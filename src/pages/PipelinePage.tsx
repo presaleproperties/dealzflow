@@ -507,11 +507,11 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       if (id) { handleSave(id, 'temperature', tg.temp); triggerHaptic('light'); }
                     }}
                   >
-                    <div className="flex items-center gap-2 px-4 py-1.5 border-t border-border/10">
-                      <TIcon className={cn("h-2.5 w-2.5", cfg.color)} />
-                      <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">{cfg.label}</span>
-                      <div className="flex-1 h-px bg-border/20" />
-                      <span className="text-[10px] text-muted-foreground/30 tabular-nums">{tg.items.length}</span>
+                    <div className="flex items-center gap-2 px-4 py-2 border-t border-border/20 bg-muted/20">
+                      <TIcon className={cn("h-3 w-3", cfg.color)} />
+                      <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">{cfg.label}</span>
+                      <div className="flex-1 h-px bg-border/30" />
+                      <span className="text-[10px] font-semibold text-muted-foreground/40 tabular-nums">{tg.items.length}</span>
                     </div>
                     <div className="sm:hidden">
                       {tg.items.map(p => (
