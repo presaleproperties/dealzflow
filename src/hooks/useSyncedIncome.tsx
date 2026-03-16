@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { getEffectiveCommission } from '@/lib/transactionUtils';
 
 interface SyncedTransaction {
   id: string;
   close_date: string | null;
   commission_amount: number | null;
+  my_net_payout: number | null;
   status: string | null;
   raw_data?: any;
   property_address: string | null;
@@ -18,7 +18,7 @@ export interface SyncedPayout {
   id: string;
   close_date: string;
   grossAmount: number;
-  netAmount: number; // User's actual take-home (from myNetPayout)
+  netAmount: number; // User's actual take-home (my_net_payout from ReZen)
   status: 'closed' | 'active'; // closed = received, active = upcoming
   property_address: string | null;
   sale_price: number | null;
@@ -26,22 +26,28 @@ export interface SyncedPayout {
 
 /**
  * Hook that provides income projections from synced transactions.
- * Uses gross commission for most deals, net payout for team deals (Ravish/Sarb).
+ * Always uses my_net_payout (user's actual take-home after brokerage/cap deductions).
+ * Falls back to commission_amount if my_net_payout is null.
  */
 export function useSyncedIncome(syncedTransactions: SyncedTransaction[]) {
   // Convert synced transactions to payout-like objects
   const syncedPayouts = useMemo(() => {
     return syncedTransactions
       .filter(tx => tx.close_date)
-      .map(tx => ({
-        id: tx.id,
-        close_date: tx.close_date!,
-        grossAmount: Number(tx.commission_amount) || 0,
-        netAmount: getEffectiveCommission(tx.raw_data, Number(tx.commission_amount) || 0),
-        status: (tx.status === 'closed' ? 'closed' : 'active') as 'closed' | 'active',
-        property_address: tx.property_address,
-        sale_price: Number(tx.sale_price) || 0,
-      }));
+      .map(tx => {
+        const gross = Number(tx.commission_amount) || 0;
+        // Use my_net_payout (ReZen's actual user take-home) — fall back to gross only if null
+        const net = tx.my_net_payout != null ? Number(tx.my_net_payout) : gross;
+        return {
+          id: tx.id,
+          close_date: tx.close_date!,
+          grossAmount: gross,
+          netAmount: net,
+          status: (tx.status === 'closed' ? 'closed' : 'active') as 'closed' | 'active',
+          property_address: tx.property_address,
+          sale_price: Number(tx.sale_price) || 0,
+        };
+      });
   }, [syncedTransactions]);
 
   // Get income for a specific month (format: 'YYYY-MM')
