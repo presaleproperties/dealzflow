@@ -224,7 +224,7 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3.5 border-b border-border/15 active:bg-muted/20 transition-colors cursor-pointer"
+      className="flex items-center gap-3 px-4 py-4 border-b border-border/25 active:bg-muted/20 transition-colors cursor-pointer"
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
       <button
@@ -234,26 +234,27 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
           handleSave(p.id, 'temperature', next);
           triggerHaptic('light');
         }}
-        className="shrink-0 w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center transition-colors hover:bg-muted/50"
+        className={cn("shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors", tc.dotColor.replace('bg-', 'bg-') + '/15 hover:opacity-80')}
       >
         <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
       </button>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold truncate leading-tight">{p.client_name}</p>
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className="text-[10px] text-muted-foreground/60">{p.home_type}</span>
-          <span className="text-[10px] text-muted-foreground/20">·</span>
-          <span className={cn("text-[10px] font-medium px-1.5 py-px rounded-md", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
+        <p className="text-[14px] font-semibold truncate leading-snug">{p.client_name}</p>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className="text-[11px] text-muted-foreground/60 font-medium">{p.home_type}</span>
+          <span className="w-px h-3 bg-border/40" />
+          <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-md", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
             {STATUS_LABELS[p.status] || p.status}
           </span>
         </div>
       </div>
 
       <div className="shrink-0 text-right">
-        <p className="text-[13px] font-bold text-primary tabular-nums">{p.potential_commission > 0 ? formatCurrency(p.potential_commission) : '—'}</p>
+        <p className="text-[14px] font-bold text-primary tabular-nums">{p.potential_commission > 0 ? formatCurrency(p.potential_commission) : '—'}</p>
+        {p.source && <p className="text-[10px] text-muted-foreground/40 mt-0.5">{p.source}</p>}
       </div>
-      <ChevronRight className="shrink-0 h-3.5 w-3.5 text-muted-foreground/20" />
+      <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground/30" />
     </div>
   );
 }
@@ -282,58 +283,59 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       onDragStart={(e: any) => { e.dataTransfer?.setData('prospect-id', p.id); e.currentTarget.style.opacity = '0.4'; }}
       onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
       className={cn(
-        "hidden sm:grid items-center border-b border-border/15 group transition-colors cursor-default",
-        "grid-cols-[32px_minmax(140px,2fr)_60px_minmax(80px,1fr)_minmax(90px,1fr)_72px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_36px]",
-        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.04]',
-        'hover:bg-primary/[0.03]'
+        "hidden sm:grid items-stretch border-b border-border/30 group transition-colors cursor-default",
+        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_88px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.035]',
+        'hover:bg-primary/[0.04]'
       )}
     >
-      <div className="px-1 flex items-center justify-center text-muted-foreground/15 group-hover:text-muted-foreground/30 cursor-grab active:cursor-grabbing" onClick={(e) => e.stopPropagation()}>
-        <GripVertical className="h-3 w-3" />
+      {/* Drag handle */}
+      <div className="flex items-center justify-center text-muted-foreground/15 group-hover:text-muted-foreground/40 cursor-grab active:cursor-grabbing transition-colors" onClick={(e) => e.stopPropagation()}>
+        <GripVertical className="h-3.5 w-3.5" />
       </div>
 
       {/* Name */}
-      <div className="border-l border-border/8 cursor-pointer" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
-        <div className="px-3 py-2.5 text-[13px] font-semibold truncate flex items-center gap-1.5 min-h-[40px]">
-          {p.client_name || <span className="text-muted-foreground/30 italic">—</span>}
+      <div className="border-l border-border/20 cursor-pointer hover:bg-primary/[0.02] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
+        <div className="px-3 py-3 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[46px] leading-tight">
+          {p.client_name || <span className="text-muted-foreground/30 italic font-normal">Unnamed</span>}
         </div>
       </div>
 
       {/* Temp */}
-      <div className="border-l border-border/8 flex items-center justify-center">
+      <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={(e) => { e.stopPropagation(); const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length]; handleSave(p.id, 'temperature', next); triggerHaptic('light'); }}
-          className="p-1 rounded-md hover:bg-muted/30 transition-colors"
+          className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-110", tc.dotColor + '/15')}
         >
           <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
         </button>
       </div>
 
       {/* Property */}
-      <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'home_type') ? (
           <InlineCell value={p.home_type} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'home_type', v)} type="select" options={HOME_TYPES} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-2.5 text-xs text-muted-foreground cursor-pointer min-h-[40px] flex items-center">{p.home_type}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3 text-[12px] font-medium text-muted-foreground/80 cursor-pointer min-h-[46px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
         )}
       </div>
 
       {/* GCI */}
-      <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'potential_commission') ? (
           <InlineCell value={p.potential_commission} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'potential_commission', v)} type="number" />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-2.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[40px] flex items-center">{formatCurrency(p.potential_commission)}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[46px] flex items-center">{formatCurrency(p.potential_commission)}</div>
         )}
       </div>
 
       {/* Status */}
-      <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'status') ? (
           <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...sOpts]} optionLabels={sLabels} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2 py-2.5 cursor-pointer flex items-center justify-center">
-            <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-3 py-3 cursor-pointer flex items-center min-h-[46px]">
+            <span className={cn("text-[11px] font-semibold px-2 py-1 rounded-lg border capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
               {STATUS_LABELS[p.status] || p.status}
             </span>
           </div>
@@ -341,24 +343,24 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       </div>
 
       {/* Source */}
-      <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.source} isEditing={isEditing(p.id, 'source')} onStartEdit={() => setEditingCell({ id: p.id, field: 'source' })} onSave={(v) => handleSave(p.id, 'source', v)} type="select" options={['', ...LEAD_SOURCES]} optionLabels={{ '': '—' }} placeholder="—" />
+      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.source} isEditing={isEditing(p.id, 'source')} onStartEdit={() => setEditingCell({ id: p.id, field: 'source' })} onSave={(v) => handleSave(p.id, 'source', v)} type="select" options={['', ...LEAD_SOURCES]} optionLabels={{ '': '—' }} placeholder="—" className="text-[12px] text-muted-foreground/70" />
       </div>
 
       {/* Budget */}
-      <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.budget != null ? formatCurrency(p.budget) : null} isEditing={isEditing(p.id, 'budget')} onStartEdit={() => setEditingCell({ id: p.id, field: 'budget' })} onSave={(v) => handleSave(p.id, 'budget', v)} type="number" placeholder="$0" />
+      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.budget != null ? formatCurrency(p.budget) : null} isEditing={isEditing(p.id, 'budget')} onStartEdit={() => setEditingCell({ id: p.id, field: 'budget' })} onSave={(v) => handleSave(p.id, 'budget', v)} type="number" placeholder="—" className="text-[12px] font-medium tabular-nums" />
       </div>
 
       {/* Notes */}
-      <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.notes} isEditing={isEditing(p.id, 'notes')} onStartEdit={() => setEditingCell({ id: p.id, field: 'notes' })} onSave={(v) => handleSave(p.id, 'notes', v)} placeholder="Notes..." />
+      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.notes} isEditing={isEditing(p.id, 'notes')} onStartEdit={() => setEditingCell({ id: p.id, field: 'notes' })} onSave={(v) => handleSave(p.id, 'notes', v)} placeholder="Add notes…" className="text-[12px] text-muted-foreground/60 italic" />
       </div>
 
       {/* Delete */}
-      <div className="border-l border-border/8 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-destructive/10 text-muted-foreground/20 hover:text-destructive">
-          <Trash2 className="h-3 w-3" />
+      <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground/30 hover:text-destructive">
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
