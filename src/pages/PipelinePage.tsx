@@ -576,11 +576,15 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
   );
 }
 
+// Module-level ref to track the card being dragged (dataTransfer.getData is empty during dragover)
+let _activeDragCardId: string | null = null;
+
 // ── Board Card ──────────────────────────────────────────────────────
-function BoardCard({ prospect, onOpen, isDragOver }: {
+function BoardCard({ prospect, onOpen, isDragOver, isBeingDragged }: {
   prospect: PipelineProspect;
   onOpen: (p: PipelineProspect) => void;
   isDragOver?: boolean;
+  isBeingDragged?: boolean;
 }) {
   const tc = TEMP_CONFIG[prospect.temperature || 'warm'] || TEMP_CONFIG.warm;
   const TIcon = tc.icon;
@@ -599,16 +603,23 @@ function BoardCard({ prospect, onOpen, isDragOver }: {
       transition={{ duration: 0.13 }}
       draggable
       onDragStart={(e: any) => {
+        _activeDragCardId = prospect.id;
         e.dataTransfer?.setData('board-card-id', prospect.id);
         e.dataTransfer?.setData('text/plain', prospect.id);
-        setTimeout(() => { e.currentTarget.style.opacity = '0.35'; }, 0);
+        setTimeout(() => { if (e.currentTarget) e.currentTarget.style.opacity = '0.3'; }, 0);
       }}
-      onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
+      onDragEnd={(e: any) => {
+        _activeDragCardId = null;
+        if (e.currentTarget) e.currentTarget.style.opacity = '1';
+      }}
       onClick={() => { onOpen(prospect); triggerHaptic('light'); }}
       className={cn(
-        "rounded-xl border-l-[3px] border border-border/40 bg-card p-3 group cursor-pointer transition-all select-none",
+        "rounded-xl border-l-[3px] border border-border/40 bg-card p-3 group cursor-grab active:cursor-grabbing transition-all select-none",
         heatBorder,
-        isDragOver ? "ring-2 ring-primary/30 border-primary/20" : "hover:border-r-primary/20 hover:border-t-primary/20 hover:border-b-primary/20 hover:shadow-md"
+        isBeingDragged && "opacity-30",
+        isDragOver
+          ? "ring-2 ring-primary/40 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)] -translate-y-0.5"
+          : "hover:border-r-primary/20 hover:border-t-primary/20 hover:border-b-primary/20 hover:shadow-md"
       )}
     >
       {/* Header row: name + temp icon */}
