@@ -475,8 +475,8 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            {/* Column headers — desktop */}
-            <div className="hidden sm:grid bg-muted/60 border-t border-b-2 border-border/60 grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]">
+            {/* Column headers — desktop only (lg+) */}
+            <div className="hidden lg:grid bg-muted/60 border-t border-b-2 border-border/60 grid-cols-[28px_minmax(140px,2fr)_48px_minmax(80px,1fr)_minmax(90px,1fr)_96px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.2fr)_34px]">
               <div className="px-2 py-3" />
               <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">Client</div>
               <div className="px-2 py-3 border-l border-border/40 flex items-center justify-center">
