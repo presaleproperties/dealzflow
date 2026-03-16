@@ -183,9 +183,7 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
           handleSave(p.id, 'temperature', next);
           triggerHaptic('light');
         }}
-        className={cn("shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors", 
-          p.temperature === 'hot' ? 'bg-rose-500/10' : p.temperature === 'cold' ? 'bg-sky-500/10' : 'bg-amber-500/10'
-        )}
+        className="shrink-0 w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center transition-colors hover:bg-muted/50"
       >
         <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
       </button>
