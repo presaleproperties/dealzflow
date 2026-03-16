@@ -14,7 +14,7 @@ import { ProspectSheet } from '@/components/pipeline/ProspectSheet';
 
 const HOME_TYPES = ['Presale', 'Condo', 'Townhome', 'Detached', 'Listings'];
 const LEAD_SOURCES = ['Instagram', 'Tiktok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Past Client'];
-const STATUS_OPTIONS = ['active', 'listings', 'in-contract', 'closed', 'lost'] as const;
+const STATUS_OPTIONS = ['active', 'listings', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
 const TEMP_OPTIONS = ['hot', 'warm', 'cold'];
 const DEAL_TYPE_OPTIONS = ['buyer', 'seller'];
 const DEAL_TYPE_LABELS: Record<string, string> = { buyer: 'Buyer', seller: 'Seller' };
@@ -27,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
   active: 'Active',
   listings: 'Listings',
   'in-contract': 'In Contract',
+  'pending-mortgage': 'Pending Mortgage',
   closed: 'Closed',
   lost: 'Lost',
 };
@@ -35,6 +36,7 @@ const STATUS_DOT_COLORS: Record<string, string> = {
   active: 'bg-primary',
   listings: 'bg-violet-500',
   'in-contract': 'bg-amber-500',
+  'pending-mortgage': 'bg-orange-500',
   closed: 'bg-emerald-500',
   lost: 'bg-destructive',
 };
@@ -43,6 +45,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: 'bg-primary/12 text-primary',
   listings: 'bg-violet-500/12 text-violet-600 dark:text-violet-400',
   'in-contract': 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
+  'pending-mortgage': 'bg-orange-500/12 text-orange-600 dark:text-orange-400',
   closed: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
   lost: 'bg-destructive/12 text-destructive',
 };

@@ -9,13 +9,14 @@ import { formatCurrency } from '@/lib/format';
 const LEAD_SOURCES = ['Instagram', 'TikTok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Open House', 'Cold Call', 'Website', 'Past Client', 'Other'];
 
 const HOME_TYPES = ['Presale', 'Condo', 'Townhome', 'Detached', 'Listings'];
-const STATUS_OPTIONS = ['active', 'listings', 'in-contract', 'closed', 'lost'] as const;
+const STATUS_OPTIONS = ['active', 'listings', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
 const DEAL_TYPE_OPTIONS = ['buyer', 'seller'] as const;
 
 const STATUS_LABELS: Record<string, string> = {
   active: 'Active',
   listings: 'Listings',
   'in-contract': 'In Contract',
+  'pending-mortgage': 'Pending Mortgage',
   closed: 'Closed',
   lost: 'Lost',
 };
@@ -24,6 +25,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: 'bg-primary/15 text-primary border-primary/30',
   listings: 'bg-violet-500/15 text-violet-600 border-violet-500/30',
   'in-contract': 'bg-amber-500/15 text-amber-600 border-amber-500/30',
+  'pending-mortgage': 'bg-orange-500/15 text-orange-600 border-orange-500/30',
   closed: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
   lost: 'bg-destructive/15 text-destructive border-destructive/30',
 };
