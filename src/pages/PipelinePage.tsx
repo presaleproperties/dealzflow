@@ -428,16 +428,16 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
     >
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/10"
+        className="w-full flex items-center gap-3 px-4 py-4 transition-colors hover:bg-muted/10"
       >
-        <div className={cn("w-2 h-2 rounded-full shrink-0", group.dotColor)} />
-        <h3 className="text-[13px] font-bold tracking-tight">{group.label}</h3>
-        <span className="text-[11px] text-muted-foreground/50 font-medium tabular-nums">
+        <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", group.dotColor)} />
+        <h3 className="text-[14px] font-bold tracking-tight">{group.label}</h3>
+        <span className="text-xs text-muted-foreground/50 font-medium tabular-nums bg-muted/40 px-1.5 py-0.5 rounded-md">
           {sortedItems.length}{tempFilter && baseItems.length !== sortedItems.length ? ` / ${baseItems.length}` : ''}
         </span>
         <div className="flex-1" />
-        <span className="text-[13px] font-bold text-primary tabular-nums">{formatCurrency(groupGCI)}</span>
-        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/30 transition-transform duration-200", collapsed && "-rotate-90")} />
+        <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(groupGCI)}</span>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground/40 transition-transform duration-200", collapsed && "-rotate-90")} />
       </button>
 
       <AnimatePresence initial={false}>
