@@ -6,7 +6,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { usePipelineProspects, useAddProspect, useUpdateProspect, useDeleteProspect, PipelineProspect } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, Filter } from 'lucide-react';
+import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
