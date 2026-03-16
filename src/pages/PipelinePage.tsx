@@ -221,10 +221,11 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
 }) {
   const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
   const TIcon = tc.icon;
+  const borderAccent = p.temperature === 'hot' ? 'border-l-rose-500' : p.temperature === 'cold' ? 'border-l-sky-500' : 'border-l-amber-500';
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-4 border-b border-border/25 active:bg-muted/20 transition-colors cursor-pointer"
+      className={cn("flex items-center gap-3 px-4 py-4 border-b border-border/40 border-l-[3px] active:bg-muted/25 transition-colors cursor-pointer", borderAccent)}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
       <button
@@ -283,59 +284,59 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       onDragStart={(e: any) => { e.dataTransfer?.setData('prospect-id', p.id); e.currentTarget.style.opacity = '0.4'; }}
       onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
       className={cn(
-        "hidden sm:grid items-stretch border-b border-border/30 group transition-colors cursor-default",
-        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_88px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
-        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.035]',
-        'hover:bg-primary/[0.04]'
+        "hidden sm:grid items-stretch border-b border-border/50 group transition-colors cursor-default",
+        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.06]',
+        'hover:bg-primary/[0.05]'
       )}
     >
       {/* Drag handle */}
-      <div className="flex items-center justify-center text-muted-foreground/15 group-hover:text-muted-foreground/40 cursor-grab active:cursor-grabbing transition-colors" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-center text-muted-foreground/20 group-hover:text-muted-foreground/50 cursor-grab active:cursor-grabbing transition-colors" onClick={(e) => e.stopPropagation()}>
         <GripVertical className="h-3.5 w-3.5" />
       </div>
 
       {/* Name */}
-      <div className="border-l border-border/20 cursor-pointer hover:bg-primary/[0.02] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
-        <div className="px-3 py-3 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[46px] leading-tight">
+      <div className="border-l border-border/30 cursor-pointer hover:bg-primary/[0.03] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
+        <div className="px-3 py-3.5 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[50px] leading-tight">
           {p.client_name || <span className="text-muted-foreground/30 italic font-normal">Unnamed</span>}
         </div>
       </div>
 
       {/* Temp */}
-      <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30 flex items-center justify-center bg-muted/[0.03]" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={(e) => { e.stopPropagation(); const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length]; handleSave(p.id, 'temperature', next); triggerHaptic('light'); }}
-          className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-110", tc.dotColor + '/15')}
+          className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 border", tc.dotColor + '/20 border-' + tc.dotColor.replace('bg-', '') + '/20')}
         >
           <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
         </button>
       </div>
 
       {/* Property */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'home_type') ? (
           <InlineCell value={p.home_type} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'home_type', v)} type="select" options={HOME_TYPES} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3 text-[12px] font-medium text-muted-foreground/80 cursor-pointer min-h-[46px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3.5 text-[12px] font-medium text-muted-foreground cursor-pointer min-h-[50px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
         )}
       </div>
 
       {/* GCI */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'potential_commission') ? (
           <InlineCell value={p.potential_commission} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'potential_commission', v)} type="number" />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[46px] flex items-center">{formatCurrency(p.potential_commission)}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[50px] flex items-center">{formatCurrency(p.potential_commission)}</div>
         )}
       </div>
 
       {/* Status */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'status') ? (
           <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...sOpts]} optionLabels={sLabels} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-3 py-3 cursor-pointer flex items-center min-h-[46px]">
-            <span className={cn("text-[11px] font-semibold px-2 py-1 rounded-lg border capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2.5 py-3.5 cursor-pointer flex items-center min-h-[50px]">
+            <span className={cn("text-[10px] font-bold px-2 py-1 rounded-md capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
               {STATUS_LABELS[p.status] || p.status}
             </span>
           </div>
@@ -343,23 +344,23 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       </div>
 
       {/* Source */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.source} isEditing={isEditing(p.id, 'source')} onStartEdit={() => setEditingCell({ id: p.id, field: 'source' })} onSave={(v) => handleSave(p.id, 'source', v)} type="select" options={['', ...LEAD_SOURCES]} optionLabels={{ '': '—' }} placeholder="—" className="text-[12px] text-muted-foreground/70" />
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.source} isEditing={isEditing(p.id, 'source')} onStartEdit={() => setEditingCell({ id: p.id, field: 'source' })} onSave={(v) => handleSave(p.id, 'source', v)} type="select" options={['', ...LEAD_SOURCES]} optionLabels={{ '': '—' }} placeholder="—" className="text-[12px] text-muted-foreground/80" />
       </div>
 
       {/* Budget */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.budget != null ? formatCurrency(p.budget) : null} isEditing={isEditing(p.id, 'budget')} onStartEdit={() => setEditingCell({ id: p.id, field: 'budget' })} onSave={(v) => handleSave(p.id, 'budget', v)} type="number" placeholder="—" className="text-[12px] font-medium tabular-nums" />
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.budget != null ? formatCurrency(p.budget) : null} isEditing={isEditing(p.id, 'budget')} onStartEdit={() => setEditingCell({ id: p.id, field: 'budget' })} onSave={(v) => handleSave(p.id, 'budget', v)} type="number" placeholder="—" className="text-[12px] font-semibold tabular-nums" />
       </div>
 
       {/* Notes */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.notes} isEditing={isEditing(p.id, 'notes')} onStartEdit={() => setEditingCell({ id: p.id, field: 'notes' })} onSave={(v) => handleSave(p.id, 'notes', v)} placeholder="Add notes…" className="text-[12px] text-muted-foreground/60 italic" />
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.notes} isEditing={isEditing(p.id, 'notes')} onStartEdit={() => setEditingCell({ id: p.id, field: 'notes' })} onSave={(v) => handleSave(p.id, 'notes', v)} placeholder="Add notes…" className="text-[12px] text-muted-foreground/70" />
       </div>
 
       {/* Delete */}
-      <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground/30 hover:text-destructive">
+      <div className="border-l border-border/30 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -450,20 +451,20 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
             className="overflow-hidden"
           >
             {/* Column headers — desktop */}
-            <div className="hidden sm:grid bg-muted/40 border-t border-b border-border/40 grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_88px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]">
-              <div className="px-2 py-2.5" />
-              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Client</div>
-              <div className="px-2 py-2.5 border-l border-border/25 flex items-center justify-center">
+            <div className="hidden sm:grid bg-muted/60 border-t border-b-2 border-border/60 grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]">
+              <div className="px-2 py-3" />
+              <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">Client</div>
+              <div className="px-2 py-3 border-l border-border/40 flex items-center justify-center">
                 <SortHeader label="Heat" field="temperature" sortField={sortField} sortDir={sortDir} onSort={onSort} />
               </div>
-              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Property</div>
-              <div className="px-3 py-2.5 border-l border-border/25 flex items-center">
+              <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">Property</div>
+              <div className="px-3 py-3 border-l border-border/40 flex items-center">
                 <SortHeader label="Est. GCI" field="potential_commission" sortField={sortField} sortDir={sortDir} onSort={onSort} />
               </div>
-              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Status</div>
-              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Source</div>
-              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
-              <div className="px-3 py-2.5 border-l border-border/25 flex items-center">
+              <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">Status</div>
+              <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">Source</div>
+              <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
+              <div className="px-3 py-3 border-l border-border/40 flex items-center">
                 <SortHeader label="Added" field="created_at" sortField={sortField} sortDir={sortDir} onSort={onSort} />
               </div>
               <div />
@@ -507,11 +508,12 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       if (id) { handleSave(id, 'temperature', tg.temp); triggerHaptic('light'); }
                     }}
                   >
-                    <div className="flex items-center gap-2 px-4 py-2 border-t border-border/20 bg-muted/20">
+                    <div className="flex items-center gap-2.5 px-4 py-2.5 border-t-2 border-border/40 bg-muted/30">
+                      <div className={cn("w-2 h-2 rounded-full shrink-0", cfg.dotColor)} />
                       <TIcon className={cn("h-3 w-3", cfg.color)} />
-                      <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">{cfg.label}</span>
-                      <div className="flex-1 h-px bg-border/30" />
-                      <span className="text-[10px] font-semibold text-muted-foreground/40 tabular-nums">{tg.items.length}</span>
+                      <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", cfg.color)}>{cfg.label}</span>
+                      <div className="flex-1 h-px bg-border/40" />
+                      <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums bg-muted/60 px-1.5 py-0.5 rounded-md">{tg.items.length} lead{tg.items.length !== 1 ? 's' : ''}</span>
                     </div>
                     <div className="sm:hidden">
                       {tg.items.map(p => (
