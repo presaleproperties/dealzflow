@@ -6,7 +6,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { usePipelineProspects, useAddProspect, useUpdateProspect, useDeleteProspect, PipelineProspect } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, Filter } from 'lucide-react';
+import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
@@ -54,6 +54,25 @@ const TEMP_CONFIG: Record<string, { icon: any; color: string; dotColor: string; 
 };
 
 type ViewMode = 'list' | 'board';
+type SortField = 'temperature' | 'potential_commission' | 'created_at' | null;
+type SortDir = 'asc' | 'desc';
+
+const TEMP_ORDER: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
+
+function sortProspects(items: PipelineProspect[], field: SortField, dir: SortDir): PipelineProspect[] {
+  if (!field) return items;
+  return [...items].sort((a, b) => {
+    let cmp = 0;
+    if (field === 'temperature') {
+      cmp = (TEMP_ORDER[a.temperature || 'warm'] ?? 1) - (TEMP_ORDER[b.temperature || 'warm'] ?? 1);
+    } else if (field === 'potential_commission') {
+      cmp = Number(a.potential_commission) - Number(b.potential_commission);
+    } else if (field === 'created_at') {
+      cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    }
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
 
 // ── Inline editable cell ─────────────────────────────────────────────
 function InlineCell({
@@ -310,11 +329,36 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
   );
 }
 
+// ── Sort column header button ─────────────────────────────────────────
+function SortHeader({ label, field, sortField, sortDir, onSort, className }: {
+  label: string; field: SortField; sortField: SortField; sortDir: SortDir;
+  onSort: (f: SortField) => void; className?: string;
+}) {
+  const active = sortField === field;
+  const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className={cn(
+        "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest transition-colors",
+        active ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground/70",
+        className
+      )}
+    >
+      {label}
+      <Icon className={cn("h-2.5 w-2.5 shrink-0", active ? "opacity-100" : "opacity-40")} />
+    </button>
+  );
+}
+
 // ── Section with collapsible temp groups ─────────────────────────────
-function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCell, handleSave, handleAdd, deleteProspect, onOpen }: {
+function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onSort, isEditing, setEditingCell, handleSave, handleAdd, deleteProspect, onOpen }: {
   group: { key: string; label: string; defaultDealType: string; defaultHomeType: string; accentColor: string; dotColor: string; filter: (p: PipelineProspect) => boolean };
   prospects: PipelineProspect[];
   tempFilter: string | null;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (f: SortField) => void;
   isEditing: (id: string, field: string) => boolean;
   setEditingCell: (cell: { id: string; field: string } | null) => void;
   handleSave: (id: string, field: string, value: string) => void;
@@ -323,15 +367,18 @@ function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCe
   onOpen: (p: PipelineProspect) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const groupItems = [...prospects].reverse().filter(group.filter);
-  const filteredItems = tempFilter ? groupItems.filter(p => (p.temperature || 'warm') === tempFilter) : groupItems;
-  const groupGCI = filteredItems.reduce((s, p) => s + Number(p.potential_commission), 0);
+  const baseItems = [...prospects].reverse().filter(group.filter);
+  const filteredItems = tempFilter ? baseItems.filter(p => (p.temperature || 'warm') === tempFilter) : baseItems;
+  const sortedItems = sortProspects(filteredItems, sortField, sortDir);
+  const groupGCI = sortedItems.reduce((s, p) => s + Number(p.potential_commission), 0);
 
-  const tempGroups = [
-    { temp: 'hot', items: filteredItems.filter(p => (p.temperature || 'warm') === 'hot') },
-    { temp: 'warm', items: filteredItems.filter(p => (p.temperature || 'warm') === 'warm') },
-    { temp: 'cold', items: filteredItems.filter(p => (p.temperature || 'warm') === 'cold') },
-  ].filter(tg => tg.items.length > 0);
+  // When sorted, flatten into a single list; otherwise group by temperature
+  const useTempGroups = !sortField;
+  const tempGroups = useTempGroups ? [
+    { temp: 'hot', items: sortedItems.filter(p => (p.temperature || 'warm') === 'hot') },
+    { temp: 'warm', items: sortedItems.filter(p => (p.temperature || 'warm') === 'warm') },
+    { temp: 'cold', items: sortedItems.filter(p => (p.temperature || 'warm') === 'cold') },
+  ].filter(tg => tg.items.length > 0) : [];
 
   return (
     <motion.div
@@ -348,7 +395,7 @@ function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCe
         <div className={cn("w-2 h-2 rounded-full shrink-0", group.dotColor)} />
         <h3 className="text-[13px] font-bold tracking-tight">{group.label}</h3>
         <span className="text-[11px] text-muted-foreground/50 font-medium tabular-nums">
-          {filteredItems.length}{tempFilter && groupItems.length !== filteredItems.length ? ` / ${groupItems.length}` : ''}
+          {sortedItems.length}{tempFilter && baseItems.length !== sortedItems.length ? ` / ${baseItems.length}` : ''}
         </span>
         <div className="flex-1" />
         <span className="text-[13px] font-bold text-primary tabular-nums">{formatCurrency(groupGCI)}</span>
@@ -365,25 +412,52 @@ function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCe
             className="overflow-hidden"
           >
             {/* Column headers — desktop */}
-            <div className="hidden sm:grid bg-muted/20 border-t border-b border-border/30 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest grid-cols-[32px_minmax(140px,2fr)_60px_minmax(80px,1fr)_minmax(90px,1fr)_72px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_36px]">
+            <div className="hidden sm:grid bg-muted/20 border-t border-b border-border/30 grid-cols-[32px_minmax(140px,2fr)_60px_minmax(80px,1fr)_minmax(90px,1fr)_72px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_36px]">
               <div className="px-2 py-2" />
-              <div className="px-3 py-2 border-l border-border/10">Client</div>
-              <div className="px-2 py-2 border-l border-border/10 text-center">Temp</div>
-              <div className="px-3 py-2 border-l border-border/10">Property</div>
-              <div className="px-3 py-2 border-l border-border/10">Est. GCI</div>
-              <div className="px-2 py-2 border-l border-border/10 text-center">Status</div>
-              <div className="px-3 py-2 border-l border-border/10">Source</div>
-              <div className="px-3 py-2 border-l border-border/10">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
-              <div className="px-3 py-2 border-l border-border/10">Notes</div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Client</div>
+              <div className="px-2 py-2 border-l border-border/10 flex items-center justify-center">
+                <SortHeader label="Temp" field="temperature" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              </div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Property</div>
+              <div className="px-3 py-2 border-l border-border/10 flex items-center">
+                <SortHeader label="Est. GCI" field="potential_commission" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              </div>
+              <div className="px-2 py-2 border-l border-border/10 text-center text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Status</div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Source</div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
+              <div className="px-3 py-2 border-l border-border/10 flex items-center">
+                <SortHeader label="Date" field="created_at" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              </div>
               <div />
             </div>
 
-            {/* Temp sub-groups */}
-            {tempGroups.length === 0 ? (
+            {/* Content: flat sorted list OR temp sub-groups */}
+            {sortedItems.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-xs text-muted-foreground/30">No leads{tempFilter ? ` matching "${TEMP_CONFIG[tempFilter]?.label}" filter` : ''}</p>
               </div>
+            ) : sortField ? (
+              // Sorted flat list
+              <>
+                <div className="sm:hidden">
+                  {sortedItems.map(p => (
+                    <MobileProspectCard key={p.id} p={p} handleSave={handleSave} onOpen={onOpen} />
+                  ))}
+                </div>
+                <AnimatePresence mode="popLayout">
+                  {sortedItems.map((p, idx) => (
+                    <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
+                      <DesktopProspectRow
+                        p={p} idx={idx} isEditing={isEditing} setEditingCell={setEditingCell}
+                        handleSave={handleSave} deleteProspect={deleteProspect} onOpen={onOpen}
+                        showBudgetAsListPrice={group.defaultDealType === 'seller'}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </>
             ) : (
+              // Temperature sub-groups
               tempGroups.map(tg => {
                 const cfg = TEMP_CONFIG[tg.temp] || TEMP_CONFIG.warm;
                 const TIcon = cfg.icon;
@@ -396,22 +470,17 @@ function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCe
                       if (id) { handleSave(id, 'temperature', tg.temp); triggerHaptic('light'); }
                     }}
                   >
-                    {/* Temp divider */}
                     <div className="flex items-center gap-2 px-4 py-1.5 border-t border-border/10">
                       <TIcon className={cn("h-2.5 w-2.5", cfg.color)} />
                       <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">{cfg.label}</span>
                       <div className="flex-1 h-px bg-border/20" />
                       <span className="text-[10px] text-muted-foreground/30 tabular-nums">{tg.items.length}</span>
                     </div>
-
-                    {/* Mobile cards */}
                     <div className="sm:hidden">
                       {tg.items.map(p => (
                         <MobileProspectCard key={p.id} p={p} handleSave={handleSave} onOpen={onOpen} />
                       ))}
                     </div>
-
-                    {/* Desktop rows */}
                     <AnimatePresence mode="popLayout">
                       {tg.items.map((p, idx) => (
                         <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
@@ -664,6 +733,21 @@ export default function PipelinePage() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem('pipeline-view') as ViewMode) || 'list');
   const [selectedProspect, setSelectedProspect] = useState<PipelineProspect | null>(null);
   const [tempFilter, setTempFilter] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  const handleSort = useCallback((field: SortField) => {
+    triggerHaptic('light');
+    setSortField(prev => {
+      if (prev === field) {
+        // same field: flip direction, or if already flipped reset to null
+        setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+        return field;
+      }
+      setSortDir('desc');
+      return field;
+    });
+  }, []);
 
   const handleSheetSave = useCallback((id: string, updates: Partial<PipelineProspect>) => {
     updateProspect.mutate({ id, ...updates } as any);
@@ -830,6 +914,9 @@ export default function PipelinePage() {
                   group={group}
                   prospects={prospects}
                   tempFilter={tempFilter}
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
                   isEditing={isEditing}
                   setEditingCell={setEditingCell}
                   handleSave={handleSave}
