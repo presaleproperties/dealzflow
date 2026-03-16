@@ -1,123 +1,128 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePipelineProspects } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Users, Flame, Thermometer, Snowflake, ArrowRight, TrendingUp } from 'lucide-react';
+import { Flame, Thermometer, Snowflake, ArrowRight, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const tempConfig: Record<string, { icon: any; color: string }> = {
-  hot: { icon: Flame, color: 'text-rose-500' },
-  warm: { icon: Thermometer, color: 'text-amber-500' },
-  cold: { icon: Snowflake, color: 'text-sky-500' },
-};
+const TEMP_CONFIG = {
+  hot:  { icon: Flame,       label: 'Hot',  color: 'text-rose-500',  bg: 'bg-rose-500/12',  bar: 'bg-rose-500',  border: 'border-rose-500/20' },
+  warm: { icon: Thermometer, label: 'Warm', color: 'text-amber-500', bg: 'bg-amber-500/12', bar: 'bg-amber-500', border: 'border-amber-500/20' },
+  cold: { icon: Snowflake,   label: 'Cold', color: 'text-sky-500',   bg: 'bg-sky-500/12',   bar: 'bg-sky-500',   border: 'border-sky-500/20' },
+} as const;
+
+type TempKey = keyof typeof TEMP_CONFIG;
 
 export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal' | 'vertical' }) {
   const { data: prospects = [] } = usePipelineProspects();
 
-  const active = prospects.filter(p => p.status === 'active');
-  const totalPotential = active.reduce((sum, p) => sum + Number(p.potential_commission), 0);
-  const hotCount = active.filter(p => p.temperature === 'hot').length;
-  const warmCount = active.filter(p => p.temperature === 'warm').length;
-  const coldCount = active.filter(p => p.temperature === 'cold').length;
+  const active = prospects.filter(p => p.status !== 'closed' && p.status !== 'lost');
+  const totalGCI = active.reduce((s, p) => s + Number(p.potential_commission), 0);
 
-  const sorted = [...active].sort((a, b) => {
-    const order: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
-    return (order[a.temperature] ?? 1) - (order[b.temperature] ?? 1);
-  }).slice(0, 4);
+  const tempStats = (['hot', 'warm', 'cold'] as TempKey[]).map(temp => {
+    const items = active.filter(p => (p.temperature || 'warm') === temp);
+    const gci = items.reduce((s, p) => s + Number(p.potential_commission), 0);
+    return { temp, count: items.length, gci };
+  });
 
-  const TempPills = () => (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      {hotCount > 0 && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20">
-          <Flame className="h-2.5 w-2.5" /> {hotCount}
-        </span>
-      )}
-      {warmCount > 0 && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20">
-          <Thermometer className="h-2.5 w-2.5" /> {warmCount}
-        </span>
-      )}
-      {coldCount > 0 && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-500 border border-sky-500/20">
-          <Snowflake className="h-2.5 w-2.5" /> {coldCount}
-        </span>
-      )}
+  const topLeads = [...active]
+    .sort((a, b) => {
+      const order: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
+      return (order[a.temperature] ?? 1) - (order[b.temperature] ?? 1);
+    })
+    .slice(0, 3);
+
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-8 gap-2">
+      <TrendingUp className="h-7 w-7 text-muted-foreground/20" />
+      <p className="text-xs text-muted-foreground/40">No active pipeline leads</p>
+      <Link to="/pipeline" className="text-[11px] font-semibold text-primary hover:underline">Add your first lead →</Link>
     </div>
   );
 
-  // Horizontal layout: compact on mobile, full on desktop
+  // ── Horizontal (used on dashboard) ──────────────────────────────────
   if (layout === 'horizontal') {
     return (
-      <Link to="/pipeline" className="block">
-        <div className="liquid-glass rounded-2xl p-4 sm:p-5 transition-colors hover:bg-muted/10">
-          {/* Mobile: compact single-row summary */}
-          <div className="sm:hidden">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Users className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold leading-tight">Pipeline</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {active.length} prospect{active.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <TempPills />
-                <span className="text-sm font-bold text-primary">{formatCurrency(totalPotential)}</span>
-                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
+      <div className="liquid-glass rounded-2xl overflow-hidden">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-4 px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">Pipeline</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold tracking-tight tabular-nums">{formatCurrency(totalGCI)}</span>
+              <span className="text-[11px] text-muted-foreground/50 font-medium">potential GCI</span>
             </div>
           </div>
+          <Link
+            to="/pipeline"
+            className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-primary border border-dashed border-primary/25 hover:bg-primary/5 transition-colors"
+          >
+            View All <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
 
-          {/* Desktop: full grid */}
-          <div className="hidden sm:block">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-semibold leading-tight">Pipeline</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {active.length} active · {formatCurrency(totalPotential)} potential
-                  </p>
-                </div>
+        {active.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* Temp summary pills + bar */}
+            <div className="px-4 sm:px-5 pb-3">
+              <div className="flex items-center gap-2 mb-2.5">
+                {tempStats.map(({ temp, count, gci }) => {
+                  if (count === 0) return null;
+                  const cfg = TEMP_CONFIG[temp];
+                  const Icon = cfg.icon;
+                  return (
+                    <div key={temp} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border", cfg.bg, cfg.border)}>
+                      <Icon className={cn("h-3 w-3 shrink-0", cfg.color)} />
+                      <span className={cn("text-[11px] font-bold tabular-nums", cfg.color)}>{count}</span>
+                      <span className="text-[10px] text-muted-foreground/50 font-medium hidden sm:inline">{formatCurrency(gci)}</span>
+                    </div>
+                  );
+                })}
+                <span className="ml-auto text-[11px] text-muted-foreground/40 tabular-nums">{active.length} lead{active.length !== 1 ? 's' : ''}</span>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <TempPills />
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary hover:bg-primary/5 border border-dashed border-primary/20 transition-colors ml-1">
-                  View All <ArrowRight className="h-3 w-3" />
-                </span>
-              </div>
+
+              {/* Stacked bar */}
+              {totalGCI > 0 && (
+                <div className="flex h-1.5 rounded-full overflow-hidden gap-px">
+                  {tempStats.map(({ temp, gci }) => {
+                    const pct = (gci / totalGCI) * 100;
+                    if (pct === 0) return null;
+                    return (
+                      <motion.div
+                        key={temp}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                        className={cn("h-full rounded-full", TEMP_CONFIG[temp].bar)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {sorted.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <p className="text-xs">No active prospects</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {sorted.map((p, idx) => {
-                  const tc = tempConfig[p.temperature] || tempConfig.warm;
+            {/* Top leads — desktop only */}
+            {topLeads.length > 0 && (
+              <div className="hidden sm:grid grid-cols-3 gap-2 px-5 pb-5 border-t border-border/15 pt-3">
+                {topLeads.map((p, idx) => {
+                  const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
                   const Icon = tc.icon;
                   return (
                     <motion.div
                       key={p.id}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.04 }}
-                      className="flex items-center gap-2.5 py-3 px-3.5 rounded-xl bg-muted/20 border border-border/15"
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/15 border border-border/15"
                     >
-                      <Icon className={cn("h-4 w-4 shrink-0", tc.color)} />
+                      <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{p.client_name}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{p.home_type}</p>
+                        <p className="text-[12px] font-semibold truncate leading-tight">{p.client_name}</p>
+                        <p className="text-[10px] text-muted-foreground/50 mt-0.5">{p.home_type}</p>
                       </div>
-                      <span className="text-sm font-bold text-primary whitespace-nowrap">
+                      <span className="text-[11px] font-bold text-primary tabular-nums whitespace-nowrap">
                         {formatCurrency(p.potential_commission)}
                       </span>
                     </motion.div>
@@ -125,88 +130,77 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
                 })}
               </div>
             )}
-            {active.length > 4 && (
-              <p className="text-[11px] text-muted-foreground text-center pt-3">
-                +{active.length - 4} more prospect{active.length - 4 !== 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-        </div>
-      </Link>
+
+            {/* Mobile: compact lead list */}
+            <div className="sm:hidden divide-y divide-border/15 border-t border-border/15">
+              {topLeads.map(p => {
+                const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
+                const Icon = tc.icon;
+                return (
+                  <div key={p.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
+                    <p className="flex-1 text-[13px] font-medium truncate">{p.client_name}</p>
+                    <span className="text-[12px] font-bold text-primary tabular-nums">{formatCurrency(p.potential_commission)}</span>
+                  </div>
+                );
+              })}
+              {active.length > 3 && (
+                <div className="px-4 py-2.5 text-center">
+                  <span className="text-[11px] text-muted-foreground/40">+{active.length - 3} more</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     );
   }
 
-  // Vertical layout (default)
+  // ── Vertical (legacy fallback) ───────────────────────────────────────
   return (
-    <Card className="border-border/40 bg-card/90 backdrop-blur-sm shadow-sm overflow-hidden">
-      <CardHeader className="p-4 sm:p-5 pb-3 sm:pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Users className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-[15px] font-semibold leading-tight">Pipeline</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {active.length} active prospect{active.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-lg font-bold text-primary">{formatCurrency(totalPotential)}</p>
-            <p className="text-[11px] text-muted-foreground">potential</p>
-          </div>
+    <div className="liquid-glass rounded-2xl p-5 space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">Pipeline</p>
+          <p className="text-lg font-bold tabular-nums">{formatCurrency(totalGCI)}</p>
+          <p className="text-[11px] text-muted-foreground/50">{active.length} active lead{active.length !== 1 ? 's' : ''}</p>
         </div>
-      </CardHeader>
+        <div className="flex flex-col items-end gap-1.5">
+          {tempStats.map(({ temp, count }) => {
+            if (count === 0) return null;
+            const cfg = TEMP_CONFIG[temp];
+            const Icon = cfg.icon;
+            return (
+              <span key={temp} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", cfg.bg, cfg.border, cfg.color)}>
+                <Icon className="h-2.5 w-2.5" /> {count}
+              </span>
+            );
+          })}
+        </div>
+      </div>
 
-      <CardContent className="p-4 sm:p-5 pt-0 sm:pt-0 space-y-4">
-        {active.length > 0 && <TempPills />}
+      {active.length === 0 ? <EmptyState /> : (
+        <div className="space-y-2">
+          {topLeads.map(p => {
+            const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
+            const Icon = tc.icon;
+            return (
+              <div key={p.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-muted/20 border border-border/15">
+                <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{p.client_name}</p>
+                  <p className="text-[11px] text-muted-foreground/50">{p.home_type}</p>
+                </div>
+                <span className="text-sm font-bold text-primary tabular-nums">{formatCurrency(p.potential_commission)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-        {sorted.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <TrendingUp className="h-7 w-7 mx-auto mb-2 opacity-30" />
-            <p className="text-xs">No active prospects</p>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {sorted.map((p, idx) => {
-              const tc = tempConfig[p.temperature] || tempConfig.warm;
-              const Icon = tc.icon;
-              return (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.04 }}
-                  className="flex items-center gap-3 py-3 px-3.5 rounded-xl bg-muted/20 border border-border/15"
-                >
-                  <Icon className={cn("h-4 w-4 shrink-0", tc.color)} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{p.client_name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{p.home_type}</p>
-                  </div>
-                  <span className="text-sm font-bold text-primary whitespace-nowrap">
-                    {formatCurrency(p.potential_commission)}
-                  </span>
-                </motion.div>
-              );
-            })}
-            {active.length > 4 && (
-              <p className="text-[11px] text-muted-foreground text-center pt-1">
-                +{active.length - 4} more prospect{active.length - 4 !== 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-        )}
-
-        <Link
-          to="/pipeline"
-          className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sm font-semibold text-primary hover:bg-primary/5 border border-dashed border-primary/20 transition-colors"
-        >
-          View Full Pipeline
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </CardContent>
-    </Card>
+      <Link to="/pipeline" className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sm font-semibold text-primary hover:bg-primary/5 border border-dashed border-primary/20 transition-colors">
+        View Full Pipeline <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
   );
 }
