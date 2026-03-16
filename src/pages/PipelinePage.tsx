@@ -283,59 +283,59 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       onDragStart={(e: any) => { e.dataTransfer?.setData('prospect-id', p.id); e.currentTarget.style.opacity = '0.4'; }}
       onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
       className={cn(
-        "hidden sm:grid items-stretch border-b border-border/30 group transition-colors cursor-default",
-        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_88px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
-        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.035]',
-        'hover:bg-primary/[0.04]'
+        "hidden sm:grid items-stretch border-b border-border/50 group transition-colors cursor-default",
+        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.06]',
+        'hover:bg-primary/[0.05]'
       )}
     >
       {/* Drag handle */}
-      <div className="flex items-center justify-center text-muted-foreground/15 group-hover:text-muted-foreground/40 cursor-grab active:cursor-grabbing transition-colors" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-center text-muted-foreground/20 group-hover:text-muted-foreground/50 cursor-grab active:cursor-grabbing transition-colors" onClick={(e) => e.stopPropagation()}>
         <GripVertical className="h-3.5 w-3.5" />
       </div>
 
       {/* Name */}
-      <div className="border-l border-border/20 cursor-pointer hover:bg-primary/[0.02] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
-        <div className="px-3 py-3 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[46px] leading-tight">
+      <div className="border-l border-border/30 cursor-pointer hover:bg-primary/[0.03] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
+        <div className="px-3 py-3.5 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[50px] leading-tight">
           {p.client_name || <span className="text-muted-foreground/30 italic font-normal">Unnamed</span>}
         </div>
       </div>
 
       {/* Temp */}
-      <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30 flex items-center justify-center bg-muted/[0.03]" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={(e) => { e.stopPropagation(); const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length]; handleSave(p.id, 'temperature', next); triggerHaptic('light'); }}
-          className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-110", tc.dotColor + '/15')}
+          className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 border", tc.dotColor + '/20 border-' + tc.dotColor.replace('bg-', '') + '/20')}
         >
           <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
         </button>
       </div>
 
       {/* Property */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'home_type') ? (
           <InlineCell value={p.home_type} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'home_type', v)} type="select" options={HOME_TYPES} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3 text-[12px] font-medium text-muted-foreground/80 cursor-pointer min-h-[46px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3.5 text-[12px] font-medium text-muted-foreground cursor-pointer min-h-[50px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
         )}
       </div>
 
       {/* GCI */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'potential_commission') ? (
           <InlineCell value={p.potential_commission} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'potential_commission', v)} type="number" />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[46px] flex items-center">{formatCurrency(p.potential_commission)}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[50px] flex items-center">{formatCurrency(p.potential_commission)}</div>
         )}
       </div>
 
       {/* Status */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'status') ? (
           <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...sOpts]} optionLabels={sLabels} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-3 py-3 cursor-pointer flex items-center min-h-[46px]">
-            <span className={cn("text-[11px] font-semibold px-2 py-1 rounded-lg border capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2.5 py-3.5 cursor-pointer flex items-center min-h-[50px]">
+            <span className={cn("text-[10px] font-bold px-2 py-1 rounded-md capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
               {STATUS_LABELS[p.status] || p.status}
             </span>
           </div>
@@ -343,23 +343,23 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       </div>
 
       {/* Source */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.source} isEditing={isEditing(p.id, 'source')} onStartEdit={() => setEditingCell({ id: p.id, field: 'source' })} onSave={(v) => handleSave(p.id, 'source', v)} type="select" options={['', ...LEAD_SOURCES]} optionLabels={{ '': '—' }} placeholder="—" className="text-[12px] text-muted-foreground/70" />
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.source} isEditing={isEditing(p.id, 'source')} onStartEdit={() => setEditingCell({ id: p.id, field: 'source' })} onSave={(v) => handleSave(p.id, 'source', v)} type="select" options={['', ...LEAD_SOURCES]} optionLabels={{ '': '—' }} placeholder="—" className="text-[12px] text-muted-foreground/80" />
       </div>
 
       {/* Budget */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.budget != null ? formatCurrency(p.budget) : null} isEditing={isEditing(p.id, 'budget')} onStartEdit={() => setEditingCell({ id: p.id, field: 'budget' })} onSave={(v) => handleSave(p.id, 'budget', v)} type="number" placeholder="—" className="text-[12px] font-medium tabular-nums" />
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.budget != null ? formatCurrency(p.budget) : null} isEditing={isEditing(p.id, 'budget')} onStartEdit={() => setEditingCell({ id: p.id, field: 'budget' })} onSave={(v) => handleSave(p.id, 'budget', v)} type="number" placeholder="—" className="text-[12px] font-semibold tabular-nums" />
       </div>
 
       {/* Notes */}
-      <div className="border-l border-border/20" onClick={(e) => e.stopPropagation()}>
-        <InlineCell value={p.notes} isEditing={isEditing(p.id, 'notes')} onStartEdit={() => setEditingCell({ id: p.id, field: 'notes' })} onSave={(v) => handleSave(p.id, 'notes', v)} placeholder="Add notes…" className="text-[12px] text-muted-foreground/60 italic" />
+      <div className="border-l border-border/30" onClick={(e) => e.stopPropagation()}>
+        <InlineCell value={p.notes} isEditing={isEditing(p.id, 'notes')} onStartEdit={() => setEditingCell({ id: p.id, field: 'notes' })} onSave={(v) => handleSave(p.id, 'notes', v)} placeholder="Add notes…" className="text-[12px] text-muted-foreground/70" />
       </div>
 
       {/* Delete */}
-      <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground/30 hover:text-destructive">
+      <div className="border-l border-border/30 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
