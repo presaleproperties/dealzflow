@@ -395,7 +395,7 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
         <div className={cn("w-2 h-2 rounded-full shrink-0", group.dotColor)} />
         <h3 className="text-[13px] font-bold tracking-tight">{group.label}</h3>
         <span className="text-[11px] text-muted-foreground/50 font-medium tabular-nums">
-          {filteredItems.length}{tempFilter && groupItems.length !== filteredItems.length ? ` / ${groupItems.length}` : ''}
+          {sortedItems.length}{tempFilter && baseItems.length !== sortedItems.length ? ` / ${baseItems.length}` : ''}
         </span>
         <div className="flex-1" />
         <span className="text-[13px] font-bold text-primary tabular-nums">{formatCurrency(groupGCI)}</span>
@@ -412,25 +412,52 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
             className="overflow-hidden"
           >
             {/* Column headers — desktop */}
-            <div className="hidden sm:grid bg-muted/20 border-t border-b border-border/30 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest grid-cols-[32px_minmax(140px,2fr)_60px_minmax(80px,1fr)_minmax(90px,1fr)_72px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_36px]">
+            <div className="hidden sm:grid bg-muted/20 border-t border-b border-border/30 grid-cols-[32px_minmax(140px,2fr)_60px_minmax(80px,1fr)_minmax(90px,1fr)_72px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_36px]">
               <div className="px-2 py-2" />
-              <div className="px-3 py-2 border-l border-border/10">Client</div>
-              <div className="px-2 py-2 border-l border-border/10 text-center">Temp</div>
-              <div className="px-3 py-2 border-l border-border/10">Property</div>
-              <div className="px-3 py-2 border-l border-border/10">Est. GCI</div>
-              <div className="px-2 py-2 border-l border-border/10 text-center">Status</div>
-              <div className="px-3 py-2 border-l border-border/10">Source</div>
-              <div className="px-3 py-2 border-l border-border/10">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
-              <div className="px-3 py-2 border-l border-border/10">Notes</div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Client</div>
+              <div className="px-2 py-2 border-l border-border/10 flex items-center justify-center">
+                <SortHeader label="Temp" field="temperature" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              </div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Property</div>
+              <div className="px-3 py-2 border-l border-border/10 flex items-center">
+                <SortHeader label="Est. GCI" field="potential_commission" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              </div>
+              <div className="px-2 py-2 border-l border-border/10 text-center text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Status</div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Source</div>
+              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
+              <div className="px-3 py-2 border-l border-border/10 flex items-center">
+                <SortHeader label="Date" field="created_at" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              </div>
               <div />
             </div>
 
-            {/* Temp sub-groups */}
-            {tempGroups.length === 0 ? (
+            {/* Content: flat sorted list OR temp sub-groups */}
+            {sortedItems.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-xs text-muted-foreground/30">No leads{tempFilter ? ` matching "${TEMP_CONFIG[tempFilter]?.label}" filter` : ''}</p>
               </div>
+            ) : sortField ? (
+              // Sorted flat list
+              <>
+                <div className="sm:hidden">
+                  {sortedItems.map(p => (
+                    <MobileProspectCard key={p.id} p={p} handleSave={handleSave} onOpen={onOpen} />
+                  ))}
+                </div>
+                <AnimatePresence mode="popLayout">
+                  {sortedItems.map((p, idx) => (
+                    <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
+                      <DesktopProspectRow
+                        p={p} idx={idx} isEditing={isEditing} setEditingCell={setEditingCell}
+                        handleSave={handleSave} deleteProspect={deleteProspect} onOpen={onOpen}
+                        showBudgetAsListPrice={group.defaultDealType === 'seller'}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </>
             ) : (
+              // Temperature sub-groups
               tempGroups.map(tg => {
                 const cfg = TEMP_CONFIG[tg.temp] || TEMP_CONFIG.warm;
                 const TIcon = cfg.icon;
@@ -443,22 +470,17 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       if (id) { handleSave(id, 'temperature', tg.temp); triggerHaptic('light'); }
                     }}
                   >
-                    {/* Temp divider */}
                     <div className="flex items-center gap-2 px-4 py-1.5 border-t border-border/10">
                       <TIcon className={cn("h-2.5 w-2.5", cfg.color)} />
                       <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">{cfg.label}</span>
                       <div className="flex-1 h-px bg-border/20" />
                       <span className="text-[10px] text-muted-foreground/30 tabular-nums">{tg.items.length}</span>
                     </div>
-
-                    {/* Mobile cards */}
                     <div className="sm:hidden">
                       {tg.items.map(p => (
                         <MobileProspectCard key={p.id} p={p} handleSave={handleSave} onOpen={onOpen} />
                       ))}
                     </div>
-
-                    {/* Desktop rows */}
                     <AnimatePresence mode="popLayout">
                       {tg.items.map((p, idx) => (
                         <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
