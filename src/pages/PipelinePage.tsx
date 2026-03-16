@@ -1070,18 +1070,18 @@ export default function PipelinePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col sm:flex-row sm:items-center gap-3"
+              className="flex items-center gap-3"
             >
-              {/* Stats */}
-              <div className="flex items-center gap-5 flex-1 min-w-0">
-                <div>
+              {/* Stats + temp filters */}
+              <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
+                <div className="shrink-0">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">
                     {activeTab === 'listings' ? 'Listings GCI' : 'Pipeline GCI'}
                   </p>
                   <p className="text-xl font-bold tracking-tight tabular-nums">{formatCurrency(totalPotential)}</p>
                 </div>
-                <div className="h-8 w-px bg-border/40 hidden sm:block" />
-                <div className="flex items-center gap-3">
+                <div className="h-7 w-px bg-border/40 shrink-0" />
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {(['hot', 'warm', 'cold'] as const).map(temp => {
                     const cfg = TEMP_CONFIG[temp];
                     const Icon = cfg.icon;
@@ -1111,8 +1111,8 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* View toggle */}
-              <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-muted/30 shrink-0 self-start sm:self-auto">
+              {/* View toggle — always visible with labels */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-muted/30 shrink-0">
                 {([{ mode: 'list' as ViewMode, icon: List, label: 'List' }, { mode: 'board' as ViewMode, icon: LayoutGrid, label: 'Board' }]).map(({ mode, icon: Icon, label }) => (
                   <button
                     key={mode}
@@ -1123,7 +1123,7 @@ export default function PipelinePage() {
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{label}</span>
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
