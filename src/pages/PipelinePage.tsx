@@ -214,18 +214,25 @@ function QuickAddRow({ onAdd, defaultDealType, defaultHomeType, defaultStatus }:
 }
 
 // ── Mobile prospect card ─────────────────────────────────────────────
-function MobileProspectCard({ p, handleSave, onOpen }: {
+function MobileProspectCard({ p, idx, handleSave, onOpen }: {
   p: PipelineProspect;
+  idx: number;
   handleSave: (id: string, field: string, value: string) => void;
   onOpen: (p: PipelineProspect) => void;
 }) {
   const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
   const TIcon = tc.icon;
   const borderAccent = p.temperature === 'hot' ? 'border-l-rose-500' : p.temperature === 'cold' ? 'border-l-sky-500' : 'border-l-amber-500';
+  const iconBg = p.temperature === 'hot' ? 'bg-rose-500/15' : p.temperature === 'cold' ? 'bg-sky-500/15' : 'bg-amber-500/15';
 
   return (
     <div
-      className={cn("flex items-center gap-3 px-4 py-4 border-b border-border/40 border-l-[3px] active:bg-muted/25 transition-colors cursor-pointer", borderAccent)}
+      className={cn(
+        "flex items-center gap-3 px-4 py-3.5 border-b border-border/50 border-l-[3px] transition-colors cursor-pointer",
+        borderAccent,
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.08]',
+        'active:bg-primary/[0.06]'
+      )}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
       <button
@@ -235,17 +242,17 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
           handleSave(p.id, 'temperature', next);
           triggerHaptic('light');
         }}
-        className={cn("shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors", tc.dotColor.replace('bg-', 'bg-') + '/15 hover:opacity-80')}
+        className={cn("shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95", iconBg)}
       >
-        <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
+        <TIcon className={cn("h-4 w-4", tc.color)} />
       </button>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-semibold truncate leading-snug">{p.client_name}</p>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[11px] text-muted-foreground/60 font-medium">{p.home_type}</span>
-          <span className="w-px h-3 bg-border/40" />
-          <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-md", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
+        <p className="text-[14px] font-bold truncate leading-snug text-foreground">{p.client_name}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[11px] text-muted-foreground font-medium">{p.home_type}</span>
+          <span className="w-px h-3 bg-border/60" />
+          <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
             {STATUS_LABELS[p.status] || p.status}
           </span>
         </div>
@@ -253,9 +260,9 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
 
       <div className="shrink-0 text-right">
         <p className="text-[14px] font-bold text-primary tabular-nums">{p.potential_commission > 0 ? formatCurrency(p.potential_commission) : '—'}</p>
-        {p.source && <p className="text-[10px] text-muted-foreground/40 mt-0.5">{p.source}</p>}
+        {p.source && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{p.source}</p>}
       </div>
-      <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground/30" />
+      <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground/40" />
     </div>
   );
 }
