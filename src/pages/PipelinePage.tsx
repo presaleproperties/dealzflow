@@ -760,7 +760,7 @@ export default function PipelinePage() {
     deleteProspect.mutate(id);
   }, [deleteProspect]);
 
-  const activeProspects = prospects.filter(p => p.status === 'active' || p.status === 'in-contract' || p.status === 'listings');
+  const activeProspects = prospects.filter(p => p.status === 'active' || p.status === 'in-contract' || p.status === 'listings' || p.status === 'pending-mortgage');
   const totalPotential = activeProspects.reduce((sum, p) => sum + Number(p.potential_commission), 0);
 
   const handleSave = useCallback((id: string, field: string, value: string) => {
