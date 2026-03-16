@@ -36,8 +36,8 @@ export function useSyncedIncome(syncedTransactions: SyncedTransaction[]) {
       .filter(tx => tx.close_date)
       .map(tx => {
         const gross = Number(tx.commission_amount) || 0;
-        // Use my_net_payout (ReZen's actual user take-home) — fall back to gross only if null
-        const net = tx.my_net_payout != null ? Number(tx.my_net_payout) : gross;
+        // Use gross commission_amount as requested
+        const net = gross;
         return {
           id: tx.id,
           close_date: tx.close_date!,
