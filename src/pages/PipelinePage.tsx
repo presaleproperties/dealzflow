@@ -808,7 +808,10 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
   }, [prospects, statusList]);
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-1 px-1">
+    <div
+      className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory"
+      style={{ WebkitOverflowScrolling: 'touch', marginLeft: '-1px', paddingLeft: '1px', paddingRight: '12px' }}
+    >
       {columns.map(col => (
         <BoardColumn
           key={col.status}
