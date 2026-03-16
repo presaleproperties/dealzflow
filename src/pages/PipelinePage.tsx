@@ -304,8 +304,9 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       onDragStart={(e: any) => { e.dataTransfer?.setData('prospect-id', p.id); e.currentTarget.style.opacity = '0.4'; }}
       onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
       className={cn(
-        "hidden sm:grid items-stretch border-b border-border/60 group transition-colors cursor-default",
-        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
+        // Desktop-only table row — tablets and smaller use MobileProspectCard
+        "hidden lg:grid items-stretch border-b border-border/60 group transition-colors cursor-default",
+        "grid-cols-[28px_minmax(140px,2fr)_48px_minmax(80px,1fr)_minmax(90px,1fr)_96px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.2fr)_34px]",
         rowLeftBorder,
         idx % 2 === 0 ? 'bg-card' : 'bg-muted/30',
         'hover:bg-primary/[0.07]'
@@ -318,7 +319,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
 
       {/* Name */}
       <div className="border-l border-border/30 cursor-pointer hover:bg-primary/[0.03] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
-        <div className="px-3 py-3.5 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[50px] leading-tight">
+        <div className="px-3 py-3.5 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[48px] leading-tight">
           {p.client_name || <span className="text-muted-foreground/30 italic font-normal">Unnamed</span>}
         </div>
       </div>
@@ -341,7 +342,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
         {isEditing(p.id, 'home_type') ? (
           <InlineCell value={p.home_type} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'home_type', v)} type="select" options={HOME_TYPES} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3.5 text-[12px] font-medium text-muted-foreground cursor-pointer min-h-[50px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3.5 text-[12px] font-medium text-muted-foreground cursor-pointer min-h-[48px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
         )}
       </div>
 
@@ -350,7 +351,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
         {isEditing(p.id, 'potential_commission') ? (
           <InlineCell value={p.potential_commission} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'potential_commission', v)} type="number" />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[50px] flex items-center">{formatCurrency(p.potential_commission)}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[48px] flex items-center">{formatCurrency(p.potential_commission)}</div>
         )}
       </div>
 
@@ -359,7 +360,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
         {isEditing(p.id, 'status') ? (
           <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...sOpts]} optionLabels={sLabels} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2.5 py-3.5 cursor-pointer flex items-center min-h-[50px]">
+          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2.5 py-3.5 cursor-pointer flex items-center min-h-[48px]">
             <span className={cn("text-[10px] font-bold px-2 py-1 rounded-md capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
               {STATUS_LABELS[p.status] || p.status}
             </span>
