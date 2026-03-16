@@ -6,7 +6,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { usePipelineProspects, useAddProspect, useUpdateProspect, useDeleteProspect, PipelineProspect } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown, Users, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
@@ -14,40 +14,57 @@ import { ProspectSheet } from '@/components/pipeline/ProspectSheet';
 
 const HOME_TYPES = ['Presale', 'Condo', 'Townhome', 'Detached', 'Listings'];
 const LEAD_SOURCES = ['Instagram', 'Tiktok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Past Client'];
-const STATUS_OPTIONS = ['active', 'listings', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
-const TEMP_OPTIONS = ['hot', 'warm', 'cold'];
-const DEAL_TYPE_OPTIONS = ['buyer', 'seller'];
-const DEAL_TYPE_LABELS: Record<string, string> = { buyer: 'Buyer', seller: 'Seller' };
-const DEAL_TYPE_COLORS: Record<string, string> = {
-  buyer: 'bg-sky-500/12 text-sky-600 dark:text-sky-400',
-  seller: 'bg-violet-500/12 text-violet-600 dark:text-violet-400',
-};
 
-const STATUS_LABELS: Record<string, string> = {
+// ── Buyer statuses ────────────────────────────────────────────────────
+const BUYER_STATUS_OPTIONS = ['active', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
+const BUYER_STATUS_LABELS: Record<string, string> = {
   active: 'Active',
-  listings: 'Listings',
   'in-contract': 'In Contract',
   'pending-mortgage': 'Pending Mortgage',
   closed: 'Closed',
   lost: 'Lost',
 };
 
+// ── Listing statuses ─────────────────────────────────────────────────
+const LISTING_STATUS_OPTIONS = ['want-to-sell', 'active-listing', 'in-contract-listing', 'sold', 'listing-lost'] as const;
+const LISTING_STATUS_LABELS: Record<string, string> = {
+  'want-to-sell': 'Want to Sell',
+  'active-listing': 'Active',
+  'in-contract-listing': 'In Contract',
+  sold: 'Sold',
+  'listing-lost': 'Lost',
+};
+
+// Combined for legacy compatibility
+const STATUS_OPTIONS = [...BUYER_STATUS_OPTIONS, ...LISTING_STATUS_OPTIONS] as const;
+const STATUS_LABELS: Record<string, string> = { ...BUYER_STATUS_LABELS, ...LISTING_STATUS_LABELS };
+
 const STATUS_DOT_COLORS: Record<string, string> = {
   active: 'bg-primary',
-  listings: 'bg-violet-500',
   'in-contract': 'bg-amber-500',
   'pending-mortgage': 'bg-orange-500',
   closed: 'bg-emerald-500',
   lost: 'bg-destructive',
+  // listing statuses
+  'want-to-sell': 'bg-violet-400',
+  'active-listing': 'bg-violet-500',
+  'in-contract-listing': 'bg-amber-500',
+  sold: 'bg-emerald-500',
+  'listing-lost': 'bg-destructive',
 };
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-primary/12 text-primary',
-  listings: 'bg-violet-500/12 text-violet-600 dark:text-violet-400',
   'in-contract': 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
   'pending-mortgage': 'bg-orange-500/12 text-orange-600 dark:text-orange-400',
   closed: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
   lost: 'bg-destructive/12 text-destructive',
+  // listing statuses
+  'want-to-sell': 'bg-violet-500/12 text-violet-500 dark:text-violet-400',
+  'active-listing': 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  'in-contract-listing': 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
+  sold: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
+  'listing-lost': 'bg-destructive/12 text-destructive',
 };
 
 const TEMP_CONFIG: Record<string, { icon: any; color: string; dotColor: string; label: string }> = {
@@ -55,8 +72,10 @@ const TEMP_CONFIG: Record<string, { icon: any; color: string; dotColor: string; 
   warm: { icon: Thermometer, color: 'text-amber-500', dotColor: 'bg-amber-500', label: 'Warm' },
   cold: { icon: Snowflake, color: 'text-sky-500', dotColor: 'bg-sky-500', label: 'Cold' },
 };
+const TEMP_OPTIONS = ['hot', 'warm', 'cold'];
 
 type ViewMode = 'list' | 'board';
+type PageTab = 'buyers' | 'listings';
 type SortField = 'temperature' | 'potential_commission' | 'created_at' | null;
 type SortDir = 'asc' | 'desc';
 
@@ -75,6 +94,10 @@ function sortProspects(items: PipelineProspect[], field: SortField, dir: SortDir
     }
     return dir === 'asc' ? cmp : -cmp;
   });
+}
+
+function isListingProspect(p: PipelineProspect) {
+  return (p.deal_type === 'seller') || (LISTING_STATUS_OPTIONS as readonly string[]).includes(p.status);
 }
 
 // ── Inline editable cell ─────────────────────────────────────────────
@@ -141,7 +164,12 @@ function InlineCell({
 }
 
 // ── Quick-add row ────────────────────────────────────────────────────
-function QuickAddRow({ onAdd, defaultDealType, defaultHomeType }: { onAdd: (data: { client_name: string; home_type: string; potential_commission: number; temperature: string; deal_type: string }) => void; defaultDealType?: string; defaultHomeType?: string }) {
+function QuickAddRow({ onAdd, defaultDealType, defaultHomeType, defaultStatus }: {
+  onAdd: (data: { client_name: string; home_type: string; potential_commission: number; temperature: string; deal_type: string; status: string }) => void;
+  defaultDealType?: string;
+  defaultHomeType?: string;
+  defaultStatus?: string;
+}) {
   const [name, setName] = useState('');
   const [commission, setCommission] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
@@ -154,6 +182,7 @@ function QuickAddRow({ onAdd, defaultDealType, defaultHomeType }: { onAdd: (data
       potential_commission: parseFloat(commission) || 0,
       temperature: 'warm',
       deal_type: defaultDealType || 'buyer',
+      status: defaultStatus || (defaultDealType === 'seller' ? 'want-to-sell' : 'active'),
     });
     setName('');
     setCommission('');
@@ -230,7 +259,7 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
 }
 
 // ── Desktop table row ────────────────────────────────────────────────
-function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, deleteProspect, onOpen, showBudgetAsListPrice }: {
+function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, deleteProspect, onOpen, showBudgetAsListPrice, statusOptions, statusLabels }: {
   p: PipelineProspect;
   idx: number;
   isEditing: (id: string, field: string) => boolean;
@@ -239,9 +268,13 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
   deleteProspect: { mutate: (id: string) => void };
   onOpen: (p: PipelineProspect) => void;
   showBudgetAsListPrice?: boolean;
+  statusOptions?: readonly string[];
+  statusLabels?: Record<string, string>;
 }) {
   const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
   const TIcon = tc.icon;
+  const sOpts = statusOptions || BUYER_STATUS_OPTIONS;
+  const sLabels = statusLabels || BUYER_STATUS_LABELS;
 
   return (
     <div
@@ -297,7 +330,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       {/* Status */}
       <div className="border-l border-border/8" onClick={(e) => e.stopPropagation()}>
         {isEditing(p.id, 'status') ? (
-          <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...STATUS_OPTIONS]} optionLabels={STATUS_LABELS} />
+          <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...sOpts]} optionLabels={sLabels} />
         ) : (
           <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2 py-2.5 cursor-pointer flex items-center justify-center">
             <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
@@ -355,8 +388,8 @@ function SortHeader({ label, field, sortField, sortDir, onSort, className }: {
 }
 
 // ── Section with collapsible temp groups ─────────────────────────────
-function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onSort, isEditing, setEditingCell, handleSave, handleAdd, deleteProspect, onOpen }: {
-  group: { key: string; label: string; defaultDealType: string; defaultHomeType: string; accentColor: string; dotColor: string; filter: (p: PipelineProspect) => boolean };
+function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onSort, isEditing, setEditingCell, handleSave, handleAdd, deleteProspect, onOpen, statusOptions, statusLabels }: {
+  group: { key: string; label: string; defaultDealType: string; defaultHomeType: string; accentColor: string; dotColor: string; filter: (p: PipelineProspect) => boolean; defaultStatus?: string };
   prospects: PipelineProspect[];
   tempFilter: string | null;
   sortField: SortField;
@@ -368,6 +401,8 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
   handleAdd: (data: any) => void;
   deleteProspect: { mutate: (id: string) => void };
   onOpen: (p: PipelineProspect) => void;
+  statusOptions?: readonly string[];
+  statusLabels?: Record<string, string>;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const baseItems = [...prospects].reverse().filter(group.filter);
@@ -375,7 +410,6 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
   const sortedItems = sortProspects(filteredItems, sortField, sortDir);
   const groupGCI = sortedItems.reduce((s, p) => s + Number(p.potential_commission), 0);
 
-  // When sorted, flatten into a single list; otherwise group by temperature
   const useTempGroups = !sortField;
   const tempGroups = useTempGroups ? [
     { temp: 'hot', items: sortedItems.filter(p => (p.temperature || 'warm') === 'hot') },
@@ -390,7 +424,6 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
       transition={{ duration: 0.25 }}
       className="rounded-2xl border border-border/50 bg-card overflow-hidden"
     >
-      {/* Section header */}
       <button
         onClick={() => setCollapsed(c => !c)}
         className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/10"
@@ -434,13 +467,11 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
               <div />
             </div>
 
-            {/* Content: flat sorted list OR temp sub-groups */}
             {sortedItems.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-xs text-muted-foreground/30">No leads{tempFilter ? ` matching "${TEMP_CONFIG[tempFilter]?.label}" filter` : ''}</p>
               </div>
             ) : sortField ? (
-              // Sorted flat list
               <>
                 <div className="sm:hidden">
                   {sortedItems.map(p => (
@@ -454,13 +485,14 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                         p={p} idx={idx} isEditing={isEditing} setEditingCell={setEditingCell}
                         handleSave={handleSave} deleteProspect={deleteProspect} onOpen={onOpen}
                         showBudgetAsListPrice={group.defaultDealType === 'seller'}
+                        statusOptions={statusOptions}
+                        statusLabels={statusLabels}
                       />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </>
             ) : (
-              // Temperature sub-groups
               tempGroups.map(tg => {
                 const cfg = TEMP_CONFIG[tg.temp] || TEMP_CONFIG.warm;
                 const TIcon = cfg.icon;
@@ -491,6 +523,8 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                             p={p} idx={idx} isEditing={isEditing} setEditingCell={setEditingCell}
                             handleSave={handleSave} deleteProspect={deleteProspect} onOpen={onOpen}
                             showBudgetAsListPrice={group.defaultDealType === 'seller'}
+                            statusOptions={statusOptions}
+                            statusLabels={statusLabels}
                           />
                         </motion.div>
                       ))}
@@ -500,7 +534,7 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
               })
             )}
 
-            <QuickAddRow onAdd={handleAdd} defaultDealType={group.defaultDealType} defaultHomeType={group.defaultHomeType} />
+            <QuickAddRow onAdd={handleAdd} defaultDealType={group.defaultDealType} defaultHomeType={group.defaultHomeType} defaultStatus={group.defaultStatus} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -536,8 +570,8 @@ function BoardCard({ prospect, onUpdate, onOpen }: {
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-md", DEAL_TYPE_COLORS[prospect.deal_type || 'buyer'])}>
-            {DEAL_TYPE_LABELS[prospect.deal_type || 'buyer']}
+          <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-md", STATUS_COLORS[prospect.status] || STATUS_COLORS.active)}>
+            {STATUS_LABELS[prospect.status] || prospect.status}
           </span>
           {prospect.home_type && <span className="text-[10px] text-muted-foreground/50">{prospect.home_type}</span>}
         </div>
@@ -550,14 +584,14 @@ function BoardCard({ prospect, onUpdate, onOpen }: {
 }
 
 // ── Board Quick Add ──────────────────────────────────────────────────
-function BoardQuickAdd({ status, onAdd }: { status: string; onAdd: (data: any) => void }) {
+function BoardQuickAdd({ status, dealType, onAdd }: { status: string; dealType?: string; onAdd: (data: any) => void }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [commission, setCommission] = useState('');
 
   const handleSubmit = () => {
     if (!name.trim()) return;
-    onAdd({ client_name: name.trim(), home_type: 'Detached', potential_commission: parseFloat(commission) || 0, temperature: 'warm', status });
+    onAdd({ client_name: name.trim(), home_type: 'Detached', potential_commission: parseFloat(commission) || 0, temperature: 'warm', status, deal_type: dealType || 'buyer' });
     setName(''); setCommission(''); setOpen(false);
     triggerHaptic('light');
   };
@@ -583,37 +617,28 @@ function BoardQuickAdd({ status, onAdd }: { status: string; onAdd: (data: any) =
 }
 
 // ── Board View ──────────────────────────────────────────────────────
-function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen }: {
+function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen, activeTab }: {
   prospects: PipelineProspect[];
   onMoveStatus: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   onAdd: (data: any) => void;
   onUpdate: (id: string, field: string, value: string) => void;
   onOpen: (p: PipelineProspect) => void;
+  activeTab: PageTab;
 }) {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
-  const [columnOrder] = useState<string[]>(() => {
-    const saved = localStorage.getItem('pipeline-col-order');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const allStatuses = [...STATUS_OPTIONS];
-        const valid = parsed.filter((s: string) => (allStatuses as readonly string[]).includes(s));
-        const missing = allStatuses.filter(s => !valid.includes(s));
-        return [...valid, ...missing];
-      } catch { /* fall through */ }
-    }
-    return [...STATUS_OPTIONS];
-  });
+
+  const statusList = activeTab === 'listings' ? LISTING_STATUS_OPTIONS : BUYER_STATUS_OPTIONS;
+  const dealType = activeTab === 'listings' ? 'seller' : 'buyer';
 
   const columns = useMemo(() => {
-    return columnOrder.map(status => ({
+    return statusList.map(status => ({
       status,
       label: STATUS_LABELS[status],
       items: prospects.filter(p => p.status === status),
       total: prospects.filter(p => p.status === status).reduce((s, p) => s + Number(p.potential_commission), 0),
     }));
-  }, [prospects, columnOrder]);
+  }, [prospects, statusList]);
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
@@ -653,7 +678,7 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen 
                 ))}
               </AnimatePresence>
             )}
-            <BoardQuickAdd status={col.status} onAdd={onAdd} />
+            <BoardQuickAdd status={col.status} dealType={dealType} onAdd={onAdd} />
           </div>
         </div>
       ))}
@@ -705,9 +730,6 @@ function ArchivedSection({ title, dotColor, accentColor, items, deleteProspect, 
                   <div className={cn("hidden sm:flex items-center gap-4 px-4 py-2.5 border-b border-border/10 group hover:bg-muted/5", idx % 2 === 1 && 'bg-muted/[0.03]')}>
                     <p className="flex-1 text-[13px] font-medium text-muted-foreground/50 line-through truncate">{p.client_name}</p>
                     <span className="text-xs text-muted-foreground/30">{p.home_type}</span>
-                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-md", DEAL_TYPE_COLORS[p.deal_type || 'buyer'])}>
-                      {DEAL_TYPE_LABELS[p.deal_type || 'buyer']}
-                    </span>
                     <span className={cn("text-[13px] font-bold tabular-nums w-24 text-right", accentColor)}>{formatCurrency(p.potential_commission)}</span>
                     <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-destructive/10 text-muted-foreground/20 hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
@@ -734,6 +756,7 @@ export default function PipelinePage() {
   const refreshData = useRefreshData();
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem('pipeline-view') as ViewMode) || 'list');
+  const [activeTab, setActiveTab] = useState<PageTab>(() => (localStorage.getItem('pipeline-tab') as PageTab) || 'buyers');
   const [selectedProspect, setSelectedProspect] = useState<PipelineProspect | null>(null);
   const [tempFilter, setTempFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>(null);
@@ -743,7 +766,6 @@ export default function PipelinePage() {
     triggerHaptic('light');
     setSortField(prev => {
       if (prev === field) {
-        // same field: flip direction, or if already flipped reset to null
         setSortDir(d => d === 'desc' ? 'asc' : 'desc');
         return field;
       }
@@ -760,7 +782,16 @@ export default function PipelinePage() {
     deleteProspect.mutate(id);
   }, [deleteProspect]);
 
-  const activeProspects = prospects.filter(p => p.status === 'active' || p.status === 'in-contract' || p.status === 'listings' || p.status === 'pending-mortgage');
+  // Split prospects into buyer vs listing tabs
+  const buyerProspects = useMemo(() => prospects.filter(p => !isListingProspect(p)), [prospects]);
+  const listingProspects = useMemo(() => prospects.filter(p => isListingProspect(p)), [prospects]);
+  const tabProspects = activeTab === 'listings' ? listingProspects : buyerProspects;
+
+  const activeStatuses = activeTab === 'listings'
+    ? ['want-to-sell', 'active-listing', 'in-contract-listing']
+    : ['active', 'in-contract', 'pending-mortgage'];
+
+  const activeProspects = tabProspects.filter(p => activeStatuses.includes(p.status));
   const totalPotential = activeProspects.reduce((sum, p) => sum + Number(p.potential_commission), 0);
 
   const handleSave = useCallback((id: string, field: string, value: string) => {
@@ -772,23 +803,18 @@ export default function PipelinePage() {
     if (field === 'budget') parsed = parseFloat(value) || null;
     if (String((prospect as any)[field]) === String(parsed)) return;
     requestAnimationFrame(() => {
-      if (field === 'status' && value === 'listings') {
-        updateProspect.mutate({ id, status: value, deal_type: 'seller' } as any);
-      } else {
-        updateProspect.mutate({ id, [field]: parsed } as any);
-      }
+      updateProspect.mutate({ id, [field]: parsed } as any);
     });
   }, [prospects, updateProspect]);
 
   const handleMoveStatus = useCallback((id: string, status: string) => {
-    const updates: any = { id, status };
-    if (status === 'listings') updates.deal_type = 'seller';
-    updateProspect.mutate(updates);
+    updateProspect.mutate({ id, status } as any);
   }, [updateProspect]);
 
   const handleAdd = (data: any) => { addProspect.mutate(data as any); };
 
   const toggleView = (mode: ViewMode) => { triggerHaptic('light'); setViewMode(mode); localStorage.setItem('pipeline-view', mode); };
+  const toggleTab = (tab: PageTab) => { triggerHaptic('light'); setActiveTab(tab); localStorage.setItem('pipeline-tab', tab); };
 
   const isEditing = (id: string, field: string) => editingCell?.id === id && editingCell?.field === field;
 
@@ -798,13 +824,17 @@ export default function PipelinePage() {
     cold: activeProspects.filter(p => (p.temperature || 'warm') === 'cold').length,
   }), [activeProspects]);
 
-  const sections = useMemo(() => [
-    { key: 'presale', label: 'Presale', defaultDealType: 'buyer', defaultHomeType: 'Presale', accentColor: 'text-amber-500', dotColor: 'bg-amber-500', filter: (p: PipelineProspect) => p.status !== 'closed' && p.status !== 'lost' && p.home_type === 'Presale' },
-    { key: 'buyer', label: 'Resale Buyers', defaultDealType: 'buyer', defaultHomeType: 'Detached', accentColor: 'text-sky-500', dotColor: 'bg-sky-500', filter: (p: PipelineProspect) => p.status !== 'closed' && p.status !== 'lost' && p.home_type !== 'Presale' && (p.deal_type || 'buyer') === 'buyer' },
-    { key: 'seller', label: 'Sellers / Listings', defaultDealType: 'seller', defaultHomeType: 'Detached', accentColor: 'text-violet-500', dotColor: 'bg-violet-500', filter: (p: PipelineProspect) => p.status !== 'closed' && p.status !== 'lost' && p.home_type !== 'Presale' && (p.deal_type || 'buyer') === 'seller' },
+  // Buyer sections
+  const buyerSections = useMemo(() => [
+    { key: 'presale', label: 'Presale', defaultDealType: 'buyer', defaultHomeType: 'Presale', defaultStatus: 'active', accentColor: 'text-amber-500', dotColor: 'bg-amber-500', filter: (p: PipelineProspect) => !['closed', 'lost'].includes(p.status) && p.home_type === 'Presale' },
+    { key: 'buyer', label: 'Resale Buyers', defaultDealType: 'buyer', defaultHomeType: 'Detached', defaultStatus: 'active', accentColor: 'text-sky-500', dotColor: 'bg-sky-500', filter: (p: PipelineProspect) => !['closed', 'lost'].includes(p.status) && p.home_type !== 'Presale' },
   ], []);
 
-  // Loading skeleton
+  // Listing sections
+  const listingSections = useMemo(() => [
+    { key: 'listings', label: 'All Listings', defaultDealType: 'seller', defaultHomeType: 'Detached', defaultStatus: 'want-to-sell', accentColor: 'text-violet-500', dotColor: 'bg-violet-500', filter: (p: PipelineProspect) => !['sold', 'listing-lost'].includes(p.status) },
+  ], []);
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -828,67 +858,104 @@ export default function PipelinePage() {
       <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100vh-56px)]">
         <div className="p-5 lg:p-6 space-y-4">
 
-          {/* ── Stats + Controls ── */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Stats */}
-            <div className="flex items-center gap-5 flex-1 min-w-0">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">Pipeline GCI</p>
-                <p className="text-xl font-bold tracking-tight tabular-nums">{formatCurrency(totalPotential)}</p>
-              </div>
-              <div className="h-8 w-px bg-border/40 hidden sm:block" />
-              <div className="flex items-center gap-3">
-                {(['hot', 'warm', 'cold'] as const).map(temp => {
-                  const cfg = TEMP_CONFIG[temp];
-                  const Icon = cfg.icon;
-                  const count = tempCounts[temp];
-                  const isActive = tempFilter === temp;
-                  return (
-                    <button
-                      key={temp}
-                      onClick={() => { triggerHaptic('light'); setTempFilter(isActive ? null : temp); }}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
-                        isActive
-                          ? cn(cfg.color, "bg-muted/30 ring-1 ring-border/50")
-                          : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30"
-                      )}
-                    >
-                      <Icon className="w-3 h-3" />
-                      <span className="tabular-nums">{count}</span>
-                    </button>
-                  );
-                })}
-                {tempFilter && (
-                  <button onClick={() => { triggerHaptic('light'); setTempFilter(null); }} className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/30 transition-colors">
-                    <X className="h-3 w-3" />
-                  </button>
+          {/* ── Buyers / Listings Tab Toggle ── */}
+          <div className="flex items-center gap-0.5 p-0.5 rounded-2xl bg-muted/30 w-fit">
+            {([
+              { tab: 'buyers' as PageTab, icon: Users, label: 'Buyers', count: buyerProspects.length },
+              { tab: 'listings' as PageTab, icon: Home, label: 'Listings', count: listingProspects.length },
+            ]).map(({ tab, icon: Icon, label, count }) => (
+              <button
+                key={tab}
+                onClick={() => toggleTab(tab)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all",
+                  activeTab === tab
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground/60 hover:text-foreground"
                 )}
-              </div>
-            </div>
-
-            {/* View toggle */}
-            <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-muted/30 shrink-0 self-start sm:self-auto">
-              {([{ mode: 'list' as ViewMode, icon: List, label: 'List' }, { mode: 'board' as ViewMode, icon: LayoutGrid, label: 'Board' }]).map(({ mode, icon: Icon, label }) => (
-                <button
-                  key={mode}
-                  onClick={() => toggleView(mode)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    viewMode === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              ))}
-            </div>
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+                <span className={cn(
+                  "text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-md",
+                  activeTab === tab ? "bg-primary/15 text-primary" : "bg-muted/50 text-muted-foreground/50"
+                )}>{count}</span>
+              </button>
+            ))}
           </div>
+
+          {/* ── Stats + Controls ── */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="flex flex-col sm:flex-row sm:items-center gap-3"
+            >
+              {/* Stats */}
+              <div className="flex items-center gap-5 flex-1 min-w-0">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">
+                    {activeTab === 'listings' ? 'Listings GCI' : 'Pipeline GCI'}
+                  </p>
+                  <p className="text-xl font-bold tracking-tight tabular-nums">{formatCurrency(totalPotential)}</p>
+                </div>
+                <div className="h-8 w-px bg-border/40 hidden sm:block" />
+                <div className="flex items-center gap-3">
+                  {(['hot', 'warm', 'cold'] as const).map(temp => {
+                    const cfg = TEMP_CONFIG[temp];
+                    const Icon = cfg.icon;
+                    const count = tempCounts[temp];
+                    const isActive = tempFilter === temp;
+                    return (
+                      <button
+                        key={temp}
+                        onClick={() => { triggerHaptic('light'); setTempFilter(isActive ? null : temp); }}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+                          isActive
+                            ? cn(cfg.color, "bg-muted/30 ring-1 ring-border/50")
+                            : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30"
+                        )}
+                      >
+                        <Icon className="w-3 h-3" />
+                        <span className="tabular-nums">{count}</span>
+                      </button>
+                    );
+                  })}
+                  {tempFilter && (
+                    <button onClick={() => { triggerHaptic('light'); setTempFilter(null); }} className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/30 transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* View toggle */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-muted/30 shrink-0 self-start sm:self-auto">
+                {([{ mode: 'list' as ViewMode, icon: List, label: 'List' }, { mode: 'board' as ViewMode, icon: LayoutGrid, label: 'Board' }]).map(({ mode, icon: Icon, label }) => (
+                  <button
+                    key={mode}
+                    onClick={() => toggleView(mode)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      viewMode === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
           {/* ── Status summary pills ── */}
           <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-            {STATUS_OPTIONS.map(status => {
-              const count = prospects.filter(p => p.status === status).length;
+            {(activeTab === 'listings' ? LISTING_STATUS_OPTIONS : BUYER_STATUS_OPTIONS).map(status => {
+              const count = tabProspects.filter(p => p.status === status).length;
               return (
                 <div key={status} className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium shrink-0", STATUS_COLORS[status])}>
                   <div className={cn("w-1.5 h-1.5 rounded-full", STATUS_DOT_COLORS[status])} />
@@ -900,48 +967,91 @@ export default function PipelinePage() {
           </div>
 
           {/* ── Content ── */}
-          {viewMode === 'board' ? (
-            <BoardView
-              prospects={prospects}
-              onMoveStatus={handleMoveStatus}
-              onDelete={(id) => deleteProspect.mutate(id)}
-              onAdd={handleAdd}
-              onUpdate={(id, field, value) => updateProspect.mutate({ id, [field]: value } as any)}
-              onOpen={setSelectedProspect}
-            />
-          ) : (
-            <div className="space-y-3">
-              {sections.map(group => (
-                <PipelineSection
-                  key={group.key}
-                  group={group}
-                  prospects={prospects}
-                  tempFilter={tempFilter}
-                  sortField={sortField}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  isEditing={isEditing}
-                  setEditingCell={setEditingCell}
-                  handleSave={handleSave}
-                  handleAdd={handleAdd}
-                  deleteProspect={deleteProspect}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + '-' + viewMode}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.12 }}
+            >
+              {viewMode === 'board' ? (
+                <BoardView
+                  prospects={tabProspects}
+                  onMoveStatus={handleMoveStatus}
+                  onDelete={(id) => deleteProspect.mutate(id)}
+                  onAdd={handleAdd}
+                  onUpdate={(id, field, value) => updateProspect.mutate({ id, [field]: value } as any)}
                   onOpen={setSelectedProspect}
+                  activeTab={activeTab}
                 />
-              ))}
-
-              {/* Archived sections */}
-              <ArchivedSection
-                title="Closed Deals" dotColor="bg-emerald-500" accentColor="text-emerald-500"
-                items={[...prospects].reverse().filter(p => p.status === 'closed')}
-                deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
-              />
-              <ArchivedSection
-                title="Lost Deals" dotColor="bg-destructive" accentColor="text-destructive"
-                items={[...prospects].reverse().filter(p => p.status === 'lost')}
-                deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
-              />
-            </div>
-          )}
+              ) : activeTab === 'listings' ? (
+                <div className="space-y-3">
+                  {listingSections.map(group => (
+                    <PipelineSection
+                      key={group.key}
+                      group={group}
+                      prospects={tabProspects}
+                      tempFilter={tempFilter}
+                      sortField={sortField}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      isEditing={isEditing}
+                      setEditingCell={setEditingCell}
+                      handleSave={handleSave}
+                      handleAdd={handleAdd}
+                      deleteProspect={deleteProspect}
+                      onOpen={setSelectedProspect}
+                      statusOptions={LISTING_STATUS_OPTIONS}
+                      statusLabels={LISTING_STATUS_LABELS}
+                    />
+                  ))}
+                  <ArchivedSection
+                    title="Sold" dotColor="bg-emerald-500" accentColor="text-emerald-500"
+                    items={[...tabProspects].reverse().filter(p => p.status === 'sold')}
+                    deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
+                  />
+                  <ArchivedSection
+                    title="Lost" dotColor="bg-destructive" accentColor="text-destructive"
+                    items={[...tabProspects].reverse().filter(p => p.status === 'listing-lost')}
+                    deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {buyerSections.map(group => (
+                    <PipelineSection
+                      key={group.key}
+                      group={group}
+                      prospects={tabProspects}
+                      tempFilter={tempFilter}
+                      sortField={sortField}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      isEditing={isEditing}
+                      setEditingCell={setEditingCell}
+                      handleSave={handleSave}
+                      handleAdd={handleAdd}
+                      deleteProspect={deleteProspect}
+                      onOpen={setSelectedProspect}
+                      statusOptions={BUYER_STATUS_OPTIONS}
+                      statusLabels={BUYER_STATUS_LABELS}
+                    />
+                  ))}
+                  <ArchivedSection
+                    title="Closed Deals" dotColor="bg-emerald-500" accentColor="text-emerald-500"
+                    items={[...tabProspects].reverse().filter(p => p.status === 'closed')}
+                    deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
+                  />
+                  <ArchivedSection
+                    title="Lost Deals" dotColor="bg-destructive" accentColor="text-destructive"
+                    items={[...tabProspects].reverse().filter(p => p.status === 'lost')}
+                    deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
+                  />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </PullToRefresh>
 

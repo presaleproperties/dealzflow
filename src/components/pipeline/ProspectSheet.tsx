@@ -7,28 +7,46 @@ import { triggerHaptic } from '@/lib/haptics';
 import { formatCurrency } from '@/lib/format';
 
 const LEAD_SOURCES = ['Instagram', 'TikTok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Open House', 'Cold Call', 'Website', 'Past Client', 'Other'];
-
 const HOME_TYPES = ['Presale', 'Condo', 'Townhome', 'Detached', 'Listings'];
-const STATUS_OPTIONS = ['active', 'listings', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
-const DEAL_TYPE_OPTIONS = ['buyer', 'seller'] as const;
 
-const STATUS_LABELS: Record<string, string> = {
+// ── Buyer statuses ─────────────────────────────────────────────────
+const BUYER_STATUS_OPTIONS = ['active', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
+const BUYER_STATUS_LABELS: Record<string, string> = {
   active: 'Active',
-  listings: 'Listings',
   'in-contract': 'In Contract',
   'pending-mortgage': 'Pending Mortgage',
   closed: 'Closed',
   lost: 'Lost',
 };
-
-const STATUS_COLORS: Record<string, string> = {
+const BUYER_STATUS_COLORS: Record<string, string> = {
   active: 'bg-primary/15 text-primary border-primary/30',
-  listings: 'bg-violet-500/15 text-violet-600 border-violet-500/30',
   'in-contract': 'bg-amber-500/15 text-amber-600 border-amber-500/30',
   'pending-mortgage': 'bg-orange-500/15 text-orange-600 border-orange-500/30',
   closed: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
   lost: 'bg-destructive/15 text-destructive border-destructive/30',
 };
+
+// ── Listing statuses ───────────────────────────────────────────────
+const LISTING_STATUS_OPTIONS = ['want-to-sell', 'active-listing', 'in-contract-listing', 'sold', 'listing-lost'] as const;
+const LISTING_STATUS_LABELS: Record<string, string> = {
+  'want-to-sell': 'Want to Sell',
+  'active-listing': 'Active',
+  'in-contract-listing': 'In Contract',
+  sold: 'Sold',
+  'listing-lost': 'Lost',
+};
+const LISTING_STATUS_COLORS: Record<string, string> = {
+  'want-to-sell': 'bg-violet-500/15 text-violet-500 border-violet-500/30',
+  'active-listing': 'bg-violet-500/15 text-violet-600 border-violet-500/30',
+  'in-contract-listing': 'bg-amber-500/15 text-amber-600 border-amber-500/30',
+  sold: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
+  'listing-lost': 'bg-destructive/15 text-destructive border-destructive/30',
+};
+
+const ALL_STATUS_LABELS = { ...BUYER_STATUS_LABELS, ...LISTING_STATUS_LABELS };
+const ALL_STATUS_COLORS = { ...BUYER_STATUS_COLORS, ...LISTING_STATUS_COLORS };
+
+const DEAL_TYPE_OPTIONS = ['buyer', 'seller'] as const;
 
 const TEMP_CONFIG = {
   hot:  { icon: Flame,       color: 'bg-rose-500/15 text-rose-500 border-rose-500/30',   label: 'Hot',  dot: 'bg-rose-500' },
@@ -50,6 +68,10 @@ function FieldLabel({ icon: Icon, label }: { icon: any; label: string }) {
       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">{label}</span>
     </div>
   );
+}
+
+function isListingLead(p: Partial<PipelineProspect>): boolean {
+  return p.deal_type === 'seller' || (LISTING_STATUS_OPTIONS as readonly string[]).includes(p.status || '');
 }
 
 export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
@@ -89,6 +111,31 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
   const tc = TEMP_CONFIG[tempKey] || TEMP_CONFIG.warm;
   const TempIcon = tc.icon;
 
+  const isListing = isListingLead(draft);
+  const statusOptions = isListing ? LISTING_STATUS_OPTIONS : BUYER_STATUS_OPTIONS;
+  const statusLabels = isListing ? LISTING_STATUS_LABELS : BUYER_STATUS_LABELS;
+  const statusColors = isListing ? LISTING_STATUS_COLORS : BUYER_STATUS_COLORS;
+
+  // Default status when switching deal type
+  const handleDealTypeChange = (dealType: string) => {
+    set('deal_type', dealType as any);
+    if (dealType === 'seller') {
+      // Switch to listing statuses if current status is a buyer status
+      if (!LISTING_STATUS_OPTIONS.includes(draft.status as any)) {
+        set('status', 'want-to-sell' as any);
+      }
+    } else {
+      // Switch to buyer statuses if current is a listing status
+      if (LISTING_STATUS_OPTIONS.includes(draft.status as any)) {
+        set('status', 'active' as any);
+      }
+    }
+  };
+
+  const currentStatus = draft.status || (isListing ? 'want-to-sell' : 'active');
+  const statusColor = ALL_STATUS_COLORS[currentStatus] || ALL_STATUS_COLORS.active;
+  const statusLabel = ALL_STATUS_LABELS[currentStatus] || currentStatus;
+
   return (
     <AnimatePresence>
       {prospect && (
@@ -126,15 +173,17 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3 border-b border-border/30">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">Lead Profile</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">
+                    {isListing ? 'Listing Profile' : 'Lead Profile'}
+                  </p>
                   <h2 className="text-lg font-bold tracking-tight truncate">{draft.client_name || 'Unnamed Lead'}</h2>
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", tc.color)}>
                       <TempIcon className="h-2.5 w-2.5" />
                       {tc.label}
                     </span>
-                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border capitalize", STATUS_COLORS[draft.status || 'active'])}>
-                      {STATUS_LABELS[draft.status || 'active']}
+                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border capitalize", statusColor)}>
+                      {statusLabel}
                     </span>
                     {(draft.potential_commission || 0) > 0 && (
                       <span className="text-[11px] font-bold text-primary">{formatCurrency(draft.potential_commission || 0)}</span>
@@ -194,7 +243,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                     <FieldLabel icon={Tag} label="Deal Type" />
                     <select
                       value={draft.deal_type || 'buyer'}
-                      onChange={e => set('deal_type', e.target.value)}
+                      onChange={e => handleDealTypeChange(e.target.value)}
                       className="w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border/40 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     >
                       {DEAL_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
@@ -226,26 +275,26 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   </div>
                 </div>
 
-                {/* Status */}
+                {/* Status — context-aware */}
                 <div>
                   <FieldLabel icon={TrendingUp} label="Status" />
-                  <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
-                    {STATUS_OPTIONS.map(s => {
-                      const isSelected = (draft.status || 'active') === s;
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {statusOptions.map(s => {
+                      const isSelected = currentStatus === s;
+                      const color = statusColors[s] || statusColors[Object.keys(statusColors)[0]];
                       return (
                         <button
                           key={s}
                           onClick={() => {
-                            set('status', s);
-                            if (s === 'listings') set('deal_type', 'seller');
+                            set('status', s as any);
                             triggerHaptic('light');
                           }}
                           className={cn(
                             "flex items-center justify-center px-2 py-2 rounded-xl text-[11px] font-semibold border transition-all",
-                            isSelected ? STATUS_COLORS[s] : "bg-muted/20 text-muted-foreground/40 border-border/30 hover:bg-muted/40"
+                            isSelected ? color : "bg-muted/20 text-muted-foreground/40 border-border/30 hover:bg-muted/40"
                           )}
                         >
-                          {STATUS_LABELS[s]}
+                          {statusLabels[s]}
                         </button>
                       );
                     })}
@@ -276,9 +325,9 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   </div>
                 </div>
 
-                {/* Budget */}
+                {/* Budget / List Price */}
                 <div>
-                  <FieldLabel icon={DollarSign} label="Budget" />
+                  <FieldLabel icon={DollarSign} label={isListing ? 'List Price' : 'Budget'} />
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/50 font-medium">$</span>
                     <input
