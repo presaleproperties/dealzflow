@@ -726,8 +726,9 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
   return (
     <div
       className={cn(
-        "flex flex-col rounded-2xl border bg-card/50 shrink-0 overflow-hidden transition-all",
-        "w-[272px] sm:w-[calc(50%-6px)] lg:w-[calc(25%-9px)]",
+        "flex flex-col rounded-2xl border bg-card/50 shrink-0 overflow-hidden transition-all snap-start",
+        // Mobile: fixed width showing peek of next col; desktop: fills quarter
+        "w-[calc(85vw)] sm:w-[300px] lg:w-[calc(25%-9px)]",
         isDragOverCol ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"
       )}
       onDragOver={(e) => { e.preventDefault(); setIsDragOverCol(true); }}
@@ -750,7 +751,7 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
       )}>
         <div className="flex items-center gap-2">
           <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", STATUS_DOT_COLORS[status])} />
-          <span className="text-[12px] font-bold tracking-tight">{label}</span>
+          <span className="text-[13px] font-bold tracking-tight">{label}</span>
           <span className="text-[10px] font-bold tabular-nums bg-muted/60 text-muted-foreground/70 px-1.5 py-0.5 rounded-md">{items.length}</span>
         </div>
         {total > 0 && (
@@ -759,7 +760,7 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
       </div>
 
       {/* Cards */}
-      <div className="flex-1 p-2.5 space-y-2 min-h-[120px]">
+      <div className="flex-1 p-2.5 space-y-2 min-h-[120px] overflow-y-auto max-h-[calc(100vh-280px)]">
         {orderedItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/25 p-6 text-center">
             <p className="text-[10px] text-muted-foreground/30">Drop leads here</p>
