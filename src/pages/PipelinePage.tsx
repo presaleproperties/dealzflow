@@ -280,10 +280,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
   statusOptions?: readonly string[];
   statusLabels?: Record<string, string>;
 }) {
-  const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
-  const TIcon = tc.icon;
-  const sOpts = statusOptions || BUYER_STATUS_OPTIONS;
-  const sLabels = statusLabels || BUYER_STATUS_LABELS;
+  const rowLeftBorder = p.temperature === 'hot' ? 'border-l-[3px] border-l-rose-500/70' : p.temperature === 'cold' ? 'border-l-[3px] border-l-sky-500/70' : 'border-l-[3px] border-l-amber-500/70';
 
   return (
     <div
@@ -293,10 +290,9 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       className={cn(
         "hidden sm:grid items-stretch border-b border-border/60 group transition-colors cursor-default",
         "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
-        idx % 2 === 0
-          ? 'bg-card dark:bg-card'
-          : 'bg-secondary/40 dark:bg-white/[0.03]',
-        'hover:bg-primary/[0.07] dark:hover:bg-primary/[0.09]'
+        rowLeftBorder,
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/30',
+        'hover:bg-primary/[0.07]'
       )}
     >
       {/* Drag handle */}
