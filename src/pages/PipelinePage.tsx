@@ -54,6 +54,25 @@ const TEMP_CONFIG: Record<string, { icon: any; color: string; dotColor: string; 
 };
 
 type ViewMode = 'list' | 'board';
+type SortField = 'temperature' | 'potential_commission' | 'created_at' | null;
+type SortDir = 'asc' | 'desc';
+
+const TEMP_ORDER: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
+
+function sortProspects(items: PipelineProspect[], field: SortField, dir: SortDir): PipelineProspect[] {
+  if (!field) return items;
+  return [...items].sort((a, b) => {
+    let cmp = 0;
+    if (field === 'temperature') {
+      cmp = (TEMP_ORDER[a.temperature || 'warm'] ?? 1) - (TEMP_ORDER[b.temperature || 'warm'] ?? 1);
+    } else if (field === 'potential_commission') {
+      cmp = Number(a.potential_commission) - Number(b.potential_commission);
+    } else if (field === 'created_at') {
+      cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    }
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
 
 // ── Inline editable cell ─────────────────────────────────────────────
 function InlineCell({
