@@ -1024,11 +1024,13 @@ export default function PipelinePage() {
                   ))}
                   <ArchivedSection
                     title="Sold" dotColor="bg-emerald-500" accentColor="text-emerald-500"
+                    restoreStatus="active-listing"
                     items={[...tabProspects].reverse().filter(p => p.status === 'sold')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
                   <ArchivedSection
                     title="Lost" dotColor="bg-destructive" accentColor="text-destructive"
+                    restoreStatus="want-to-sell"
                     items={[...tabProspects].reverse().filter(p => p.status === 'listing-lost')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
@@ -1056,11 +1058,13 @@ export default function PipelinePage() {
                   ))}
                   <ArchivedSection
                     title="Closed Deals" dotColor="bg-emerald-500" accentColor="text-emerald-500"
+                    restoreStatus="active"
                     items={[...tabProspects].reverse().filter(p => p.status === 'closed')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
                   <ArchivedSection
                     title="Lost Deals" dotColor="bg-destructive" accentColor="text-destructive"
+                    restoreStatus="active"
                     items={[...tabProspects].reverse().filter(p => p.status === 'lost')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
