@@ -310,10 +310,13 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       </div>
 
       {/* Temp */}
-      <div className="border-l border-border/30 flex items-center justify-center bg-muted/[0.03]" onClick={(e) => e.stopPropagation()}>
+      <div className="border-l border-border/30 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={(e) => { e.stopPropagation(); const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length]; handleSave(p.id, 'temperature', next); triggerHaptic('light'); }}
-          className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 border", tc.dotColor + '/20 border-' + tc.dotColor.replace('bg-', '') + '/20')}
+          className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110",
+            p.temperature === 'hot' ? 'bg-rose-500/20' : p.temperature === 'cold' ? 'bg-sky-500/20' : 'bg-amber-500/20'
+          )}
         >
           <TIcon className={cn("h-3.5 w-3.5", tc.color)} />
         </button>
