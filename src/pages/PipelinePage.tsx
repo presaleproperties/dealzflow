@@ -224,7 +224,8 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-4 border-b border-border/25 active:bg-muted/20 transition-colors cursor-pointer"
+      className="flex items-center gap-3 px-4 py-4 border-b border-border/40 active:bg-muted/25 transition-colors cursor-pointer"
+      style={{ borderLeftWidth: '3px', borderLeftColor: `var(--tw-${tc.dotColor.replace('bg-', '')}, transparent)` }}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
       <button
