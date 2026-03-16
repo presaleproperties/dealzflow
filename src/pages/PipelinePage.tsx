@@ -914,6 +914,9 @@ export default function PipelinePage() {
                   group={group}
                   prospects={prospects}
                   tempFilter={tempFilter}
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
                   isEditing={isEditing}
                   setEditingCell={setEditingCell}
                   handleSave={handleSave}
