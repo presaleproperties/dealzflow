@@ -825,9 +825,10 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
   }, [prospects, statusList]);
 
   return (
+    // On mobile/tablet: horizontal scroll with snap; on lg+: wraps naturally into a row
     <div
-      className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory"
-      style={{ WebkitOverflowScrolling: 'touch', marginLeft: '-1px', paddingLeft: '1px', paddingRight: '12px' }}
+      className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory lg:flex-wrap lg:overflow-x-visible lg:snap-none"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {columns.map(col => (
         <BoardColumn
