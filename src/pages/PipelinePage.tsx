@@ -293,8 +293,8 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       className={cn(
         "hidden sm:grid items-stretch border-b border-border/50 group transition-colors cursor-default",
         "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
-        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.06]',
-        'hover:bg-primary/[0.05]'
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/20',
+        'hover:bg-primary/[0.06]'
       )}
     >
       {/* Drag handle */}
