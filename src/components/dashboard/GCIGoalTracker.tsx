@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import { Target, CalendarClock, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { AnimatedCurrency } from '@/components/ui/animated-number';
