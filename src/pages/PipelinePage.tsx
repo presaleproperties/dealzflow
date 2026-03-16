@@ -329,11 +329,36 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
   );
 }
 
+// ── Sort column header button ─────────────────────────────────────────
+function SortHeader({ label, field, sortField, sortDir, onSort, className }: {
+  label: string; field: SortField; sortField: SortField; sortDir: SortDir;
+  onSort: (f: SortField) => void; className?: string;
+}) {
+  const active = sortField === field;
+  const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className={cn(
+        "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest transition-colors",
+        active ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground/70",
+        className
+      )}
+    >
+      {label}
+      <Icon className={cn("h-2.5 w-2.5 shrink-0", active ? "opacity-100" : "opacity-40")} />
+    </button>
+  );
+}
+
 // ── Section with collapsible temp groups ─────────────────────────────
-function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCell, handleSave, handleAdd, deleteProspect, onOpen }: {
+function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onSort, isEditing, setEditingCell, handleSave, handleAdd, deleteProspect, onOpen }: {
   group: { key: string; label: string; defaultDealType: string; defaultHomeType: string; accentColor: string; dotColor: string; filter: (p: PipelineProspect) => boolean };
   prospects: PipelineProspect[];
   tempFilter: string | null;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (f: SortField) => void;
   isEditing: (id: string, field: string) => boolean;
   setEditingCell: (cell: { id: string; field: string } | null) => void;
   handleSave: (id: string, field: string, value: string) => void;
@@ -342,15 +367,18 @@ function PipelineSection({ group, prospects, tempFilter, isEditing, setEditingCe
   onOpen: (p: PipelineProspect) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const groupItems = [...prospects].reverse().filter(group.filter);
-  const filteredItems = tempFilter ? groupItems.filter(p => (p.temperature || 'warm') === tempFilter) : groupItems;
-  const groupGCI = filteredItems.reduce((s, p) => s + Number(p.potential_commission), 0);
+  const baseItems = [...prospects].reverse().filter(group.filter);
+  const filteredItems = tempFilter ? baseItems.filter(p => (p.temperature || 'warm') === tempFilter) : baseItems;
+  const sortedItems = sortProspects(filteredItems, sortField, sortDir);
+  const groupGCI = sortedItems.reduce((s, p) => s + Number(p.potential_commission), 0);
 
-  const tempGroups = [
-    { temp: 'hot', items: filteredItems.filter(p => (p.temperature || 'warm') === 'hot') },
-    { temp: 'warm', items: filteredItems.filter(p => (p.temperature || 'warm') === 'warm') },
-    { temp: 'cold', items: filteredItems.filter(p => (p.temperature || 'warm') === 'cold') },
-  ].filter(tg => tg.items.length > 0);
+  // When sorted, flatten into a single list; otherwise group by temperature
+  const useTempGroups = !sortField;
+  const tempGroups = useTempGroups ? [
+    { temp: 'hot', items: sortedItems.filter(p => (p.temperature || 'warm') === 'hot') },
+    { temp: 'warm', items: sortedItems.filter(p => (p.temperature || 'warm') === 'warm') },
+    { temp: 'cold', items: sortedItems.filter(p => (p.temperature || 'warm') === 'cold') },
+  ].filter(tg => tg.items.length > 0) : [];
 
   return (
     <motion.div
