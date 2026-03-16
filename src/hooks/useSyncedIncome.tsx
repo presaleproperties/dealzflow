@@ -36,8 +36,12 @@ export function useSyncedIncome(syncedTransactions: SyncedTransaction[]) {
       .filter(tx => tx.close_date)
       .map(tx => {
         const gross = Number(tx.commission_amount) || 0;
-        // Use gross commission_amount as requested
-        const net = gross;
+        // For team deals (split < 1, e.g. Ravish/Sarb at 30%), use my_net_payout.
+        // For solo deals (split = 1 or null), use gross commission_amount.
+        const splitPercent = tx.my_split_percent != null ? Number(tx.my_split_percent) : 1;
+        const net = (splitPercent < 1 && tx.my_net_payout != null)
+          ? Number(tx.my_net_payout)
+          : gross;
         return {
           id: tx.id,
           close_date: tx.close_date!,
