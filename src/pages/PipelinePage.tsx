@@ -744,8 +744,8 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
     <div
       className={cn(
         "flex flex-col rounded-2xl border bg-card/50 shrink-0 overflow-hidden transition-all snap-start",
-        // Mobile: fixed width showing peek of next col; desktop: fills quarter
-        "w-[calc(85vw)] sm:w-[300px] lg:w-[calc(25%-9px)]",
+        // Mobile: 85vw with peek; tablet: 2-col; desktop: 4-col
+        "w-[calc(85vw)] sm:w-[calc(50%-6px)] lg:w-[calc(25%-9px)]",
         isDragOverCol ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"
       )}
       onDragOver={(e) => { e.preventDefault(); setIsDragOverCol(true); }}
