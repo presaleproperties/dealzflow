@@ -559,13 +559,18 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
 }
 
 // ── Board Card ──────────────────────────────────────────────────────
-function BoardCard({ prospect, onUpdate, onOpen }: {
+function BoardCard({ prospect, onOpen, isDragOver }: {
   prospect: PipelineProspect;
-  onUpdate: (id: string, field: string, value: string) => void;
   onOpen: (p: PipelineProspect) => void;
+  isDragOver?: boolean;
 }) {
   const tc = TEMP_CONFIG[prospect.temperature || 'warm'] || TEMP_CONFIG.warm;
   const TIcon = tc.icon;
+  const heatBorder = prospect.temperature === 'hot'
+    ? 'border-l-rose-500'
+    : prospect.temperature === 'cold'
+      ? 'border-l-sky-500'
+      : 'border-l-amber-500';
 
   return (
     <motion.div
@@ -575,24 +580,61 @@ function BoardCard({ prospect, onUpdate, onOpen }: {
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.13 }}
       draggable
-      onDragStart={(e: any) => { e.dataTransfer?.setData('text/plain', prospect.id); e.currentTarget.style.opacity = '0.4'; }}
+      onDragStart={(e: any) => {
+        e.dataTransfer?.setData('board-card-id', prospect.id);
+        e.dataTransfer?.setData('text/plain', prospect.id);
+        setTimeout(() => { e.currentTarget.style.opacity = '0.35'; }, 0);
+      }}
       onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
       onClick={() => { onOpen(prospect); triggerHaptic('light'); }}
-      className="rounded-xl border border-border/40 bg-card p-3 group hover:border-primary/25 hover:shadow-sm transition-all cursor-pointer"
+      className={cn(
+        "rounded-xl border-l-[3px] border border-border/40 bg-card p-3 group cursor-pointer transition-all select-none",
+        heatBorder,
+        isDragOver ? "ring-2 ring-primary/30 border-primary/20" : "hover:border-r-primary/20 hover:border-t-primary/20 hover:border-b-primary/20 hover:shadow-md"
+      )}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-[13px] font-semibold truncate leading-tight">{prospect.client_name}</p>
-        <TIcon className={cn("h-3 w-3 shrink-0 mt-0.5", tc.color)} />
+      {/* Header row: name + temp icon */}
+      <div className="flex items-start justify-between gap-2 mb-2.5">
+        <p className="text-[13px] font-bold truncate leading-tight text-foreground">{prospect.client_name}</p>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "shrink-0 w-6 h-6 rounded-md flex items-center justify-center",
+            prospect.temperature === 'hot' ? 'bg-rose-500/15' : prospect.temperature === 'cold' ? 'bg-sky-500/15' : 'bg-amber-500/15'
+          )}
+        >
+          <TIcon className={cn("h-3 w-3", tc.color)} />
+        </button>
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-md", STATUS_COLORS[prospect.status] || STATUS_COLORS.active)}>
-            {STATUS_LABELS[prospect.status] || prospect.status}
+
+      {/* Property type + source */}
+      <div className="flex items-center gap-1.5 mb-2">
+        {prospect.home_type && (
+          <span className="text-[10px] font-medium text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded-md">{prospect.home_type}</span>
+        )}
+        {prospect.source && (
+          <span className="text-[10px] text-muted-foreground/60 truncate">{prospect.source}</span>
+        )}
+      </div>
+
+      {/* GCI + budget */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">GCI</span>
+          <span className={cn(
+            "text-[12px] font-bold tabular-nums",
+            prospect.potential_commission > 0 ? "text-primary" : "text-muted-foreground/40"
+          )}>
+            {prospect.potential_commission > 0 ? formatCurrency(prospect.potential_commission) : '—'}
           </span>
-          {prospect.home_type && <span className="text-[10px] text-muted-foreground/50">{prospect.home_type}</span>}
         </div>
-        {prospect.potential_commission > 0 && (
-          <span className="text-[11px] font-bold text-primary tabular-nums">{formatCurrency(prospect.potential_commission)}</span>
+        {prospect.budget != null && prospect.budget > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+              {isListingProspect(prospect) ? 'List' : 'Budget'}
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground/70 tabular-nums">{formatCurrency(prospect.budget)}</span>
+          </div>
         )}
       </div>
     </motion.div>
@@ -614,21 +656,129 @@ function BoardQuickAdd({ status, dealType, onAdd }: { status: string; dealType?:
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="w-full rounded-xl border border-dashed border-border/30 hover:border-primary/30 p-2.5 text-xs text-muted-foreground/40 hover:text-primary transition-all flex items-center justify-center gap-1.5">
-        <Plus className="h-3.5 w-3.5" /> Add
+      <button onClick={() => setOpen(true)} className="w-full rounded-xl border border-dashed border-border/30 hover:border-primary/40 p-2.5 text-xs text-muted-foreground/40 hover:text-primary transition-all flex items-center justify-center gap-1.5 mt-1">
+        <Plus className="h-3.5 w-3.5" /> Add lead
       </button>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-primary/25 bg-card p-3 space-y-2">
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-primary/30 bg-card p-3 space-y-2 mt-1">
       <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} placeholder="Client name" className="w-full bg-transparent border-b border-border/30 outline-none text-sm py-1.5 placeholder:text-muted-foreground/30 focus:border-primary/40" />
-      <input value={commission} onChange={(e) => setCommission(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} placeholder="Commission $" type="number" className="w-full bg-transparent border-b border-border/30 outline-none text-sm py-1.5 placeholder:text-muted-foreground/30 focus:border-primary/40" />
+      <input value={commission} onChange={(e) => setCommission(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} placeholder="Est. GCI $" type="number" className="w-full bg-transparent border-b border-border/30 outline-none text-sm py-1.5 placeholder:text-muted-foreground/30 focus:border-primary/40" />
       <div className="flex gap-1.5 pt-1">
-        <button onClick={handleSubmit} disabled={!name.trim()} className="flex-1 rounded-lg bg-primary text-primary-foreground text-xs font-medium py-2 disabled:opacity-40">Add</button>
+        <button onClick={handleSubmit} disabled={!name.trim()} className="flex-1 rounded-lg bg-primary text-primary-foreground text-xs font-semibold py-2 disabled:opacity-40 transition-opacity">Add</button>
         <button onClick={() => { setOpen(false); setName(''); setCommission(''); }} className="flex-1 rounded-lg bg-muted/50 text-muted-foreground text-xs font-medium py-2">Cancel</button>
       </div>
     </motion.div>
+  );
+}
+
+// ── Board Column ─────────────────────────────────────────────────────
+function BoardColumn({ status, label, items, total, dealType, dragOverCard, setDragOverCard, onMoveStatus, onAdd, onOpen }: {
+  status: string;
+  label: string;
+  items: PipelineProspect[];
+  total: number;
+  dealType: string;
+  dragOverCard: string | null;
+  setDragOverCard: (id: string | null) => void;
+  onMoveStatus: (id: string, status: string) => void;
+  onAdd: (data: any) => void;
+  onOpen: (p: PipelineProspect) => void;
+}) {
+  const [isDragOverCol, setIsDragOverCol] = useState(false);
+  const [localOrder, setLocalOrder] = useState<string[]>(() => items.map(p => p.id));
+
+  // Sync localOrder when items change externally
+  useEffect(() => {
+    setLocalOrder(prev => {
+      const incoming = items.map(p => p.id);
+      const prevSet = new Set(prev);
+      const incomingSet = new Set(incoming);
+      // Preserve existing order, add new, remove deleted
+      const kept = prev.filter(id => incomingSet.has(id));
+      const added = incoming.filter(id => !prevSet.has(id));
+      return [...kept, ...added];
+    });
+  }, [items]);
+
+  const orderedItems = localOrder.map(id => items.find(p => p.id === id)).filter(Boolean) as PipelineProspect[];
+
+  const handleCardDragOver = (e: React.DragEvent, overId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverCol(true);
+    setDragOverCard(overId);
+    const dragId = e.dataTransfer.getData('board-card-id');
+    if (!dragId || dragId === overId) return;
+    setLocalOrder(prev => {
+      const from = prev.indexOf(dragId);
+      const to = prev.indexOf(overId);
+      if (from === -1 || to === -1) return prev;
+      const next = [...prev];
+      next.splice(from, 1);
+      next.splice(to, 0, dragId);
+      return next;
+    });
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col rounded-2xl border bg-card/50 shrink-0 overflow-hidden transition-all",
+        "w-[272px] sm:w-[calc(50%-6px)] lg:w-[calc(25%-9px)]",
+        isDragOverCol ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"
+      )}
+      onDragOver={(e) => { e.preventDefault(); setIsDragOverCol(true); }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDragOverCol(false);
+          setDragOverCard(null);
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault(); setIsDragOverCol(false); setDragOverCard(null);
+        const id = e.dataTransfer.getData('board-card-id') || e.dataTransfer.getData('text/plain');
+        if (id) { triggerHaptic('light'); onMoveStatus(id, status); }
+      }}
+    >
+      {/* Column header */}
+      <div className={cn(
+        "flex items-center justify-between px-3.5 py-3 border-b border-border/50",
+        isDragOverCol ? "bg-primary/[0.04]" : "bg-muted/20"
+      )}>
+        <div className="flex items-center gap-2">
+          <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", STATUS_DOT_COLORS[status])} />
+          <span className="text-[12px] font-bold tracking-tight">{label}</span>
+          <span className="text-[10px] font-bold tabular-nums bg-muted/60 text-muted-foreground/70 px-1.5 py-0.5 rounded-md">{items.length}</span>
+        </div>
+        {total > 0 && (
+          <span className="text-[11px] font-bold text-primary tabular-nums">{formatCurrency(total)}</span>
+        )}
+      </div>
+
+      {/* Cards */}
+      <div className="flex-1 p-2.5 space-y-2 min-h-[120px]">
+        {orderedItems.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/25 p-6 text-center">
+            <p className="text-[10px] text-muted-foreground/30">Drop leads here</p>
+          </div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {orderedItems.map(p => (
+              <div
+                key={p.id}
+                onDragOver={(e) => handleCardDragOver(e, p.id)}
+              >
+                <BoardCard prospect={p} onOpen={onOpen} isDragOver={dragOverCard === p.id} />
+              </div>
+            ))}
+          </AnimatePresence>
+        )}
+        <BoardQuickAdd status={status} dealType={dealType} onAdd={onAdd} />
+      </div>
+    </div>
   );
 }
 
@@ -642,7 +792,7 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
   onOpen: (p: PipelineProspect) => void;
   activeTab: PageTab;
 }) {
-  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [dragOverCard, setDragOverCard] = useState<string | null>(null);
 
   const statusList = activeTab === 'listings' ? LISTING_STATUS_OPTIONS : BUYER_STATUS_OPTIONS;
   const dealType = activeTab === 'listings' ? 'seller' : 'buyer';
@@ -657,46 +807,21 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
   }, [prospects, statusList]);
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+    <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-1 px-1">
       {columns.map(col => (
-        <div
+        <BoardColumn
           key={col.status}
-          className={cn(
-            "flex flex-col min-h-[200px] rounded-2xl border border-border/40 bg-card/40 p-3 shrink-0 w-[260px] sm:w-[calc(50%-6px)] lg:w-[calc(25%-9px)] snap-start transition-all",
-            dragOverCol === col.status && "bg-primary/5 border-primary/25"
-          )}
-          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverCol(col.status); }}
-          onDragLeave={() => setDragOverCol(null)}
-          onDrop={(e) => {
-            e.preventDefault(); setDragOverCol(null);
-            const id = e.dataTransfer.getData('text/plain');
-            if (id) { triggerHaptic('light'); onMoveStatus(id, col.status); }
-          }}
-        >
-          <div className="flex items-center justify-between px-1 pb-3 mb-1 border-b border-border/30">
-            <div className="flex items-center gap-2">
-              <div className={cn("w-2 h-2 rounded-full", STATUS_DOT_COLORS[col.status])} />
-              <span className="text-xs font-bold">{col.label}</span>
-              <span className="text-[10px] text-muted-foreground/50 font-medium bg-muted/40 px-1.5 py-0.5 rounded-md tabular-nums">{col.items.length}</span>
-            </div>
-            {col.total > 0 && <span className="text-[10px] text-muted-foreground/50 font-semibold tabular-nums">{formatCurrency(col.total)}</span>}
-          </div>
-
-          <div className="flex-1 space-y-2">
-            {col.items.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border/20 p-6 text-center">
-                <p className="text-[10px] text-muted-foreground/25">No leads</p>
-              </div>
-            ) : (
-              <AnimatePresence mode="popLayout">
-                {col.items.map(p => (
-                  <BoardCard key={p.id} prospect={p} onUpdate={onUpdate} onOpen={onOpen} />
-                ))}
-              </AnimatePresence>
-            )}
-            <BoardQuickAdd status={col.status} dealType={dealType} onAdd={onAdd} />
-          </div>
-        </div>
+          status={col.status}
+          label={col.label}
+          items={col.items}
+          total={col.total}
+          dealType={dealType}
+          dragOverCard={dragOverCard}
+          setDragOverCard={setDragOverCard}
+          onMoveStatus={onMoveStatus}
+          onAdd={onAdd}
+          onOpen={onOpen}
+        />
       ))}
     </div>
   );
