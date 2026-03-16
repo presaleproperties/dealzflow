@@ -450,21 +450,21 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
             className="overflow-hidden"
           >
             {/* Column headers — desktop */}
-            <div className="hidden sm:grid bg-muted/20 border-t border-b border-border/30 grid-cols-[32px_minmax(140px,2fr)_60px_minmax(80px,1fr)_minmax(90px,1fr)_72px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_36px]">
-              <div className="px-2 py-2" />
-              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Client</div>
-              <div className="px-2 py-2 border-l border-border/10 flex items-center justify-center">
-                <SortHeader label="Temp" field="temperature" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+            <div className="hidden sm:grid bg-muted/40 border-t border-b border-border/40 grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_88px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]">
+              <div className="px-2 py-2.5" />
+              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Client</div>
+              <div className="px-2 py-2.5 border-l border-border/25 flex items-center justify-center">
+                <SortHeader label="Heat" field="temperature" sortField={sortField} sortDir={sortDir} onSort={onSort} />
               </div>
-              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Property</div>
-              <div className="px-3 py-2 border-l border-border/10 flex items-center">
+              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Property</div>
+              <div className="px-3 py-2.5 border-l border-border/25 flex items-center">
                 <SortHeader label="Est. GCI" field="potential_commission" sortField={sortField} sortDir={sortDir} onSort={onSort} />
               </div>
-              <div className="px-2 py-2 border-l border-border/10 text-center text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Status</div>
-              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">Source</div>
-              <div className="px-3 py-2 border-l border-border/10 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
-              <div className="px-3 py-2 border-l border-border/10 flex items-center">
-                <SortHeader label="Date" field="created_at" sortField={sortField} sortDir={sortDir} onSort={onSort} />
+              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Status</div>
+              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Source</div>
+              <div className="px-3 py-2.5 border-l border-border/25 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{group.defaultDealType === 'seller' ? 'List Price' : 'Budget'}</div>
+              <div className="px-3 py-2.5 border-l border-border/25 flex items-center">
+                <SortHeader label="Added" field="created_at" sortField={sortField} sortDir={sortDir} onSort={onSort} />
               </div>
               <div />
             </div>
