@@ -131,6 +131,16 @@ export function GCIGoalTracker({ gciYTD, revShareYTD, projectedRevenue, revShare
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
               <span className="text-[11px] text-muted-foreground font-medium">Commissions</span>
               <span className="text-[11px] font-bold text-foreground">{formatCurrency(projectedRevenue)}</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground/50 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[200px] text-center text-[11px]">
+                    Your net portion after team splits (e.g. 30% on co-listed deals)
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400" />
