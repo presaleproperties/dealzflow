@@ -523,8 +523,8 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums bg-muted/60 px-1.5 py-0.5 rounded-md">{tg.items.length} lead{tg.items.length !== 1 ? 's' : ''}</span>
                     </div>
                     <div className="sm:hidden">
-                      {tg.items.map(p => (
-                        <MobileProspectCard key={p.id} p={p} handleSave={handleSave} onOpen={onOpen} />
+                      {tg.items.map((p, idx) => (
+                        <MobileProspectCard key={p.id} p={p} idx={idx} handleSave={handleSave} onOpen={onOpen} />
                       ))}
                     </div>
                     <AnimatePresence mode="popLayout">
