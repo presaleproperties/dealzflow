@@ -57,7 +57,13 @@ export function InsightsGreeting({ syncedTransactions, revenueShare = [], userNa
         return isWithinInterval(d, { start: monthStart, end: monthEnd });
       });
 
-      const commission = deals.reduce((sum: number, tx: any) => sum + Number(tx.commission_amount || 0), 0);
+      const commission = deals.reduce((sum: number, tx: any) => {
+        const splitPercent = tx.my_split_percent != null ? Number(tx.my_split_percent) : 1;
+        const amount = (splitPercent < 1 && tx.my_net_payout != null)
+          ? Number(tx.my_net_payout)
+          : Number(tx.commission_amount || 0);
+        return sum + amount;
+      }, 0);
 
       return {
         label: format(monthStart, 'MMM'),
