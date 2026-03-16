@@ -280,6 +280,10 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
   statusOptions?: readonly string[];
   statusLabels?: Record<string, string>;
 }) {
+  const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
+  const TIcon = tc.icon;
+  const sOpts = statusOptions || BUYER_STATUS_OPTIONS;
+  const sLabels = statusLabels || BUYER_STATUS_LABELS;
   const rowLeftBorder = p.temperature === 'hot' ? 'border-l-[3px] border-l-rose-500/70' : p.temperature === 'cold' ? 'border-l-[3px] border-l-sky-500/70' : 'border-l-[3px] border-l-amber-500/70';
 
   return (
