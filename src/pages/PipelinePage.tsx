@@ -219,13 +219,11 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
   handleSave: (id: string, field: string, value: string) => void;
   onOpen: (p: PipelineProspect) => void;
 }) {
-  const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
-  const TIcon = tc.icon;
+  const borderAccent = p.temperature === 'hot' ? 'border-l-rose-500' : p.temperature === 'cold' ? 'border-l-sky-500' : 'border-l-amber-500';
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-4 border-b border-border/40 active:bg-muted/25 transition-colors cursor-pointer"
-      style={{ borderLeftWidth: '3px', borderLeftColor: `var(--tw-${tc.dotColor.replace('bg-', '')}, transparent)` }}
+      className={cn("flex items-center gap-3 px-4 py-4 border-b border-border/40 border-l-[3px] active:bg-muted/25 transition-colors cursor-pointer", borderAccent)}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
       <button
