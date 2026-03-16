@@ -228,13 +228,13 @@ function MobileProspectCard({ p, idx, handleSave, onOpen }: {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-3.5 border-b border-border/50 border-l-[3px] transition-colors cursor-pointer",
+        "flex items-center gap-3 px-4 py-4 border-b border-border/40 border-l-[3px] transition-colors cursor-pointer active:bg-primary/[0.06]",
         borderAccent,
-        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.08]',
-        'active:bg-primary/[0.06]'
+        idx % 2 === 0 ? 'bg-card' : 'bg-muted/[0.06]',
       )}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
+      {/* Temp toggle */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -242,27 +242,39 @@ function MobileProspectCard({ p, idx, handleSave, onOpen }: {
           handleSave(p.id, 'temperature', next);
           triggerHaptic('light');
         }}
-        className={cn("shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95", iconBg)}
+        className={cn("shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95", iconBg)}
       >
-        <TIcon className={cn("h-4 w-4", tc.color)} />
+        <TIcon className={cn("h-[18px] w-[18px]", tc.color)} />
       </button>
 
+      {/* Client info */}
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-bold truncate leading-snug text-foreground">{p.client_name}</p>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[11px] text-muted-foreground font-medium">{p.home_type}</span>
-          <span className="w-px h-3 bg-border/60" />
-          <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
+        <p className="text-[15px] font-bold truncate leading-snug text-foreground">{p.client_name}</p>
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+          <span className="text-[11px] text-muted-foreground/70 font-medium">{p.home_type}</span>
+          <span className="w-px h-3 bg-border/60 shrink-0" />
+          <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
             {STATUS_LABELS[p.status] || p.status}
           </span>
+          {p.source && (
+            <>
+              <span className="w-px h-3 bg-border/60 shrink-0" />
+              <span className="text-[10px] text-muted-foreground/50 truncate max-w-[80px]">{p.source}</span>
+            </>
+          )}
         </div>
       </div>
 
+      {/* GCI */}
       <div className="shrink-0 text-right">
-        <p className="text-[14px] font-bold text-primary tabular-nums">{p.potential_commission > 0 ? formatCurrency(p.potential_commission) : '—'}</p>
-        {p.source && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{p.source}</p>}
+        <p className={cn("text-[15px] font-bold tabular-nums", p.potential_commission > 0 ? "text-primary" : "text-muted-foreground/30")}>
+          {p.potential_commission > 0 ? formatCurrency(p.potential_commission) : '—'}
+        </p>
+        {p.budget != null && p.budget > 0 && (
+          <p className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">{formatCurrency(p.budget)}</p>
+        )}
       </div>
-      <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground/40" />
+      <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground/30 ml-1" />
     </div>
   );
 }
@@ -292,8 +304,9 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       onDragStart={(e: any) => { e.dataTransfer?.setData('prospect-id', p.id); e.currentTarget.style.opacity = '0.4'; }}
       onDragEnd={(e: any) => { e.currentTarget.style.opacity = '1'; }}
       className={cn(
-        "hidden sm:grid items-stretch border-b border-border/60 group transition-colors cursor-default",
-        "grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]",
+        // Desktop-only table row — tablets and smaller use MobileProspectCard
+        "hidden lg:grid items-stretch border-b border-border/60 group transition-colors cursor-default",
+        "grid-cols-[28px_minmax(140px,2fr)_48px_minmax(80px,1fr)_minmax(90px,1fr)_96px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.2fr)_34px]",
         rowLeftBorder,
         idx % 2 === 0 ? 'bg-card' : 'bg-muted/30',
         'hover:bg-primary/[0.07]'
@@ -306,7 +319,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
 
       {/* Name */}
       <div className="border-l border-border/30 cursor-pointer hover:bg-primary/[0.03] transition-colors" onClick={() => { onOpen(p); triggerHaptic('light'); }}>
-        <div className="px-3 py-3.5 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[50px] leading-tight">
+        <div className="px-3 py-3.5 text-[13px] font-semibold truncate flex items-center gap-2 min-h-[48px] leading-tight">
           {p.client_name || <span className="text-muted-foreground/30 italic font-normal">Unnamed</span>}
         </div>
       </div>
@@ -329,7 +342,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
         {isEditing(p.id, 'home_type') ? (
           <InlineCell value={p.home_type} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'home_type', v)} type="select" options={HOME_TYPES} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3.5 text-[12px] font-medium text-muted-foreground cursor-pointer min-h-[50px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'home_type' })} className="px-3 py-3.5 text-[12px] font-medium text-muted-foreground cursor-pointer min-h-[48px] flex items-center hover:text-foreground transition-colors">{p.home_type}</div>
         )}
       </div>
 
@@ -338,7 +351,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
         {isEditing(p.id, 'potential_commission') ? (
           <InlineCell value={p.potential_commission} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'potential_commission', v)} type="number" />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[50px] flex items-center">{formatCurrency(p.potential_commission)}</div>
+          <div onClick={() => setEditingCell({ id: p.id, field: 'potential_commission' })} className="px-3 py-3.5 text-[13px] font-bold text-primary tabular-nums cursor-text min-h-[48px] flex items-center">{formatCurrency(p.potential_commission)}</div>
         )}
       </div>
 
@@ -347,7 +360,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
         {isEditing(p.id, 'status') ? (
           <InlineCell value={p.status} isEditing onStartEdit={() => {}} onSave={(v) => handleSave(p.id, 'status', v)} type="select" options={[...sOpts]} optionLabels={sLabels} />
         ) : (
-          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2.5 py-3.5 cursor-pointer flex items-center min-h-[50px]">
+          <div onClick={() => setEditingCell({ id: p.id, field: 'status' })} className="px-2.5 py-3.5 cursor-pointer flex items-center min-h-[48px]">
             <span className={cn("text-[10px] font-bold px-2 py-1 rounded-md capitalize whitespace-nowrap", STATUS_COLORS[p.status] || STATUS_COLORS.active)}>
               {STATUS_LABELS[p.status] || p.status}
             </span>
@@ -462,8 +475,8 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            {/* Column headers — desktop */}
-            <div className="hidden sm:grid bg-muted/60 border-t border-b-2 border-border/60 grid-cols-[28px_minmax(150px,2fr)_52px_minmax(90px,1fr)_minmax(100px,1fr)_100px_minmax(90px,1fr)_minmax(90px,1fr)_minmax(110px,1.5fr)_36px]">
+            {/* Column headers — desktop only (lg+) */}
+            <div className="hidden lg:grid bg-muted/60 border-t border-b-2 border-border/60 grid-cols-[28px_minmax(140px,2fr)_48px_minmax(80px,1fr)_minmax(90px,1fr)_96px_minmax(80px,1fr)_minmax(80px,1fr)_minmax(100px,1.2fr)_34px]">
               <div className="px-2 py-3" />
               <div className="px-3 py-3 border-l border-border/40 text-[10px] font-black text-foreground/70 uppercase tracking-[0.08em]">Client</div>
               <div className="px-2 py-3 border-l border-border/40 flex items-center justify-center">
@@ -488,11 +501,13 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
               </div>
             ) : sortField ? (
               <>
-                <div className="sm:hidden">
+                {/* Mobile + tablet card view (< lg) */}
+                <div className="lg:hidden">
                   {sortedItems.map((p, idx) => (
                     <MobileProspectCard key={p.id} p={p} idx={idx} handleSave={handleSave} onOpen={onOpen} />
                   ))}
                 </div>
+                {/* Desktop table rows (lg+) */}
                 <AnimatePresence mode="popLayout">
                   {sortedItems.map((p, idx) => (
                     <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
@@ -527,11 +542,13 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       <div className="flex-1 h-px bg-border/40" />
                       <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums bg-muted/60 px-1.5 py-0.5 rounded-md">{tg.items.length} lead{tg.items.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <div className="sm:hidden">
+                    {/* Mobile + tablet card view (< lg) */}
+                    <div className="lg:hidden">
                       {tg.items.map((p, idx) => (
                         <MobileProspectCard key={p.id} p={p} idx={idx} handleSave={handleSave} onOpen={onOpen} />
                       ))}
                     </div>
+                    {/* Desktop table rows (lg+) */}
                     <AnimatePresence mode="popLayout">
                       {tg.items.map((p, idx) => (
                         <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
@@ -727,8 +744,8 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
     <div
       className={cn(
         "flex flex-col rounded-2xl border bg-card/50 shrink-0 overflow-hidden transition-all snap-start",
-        // Mobile: fixed width showing peek of next col; desktop: fills quarter
-        "w-[calc(85vw)] sm:w-[300px] lg:w-[calc(25%-9px)]",
+        // Mobile: 85vw with peek; tablet: 2-col; desktop: 4-col
+        "w-[calc(85vw)] sm:w-[calc(50%-6px)] lg:w-[calc(25%-9px)]",
         isDragOverCol ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"
       )}
       onDragOver={(e) => { e.preventDefault(); setIsDragOverCol(true); }}
@@ -808,9 +825,10 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
   }, [prospects, statusList]);
 
   return (
+    // On mobile/tablet: horizontal scroll with snap; on lg+: wraps naturally into a row
     <div
-      className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory"
-      style={{ WebkitOverflowScrolling: 'touch', marginLeft: '-1px', paddingLeft: '1px', paddingRight: '12px' }}
+      className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory lg:flex-wrap lg:overflow-x-visible lg:snap-none"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {columns.map(col => (
         <BoardColumn
@@ -1053,18 +1071,18 @@ export default function PipelinePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col sm:flex-row sm:items-center gap-3"
+              className="flex items-center gap-3"
             >
-              {/* Stats */}
-              <div className="flex items-center gap-5 flex-1 min-w-0">
-                <div>
+              {/* Stats + temp filters */}
+              <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
+                <div className="shrink-0">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">
                     {activeTab === 'listings' ? 'Listings GCI' : 'Pipeline GCI'}
                   </p>
                   <p className="text-xl font-bold tracking-tight tabular-nums">{formatCurrency(totalPotential)}</p>
                 </div>
-                <div className="h-8 w-px bg-border/40 hidden sm:block" />
-                <div className="flex items-center gap-3">
+                <div className="h-7 w-px bg-border/40 shrink-0" />
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {(['hot', 'warm', 'cold'] as const).map(temp => {
                     const cfg = TEMP_CONFIG[temp];
                     const Icon = cfg.icon;
@@ -1094,8 +1112,8 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* View toggle */}
-              <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-muted/30 shrink-0 self-start sm:self-auto">
+              {/* View toggle — always visible with labels */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-muted/30 shrink-0">
                 {([{ mode: 'list' as ViewMode, icon: List, label: 'List' }, { mode: 'board' as ViewMode, icon: LayoutGrid, label: 'Board' }]).map(({ mode, icon: Icon, label }) => (
                   <button
                     key={mode}
@@ -1106,7 +1124,7 @@ export default function PipelinePage() {
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{label}</span>
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
