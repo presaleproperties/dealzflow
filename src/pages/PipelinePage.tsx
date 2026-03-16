@@ -484,8 +484,8 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
             ) : sortField ? (
               <>
                 <div className="sm:hidden">
-                  {sortedItems.map(p => (
-                    <MobileProspectCard key={p.id} p={p} handleSave={handleSave} onOpen={onOpen} />
+                  {sortedItems.map((p, idx) => (
+                    <MobileProspectCard key={p.id} p={p} idx={idx} handleSave={handleSave} onOpen={onOpen} />
                   ))}
                 </div>
                 <AnimatePresence mode="popLayout">
