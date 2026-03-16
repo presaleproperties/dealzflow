@@ -219,6 +219,8 @@ function MobileProspectCard({ p, handleSave, onOpen }: {
   handleSave: (id: string, field: string, value: string) => void;
   onOpen: (p: PipelineProspect) => void;
 }) {
+  const tc = TEMP_CONFIG[p.temperature || 'warm'] || TEMP_CONFIG.warm;
+  const TIcon = tc.icon;
   const borderAccent = p.temperature === 'hot' ? 'border-l-rose-500' : p.temperature === 'cold' ? 'border-l-sky-500' : 'border-l-amber-500';
 
   return (
