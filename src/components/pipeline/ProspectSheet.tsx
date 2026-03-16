@@ -31,6 +31,7 @@ const LISTING_STATUS_OPTIONS = ['want-to-sell', 'active-listing', 'pending-mortg
 const LISTING_STATUS_LABELS: Record<string, string> = {
   'want-to-sell': 'Want to Sell',
   'active-listing': 'Active',
+  'pending-mortgage': 'Pending Mortgage',
   'in-contract-listing': 'In Contract',
   sold: 'Sold',
   'listing-lost': 'Lost',
@@ -38,6 +39,7 @@ const LISTING_STATUS_LABELS: Record<string, string> = {
 const LISTING_STATUS_COLORS: Record<string, string> = {
   'want-to-sell': 'bg-violet-500/15 text-violet-500 border-violet-500/30',
   'active-listing': 'bg-violet-500/15 text-violet-600 border-violet-500/30',
+  'pending-mortgage': 'bg-orange-500/15 text-orange-600 border-orange-500/30',
   'in-contract-listing': 'bg-amber-500/15 text-amber-600 border-amber-500/30',
   sold: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
   'listing-lost': 'bg-destructive/15 text-destructive border-destructive/30',
