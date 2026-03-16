@@ -190,15 +190,15 @@ function QuickAddRow({ onAdd, defaultDealType, defaultHomeType, defaultStatus }:
   };
 
   return (
-    <div className="flex items-center gap-2.5 px-4 py-2.5 bg-muted/5 border-t border-dashed border-border/30">
-      <Plus className="h-3.5 w-3.5 text-muted-foreground/25 shrink-0" />
+    <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/10 border-t border-dashed border-border/40">
+      <Plus className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
       <input
         ref={nameRef}
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
         placeholder="Add a lead..."
-        className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground/25 min-w-0"
+        className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground/30 min-w-0"
       />
       <input
         type="number"
@@ -206,7 +206,7 @@ function QuickAddRow({ onAdd, defaultDealType, defaultHomeType, defaultStatus }:
         onChange={(e) => setCommission(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
         placeholder="$0"
-        className="hidden sm:block w-20 bg-transparent border-0 outline-none text-sm text-right placeholder:text-muted-foreground/25"
+        className="hidden sm:block w-20 bg-transparent border-0 outline-none text-sm text-right placeholder:text-muted-foreground/30"
       />
       <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs text-primary font-semibold shrink-0" onClick={handleSubmit} disabled={!name.trim()}>Add</Button>
     </div>
