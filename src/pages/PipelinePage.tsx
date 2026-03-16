@@ -704,30 +704,27 @@ function BoardQuickAdd({ status, dealType, onAdd }: { status: string; dealType?:
 }
 
 // ── Board Column ─────────────────────────────────────────────────────
-function BoardColumn({ status, label, items, total, dealType, dragOverCard, setDragOverCard, onMoveStatus, onAdd, onOpen }: {
+function BoardColumn({ status, label, items, total, dealType, onMoveStatus, onAdd, onOpen }: {
   status: string;
   label: string;
   items: PipelineProspect[];
   total: number;
   dealType: string;
-  dragOverCard: string | null;
-  setDragOverCard: (id: string | null) => void;
   onMoveStatus: (id: string, status: string) => void;
   onAdd: (data: any) => void;
   onOpen: (p: PipelineProspect) => void;
 }) {
   const [isDragOverCol, setIsDragOverCol] = useState(false);
   const [localOrder, setLocalOrder] = useState<string[]>(() => items.map(p => p.id));
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
-  // Sync localOrder when items change externally
+  // Sync localOrder when items change externally (preserve existing manual order)
   useEffect(() => {
     setLocalOrder(prev => {
       const incoming = items.map(p => p.id);
-      const prevSet = new Set(prev);
       const incomingSet = new Set(incoming);
-      // Preserve existing order, add new, remove deleted
       const kept = prev.filter(id => incomingSet.has(id));
-      const added = incoming.filter(id => !prevSet.has(id));
+      const added = incoming.filter(id => !new Set(kept).has(id));
       return [...kept, ...added];
     });
   }, [items]);
@@ -738,9 +735,12 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
     e.preventDefault();
     e.stopPropagation();
     setIsDragOverCol(true);
-    setDragOverCard(overId);
-    const dragId = e.dataTransfer.getData('board-card-id');
+    setDropTargetId(overId);
+
+    // Use module-level ref — dataTransfer.getData is empty during dragover
+    const dragId = _activeDragCardId;
     if (!dragId || dragId === overId) return;
+
     setLocalOrder(prev => {
       const from = prev.indexOf(dragId);
       const to = prev.indexOf(overId);
@@ -756,7 +756,6 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
     <div
       className={cn(
         "flex flex-col rounded-2xl border bg-card/50 shrink-0 overflow-hidden transition-all snap-start",
-        // Mobile: 85vw with peek; tablet: 2-col; desktop: 4-col
         "w-[calc(85vw)] sm:w-[calc(50%-6px)] lg:w-[calc(25%-9px)]",
         isDragOverCol ? "border-primary/40 bg-primary/[0.03]" : "border-border/50"
       )}
@@ -764,13 +763,21 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
       onDragLeave={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
           setIsDragOverCol(false);
-          setDragOverCard(null);
+          setDropTargetId(null);
         }
       }}
       onDrop={(e) => {
-        e.preventDefault(); setIsDragOverCol(false); setDragOverCard(null);
+        e.preventDefault();
+        setIsDragOverCol(false);
+        setDropTargetId(null);
         const id = e.dataTransfer.getData('board-card-id') || e.dataTransfer.getData('text/plain');
-        if (id) { triggerHaptic('light'); onMoveStatus(id, status); }
+        // Only fire status change if dragging FROM a different column
+        if (id && !localOrder.includes(id)) {
+          triggerHaptic('light');
+          onMoveStatus(id, status);
+        } else if (id) {
+          triggerHaptic('light');
+        }
       }}
     >
       {/* Column header */}
@@ -789,7 +796,7 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
       </div>
 
       {/* Cards */}
-      <div className="flex-1 p-2.5 space-y-2 min-h-[120px] overflow-y-auto max-h-[calc(100vh-280px)]">
+      <div className="flex-1 p-2.5 space-y-1.5 min-h-[120px] overflow-y-auto max-h-[calc(100vh-280px)]">
         {orderedItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/25 p-6 text-center">
             <p className="text-[10px] text-muted-foreground/30">Drop leads here</p>
@@ -799,9 +806,19 @@ function BoardColumn({ status, label, items, total, dealType, dragOverCard, setD
             {orderedItems.map(p => (
               <div
                 key={p.id}
+                className="relative"
                 onDragOver={(e) => handleCardDragOver(e, p.id)}
               >
-                <BoardCard prospect={p} onOpen={onOpen} isDragOver={dragOverCard === p.id} />
+                {/* Drop indicator line */}
+                {dropTargetId === p.id && _activeDragCardId && _activeDragCardId !== p.id && (
+                  <div className="absolute -top-1 left-2 right-2 h-0.5 rounded-full bg-primary z-10 pointer-events-none" />
+                )}
+                <BoardCard
+                  prospect={p}
+                  onOpen={onOpen}
+                  isDragOver={dropTargetId === p.id && _activeDragCardId !== p.id}
+                  isBeingDragged={_activeDragCardId === p.id}
+                />
               </div>
             ))}
           </AnimatePresence>
