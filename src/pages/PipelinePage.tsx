@@ -26,11 +26,10 @@ const BUYER_STATUS_LABELS: Record<string, string> = {
 };
 
 // ── Listing statuses ─────────────────────────────────────────────────
-const LISTING_STATUS_OPTIONS = ['want-to-sell', 'active-listing', 'pending-mortgage', 'in-contract-listing', 'sold', 'listing-lost'] as const;
+const LISTING_STATUS_OPTIONS = ['want-to-sell', 'active-listing', 'in-contract-listing', 'sold', 'listing-lost'] as const;
 const LISTING_STATUS_LABELS: Record<string, string> = {
   'want-to-sell': 'Want to Sell',
   'active-listing': 'Active',
-  'pending-mortgage': 'Pending Mortgage',
   'in-contract-listing': 'In Contract',
   sold: 'Sold',
   'listing-lost': 'Lost',
