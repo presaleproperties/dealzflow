@@ -6,7 +6,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { usePipelineProspects, useAddProspect, useUpdateProspect, useDeleteProspect, PipelineProspect } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown, Users, Home } from 'lucide-react';
+import { Plus, Trash2, Flame, Thermometer, Snowflake, List, LayoutGrid, ChevronRight, GripVertical, ChevronDown, X, ArrowUpDown, ArrowUp, ArrowDown, Users, Home, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
@@ -687,9 +687,10 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
 }
 
 // ── Archived section (closed/lost) ──────────────────────────────────
-function ArchivedSection({ title, dotColor, accentColor, items, deleteProspect, isEditing, setEditingCell, handleSave, onOpen }: {
+function ArchivedSection({ title, dotColor, accentColor, items, restoreStatus, deleteProspect, isEditing, setEditingCell, handleSave, onOpen }: {
   title: string; dotColor: string; accentColor: string;
   items: PipelineProspect[];
+  restoreStatus: string;
   deleteProspect: { mutate: (id: string) => void };
   isEditing: (id: string, field: string) => boolean;
   setEditingCell: (cell: { id: string; field: string } | null) => void;
@@ -720,17 +721,32 @@ function ArchivedSection({ title, dotColor, accentColor, items, deleteProspect, 
                 <div key={p.id}>
                   {/* Mobile */}
                   <div className="sm:hidden flex items-center gap-3 px-4 py-3 border-b border-border/10 group">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0" onClick={() => onOpen(p)}>
                       <p className="text-[13px] font-medium text-muted-foreground/50 line-through truncate">{p.client_name}</p>
                       <p className="text-[10px] text-muted-foreground/30 mt-0.5">{p.home_type}</p>
                     </div>
                     <span className={cn("text-[13px] font-bold shrink-0 tabular-nums", accentColor)}>{formatCurrency(p.potential_commission)}</span>
+                    <button
+                      onClick={() => { handleSave(p.id, 'status', restoreStatus); triggerHaptic('light'); }}
+                      className="p-1.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      title="Restore to pipeline"
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                   {/* Desktop */}
                   <div className={cn("hidden sm:flex items-center gap-4 px-4 py-2.5 border-b border-border/10 group hover:bg-muted/5", idx % 2 === 1 && 'bg-muted/[0.03]')}>
-                    <p className="flex-1 text-[13px] font-medium text-muted-foreground/50 line-through truncate">{p.client_name}</p>
+                    <p className="flex-1 text-[13px] font-medium text-muted-foreground/50 line-through truncate cursor-pointer hover:text-foreground/70 transition-colors" onClick={() => onOpen(p)}>{p.client_name}</p>
                     <span className="text-xs text-muted-foreground/30">{p.home_type}</span>
                     <span className={cn("text-[13px] font-bold tabular-nums w-24 text-right", accentColor)}>{formatCurrency(p.potential_commission)}</span>
+                    <button
+                      onClick={() => { handleSave(p.id, 'status', restoreStatus); triggerHaptic('light'); }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-semibold"
+                      title="Restore to pipeline"
+                    >
+                      <Undo2 className="h-3 w-3" />
+                      Restore
+                    </button>
                     <button onClick={() => deleteProspect.mutate(p.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-destructive/10 text-muted-foreground/20 hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -1008,11 +1024,13 @@ export default function PipelinePage() {
                   ))}
                   <ArchivedSection
                     title="Sold" dotColor="bg-emerald-500" accentColor="text-emerald-500"
+                    restoreStatus="active-listing"
                     items={[...tabProspects].reverse().filter(p => p.status === 'sold')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
                   <ArchivedSection
                     title="Lost" dotColor="bg-destructive" accentColor="text-destructive"
+                    restoreStatus="want-to-sell"
                     items={[...tabProspects].reverse().filter(p => p.status === 'listing-lost')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
@@ -1040,11 +1058,13 @@ export default function PipelinePage() {
                   ))}
                   <ArchivedSection
                     title="Closed Deals" dotColor="bg-emerald-500" accentColor="text-emerald-500"
+                    restoreStatus="active"
                     items={[...tabProspects].reverse().filter(p => p.status === 'closed')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
                   <ArchivedSection
                     title="Lost Deals" dotColor="bg-destructive" accentColor="text-destructive"
+                    restoreStatus="active"
                     items={[...tabProspects].reverse().filter(p => p.status === 'lost')}
                     deleteProspect={deleteProspect} isEditing={isEditing} setEditingCell={setEditingCell} handleSave={handleSave} onOpen={setSelectedProspect}
                   />
