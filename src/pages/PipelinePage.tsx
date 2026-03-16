@@ -867,8 +867,6 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
           items={col.items}
           total={col.total}
           dealType={dealType}
-          dragOverCard={dragOverCard}
-          setDragOverCard={setDragOverCard}
           onMoveStatus={onMoveStatus}
           onAdd={onAdd}
           onOpen={onOpen}
