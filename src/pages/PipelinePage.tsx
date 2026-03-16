@@ -501,11 +501,13 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
               </div>
             ) : sortField ? (
               <>
-                <div className="sm:hidden">
+                {/* Mobile + tablet card view (< lg) */}
+                <div className="lg:hidden">
                   {sortedItems.map((p, idx) => (
                     <MobileProspectCard key={p.id} p={p} idx={idx} handleSave={handleSave} onOpen={onOpen} />
                   ))}
                 </div>
+                {/* Desktop table rows (lg+) */}
                 <AnimatePresence mode="popLayout">
                   {sortedItems.map((p, idx) => (
                     <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
@@ -540,11 +542,13 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       <div className="flex-1 h-px bg-border/40" />
                       <span className="text-[10px] font-bold text-muted-foreground/60 tabular-nums bg-muted/60 px-1.5 py-0.5 rounded-md">{tg.items.length} lead{tg.items.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <div className="sm:hidden">
+                    {/* Mobile + tablet card view (< lg) */}
+                    <div className="lg:hidden">
                       {tg.items.map((p, idx) => (
                         <MobileProspectCard key={p.id} p={p} idx={idx} handleSave={handleSave} onOpen={onOpen} />
                       ))}
                     </div>
+                    {/* Desktop table rows (lg+) */}
                     <AnimatePresence mode="popLayout">
                       {tg.items.map((p, idx) => (
                         <motion.div key={p.id} layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.12 }}>
