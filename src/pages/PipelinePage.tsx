@@ -839,8 +839,6 @@ function BoardView({ prospects, onMoveStatus, onDelete, onAdd, onUpdate, onOpen,
   onOpen: (p: PipelineProspect) => void;
   activeTab: PageTab;
 }) {
-  const [dragOverCard, setDragOverCard] = useState<string | null>(null);
-
   const statusList = activeTab === 'listings' ? LISTING_STATUS_OPTIONS : BUYER_STATUS_OPTIONS;
   const dealType = activeTab === 'listings' ? 'seller' : 'buyer';
 
