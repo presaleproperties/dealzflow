@@ -733,6 +733,21 @@ export default function PipelinePage() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem('pipeline-view') as ViewMode) || 'list');
   const [selectedProspect, setSelectedProspect] = useState<PipelineProspect | null>(null);
   const [tempFilter, setTempFilter] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  const handleSort = useCallback((field: SortField) => {
+    triggerHaptic('light');
+    setSortField(prev => {
+      if (prev === field) {
+        // same field: flip direction, or if already flipped reset to null
+        setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+        return field;
+      }
+      setSortDir('desc');
+      return field;
+    });
+  }, []);
 
   const handleSheetSave = useCallback((id: string, updates: Partial<PipelineProspect>) => {
     updateProspect.mutate({ id, ...updates } as any);
