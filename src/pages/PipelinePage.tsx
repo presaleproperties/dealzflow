@@ -763,7 +763,7 @@ export default function PipelinePage() {
                       className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
                         isActive
-                          ? cn("ring-1", temp === 'hot' ? 'bg-rose-500/12 text-rose-500 ring-rose-500/30' : temp === 'warm' ? 'bg-amber-500/12 text-amber-500 ring-amber-500/30' : 'bg-sky-500/12 text-sky-500 ring-sky-500/30')
+                          ? cn(cfg.color, "bg-muted/30 ring-1 ring-border/50")
                           : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30"
                       )}
                     >
