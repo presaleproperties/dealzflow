@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.handle-manychat-inbound]
 verify_jwt = false
+
+[functions.handle-lead-inbound]
+verify_jwt = false
