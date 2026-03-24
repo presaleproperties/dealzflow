@@ -20,9 +20,9 @@ export function MobileNav() {
       <div
         className="absolute inset-0"
         style={{
-          background: 'hsl(var(--background) / 0.9)',
-          backdropFilter: 'blur(28px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          background: 'hsl(var(--background) / 0.92)',
+          backdropFilter: 'blur(32px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(200%)',
         }}
       />
 
@@ -30,12 +30,12 @@ export function MobileNav() {
       <div
         className="absolute inset-x-0 top-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent, hsl(var(--border) / 0.8) 15%, hsl(var(--border) / 0.8) 85%, transparent)',
+          background: 'linear-gradient(90deg, transparent, hsl(var(--border) / 0.9) 15%, hsl(var(--border) / 0.9) 85%, transparent)',
         }}
       />
 
       {/* Items row */}
-      <div className="relative flex justify-around items-center px-1 md:px-6 pt-2 pb-1.5">
+      <div className="relative flex justify-around items-center px-1 md:px-6 pt-2.5 pb-2">
         {navItems.map((item) => {
           const isActive =
             location.pathname === item.path ||
@@ -47,13 +47,13 @@ export function MobileNav() {
               key={item.path}
               to={item.path}
               onClick={() => triggerHaptic('light')}
-              className="relative flex flex-col items-center gap-1 flex-1 py-1 transition-all duration-200 active:scale-[0.88] active:opacity-60 select-none outline-none"
+              className="relative flex flex-col items-center gap-1.5 flex-1 py-1 transition-all duration-200 active:scale-[0.88] active:opacity-60 select-none outline-none"
             >
-              {/* Active indicator dot */}
+              {/* Active indicator bar */}
               <span
                 className={cn(
-                  'absolute -top-2 left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
-                  isActive ? 'w-1 h-1 opacity-100' : 'w-0 h-0 opacity-0',
+                  'absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
+                  isActive ? 'w-5 h-[2px] opacity-100' : 'w-0 h-[2px] opacity-0',
                 )}
                 style={{ background: 'hsl(var(--primary))' }}
               />
@@ -61,25 +61,25 @@ export function MobileNav() {
               {/* Icon container */}
               <div
                 className={cn(
-                  'flex items-center justify-center rounded-[12px] transition-all duration-250',
-                  'w-10 h-7 md:w-12 md:h-8',
+                  'flex items-center justify-center rounded-[14px] transition-all duration-250',
+                  'w-11 h-8 md:w-12 md:h-8',
                   isActive ? 'scale-105' : 'scale-100',
                 )}
                 style={isActive ? {
-                  background: 'hsl(var(--primary) / 0.1)',
-                  boxShadow: '0 1px 4px hsl(var(--primary) / 0.12)',
+                  background: 'hsl(var(--primary) / 0.12)',
+                  boxShadow: '0 0 0 1px hsl(var(--primary) / 0.15), 0 2px 8px hsl(var(--primary) / 0.15)',
                 } : undefined}
               >
                 <Icon
-                  strokeWidth={isActive ? 2.2 : 1.7}
+                  strokeWidth={isActive ? 2.3 : 1.8}
                   className={cn(
                     'transition-all duration-200',
-                    'w-[18px] h-[18px] md:w-5 md:h-5',
+                    'w-[19px] h-[19px] md:w-5 md:h-5',
                   )}
                   style={{
                     color: isActive
                       ? 'hsl(var(--primary))'
-                      : 'hsl(var(--muted-foreground) / 0.45)',
+                      : 'hsl(var(--muted-foreground) / 0.65)',
                   }}
                 />
               </div>
@@ -87,13 +87,13 @@ export function MobileNav() {
               {/* Label */}
               <span
                 className={cn(
-                  'text-[9.5px] md:text-[10.5px] tracking-tight leading-none transition-all duration-200',
-                  isActive ? 'font-bold' : 'font-medium',
+                  'text-[10.5px] md:text-[11px] tracking-tight leading-none transition-all duration-200',
+                  isActive ? 'font-bold' : 'font-semibold',
                 )}
                 style={{
                   color: isActive
                     ? 'hsl(var(--primary))'
-                    : 'hsl(var(--muted-foreground) / 0.45)',
+                    : 'hsl(var(--muted-foreground) / 0.7)',
                 }}
               >
                 {item.label}
