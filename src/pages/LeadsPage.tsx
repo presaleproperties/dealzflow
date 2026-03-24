@@ -37,7 +37,8 @@ const statusChips: { value: StatusFilter; label: string }[] = [
 ];
 
 const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-const WEBHOOK_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/handle-message-inbound`;
+const MANYCHAT_WEBHOOK_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/handle-manychat-inbound`;
+const TWILIO_WEBHOOK_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/handle-message-inbound`;
 
 export default function LeadsPage() {
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');

@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.handle-message-inbound]
 verify_jwt = false
+
+[functions.handle-manychat-inbound]
+verify_jwt = false
