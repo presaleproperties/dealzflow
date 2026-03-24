@@ -45,61 +45,57 @@ export function SyncedDealCard({ deal, index = 0, onClick }: SyncedDealCardProps
       className="group cursor-pointer"
     >
       <div className={cn(
-        "flex items-center gap-4 p-4 rounded-xl border bg-card transition-all duration-200",
-        "border-border/50 hover:border-border hover:shadow-md hover:shadow-black/[0.03]",
+        "flex items-center gap-3 p-4 rounded-xl border bg-card transition-all duration-200",
+        "border-border/50 hover:border-border hover:shadow-md",
       )}>
         {/* Status dot */}
-        <div className="flex flex-col items-center gap-1 shrink-0">
+        <div className="shrink-0">
           <div className={cn(
             "w-2.5 h-2.5 rounded-full",
-            deal.isListing ? 'bg-amber-500' :
-            deal.status === 'closed' ? 'bg-emerald-500' :
-            deal.status === 'active' ? 'bg-primary' :
-            'bg-amber-500'
+            deal.isListing ? 'bg-warning' :
+            deal.status === 'closed' ? 'bg-success' :
+            'bg-primary'
           )} />
         </div>
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Address */}
-          <div className="flex items-center gap-2 mb-0.5">
-            <h3 className="font-semibold text-sm text-foreground truncate">
+          {/* Address + badges */}
+          <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
+            <h3 className="font-semibold text-sm text-foreground truncate leading-snug">
               {displayAddress}
             </h3>
             {isPresale && (
-              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-warning/10 text-warning font-medium">
                 {partMatch?.[1]}
               </span>
             )}
             {deal.isListing && (
-              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold">
+              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-semibold">
                 Listing
               </span>
             )}
           </div>
 
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+          {/* Meta row — always visible on mobile */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
             {deal.clientName && deal.clientName !== 'Unknown' && (
-              <span className="truncate max-w-[130px]">{deal.clientName}</span>
+              <span className="text-xs text-muted-foreground truncate max-w-[120px]">{deal.clientName}</span>
             )}
             {dateLabel && (
-              <span className="flex items-center gap-1 shrink-0">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                 <Calendar className="h-3 w-3" />
                 {dateLabel}
               </span>
             )}
-            {lifecycleDisplay && (
-              <span className="hidden sm:inline text-muted-foreground/60">· {lifecycleDisplay}</span>
-            )}
             {deal.mlsNumber && deal.mlsNumber !== 'N/A' && (
-              <span className="hidden md:inline font-mono text-[11px]">· MLS {deal.mlsNumber}</span>
+              <span className="hidden md:inline font-mono text-[11px] text-muted-foreground">· MLS {deal.mlsNumber}</span>
             )}
           </div>
 
           {/* Participants - compact */}
           {visibleParticipants.length > 0 && (
-            <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground/70">
+            <div className="flex items-center gap-1.5 mt-1 text-[11px] text-muted-foreground/70">
               <Users className="h-3 w-3 shrink-0" />
               <span className="truncate">
                 {visibleParticipants.slice(0, 2).map(p => {
@@ -116,17 +112,17 @@ export function SyncedDealCard({ deal, index = 0, onClick }: SyncedDealCardProps
         </div>
 
         {/* Right side: Amount + Chevron */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="text-right">
             <p className={cn(
-              "text-base lg:text-lg font-bold tracking-tight",
-              deal.isListing ? 'text-amber-600 dark:text-amber-400' :
-              deal.status === 'closed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+              "text-sm font-bold tracking-tight",
+              deal.isListing ? 'text-warning' :
+              deal.status === 'closed' ? 'text-success' : 'text-foreground'
             )}>
               {formatCurrency(deal.displayCommission || deal.myNetPayout || 0)}
             </p>
             {deal.salePrice != null && deal.salePrice > 0 && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground hidden sm:block">
                 {formatCurrency(deal.salePrice)} sale
               </p>
             )}
