@@ -487,10 +487,10 @@ export default function AuthPage() {
           {/* Email form (secondary) */}
           {!awaitingConfirmation && (showEmailForm || mode === 'forgot' || mode === 'reset') && (
             <>
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === 'signup' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-[15px]">Full Name</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fullName" className="text-[13px] font-semibold text-foreground/80">Full Name</Label>
                     <Input
                       id="fullName"
                       type="text"
@@ -498,14 +498,14 @@ export default function AuthPage() {
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="John Smith"
                       required={mode === 'signup'}
-                      className="h-12"
+                      className="h-11"
                     />
                   </div>
                 )}
 
                 {mode !== 'reset' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[15px]">Email</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-[13px] font-semibold text-foreground/80">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -513,14 +513,14 @@ export default function AuthPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      className="h-12"
+                      className="h-11"
                     />
                   </div>
                 )}
 
                 {(mode === 'login' || mode === 'signup' || mode === 'reset') && (
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-[15px]">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password" className="text-[13px] font-semibold text-foreground/80">
                       {mode === 'reset' ? 'New Password' : 'Password'}
                     </Label>
                     <div className="relative">
@@ -534,14 +534,14 @@ export default function AuthPage() {
                         minLength={8}
                         maxLength={128}
                         autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                        className="h-12 pr-12"
+                        className="h-11 pr-12"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
                       >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     {/* Password strength indicator for signup/reset */}
