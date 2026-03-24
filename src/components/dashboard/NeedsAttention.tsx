@@ -76,9 +76,9 @@ export function NeedsAttention({ syncedTransactions }: NeedsAttentionProps) {
         <AlertTriangle className="h-5 w-5 text-muted-foreground" />
         <h3 className="font-semibold text-foreground">Needs Attention</h3>
         {totalItems > 0 && (
-          <Badge variant="outline" className="ml-auto">
+          <span className="ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-border/50 bg-background text-foreground">
             {totalItems} item{totalItems > 1 ? 's' : ''}
-          </Badge>
+          </span>
         )}
       </div>
 
