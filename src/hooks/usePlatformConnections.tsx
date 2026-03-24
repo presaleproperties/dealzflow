@@ -195,8 +195,11 @@ export function useUpsertConnection() {
 
 export function useDeleteConnection() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (connectionId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      if (!connectionId?.trim()) throw new Error('Invalid connection ID');
       // Route through edge function for ownership verification
       const { data, error } = await supabase.functions.invoke('manage-connection', {
         body: { action: 'delete', connection_id: connectionId },

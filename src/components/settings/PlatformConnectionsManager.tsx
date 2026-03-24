@@ -37,11 +37,21 @@ export interface SyncPreferences {
 const PREF_KEY = 'sync_preferences';
 
 function loadPreferences(): SyncPreferences {
+  const defaults: SyncPreferences = { transactions: true, listings: true, revshare: true, network: true };
   try {
     const raw = localStorage.getItem(PREF_KEY);
-    if (raw) return { transactions: true, listings: true, revshare: true, network: true, ...JSON.parse(raw) };
-  } catch {}
-  return { transactions: true, listings: true, revshare: true, network: true };
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw);
+    // Sanitize: only accept boolean values for known keys
+    return {
+      transactions: typeof parsed.transactions === 'boolean' ? parsed.transactions : true,
+      listings: typeof parsed.listings === 'boolean' ? parsed.listings : true,
+      revshare: typeof parsed.revshare === 'boolean' ? parsed.revshare : true,
+      network: typeof parsed.network === 'boolean' ? parsed.network : true,
+    };
+  } catch {
+    return defaults;
+  }
 }
 
 function savePreferences(prefs: SyncPreferences) {
