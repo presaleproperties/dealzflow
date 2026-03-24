@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
-  Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
+  Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert, MessageSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -20,6 +20,7 @@ const navSections: NavSection[] = [
     label: 'Production',
     items: [
       { label: 'Dashboard',        path: '/dashboard', icon: LayoutDashboard },
+      { label: 'Leads',            path: '/leads',     icon: MessageSquare },
       { label: 'Pipeline',         path: '/pipeline',  icon: GitBranch },
       { label: 'Deals',            path: '/deals',     icon: Handshake },
       { label: 'Payouts',          path: '/payouts',   icon: DollarSign },
