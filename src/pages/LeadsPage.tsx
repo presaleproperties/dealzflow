@@ -48,7 +48,7 @@ export default function LeadsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [webhookBannerDismissed, setWebhookBannerDismissed] = useState(false);
-  const [activeWebhook, setActiveWebhook] = useState<'manychat' | 'twilio'>('manychat');
+  const [activeWebhook, setActiveWebhook] = useState<'manychat' | 'twilio' | 'lead-ads'>('manychat');
 
   const copyWebhook = (url: string) => {
     navigator.clipboard.writeText(url);
