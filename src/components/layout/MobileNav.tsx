@@ -87,13 +87,13 @@ export function MobileNav() {
               {/* Label */}
               <span
                 className={cn(
-                  'text-[10px] md:text-[11px] tracking-tight leading-none transition-all duration-200',
-                  isActive ? 'font-bold' : 'font-medium',
+                  'text-[10.5px] md:text-[11px] tracking-tight leading-none transition-all duration-200',
+                  isActive ? 'font-bold' : 'font-semibold',
                 )}
                 style={{
                   color: isActive
                     ? 'hsl(var(--primary))'
-                    : 'hsl(var(--muted-foreground) / 0.65)',
+                    : 'hsl(var(--muted-foreground) / 0.7)',
                 }}
               >
                 {item.label}
