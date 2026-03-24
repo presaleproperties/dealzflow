@@ -41,6 +41,108 @@ Rules:
 
 Context: You're operating in Metro Vancouver. Uzair specializes in presale condos, resale, and investment properties.`;
 
+/**
+ * Send reply via ManyChat API (for instagram, facebook, whatsapp via ManyChat)
+ */
+async function sendViaManyChat(
+  subscriberId: string,
+  messageText: string,
+  lovableApiKey: string,
+  manychatApiKey: string
+): Promise<{ success: boolean; sid?: string; error?: string }> {
+  const MANYCHAT_GATEWAY = "https://connector-gateway.lovable.dev/manychat";
+
+  try {
+    const response = await fetch(`${MANYCHAT_GATEWAY}/fb/sending/sendContent`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableApiKey}`,
+        "X-Connection-Api-Key": manychatApiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        subscriber_id: subscriberId,
+        data: {
+          version: "v2",
+          content: {
+            messages: [
+              {
+                type: "text",
+                text: messageText,
+              },
+            ],
+          },
+        },
+        message_tag: "ACCOUNT_UPDATE",
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `ManyChat API error [${response.status}]: ${JSON.stringify(data)}`,
+      };
+    }
+    return { success: true, sid: data?.data?.message_id };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+/**
+ * Send reply via Twilio (for whatsapp/sms via Twilio)
+ */
+async function sendViaTwilio(
+  toPhone: string,
+  messageText: string,
+  channel: string,
+  lovableApiKey: string,
+  twilioApiKey: string
+): Promise<{ success: boolean; sid?: string; error?: string }> {
+  const TWILIO_GATEWAY = "https://connector-gateway.lovable.dev/twilio";
+  const isWhatsApp = channel === "whatsapp";
+  const formattedTo = isWhatsApp
+    ? toPhone.startsWith("whatsapp:")
+      ? toPhone
+      : `whatsapp:${toPhone}`
+    : toPhone;
+
+  const twilioFrom = Deno.env.get("TWILIO_WHATSAPP_FROM") || "whatsapp:+14155238886";
+  const formattedFrom = isWhatsApp
+    ? twilioFrom.startsWith("whatsapp:")
+      ? twilioFrom
+      : `whatsapp:${twilioFrom}`
+    : twilioFrom.replace("whatsapp:", "");
+
+  try {
+    const response = await fetch(`${TWILIO_GATEWAY}/Messages.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableApiKey}`,
+        "X-Connection-Api-Key": twilioApiKey,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: formattedTo,
+        From: formattedFrom,
+        Body: messageText,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Twilio error [${response.status}]: ${JSON.stringify(data)}`,
+      };
+    }
+    return { success: true, sid: data?.sid };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,21 +152,24 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
-    if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
-
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase env not configured");
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)
+      throw new Error("Supabase env not configured");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { conversationId, fromNumber } = await req.json();
+    const body = await req.json();
+    const { conversationId, fromNumber, manychatSubscriberId } = body;
+
     if (!conversationId) {
-      return new Response(JSON.stringify({ error: "conversationId is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "conversationId is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Fetch conversation details
@@ -75,10 +180,13 @@ serve(async (req) => {
       .single();
 
     if (convError || !conversation) {
-      return new Response(JSON.stringify({ error: "Conversation not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Conversation not found" }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Only respond if assigned to Zara
@@ -110,39 +218,47 @@ Current lead:
 - Name: ${conversation.lead_name}
 - Channel: ${conversation.channel}
 - Status: ${conversation.status}
-- Phone: ${conversation.lead_phone || "unknown"}`;
+- Phone: ${conversation.lead_phone || "unknown"}
+- Email: ${conversation.lead_email || "unknown"}`;
 
     // Call Lovable AI Gateway
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: contextualSystemPrompt },
-          ...chatMessages,
-        ],
-      }),
-    });
+    const aiResponse = await fetch(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: contextualSystemPrompt },
+            ...chatMessages,
+          ],
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       if (aiResponse.status === 429) {
-        console.error("AI rate limit hit");
-        return new Response(JSON.stringify({ error: "AI rate limit exceeded" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "AI rate limit exceeded" }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
       if (aiResponse.status === 402) {
-        console.error("AI credits exhausted");
-        return new Response(JSON.stringify({ error: "AI credits exhausted" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted" }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
       throw new Error(`AI gateway error [${aiResponse.status}]: ${errorText}`);
     }
@@ -151,70 +267,60 @@ Current lead:
     const replyBody = aiData.choices?.[0]?.message?.content;
     if (!replyBody) throw new Error("No content from AI");
 
-    // Determine recipient phone number
-    const toPhone = fromNumber || conversation.lead_phone;
-    if (!toPhone) {
-      // Save the message to DB without sending (no phone number)
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        direction: "outbound",
-        sender: "zara",
-        body: replyBody,
-        status: "sent",
-      });
+    // ── Determine send strategy ──────────────────────────────────────────────
+    // 1. If we have a ManyChat subscriber ID (or it's stored on the conversation's
+    //    external_id), use ManyChat API for instagram/facebook/whatsapp channels.
+    // 2. Otherwise fall back to Twilio for whatsapp/sms.
+    // 3. If no delivery mechanism, just save to DB as "no_phone".
 
-      // Log Zara activity
-      await supabase.from("zara_activity").insert({
-        conversation_id: conversationId,
-        action_type: "ai_reply_no_phone",
-        description: `Zara generated reply but no phone number available`,
-        payload: { reply_preview: replyBody.substring(0, 100) },
-      });
+    const resolvedSubscriberId =
+      manychatSubscriberId || conversation.external_id || null;
 
-      return new Response(
-        JSON.stringify({ success: true, reply: replyBody, sent: false, reason: "no_phone" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    const isManyChatChannel =
+      ["instagram", "facebook", "whatsapp", "sms"].includes(conversation.channel);
+
+    const MANYCHAT_API_KEY = Deno.env.get("MANYCHAT_API_KEY");
+    const TWILIO_API_KEY = Deno.env.get("TWILIO_API_KEY");
+
+    let sendResult: { success: boolean; sid?: string; error?: string } = {
+      success: false,
+      error: "no_delivery_mechanism",
+    };
+    let deliveryMethod = "none";
+
+    if (resolvedSubscriberId && MANYCHAT_API_KEY && isManyChatChannel) {
+      // Preferred: send via ManyChat
+      sendResult = await sendViaManyChat(
+        resolvedSubscriberId,
+        replyBody,
+        LOVABLE_API_KEY,
+        MANYCHAT_API_KEY
       );
-    }
-
-    // Format phone for WhatsApp if needed
-    const isWhatsApp = conversation.channel === "whatsapp";
-    const formattedTo = isWhatsApp
-      ? toPhone.startsWith("whatsapp:") ? toPhone : `whatsapp:${toPhone}`
-      : toPhone;
-
-    // Send via Twilio gateway
-    // The From number should be your Twilio WhatsApp sandbox or approved number
-    // We'll fetch it from the TWILIO_WHATSAPP_FROM env or use a default pattern
-    const twilioFrom = Deno.env.get("TWILIO_WHATSAPP_FROM") || "whatsapp:+14155238886"; // Twilio sandbox default
-
-    const twilioFrom_formatted = isWhatsApp
-      ? (twilioFrom.startsWith("whatsapp:") ? twilioFrom : `whatsapp:${twilioFrom}`)
-      : twilioFrom.replace("whatsapp:", "");
-
-    const twilioResponse = await fetch(
-      "https://connector-gateway.lovable.dev/twilio/Messages.json",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": TWILIO_API_KEY,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: formattedTo,
-          From: twilioFrom_formatted,
-          Body: replyBody,
-        }),
+      deliveryMethod = "manychat";
+      if (!sendResult.success) {
+        console.error("ManyChat send failed:", sendResult.error);
       }
-    );
-
-    const twilioData = await twilioResponse.json();
-    const messageSid = twilioData?.sid || null;
-    const sendStatus = twilioResponse.ok ? "sent" : "failed";
-
-    if (!twilioResponse.ok) {
-      console.error("Twilio send error:", JSON.stringify(twilioData));
+    } else if (
+      TWILIO_API_KEY &&
+      (conversation.channel === "whatsapp" || conversation.channel === "sms")
+    ) {
+      // Fallback: send via Twilio
+      const toPhone = fromNumber || conversation.lead_phone;
+      if (toPhone) {
+        sendResult = await sendViaTwilio(
+          toPhone,
+          replyBody,
+          conversation.channel,
+          LOVABLE_API_KEY,
+          TWILIO_API_KEY
+        );
+        deliveryMethod = "twilio";
+        if (!sendResult.success) {
+          console.error("Twilio send failed:", sendResult.error);
+        }
+      } else {
+        sendResult = { success: false, error: "no_phone" };
+      }
     }
 
     // Save outbound message to DB
@@ -223,8 +329,9 @@ Current lead:
       direction: "outbound",
       sender: "zara",
       body: replyBody,
-      twilio_message_sid: messageSid,
-      status: sendStatus,
+      twilio_message_sid: sendResult.sid || null,
+      status: sendResult.success ? "sent" : "failed",
+      metadata: { delivery_method: deliveryMethod, delivery_error: sendResult.error || null },
     });
 
     // Update conversation last_message_at
@@ -237,19 +344,35 @@ Current lead:
     await supabase.from("zara_activity").insert({
       conversation_id: conversationId,
       action_type: "ai_reply_sent",
-      description: `Zara sent a reply via ${conversation.channel}`,
-      payload: { message_sid: messageSid, reply_preview: replyBody.substring(0, 100) },
+      description: `Zara sent a reply via ${deliveryMethod} (${conversation.channel})`,
+      payload: {
+        delivery_method: deliveryMethod,
+        message_sid: sendResult.sid,
+        reply_preview: replyBody.substring(0, 100),
+        sent: sendResult.success,
+      },
     });
 
     return new Response(
-      JSON.stringify({ success: true, reply: replyBody, messageSid, sent: twilioResponse.ok }),
+      JSON.stringify({
+        success: true,
+        reply: replyBody,
+        deliveryMethod,
+        sent: sendResult.success,
+        sid: sendResult.sid,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("zara-respond error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });
