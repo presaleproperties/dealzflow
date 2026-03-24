@@ -252,9 +252,9 @@ export function useAddConversation() {
   return useMutation({
     mutationFn: async (conv: Omit<Conversation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user) throw new Error('Not authenticated');
-      const { data, error } = await supabase
-        .from('conversations')
-        .insert([{ ...conv, user_id: user.id }] as Parameters<typeof supabase.from<'conversations', typeof supabase['from']>>[0] extends never ? never : any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from('conversations') as any)
+        .insert({ ...conv, user_id: user.id })
         .select()
         .single();
       if (error) throw error;
