@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
@@ -252,21 +253,41 @@ export default function DashboardPage() {
 
           {/* Mobile Dashboard */}
           <div className="sm:hidden">
-            <div className="px-5 pt-3 pb-3">
+            <motion.div
+              className="px-5 pt-3 pb-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
               <p className="text-[10px] font-semibold text-muted-foreground/45 uppercase tracking-widest">{format(now, 'EEEE, MMMM d')}</p>
               <h1 className="text-[20px] font-bold tracking-[-0.03em] mt-0.5 text-foreground">Dashboard</h1>
-            </div>
+            </motion.div>
 
-            <div className="px-5 mb-3">
+            <motion.div
+              className="px-5 mb-3"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+            >
               <QuickStats {...quickStatsProps} />
-            </div>
+            </motion.div>
 
-            <div className="px-5 mb-3">
+            <motion.div
+              className="px-5 mb-3"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
+            >
               <GCIGoalTracker {...goalTrackerProps} />
-            </div>
+            </motion.div>
 
             <Tabs defaultValue="insights" className="pb-8">
-              <div className="px-5 mb-3">
+              <motion.div
+                className="px-5 mb-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <TabsList className="w-full grid grid-cols-4 h-9 bg-muted/40 rounded-xl p-0.5 border border-border/30">
                   {[
                     { value: 'insights', label: 'Insights' },
@@ -283,42 +304,30 @@ export default function DashboardPage() {
                     </TabsTrigger>
                   ))}
                 </TabsList>
-              </div>
+              </motion.div>
 
               <TabsContent value="insights" className="px-5 space-y-3 mt-0">
-                <UpcomingRevenue syncedTransactions={syncedTransactions} />
-                <PipelinePreview layout="horizontal" />
-                <NeedsAttention syncedTransactions={syncedTransactions} />
+                <FadeUp delay={0.0}><UpcomingRevenue syncedTransactions={syncedTransactions} /></FadeUp>
+                <FadeUp delay={0.07}><PipelinePreview layout="horizontal" /></FadeUp>
+                <FadeUp delay={0.14}><NeedsAttention syncedTransactions={syncedTransactions} /></FadeUp>
               </TabsContent>
 
               <TabsContent value="cashflow" className="px-5 space-y-3 mt-0">
-                <IncomeProjection payouts={[]} expenses={expenses} revShareMonthlyAvg={revShareMonthlyAvg} properties={properties} syncedPayouts={syncedPayouts} />
-                <RevShareSummaryCard revenueShare={revenueShare} />
+                <FadeUp delay={0.0}><IncomeProjection payouts={[]} expenses={expenses} revShareMonthlyAvg={revShareMonthlyAvg} properties={properties} syncedPayouts={syncedPayouts} /></FadeUp>
+                <FadeUp delay={0.08}><RevShareSummaryCard revenueShare={revenueShare} /></FadeUp>
               </TabsContent>
 
               <TabsContent value="taxes" className="px-5 space-y-3 mt-0">
-                <SafeToSpendCard
-                  projectedCashIn={incomeTotals.projected}
-                  monthlyExpenses={expenseTotals.monthly}
-                  taxSetAsideRequired={taxSetAsideRequired}
-                />
-                <TaxSafetyCard
-                  paidIncome={incomeTotals.paid}
-                  projectedIncome={incomeTotals.projected}
-                  deductibleExpenses={expenseTotals.annual}
-                />
-                <TaxProjection
-                  projectedIncome={incomeTotals.projected}
-                  paidIncome={incomeTotals.paid}
-                  totalExpenses={expenseTotals.annual}
-                />
+                <FadeUp delay={0.0}><SafeToSpendCard projectedCashIn={incomeTotals.projected} monthlyExpenses={expenseTotals.monthly} taxSetAsideRequired={taxSetAsideRequired} /></FadeUp>
+                <FadeUp delay={0.07}><TaxSafetyCard paidIncome={incomeTotals.paid} projectedIncome={incomeTotals.projected} deductibleExpenses={expenseTotals.annual} /></FadeUp>
+                <FadeUp delay={0.14}><TaxProjection projectedIncome={incomeTotals.projected} paidIncome={incomeTotals.paid} totalExpenses={expenseTotals.annual} /></FadeUp>
               </TabsContent>
 
               <TabsContent value="analytics" className="px-5 space-y-3 mt-0">
-                <DealsWrittenCard syncedTransactions={syncedTransactions} compact />
-                <ExpenseAnalytics expenses={expenses} />
-                <AIBusinessInsights syncedTransactions={syncedTransactions} />
-                <BusinessAnalytics deals={[]} payouts={[]} syncedPayouts={syncedPayouts} syncedTransactions={syncedTransactions} />
+                <FadeUp delay={0.0}><DealsWrittenCard syncedTransactions={syncedTransactions} compact /></FadeUp>
+                <FadeUp delay={0.07}><ExpenseAnalytics expenses={expenses} /></FadeUp>
+                <FadeUp delay={0.14}><AIBusinessInsights syncedTransactions={syncedTransactions} /></FadeUp>
+                <FadeUp delay={0.21}><BusinessAnalytics deals={[]} payouts={[]} syncedPayouts={syncedPayouts} syncedTransactions={syncedTransactions} /></FadeUp>
               </TabsContent>
             </Tabs>
           </div>
@@ -327,86 +336,102 @@ export default function DashboardPage() {
           <div className="hidden sm:block p-5 md:p-6 lg:p-6 space-y-5">
             {/* On tablet, show 2-col QuickStats + Goals side by side */}
             <div className="grid md:grid-cols-2 lg:grid-cols-1 gap-5">
-              <div className="space-y-5">
+              <motion.div
+                className="space-y-5"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.04, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <QuickStats {...quickStatsProps} />
-              </div>
-              <div className="md:flex md:items-stretch">
+              </motion.div>
+              <motion.div
+                className="md:flex md:items-stretch"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <div className="w-full">
                   <GCIGoalTracker {...goalTrackerProps} />
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             <Tabs defaultValue="insights" className="space-y-5">
-              <TabsList className="w-auto inline-flex h-10 p-0.5 bg-muted/40 rounded-xl border border-border/30">
-                <TabsTrigger value="insights" className={tabTriggerClass}>Insights</TabsTrigger>
-                <TabsTrigger value="cashflow" className={tabTriggerClass}>Cashflow</TabsTrigger>
-                <TabsTrigger value="taxes" className={tabTriggerClass}>Taxes</TabsTrigger>
-                <TabsTrigger value="analytics" className={tabTriggerClass}>Analytics</TabsTrigger>
-              </TabsList>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <TabsList className="w-auto inline-flex h-10 p-0.5 bg-muted/40 rounded-xl border border-border/30">
+                  <TabsTrigger value="insights" className={tabTriggerClass}>Insights</TabsTrigger>
+                  <TabsTrigger value="cashflow" className={tabTriggerClass}>Cashflow</TabsTrigger>
+                  <TabsTrigger value="taxes" className={tabTriggerClass}>Taxes</TabsTrigger>
+                  <TabsTrigger value="analytics" className={tabTriggerClass}>Analytics</TabsTrigger>
+                </TabsList>
+              </motion.div>
 
               {/* Insights Tab */}
               <TabsContent value="insights" className="mt-0 space-y-5">
-                <InsightsGreeting
-                  syncedTransactions={syncedTransactions}
-                  revenueShare={revenueShare}
-                  userName={userName}
-                  receivedYTD={receivedYTD}
-                  revShareMonthlyAvg={revShareMonthlyAvg}
-                />
-                <PipelinePreview layout="horizontal" />
-                <div className="grid md:grid-cols-2 gap-4 items-start">
-                  <UpcomingRevenue syncedTransactions={syncedTransactions} />
-                  <NeedsAttention syncedTransactions={syncedTransactions} />
-                </div>
-                <RevShareSummaryCard revenueShare={revenueShare} />
+                <FadeUp delay={0.0}>
+                  <InsightsGreeting syncedTransactions={syncedTransactions} revenueShare={revenueShare} userName={userName} receivedYTD={receivedYTD} revShareMonthlyAvg={revShareMonthlyAvg} />
+                </FadeUp>
+                <FadeUp delay={0.07}><PipelinePreview layout="horizontal" /></FadeUp>
+                <FadeUp delay={0.14}>
+                  <div className="grid md:grid-cols-2 gap-4 items-start">
+                    <UpcomingRevenue syncedTransactions={syncedTransactions} />
+                    <NeedsAttention syncedTransactions={syncedTransactions} />
+                  </div>
+                </FadeUp>
+                <FadeUp delay={0.21}><RevShareSummaryCard revenueShare={revenueShare} /></FadeUp>
               </TabsContent>
 
               {/* Cashflow Tab */}
               <TabsContent value="cashflow" className="mt-0 space-y-5">
-                <IncomeProjection payouts={[]} expenses={expenses} revShareMonthlyAvg={revShareMonthlyAvg} properties={properties} syncedPayouts={syncedPayouts} />
-                <ExpenseCommandCenter
-                  expenses={expenses}
-                  properties={properties}
-                  monthlyExpenses={expenseTotals.monthly}
-                  annualExpenses={expenseTotals.annual}
-                />
+                <FadeUp delay={0.0}><IncomeProjection payouts={[]} expenses={expenses} revShareMonthlyAvg={revShareMonthlyAvg} properties={properties} syncedPayouts={syncedPayouts} /></FadeUp>
+                <FadeUp delay={0.09}>
+                  <ExpenseCommandCenter expenses={expenses} properties={properties} monthlyExpenses={expenseTotals.monthly} annualExpenses={expenseTotals.annual} />
+                </FadeUp>
               </TabsContent>
 
               {/* Taxes Tab */}
               <TabsContent value="taxes" className="mt-0 space-y-5">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <SafeToSpendCard
-                    projectedCashIn={incomeTotals.projected}
-                    monthlyExpenses={expenseTotals.monthly}
-                    taxSetAsideRequired={taxSetAsideRequired}
-                  />
-                  <TaxSafetyCard
-                    paidIncome={incomeTotals.paid}
-                    projectedIncome={incomeTotals.projected}
-                    deductibleExpenses={expenseTotals.annual}
-                  />
-                </div>
-                <TaxProjection
-                  projectedIncome={incomeTotals.projected}
-                  paidIncome={incomeTotals.paid}
-                  totalExpenses={expenseTotals.annual}
-                />
+                <FadeUp delay={0.0}>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <SafeToSpendCard projectedCashIn={incomeTotals.projected} monthlyExpenses={expenseTotals.monthly} taxSetAsideRequired={taxSetAsideRequired} />
+                    <TaxSafetyCard paidIncome={incomeTotals.paid} projectedIncome={incomeTotals.projected} deductibleExpenses={expenseTotals.annual} />
+                  </div>
+                </FadeUp>
+                <FadeUp delay={0.1}><TaxProjection projectedIncome={incomeTotals.projected} paidIncome={incomeTotals.paid} totalExpenses={expenseTotals.annual} /></FadeUp>
               </TabsContent>
 
               {/* Analytics Tab */}
               <TabsContent value="analytics" className="mt-0 space-y-5">
-                <div className="grid md:grid-cols-2 gap-5">
-                  <DealsWrittenCard syncedTransactions={syncedTransactions} compact />
-                  <ExpenseAnalytics expenses={expenses} />
-                </div>
-                <AIBusinessInsights syncedTransactions={syncedTransactions} />
-                <BusinessAnalytics deals={[]} payouts={[]} syncedPayouts={syncedPayouts} syncedTransactions={syncedTransactions} />
+                <FadeUp delay={0.0}>
+                  <div className="grid md:grid-cols-2 gap-5">
+                    <DealsWrittenCard syncedTransactions={syncedTransactions} compact />
+                    <ExpenseAnalytics expenses={expenses} />
+                  </div>
+                </FadeUp>
+                <FadeUp delay={0.09}><AIBusinessInsights syncedTransactions={syncedTransactions} /></FadeUp>
+                <FadeUp delay={0.18}><BusinessAnalytics deals={[]} payouts={[]} syncedPayouts={syncedPayouts} syncedTransactions={syncedTransactions} /></FadeUp>
               </TabsContent>
             </Tabs>
           </div>
         </PullToRefresh>
       )}
     </AppLayout>
+  );
+}
+
+// Lightweight stagger wrapper — re-animates whenever the tab content mounts
+function FadeUp({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
