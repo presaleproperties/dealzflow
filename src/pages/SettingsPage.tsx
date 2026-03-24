@@ -847,19 +847,22 @@ function AppearanceSection() {
             type="button"
             onClick={() => setTheme(value)}
             className={cn(
-              'p-4 rounded-xl border-2 transition-all text-center group',
+              'relative p-4 rounded-xl border-2 transition-all duration-200 text-center group overflow-hidden',
               theme === value
-                ? 'border-accent bg-accent/10'
-                : 'border-border hover:border-muted-foreground'
+                ? 'border-accent/70 bg-accent/8 shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]'
+                : 'border-border/50 bg-muted/20 hover:border-border/80 hover:bg-muted/40',
             )}
           >
+            {theme === value && (
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            )}
             <ThemeIcon className={cn(
-              'w-6 h-6 mx-auto mb-2 transition-colors',
+              'w-5 h-5 mx-auto mb-2 transition-colors',
               theme === value ? 'text-accent' : 'text-muted-foreground group-hover:text-foreground'
             )} />
             <span className={cn(
-              'text-sm font-medium',
-              theme === value && 'text-accent'
+              'text-[12px] font-semibold tracking-[-0.01em]',
+              theme === value ? 'text-accent' : 'text-foreground/70'
             )}>
               {label}
             </span>
