@@ -36,12 +36,21 @@ const statusChips: { value: StatusFilter; label: string }[] = [
   { value: 'unresponsive', label: 'No Reply' },
 ];
 
+const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const WEBHOOK_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/handle-message-inbound`;
+
 export default function LeadsPage() {
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [webhookBannerDismissed, setWebhookBannerDismissed] = useState(false);
+
+  const copyWebhook = () => {
+    navigator.clipboard.writeText(WEBHOOK_URL);
+    toast.success('Webhook URL copied!');
+  };
 
   const { data: conversations = [], isLoading } = useConversations({
     channel: channelFilter,
