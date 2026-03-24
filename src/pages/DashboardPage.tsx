@@ -37,6 +37,7 @@ import { calculateTax, Province, TaxType } from '@/lib/taxCalculator';
 import { GCIGoalTracker } from '@/components/dashboard/GCIGoalTracker';
 import { DealsWrittenCard } from '@/components/dashboard/DealsWrittenCard';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
+import { LeadsAnalyticsCard } from '@/components/dashboard/LeadsAnalyticsCard';
 
 export default function DashboardPage() {
   const { data: expenses = [] } = useExpenses();
