@@ -43,6 +43,7 @@ export function ConversationPanel({ conversation }: Props) {
   const sendMessage = useSendMessage();
   const updateConversation = useUpdateConversation();
   const [tab, setTab] = useState<'messages' | 'notes' | 'activity'>('messages');
+  const [zaraTriggering, setZaraTriggering] = useState(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
