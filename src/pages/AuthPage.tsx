@@ -570,8 +570,8 @@ export default function AuthPage() {
                 )}
 
                 {mode === 'reset' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-[15px]">Confirm Password</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirmPassword" className="text-[13px] font-semibold text-foreground/80">Confirm Password</Label>
                     <Input
                       id="confirmPassword"
                       type={showPassword ? 'text' : 'password'}
@@ -580,17 +580,17 @@ export default function AuthPage() {
                       placeholder="••••••••"
                       required
                       minLength={8}
-                      className="h-12"
+                      className="h-11"
                     />
                   </div>
                 )}
 
                 {mode === 'login' && (
-                  <div className="flex justify-end">
+                  <div className="flex justify-end -mt-1">
                     <button
                       type="button"
                       onClick={() => { setMode('forgot'); setError(''); }}
-                      className="text-sm text-primary hover:underline"
+                      className="text-[13px] text-primary hover:underline underline-offset-2 font-medium"
                     >
                       Forgot password?
                     </button>
@@ -599,31 +599,31 @@ export default function AuthPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-[15px] font-semibold btn-premium mt-2" 
+                  className="w-full h-11 text-[14px] font-semibold mt-1" 
                   disabled={loading}
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
+                    <>
+                      <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                       Please wait...
-                    </span>
+                    </>
                   ) : mode === 'login' ? 'Sign In' 
                     : mode === 'signup' ? 'Create Account' 
                     : mode === 'forgot' ? (
-                      <><Mail className="w-4 h-4 mr-2" />Send Reset Link</>
+                      <><Mail className="w-4 h-4" />Send Reset Link</>
                     ) : 'Update Password'}
                 </Button>
               </form>
 
               {(mode === 'login' || mode === 'signup') && (
-                <p className="mt-8 text-center text-[15px] text-muted-foreground">
+                <p className="mt-5 text-center text-[13.5px] text-muted-foreground">
                   {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
                   <button
                     type="button"
                     onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-                    className="text-primary font-semibold active:opacity-50 transition-opacity"
+                    className="text-primary font-semibold active:opacity-50 transition-opacity hover:underline underline-offset-2"
                   >
-                    {mode === 'login' ? 'Sign up' : 'Sign in'}
+                    {mode === 'login' ? 'Sign up free' : 'Sign in'}
                   </button>
                 </p>
               )}
