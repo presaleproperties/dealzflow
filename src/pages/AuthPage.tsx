@@ -630,9 +630,10 @@ export default function AuthPage() {
               )}
             </>
           )}
+          </div>{/* end premium card */}
 
           {/* Legal links for mobile */}
-          <div className="lg:hidden flex justify-center gap-4 mt-8 text-sm text-muted-foreground">
+          <div className="lg:hidden flex justify-center gap-4 mt-6 text-sm text-muted-foreground">
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           </div>
