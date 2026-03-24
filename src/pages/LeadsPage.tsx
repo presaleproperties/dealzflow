@@ -9,7 +9,8 @@ import { ChannelBadge } from '@/components/leads/ChannelBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Search, Plus, Inbox } from 'lucide-react';
+import { Search, Plus, Inbox, Webhook, Copy, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 type ChannelFilter = 'all' | 'whatsapp' | 'sms' | 'email' | 'facebook' | 'instagram' | 'tiktok';
 type StatusFilter = 'all' | 'new' | 'contacted' | 'engaged' | 'qualified' | 'booked' | 'escalated' | 'unresponsive' | 'disqualified' | 'closed';
