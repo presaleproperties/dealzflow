@@ -221,7 +221,7 @@ export default function SettingsPage() {
               { value: 'integrations', label: 'Integrations' },
               { value: 'notifications', label: 'Reminders' },
             ].map(({ value, label }) => (
-              <TabsTrigger key={value} value={value} className="flex-1 min-w-fit py-2 px-3 whitespace-nowrap text-xs sm:text-sm font-medium rounded-lg">
+              <TabsTrigger key={value} value={value} className="flex-1 min-w-fit py-2 px-2.5 whitespace-nowrap text-[11.5px] sm:text-xs font-semibold rounded-[10px] tracking-[-0.01em]">
                 {label}
               </TabsTrigger>
             ))}
