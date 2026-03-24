@@ -309,6 +309,7 @@ function ConnectionCard({ connection, prefs }: { connection: PlatformConnection;
   const platformInfo = PLATFORMS.find(p => p.id === connection.platform);
   const [showRekey, setShowRekey] = useState(false);
   const [newApiKey, setNewApiKey] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Detect stuck syncing: status is 'syncing' but updated_at is >8 minutes ago
   const isStuckSyncing = connection.sync_status === 'syncing' &&
