@@ -187,7 +187,7 @@ export function Sidebar() {
         {navSections.map((section) => (
           <div key={section.label} className="mb-3">
             {!isCollapsed ? (
-              <div className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/22">
+              <div className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/40">
                 {section.label}
               </div>
             ) : (
