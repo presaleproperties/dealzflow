@@ -9,6 +9,7 @@ import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
+  LogOut,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -43,7 +44,6 @@ const standaloneItems: NavItem[] = [
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
-// Context so AppLayout can subscribe without polling
 export const SidebarCollapsedContext = createContext<boolean>(false);
 
 export function Sidebar() {
@@ -72,23 +72,30 @@ export function Sidebar() {
       <Link
         to={item.path}
         className={cn(
-          'relative flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150',
-          isCollapsed && 'justify-center px-0',
+          'relative flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-all duration-200 group',
+          isCollapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-2.5 py-[7px]',
           isActive
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/50 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60',
+            : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/50',
         )}
       >
+        {/* Active indicator */}
         {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-sidebar-primary" />
+          <span
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+            style={{ background: 'hsl(var(--sidebar-primary))' }}
+          />
         )}
         <item.icon
           className={cn(
-            'flex-shrink-0 transition-all duration-150',
-            isCollapsed ? 'w-[18px] h-[18px]' : 'w-[16px] h-[16px]',
-            isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/40',
+            'flex-shrink-0 transition-all duration-200',
+            isCollapsed ? 'w-[17px] h-[17px]' : 'w-[15px] h-[15px]',
+            isActive
+              ? 'opacity-100'
+              : 'opacity-50 group-hover:opacity-75',
           )}
-          strokeWidth={1.75}
+          style={isActive ? { color: 'hsl(var(--sidebar-primary))' } : undefined}
+          strokeWidth={isActive ? 2.1 : 1.75}
         />
         {!isCollapsed && (
           <span className="truncate">{item.label}</span>
@@ -100,7 +107,7 @@ export function Sidebar() {
       return (
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>{linkEl}</TooltipTrigger>
-          <TooltipContent side="right" className="font-medium">{item.label}</TooltipContent>
+          <TooltipContent side="right" className="font-medium text-xs">{item.label}</TooltipContent>
         </Tooltip>
       );
     }
@@ -111,30 +118,36 @@ export function Sidebar() {
     <aside
       className={cn(
         'hidden md:flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 ease-in-out z-40',
-        isCollapsed ? 'w-[56px]' : 'w-56',
+        isCollapsed ? 'w-[54px]' : 'w-[218px]',
       )}
     >
-      {/* Background */}
+      {/* Background — very deep with subtle noise feel */}
       <div
         className="absolute inset-0"
         style={{
           background: 'hsl(var(--sidebar-background))',
-          boxShadow: '1px 0 0 0 hsl(var(--sidebar-border))',
+          boxShadow: '1px 0 0 0 hsl(var(--sidebar-border) / 0.8)',
         }}
       />
 
       {/* Logo */}
-      <div className="relative px-3.5 pt-5 pb-4 flex items-center gap-2.5 min-h-[60px]">
+      <div className={cn(
+        'relative flex items-center gap-2.5 min-h-[58px]',
+        isCollapsed ? 'justify-center px-0 pt-4 pb-3' : 'px-3.5 pt-4 pb-3',
+      )}>
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
           <img
             src={logoMark}
             alt="Dealzflow"
-            className="w-7 h-7 rounded-lg flex-shrink-0 transition-opacity duration-200 group-hover:opacity-80"
+            className={cn(
+              'rounded-[9px] flex-shrink-0 transition-all duration-200 group-hover:opacity-80',
+              isCollapsed ? 'w-6 h-6' : 'w-[26px] h-[26px]',
+            )}
           />
           <span
             className={cn(
-              'transition-all duration-300 font-semibold text-[14px] tracking-[-0.02em] whitespace-nowrap overflow-hidden',
-              'text-sidebar-foreground/90',
+              'transition-all duration-300 font-bold text-[14px] tracking-[-0.03em] whitespace-nowrap overflow-hidden',
+              'text-sidebar-foreground/92',
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100',
             )}
           >
@@ -146,7 +159,7 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={toggleCollapse}
-        className="absolute -right-3 top-[52px] w-5 h-5 rounded-full flex items-center justify-center bg-background border border-border text-foreground/70 hover:text-foreground hover:border-primary/60 shadow-sm transition-all duration-200 z-10"
+        className="absolute -right-[11px] top-[50px] w-[22px] h-[22px] rounded-full flex items-center justify-center bg-sidebar-background border border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground hover:border-sidebar-primary/50 shadow-[0_2px_8px_-2px_hsl(0_0%_0%/0.3)] transition-all duration-200 z-10"
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {isCollapsed
@@ -155,16 +168,22 @@ export function Sidebar() {
         }
       </button>
 
+      {/* Sep */}
+      <div className="relative mx-3 h-px" style={{ background: 'hsl(var(--sidebar-border) / 0.5)' }} />
+
       {/* Navigation */}
-      <nav className="relative flex-1 px-2 py-1 space-y-0.5 overflow-y-auto overflow-x-hidden">
+      <nav className={cn(
+        'relative flex-1 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden',
+        isCollapsed ? 'px-0' : 'px-2',
+      )}>
         {navSections.map((section) => (
           <div key={section.label} className="mb-3">
             {!isCollapsed ? (
-              <div className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/30">
+              <div className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/22">
                 {section.label}
               </div>
             ) : (
-              <div className="border-t border-sidebar-border/40 mx-2 my-2" />
+              <div className="h-px mx-2 my-2" style={{ background: 'hsl(var(--sidebar-border) / 0.4)' }} />
             )}
             <div className="space-y-0.5">
               {section.items.map((item) => (
@@ -174,7 +193,7 @@ export function Sidebar() {
           </div>
         ))}
 
-        <div className="border-t border-sidebar-border/30 mx-1 my-1" />
+        <div className="h-px mx-2 my-1" style={{ background: 'hsl(var(--sidebar-border) / 0.35)' }} />
 
         {standaloneItems.map((item) => (
           <NavLink key={item.path} item={item} />
@@ -182,35 +201,35 @@ export function Sidebar() {
 
         {isAdmin && (
           <>
-            <div className="border-t border-sidebar-border/30 mx-1 my-1" />
+            <div className="h-px mx-2 my-1" style={{ background: 'hsl(var(--sidebar-border) / 0.35)' }} />
             {isCollapsed ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <Link
                     to="/admin"
                     className={cn(
-                      'flex items-center justify-center py-2 rounded-lg transition-all duration-150',
+                      'flex items-center justify-center py-2.5 mx-1 rounded-[10px] transition-all duration-200',
                       location.pathname === '/admin'
-                        ? 'text-warning bg-warning/10'
-                        : 'text-warning/40 hover:text-warning hover:bg-warning/8',
+                        ? 'text-warning bg-warning/12'
+                        : 'text-warning/35 hover:text-warning hover:bg-warning/10',
                     )}
                   >
-                    <ShieldAlert className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                    <ShieldAlert className="w-[17px] h-[17px]" strokeWidth={1.75} />
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">Admin</TooltipContent>
+                <TooltipContent side="right" className="font-medium text-xs">Admin</TooltipContent>
               </Tooltip>
             ) : (
               <Link
                 to="/admin"
                 className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150',
+                  'flex items-center gap-2.5 px-2.5 py-[7px] rounded-[10px] text-[13px] font-medium transition-all duration-200',
                   location.pathname === '/admin'
-                    ? 'bg-warning/10 text-warning'
-                    : 'text-warning/40 hover:text-warning hover:bg-warning/8',
+                    ? 'bg-warning/12 text-warning'
+                    : 'text-warning/35 hover:text-warning hover:bg-warning/10',
                 )}
               >
-                <ShieldAlert className="w-[16px] h-[16px] flex-shrink-0" strokeWidth={1.75} />
+                <ShieldAlert className="w-[15px] h-[15px] flex-shrink-0" strokeWidth={1.75} />
                 <span>Admin</span>
               </Link>
             )}
@@ -219,25 +238,29 @@ export function Sidebar() {
       </nav>
 
       {/* Sign out */}
-      <div className="relative px-2 py-3 border-t border-sidebar-border/40">
+      <div
+        className="relative px-2 py-3"
+        style={{ borderTop: '1px solid hsl(var(--sidebar-border) / 0.45)' }}
+      >
         {isCollapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button
                 onClick={signOut}
-                className="flex items-center justify-center w-full py-1.5 rounded-lg text-sidebar-foreground/25 hover:text-destructive/70 hover:bg-destructive/8 transition-all duration-150"
+                className="flex items-center justify-center w-full py-2 rounded-[10px] text-sidebar-foreground/22 hover:text-destructive/70 hover:bg-destructive/8 transition-all duration-200"
               >
-                <span className="text-base leading-none">↑</span>
+                <LogOut className="w-[14px] h-[14px]" strokeWidth={1.75} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="font-medium">Sign Out</TooltipContent>
+            <TooltipContent side="right" className="font-medium text-xs">Sign Out</TooltipContent>
           </Tooltip>
         ) : (
           <button
             onClick={signOut}
-            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[13px] font-medium text-sidebar-foreground/30 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-150"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-[10px] text-[12.5px] font-medium text-sidebar-foreground/28 hover:text-destructive/75 hover:bg-destructive/8 transition-all duration-200"
           >
-            Sign out
+            <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.75} />
+            <span>Sign out</span>
           </button>
         )}
       </div>
@@ -245,7 +268,6 @@ export function Sidebar() {
   );
 }
 
-// Lightweight hook — listens to custom event instead of polling
 export function useSidebarCollapsed() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';

@@ -19,12 +19,12 @@ function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   return (
     <button
-      className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground active:scale-90 transition-all duration-200"
+      className="h-8 w-8 shrink-0 flex items-center justify-center rounded-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 active:scale-90 transition-all duration-200"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       aria-label="Toggle theme"
     >
-      <Sun className="h-[15px] w-[15px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[15px] w-[15px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Sun className="h-[14px] w-[14px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-[14px] w-[14px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
     </button>
   );
 }
@@ -38,22 +38,30 @@ export function Header({
   backPath = '/dashboard'
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-40" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <header
+      className="sticky top-0 z-40"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
+      {/* Glass background */}
       <div
-        className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-150"
+        className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
         style={{ background: 'hsl(var(--background) / 0.88)' }}
       />
+      {/* Bottom hairline — gradient fade out at edges */}
       <div
         className="absolute inset-x-0 bottom-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, hsl(var(--border) / 0.65) 15%, hsl(var(--border) / 0.65) 85%, transparent)' }}
+        style={{
+          background: 'linear-gradient(90deg, transparent, hsl(var(--border) / 0.7) 10%, hsl(var(--border) / 0.7) 90%, transparent)',
+        }}
       />
 
-      <div className="relative flex items-center justify-between h-[52px] md:h-[60px] lg:h-[52px] px-4 sm:px-5 md:px-6 lg:px-6">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="relative flex items-center justify-between h-[52px] md:h-[58px] lg:h-[52px] px-4 sm:px-5 md:px-6">
+        {/* Left */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {showBackButton ? (
             <Link
               to={backPath}
-              className="md:hidden -ml-1.5 flex items-center text-primary font-medium active:opacity-50 transition-all duration-200"
+              className="md:hidden -ml-1.5 flex items-center text-primary font-semibold active:opacity-50 transition-all duration-200"
             >
               <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
               <span className="text-[15px] -ml-0.5 tracking-tight">Back</span>
@@ -61,32 +69,35 @@ export function Header({
           ) : (
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
-                <button className="shrink-0 -ml-1 h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground active:scale-95 transition-transform">
-                  <Menu className="h-[19px] w-[19px]" />
+                <button className="shrink-0 -ml-1 h-9 w-9 flex items-center justify-center rounded-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all duration-200">
+                  <Menu className="h-[18px] w-[18px]" strokeWidth={2} />
                 </button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-[240px] border-r border-border/40 bg-sidebar">
+              <SheetContent side="left" className="p-0 w-[240px] border-r-0" style={{ background: 'hsl(var(--sidebar-background))' }}>
                 <Sidebar />
               </SheetContent>
             </Sheet>
           )}
 
           <div className="min-w-0">
-            <h1 className="text-[16px] md:text-[18px] lg:text-[17px] font-semibold tracking-[-0.02em] truncate text-foreground leading-snug">
+            <h1 className="text-[15.5px] md:text-[17px] lg:text-[16px] font-semibold tracking-[-0.025em] truncate text-foreground leading-snug">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-[11px] md:text-[12px] text-muted-foreground/60 truncate hidden sm:block">{subtitle}</p>
+              <p className="text-[10.5px] md:text-[11.5px] text-muted-foreground/55 truncate hidden sm:block tracking-tight mt-0.5">
+                {subtitle}
+              </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
           {action}
           {showAddDeal && (
             <Link to="/deals/new">
-              <Button className="btn-premium h-8 md:h-9 px-3.5 md:px-4 text-[13px] font-semibold tracking-tight hidden sm:flex">
+              <Button className="btn-premium h-[30px] md:h-8 px-3.5 md:px-4 text-[12px] font-semibold tracking-tight hidden sm:flex">
                 New Deal
               </Button>
             </Link>
