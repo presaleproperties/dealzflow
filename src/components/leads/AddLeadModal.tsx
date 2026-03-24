@@ -231,7 +231,7 @@ export function AddLeadModal({ open, onOpenChange }: Props) {
                 <>
                   {/* Phone warning */}
                   {!form.lead_phone.trim() && (
-                    <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                    <p className="text-[11px] text-destructive/80">
                       ⚠ Add a phone number above to enable sending
                     </p>
                   )}
