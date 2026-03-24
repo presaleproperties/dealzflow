@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
-  Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
+  Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert, MessageSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
