@@ -72,11 +72,11 @@ export function Sidebar() {
       <Link
         to={item.path}
         className={cn(
-          'relative flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-all duration-200 group',
+        'relative flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-all duration-200 group',
           isCollapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-2.5 py-[7px]',
           isActive
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/50',
+            : 'text-sidebar-foreground/55 hover:text-sidebar-foreground hover:bg-sidebar-accent/60',
         )}
       >
         {/* Active indicator */}
@@ -147,7 +147,7 @@ export function Sidebar() {
           <span
             className={cn(
               'transition-all duration-300 font-bold text-[14px] tracking-[-0.03em] whitespace-nowrap overflow-hidden',
-              'text-sidebar-foreground/92',
+              'text-sidebar-foreground/80',
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100',
             )}
           >
@@ -159,12 +159,20 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={toggleCollapse}
-        className="absolute -right-[11px] top-[50px] w-[22px] h-[22px] rounded-full flex items-center justify-center bg-sidebar-background border border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground hover:border-sidebar-primary/50 shadow-[0_2px_8px_-2px_hsl(0_0%_0%/0.3)] transition-all duration-200 z-10"
+        className="absolute -right-[13px] top-[50px] w-[26px] h-[26px] rounded-full flex items-center justify-center transition-all duration-200 z-10"
+        style={{
+          background: 'hsl(var(--sidebar-background))',
+          border: '1.5px solid hsl(var(--sidebar-border))',
+          color: 'hsl(var(--sidebar-foreground) / 0.7)',
+          boxShadow: '0 2px 8px -2px hsl(0 0% 0% / 0.18), 0 0 0 0.5px hsl(var(--sidebar-border))',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'hsl(var(--sidebar-primary))')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'hsl(var(--sidebar-foreground) / 0.7)')}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {isCollapsed
-          ? <ChevronRight className="w-2.5 h-2.5" />
-          : <ChevronLeft className="w-2.5 h-2.5" />
+          ? <ChevronRight className="w-3 h-3" />
+          : <ChevronLeft className="w-3 h-3" />
         }
       </button>
 
@@ -179,7 +187,7 @@ export function Sidebar() {
         {navSections.map((section) => (
           <div key={section.label} className="mb-3">
             {!isCollapsed ? (
-              <div className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/22">
+              <div className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/40">
                 {section.label}
               </div>
             ) : (
@@ -245,10 +253,10 @@ export function Sidebar() {
         {isCollapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
-              <button
-                onClick={signOut}
-                className="flex items-center justify-center w-full py-2 rounded-[10px] text-sidebar-foreground/22 hover:text-destructive/70 hover:bg-destructive/8 transition-all duration-200"
-              >
+        <button
+            onClick={signOut}
+            className="flex items-center justify-center w-full py-2 rounded-[10px] text-sidebar-foreground/45 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-200"
+          >
                 <LogOut className="w-[14px] h-[14px]" strokeWidth={1.75} />
               </button>
             </TooltipTrigger>
@@ -257,7 +265,7 @@ export function Sidebar() {
         ) : (
           <button
             onClick={signOut}
-            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-[10px] text-[12.5px] font-medium text-sidebar-foreground/28 hover:text-destructive/75 hover:bg-destructive/8 transition-all duration-200"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-[10px] text-[12.5px] font-medium text-sidebar-foreground/45 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-200"
           >
             <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.75} />
             <span>Sign out</span>
