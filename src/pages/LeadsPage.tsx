@@ -54,7 +54,38 @@ export default function LeadsPage() {
     toast.success('Webhook URL copied!');
   };
 
-  ...
+  const { data: conversations = [], isLoading } = useConversations({
+    channel: channelFilter,
+    status: statusFilter,
+    search: search || undefined,
+  });
+
+  const selectedConversation = conversations.find(c => c.id === selectedId) ?? null;
+
+  const stats = {
+    total: conversations.length,
+    new: conversations.filter(c => c.status === 'new').length,
+    zara: conversations.filter(c => c.assigned_to === 'zara').length,
+    hot: conversations.filter(c => c.heat >= 70).length,
+  };
+
+  return (
+    <AppLayout>
+      <Header
+        title="Leads"
+        subtitle="Universal Inbox"
+        showAddDeal={false}
+        action={
+          <Button
+            size="sm"
+            className="h-8 px-3 text-[12px] font-semibold"
+            onClick={() => setAddLeadOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Add Lead
+          </Button>
+        }
+      />
 
       {/* Webhook Setup Banner */}
       {!webhookBannerDismissed && (
@@ -67,16 +98,24 @@ export default function LeadsPage() {
                 onClick={() => setActiveWebhook('manychat')}
                 className={cn(
                   'px-2 py-0.5 rounded text-[10px] font-semibold transition-all',
-                  activeWebhook === 'manychat' ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                  activeWebhook === 'manychat'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
                 )}
-              >ManyChat</button>
+              >
+                ManyChat
+              </button>
               <button
                 onClick={() => setActiveWebhook('twilio')}
                 className={cn(
                   'px-2 py-0.5 rounded text-[10px] font-semibold transition-all',
-                  activeWebhook === 'twilio' ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                  activeWebhook === 'twilio'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
                 )}
-              >Twilio</button>
+              >
+                Twilio
+              </button>
             </div>
             <button
               onClick={() => setWebhookBannerDismissed(true)}
@@ -88,7 +127,7 @@ export default function LeadsPage() {
           <div className="px-3 pb-2 flex items-center gap-2">
             {activeWebhook === 'manychat' ? (
               <span className="text-muted-foreground flex-1">
-                In ManyChat → <span className="font-medium text-foreground">Settings → API</span> → External Request, paste this URL and select POST + JSON:{' '}
+                In ManyChat → <span className="font-medium text-foreground">Automation → Flow</span> → add an External Request step, paste this URL, set method to POST + JSON:{' '}
                 <span className="font-mono text-primary/80 break-all">{MANYCHAT_WEBHOOK_URL}</span>
               </span>
             ) : (
