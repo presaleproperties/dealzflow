@@ -213,8 +213,19 @@ export default function DealsPage() {
 
               {/* ── Filter banner ── */}
               {(monthParam || filterParam) && (
-                <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm ${filterParam === 'overdue' ? 'bg-destructive/10 border-destructive/25' : filterParam === 'this-week' ? 'bg-amber-500/10 border-amber-500/25' : 'bg-primary/10 border-primary/25'}`}>
-                  <span className={`font-medium ${filterParam === 'overdue' ? 'text-destructive' : filterParam === 'this-week' ? 'text-amber-500' : 'text-primary'}`}>
+                <div className={cn(
+                  "flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm",
+                  filterParam === 'overdue'
+                    ? 'bg-destructive/10 border-destructive/25'
+                    : filterParam === 'this-week'
+                    ? 'bg-warning/10 border-warning/25'
+                    : 'bg-primary/10 border-primary/25'
+                )}>
+                  <span className={cn(
+                    "font-medium",
+                    filterParam === 'overdue' ? 'text-destructive' :
+                    filterParam === 'this-week' ? 'text-warning' : 'text-primary'
+                  )}>
                     {monthParam
                       ? `Showing deals closing in ${format(parseISO(`${monthParam}-01`), 'MMMM yyyy')}`
                       : filterParam === 'overdue'
@@ -231,7 +242,7 @@ export default function DealsPage() {
               )}
 
               {/* ── Stats Row ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
                 {[
                   { label: 'Total', value: stats.totalDeals.toString(), sub: `${stats.active} active · ${stats.closed} closed` },
                   { label: 'Earned', value: formatCurrencyCompact(stats.closedNet), sub: `${stats.closed} closed deals` },
@@ -243,11 +254,11 @@ export default function DealsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04, type: 'spring', stiffness: 240, damping: 28 }}
-                    className="card-premium p-4 space-y-1"
+                    className="card-premium p-3.5 md:p-4 space-y-1 overflow-hidden"
                   >
                     <p className="metric-label">{stat.label}</p>
-                    <p className="text-xl font-bold tracking-tight text-foreground truncate">{stat.value}</p>
-                    <p className="text-[11px] text-muted-foreground leading-tight">{stat.sub}</p>
+                    <p className="text-lg md:text-xl font-bold tracking-tight text-foreground leading-none">{stat.value}</p>
+                    <p className="text-[10px] md:text-[11px] text-muted-foreground leading-tight line-clamp-2">{stat.sub}</p>
                   </motion.div>
                 ))}
               </div>
@@ -258,10 +269,10 @@ export default function DealsPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => { triggerHaptic('light'); setShowMissingInfo(true); }}
-                  className="w-full flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-left transition-colors hover:bg-amber-500/10"
+                  className="w-full flex items-center gap-3 rounded-xl border border-warning/20 bg-warning/5 p-3.5 text-left transition-colors hover:bg-warning/10"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">
@@ -303,8 +314,9 @@ export default function DealsPage() {
                 </div>
 
                 {/* Search + Controls */}
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1 relative">
+                <div className="space-y-2">
+                  {/* Search bar full width */}
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input
                       placeholder="Search address, client, MLS..."
@@ -322,45 +334,48 @@ export default function DealsPage() {
                     )}
                   </div>
 
-                  <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-                    <SelectTrigger className="w-[110px] h-10 rounded-lg bg-card border-border/50 text-sm">
-                      <ArrowUpDown className="h-3.5 w-3.5 mr-1 text-muted-foreground/50" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg">
-                      {SORT_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-sm">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Controls row — sort + filter + add on one line */}
+                  <div className="flex gap-2 items-center">
+                    <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                      <SelectTrigger className="flex-1 h-10 rounded-lg bg-card border-border/50 text-sm min-w-0">
+                        <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground/50 shrink-0" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-lg">
+                        {SORT_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={cn(
-                      'h-10 w-10 rounded-lg border-border/50 bg-card',
-                      hasActiveFilters && 'border-primary/40 bg-primary/5 text-primary'
-                    )}
-                    onClick={() => {
-                      triggerHaptic('light');
-                      setShowFilters(!showFilters);
-                    }}
-                  >
-                    <Filter className="h-4 w-4" />
-                  </Button>
-
-                  <Link to="/deals/new">
                     <Button
-                      size="sm"
-                      className="h-10 rounded-lg gap-1.5 px-4 font-medium shadow-sm"
-                      onClick={() => triggerHaptic('light')}
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        'h-10 w-10 shrink-0 rounded-lg border-border/50 bg-card',
+                        hasActiveFilters && 'border-primary/40 bg-primary/5 text-primary'
+                      )}
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setShowFilters(!showFilters);
+                      }}
                     >
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden sm:inline">Add Deal</span>
+                      <Filter className="h-4 w-4" />
                     </Button>
-                  </Link>
+
+                    <Link to="/deals/new" className="shrink-0">
+                      <Button
+                        size="sm"
+                        className="h-10 rounded-lg gap-1.5 px-3 sm:px-4 font-medium shadow-sm"
+                        onClick={() => triggerHaptic('light')}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden xs:inline sm:inline">Add</span>
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Filter Panel */}
