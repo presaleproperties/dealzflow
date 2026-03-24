@@ -289,6 +289,7 @@ export default function DashboardPage() {
               <TabsContent value="insights" className="px-5 space-y-3 mt-0">
                 <UpcomingRevenue syncedTransactions={syncedTransactions} />
                 <PipelinePreview layout="horizontal" />
+                <LeadsAnalyticsCard />
                 <NeedsAttention syncedTransactions={syncedTransactions} />
               </TabsContent>
 
