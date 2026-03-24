@@ -90,19 +90,24 @@ export function QuickStats({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              'rounded-2xl p-4 border relative overflow-hidden cursor-default',
-              'transition-transform duration-300 hover:-translate-y-0.5',
+              'rounded-[20px] p-4 border relative overflow-hidden cursor-default',
+              'transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg',
               card.bg,
               card.border,
             )}
+            style={{
+              boxShadow: '0 1px 0 0 hsl(0 0% 100% / 0.06) inset, 0 2px 12px -4px hsl(0 0% 0% / 0.18)',
+            }}
           >
             {/* Top shine */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-white/10" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/12" />
+            {/* Bottom inner shadow */}
+            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/[0.04] to-transparent dark:from-black/10" />
 
             {/* Label */}
             <div className="flex items-center gap-1.5 mb-3">
-              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', card.dot)} />
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted-foreground/70">
+              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 shadow-sm', card.dot)} />
+              <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground/75">
                 {card.label}
               </span>
             </div>
@@ -110,12 +115,12 @@ export function QuickStats({
             {/* Value */}
             <AnimatedCurrency
               value={value}
-              className={cn('text-[21px] sm:text-[22px] font-bold block tracking-[-0.03em] leading-none mb-1.5', card.accent)}
+              className={cn('text-[22px] sm:text-[23px] font-extrabold block tracking-[-0.035em] leading-none mb-1.5', card.accent)}
               duration={0.8 + index * 0.06}
             />
 
             {/* Subtitle */}
-            <p className="text-[11px] text-muted-foreground/60 leading-tight truncate">
+            <p className="text-[10.5px] text-muted-foreground/65 leading-tight truncate font-medium">
               {subtitle}
             </p>
           </motion.div>
