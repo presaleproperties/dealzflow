@@ -6,8 +6,10 @@ import { MessageComposer } from './MessageComposer';
 import { NotesPanel, ActivityPanel } from './LeadPanels';
 import { ChannelBadge } from './ChannelBadge';
 import { cn } from '@/lib/utils';
-import { Phone, Mail, MoreHorizontal, Zap, User, Flame } from 'lucide-react';
+import { Phone, Mail, MoreHorizontal, Zap, Flame, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const statusColors: Record<string, string> = {
   new: 'hsl(217 91% 60%)', contacted: 'hsl(43 96% 56%)', engaged: 'hsl(158 64% 52%)',
