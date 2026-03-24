@@ -79,21 +79,21 @@ export function SyncedDealCard({ deal, index = 0, onClick }: SyncedDealCardProps
           </div>
 
           {/* Meta row */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
             {deal.clientName && deal.clientName !== 'Unknown' && (
-              <span className="truncate max-w-[140px]">{deal.clientName}</span>
-            )}
-            {lifecycleDisplay && (
-              <span className="hidden sm:inline">· {lifecycleDisplay}</span>
-            )}
-            {deal.mlsNumber && deal.mlsNumber !== 'N/A' && (
-              <span className="hidden md:inline font-mono text-[11px]">· MLS {deal.mlsNumber}</span>
+              <span className="truncate max-w-[130px]">{deal.clientName}</span>
             )}
             {dateLabel && (
-              <span className="hidden sm:flex items-center gap-1">
+              <span className="flex items-center gap-1 shrink-0">
                 <Calendar className="h-3 w-3" />
                 {dateLabel}
               </span>
+            )}
+            {lifecycleDisplay && (
+              <span className="hidden sm:inline text-muted-foreground/60">· {lifecycleDisplay}</span>
+            )}
+            {deal.mlsNumber && deal.mlsNumber !== 'N/A' && (
+              <span className="hidden md:inline font-mono text-[11px]">· MLS {deal.mlsNumber}</span>
             )}
           </div>
 
