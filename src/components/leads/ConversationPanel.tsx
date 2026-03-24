@@ -65,6 +65,28 @@ export function ConversationPanel({ conversation }: Props) {
     });
   };
 
+  const triggerZara = async () => {
+    if (zaraTriggering) return;
+    setZaraTriggering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-respond', {
+        body: { conversationId: conversation.id },
+      });
+      if (error) throw error;
+      if (data?.skipped) {
+        toast.info('Zara is not assigned to this conversation');
+      } else if (data?.success) {
+        toast.success('Zara replied successfully');
+      } else {
+        toast.error('Zara could not respond: ' + (data?.error || 'Unknown error'));
+      }
+    } catch (err: unknown) {
+      toast.error('Failed to trigger Zara: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setZaraTriggering(false);
+    }
+  };
+
   // Group messages by day
   const groupedMessages: { date: Date; messages: typeof messages }[] = [];
   for (const msg of messages) {
