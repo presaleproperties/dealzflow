@@ -213,8 +213,19 @@ export default function DealsPage() {
 
               {/* ── Filter banner ── */}
               {(monthParam || filterParam) && (
-                <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm ${filterParam === 'overdue' ? 'bg-destructive/10 border-destructive/25' : filterParam === 'this-week' ? 'bg-amber-500/10 border-amber-500/25' : 'bg-primary/10 border-primary/25'}`}>
-                  <span className={`font-medium ${filterParam === 'overdue' ? 'text-destructive' : filterParam === 'this-week' ? 'text-amber-500' : 'text-primary'}`}>
+                <div className={cn(
+                  "flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm",
+                  filterParam === 'overdue'
+                    ? 'bg-destructive/10 border-destructive/25'
+                    : filterParam === 'this-week'
+                    ? 'bg-warning/10 border-warning/25'
+                    : 'bg-primary/10 border-primary/25'
+                )}>
+                  <span className={cn(
+                    "font-medium",
+                    filterParam === 'overdue' ? 'text-destructive' :
+                    filterParam === 'this-week' ? 'text-warning' : 'text-primary'
+                  )}>
                     {monthParam
                       ? `Showing deals closing in ${format(parseISO(`${monthParam}-01`), 'MMMM yyyy')}`
                       : filterParam === 'overdue'
