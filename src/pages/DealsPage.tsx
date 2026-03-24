@@ -231,7 +231,7 @@ export default function DealsPage() {
               )}
 
               {/* ── Stats Row ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
                 {[
                   { label: 'Total', value: stats.totalDeals.toString(), sub: `${stats.active} active · ${stats.closed} closed` },
                   { label: 'Earned', value: formatCurrencyCompact(stats.closedNet), sub: `${stats.closed} closed deals` },
@@ -243,11 +243,11 @@ export default function DealsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04, type: 'spring', stiffness: 240, damping: 28 }}
-                    className="card-premium p-4 space-y-1"
+                    className="card-premium p-3.5 md:p-4 space-y-1 overflow-hidden"
                   >
                     <p className="metric-label">{stat.label}</p>
-                    <p className="text-xl font-bold tracking-tight text-foreground truncate">{stat.value}</p>
-                    <p className="text-[11px] text-muted-foreground leading-tight">{stat.sub}</p>
+                    <p className="text-lg md:text-xl font-bold tracking-tight text-foreground leading-none">{stat.value}</p>
+                    <p className="text-[10px] md:text-[11px] text-muted-foreground leading-tight line-clamp-2">{stat.sub}</p>
                   </motion.div>
                 ))}
               </div>
