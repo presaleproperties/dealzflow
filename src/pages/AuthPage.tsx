@@ -270,8 +270,10 @@ export default function AuthPage() {
       </div>
 
       {/* Right side - auth */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background">
-        <div className="w-full max-w-sm">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background relative overflow-hidden">
+        {/* Subtle radial glow */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,hsl(var(--primary)/0.06),transparent)]" />
+        <div className="w-full max-w-sm relative">
           {/* Mobile logo */}
           <div className="lg:hidden flex flex-col items-center gap-3 mb-10">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
