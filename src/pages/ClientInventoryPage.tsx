@@ -4,22 +4,21 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useClientInventory, useUpsertClientInventory, useDeleteClientInventory, ClientInventoryItem } from '@/hooks/useClientInventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { Plus, Search, Building2, Home, Layers, Edit2, Trash2, MapPin, Calendar, DollarSign, Filter, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Plus, Search, Building2, Home, Layers, Edit2, Trash2, MapPin, Calendar, DollarSign, AlertTriangle, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PROPERTY_TYPES = ['Condo', 'Townhome', 'Detached Home', 'Presale'] as const;
-// Quick-pick types shown in the inline popover (3 main options only)
 const QUICK_TYPES = ['Condo', 'Townhome', 'Detached'] as const;
 
 const propertyTypeIcon = {
@@ -221,26 +220,28 @@ function QuickTypePicker({ item }: { item: ClientInventoryItem }) {
     });
   };
 
-  const typeColor = item.propertyType ? (propertyTypeColor[item.propertyType] || 'bg-muted/50 text-muted-foreground border-border') : '';
+  const typeColor = item.propertyType
+    ? (propertyTypeColor[item.propertyType] || 'bg-muted/50 text-muted-foreground border-border')
+    : '';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {item.propertyType ? (
           <button className={cn(
-            "flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors hover:opacity-80",
+            "flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors hover:opacity-80",
             typeColor
           )}>
             {item.propertyType}
-            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+            <ChevronDown className="w-2.5 h-2.5 opacity-50" />
           </button>
         ) : (
-          <button className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground/60 hover:text-primary hover:border-primary/40 transition-colors">
+          <button className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-dashed border-muted-foreground/30 text-muted-foreground/60 hover:text-primary hover:border-primary/40 transition-colors">
             + type
           </button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-1.5" align="end" side="bottom">
+      <PopoverContent className="w-auto p-1.5" align="start" side="bottom">
         <div className="flex gap-1">
           {QUICK_TYPES.map(t => (
             <button
@@ -263,95 +264,134 @@ function QuickTypePicker({ item }: { item: ClientInventoryItem }) {
   );
 }
 
-// ─── Property Card ─────────────────────────────────────────────────────────────
-function InventoryCard({ item, onEdit, onDelete }: {
+// ─── Inventory Row ─────────────────────────────────────────────────────────────
+function InventoryRow({ item, index, onEdit, onDelete }: {
   item: ClientInventoryItem;
+  index: number;
   onEdit: () => void;
   onDelete?: () => void;
 }) {
-  const Icon = item.propertyType ? (propertyTypeIcon[item.propertyType as keyof typeof propertyTypeIcon] || Building2) : Building2;
-  const typeColor = item.propertyType ? (propertyTypeColor[item.propertyType] || 'bg-muted text-muted-foreground border-border') : 'bg-muted/50 text-muted-foreground border-border';
   const isClosed = item.dealStatus === 'closed';
+  const isActive = item.dealStatus === 'active';
+
+  const dateDisplay = item.closeDate
+    ? formatDate(item.closeDate)
+    : item.closeDateEst
+      ? `Est. ${formatDate(item.closeDateEst)}`
+      : item.purchaseDate
+        ? formatDate(item.purchaseDate)
+        : null;
 
   return (
-    <div className="group relative bg-card border border-border rounded-2xl p-4 hover:shadow-md transition-all duration-200 hover:border-border/80">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className={cn("flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center border", typeColor)}>
-            <Icon className="w-4 h-4" />
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.025, 0.3), duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className="group"
+    >
+      <div className={cn(
+        "flex items-center gap-4 px-5 py-4 border-b border-border/40 last:border-b-0",
+        "hover:bg-muted/25 transition-colors duration-150",
+      )}>
+
+        {/* Status dot */}
+        <div className="shrink-0 w-2 h-2 rounded-full mt-0.5" style={{
+          backgroundColor: isClosed
+            ? 'hsl(var(--success))'
+            : isActive
+              ? 'hsl(var(--primary))'
+              : 'hsl(var(--muted-foreground) / 0.4)',
+        }} />
+
+        {/* Primary: name + address */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-semibold text-sm text-foreground leading-snug">
+              {item.buyerName}
+            </span>
+            {item.isPotentialDuplicate && (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-xs">
+                    <p className="font-semibold text-warning mb-0.5">Potential Duplicate</p>
+                    <p>{item.duplicateReason || 'This entry may already exist in your ReZen sync.'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-sm text-foreground truncate">{item.buyerName}</p>
-              {item.isPotentialDuplicate && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="flex-shrink-0">
-                        <AlertTriangle className="w-3.5 h-3.5 text-warning" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs text-xs">
-                      <p className="font-semibold text-warning mb-0.5">Potential Duplicate</p>
-                      <p>{item.duplicateReason || 'This entry may already exist in your ReZen sync.'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-            {item.projectName && (
-              <p className="text-xs text-muted-foreground truncate">{item.projectName}</p>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            {(item.propertyAddress || item.projectName) && (
+              <span className="text-xs text-muted-foreground truncate max-w-[260px] flex items-center gap-1">
+                <MapPin className="w-3 h-3 shrink-0" />
+                {item.propertyAddress || item.projectName}
+              </span>
+            )}
+            {dateDisplay && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                <Calendar className="w-3 h-3" />
+                {dateDisplay}
+              </span>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+
+        {/* Property type badge */}
+        <div className="shrink-0 hidden sm:block">
           <QuickTypePicker item={item} />
+        </div>
+
+        {/* Price */}
+        <div className="shrink-0 text-right hidden sm:block w-28">
+          {item.purchasePrice ? (
+            <span className="text-sm font-semibold text-foreground tabular-nums">
+              {formatCurrency(item.purchasePrice)}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground/40">No price</span>
+          )}
+        </div>
+
+        {/* Status badge */}
+        <div className="shrink-0 hidden md:block w-16 text-right">
           {isClosed ? (
-            <Badge variant="outline" className="text-[10px] font-medium px-2 py-0.5 bg-success/8 text-success border-success/20">Closed</Badge>
-          ) : item.dealStatus === 'active' ? (
-            <Badge variant="outline" className="text-[10px] font-medium px-2 py-0.5 bg-info/8 text-info border-info/20">Active</Badge>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-success/10 text-success border border-success/20">
+              Closed
+            </span>
+          ) : isActive ? (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+              Active
+            </span>
           ) : item.isManual ? (
-            <Badge variant="outline" className="text-[10px] font-medium px-2 py-0.5 bg-muted text-muted-foreground border-border">Manual</Badge>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
+              Manual
+            </span>
           ) : null}
         </div>
-      </div>
 
-      {/* Details grid */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-        {item.propertyAddress && (
-          <div className="col-span-2 flex items-start gap-1.5 text-muted-foreground">
-            <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-            <span className="truncate">{item.propertyAddress}</span>
-          </div>
-        )}
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <DollarSign className="w-3 h-3 flex-shrink-0" />
-          <span className="font-medium text-foreground/80">{formatCurrency(item.purchasePrice)}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Calendar className="w-3 h-3 flex-shrink-0" />
-          <span>{item.closeDate ? formatDate(item.closeDate) : item.closeDateEst ? `Est. ${formatDate(item.closeDateEst)}` : item.purchaseDate ? formatDate(item.purchaseDate) : '—'}</span>
-        </div>
-      </div>
-
-      {/* Actions (appear on hover) */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={onEdit}
-          className="p-1.5 rounded-lg bg-background/80 border border-border text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Edit2 className="w-3.5 h-3.5" />
-        </button>
-        {item.isManual && onDelete && (
+        {/* Actions */}
+        <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={onDelete}
-            className="p-1.5 rounded-lg bg-background/80 border border-border text-muted-foreground hover:text-destructive transition-colors"
+            onClick={onEdit}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Edit2 className="w-3.5 h-3.5" />
           </button>
-        )}
+          {item.isManual && onDelete && (
+            <button
+              onClick={onDelete}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -363,7 +403,6 @@ export default function ClientInventoryPage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [groupBy, setGroupBy] = useState<'none' | 'project' | 'type' | 'status'>('none');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClientInventoryItem | null>(null);
 
@@ -387,27 +426,9 @@ export default function ClientInventoryPage() {
     });
   }, [allItems, search, filterType, filterStatus]);
 
-  // Grouping logic
-  const grouped = useMemo(() => {
-    if (groupBy === 'none') return [{ label: null, items: filtered }];
-
-    const map = new Map<string, ClientInventoryItem[]>();
-    filtered.forEach(item => {
-      let key = '';
-      if (groupBy === 'project') key = item.projectName || 'No Project';
-      if (groupBy === 'type') key = item.propertyType || 'No Type';
-      if (groupBy === 'status') key = item.dealStatus === 'closed' ? 'Closed' : item.dealStatus === 'active' ? 'Active' : 'Manual';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(item);
-    });
-
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([label, items]) => ({ label, items }));
-  }, [filtered, groupBy]);
-
   const totalCount = allItems.length;
   const closedCount = allItems.filter(i => i.dealStatus === 'closed').length;
+  const activeCount = allItems.filter(i => i.dealStatus === 'active').length;
   const totalValue = allItems.reduce((sum, i) => sum + (i.purchasePrice || 0), 0);
 
   const openEdit = (item: ClientInventoryItem) => {
@@ -420,102 +441,142 @@ export default function ClientInventoryPage() {
     setDialogOpen(true);
   };
 
+  const hasActiveFilters = filterType !== 'all' || filterStatus !== 'all' || !!search;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterType('all');
+    setFilterStatus('all');
+  };
+
   return (
     <AppLayout>
-      <Header title="Client Inventory" subtitle="All properties you've helped clients buy" showAddDeal={false} action={
-        <Button size="sm" onClick={openAdd} className="gap-1.5">
-          <Plus className="w-3.5 h-3.5" />
-          Add Property
-        </Button>
-      } />
-      <div className="p-5 md:p-7 lg:p-6 space-y-5 pb-8">
+      <Header
+        title="Client Inventory"
+        subtitle="All properties you've helped clients buy"
+        showAddDeal={false}
+        action={
+          <Button size="sm" onClick={openAdd} className="gap-1.5">
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Add Property</span>
+          </Button>
+        }
+      />
 
-        {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
+      <div className="p-5 md:p-7 lg:p-6 space-y-5 pb-24 lg:pb-8">
+
+        {/* Stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
           {[
-            { label: 'Total Properties', value: totalCount },
-            { label: 'Closed', value: closedCount },
-            { label: 'Total Portfolio Value', value: formatCurrency(totalValue) },
-          ].map(stat => (
-            <div key={stat.label} className="bg-card border border-border rounded-2xl px-4 py-3">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">{stat.label}</p>
-              <p className="text-lg md:text-xl font-bold text-foreground mt-0.5">{stat.value}</p>
-            </div>
+            { label: 'Total', value: totalCount.toString() },
+            { label: 'Active', value: activeCount.toString() },
+            { label: 'Closed', value: closedCount.toString() },
+            { label: 'Portfolio Value', value: formatCurrency(totalValue) },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="card-premium p-3.5 space-y-1"
+            >
+              <p className="metric-label">{stat.label}</p>
+              <p className="text-lg font-bold tracking-tight text-foreground">{stat.value}</p>
+            </motion.div>
           ))}
         </div>
 
-        {/* Filters + Search */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[200px] md:max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search buyer, address, project…"
-              className="pl-9 h-9 text-sm"
-            />
+        {/* Search + Filters */}
+        <div className="space-y-2">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+              <Input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search buyer, address, project…"
+                className="pl-9 h-10 rounded-lg bg-card border-border/50 text-sm placeholder:text-muted-foreground/40"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[120px] h-10 rounded-lg bg-card border-border/50 text-sm shrink-0">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="duplicate">⚠ Duplicates</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[110px] h-10 rounded-lg bg-card border-border/50 text-sm shrink-0 hidden sm:flex">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {PROPERTY_TYPES.map(pt => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-36 h-9 text-sm">
-              <SelectValue placeholder="All types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {PROPERTY_TYPES.map(pt => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-32 h-9 text-sm">
-              <SelectValue placeholder="All status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-              <SelectItem value="manual">Manual</SelectItem>
-              <SelectItem value="duplicate">⚠️ Duplicates</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={groupBy} onValueChange={v => setGroupBy(v as typeof groupBy)}>
-            <SelectTrigger className="w-36 h-9 text-sm">
-              <Filter className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-              <SelectValue placeholder="Group by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No Grouping</SelectItem>
-              <SelectItem value="project">By Project</SelectItem>
-              <SelectItem value="type">By Type</SelectItem>
-              <SelectItem value="status">By Status</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <span className="text-xs text-muted-foreground ml-1">
-            {filtered.length} of {totalCount}
-          </span>
+          {/* Active filter chips */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} of {totalCount} shown
+              </span>
+              <button
+                onClick={clearFilters}
+                className="text-xs text-primary font-medium hover:underline ml-1"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+          {!hasActiveFilters && (
+            <p className="text-xs text-muted-foreground">{totalCount} properties</p>
+          )}
         </div>
 
         {/* Content */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl h-36 animate-pulse" />
+          <div className="card-premium overflow-hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border/30 last:border-b-0 animate-pulse">
+                <div className="w-2 h-2 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-muted rounded w-1/3" />
+                  <div className="h-3 bg-muted/60 rounded w-1/2" />
+                </div>
+                <div className="h-5 bg-muted rounded w-16 hidden sm:block" />
+                <div className="h-4 bg-muted rounded w-20 hidden sm:block" />
+              </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-4">
-              <Home className="w-6 h-6 text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center mb-4">
+              <Home className="w-6 h-6 text-muted-foreground/40" />
             </div>
             <p className="text-sm font-medium text-foreground">No properties found</p>
             <p className="text-xs text-muted-foreground mt-1 mb-4">
-              {search || filterType !== 'all' || filterStatus !== 'all'
+              {hasActiveFilters
                 ? 'Try adjusting your filters'
                 : 'Properties from your ReZen deals will appear here automatically'}
             </p>
-            {!search && filterType === 'all' && filterStatus === 'all' && (
+            {!hasActiveFilters && (
               <Button size="sm" onClick={openAdd} variant="outline" className="gap-1.5">
                 <Plus className="w-3.5 h-3.5" />
                 Add manually
@@ -523,32 +584,49 @@ export default function ClientInventoryPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-6">
-            {grouped.map(({ label, items }) => (
-              <div key={label ?? 'all'}>
-                {label && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h2>
-                    <span className="text-xs text-muted-foreground/50">({items.length})</span>
-                    <div className="flex-1 border-t border-border/40" />
-                  </div>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {items.map(item => (
-                    <InventoryCard
-                      key={item.id}
-                      item={item}
-                      onEdit={() => openEdit(item)}
-                      onDelete={item.isManual ? () => {
-                        if (!item.id.startsWith('journey-') && !item.id.startsWith('synced-'))
-                          deleteItem.mutate(item.id);
-                      } : undefined}
-                    />
-                  ))}
-                </div>
+          <motion.div
+            className="card-premium overflow-hidden"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Table header — desktop only */}
+            <div className="hidden md:flex items-center gap-4 px-5 py-2.5 border-b border-border/40 bg-muted/20">
+              <div className="w-2 shrink-0" />
+              <div className="flex-1">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Buyer / Property
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="w-20 shrink-0 hidden sm:block" />
+              <div className="w-28 shrink-0 hidden sm:block text-right">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Price
+                </span>
+              </div>
+              <div className="w-16 shrink-0 hidden md:block text-right">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Status
+                </span>
+              </div>
+              <div className="w-14 shrink-0" />
+            </div>
+
+            <AnimatePresence>
+              {filtered.map((item, index) => (
+                <InventoryRow
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  onEdit={() => openEdit(item)}
+                  onDelete={item.isManual ? () => {
+                    if (!item.id.startsWith('journey-') && !item.id.startsWith('synced-'))
+                      deleteItem.mutate(item.id);
+                  } : undefined}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
 
