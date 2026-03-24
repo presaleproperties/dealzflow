@@ -160,66 +160,6 @@ export type Database = {
           },
         ]
       }
-      conversations: {
-        Row: {
-          assigned_to: string
-          avatar_url: string | null
-          channel: string
-          created_at: string
-          external_id: string | null
-          heat: number | null
-          id: string
-          last_message_at: string | null
-          lead_email: string | null
-          lead_id: string | null
-          lead_name: string
-          lead_phone: string | null
-          lofty_contact_id: string | null
-          meta_window_expires_at: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          assigned_to?: string
-          avatar_url?: string | null
-          channel?: string
-          created_at?: string
-          external_id?: string | null
-          heat?: number | null
-          id?: string
-          last_message_at?: string | null
-          lead_email?: string | null
-          lead_id?: string | null
-          lead_name?: string
-          lead_phone?: string | null
-          lofty_contact_id?: string | null
-          meta_window_expires_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          assigned_to?: string
-          avatar_url?: string | null
-          channel?: string
-          created_at?: string
-          external_id?: string | null
-          heat?: number | null
-          id?: string
-          last_message_at?: string | null
-          lead_email?: string | null
-          lead_id?: string | null
-          lead_name?: string
-          lead_phone?: string | null
-          lofty_contact_id?: string | null
-          meta_window_expires_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       deals: {
         Row: {
           address: string | null
@@ -392,85 +332,6 @@ export type Database = {
             columns: ["rental_property_id"]
             isOneToOne: false
             referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lead_notes: {
-        Row: {
-          body: string
-          conversation_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-        }
-        Insert: {
-          body: string
-          conversation_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-        }
-        Update: {
-          body?: string
-          conversation_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lead_notes_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          body: string
-          conversation_id: string
-          created_at: string
-          direction: string
-          id: string
-          media_url: string | null
-          metadata: Json | null
-          sender: string
-          status: string | null
-          twilio_message_sid: string | null
-        }
-        Insert: {
-          body: string
-          conversation_id: string
-          created_at?: string
-          direction: string
-          id?: string
-          media_url?: string | null
-          metadata?: Json | null
-          sender: string
-          status?: string | null
-          twilio_message_sid?: string | null
-        }
-        Update: {
-          body?: string
-          conversation_id?: string
-          created_at?: string
-          direction?: string
-          id?: string
-          media_url?: string | null
-          metadata?: Json | null
-          sender?: string
-          status?: string | null
-          twilio_message_sid?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -1193,41 +1054,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      zara_activity: {
-        Row: {
-          action_type: string
-          conversation_id: string
-          created_at: string
-          description: string | null
-          id: string
-          payload: Json | null
-        }
-        Insert: {
-          action_type: string
-          conversation_id: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          payload?: Json | null
-        }
-        Update: {
-          action_type?: string
-          conversation_id?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          payload?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "zara_activity_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
