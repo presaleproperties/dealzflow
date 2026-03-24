@@ -424,7 +424,7 @@ export default function DashboardPage() {
 }
 
 // Lightweight stagger wrapper — re-animates whenever the tab content mounts
-function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function FadeUp({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
