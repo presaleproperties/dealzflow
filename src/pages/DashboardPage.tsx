@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
