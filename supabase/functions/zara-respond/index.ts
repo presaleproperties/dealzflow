@@ -197,22 +197,30 @@ serve(async (req) => {
       );
     }
 
-    // Fetch recent message history (last 20)
-    const { data: messages } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
-      .limit(20);
+    // ── Resolve reply body ───────────────────────────────────────────────────
+    // If caller provided an overrideFirstMessage, skip AI and use it directly.
+    let replyBody: string;
 
-    // Build chat messages for AI
-    const chatMessages = (messages || []).map((msg) => ({
-      role: msg.direction === "inbound" ? "user" : "assistant",
-      content: msg.body,
-    }));
+    if (overrideFirstMessage && typeof overrideFirstMessage === "string" && overrideFirstMessage.trim()) {
+      replyBody = overrideFirstMessage.trim();
+      console.log("Using overrideFirstMessage — skipping AI call");
+    } else {
+      // Fetch recent message history (last 20)
+      const { data: messages } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true })
+        .limit(20);
 
-    // Add lead context to system prompt
-    const contextualSystemPrompt = `${ZARA_SYSTEM_PROMPT}
+      // Build chat messages for AI
+      const chatMessages = (messages || []).map((msg) => ({
+        role: msg.direction === "inbound" ? "user" : "assistant",
+        content: msg.body,
+      }));
+
+      // Add lead context to system prompt
+      const contextualSystemPrompt = `${ZARA_SYSTEM_PROMPT}
 
 Current lead:
 - Name: ${conversation.lead_name}
@@ -221,51 +229,52 @@ Current lead:
 - Phone: ${conversation.lead_phone || "unknown"}
 - Email: ${conversation.lead_email || "unknown"}`;
 
-    // Call Lovable AI Gateway
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: contextualSystemPrompt },
-            ...chatMessages,
-          ],
-        }),
-      }
-    );
+      // Call Lovable AI Gateway
+      const aiResponse = await fetch(
+        "https://ai.gateway.lovable.dev/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              { role: "system", content: contextualSystemPrompt },
+              ...chatMessages,
+            ],
+          }),
+        }
+      );
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "AI rate limit exceeded" }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        if (aiResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "AI rate limit exceeded" }),
+            {
+              status: 429,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        if (aiResponse.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "AI credits exhausted" }),
+            {
+              status: 402,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        throw new Error(`AI gateway error [${aiResponse.status}]: ${errorText}`);
       }
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted" }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      throw new Error(`AI gateway error [${aiResponse.status}]: ${errorText}`);
+
+      const aiData = await aiResponse.json();
+      replyBody = aiData.choices?.[0]?.message?.content;
+      if (!replyBody) throw new Error("No content from AI");
     }
-
-    const aiData = await aiResponse.json();
-    const replyBody = aiData.choices?.[0]?.message?.content;
-    if (!replyBody) throw new Error("No content from AI");
 
     // ── Determine send strategy ──────────────────────────────────────────────
     // 1. If we have a ManyChat subscriber ID (or it's stored on the conversation's
