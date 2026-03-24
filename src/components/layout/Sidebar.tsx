@@ -147,7 +147,7 @@ export function Sidebar() {
           <span
             className={cn(
               'transition-all duration-300 font-bold text-[14px] tracking-[-0.03em] whitespace-nowrap overflow-hidden',
-              'text-sidebar-foreground/92',
+              'text-sidebar-foreground/80',
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100',
             )}
           >
