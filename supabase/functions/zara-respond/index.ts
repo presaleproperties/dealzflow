@@ -160,7 +160,7 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const body = await req.json();
-    const { conversationId, fromNumber, manychatSubscriberId } = body;
+    const { conversationId, fromNumber, manychatSubscriberId, overrideFirstMessage } = body;
 
     if (!conversationId) {
       return new Response(
