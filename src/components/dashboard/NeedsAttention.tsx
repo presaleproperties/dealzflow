@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { addDays, startOfDay, isBefore, isAfter } from 'date-fns';
