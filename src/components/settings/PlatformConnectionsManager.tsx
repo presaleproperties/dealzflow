@@ -428,12 +428,34 @@ function ConnectionCard({ connection, prefs }: { connection: PlatformConnection;
             size="sm"
             variant="ghost"
             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-            onClick={() => deleteConnection.mutate(connection.id)}
+            onClick={() => setShowDeleteConfirm(true)}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
+
+      {/* ── Delete Confirm Dialog ── */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {platformInfo?.name || connection.platform} connection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will disconnect your {platformInfo?.name || connection.platform} integration and stop all future syncs.
+              Your existing synced data will remain, but no new data will be imported until you reconnect.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteConnection.mutate(connection.id)}
+            >
+              Remove Connection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Sync Progress Indicator ── */}
       {isSyncing && (
