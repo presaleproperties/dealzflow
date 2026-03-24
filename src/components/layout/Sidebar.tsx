@@ -265,7 +265,7 @@ export function Sidebar() {
         ) : (
           <button
             onClick={signOut}
-            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-[10px] text-[12.5px] font-medium text-sidebar-foreground/28 hover:text-destructive/75 hover:bg-destructive/8 transition-all duration-200"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-[10px] text-[12.5px] font-medium text-sidebar-foreground/45 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-200"
           >
             <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.75} />
             <span>Sign out</span>
