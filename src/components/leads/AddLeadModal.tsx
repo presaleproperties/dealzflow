@@ -13,13 +13,14 @@ interface Props {
 
 export function AddLeadModal({ open, onOpenChange }: Props) {
   const addConversation = useAddConversation();
-  const [form, setForm] = useState({
+  type FormState = { lead_name: string; lead_phone: string; lead_email: string; channel: 'whatsapp' | 'sms' | 'email' | 'facebook' | 'instagram' | 'tiktok'; status: 'new'; assigned_to: 'zara' | 'uzair'; heat: number; };
+  const [form, setForm] = useState<FormState>({
     lead_name: '',
     lead_phone: '',
     lead_email: '',
-    channel: 'whatsapp' as const,
-    status: 'new' as const,
-    assigned_to: 'zara' as const,
+    channel: 'whatsapp',
+    status: 'new',
+    assigned_to: 'zara',
     heat: 50,
   });
 
