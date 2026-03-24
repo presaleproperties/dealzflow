@@ -254,7 +254,7 @@ export function useAddConversation() {
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('conversations')
-        .insert({ ...conv, user_id: user.id } as Record<string, unknown>)
+        .insert([{ ...conv, user_id: user.id }] as Parameters<typeof supabase.from<'conversations', typeof supabase['from']>>[0] extends never ? never : any)
         .select()
         .single();
       if (error) throw error;
