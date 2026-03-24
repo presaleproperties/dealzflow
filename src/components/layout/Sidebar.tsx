@@ -159,12 +159,20 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={toggleCollapse}
-        className="absolute -right-[11px] top-[50px] w-[22px] h-[22px] rounded-full flex items-center justify-center bg-sidebar-background border border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground hover:border-sidebar-primary/50 shadow-[0_2px_8px_-2px_hsl(0_0%_0%/0.3)] transition-all duration-200 z-10"
+        className="absolute -right-[13px] top-[50px] w-[26px] h-[26px] rounded-full flex items-center justify-center transition-all duration-200 z-10"
+        style={{
+          background: 'hsl(var(--sidebar-background))',
+          border: '1.5px solid hsl(var(--sidebar-border))',
+          color: 'hsl(var(--sidebar-foreground) / 0.7)',
+          boxShadow: '0 2px 8px -2px hsl(0 0% 0% / 0.18), 0 0 0 0.5px hsl(var(--sidebar-border))',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'hsl(var(--sidebar-primary))')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'hsl(var(--sidebar-foreground) / 0.7)')}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {isCollapsed
-          ? <ChevronRight className="w-2.5 h-2.5" />
-          : <ChevronLeft className="w-2.5 h-2.5" />
+          ? <ChevronRight className="w-3 h-3" />
+          : <ChevronLeft className="w-3 h-3" />
         }
       </button>
 
