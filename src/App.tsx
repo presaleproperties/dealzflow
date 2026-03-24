@@ -24,6 +24,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import NetworkPage from "./pages/NetworkPage";
 import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
+import LeadsPage from "./pages/LeadsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
