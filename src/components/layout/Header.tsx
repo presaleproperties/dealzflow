@@ -55,7 +55,7 @@ export function Header({
         }}
       />
 
-      <div className="relative flex items-center justify-between h-[52px] md:h-[58px] lg:h-[52px] px-4 sm:px-5 md:px-6">
+      <div className="relative flex items-center justify-between h-[54px] md:h-[58px] lg:h-[52px] px-4 sm:px-5 md:px-6">
         {/* Left */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {showBackButton ? (
@@ -69,8 +69,8 @@ export function Header({
           ) : (
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
-                <button className="shrink-0 -ml-1 h-9 w-9 flex items-center justify-center rounded-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all duration-200">
-                  <Menu className="h-[18px] w-[18px]" strokeWidth={2} />
+                <button className="shrink-0 -ml-1 h-9 w-9 flex items-center justify-center rounded-[12px] text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 active:scale-95 transition-all duration-200">
+                  <Menu className="h-[18px] w-[18px]" strokeWidth={2.2} />
                 </button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-[240px] border-r-0" style={{ background: 'hsl(var(--sidebar-background))' }}>
@@ -80,11 +80,11 @@ export function Header({
           )}
 
           <div className="min-w-0">
-            <h1 className="text-[15.5px] md:text-[17px] lg:text-[16px] font-semibold tracking-[-0.025em] truncate text-foreground leading-snug">
+            <h1 className="text-[16px] md:text-[17px] lg:text-[16px] font-bold tracking-[-0.03em] truncate text-foreground leading-snug">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-[10.5px] md:text-[11.5px] text-muted-foreground/55 truncate hidden sm:block tracking-tight mt-0.5">
+              <p className="text-[10.5px] md:text-[11.5px] text-muted-foreground/60 truncate hidden sm:block tracking-tight mt-0.5">
                 {subtitle}
               </p>
             )}
