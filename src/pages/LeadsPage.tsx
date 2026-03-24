@@ -9,7 +9,8 @@ import { ChannelBadge } from '@/components/leads/ChannelBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Search, Plus, Inbox } from 'lucide-react';
+import { Search, Plus, Inbox, Webhook, Copy, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 type ChannelFilter = 'all' | 'whatsapp' | 'sms' | 'email' | 'facebook' | 'instagram' | 'tiktok';
 type StatusFilter = 'all' | 'new' | 'contacted' | 'engaged' | 'qualified' | 'booked' | 'escalated' | 'unresponsive' | 'disqualified' | 'closed';
@@ -35,12 +36,21 @@ const statusChips: { value: StatusFilter; label: string }[] = [
   { value: 'unresponsive', label: 'No Reply' },
 ];
 
+const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const WEBHOOK_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/handle-message-inbound`;
+
 export default function LeadsPage() {
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [webhookBannerDismissed, setWebhookBannerDismissed] = useState(false);
+
+  const copyWebhook = () => {
+    navigator.clipboard.writeText(WEBHOOK_URL);
+    toast.success('Webhook URL copied!');
+  };
 
   const { data: conversations = [], isLoading } = useConversations({
     channel: channelFilter,
@@ -75,6 +85,31 @@ export default function LeadsPage() {
           </Button>
         }
       />
+
+      {/* Twilio Webhook Banner */}
+      {!webhookBannerDismissed && (
+        <div className="mx-4 mt-2 mb-0 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-[11px]">
+          <Webhook className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+          <span className="text-muted-foreground flex-1">
+            <span className="font-semibold text-foreground">Twilio Webhook URL:</span>{' '}
+            Configure this in your Twilio WhatsApp sandbox →{' '}
+            <span className="font-mono text-primary/80 break-all">{WEBHOOK_URL}</span>
+          </span>
+          <button
+            onClick={copyWebhook}
+            className="flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-all whitespace-nowrap"
+          >
+            <Copy className="h-3 w-3" />
+            Copy
+          </button>
+          <button
+            onClick={() => setWebhookBannerDismissed(true)}
+            className="text-muted-foreground/50 hover:text-foreground transition-all"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="flex h-[calc(100vh-52px)] md:h-[calc(100vh-60px)] lg:h-[calc(100vh-52px)] overflow-hidden">
         {/* Left Pane — Conversation List */}

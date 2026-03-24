@@ -6,8 +6,10 @@ import { MessageComposer } from './MessageComposer';
 import { NotesPanel, ActivityPanel } from './LeadPanels';
 import { ChannelBadge } from './ChannelBadge';
 import { cn } from '@/lib/utils';
-import { Phone, Mail, MoreHorizontal, Zap, User, Flame } from 'lucide-react';
+import { Phone, Mail, MoreHorizontal, Zap, Flame, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const statusColors: Record<string, string> = {
   new: 'hsl(217 91% 60%)', contacted: 'hsl(43 96% 56%)', engaged: 'hsl(158 64% 52%)',
@@ -41,6 +43,7 @@ export function ConversationPanel({ conversation }: Props) {
   const sendMessage = useSendMessage();
   const updateConversation = useUpdateConversation();
   const [tab, setTab] = useState<'messages' | 'notes' | 'activity'>('messages');
+  const [zaraTriggering, setZaraTriggering] = useState(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -60,6 +63,28 @@ export function ConversationPanel({ conversation }: Props) {
       id: conversation.id,
       assigned_to: conversation.assigned_to === 'zara' ? 'uzair' : 'zara',
     });
+  };
+
+  const triggerZara = async () => {
+    if (zaraTriggering) return;
+    setZaraTriggering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('zara-respond', {
+        body: { conversationId: conversation.id },
+      });
+      if (error) throw error;
+      if (data?.skipped) {
+        toast.info('Zara is not assigned to this conversation');
+      } else if (data?.success) {
+        toast.success('Zara replied successfully');
+      } else {
+        toast.error('Zara could not respond: ' + (data?.error || 'Unknown error'));
+      }
+    } catch (err: unknown) {
+      toast.error('Failed to trigger Zara: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setZaraTriggering(false);
+    }
   };
 
   // Group messages by day
@@ -126,6 +151,19 @@ export function ConversationPanel({ conversation }: Props) {
               <Flame className="h-3 w-3 text-orange-500" />
               <span className="text-[10px] font-semibold text-orange-500">{conversation.heat}</span>
             </div>
+          )}
+
+          {/* Trigger Zara manually */}
+          {conversation.assigned_to === 'zara' && (
+            <button
+              onClick={triggerZara}
+              disabled={zaraTriggering}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold bg-muted/60 text-muted-foreground hover:bg-muted transition-all disabled:opacity-50"
+              title="Trigger Zara to respond now"
+            >
+              {zaraTriggering ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-yellow-500" />}
+              Reply
+            </button>
           )}
 
           {/* Zara toggle */}
