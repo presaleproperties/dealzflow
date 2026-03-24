@@ -153,6 +153,19 @@ export function ConversationPanel({ conversation }: Props) {
             </div>
           )}
 
+          {/* Trigger Zara manually */}
+          {conversation.assigned_to === 'zara' && (
+            <button
+              onClick={triggerZara}
+              disabled={zaraTriggering}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold bg-muted/60 text-muted-foreground hover:bg-muted transition-all disabled:opacity-50"
+              title="Trigger Zara to respond now"
+            >
+              {zaraTriggering ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-yellow-500" />}
+              Reply
+            </button>
+          )}
+
           {/* Zara toggle */}
           <button
             onClick={toggleZara}
