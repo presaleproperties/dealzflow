@@ -253,10 +253,10 @@ export function Sidebar() {
         {isCollapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
-              <button
-                onClick={signOut}
-                className="flex items-center justify-center w-full py-2 rounded-[10px] text-sidebar-foreground/22 hover:text-destructive/70 hover:bg-destructive/8 transition-all duration-200"
-              >
+        <button
+            onClick={signOut}
+            className="flex items-center justify-center w-full py-2 rounded-[10px] text-sidebar-foreground/45 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-200"
+          >
                 <LogOut className="w-[14px] h-[14px]" strokeWidth={1.75} />
               </button>
             </TooltipTrigger>
