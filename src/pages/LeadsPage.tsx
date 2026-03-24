@@ -93,8 +93,19 @@ export default function LeadsPage() {
         <div className="mx-4 mt-2 mb-0 rounded-lg bg-primary/5 border border-primary/20 text-[11px] overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2">
             <Webhook className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-            <span className="text-foreground font-semibold flex-1">Connect your messaging platforms</span>
+            <span className="text-foreground font-semibold flex-1">Connect your lead sources</span>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setActiveWebhook('lead-ads')}
+                className={cn(
+                  'px-2 py-0.5 rounded text-[10px] font-semibold transition-all',
+                  activeWebhook === 'lead-ads'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                )}
+              >
+                FB/TT Ads
+              </button>
               <button
                 onClick={() => setActiveWebhook('manychat')}
                 className={cn(
@@ -126,19 +137,31 @@ export default function LeadsPage() {
             </button>
           </div>
           <div className="px-3 pb-2 flex items-center gap-2">
-            {activeWebhook === 'manychat' ? (
+            {activeWebhook === 'lead-ads' && (
+              <span className="text-muted-foreground flex-1">
+                Facebook Lead Ads & TikTok Lead Gen → paste in your <span className="font-medium text-foreground">Zapier webhook</span> or Meta/TikTok webhook URL field:{' '}
+                <span className="font-mono text-primary/80 break-all">{LEAD_ADS_WEBHOOK_URL}</span>
+                <span className="ml-1 text-muted-foreground/60">(add ?source=facebook or ?source=tiktok)</span>
+              </span>
+            )}
+            {activeWebhook === 'manychat' && (
               <span className="text-muted-foreground flex-1">
                 In ManyChat → <span className="font-medium text-foreground">Automation → Flow</span> → add an External Request step, paste this URL, set method to POST + JSON:{' '}
                 <span className="font-mono text-primary/80 break-all">{MANYCHAT_WEBHOOK_URL}</span>
               </span>
-            ) : (
+            )}
+            {activeWebhook === 'twilio' && (
               <span className="text-muted-foreground flex-1">
                 In Twilio Console → WhatsApp Sandbox → <span className="font-medium text-foreground">When a message comes in</span>, paste:{' '}
                 <span className="font-mono text-primary/80 break-all">{TWILIO_WEBHOOK_URL}</span>
               </span>
             )}
             <button
-              onClick={() => copyWebhook(activeWebhook === 'manychat' ? MANYCHAT_WEBHOOK_URL : TWILIO_WEBHOOK_URL)}
+              onClick={() => copyWebhook(
+                activeWebhook === 'manychat' ? MANYCHAT_WEBHOOK_URL :
+                activeWebhook === 'lead-ads' ? LEAD_ADS_WEBHOOK_URL :
+                TWILIO_WEBHOOK_URL
+              )}
               className="flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-all whitespace-nowrap flex-shrink-0"
             >
               <Copy className="h-3 w-3" />
