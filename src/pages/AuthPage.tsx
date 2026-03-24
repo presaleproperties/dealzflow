@@ -308,6 +308,12 @@ export default function AuthPage() {
           <h1 className="text-2xl font-bold mb-2 text-center lg:text-left">{getTitle()}</h1>
           <p className="text-muted-foreground mb-8 text-center lg:text-left text-[15px]">{getSubtitle()}</p>
 
+          {/* Premium glass card wrapping all auth content */}
+          <div className="rounded-2xl border border-border/60 bg-card p-6 sm:p-7
+            shadow-[0_1px_0_0_hsl(0_0%_100%/0.7),0_1px_2px_0_hsl(222_20%_6%/0.04),0_4px_14px_-4px_hsl(222_20%_6%/0.08),0_20px_48px_-12px_hsl(222_20%_6%/0.07)]
+            dark:shadow-[0_1px_0_0_hsl(0_0%_100%/0.05),0_2px_8px_0_hsl(0_0%_0%/0.3),0_16px_40px_-8px_hsl(0_0%_0%/0.4)]">
+
+
           {error && (
             <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-sm text-destructive">
               {error}
