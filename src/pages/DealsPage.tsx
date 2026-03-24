@@ -269,10 +269,10 @@ export default function DealsPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => { triggerHaptic('light'); setShowMissingInfo(true); }}
-                  className="w-full flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-left transition-colors hover:bg-amber-500/10"
+                  className="w-full flex items-center gap-3 rounded-xl border border-warning/20 bg-warning/5 p-3.5 text-left transition-colors hover:bg-warning/10"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">
