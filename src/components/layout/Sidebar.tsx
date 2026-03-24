@@ -72,11 +72,11 @@ export function Sidebar() {
       <Link
         to={item.path}
         className={cn(
-          'relative flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-all duration-200 group',
+        'relative flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-all duration-200 group',
           isCollapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-2.5 py-[7px]',
           isActive
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/50',
+            : 'text-sidebar-foreground/55 hover:text-sidebar-foreground hover:bg-sidebar-accent/60',
         )}
       >
         {/* Active indicator */}
