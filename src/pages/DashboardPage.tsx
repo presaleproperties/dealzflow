@@ -357,6 +357,7 @@ export default function DashboardPage() {
                   revShareMonthlyAvg={revShareMonthlyAvg}
                 />
                 <PipelinePreview layout="horizontal" />
+                <LeadsAnalyticsCard />
                 <div className="grid md:grid-cols-2 gap-4 items-start">
                   <UpcomingRevenue syncedTransactions={syncedTransactions} />
                   <NeedsAttention syncedTransactions={syncedTransactions} />
