@@ -221,7 +221,7 @@ export default function SettingsPage() {
               { value: 'integrations', label: 'Integrations' },
               { value: 'notifications', label: 'Reminders' },
             ].map(({ value, label }) => (
-              <TabsTrigger key={value} value={value} className="flex-1 min-w-fit py-2 px-3 whitespace-nowrap text-xs sm:text-sm font-medium rounded-lg">
+              <TabsTrigger key={value} value={value} className="flex-1 min-w-fit py-2 px-2.5 whitespace-nowrap text-[11.5px] sm:text-xs font-semibold rounded-[10px] tracking-[-0.01em]">
                 {label}
               </TabsTrigger>
             ))}
@@ -739,14 +739,23 @@ function SettingsCard({
       animate={{ opacity: 1, y: 0 }}
       transition={springConfig}
     >
-      <div className={cn("px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-gradient-to-r", gradient, "to-transparent")}>
+      <div className={cn("px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border/50 bg-gradient-to-r", gradient, "to-transparent relative overflow-hidden")}>
+        {/* Top shine */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
         <div className="flex items-center gap-3">
-          <div className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-background/80 border border-border/50 flex items-center justify-center shrink-0", iconColor)}>
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div
+            className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] flex items-center justify-center shrink-0", iconColor)}
+            style={{
+              background: 'hsl(var(--background) / 0.85)',
+              border: '1px solid hsl(var(--border) / 0.6)',
+              boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.08), 0 1px 4px hsl(0 0% 0% / 0.12)',
+            }}
+          >
+            <Icon className="w-4 h-4 sm:w-[17px] sm:h-[17px]" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-bold text-sm sm:text-base">{title}</h3>
-            <p className="text-xs text-muted-foreground truncate">{description}</p>
+            <h3 className="font-bold text-sm sm:text-[15px] tracking-[-0.02em]">{title}</h3>
+            <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">{description}</p>
           </div>
         </div>
       </div>
@@ -773,11 +782,11 @@ function ToggleCard({
   description: string;
   activeColor?: string;
 }) {
-  const colorMap: Record<string, { border: string; bg: string; text: string }> = {
-    'accent': { border: 'border-accent', bg: 'bg-accent/10', text: 'text-accent' },
-    'primary': { border: 'border-primary', bg: 'bg-primary/10', text: 'text-primary' },
-    'violet-500': { border: 'border-violet-500', bg: 'bg-violet-500/10', text: 'text-violet-500' },
-    'success': { border: 'border-success', bg: 'bg-success/10', text: 'text-success' },
+  const colorMap: Record<string, { border: string; bg: string; text: string; glow: string }> = {
+    'accent': { border: 'border-accent/70', bg: 'bg-accent/8', text: 'text-accent', glow: 'shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]' },
+    'primary': { border: 'border-primary/70', bg: 'bg-primary/8', text: 'text-primary', glow: 'shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]' },
+    'violet-500': { border: 'border-violet-500/70', bg: 'bg-violet-500/8', text: 'text-violet-400', glow: 'shadow-[0_0_0_3px_hsl(263_70%_50%/0.12)]' },
+    'success': { border: 'border-success/70', bg: 'bg-success/8', text: 'text-success', glow: 'shadow-[0_0_0_3px_hsl(var(--success)/0.12)]' },
   };
   
   const colors = colorMap[activeColor] || colorMap.accent;
@@ -787,15 +796,21 @@ function ToggleCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'p-4 rounded-xl border-2 transition-all text-left',
-        active ? `${colors.border} ${colors.bg}` : 'border-border hover:border-muted-foreground'
+        'relative p-3.5 rounded-xl border-2 transition-all duration-200 text-left overflow-hidden',
+        active
+          ? `${colors.border} ${colors.bg} ${colors.glow}`
+          : 'border-border/50 bg-muted/20 hover:border-border/80 hover:bg-muted/40',
       )}
     >
+      {/* Active top shine */}
+      {active && (
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      )}
       <div className="flex items-center gap-2 mb-1">
-        <Icon className={cn('w-4 h-4', active ? colors.text : 'text-muted-foreground')} />
-        <span className={cn('font-medium', active && colors.text)}>{title}</span>
+        <Icon className={cn('w-3.5 h-3.5', active ? colors.text : 'text-muted-foreground')} />
+        <span className={cn('text-[12.5px] font-semibold tracking-[-0.01em]', active ? colors.text : 'text-foreground/80')}>{title}</span>
       </div>
-      <p className="text-xs text-muted-foreground">{description}</p>
+      <p className="text-[11px] text-muted-foreground/65 leading-tight">{description}</p>
     </button>
   );
 }
@@ -832,19 +847,22 @@ function AppearanceSection() {
             type="button"
             onClick={() => setTheme(value)}
             className={cn(
-              'p-4 rounded-xl border-2 transition-all text-center group',
+              'relative p-4 rounded-xl border-2 transition-all duration-200 text-center group overflow-hidden',
               theme === value
-                ? 'border-accent bg-accent/10'
-                : 'border-border hover:border-muted-foreground'
+                ? 'border-accent/70 bg-accent/8 shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]'
+                : 'border-border/50 bg-muted/20 hover:border-border/80 hover:bg-muted/40',
             )}
           >
+            {theme === value && (
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            )}
             <ThemeIcon className={cn(
-              'w-6 h-6 mx-auto mb-2 transition-colors',
+              'w-5 h-5 mx-auto mb-2 transition-colors',
               theme === value ? 'text-accent' : 'text-muted-foreground group-hover:text-foreground'
             )} />
             <span className={cn(
-              'text-sm font-medium',
-              theme === value && 'text-accent'
+              'text-[12px] font-semibold tracking-[-0.01em]',
+              theme === value ? 'text-accent' : 'text-foreground/70'
             )}>
               {label}
             </span>
