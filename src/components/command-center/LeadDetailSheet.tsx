@@ -153,7 +153,7 @@ function useLeadDetail(prospect: ProspectRow | null) {
 }
 
 // ─── Add note hook ─────────────────────────────────────────────────────────────
-function useAddNote(conversationId: string | undefined) {
+function useAddNote(prospect: ProspectRow | null, conversationId: string | undefined) {
   const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -162,15 +162,42 @@ function useAddNote(conversationId: string | undefined) {
 
   async function submit() {
     const body = text.trim();
-    if (!body || !conversationId) return;
+    if (!body || !prospect) return;
     if (body.length > 1000) {
       toast.error('Note too long — max 1000 characters');
       return;
     }
     setSaving(true);
+
+    // Resolve conversation ID — create a stub conversation if none exists
+    let convId = conversationId;
+    if (!convId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setSaving(false); toast.error('Not authenticated'); return; }
+      const { data: newConv, error: convErr } = await supabase
+        .from('conversations')
+        .insert({
+          user_id: user.id,
+          lead_name: prospect.client_name,
+          assigned_to: 'uzair',
+          channel: 'whatsapp',
+          status: 'new',
+        })
+        .select('id')
+        .single();
+      if (convErr || !newConv) {
+        setSaving(false);
+        toast.error('Could not create conversation for note');
+        return;
+      }
+      convId = newConv.id;
+      // Refresh conversation query so future notes wire up correctly
+      queryClient.invalidateQueries({ queryKey: ['lead-sheet-conv', prospect.id] });
+    }
+
     const { error } = await supabase
       .from('lead_notes')
-      .insert({ conversation_id: conversationId, body, created_by: 'Uzair' });
+      .insert({ conversation_id: convId, body, created_by: 'Uzair' });
     setSaving(false);
     if (error) {
       toast.error('Failed to save note');
@@ -178,7 +205,7 @@ function useAddNote(conversationId: string | undefined) {
     }
     setText('');
     setOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', conversationId] });
+    queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', convId] });
     toast.success('Note saved');
   }
 
@@ -194,7 +221,7 @@ interface Props {
 
 export function LeadDetailSheet({ prospect, open, onClose }: Props) {
   const { conversation, messages, notes } = useLeadDetail(open ? prospect : null);
-  const note = useAddNote(conversation?.id);
+  const note = useAddNote(prospect, conversation?.id);
 
   if (!prospect) return null;
 
@@ -298,15 +325,13 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
             title="Notes"
             count={notes.length}
             action={
-              conversation?.id ? (
-                <button
-                  onClick={() => { note.setOpen(true); setTimeout(() => note.inputRef.current?.focus(), 50); }}
-                  className="ml-auto flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Note
-                </button>
-              ) : null
+              <button
+                onClick={() => { note.setOpen(true); setTimeout(() => note.inputRef.current?.focus(), 50); }}
+                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add Note
+              </button>
             }
           >
             {/* Inline compose area */}
