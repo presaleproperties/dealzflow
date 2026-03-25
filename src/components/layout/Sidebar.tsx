@@ -66,6 +66,15 @@ export function Sidebar() {
     });
   };
 
+  // Sidebar CSS vars helpers
+  const sbBg = { background: 'hsl(222 47% 11%)' };
+  const sbBorder = '1px solid hsl(222 40% 16% / 0.6)';
+
+  const navItemStyle = (isActive: boolean) => ({
+    background: isActive ? 'hsl(172 72% 47% / 0.15)' : undefined,
+    color: isActive ? 'hsl(172 72% 47%)' : 'hsl(220 20% 60%)',
+  });
+
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location.pathname === item.path ||
       (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
@@ -73,19 +82,17 @@ export function Sidebar() {
     const linkEl = (
       <Link
         to={item.path}
+        style={navItemStyle(isActive)}
         className={cn(
-          'relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 group select-none',
-          isCollapsed ? 'justify-center px-0 py-2 mx-1.5' : 'px-2.5 py-[6px]',
-          isActive
-            ? 'bg-primary/10 text-primary'
-            : 'text-foreground/50 hover:text-foreground/80 hover:bg-muted/60',
+          'relative flex items-center gap-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 group select-none',
+          'hover:bg-[hsl(222_40%_17%)] hover:text-white',
+          isCollapsed ? 'justify-center w-10 h-10 mx-auto' : 'px-2.5 py-[6px]',
         )}
       >
         <item.icon
           className={cn(
             'flex-shrink-0 transition-all duration-150',
-            isCollapsed ? 'w-[16px] h-[16px]' : 'w-[15px] h-[15px]',
-            isActive ? 'text-primary opacity-100' : 'opacity-60 group-hover:opacity-80',
+            isCollapsed ? 'w-[18px] h-[18px]' : 'w-[15px] h-[15px]',
           )}
           strokeWidth={isActive ? 2.2 : 1.8}
         />
@@ -108,17 +115,19 @@ export function Sidebar() {
 
   return (
     <aside
+      style={{ ...sbBg, borderRight: sbBorder }}
       className={cn(
         'hidden md:flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 ease-in-out z-40',
-        'bg-card border-r border-border/60',
-        isCollapsed ? 'w-[54px]' : 'w-[218px]',
+        isCollapsed ? 'w-[60px]' : 'w-[218px]',
       )}
     >
       {/* Logo */}
-      <div className={cn(
-        'flex items-center gap-2.5 h-[56px] border-b border-border/50',
-        isCollapsed ? 'justify-center px-0' : 'px-4',
-      )}>
+      <div
+        style={{ borderBottom: sbBorder }}
+        className={cn(
+          'flex items-center gap-2.5 h-[56px]',
+          isCollapsed ? 'justify-center px-0' : 'px-4',
+        )}>
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
           <img
             src={logoMark}
@@ -130,11 +139,11 @@ export function Sidebar() {
           />
           <span
             className={cn(
-              'transition-all duration-300 font-semibold text-[13.5px] tracking-[-0.02em] whitespace-nowrap overflow-hidden text-foreground',
+              'transition-all duration-300 font-semibold text-[13.5px] tracking-[-0.02em] whitespace-nowrap overflow-hidden text-white',
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100',
             )}
           >
-            Dealz<span className="text-primary">flow</span>
+            Dealz<span style={{ color: 'hsl(172 72% 47%)' }}>flow</span>
           </span>
         </Link>
       </div>
@@ -142,10 +151,11 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={toggleCollapse}
+        style={{ background: 'hsl(222 47% 11%)', borderColor: 'hsl(222 40% 22%)' }}
         className={cn(
-          'absolute -right-[11px] top-[56px] -translate-y-1/2 w-[22px] h-[22px] rounded-full flex items-center justify-center transition-all duration-200 z-10',
-          'bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary/40',
-          'shadow-[0_1px_4px_0_hsl(0_0%_0%/0.1)]',
+          'absolute -right-[11px] top-[56px] -translate-y-1/2 w-[22px] h-[22px] rounded-full border flex items-center justify-center transition-all duration-200 z-10',
+          'text-[hsl(220_20%_55%)] hover:text-[hsl(172_72%_47%)]',
+          'shadow-[0_1px_6px_0_hsl(0_0%_0%/0.4)]',
         )}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
@@ -158,18 +168,19 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className={cn(
         'flex-1 py-3 overflow-y-auto overflow-x-hidden',
-        isCollapsed ? 'px-0' : 'px-2.5',
+        isCollapsed ? 'px-0 flex flex-col items-center' : 'px-2.5',
       )}>
-        {navSections.map((section) => (
-          <div key={section.label} className="mb-4">
+        {navSections.map((section, si) => (
+          <div key={section.label} className={cn('mb-3', isCollapsed && 'w-full flex flex-col items-center')}>
             {!isCollapsed ? (
-              <div className="px-2.5 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.09em] text-muted-foreground/50">
+              <div className="px-2.5 pb-1 pt-0.5 text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                style={{ color: 'hsl(220 20% 35%)' }}>
                 {section.label}
               </div>
-            ) : (
-              <div className="h-px mx-2 my-2 bg-border/50" />
-            )}
-            <div className="space-y-0.5">
+            ) : si > 0 ? (
+              <div className="h-px w-8 my-2" style={{ background: 'hsl(222 40% 18%)' }} />
+            ) : null}
+            <div className={cn('space-y-0.5', isCollapsed && 'w-full flex flex-col items-center')}>
               {section.items.map((item) => (
                 <NavLink key={item.path} item={item} />
               ))}
@@ -177,58 +188,64 @@ export function Sidebar() {
           </div>
         ))}
 
-        <div className="h-px mx-2 my-1 bg-border/40" />
+        <div className="h-px w-full my-1" style={{ background: 'hsl(222 40% 16%)' }} />
 
-        {standaloneItems.map((item) => (
-          <NavLink key={item.path} item={item} />
-        ))}
+        <div className={cn('space-y-0.5', isCollapsed && 'w-full flex flex-col items-center')}>
+          {standaloneItems.map((item) => (
+            <NavLink key={item.path} item={item} />
+          ))}
+        </div>
 
         {isAdmin && (
           <>
-            <div className="h-px mx-2 my-1 bg-border/40" />
-            {isCollapsed ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to="/admin"
-                    className={cn(
-                      'flex items-center justify-center py-2 mx-1.5 rounded-lg transition-all duration-150',
-                      location.pathname === '/admin'
-                        ? 'text-warning bg-warning/10'
-                        : 'text-warning/40 hover:text-warning hover:bg-warning/10',
-                    )}
-                  >
-                    <ShieldAlert className="w-[16px] h-[16px]" strokeWidth={1.8} />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium text-xs">Admin</TooltipContent>
-              </Tooltip>
-            ) : (
-              <Link
-                to="/admin"
-                className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-[6px] rounded-lg text-[13px] font-medium transition-all duration-150',
-                  location.pathname === '/admin'
-                    ? 'bg-warning/10 text-warning'
-                    : 'text-warning/40 hover:text-warning hover:bg-warning/10',
-                )}
-              >
-                <ShieldAlert className="w-[15px] h-[15px] flex-shrink-0" strokeWidth={1.8} />
-                <span>Admin</span>
-              </Link>
-            )}
+            <div className="h-px w-full my-1" style={{ background: 'hsl(222 40% 16%)' }} />
+            <div className={cn(isCollapsed && 'w-full flex justify-center')}>
+              {isCollapsed ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/admin"
+                      className={cn(
+                        'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150',
+                        location.pathname === '/admin'
+                          ? 'text-warning bg-warning/20'
+                          : 'text-warning/40 hover:text-warning hover:bg-warning/15',
+                      )}
+                    >
+                      <ShieldAlert className="w-[16px] h-[16px]" strokeWidth={1.8} />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium text-xs">Admin</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  to="/admin"
+                  className={cn(
+                    'flex items-center gap-2.5 px-2.5 py-[6px] rounded-xl text-[13px] font-medium transition-all duration-150',
+                    location.pathname === '/admin'
+                      ? 'bg-warning/20 text-warning'
+                      : 'text-warning/40 hover:text-warning hover:bg-warning/15',
+                  )}
+                >
+                  <ShieldAlert className="w-[15px] h-[15px] flex-shrink-0" strokeWidth={1.8} />
+                  <span>Admin</span>
+                </Link>
+              )}
+            </div>
           </>
         )}
       </nav>
 
       {/* Sign out */}
-      <div className="px-2.5 py-3 border-t border-border/50">
+      <div style={{ borderTop: sbBorder }}
+        className={cn('px-2.5 py-3', isCollapsed && 'flex justify-center px-0')}>
         {isCollapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button
                 onClick={signOut}
-                className="flex items-center justify-center w-full py-2 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/8 transition-all duration-150"
+                className="flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150 hover:text-destructive hover:bg-destructive/15"
+                style={{ color: 'hsl(220 20% 40%)' }}
               >
                 <LogOut className="w-[14px] h-[14px]" strokeWidth={1.8} />
               </button>
@@ -238,7 +255,8 @@ export function Sidebar() {
         ) : (
           <button
             onClick={signOut}
-            className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[12.5px] font-medium text-muted-foreground/50 hover:text-destructive hover:bg-destructive/8 transition-all duration-150"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-xl text-[12.5px] font-medium transition-all duration-150 hover:text-destructive hover:bg-destructive/15"
+            style={{ color: 'hsl(220 20% 40%)' }}
           >
             <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.8} />
             <span>Sign out</span>
