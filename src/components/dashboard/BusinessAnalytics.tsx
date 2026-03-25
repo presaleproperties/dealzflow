@@ -42,19 +42,19 @@ interface BusinessAnalyticsProps {
   syncedTransactions?: any[];
 }
 
-const EMERALD_PALETTE = [
-  'hsl(158, 64%, 32%)',
-  'hsl(168, 76%, 36%)',
-  'hsl(172, 66%, 40%)',
-  'hsl(38, 92%, 50%)',
-  'hsl(45, 93%, 47%)',
-  'hsl(0, 84%, 60%)',
+const CHART_PALETTE = [
+  'hsl(231, 62%, 58%)',   // primary indigo
+  'hsl(152, 50%, 36%)',   // success green
+  'hsl(210, 62%, 52%)',   // info blue
+  'hsl(270, 48%, 56%)',   // violet
+  'hsl(38, 90%, 52%)',    // warning amber
+  'hsl(0, 65%, 52%)',     // destructive red
 ];
 
 const CHART_COLORS = {
-  primary: 'hsl(158, 64%, 32%)',
-  secondary: 'hsl(168, 76%, 36%)',
-  tertiary: 'hsl(38, 92%, 50%)',
+  primary: 'hsl(231, 62%, 58%)',
+  secondary: 'hsl(210, 62%, 52%)',
+  tertiary: 'hsl(152, 50%, 36%)',
   muted: 'hsl(var(--muted-foreground))',
 };
 
