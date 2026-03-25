@@ -25,6 +25,7 @@ import NetworkPage from "./pages/NetworkPage";
 import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
 import CommandCenterPage from "./pages/CommandCenterPage";
+import LeadsPage from "./pages/LeadsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -126,7 +127,8 @@ const App = () => (
                 <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
                  <Route path="/inventory" element={<ProtectedRoute><ClientInventoryPage /></ProtectedRoute>} />
                  <Route path="/command-center" element={<ProtectedRoute><CommandCenterPage /></ProtectedRoute>} />
-                <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
+                 <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
+                 <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="*" element={<NotFound />} />
