@@ -2,124 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dealzflow — Ultra-Premium Design System
-   Fintech editorial clarity with depth, precision and quiet luxury
+/* Dealzflow — Presale Properties Design System
+   Warm amber/gold primary on deep charcoal — presaleproperties.com brand
 */
 
 @layer base {
   :root {
-    /* Light — crisp white with warm undertone */
-    --background: 0 0% 97.5%;
-    --foreground: 220 18% 8%;
+    /* Light — warm white, presale editorial */
+    --background: 40 14% 97%;
+    --foreground: 24 10% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 18% 8%;
+    --card-foreground: 24 10% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 18% 8%;
+    --popover-foreground: 24 10% 8%;
 
-    /* Primary — muted sage, deep and sophisticated */
-    --primary: 158 44% 26%;
+    /* Primary — presaleproperties.com amber/gold */
+    --primary: 40 76% 46%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 158 50% 38%;
-    --primary-subtle: 158 40% 96%;
+    --primary-glow: 40 82% 58%;
+    --primary-subtle: 40 80% 96%;
 
     /* Secondary */
-    --secondary: 220 12% 94%;
-    --secondary-foreground: 220 14% 18%;
+    --secondary: 30 14% 94%;
+    --secondary-foreground: 24 10% 18%;
 
     /* Muted */
-    --muted: 220 10% 93%;
-    --muted-foreground: 220 10% 44%;
+    --muted: 30 10% 93%;
+    --muted-foreground: 24 8% 44%;
 
-    /* Accent — refined slate-blue */
-    --accent: 220 62% 48%;
+    /* Accent — deep charcoal, matches dark hero */
+    --accent: 222 16% 22%;
     --accent-foreground: 0 0% 100%;
 
     /* Semantic */
-    --success: 158 44% 26%;
+    --success: 152 50% 32%;
     --success-foreground: 0 0% 100%;
-    --warning: 36 82% 42%;
+    --warning: 40 76% 46%;
     --warning-foreground: 0 0% 100%;
-    --info: 220 62% 48%;
+    --info: 210 62% 46%;
     --info-foreground: 0 0% 100%;
     --destructive: 0 65% 44%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 12% 88%;
-    --border-subtle: 220 10% 92%;
-    --input: 220 12% 92%;
-    --ring: 158 44% 26%;
+    --border: 30 12% 88%;
+    --border-subtle: 30 10% 92%;
+    --input: 30 12% 92%;
+    --ring: 40 76% 46%;
 
     --radius: 0.875rem;
 
-    /* Sidebar — light: warm off-white panel */
-    --sidebar-background: 220 14% 96%;
-    --sidebar-foreground: 220 18% 28%;
-    --sidebar-primary: 158 44% 26%;
+    /* Sidebar — warm off-white */
+    --sidebar-background: 30 14% 96%;
+    --sidebar-foreground: 24 10% 28%;
+    --sidebar-primary: 40 76% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 12% 90%;
-    --sidebar-accent-foreground: 220 18% 14%;
-    --sidebar-border: 220 12% 86%;
-    --sidebar-ring: 158 44% 26%;
+    --sidebar-accent: 30 12% 90%;
+    --sidebar-accent-foreground: 24 10% 14%;
+    --sidebar-border: 30 12% 86%;
+    --sidebar-ring: 40 76% 46%;
 
     /* Charts */
-    --chart-1: 158 44% 28%;
-    --chart-2: 220 62% 48%;
-    --chart-3: 36 82% 42%;
+    --chart-1: 40 76% 46%;
+    --chart-2: 210 62% 46%;
+    --chart-3: 152 50% 32%;
     --chart-4: 270 48% 50%;
     --chart-5: 0 65% 44%;
   }
 
   .dark {
-    /* Dark — pure deep charcoal, zero color cast */
-    --background: 222 16% 6%;
-    --foreground: 220 14% 94%;
+    /* Dark — presaleproperties.com near-black charcoal */
+    --background: 24 8% 5%;
+    --foreground: 40 14% 94%;
 
-    --card: 222 15% 9%;
-    --card-foreground: 220 14% 94%;
+    --card: 24 8% 8%;
+    --card-foreground: 40 14% 94%;
 
-    --popover: 222 15% 10%;
-    --popover-foreground: 220 14% 94%;
+    --popover: 24 8% 9%;
+    --popover-foreground: 40 14% 94%;
 
-    /* Primary — brighter sage for dark mode */
-    --primary: 158 52% 44%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 158 56% 54%;
-    --primary-subtle: 158 44% 12%;
+    /* Primary — warm amber, bright on dark */
+    --primary: 40 82% 52%;
+    --primary-foreground: 24 10% 8%;
+    --primary-glow: 40 88% 64%;
+    --primary-subtle: 40 60% 12%;
 
-    --secondary: 222 14% 15%;
-    --secondary-foreground: 220 12% 84%;
+    --secondary: 24 8% 14%;
+    --secondary-foreground: 40 12% 84%;
 
-    --muted: 222 14% 13%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 24 8% 12%;
+    --muted-foreground: 30 8% 50%;
 
-    --accent: 220 60% 52%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 40 82% 52%;
+    --accent-foreground: 24 10% 8%;
 
-    --success: 158 52% 44%;
+    --success: 152 52% 44%;
     --success-foreground: 0 0% 100%;
-    --warning: 36 80% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 220 60% 52%;
+    --warning: 40 82% 52%;
+    --warning-foreground: 24 10% 8%;
+    --info: 210 60% 52%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 64% 50%;
+    --destructive: 0 64% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 14% 16%;
-    --border-subtle: 222 12% 13%;
-    --input: 222 14% 13%;
-    --ring: 158 52% 44%;
+    --border: 24 8% 15%;
+    --border-subtle: 24 6% 12%;
+    --input: 24 8% 13%;
+    --ring: 40 82% 52%;
 
-    /* Sidebar — darkest ink */
-    --sidebar-background: 222 22% 5%;
-    --sidebar-foreground: 220 12% 65%;
-    --sidebar-primary: 158 52% 46%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 18% 11%;
-    --sidebar-accent-foreground: 220 12% 88%;
-    --sidebar-border: 222 18% 11%;
-    --sidebar-ring: 158 52% 46%;
+    /* Sidebar — deepest charcoal */
+    --sidebar-background: 24 10% 4%;
+    --sidebar-foreground: 40 12% 65%;
+    --sidebar-primary: 40 82% 52%;
+    --sidebar-primary-foreground: 24 10% 8%;
+    --sidebar-accent: 24 8% 10%;
+    --sidebar-accent-foreground: 40 12% 88%;
+    --sidebar-border: 24 8% 10%;
+    --sidebar-ring: 40 82% 52%;
   }
 }
 
@@ -264,27 +264,27 @@
 
   /* ── Gradient cards ── */
   .gradient-card-primary {
-    background: linear-gradient(150deg, hsl(158 44% 26%) 0%, hsl(158 48% 16%) 100%);
+    background: linear-gradient(150deg, hsl(40 76% 44%) 0%, hsl(36 72% 30%) 100%);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.12),
-      0 4px 16px -2px hsl(158 44% 20% / 0.32),
-      0 16px 36px -6px hsl(158 44% 20% / 0.2);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.18),
+      0 4px 16px -2px hsl(40 72% 30% / 0.38),
+      0 16px 36px -6px hsl(40 72% 30% / 0.24);
   }
 
   .gradient-card-accent {
-    background: linear-gradient(150deg, hsl(36 76% 42%) 0%, hsl(30 80% 32%) 100%);
+    background: linear-gradient(150deg, hsl(24 8% 14%) 0%, hsl(24 8% 8%) 100%);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.12),
-      0 4px 16px -2px hsl(36 74% 38% / 0.32),
-      0 16px 36px -6px hsl(36 74% 38% / 0.2);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.08),
+      0 4px 16px -2px hsl(0 0% 0% / 0.3),
+      0 16px 36px -6px hsl(0 0% 0% / 0.2);
   }
 
   .gradient-card-success {
-    background: linear-gradient(150deg, hsl(158 44% 26%) 0%, hsl(158 48% 15%) 100%);
+    background: linear-gradient(150deg, hsl(152 50% 30%) 0%, hsl(152 50% 18%) 100%);
     box-shadow:
       inset 0 1px 0 0 hsl(0 0% 100% / 0.12),
-      0 4px 16px -2px hsl(158 44% 20% / 0.32),
-      0 16px 36px -6px hsl(158 44% 20% / 0.2);
+      0 4px 16px -2px hsl(152 50% 20% / 0.32),
+      0 16px 36px -6px hsl(152 50% 20% / 0.2);
   }
 
   /* ── iOS Segment ── */
@@ -343,23 +343,24 @@
 
   /* ── Premium button ── */
   .btn-premium {
-    @apply text-white font-semibold rounded-xl;
+    @apply font-semibold rounded-xl;
     @apply hover:brightness-110 active:scale-[0.97] active:brightness-95;
     @apply transition-all duration-200;
-    background: linear-gradient(150deg, hsl(158 44% 24%) 0%, hsl(158 48% 16%) 100%);
+    color: hsl(24 10% 8%);
+    background: linear-gradient(150deg, hsl(40 82% 56%) 0%, hsl(36 78% 42%) 100%);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.16),
-      0 1px 3px 0 hsl(158 44% 12% / 0.32),
-      0 5px 16px -4px hsl(158 44% 20% / 0.3);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.24),
+      0 1px 3px 0 hsl(36 70% 20% / 0.28),
+      0 5px 16px -4px hsl(40 76% 38% / 0.32);
   }
 
   .btn-premium:hover {
-    background: linear-gradient(150deg, hsl(158 44% 28%) 0%, hsl(158 48% 20%) 100%);
+    background: linear-gradient(150deg, hsl(40 86% 62%) 0%, hsl(36 80% 48%) 100%);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.2),
-      0 2px 6px 0 hsl(158 44% 12% / 0.34),
-      0 12px 24px -4px hsl(158 44% 20% / 0.34),
-      0 0 0 0.5px hsl(158 44% 28% / 0.38);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.28),
+      0 2px 6px 0 hsl(36 70% 20% / 0.30),
+      0 12px 24px -4px hsl(40 76% 38% / 0.36),
+      0 0 0 0.5px hsl(40 82% 52% / 0.4);
   }
 
   /* ── Glass ── */
