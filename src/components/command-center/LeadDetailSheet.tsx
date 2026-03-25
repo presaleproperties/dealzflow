@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow, format } from 'date-fns';
+import { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import {
   Sheet,
   SheetContent,
@@ -21,6 +23,9 @@ import {
   StickyNote,
   Zap,
   User,
+  Plus,
+  Send,
+  X,
 } from 'lucide-react';
 import type { ProspectRow } from './NeedsAttention';
 
@@ -147,6 +152,39 @@ function useLeadDetail(prospect: ProspectRow | null) {
   return { conversation, messages, notes };
 }
 
+// ─── Add note hook ─────────────────────────────────────────────────────────────
+function useAddNote(conversationId: string | undefined) {
+  const queryClient = useQueryClient();
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  async function submit() {
+    const body = text.trim();
+    if (!body || !conversationId) return;
+    if (body.length > 1000) {
+      toast.error('Note too long — max 1000 characters');
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from('lead_notes')
+      .insert({ conversation_id: conversationId, body, created_by: 'Uzair' });
+    setSaving(false);
+    if (error) {
+      toast.error('Failed to save note');
+      return;
+    }
+    setText('');
+    setOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', conversationId] });
+    toast.success('Note saved');
+  }
+
+  return { text, setText, saving, open, setOpen, submit, inputRef };
+}
+
 // ─── Sheet component ───────────────────────────────────────────────────────────
 interface Props {
   prospect: ProspectRow | null;
@@ -156,6 +194,7 @@ interface Props {
 
 export function LeadDetailSheet({ prospect, open, onClose }: Props) {
   const { conversation, messages, notes } = useLeadDetail(open ? prospect : null);
+  const note = useAddNote(conversation?.id);
 
   if (!prospect) return null;
 
@@ -254,8 +293,69 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
           </div>
 
           {/* ── Notes ─────────────────────────────────────────────────────── */}
-          <Section icon={<StickyNote className="w-3.5 h-3.5" />} title="Notes" count={notes.length}>
-            {notes.length === 0 ? (
+          <Section
+            icon={<StickyNote className="w-3.5 h-3.5" />}
+            title="Notes"
+            count={notes.length}
+            action={
+              conversation?.id ? (
+                <button
+                  onClick={() => { note.setOpen(true); setTimeout(() => note.inputRef.current?.focus(), 50); }}
+                  className="ml-auto flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Note
+                </button>
+              ) : null
+            }
+          >
+            {/* Inline compose area */}
+            <AnimatePresence>
+              {note.open && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 py-3 border-b border-border/30 bg-muted/20">
+                    <textarea
+                      ref={note.inputRef}
+                      value={note.text}
+                      onChange={e => note.setText(e.target.value.slice(0, 1000))}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) note.submit();
+                        if (e.key === 'Escape') note.setOpen(false);
+                      }}
+                      placeholder="Write a note… (⌘+Enter to save)"
+                      rows={3}
+                      className="w-full bg-background/60 border border-border/40 rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-muted-foreground/40">{note.text.length}/1000</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { note.setOpen(false); note.setText(''); }}
+                          className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/30 hover:bg-muted transition-colors"
+                        >
+                          <X className="w-3 h-3" /> Cancel
+                        </button>
+                        <button
+                          onClick={note.submit}
+                          disabled={!note.text.trim() || note.saving}
+                          className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          <Send className="w-3 h-3" />
+                          {note.saving ? 'Saving…' : 'Save Note'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {notes.length === 0 && !note.open ? (
               <p className="text-xs text-muted-foreground/50 italic px-4 py-2">No notes yet.</p>
             ) : notes.map((n: any, i: number) => (
               <motion.div
@@ -315,11 +415,12 @@ function DetailCard({ icon, label, value }: { icon: React.ReactNode; label: stri
 }
 
 function Section({
-  icon, title, count, children,
+  icon, title, count, action, children,
 }: {
   icon: React.ReactNode;
   title: string;
   count: number;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -328,10 +429,11 @@ function Section({
         <span className="text-muted-foreground/60">{icon}</span>
         <span className="text-xs font-semibold text-foreground">{title}</span>
         {count > 0 && (
-          <span className="ml-auto text-[10px] font-bold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">
             {count}
           </span>
         )}
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       {children}
     </div>
