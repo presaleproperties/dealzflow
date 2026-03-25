@@ -415,11 +415,12 @@ function DetailCard({ icon, label, value }: { icon: React.ReactNode; label: stri
 }
 
 function Section({
-  icon, title, count, children,
+  icon, title, count, action, children,
 }: {
   icon: React.ReactNode;
   title: string;
   count: number;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -428,10 +429,11 @@ function Section({
         <span className="text-muted-foreground/60">{icon}</span>
         <span className="text-xs font-semibold text-foreground">{title}</span>
         {count > 0 && (
-          <span className="ml-auto text-[10px] font-bold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">
             {count}
           </span>
         )}
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       {children}
     </div>
