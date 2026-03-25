@@ -17,6 +17,7 @@ import { PipelineStatus } from '@/components/command-center/PipelineStatus';
 import { CalendarWidget } from '@/components/command-center/CalendarWidget';
 import { ActivityFeed } from '@/components/command-center/ActivityFeed';
 import { QuickActions } from '@/components/command-center/QuickActions';
+import { TodaysFocus } from '@/components/command-center/TodaysFocus';
 
 // ─── Query keys (centralised so realtime can invalidate them) ──────────────────
 const QK = {
@@ -352,6 +353,11 @@ export default function CommandCenterPage() {
           <HeroKPIs
             data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }}
           />
+        </FadeUp>
+
+        {/* ── Today's Focus ─────────────────────────────────────────────── */}
+        <FadeUp delay={0.08}>
+          <TodaysFocus />
         </FadeUp>
 
         {/* ── ROW 2: Needs Attention (60%) + Zara Funnel (40%) ─────────── */}
