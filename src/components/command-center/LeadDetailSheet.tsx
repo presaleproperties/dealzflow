@@ -384,18 +384,16 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
             {notes.length === 0 && !note.open ? (
               <p className="text-xs text-muted-foreground/50 italic px-4 py-2">No notes yet.</p>
             ) : notes.map((n: any, i: number) => (
-              <motion.div
+              <NoteRow
                 key={n.id}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="px-4 py-2.5 border-b border-border/20 last:border-0"
-              >
-                <p className="text-xs text-foreground leading-relaxed">{n.body}</p>
-                <p className="text-[10px] text-muted-foreground/50 mt-1">
-                  {n.created_by ?? 'Zara'} · {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                </p>
-              </motion.div>
+                note={n}
+                index={i}
+                onDelete={async () => {
+                  await supabase.from('lead_notes').delete().eq('id', n.id);
+                  queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', conversation?.id ?? n.conversation_id] });
+                  toast.success('Note deleted');
+                }}
+              />
             ))}
           </Section>
 
