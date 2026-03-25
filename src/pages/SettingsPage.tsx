@@ -818,6 +818,7 @@ function ToggleCard({
 // Appearance Section
 function AppearanceSection() {
   const { theme, setTheme } = useTheme();
+  const updateSettings = useUpdateSettings({ silent: true });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -838,6 +839,11 @@ function AppearanceSection() {
     { value: 'system', icon: Monitor, label: 'System' },
   ];
 
+  function handleTheme(value: string) {
+    setTheme(value);
+    updateSettings.mutate({ theme: value as 'light' | 'dark' | 'system' });
+  }
+
   return (
     <SettingsCard icon={Palette} title="Appearance" description="Choose your preferred theme" iconColor="text-accent" gradient="from-accent/10 to-accent/5">
       <div className="grid grid-cols-3 gap-3">
@@ -845,7 +851,7 @@ function AppearanceSection() {
           <button
             key={value}
             type="button"
-            onClick={() => setTheme(value)}
+            onClick={() => handleTheme(value)}
             className={cn(
               'relative p-4 rounded-xl border-2 transition-all duration-200 text-center group overflow-hidden',
               theme === value
