@@ -104,7 +104,7 @@ function useCommandCenterData() {
 
   // Active leads (pipeline_prospects where status not closed/lost)
   const { data: prospects = [] } = useQuery({
-    queryKey: ['cc-prospects', uid, refreshKey],
+    queryKey: QK.prospects(uid ?? ''),
     queryFn: async () => {
       const { data } = await supabase
         .from('pipeline_prospects')
@@ -124,7 +124,7 @@ function useCommandCenterData() {
     p.temperature?.toLowerCase() === 'hot',
   ).length;
 
-  // "Needs attention" = stale (updated > 48h ago, ordered hot first)
+  // "Needs attention" = stale (updated > 24h ago, ordered hot first)
   const needsAttention = [...prospects].sort((a: any, b: any) => {
     const tempOrder = { hot: 0, warm: 1, cold: 2 };
     const ta = tempOrder[(a.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
@@ -158,7 +158,7 @@ function useCommandCenterData() {
 
   // Zara captures (7d)
   const { data: zaraCaptures = 0 } = useQuery({
-    queryKey: ['cc-zara-captures', uid, refreshKey],
+    queryKey: QK.zaraCaptures(uid ?? ''),
     queryFn: async () => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -174,7 +174,7 @@ function useCommandCenterData() {
 
   // Zara funnel data
   const { data: zaraFunnelData } = useQuery({
-    queryKey: ['cc-zara-funnel', uid, refreshKey],
+    queryKey: QK.zaraFunnel(uid ?? ''),
     queryFn: async () => {
       const [capturedRes, syncedRes, qualifiedRes] = await Promise.all([
         supabase
@@ -192,7 +192,7 @@ function useCommandCenterData() {
       ]);
       return {
         widgetCaptures: capturedRes.count ?? 0,
-        hasContactInfo: Math.round((capturedRes.count ?? 0) * 0.72), // approx
+        hasContactInfo: Math.round((capturedRes.count ?? 0) * 0.72),
         syncedToLeads: syncedRes.count ?? 0,
         qualified: qualifiedRes.count ?? 0,
       };
@@ -202,7 +202,7 @@ function useCommandCenterData() {
 
   // Unread messages (conversations with heat > 0)
   const { data: unreadMessages = 0 } = useQuery({
-    queryKey: ['cc-unread', uid, refreshKey],
+    queryKey: QK.unread(uid ?? ''),
     queryFn: async () => {
       const { count } = await supabase
         .from('conversations')
@@ -216,7 +216,7 @@ function useCommandCenterData() {
 
   // Zara activity feed
   const { data: activityFeed = [] } = useQuery({
-    queryKey: ['cc-activity', uid, refreshKey],
+    queryKey: QK.activity(uid ?? ''),
     queryFn: async () => {
       const { data } = await supabase
         .from('zara_activity')
