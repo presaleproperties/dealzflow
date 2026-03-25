@@ -53,12 +53,12 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar — clean off-white */
+    /* Sidebar — pure white in light mode */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 13% 30%;
     --sidebar-primary: 231 62% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 93%;
+    --sidebar-accent: 220 14% 95%;
     --sidebar-accent-foreground: 220 13% 14%;
     --sidebar-border: 220 13% 90%;
     --sidebar-ring: 231 62% 58%;
