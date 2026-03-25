@@ -14,24 +14,28 @@ const navItems = [
 export function MobileNav() {
   const location = useLocation();
 
+  // Sidebar navy palette (matches Sidebar.tsx)
+  const NAVY = 'hsl(222 47% 11%)';
+  const TEAL = 'hsl(172 72% 47%)';
+  const BORDER = 'hsl(222 40% 16% / 0.8)';
+  const MUTED_ICON = 'hsl(220 20% 50%)';
+
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
-      {/* Deep frosted glass */}
+      {/* Deep navy background */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'hsl(var(--background) / 0.92)',
-          backdropFilter: 'blur(32px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(32px) saturate(200%)',
+          background: NAVY,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
         }}
       />
 
       {/* Top hairline */}
       <div
         className="absolute inset-x-0 top-0 h-px"
-        style={{
-          background: 'linear-gradient(90deg, transparent, hsl(var(--border) / 0.9) 15%, hsl(var(--border) / 0.9) 85%, transparent)',
-        }}
+        style={{ background: BORDER }}
       />
 
       {/* Items row */}
@@ -49,13 +53,13 @@ export function MobileNav() {
               onClick={() => triggerHaptic('light')}
               className="relative flex flex-col items-center gap-1.5 flex-1 py-1 transition-all duration-200 active:scale-[0.88] active:opacity-60 select-none outline-none"
             >
-              {/* Active indicator bar */}
+              {/* Active top indicator */}
               <span
                 className={cn(
                   'absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
                   isActive ? 'w-5 h-[2px] opacity-100' : 'w-0 h-[2px] opacity-0',
                 )}
-                style={{ background: 'hsl(var(--primary))' }}
+                style={{ background: TEAL }}
               />
 
               {/* Icon container */}
@@ -66,21 +70,14 @@ export function MobileNav() {
                   isActive ? 'scale-105' : 'scale-100',
                 )}
                 style={isActive ? {
-                  background: 'hsl(var(--primary) / 0.12)',
-                  boxShadow: '0 0 0 1px hsl(var(--primary) / 0.15), 0 2px 8px hsl(var(--primary) / 0.15)',
+                  background: 'hsl(172 72% 47% / 0.15)',
+                  boxShadow: '0 0 0 1px hsl(172 72% 47% / 0.2), 0 2px 8px hsl(172 72% 47% / 0.15)',
                 } : undefined}
               >
                 <Icon
                   strokeWidth={isActive ? 2.3 : 1.8}
-                  className={cn(
-                    'transition-all duration-200',
-                    'w-[19px] h-[19px] md:w-5 md:h-5',
-                  )}
-                  style={{
-                    color: isActive
-                      ? 'hsl(var(--primary))'
-                      : 'hsl(var(--muted-foreground) / 0.65)',
-                  }}
+                  className="transition-all duration-200 w-[19px] h-[19px] md:w-5 md:h-5"
+                  style={{ color: isActive ? TEAL : MUTED_ICON }}
                 />
               </div>
 
@@ -90,11 +87,7 @@ export function MobileNav() {
                   'text-[10.5px] md:text-[11px] tracking-tight leading-none transition-all duration-200',
                   isActive ? 'font-bold' : 'font-semibold',
                 )}
-                style={{
-                  color: isActive
-                    ? 'hsl(var(--primary))'
-                    : 'hsl(var(--muted-foreground) / 0.7)',
-                }}
+                style={{ color: isActive ? TEAL : MUTED_ICON }}
               >
                 {item.label}
               </span>
