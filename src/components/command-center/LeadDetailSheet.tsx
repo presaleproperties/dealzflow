@@ -152,6 +152,39 @@ function useLeadDetail(prospect: ProspectRow | null) {
   return { conversation, messages, notes };
 }
 
+// ─── Add note hook ─────────────────────────────────────────────────────────────
+function useAddNote(conversationId: string | undefined) {
+  const queryClient = useQueryClient();
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  async function submit() {
+    const body = text.trim();
+    if (!body || !conversationId) return;
+    if (body.length > 1000) {
+      toast.error('Note too long — max 1000 characters');
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from('lead_notes')
+      .insert({ conversation_id: conversationId, body, created_by: 'Uzair' });
+    setSaving(false);
+    if (error) {
+      toast.error('Failed to save note');
+      return;
+    }
+    setText('');
+    setOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', conversationId] });
+    toast.success('Note saved');
+  }
+
+  return { text, setText, saving, open, setOpen, submit, inputRef };
+}
+
 // ─── Sheet component ───────────────────────────────────────────────────────────
 interface Props {
   prospect: ProspectRow | null;
