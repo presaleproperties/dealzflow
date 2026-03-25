@@ -325,15 +325,13 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
             title="Notes"
             count={notes.length}
             action={
-              conversation?.id ? (
-                <button
-                  onClick={() => { note.setOpen(true); setTimeout(() => note.inputRef.current?.focus(), 50); }}
-                  className="ml-auto flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Note
-                </button>
-              ) : null
+              <button
+                onClick={() => { note.setOpen(true); setTimeout(() => note.inputRef.current?.focus(), 50); }}
+                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add Note
+              </button>
             }
           >
             {/* Inline compose area */}
