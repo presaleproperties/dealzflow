@@ -53,15 +53,15 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar — pure white in light mode */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 13% 30%;
-    --sidebar-primary: 231 62% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 95%;
-    --sidebar-accent-foreground: 220 13% 14%;
-    --sidebar-border: 220 13% 90%;
-    --sidebar-ring: 231 62% 58%;
+    /* Sidebar — always deep navy (ReZen-style), theme-independent */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 20% 65%;
+    --sidebar-primary: 172 72% 47%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 222 40% 17%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 40% 16%;
+    --sidebar-ring: 172 72% 47%;
 
     /* Charts */
     --chart-1: 231 62% 58%;
@@ -111,15 +111,15 @@
     --input: 222 14% 17%;
     --ring: 231 70% 64%;
 
-    /* Sidebar — darkest slate */
-    --sidebar-background: 222 20% 7%;
-    --sidebar-foreground: 220 12% 62%;
-    --sidebar-primary: 231 70% 64%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 16% 13%;
-    --sidebar-accent-foreground: 220 14% 88%;
-    --sidebar-border: 222 16% 14%;
-    --sidebar-ring: 231 70% 64%;
+    /* Sidebar — same deep navy in dark mode (consistent with light) */
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 220 20% 60%;
+    --sidebar-primary: 172 72% 47%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 40% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 40% 13%;
+    --sidebar-ring: 172 72% 47%;
   }
 }
 
