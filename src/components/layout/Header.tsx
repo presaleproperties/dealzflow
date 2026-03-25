@@ -35,10 +35,7 @@ function ThemeToggle() {
     const next = resolvedTheme === 'dark' ? 'light' : 'dark';
     setTheme(next);
     if (user) {
-      updateSettings.mutate({ theme: next as 'light' | 'dark' | 'system' }, {
-        onSuccess: () => {}, // suppress default toast
-        onError: () => {},
-      });
+      updateSettings.mutate({ theme: next as 'light' | 'dark' | 'system' });
     }
   }
 
