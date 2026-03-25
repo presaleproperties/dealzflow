@@ -17,6 +17,7 @@ import { PipelineStatus } from '@/components/command-center/PipelineStatus';
 import { CalendarWidget } from '@/components/command-center/CalendarWidget';
 import { ActivityFeed } from '@/components/command-center/ActivityFeed';
 import { QuickActions } from '@/components/command-center/QuickActions';
+import { TodaysFocus } from '@/components/command-center/TodaysFocus';
 
 // ─── Query keys (centralised so realtime can invalidate them) ──────────────────
 const QK = {
