@@ -25,6 +25,7 @@ import NetworkPage from "./pages/NetworkPage";
 import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
 import CommandCenterPage from "./pages/CommandCenterPage";
+import LeadsPage from "./pages/LeadsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
