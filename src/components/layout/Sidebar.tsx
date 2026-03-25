@@ -9,7 +9,7 @@ import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
-  LogOut, Command,
+  LogOut, Command, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -29,6 +29,7 @@ const navSections: NavSection[] = [
       { label: 'Forecast',         path: '/forecast',  icon: TrendingUp },
       { label: 'Analytics',        path: '/analytics', icon: BarChart2 },
       { label: 'Client Inventory', path: '/inventory', icon: Building2 },
+      { label: 'Leads',            path: '/leads',     icon: Users },
     ],
   },
   {
