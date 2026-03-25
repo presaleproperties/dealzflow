@@ -263,13 +263,33 @@ const FadeUp = ({
 );
 
 export default function CommandCenterPage() {
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [liveFlash, setLiveFlash] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const handleRefresh = useCallback(() => {
-    setRefreshKey(k => k + 1);
+  const onLiveUpdate = useCallback(() => {
     setLastUpdated(new Date());
+    setLiveFlash(true);
+    clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setLiveFlash(false), 2000);
   }, []);
+
+  // Manual refresh — invalidate all cc-* queries
+  const handleRefresh = useCallback(() => {
+    if (!user?.id) return;
+    const uid = user.id;
+    qc.invalidateQueries({ queryKey: QK.prospects(uid) });
+    qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
+    qc.invalidateQueries({ queryKey: QK.zaraFunnel(uid) });
+    qc.invalidateQueries({ queryKey: QK.unread(uid) });
+    qc.invalidateQueries({ queryKey: QK.activity(uid) });
+    onLiveUpdate();
+  }, [user?.id, qc, onLiveUpdate]);
+
+  // Wire up realtime subscriptions
+  useRealtimeInvalidation(user?.id, onLiveUpdate);
 
   const {
     pipelineValue,
@@ -282,7 +302,7 @@ export default function CommandCenterPage() {
     statusData,
     zaraFunnelData,
     activityFeed,
-  } = useCommandCenterData(refreshKey);
+  } = useCommandCenterData();
 
   return (
     <AppLayout>
@@ -292,8 +312,27 @@ export default function CommandCenterPage() {
         showAddDeal={false}
         action={
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="hidden sm:inline">
-              Updated {format(lastUpdated, 'h:mm a')}
+            {/* Live indicator dot */}
+            <AnimatePresence>
+              {liveFlash && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex items-center gap-1 text-success font-semibold"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <span className="hidden sm:inline text-[11px]">Live</span>
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <Wifi className={cn(
+              'w-3.5 h-3.5 transition-colors duration-500',
+              liveFlash ? 'text-success' : 'text-muted-foreground/40',
+            )} />
+            <span className="hidden sm:inline text-[11px]">
+              {format(lastUpdated, 'h:mm a')}
             </span>
             <button
               onClick={handleRefresh}
