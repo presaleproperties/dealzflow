@@ -321,8 +321,8 @@
   /* ── Status badges ── */
   .status-pending   { @apply bg-warning/10 text-warning font-medium; }
   .status-closed    { @apply bg-success/10 text-success font-medium; }
-  .status-projected { @apply bg-muted text-muted-foreground font-medium; }
-  .status-invoiced  { @apply bg-info/10 text-info font-medium; }
+  .status-projected { @apply bg-primary/8 text-primary/70 font-medium; }
+  .status-invoiced  { @apply bg-primary/10 text-primary font-medium; }
   .status-paid      { @apply bg-success/10 text-success font-medium; }
 
   /* ── Nav item ── */

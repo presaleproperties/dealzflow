@@ -68,8 +68,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="font-medium">{formatCurrency(data?.income || 0)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-emerald-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-primary flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-primary" />
               RevShare
             </span>
             <span className="font-medium">{formatCurrency(data?.revShareIncome || 0)}</span>
@@ -215,11 +215,11 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
             className="text-center"
           >
             <motion.div 
-              className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-primary/20 dark:to-accent/20 flex items-center justify-center shadow-lg"
+              className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shadow-lg"
               animate={{ y: [0, -5, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              <BarChart3 className="w-10 h-10 text-emerald-600 dark:text-primary" />
+              <BarChart3 className="w-10 h-10 text-primary" />
             </motion.div>
             
             <h3 className="text-lg font-bold text-slate-800 dark:text-foreground mb-2">
@@ -284,7 +284,7 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
             ))}
           </div>
           <Link to="/forecast">
-            <Button variant="ghost" size="sm" className="text-emerald-600 dark:text-accent hover:bg-emerald-50 dark:hover:bg-accent/10">
+            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
               Full Forecast <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           </Link>
@@ -296,14 +296,14 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
       {/* Summary Stats - Compact inline */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-4 text-xs">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-success" />
+          <span className="w-2 h-2 rounded-full bg-primary" />
           <span className="text-muted-foreground">Commissions</span>
-          <span className="font-bold text-success">{formatCurrency(totalCommissions)}</span>
+          <span className="font-bold text-primary">{formatCurrency(totalCommissions)}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="w-2 h-2 rounded-full bg-success" />
           <span className="text-muted-foreground">RevShare</span>
-          <span className="font-bold text-emerald-400">{formatCurrency(totalRevShare)}</span>
+          <span className="font-bold text-success">{formatCurrency(totalRevShare)}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">Total</span>
@@ -329,16 +329,16 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
           <ComposedChart data={chartData} barGap={0} onClick={handleBarClick} style={{ cursor: 'pointer' }}>
             <defs>
               <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(160, 84%, 45%)" stopOpacity={1} />
-                <stop offset="100%" stopColor="hsl(160, 84%, 35%)" stopOpacity={1} />
+                <stop offset="0%" stopColor="hsl(231, 70%, 64%)" stopOpacity={1} />
+                <stop offset="100%" stopColor="hsl(231, 62%, 50%)" stopOpacity={1} />
               </linearGradient>
               <linearGradient id="revShareGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(155, 72%, 50%)" stopOpacity={1} />
-                <stop offset="100%" stopColor="hsl(155, 72%, 40%)" stopOpacity={1} />
+                <stop offset="0%" stopColor="hsl(152, 52%, 46%)" stopOpacity={1} />
+                <stop offset="100%" stopColor="hsl(152, 50%, 34%)" stopOpacity={1} />
               </linearGradient>
               <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(0, 84%, 65%)" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="hsl(0, 84%, 55%)" stopOpacity={0.9} />
+                <stop offset="0%" stopColor="hsl(0, 65%, 60%)" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="hsl(0, 65%, 50%)" stopOpacity={0.9} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.5} />
@@ -407,9 +407,9 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
       </div>
 
       {/* Legend note */}
-      <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-border/50">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-muted-foreground">
-          <div className="w-4 h-0.5 bg-emerald-600 dark:bg-primary rounded" />
+      <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-border/50">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="w-4 h-0.5 bg-primary rounded" />
           <span>Net Income Trend</span>
         </div>
       </div>
