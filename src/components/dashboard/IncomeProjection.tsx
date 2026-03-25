@@ -68,8 +68,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="font-medium">{formatCurrency(data?.income || 0)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-emerald-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-primary flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-primary" />
               RevShare
             </span>
             <span className="font-medium">{formatCurrency(data?.revShareIncome || 0)}</span>
@@ -296,14 +296,14 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
       {/* Summary Stats - Compact inline */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-4 text-xs">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-success" />
+          <span className="w-2 h-2 rounded-full bg-primary" />
           <span className="text-muted-foreground">Commissions</span>
-          <span className="font-bold text-success">{formatCurrency(totalCommissions)}</span>
+          <span className="font-bold text-primary">{formatCurrency(totalCommissions)}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="w-2 h-2 rounded-full bg-success" />
           <span className="text-muted-foreground">RevShare</span>
-          <span className="font-bold text-emerald-400">{formatCurrency(totalRevShare)}</span>
+          <span className="font-bold text-success">{formatCurrency(totalRevShare)}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">Total</span>
