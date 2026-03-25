@@ -76,6 +76,7 @@ export interface Settings {
   brokerage_split_percent: number | null;
   apply_tax_to_forecasts: boolean;
   onboarding_completed?: boolean;
+  theme?: 'light' | 'dark' | 'system';
   created_at: string;
   updated_at: string;
 }
