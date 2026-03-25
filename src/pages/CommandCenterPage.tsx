@@ -1,12 +1,13 @@
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
-import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, Wifi } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 import { HeroKPIs } from '@/components/command-center/HeroKPIs';
 import { NeedsAttention } from '@/components/command-center/NeedsAttention';
@@ -17,6 +18,15 @@ import { CalendarWidget } from '@/components/command-center/CalendarWidget';
 import { ActivityFeed } from '@/components/command-center/ActivityFeed';
 import { QuickActions } from '@/components/command-center/QuickActions';
 
+// ─── Query keys (centralised so realtime can invalidate them) ──────────────────
+const QK = {
+  prospects:    (uid: string) => ['cc-prospects',     uid] as const,
+  zaraCaptures: (uid: string) => ['cc-zara-captures', uid] as const,
+  zaraFunnel:   (uid: string) => ['cc-zara-funnel',   uid] as const,
+  unread:       (uid: string) => ['cc-unread',        uid] as const,
+  activity:     (uid: string) => ['cc-activity',      uid] as const,
+};
+
 // ─── Greeting helper ───────────────────────────────────────────────────────────
 function getGreeting() {
   const h = new Date().getHours();
@@ -25,8 +35,70 @@ function getGreeting() {
   return 'Good evening';
 }
 
+// ─── Realtime hook — invalidates queries on table changes ──────────────────────
+function useRealtimeInvalidation(uid: string | undefined, onUpdate: () => void) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!uid) return;
+
+    const invalidateProspects = () => {
+      qc.invalidateQueries({ queryKey: QK.prospects(uid) });
+      onUpdate();
+    };
+    const invalidateConversations = () => {
+      qc.invalidateQueries({ queryKey: QK.unread(uid) });
+      onUpdate();
+    };
+    const invalidateZara = () => {
+      qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
+      qc.invalidateQueries({ queryKey: QK.zaraFunnel(uid) });
+      qc.invalidateQueries({ queryKey: QK.activity(uid) });
+      onUpdate();
+    };
+
+    // Subscribe to pipeline_prospects changes
+    const prospectsChannel = supabase
+      .channel('cc-pipeline-prospects')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pipeline_prospects',
+        filter: `user_id=eq.${uid}`,
+      }, invalidateProspects)
+      .subscribe();
+
+    // Subscribe to conversations changes
+    const conversationsChannel = supabase
+      .channel('cc-conversations')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'conversations',
+        filter: `user_id=eq.${uid}`,
+      }, invalidateConversations)
+      .subscribe();
+
+    // Subscribe to zara_activity changes (no user_id filter — join via conversations)
+    const zaraChannel = supabase
+      .channel('cc-zara-activity')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'zara_activity',
+      }, invalidateZara)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(prospectsChannel);
+      supabase.removeChannel(conversationsChannel);
+      supabase.removeChannel(zaraChannel);
+    };
+  }, [uid, qc, onUpdate]);
+}
+
 // ─── Data hook ─────────────────────────────────────────────────────────────────
-function useCommandCenterData(refreshKey: number) {
+function useCommandCenterData() {
   const { user } = useAuth();
   const uid = user?.id;
 
