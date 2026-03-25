@@ -8,118 +8,118 @@
 
 @layer base {
   :root {
-    /* Light — warm white, presale editorial */
-    --background: 40 14% 97%;
-    --foreground: 24 10% 8%;
+    /* Light — Bolt/Real-style clean neutral */
+    --background: 220 14% 96%;
+    --foreground: 220 13% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 24 10% 8%;
+    --card-foreground: 220 13% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 24 10% 8%;
+    --popover-foreground: 220 13% 13%;
 
-    /* Primary — presaleproperties.com amber/gold */
-    --primary: 40 76% 46%;
+    /* Primary — vivid indigo-blue, like Bolt CTA */
+    --primary: 231 62% 58%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 40 82% 58%;
-    --primary-subtle: 40 80% 96%;
+    --primary-glow: 231 70% 68%;
+    --primary-subtle: 231 80% 96%;
 
     /* Secondary */
-    --secondary: 30 14% 94%;
-    --secondary-foreground: 24 10% 18%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 13% 22%;
 
     /* Muted */
-    --muted: 30 10% 93%;
-    --muted-foreground: 24 8% 44%;
+    --muted: 220 12% 91%;
+    --muted-foreground: 220 9% 46%;
 
-    /* Accent — deep charcoal, matches dark hero */
-    --accent: 222 16% 22%;
+    /* Accent — near-black charcoal, like Bolt icon bg */
+    --accent: 220 16% 20%;
     --accent-foreground: 0 0% 100%;
 
     /* Semantic */
-    --success: 152 50% 32%;
+    --success: 152 50% 34%;
     --success-foreground: 0 0% 100%;
-    --warning: 40 76% 46%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     --info: 210 62% 46%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 65% 44%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 12% 88%;
-    --border-subtle: 30 10% 92%;
-    --input: 30 12% 92%;
-    --ring: 40 76% 46%;
+    --border: 220 13% 88%;
+    --border-subtle: 220 12% 92%;
+    --input: 220 13% 91%;
+    --ring: 231 62% 58%;
 
-    --radius: 0.875rem;
+    --radius: 0.75rem;
 
-    /* Sidebar — warm off-white */
-    --sidebar-background: 30 14% 96%;
-    --sidebar-foreground: 24 10% 28%;
-    --sidebar-primary: 40 76% 46%;
+    /* Sidebar — clean off-white */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 13% 30%;
+    --sidebar-primary: 231 62% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 12% 90%;
-    --sidebar-accent-foreground: 24 10% 14%;
-    --sidebar-border: 30 12% 86%;
-    --sidebar-ring: 40 76% 46%;
+    --sidebar-accent: 220 14% 93%;
+    --sidebar-accent-foreground: 220 13% 14%;
+    --sidebar-border: 220 13% 90%;
+    --sidebar-ring: 231 62% 58%;
 
     /* Charts */
-    --chart-1: 40 76% 46%;
-    --chart-2: 210 62% 46%;
-    --chart-3: 152 50% 32%;
-    --chart-4: 270 48% 50%;
-    --chart-5: 0 65% 44%;
+    --chart-1: 231 62% 58%;
+    --chart-2: 152 50% 34%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 270 48% 56%;
+    --chart-5: 0 65% 50%;
   }
 
   .dark {
-    /* Dark — presaleproperties.com near-black charcoal */
-    --background: 24 8% 5%;
-    --foreground: 40 14% 94%;
+    /* Dark — deep slate, clean and modern */
+    --background: 222 18% 9%;
+    --foreground: 220 14% 93%;
 
-    --card: 24 8% 8%;
-    --card-foreground: 40 14% 94%;
+    --card: 222 16% 13%;
+    --card-foreground: 220 14% 93%;
 
-    --popover: 24 8% 9%;
-    --popover-foreground: 40 14% 94%;
+    --popover: 222 16% 13%;
+    --popover-foreground: 220 14% 93%;
 
-    /* Primary — warm amber, bright on dark */
-    --primary: 40 82% 52%;
-    --primary-foreground: 24 10% 8%;
-    --primary-glow: 40 88% 64%;
-    --primary-subtle: 40 60% 12%;
+    /* Primary — bright indigo on dark */
+    --primary: 231 70% 64%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 231 76% 74%;
+    --primary-subtle: 231 50% 16%;
 
-    --secondary: 24 8% 14%;
-    --secondary-foreground: 40 12% 84%;
+    --secondary: 222 16% 18%;
+    --secondary-foreground: 220 12% 80%;
 
-    --muted: 24 8% 12%;
-    --muted-foreground: 30 8% 50%;
+    --muted: 222 14% 16%;
+    --muted-foreground: 220 10% 52%;
 
-    --accent: 40 82% 52%;
-    --accent-foreground: 24 10% 8%;
+    --accent: 231 70% 64%;
+    --accent-foreground: 0 0% 100%;
 
     --success: 152 52% 44%;
     --success-foreground: 0 0% 100%;
-    --warning: 40 82% 52%;
-    --warning-foreground: 24 10% 8%;
-    --info: 210 60% 52%;
+    --warning: 38 90% 54%;
+    --warning-foreground: 220 13% 10%;
+    --info: 210 60% 54%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 64% 52%;
+    --destructive: 0 64% 56%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 24 8% 15%;
-    --border-subtle: 24 6% 12%;
-    --input: 24 8% 13%;
-    --ring: 40 82% 52%;
+    --border: 222 14% 20%;
+    --border-subtle: 222 12% 17%;
+    --input: 222 14% 17%;
+    --ring: 231 70% 64%;
 
-    /* Sidebar — deepest charcoal */
-    --sidebar-background: 24 10% 4%;
-    --sidebar-foreground: 40 12% 65%;
-    --sidebar-primary: 40 82% 52%;
-    --sidebar-primary-foreground: 24 10% 8%;
-    --sidebar-accent: 24 8% 10%;
-    --sidebar-accent-foreground: 40 12% 88%;
-    --sidebar-border: 24 8% 10%;
-    --sidebar-ring: 40 82% 52%;
+    /* Sidebar — darkest slate */
+    --sidebar-background: 222 20% 7%;
+    --sidebar-foreground: 220 12% 62%;
+    --sidebar-primary: 231 70% 64%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 16% 13%;
+    --sidebar-accent-foreground: 220 14% 88%;
+    --sidebar-border: 222 16% 14%;
+    --sidebar-ring: 231 70% 64%;
   }
 }
 
@@ -264,11 +264,11 @@
 
   /* ── Gradient cards ── */
   .gradient-card-primary {
-    background: linear-gradient(150deg, hsl(40 76% 44%) 0%, hsl(36 72% 30%) 100%);
+    background: linear-gradient(150deg, hsl(231 62% 56%) 0%, hsl(231 58% 40%) 100%);
     box-shadow:
       inset 0 1px 0 0 hsl(0 0% 100% / 0.18),
-      0 4px 16px -2px hsl(40 72% 30% / 0.38),
-      0 16px 36px -6px hsl(40 72% 30% / 0.24);
+      0 4px 16px -2px hsl(231 58% 40% / 0.38),
+      0 16px 36px -6px hsl(231 58% 40% / 0.24);
   }
 
   .gradient-card-accent {
@@ -346,21 +346,21 @@
     @apply font-semibold rounded-xl;
     @apply hover:brightness-110 active:scale-[0.97] active:brightness-95;
     @apply transition-all duration-200;
-    color: hsl(24 10% 8%);
-    background: linear-gradient(150deg, hsl(40 82% 56%) 0%, hsl(36 78% 42%) 100%);
+    color: hsl(0 0% 100%);
+    background: linear-gradient(150deg, hsl(231 70% 62%) 0%, hsl(231 62% 48%) 100%);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.24),
-      0 1px 3px 0 hsl(36 70% 20% / 0.28),
-      0 5px 16px -4px hsl(40 76% 38% / 0.32);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.2),
+      0 1px 3px 0 hsl(231 60% 30% / 0.28),
+      0 5px 16px -4px hsl(231 62% 50% / 0.32);
   }
 
   .btn-premium:hover {
-    background: linear-gradient(150deg, hsl(40 86% 62%) 0%, hsl(36 80% 48%) 100%);
+    background: linear-gradient(150deg, hsl(231 74% 68%) 0%, hsl(231 66% 54%) 100%);
     box-shadow:
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.28),
-      0 2px 6px 0 hsl(36 70% 20% / 0.30),
-      0 12px 24px -4px hsl(40 76% 38% / 0.36),
-      0 0 0 0.5px hsl(40 82% 52% / 0.4);
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.24),
+      0 2px 6px 0 hsl(231 60% 30% / 0.28),
+      0 12px 24px -4px hsl(231 62% 50% / 0.36),
+      0 0 0 0.5px hsl(231 70% 64% / 0.4);
   }
 
   /* ── Glass ── */
