@@ -218,7 +218,7 @@ export default function CommandCenterPage() {
         title="Command Center"
         subtitle={`${getGreeting()}, Uzair`}
         showAddDeal={false}
-        rightContent={
+        action={
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="hidden sm:inline">
               Updated {format(lastUpdated, 'h:mm a')}
