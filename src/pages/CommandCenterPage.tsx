@@ -1,12 +1,13 @@
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
-import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, Wifi } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 import { HeroKPIs } from '@/components/command-center/HeroKPIs';
 import { NeedsAttention } from '@/components/command-center/NeedsAttention';
@@ -17,6 +18,15 @@ import { CalendarWidget } from '@/components/command-center/CalendarWidget';
 import { ActivityFeed } from '@/components/command-center/ActivityFeed';
 import { QuickActions } from '@/components/command-center/QuickActions';
 
+// ─── Query keys (centralised so realtime can invalidate them) ──────────────────
+const QK = {
+  prospects:    (uid: string) => ['cc-prospects',     uid] as const,
+  zaraCaptures: (uid: string) => ['cc-zara-captures', uid] as const,
+  zaraFunnel:   (uid: string) => ['cc-zara-funnel',   uid] as const,
+  unread:       (uid: string) => ['cc-unread',        uid] as const,
+  activity:     (uid: string) => ['cc-activity',      uid] as const,
+};
+
 // ─── Greeting helper ───────────────────────────────────────────────────────────
 function getGreeting() {
   const h = new Date().getHours();
@@ -25,14 +35,76 @@ function getGreeting() {
   return 'Good evening';
 }
 
+// ─── Realtime hook — invalidates queries on table changes ──────────────────────
+function useRealtimeInvalidation(uid: string | undefined, onUpdate: () => void) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!uid) return;
+
+    const invalidateProspects = () => {
+      qc.invalidateQueries({ queryKey: QK.prospects(uid) });
+      onUpdate();
+    };
+    const invalidateConversations = () => {
+      qc.invalidateQueries({ queryKey: QK.unread(uid) });
+      onUpdate();
+    };
+    const invalidateZara = () => {
+      qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
+      qc.invalidateQueries({ queryKey: QK.zaraFunnel(uid) });
+      qc.invalidateQueries({ queryKey: QK.activity(uid) });
+      onUpdate();
+    };
+
+    // Subscribe to pipeline_prospects changes
+    const prospectsChannel = supabase
+      .channel('cc-pipeline-prospects')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'pipeline_prospects',
+        filter: `user_id=eq.${uid}`,
+      }, invalidateProspects)
+      .subscribe();
+
+    // Subscribe to conversations changes
+    const conversationsChannel = supabase
+      .channel('cc-conversations')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'conversations',
+        filter: `user_id=eq.${uid}`,
+      }, invalidateConversations)
+      .subscribe();
+
+    // Subscribe to zara_activity changes (no user_id filter — join via conversations)
+    const zaraChannel = supabase
+      .channel('cc-zara-activity')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'zara_activity',
+      }, invalidateZara)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(prospectsChannel);
+      supabase.removeChannel(conversationsChannel);
+      supabase.removeChannel(zaraChannel);
+    };
+  }, [uid, qc, onUpdate]);
+}
+
 // ─── Data hook ─────────────────────────────────────────────────────────────────
-function useCommandCenterData(refreshKey: number) {
+function useCommandCenterData() {
   const { user } = useAuth();
   const uid = user?.id;
 
   // Active leads (pipeline_prospects where status not closed/lost)
   const { data: prospects = [] } = useQuery({
-    queryKey: ['cc-prospects', uid, refreshKey],
+    queryKey: QK.prospects(uid ?? ''),
     queryFn: async () => {
       const { data } = await supabase
         .from('pipeline_prospects')
@@ -52,7 +124,7 @@ function useCommandCenterData(refreshKey: number) {
     p.temperature?.toLowerCase() === 'hot',
   ).length;
 
-  // "Needs attention" = stale (updated > 48h ago, ordered hot first)
+  // "Needs attention" = stale (updated > 24h ago, ordered hot first)
   const needsAttention = [...prospects].sort((a: any, b: any) => {
     const tempOrder = { hot: 0, warm: 1, cold: 2 };
     const ta = tempOrder[(a.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
@@ -86,7 +158,7 @@ function useCommandCenterData(refreshKey: number) {
 
   // Zara captures (7d)
   const { data: zaraCaptures = 0 } = useQuery({
-    queryKey: ['cc-zara-captures', uid, refreshKey],
+    queryKey: QK.zaraCaptures(uid ?? ''),
     queryFn: async () => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -102,7 +174,7 @@ function useCommandCenterData(refreshKey: number) {
 
   // Zara funnel data
   const { data: zaraFunnelData } = useQuery({
-    queryKey: ['cc-zara-funnel', uid, refreshKey],
+    queryKey: QK.zaraFunnel(uid ?? ''),
     queryFn: async () => {
       const [capturedRes, syncedRes, qualifiedRes] = await Promise.all([
         supabase
@@ -120,7 +192,7 @@ function useCommandCenterData(refreshKey: number) {
       ]);
       return {
         widgetCaptures: capturedRes.count ?? 0,
-        hasContactInfo: Math.round((capturedRes.count ?? 0) * 0.72), // approx
+        hasContactInfo: Math.round((capturedRes.count ?? 0) * 0.72),
         syncedToLeads: syncedRes.count ?? 0,
         qualified: qualifiedRes.count ?? 0,
       };
@@ -130,7 +202,7 @@ function useCommandCenterData(refreshKey: number) {
 
   // Unread messages (conversations with heat > 0)
   const { data: unreadMessages = 0 } = useQuery({
-    queryKey: ['cc-unread', uid, refreshKey],
+    queryKey: QK.unread(uid ?? ''),
     queryFn: async () => {
       const { count } = await supabase
         .from('conversations')
@@ -144,7 +216,7 @@ function useCommandCenterData(refreshKey: number) {
 
   // Zara activity feed
   const { data: activityFeed = [] } = useQuery({
-    queryKey: ['cc-activity', uid, refreshKey],
+    queryKey: QK.activity(uid ?? ''),
     queryFn: async () => {
       const { data } = await supabase
         .from('zara_activity')
@@ -191,13 +263,33 @@ const FadeUp = ({
 );
 
 export default function CommandCenterPage() {
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [liveFlash, setLiveFlash] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const handleRefresh = useCallback(() => {
-    setRefreshKey(k => k + 1);
+  const onLiveUpdate = useCallback(() => {
     setLastUpdated(new Date());
+    setLiveFlash(true);
+    clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setLiveFlash(false), 2000);
   }, []);
+
+  // Manual refresh — invalidate all cc-* queries
+  const handleRefresh = useCallback(() => {
+    if (!user?.id) return;
+    const uid = user.id;
+    qc.invalidateQueries({ queryKey: QK.prospects(uid) });
+    qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
+    qc.invalidateQueries({ queryKey: QK.zaraFunnel(uid) });
+    qc.invalidateQueries({ queryKey: QK.unread(uid) });
+    qc.invalidateQueries({ queryKey: QK.activity(uid) });
+    onLiveUpdate();
+  }, [user?.id, qc, onLiveUpdate]);
+
+  // Wire up realtime subscriptions
+  useRealtimeInvalidation(user?.id, onLiveUpdate);
 
   const {
     pipelineValue,
@@ -210,7 +302,7 @@ export default function CommandCenterPage() {
     statusData,
     zaraFunnelData,
     activityFeed,
-  } = useCommandCenterData(refreshKey);
+  } = useCommandCenterData();
 
   return (
     <AppLayout>
@@ -220,8 +312,27 @@ export default function CommandCenterPage() {
         showAddDeal={false}
         action={
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="hidden sm:inline">
-              Updated {format(lastUpdated, 'h:mm a')}
+            {/* Live indicator dot */}
+            <AnimatePresence>
+              {liveFlash && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex items-center gap-1 text-success font-semibold"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <span className="hidden sm:inline text-[11px]">Live</span>
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <Wifi className={cn(
+              'w-3.5 h-3.5 transition-colors duration-500',
+              liveFlash ? 'text-success' : 'text-muted-foreground/40',
+            )} />
+            <span className="hidden sm:inline text-[11px]">
+              {format(lastUpdated, 'h:mm a')}
             </span>
             <button
               onClick={handleRefresh}
