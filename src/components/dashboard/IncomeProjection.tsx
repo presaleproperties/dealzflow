@@ -329,16 +329,16 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
           <ComposedChart data={chartData} barGap={0} onClick={handleBarClick} style={{ cursor: 'pointer' }}>
             <defs>
               <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(160, 84%, 45%)" stopOpacity={1} />
-                <stop offset="100%" stopColor="hsl(160, 84%, 35%)" stopOpacity={1} />
+                <stop offset="0%" stopColor="hsl(231, 70%, 64%)" stopOpacity={1} />
+                <stop offset="100%" stopColor="hsl(231, 62%, 50%)" stopOpacity={1} />
               </linearGradient>
               <linearGradient id="revShareGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(155, 72%, 50%)" stopOpacity={1} />
-                <stop offset="100%" stopColor="hsl(155, 72%, 40%)" stopOpacity={1} />
+                <stop offset="0%" stopColor="hsl(152, 52%, 46%)" stopOpacity={1} />
+                <stop offset="100%" stopColor="hsl(152, 50%, 34%)" stopOpacity={1} />
               </linearGradient>
               <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(0, 84%, 65%)" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="hsl(0, 84%, 55%)" stopOpacity={0.9} />
+                <stop offset="0%" stopColor="hsl(0, 65%, 60%)" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="hsl(0, 65%, 50%)" stopOpacity={0.9} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} opacity={0.5} />
