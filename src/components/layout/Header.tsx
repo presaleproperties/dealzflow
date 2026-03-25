@@ -1,10 +1,12 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { useTheme } from 'next-themes';
 import { ChevronLeft, Menu, Sun, Moon } from 'lucide-react';
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderProps {
   title: string;
@@ -16,11 +18,31 @@ interface HeaderProps {
 }
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { user } = useAuth();
+  const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings({ silent: true });
+
+  // On mount: restore theme from DB if user is logged in
+  useEffect(() => {
+    if (settings?.theme && settings.theme !== theme) {
+      setTheme(settings.theme);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings?.theme]);
+
+  function handleToggle() {
+    const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    if (user) {
+      updateSettings.mutate({ theme: next as 'light' | 'dark' | 'system' });
+    }
+  }
+
   return (
     <button
       className="h-8 w-8 shrink-0 flex items-center justify-center rounded-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 active:scale-90 transition-all duration-200"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={handleToggle}
       aria-label="Toggle theme"
     >
       <Sun className="h-[14px] w-[14px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
