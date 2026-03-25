@@ -1,10 +1,12 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { useTheme } from 'next-themes';
 import { ChevronLeft, Menu, Sun, Moon } from 'lucide-react';
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 
 interface HeaderProps {
   title: string;
