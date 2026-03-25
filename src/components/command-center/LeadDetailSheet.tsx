@@ -221,6 +221,7 @@ interface Props {
 }
 
 export function LeadDetailSheet({ prospect, open, onClose }: Props) {
+  const queryClient = useQueryClient();
   const { conversation, messages, notes } = useLeadDetail(open ? prospect : null);
   const note = useAddNote(prospect, conversation?.id);
 
