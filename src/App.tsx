@@ -93,7 +93,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/command-center" replace />;
   }
   
   return <>{children}</>;
