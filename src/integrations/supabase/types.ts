@@ -1002,6 +1002,7 @@ export type Database = {
           tax_saved_amount: number | null
           tax_set_aside_percent: number | null
           tax_type: string | null
+          theme: string | null
           updated_at: string
           user_id: string
           yearly_gci_goal: number | null
@@ -1034,6 +1035,7 @@ export type Database = {
           tax_saved_amount?: number | null
           tax_set_aside_percent?: number | null
           tax_type?: string | null
+          theme?: string | null
           updated_at?: string
           user_id: string
           yearly_gci_goal?: number | null
@@ -1066,6 +1068,7 @@ export type Database = {
           tax_saved_amount?: number | null
           tax_set_aside_percent?: number | null
           tax_type?: string | null
+          theme?: string | null
           updated_at?: string
           user_id?: string
           yearly_gci_goal?: number | null
