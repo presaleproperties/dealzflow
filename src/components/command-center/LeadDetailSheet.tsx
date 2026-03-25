@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import {
   MessageSquare,
   Phone,
+  Trash2,
   ExternalLink,
   Calendar,
   Tag,
