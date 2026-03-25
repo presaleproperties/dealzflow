@@ -293,8 +293,69 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
           </div>
 
           {/* ── Notes ─────────────────────────────────────────────────────── */}
-          <Section icon={<StickyNote className="w-3.5 h-3.5" />} title="Notes" count={notes.length}>
-            {notes.length === 0 ? (
+          <Section
+            icon={<StickyNote className="w-3.5 h-3.5" />}
+            title="Notes"
+            count={notes.length}
+            action={
+              conversation?.id ? (
+                <button
+                  onClick={() => { note.setOpen(true); setTimeout(() => note.inputRef.current?.focus(), 50); }}
+                  className="ml-auto flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Note
+                </button>
+              ) : null
+            }
+          >
+            {/* Inline compose area */}
+            <AnimatePresence>
+              {note.open && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 py-3 border-b border-border/30 bg-muted/20">
+                    <textarea
+                      ref={note.inputRef}
+                      value={note.text}
+                      onChange={e => note.setText(e.target.value.slice(0, 1000))}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) note.submit();
+                        if (e.key === 'Escape') note.setOpen(false);
+                      }}
+                      placeholder="Write a note… (⌘+Enter to save)"
+                      rows={3}
+                      className="w-full bg-background/60 border border-border/40 rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-muted-foreground/40">{note.text.length}/1000</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { note.setOpen(false); note.setText(''); }}
+                          className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/30 hover:bg-muted transition-colors"
+                        >
+                          <X className="w-3 h-3" /> Cancel
+                        </button>
+                        <button
+                          onClick={note.submit}
+                          disabled={!note.text.trim() || note.saving}
+                          className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          <Send className="w-3 h-3" />
+                          {note.saving ? 'Saving…' : 'Save Note'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {notes.length === 0 && !note.open ? (
               <p className="text-xs text-muted-foreground/50 italic px-4 py-2">No notes yet.</p>
             ) : notes.map((n: any, i: number) => (
               <motion.div
