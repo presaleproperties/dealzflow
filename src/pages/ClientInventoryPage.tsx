@@ -324,11 +324,11 @@ function InventoryRow({ item, index, onEdit, onDelete }: {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 min-w-0">
             {(item.propertyAddress || item.projectName) && (
-              <span className="text-xs text-muted-foreground truncate max-w-[260px] flex items-center gap-1">
+              <span className="text-xs text-muted-foreground flex items-center gap-1 min-w-0 truncate">
                 <MapPin className="w-3 h-3 shrink-0" />
-                {item.propertyAddress || item.projectName}
+                <span className="truncate">{item.propertyAddress || item.projectName}</span>
               </span>
             )}
             {dateDisplay && (
