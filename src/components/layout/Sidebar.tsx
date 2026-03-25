@@ -74,33 +74,23 @@ export function Sidebar() {
       <Link
         to={item.path}
         className={cn(
-        'relative flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-all duration-200 group',
-          isCollapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-2.5 py-[7px]',
+          'relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 group select-none',
+          isCollapsed ? 'justify-center px-0 py-2 mx-1.5' : 'px-2.5 py-[6px]',
           isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/55 hover:text-sidebar-foreground hover:bg-sidebar-accent/60',
+            ? 'bg-primary/10 text-primary'
+            : 'text-foreground/50 hover:text-foreground/80 hover:bg-muted/60',
         )}
       >
-        {/* Active indicator */}
-        {isActive && (
-          <span
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-            style={{ background: 'hsl(var(--sidebar-primary))' }}
-          />
-        )}
         <item.icon
           className={cn(
-            'flex-shrink-0 transition-all duration-200',
-            isCollapsed ? 'w-[17px] h-[17px]' : 'w-[15px] h-[15px]',
-            isActive
-              ? 'opacity-100'
-              : 'opacity-50 group-hover:opacity-75',
+            'flex-shrink-0 transition-all duration-150',
+            isCollapsed ? 'w-[16px] h-[16px]' : 'w-[15px] h-[15px]',
+            isActive ? 'text-primary opacity-100' : 'opacity-60 group-hover:opacity-80',
           )}
-          style={isActive ? { color: 'hsl(var(--sidebar-primary))' } : undefined}
-          strokeWidth={isActive ? 2.1 : 1.75}
+          strokeWidth={isActive ? 2.2 : 1.8}
         />
         {!isCollapsed && (
-          <span className="truncate">{item.label}</span>
+          <span className="truncate leading-none">{item.label}</span>
         )}
       </Link>
     );
@@ -120,40 +110,31 @@ export function Sidebar() {
     <aside
       className={cn(
         'hidden md:flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 ease-in-out z-40',
+        'bg-card border-r border-border/60',
         isCollapsed ? 'w-[54px]' : 'w-[218px]',
       )}
     >
-      {/* Background — very deep with subtle noise feel */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'hsl(var(--sidebar-background))',
-          boxShadow: '1px 0 0 0 hsl(var(--sidebar-border) / 0.8)',
-        }}
-      />
-
       {/* Logo */}
       <div className={cn(
-        'relative flex items-center gap-2.5 min-h-[58px]',
-        isCollapsed ? 'justify-center px-0 pt-4 pb-3' : 'px-3.5 pt-4 pb-3',
+        'flex items-center gap-2.5 h-[56px] border-b border-border/50',
+        isCollapsed ? 'justify-center px-0' : 'px-4',
       )}>
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
           <img
             src={logoMark}
             alt="Dealzflow"
             className={cn(
-              'rounded-[9px] flex-shrink-0 transition-all duration-200 group-hover:opacity-80',
-              isCollapsed ? 'w-6 h-6' : 'w-[26px] h-[26px]',
+              'rounded-[8px] flex-shrink-0 transition-all duration-200 group-hover:opacity-80',
+              isCollapsed ? 'w-6 h-6' : 'w-[25px] h-[25px]',
             )}
           />
           <span
             className={cn(
-              'transition-all duration-300 font-bold text-[14px] tracking-[-0.03em] whitespace-nowrap overflow-hidden',
-              'text-sidebar-foreground/80',
+              'transition-all duration-300 font-semibold text-[13.5px] tracking-[-0.02em] whitespace-nowrap overflow-hidden text-foreground',
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100',
             )}
           >
-            Dealz<span style={{ color: 'hsl(var(--sidebar-primary))' }}>flow</span>
+            Dealz<span className="text-primary">flow</span>
           </span>
         </Link>
       </div>
@@ -161,39 +142,32 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={toggleCollapse}
-        className="absolute -right-[13px] top-[50px] w-[26px] h-[26px] rounded-full flex items-center justify-center transition-all duration-200 z-10"
-        style={{
-          background: 'hsl(var(--sidebar-background))',
-          border: '1.5px solid hsl(var(--sidebar-border))',
-          color: 'hsl(var(--sidebar-foreground) / 0.7)',
-          boxShadow: '0 2px 8px -2px hsl(0 0% 0% / 0.18), 0 0 0 0.5px hsl(var(--sidebar-border))',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'hsl(var(--sidebar-primary))')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'hsl(var(--sidebar-foreground) / 0.7)')}
+        className={cn(
+          'absolute -right-[11px] top-[56px] -translate-y-1/2 w-[22px] h-[22px] rounded-full flex items-center justify-center transition-all duration-200 z-10',
+          'bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary/40',
+          'shadow-[0_1px_4px_0_hsl(0_0%_0%/0.1)]',
+        )}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {isCollapsed
-          ? <ChevronRight className="w-3 h-3" />
-          : <ChevronLeft className="w-3 h-3" />
+          ? <ChevronRight className="w-2.5 h-2.5" />
+          : <ChevronLeft className="w-2.5 h-2.5" />
         }
       </button>
 
-      {/* Sep */}
-      <div className="relative mx-3 h-px" style={{ background: 'hsl(var(--sidebar-border) / 0.5)' }} />
-
       {/* Navigation */}
       <nav className={cn(
-        'relative flex-1 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden',
-        isCollapsed ? 'px-0' : 'px-2',
+        'flex-1 py-3 overflow-y-auto overflow-x-hidden',
+        isCollapsed ? 'px-0' : 'px-2.5',
       )}>
         {navSections.map((section) => (
-          <div key={section.label} className="mb-3">
+          <div key={section.label} className="mb-4">
             {!isCollapsed ? (
-              <div className="px-2.5 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/40">
+              <div className="px-2.5 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.09em] text-muted-foreground/50">
                 {section.label}
               </div>
             ) : (
-              <div className="h-px mx-2 my-2" style={{ background: 'hsl(var(--sidebar-border) / 0.4)' }} />
+              <div className="h-px mx-2 my-2 bg-border/50" />
             )}
             <div className="space-y-0.5">
               {section.items.map((item) => (
@@ -203,7 +177,7 @@ export function Sidebar() {
           </div>
         ))}
 
-        <div className="h-px mx-2 my-1" style={{ background: 'hsl(var(--sidebar-border) / 0.35)' }} />
+        <div className="h-px mx-2 my-1 bg-border/40" />
 
         {standaloneItems.map((item) => (
           <NavLink key={item.path} item={item} />
@@ -211,20 +185,20 @@ export function Sidebar() {
 
         {isAdmin && (
           <>
-            <div className="h-px mx-2 my-1" style={{ background: 'hsl(var(--sidebar-border) / 0.35)' }} />
+            <div className="h-px mx-2 my-1 bg-border/40" />
             {isCollapsed ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <Link
                     to="/admin"
                     className={cn(
-                      'flex items-center justify-center py-2.5 mx-1 rounded-[10px] transition-all duration-200',
+                      'flex items-center justify-center py-2 mx-1.5 rounded-lg transition-all duration-150',
                       location.pathname === '/admin'
-                        ? 'text-warning bg-warning/12'
-                        : 'text-warning/35 hover:text-warning hover:bg-warning/10',
+                        ? 'text-warning bg-warning/10'
+                        : 'text-warning/40 hover:text-warning hover:bg-warning/10',
                     )}
                   >
-                    <ShieldAlert className="w-[17px] h-[17px]" strokeWidth={1.75} />
+                    <ShieldAlert className="w-[16px] h-[16px]" strokeWidth={1.8} />
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium text-xs">Admin</TooltipContent>
@@ -233,13 +207,13 @@ export function Sidebar() {
               <Link
                 to="/admin"
                 className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-[7px] rounded-[10px] text-[13px] font-medium transition-all duration-200',
+                  'flex items-center gap-2.5 px-2.5 py-[6px] rounded-lg text-[13px] font-medium transition-all duration-150',
                   location.pathname === '/admin'
-                    ? 'bg-warning/12 text-warning'
-                    : 'text-warning/35 hover:text-warning hover:bg-warning/10',
+                    ? 'bg-warning/10 text-warning'
+                    : 'text-warning/40 hover:text-warning hover:bg-warning/10',
                 )}
               >
-                <ShieldAlert className="w-[15px] h-[15px] flex-shrink-0" strokeWidth={1.75} />
+                <ShieldAlert className="w-[15px] h-[15px] flex-shrink-0" strokeWidth={1.8} />
                 <span>Admin</span>
               </Link>
             )}
@@ -248,18 +222,15 @@ export function Sidebar() {
       </nav>
 
       {/* Sign out */}
-      <div
-        className="relative px-2 py-3"
-        style={{ borderTop: '1px solid hsl(var(--sidebar-border) / 0.45)' }}
-      >
+      <div className="px-2.5 py-3 border-t border-border/50">
         {isCollapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
-        <button
-            onClick={signOut}
-            className="flex items-center justify-center w-full py-2 rounded-[10px] text-sidebar-foreground/45 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-200"
-          >
-                <LogOut className="w-[14px] h-[14px]" strokeWidth={1.75} />
+              <button
+                onClick={signOut}
+                className="flex items-center justify-center w-full py-2 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/8 transition-all duration-150"
+              >
+                <LogOut className="w-[14px] h-[14px]" strokeWidth={1.8} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" className="font-medium text-xs">Sign Out</TooltipContent>
@@ -267,9 +238,9 @@ export function Sidebar() {
         ) : (
           <button
             onClick={signOut}
-            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-[10px] text-[12.5px] font-medium text-sidebar-foreground/45 hover:text-destructive/80 hover:bg-destructive/8 transition-all duration-200"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[12.5px] font-medium text-muted-foreground/50 hover:text-destructive hover:bg-destructive/8 transition-all duration-150"
           >
-            <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.75} />
+            <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.8} />
             <span>Sign out</span>
           </button>
         )}
