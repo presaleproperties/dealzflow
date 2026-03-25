@@ -21,7 +21,7 @@ function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user } = useAuth();
   const { data: settings } = useSettings();
-  const updateSettings = useUpdateSettings();
+  const updateSettings = useUpdateSettings({ silent: true });
 
   // On mount: restore theme from DB if user is logged in
   useEffect(() => {
