@@ -23,6 +23,9 @@ import {
   StickyNote,
   Zap,
   User,
+  Plus,
+  Send,
+  X,
 } from 'lucide-react';
 import type { ProspectRow } from './NeedsAttention';
 
