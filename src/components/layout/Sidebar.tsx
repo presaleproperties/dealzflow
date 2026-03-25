@@ -20,7 +20,7 @@ const navSections: NavSection[] = [
   {
     label: 'Production',
     items: [
-      { label: 'Command Center',   path: '/command-center', icon: LayoutDashboard },
+      { label: 'Command Center',   path: '/command-center', icon: Command },
       { label: 'Dashboard',        path: '/dashboard', icon: LayoutDashboard },
       { label: 'Pipeline',         path: '/pipeline',  icon: GitBranch },
       { label: 'Deals',            path: '/deals',     icon: Handshake },
