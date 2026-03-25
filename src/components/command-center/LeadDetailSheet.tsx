@@ -194,6 +194,7 @@ interface Props {
 
 export function LeadDetailSheet({ prospect, open, onClose }: Props) {
   const { conversation, messages, notes } = useLeadDetail(open ? prospect : null);
+  const note = useAddNote(conversation?.id);
 
   if (!prospect) return null;
 
