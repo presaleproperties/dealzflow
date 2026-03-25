@@ -9,7 +9,7 @@ import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
-  LogOut,
+  LogOut, Command,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
