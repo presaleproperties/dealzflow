@@ -355,6 +355,11 @@ export default function CommandCenterPage() {
           />
         </FadeUp>
 
+        {/* ── Today's Focus ─────────────────────────────────────────────── */}
+        <FadeUp delay={0.08}>
+          <TodaysFocus />
+        </FadeUp>
+
         {/* ── ROW 2: Needs Attention (60%) + Zara Funnel (40%) ─────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           <FadeUp delay={0.14} className="lg:col-span-3">
