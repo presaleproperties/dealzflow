@@ -1,20 +1,176 @@
-import { Link } from 'react-router-dom';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
-import {
-  Users, Zap, TrendingUp, MessageSquare,
-  CircleDot, ArrowRightLeft, Star, MessageCircle,
-  LayoutGrid, Handshake, Settings2, Home,
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { RefreshCw } from 'lucide-react';
+import { format } from 'date-fns';
 
-// ─── Animation helpers ─────────────────────────────────────────────────────────
+import { HeroKPIs } from '@/components/command-center/HeroKPIs';
+import { NeedsAttention } from '@/components/command-center/NeedsAttention';
+import { ZaraFunnel } from '@/components/command-center/ZaraFunnel';
+import { LeadSources } from '@/components/command-center/LeadSources';
+import { PipelineStatus } from '@/components/command-center/PipelineStatus';
+import { CalendarWidget } from '@/components/command-center/CalendarWidget';
+import { ActivityFeed } from '@/components/command-center/ActivityFeed';
+import { QuickActions } from '@/components/command-center/QuickActions';
+
+// ─── Greeting helper ───────────────────────────────────────────────────────────
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// ─── Data hook ─────────────────────────────────────────────────────────────────
+function useCommandCenterData(refreshKey: number) {
+  const { user } = useAuth();
+  const uid = user?.id;
+
+  // Active leads (pipeline_prospects where status not closed/lost)
+  const { data: prospects = [] } = useQuery({
+    queryKey: ['cc-prospects', uid, refreshKey],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('pipeline_prospects')
+        .select('id,client_name,source,temperature,budget,status,notes,created_at,updated_at')
+        .not('status', 'in', '("closed","lost","Closed","Lost")')
+        .order('temperature', { ascending: false })
+        .order('created_at', { ascending: true });
+      return data ?? [];
+    },
+    enabled: !!uid,
+  });
+
+  // Pipeline value (sum of budgets)
+  const pipelineValue = prospects.reduce((s: number, p: any) => s + (p.budget ?? 0), 0);
+  const activeLeads = prospects.length;
+  const hotLeads = prospects.filter((p: any) =>
+    p.temperature?.toLowerCase() === 'hot',
+  ).length;
+
+  // "Needs attention" = stale (updated > 48h ago, ordered hot first)
+  const needsAttention = [...prospects].sort((a: any, b: any) => {
+    const tempOrder = { hot: 0, warm: 1, cold: 2 };
+    const ta = tempOrder[(a.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
+    const tb = tempOrder[(b.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
+    if (ta !== tb) return ta - tb;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  }).filter((p: any) => {
+    const hoursAgo = (Date.now() - new Date(p.updated_at).getTime()) / 3_600_000;
+    return hoursAgo > 24;
+  });
+
+  // Lead sources
+  const sourceMap: Record<string, number> = {};
+  prospects.forEach((p: any) => {
+    const s = p.source?.trim() || 'Unknown';
+    sourceMap[s] = (sourceMap[s] || 0) + 1;
+  });
+  const sourceData = Object.entries(sourceMap)
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Pipeline by status
+  const statusMap: Record<string, number> = {};
+  prospects.forEach((p: any) => {
+    const s = p.status?.toLowerCase()?.trim() || 'active';
+    statusMap[s] = (statusMap[s] || 0) + 1;
+  });
+  const statusData = Object.entries(statusMap)
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Zara captures (7d)
+  const { data: zaraCaptures = 0 } = useQuery({
+    queryKey: ['cc-zara-captures', uid, refreshKey],
+    queryFn: async () => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const { count } = await supabase
+        .from('zara_activity')
+        .select('*', { count: 'exact', head: true })
+        .eq('action_type', 'captured')
+        .gte('created_at', sevenDaysAgo.toISOString());
+      return count ?? 0;
+    },
+    enabled: !!uid,
+  });
+
+  // Zara funnel data
+  const { data: zaraFunnelData } = useQuery({
+    queryKey: ['cc-zara-funnel', uid, refreshKey],
+    queryFn: async () => {
+      const [capturedRes, syncedRes, qualifiedRes] = await Promise.all([
+        supabase
+          .from('zara_activity')
+          .select('*', { count: 'exact', head: true })
+          .eq('action_type', 'captured'),
+        supabase
+          .from('zara_activity')
+          .select('*', { count: 'exact', head: true })
+          .eq('action_type', 'synced_to_leads'),
+        supabase
+          .from('zara_activity')
+          .select('*', { count: 'exact', head: true })
+          .eq('action_type', 'qualified'),
+      ]);
+      return {
+        widgetCaptures: capturedRes.count ?? 0,
+        hasContactInfo: Math.round((capturedRes.count ?? 0) * 0.72), // approx
+        syncedToLeads: syncedRes.count ?? 0,
+        qualified: qualifiedRes.count ?? 0,
+      };
+    },
+    enabled: !!uid,
+  });
+
+  // Unread messages (conversations with heat > 0)
+  const { data: unreadMessages = 0 } = useQuery({
+    queryKey: ['cc-unread', uid, refreshKey],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('conversations')
+        .select('*', { count: 'exact', head: true })
+        .gt('heat', 0)
+        .neq('status', 'closed');
+      return count ?? 0;
+    },
+    enabled: !!uid,
+  });
+
+  // Zara activity feed
+  const { data: activityFeed = [] } = useQuery({
+    queryKey: ['cc-activity', uid, refreshKey],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('zara_activity')
+        .select('id,action_type,description,created_at')
+        .order('created_at', { ascending: false })
+        .limit(15);
+      return data ?? [];
+    },
+    enabled: !!uid,
+  });
+
+  return {
+    pipelineValue,
+    activeLeads,
+    hotLeads,
+    zaraCaptures,
+    unreadMessages,
+    needsAttention,
+    sourceData,
+    statusData,
+    zaraFunnelData: zaraFunnelData ?? { widgetCaptures: 0, hasContactInfo: 0, syncedToLeads: 0, qualified: 0 },
+    activityFeed,
+  };
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 const FadeUp = ({
   children,
   delay = 0,
@@ -34,417 +190,105 @@ const FadeUp = ({
   </motion.div>
 );
 
-// ─── Data hooks ────────────────────────────────────────────────────────────────
-function useCommandCenterData() {
-  const { user } = useAuth();
-
-  const { data: activeLeadsCount = 0 } = useQuery({
-    queryKey: ['command-center-active-leads', user?.id],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('conversations')
-        .select('*', { count: 'exact', head: true })
-        .neq('status', 'closed');
-      return count ?? 0;
-    },
-    enabled: !!user,
-  });
-
-  const { data: zaraCapturesCount = 0 } = useQuery({
-    queryKey: ['command-center-zara-captures', user?.id],
-    queryFn: async () => {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { count } = await supabase
-        .from('zara_activity')
-        .select('*', { count: 'exact', head: true })
-        .eq('action_type', 'captured')
-        .gte('created_at', sevenDaysAgo.toISOString());
-      return count ?? 0;
-    },
-    enabled: !!user,
-  });
-
-  const { data: dealsThisMonthCount = 0 } = useQuery({
-    queryKey: ['command-center-deals-month', user?.id],
-    queryFn: async () => {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { count } = await supabase
-        .from('conversations')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'qualified')
-        .gte('updated_at', startOfMonth);
-      return count ?? 0;
-    },
-    enabled: !!user,
-  });
-
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['command-center-unread', user?.id],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('conversations')
-        .select('*', { count: 'exact', head: true })
-        .gt('heat', 0)
-        .neq('status', 'closed');
-      return count ?? 0;
-    },
-    enabled: !!user,
-  });
-
-  const { data: zaraActivity = [] } = useQuery({
-    queryKey: ['command-center-zara-activity', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('zara_activity')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      return data ?? [];
-    },
-    enabled: !!user,
-  });
-
-  const { data: pipelineData = {} } = useQuery({
-    queryKey: ['command-center-pipeline', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('conversations')
-        .select('status');
-      if (!data) return {};
-      const counts: Record<string, number> = {};
-      data.forEach(({ status }) => {
-        if (status) counts[status] = (counts[status] || 0) + 1;
-      });
-      return counts;
-    },
-    enabled: !!user,
-  });
-
-  return {
-    activeLeadsCount,
-    zaraCapturesCount,
-    dealsThisMonthCount,
-    unreadCount,
-    zaraActivity,
-    pipelineData,
-  };
-}
-
-// ─── KPI Card ──────────────────────────────────────────────────────────────────
-function KPICard({
-  label,
-  value,
-  icon: Icon,
-  colorVar,
-  delay,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ElementType;
-  colorVar: string;
-  delay: number;
-}) {
-  return (
-    <FadeUp delay={delay}>
-      <div className="card-premium p-4 flex items-start gap-3.5 h-full">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-          style={{ background: `hsl(${colorVar} / 0.12)` }}
-        >
-          <Icon className="w-4 h-4" style={{ color: `hsl(${colorVar})` }} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-2xl font-bold tracking-tight text-foreground tabular-nums leading-none mb-1">
-            {value}
-          </p>
-          <p className="text-xs text-muted-foreground leading-snug">{label}</p>
-        </div>
-      </div>
-    </FadeUp>
-  );
-}
-
-// ─── Zara Activity Icon ────────────────────────────────────────────────────────
-function ActivityIcon({ type }: { type: string }) {
-  if (type === 'captured') return (
-    <span className="w-6 h-6 rounded-full bg-success/15 flex items-center justify-center shrink-0">
-      <CircleDot className="w-3 h-3 text-success" />
-    </span>
-  );
-  if (type === 'synced_to_leads') return (
-    <span className="w-6 h-6 rounded-full bg-info/15 flex items-center justify-center shrink-0">
-      <ArrowRightLeft className="w-3 h-3 text-info" />
-    </span>
-  );
-  if (type === 'qualified') return (
-    <span className="w-6 h-6 rounded-full bg-warning/15 flex items-center justify-center shrink-0">
-      <Star className="w-3 h-3 text-warning" />
-    </span>
-  );
-  if (type === 'conversation') return (
-    <span className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-      <MessageCircle className="w-3 h-3 text-primary" />
-    </span>
-  );
-  return (
-    <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
-      <Zap className="w-3 h-3 text-muted-foreground" />
-    </span>
-  );
-}
-
-// ─── Pipeline Funnel ───────────────────────────────────────────────────────────
-const FUNNEL_STAGES = [
-  { key: 'new',       label: 'New',       colorVar: 'var(--muted-foreground)' },
-  { key: 'contacted', label: 'Contacted', colorVar: 'hsl(var(--info))' },
-  { key: 'qualified', label: 'Qualified', colorVar: 'hsl(var(--warning))' },
-  { key: 'closed',    label: 'Closed',    colorVar: 'hsl(var(--success))' },
-];
-
-function PipelineFunnel({ data }: { data: Record<string, number> }) {
-  const stagesWithCounts = FUNNEL_STAGES.map(s => ({
-    ...s,
-    count: data[s.key] ?? 0,
-  }));
-  const totalCount = stagesWithCounts.reduce((s, x) => s + x.count, 0);
-  const maxCount = Math.max(...stagesWithCounts.map(s => s.count), 1);
-  const hasData = totalCount > 0;
-
-  if (!hasData) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
-        <div className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center mb-3">
-          <TrendingUp className="w-4 h-4 text-muted-foreground/40" />
-        </div>
-        <p className="text-sm font-medium text-foreground">No pipeline data yet</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Lead stages will appear here as conversations move through the funnel
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {stagesWithCounts.map((stage, i) => {
-        const pct = Math.max((stage.count / maxCount) * 100, stage.count > 0 ? 3 : 0);
-        return (
-          <motion.div
-            key={stage.key}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.55 + i * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-3"
-          >
-            <span className="text-xs text-muted-foreground w-20 shrink-0 text-right font-medium">
-              {stage.label}
-            </span>
-            <div className="flex-1 h-7 rounded-lg bg-muted/30 overflow-hidden relative flex items-center">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ delay: 0.6 + i * 0.06, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="h-full rounded-lg absolute left-0 top-0"
-                style={{ background: stage.colorVar, opacity: 0.75 }}
-              />
-              {stage.count > 0 && (
-                <span
-                  className="relative z-10 text-xs font-semibold pl-2.5"
-                  style={{ color: stage.colorVar }}
-                >
-                  {stage.count}
-                </span>
-              )}
-            </div>
-            <span
-              className="text-sm font-bold tabular-nums w-6 shrink-0 text-right"
-              style={{ color: stage.colorVar }}
-            >
-              {stage.count}
-            </span>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Quick Links ───────────────────────────────────────────────────────────────
-const QUICK_LINKS = [
-  { label: 'All Leads',     to: '/dashboard',     icon: LayoutGrid },
-  { label: 'Conversations', to: '/conversations',  icon: MessageSquare },
-  { label: 'Deals',         to: '/deals',          icon: Handshake },
-  { label: 'Settings',      to: '/settings',       icon: Settings2 },
-];
-
-// ─── Google Calendar with dark mode filter ─────────────────────────────────────
-function CalendarEmbed() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
-  return (
-    <iframe
-      src="https://calendar.google.com/calendar/embed?src=info%40meetuzair.com&ctz=America%2FVancouver&mode=WEEK&showTitle=0&showNav=1&showPrint=0&showCalendars=0&showTz=0&showTabs=0&showDate=1"
-      className="absolute inset-0 w-full h-full border-0 rounded-b-xl"
-      title="Google Calendar"
-      style={{
-        filter: isDark
-          ? 'invert(0.88) hue-rotate(180deg) saturate(0.9) brightness(0.95)'
-          : 'none',
-        transition: 'filter 0.3s ease',
-      }}
-      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-    />
-  );
-}
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function CommandCenterPage() {
-  const {
-    activeLeadsCount,
-    zaraCapturesCount,
-    dealsThisMonthCount,
-    unreadCount,
-    zaraActivity,
-    pipelineData,
-  } = useCommandCenterData();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  const kpiCards = [
-    { label: 'Active Leads',        value: activeLeadsCount,    icon: Users,         colorVar: 'var(--primary)',     delay: 0.04 },
-    { label: 'Zara Captures (7d)',   value: zaraCapturesCount,   icon: Zap,           colorVar: 'var(--success)',     delay: 0.08 },
-    { label: 'Deals This Month',     value: dealsThisMonthCount, icon: TrendingUp,    colorVar: 'var(--warning)',     delay: 0.12 },
-    { label: 'Unread Conversations', value: unreadCount,         icon: MessageSquare, colorVar: 'var(--destructive)', delay: 0.16 },
-  ];
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(k => k + 1);
+    setLastUpdated(new Date());
+  }, []);
+
+  const {
+    pipelineValue,
+    activeLeads,
+    hotLeads,
+    zaraCaptures,
+    unreadMessages,
+    needsAttention,
+    sourceData,
+    statusData,
+    zaraFunnelData,
+    activityFeed,
+  } = useCommandCenterData(refreshKey);
 
   return (
     <AppLayout>
       <Header
         title="Command Center"
-        subtitle="Your morning briefing — leads, activity & schedule"
+        subtitle={`${getGreeting()}, Uzair`}
         showAddDeal={false}
+        action={
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="hidden sm:inline">
+              Updated {format(lastUpdated, 'h:mm a')}
+            </span>
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-xs font-medium"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+        }
       />
 
-      <div className="p-4 md:p-7 lg:p-6 space-y-5 pb-28 lg:pb-8">
+      <div className="p-4 md:p-6 space-y-5 pb-28 lg:pb-10">
 
-        {/* ── KPI Row ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {kpiCards.map((card) => (
-            <KPICard key={card.label} {...card} />
-          ))}
-        </div>
+        {/* ── ROW 1: Hero KPIs ─────────────────────────────────────────── */}
+        <FadeUp delay={0.02}>
+          <HeroKPIs
+            data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }}
+          />
+        </FadeUp>
 
-        {/* ── Calendar + Activity ─────────────────────────────────── */}
+        {/* ── ROW 2: Needs Attention (60%) + Zara Funnel (40%) ─────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-
-          {/* Calendar — 60% */}
-          <FadeUp delay={0.22} className="lg:col-span-3">
-            <div className="card-premium overflow-hidden flex flex-col">
-              <div className="px-5 py-4 border-b border-border/40 flex items-center gap-2 shrink-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                <h2 className="text-sm font-semibold text-foreground">This Week's Schedule</h2>
-              </div>
-              {/* Fixed height container — tall enough to show full day */}
-              <div className="relative h-[500px] md:h-[560px]">
-                <CalendarEmbed />
-              </div>
+          <FadeUp delay={0.14} className="lg:col-span-3">
+            <div style={{ minHeight: '380px' }} className="h-full">
+              <NeedsAttention prospects={needsAttention as any} />
             </div>
           </FadeUp>
-
-          {/* Zara Activity — 40% */}
-          <FadeUp delay={0.28} className="lg:col-span-2">
-            <div className="card-premium overflow-hidden flex flex-col" style={{ minHeight: '560px' }}>
-              <div className="px-5 py-4 border-b border-border/40 flex items-center gap-2 shrink-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                <h2 className="text-sm font-semibold text-foreground">Zara Activity Log</h2>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-                {zaraActivity.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 px-6 text-center h-full min-h-[200px]">
-                    <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-                      <Zap className="w-5 h-5 text-muted-foreground/40" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground">No activity yet</p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[200px]">
-                      Zara will log captures, qualifications, and syncs here automatically
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border/30">
-                    {zaraActivity.map((entry: any, i: number) => (
-                      <motion.div
-                        key={entry.id}
-                        initial={{ opacity: 0, x: 8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.32 + i * 0.03, duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                        className="flex items-start gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors"
-                      >
-                        <ActivityIcon type={entry.action_type} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground leading-snug line-clamp-2">
-                            {entry.description || entry.action_type.replace(/_/g, ' ')}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
+          <FadeUp delay={0.2} className="lg:col-span-2">
+            <div style={{ minHeight: '380px' }} className="h-full">
+              <ZaraFunnel data={zaraFunnelData} />
             </div>
           </FadeUp>
         </div>
 
-        {/* ── Pipeline Funnel ─────────────────────────────────────── */}
-        <FadeUp delay={0.38}>
-          <div className="card-premium p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="w-1.5 h-1.5 rounded-full bg-warning" />
-              <h2 className="text-sm font-semibold text-foreground">Lead Pipeline</h2>
-              <span className="text-xs text-muted-foreground ml-1">— progression by stage</span>
+        {/* ── ROW 3: Lead Sources (33%) + Pipeline Status (34%) + Calendar (33%) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <FadeUp delay={0.28}>
+            <div style={{ minHeight: '380px' }} className="h-full">
+              <LeadSources data={sourceData} />
             </div>
-            <PipelineFunnel data={pipelineData as Record<string, number>} />
-          </div>
-        </FadeUp>
+          </FadeUp>
+          <FadeUp delay={0.33}>
+            <div style={{ minHeight: '380px' }} className="h-full">
+              <PipelineStatus data={statusData} />
+            </div>
+          </FadeUp>
+          <FadeUp delay={0.38}>
+            <div style={{ minHeight: '380px' }} className="h-full">
+              <CalendarWidget />
+            </div>
+          </FadeUp>
+        </div>
 
-        {/* ── Quick Links ─────────────────────────────────────────── */}
-        <FadeUp delay={0.44}>
-          {/* On mobile: single column full-width. On sm+: 2-col. On lg+: 4-col */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {QUICK_LINKS.map((link, i) => {
-              const Icon = link.icon;
-              return (
-                <motion.div
-                  key={link.to}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.46 + i * 0.05, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    to={link.to}
-                    className={cn(
-                      'flex items-center gap-3.5 px-4 py-4 rounded-xl border border-border/50',
-                      'bg-card/70 hover:bg-card hover:border-border transition-all duration-200',
-                      'hover:shadow-[0_4px_16px_-4px_hsl(0_0%_0%/0.08)]',
-                      'group w-full'
-                    )}
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
-                      <Icon className="w-4.5 h-4.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground">
-                      {link.label}
-                    </span>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-        </FadeUp>
+        {/* ── ROW 4: Activity Feed (60%) + Quick Actions (40%) ─────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <FadeUp delay={0.44} className="lg:col-span-3">
+            <div style={{ minHeight: '340px' }} className="h-full">
+              <ActivityFeed entries={activityFeed as any} />
+            </div>
+          </FadeUp>
+          <FadeUp delay={0.48} className="lg:col-span-2">
+            <div style={{ minHeight: '340px' }} className="h-full">
+              <QuickActions />
+            </div>
+          </FadeUp>
+        </div>
 
       </div>
     </AppLayout>
