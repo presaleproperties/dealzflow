@@ -384,18 +384,22 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
 
             {notes.length === 0 && !note.open ? (
               <p className="text-xs text-muted-foreground/50 italic px-4 py-2">No notes yet.</p>
-            ) : notes.map((n: any, i: number) => (
-              <NoteRow
-                key={n.id}
-                note={n}
-                index={i}
-                onDelete={async () => {
-                  await supabase.from('lead_notes').delete().eq('id', n.id);
-                  queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', conversation?.id ?? n.conversation_id] });
-                  toast.success('Note deleted');
-                }}
-              />
-            ))}
+            ) : (
+              <AnimatePresence initial={false}>
+                {notes.map((n: any, i: number) => (
+                  <NoteRow
+                    key={n.id}
+                    note={n}
+                    index={i}
+                    onDelete={async () => {
+                      await supabase.from('lead_notes').delete().eq('id', n.id);
+                      queryClient.invalidateQueries({ queryKey: ['lead-sheet-notes', conversation?.id ?? n.conversation_id] });
+                      toast.success('Note deleted');
+                    }}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
           </Section>
 
           {/* ── Message history ───────────────────────────────────────────── */}
