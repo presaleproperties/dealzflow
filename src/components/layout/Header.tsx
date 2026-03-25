@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { useTheme } from 'next-themes';
-import { ChevronLeft, Menu, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, Menu, Sun, Moon, Monitor } from 'lucide-react';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -17,8 +17,10 @@ interface HeaderProps {
   backPath?: string;
 }
 
+const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+
 function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings({ silent: true });
@@ -31,22 +33,27 @@ function ThemeToggle() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings?.theme]);
 
-  function handleToggle() {
-    const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+  function handleCycle() {
+    const current = (theme as 'light' | 'dark' | 'system') ?? 'system';
+    const idx = THEME_CYCLE.indexOf(current);
+    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
     setTheme(next);
     if (user) {
-      updateSettings.mutate({ theme: next as 'light' | 'dark' | 'system' });
+      updateSettings.mutate({ theme: next });
     }
   }
+
+  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
 
   return (
     <button
       className="h-8 w-8 shrink-0 flex items-center justify-center rounded-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 active:scale-90 transition-all duration-200"
-      onClick={handleToggle}
-      aria-label="Toggle theme"
+      onClick={handleCycle}
+      aria-label={`Theme: ${label}. Click to cycle.`}
+      title={`Theme: ${label}`}
     >
-      <Sun className="h-[14px] w-[14px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[14px] w-[14px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Icon className="h-[14px] w-[14px] transition-all duration-200" />
     </button>
   );
 }
