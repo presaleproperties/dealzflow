@@ -352,7 +352,7 @@ export function BusinessAnalytics({ deals, payouts, syncedPayouts = [], syncedTr
                   labelLine={false}
                 >
                   {data.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={EMERALD_PALETTE[index % EMERALD_PALETTE.length]} />
+                    <Cell key={`cell-${index}`} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -376,7 +376,7 @@ export function BusinessAnalytics({ deals, payouts, syncedPayouts = [], syncedTr
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-2.5 h-2.5 rounded-full" 
-                    style={{ backgroundColor: EMERALD_PALETTE[i % EMERALD_PALETTE.length] }} 
+                    style={{ backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length] }} 
                   />
                   <span className="text-muted-foreground truncate max-w-[100px]">{item.name}</span>
                 </div>
