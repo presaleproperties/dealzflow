@@ -179,9 +179,9 @@ function useAddNote(prospect: ProspectRow | null, conversationId: string | undef
         .insert({
           user_id: user.id,
           lead_name: prospect.client_name,
-          assigned_to: 'manual',
-          channel: 'manual',
-          status: 'open',
+          assigned_to: 'uzair',
+          channel: 'whatsapp',
+          status: 'new',
         })
         .select('id')
         .single();
