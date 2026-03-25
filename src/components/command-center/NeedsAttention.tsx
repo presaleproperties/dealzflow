@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { LeadDetailSheet } from './LeadDetailSheet';
 
 export interface ProspectRow {
   id: string;
