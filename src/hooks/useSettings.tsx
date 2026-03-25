@@ -37,7 +37,7 @@ export function useSettings() {
   });
 }
 
-export function useUpdateSettings() {
+export function useUpdateSettings(options?: { silent?: boolean }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -77,10 +77,10 @@ export function useUpdateSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      toast.success('Settings saved');
+      if (!options?.silent) toast.success('Settings saved');
     },
     onError: (error) => {
-      toast.error(`Failed to save settings: ${error.message}`);
+      if (!options?.silent) toast.error(`Failed to save settings: ${error.message}`);
     },
   });
 }
