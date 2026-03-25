@@ -426,6 +426,62 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
   );
 }
 
+// ─── NoteRow — note item with hover-delete + inline confirmation ───────────────
+function NoteRow({ note, index, onDelete }: { note: any; index: number; onDelete: () => Promise<void> }) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    await onDelete();
+    setDeleting(false);
+    setConfirming(false);
+  }
+
+  return (
+    <motion.div
+      key={note.id}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -8 }}
+      transition={{ delay: index * 0.04 }}
+      className="group px-4 py-2.5 border-b border-border/20 last:border-0"
+    >
+      <div className="flex items-start gap-2">
+        <p className="text-xs text-foreground leading-relaxed flex-1">{note.body}</p>
+        {!confirming ? (
+          <button
+            onClick={() => setConfirming(true)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive"
+            title="Delete note"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        ) : (
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setConfirming(false)}
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-muted/50 text-muted-foreground hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-destructive/90 text-destructive-foreground hover:bg-destructive disabled:opacity-50 transition-colors"
+            >
+              {deleting ? '…' : 'Delete'}
+            </button>
+          </div>
+        )}
+      </div>
+      <p className="text-[10px] text-muted-foreground/50 mt-1">
+        {note.created_by ?? 'Zara'} · {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
+      </p>
+    </motion.div>
+  );
+}
+
 // ─── Sub-components ────────────────────────────────────────────────────────────
 function DetailCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
