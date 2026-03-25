@@ -215,11 +215,11 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
             className="text-center"
           >
             <motion.div 
-              className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-primary/20 dark:to-accent/20 flex items-center justify-center shadow-lg"
+              className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shadow-lg"
               animate={{ y: [0, -5, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              <BarChart3 className="w-10 h-10 text-emerald-600 dark:text-primary" />
+              <BarChart3 className="w-10 h-10 text-primary" />
             </motion.div>
             
             <h3 className="text-lg font-bold text-slate-800 dark:text-foreground mb-2">
@@ -284,7 +284,7 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
             ))}
           </div>
           <Link to="/forecast">
-            <Button variant="ghost" size="sm" className="text-emerald-600 dark:text-accent hover:bg-emerald-50 dark:hover:bg-accent/10">
+            <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
               Full Forecast <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           </Link>
@@ -407,9 +407,9 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
       </div>
 
       {/* Legend note */}
-      <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-border/50">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-muted-foreground">
-          <div className="w-4 h-0.5 bg-emerald-600 dark:bg-primary rounded" />
+      <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-border/50">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="w-4 h-0.5 bg-primary rounded" />
           <span>Net Income Trend</span>
         </div>
       </div>
