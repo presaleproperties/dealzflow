@@ -74,9 +74,20 @@ serve(async (req) => {
 
     if (insightsData.error) {
       console.error('Meta Ads insights error:', JSON.stringify(insightsData.error));
+      console.error('Insights URL used:', insightsUrl.replace(META_ACCESS_TOKEN, '***'));
+    }
+    if (accountData.error) {
+      console.error('Meta Ads account error:', JSON.stringify(accountData.error));
+    }
+    if (campaignsData.error) {
+      console.error('Meta Ads campaigns error:', JSON.stringify(campaignsData.error));
+    }
+
+    // If all three fail, return error
+    if (insightsData.error && accountData.error) {
       return new Response(JSON.stringify({
         error: 'api_error',
-        message: insightsData.error.message || 'Meta API error',
+        message: insightsData.error.message || accountData.error.message || 'Meta API error',
       }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
