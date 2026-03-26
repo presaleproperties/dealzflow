@@ -244,20 +244,29 @@ function TimelineEvent({
       onTouchStart={canEdit ? handleTimelineDragStart : undefined}
     >
       <div
-        className="h-full px-2 py-1 flex flex-col justify-start"
+        className="h-full px-2 py-1 flex flex-col justify-start relative"
         style={{ background: color, opacity: 0.9 }}
       >
         <div className="flex items-center gap-0.5">
           {canEdit && <GripVertical className="w-2.5 h-2.5 text-white/50 shrink-0" />}
           <p className="text-[10px] font-bold text-white leading-tight truncate">{displayTitle}</p>
         </div>
-        {height > 30 && (
+        {height > 30 && !isDraggingTime && (
           <p className="text-[9px] text-white/80 leading-tight mt-0.5">
             {format(eventStart, 'h:mm a')} – {format(eventEnd, 'h:mm a')}
           </p>
         )}
-        {height > 50 && event.location && (
+        {height > 50 && event.location && !isDraggingTime && (
           <p className="text-[8px] text-white/60 truncate mt-0.5">{event.location}</p>
+        )}
+
+        {/* Floating time indicator while dragging */}
+        {isDraggingTime && dragPreviewTimes && (
+          <div className="absolute -left-1 -top-8 z-50 bg-foreground text-background px-2.5 py-1 rounded-lg shadow-xl pointer-events-none whitespace-nowrap">
+            <p className="text-[11px] font-bold tabular-nums">
+              {dragPreviewTimes.start} – {dragPreviewTimes.end}
+            </p>
+          </div>
         )}
       </div>
 
