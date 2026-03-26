@@ -115,7 +115,7 @@ function TreeNodeComponent({ node, depth = 0 }: { node: TreeNode; depth?: number
             </Badge>
           )}
           {!isActive && agent && (
-            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-[16px] shrink-0 bg-destructive/8 text-destructive/70 border-destructive/15">
+            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-[16px] shrink-0 bg-destructive/[0.08] text-destructive/70 border-destructive/[0.15]">
               Left
             </Badge>
           )}

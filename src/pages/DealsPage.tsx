@@ -428,13 +428,13 @@ export default function DealsPage() {
                 {hasActiveFilters && !showFilters && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {minAmount && (
-                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-primary/8 text-primary font-medium border border-primary/15">
+                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-primary/[0.08] text-primary font-medium border border-primary/[0.15]">
                         Min: {formatCurrency(Number(minAmount))}
                         <button onClick={() => setMinAmount('')}><X className="h-3 w-3" /></button>
                       </span>
                     )}
                     {maxAmount && (
-                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-primary/8 text-primary font-medium border border-primary/15">
+                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-primary/[0.08] text-primary font-medium border border-primary/[0.15]">
                         Max: {formatCurrency(Number(maxAmount))}
                         <button onClick={() => setMaxAmount('')}><X className="h-3 w-3" /></button>
                       </span>
