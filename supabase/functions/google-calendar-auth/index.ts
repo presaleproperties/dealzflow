@@ -151,7 +151,7 @@ serve(async (req) => {
           `&response_type=code` +
           `&scope=${encodeURIComponent(SCOPES)}` +
           `&access_type=offline` +
-          `&prompt=consent` +
+          `&prompt=${encodeURIComponent('consent select_account')}` +
           `&state=${encodeURIComponent(stateData)}`;
 
         return new Response(JSON.stringify({ authUrl }), {
