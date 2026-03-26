@@ -694,6 +694,31 @@ export function CalendarWidget() {
     return map;
   }, [events]);
 
+  const handleDropEvent = useCallback((eventJson: string, targetDate: Date) => {
+    if (!canManageEvents) return;
+    try {
+      const droppedEvent = JSON.parse(eventJson) as CalendarEvent;
+      const originalDate = format(parseISO(droppedEvent.start), 'yyyy-MM-dd');
+      const newDate = format(targetDate, 'yyyy-MM-dd');
+      if (originalDate === newDate) return;
+
+      const displayTitle = droppedEvent.title && droppedEvent.title !== '(No title)' ? droppedEvent.title : 'Untitled event';
+      const startTime = !droppedEvent.allDay ? format(parseISO(droppedEvent.start), 'HH:mm') : '09:00';
+      const endTime = !droppedEvent.allDay && droppedEvent.end ? format(parseISO(droppedEvent.end), 'HH:mm') : '10:00';
+
+      handleEditEvent(droppedEvent.id, {
+        title: displayTitle,
+        startTime,
+        endTime,
+        allDay: droppedEvent.allDay,
+        date: newDate,
+      });
+      setSelectedDate(targetDate);
+    } catch (err) {
+      console.error('Drop failed:', err);
+    }
+  }, [canManageEvents, handleEditEvent]);
+
   const navigateBack = () => {
     if (viewMode === 'month') {
       setCurrentMonth((m) => subMonths(m, 1));
