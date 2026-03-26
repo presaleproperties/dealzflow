@@ -40,6 +40,7 @@ import { DealsWrittenCard } from '@/components/dashboard/DealsWrittenCard';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data: expenses = [] } = useExpenses();
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
