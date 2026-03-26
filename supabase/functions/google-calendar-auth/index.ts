@@ -36,7 +36,19 @@ serve(async (req) => {
     const state = url.searchParams.get('state'); // contains user_id + redirect URL
 
     if (code && state) {
-      const { userId, redirectUrl } = JSON.parse(atob(state));
+      let userId: string;
+      let redirectUrl: string;
+
+      try {
+        const parsedState = JSON.parse(atob(state));
+        userId = parsedState.userId;
+        redirectUrl = parsedState.redirectUrl;
+      } catch {
+        return new Response(JSON.stringify({ error: 'Invalid OAuth state' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       // Exchange authorization code for tokens
       const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
@@ -58,6 +70,22 @@ serve(async (req) => {
         return Response.redirect(errorRedirect, 302);
       }
 
+      // Store tokens using service role
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+      // If Google doesn't return refresh_token again, keep the existing one
+      const { data: existingToken } = await supabase
+        .from('google_calendar_tokens')
+        .select('refresh_token')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const refreshToken = tokens.refresh_token || existingToken?.refresh_token;
+      if (!refreshToken) {
+        const errorRedirect = `${redirectUrl}?calendar_auth=error&message=${encodeURIComponent('No refresh token returned. Revoke app access in Google and reconnect.')}`;
+        return Response.redirect(errorRedirect, 302);
+      }
+
       // Get the user's Google email for this calendar account
       let calendarEmail = null;
       try {
@@ -68,8 +96,6 @@ serve(async (req) => {
         calendarEmail = info.email || null;
       } catch (_) { /* non-critical */ }
 
-      // Store tokens using service role
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
       const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
 
       const { error: dbError } = await supabase
@@ -77,7 +103,7 @@ serve(async (req) => {
         .upsert({
           user_id: userId,
           access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
+          refresh_token: refreshToken,
           token_expires_at: expiresAt,
           calendar_email: calendarEmail,
         }, { onConflict: 'user_id' });
