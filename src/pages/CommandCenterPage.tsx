@@ -14,6 +14,7 @@ import { NeedsAttention } from '@/components/command-center/NeedsAttention';
 import { TodaysFocus } from '@/components/command-center/TodaysFocus';
 import { PipelineInsights } from '@/components/command-center/PipelineInsights';
 import { CalendarWidget } from '@/components/command-center/CalendarWidget';
+import { FacebookAdsWidget } from '@/components/command-center/FacebookAdsWidget';
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 const QK = {
@@ -45,31 +46,21 @@ const LEAD_SOURCE_NORMALIZE: Record<string, string> = {
 // ─── Realtime hook ─────────────────────────────────────────────────────────────
 function useRealtimeInvalidation(uid: string | undefined, onUpdate: () => void) {
   const qc = useQueryClient();
-
   useEffect(() => {
     if (!uid) return;
-
     const invalidateAll = () => {
       qc.invalidateQueries({ queryKey: QK.prospects(uid) });
       qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
       qc.invalidateQueries({ queryKey: QK.unread(uid) });
       onUpdate();
     };
-
-    const ch1 = supabase
-      .channel('cc-pipeline')
+    const ch1 = supabase.channel('cc-pipeline')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pipeline_prospects', filter: `user_id=eq.${uid}` }, invalidateAll)
       .subscribe();
-
-    const ch2 = supabase
-      .channel('cc-convos')
+    const ch2 = supabase.channel('cc-convos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `user_id=eq.${uid}` }, invalidateAll)
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(ch1);
-      supabase.removeChannel(ch2);
-    };
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
   }, [uid, qc, onUpdate]);
 }
 
@@ -96,7 +87,6 @@ function useCommandCenterData() {
   const activeLeads = prospects.length;
   const hotLeads = prospects.filter((p: any) => p.temperature?.toLowerCase() === 'hot').length;
 
-  // Needs attention — stale > 48h
   const needsAttention = [...prospects]
     .filter((p: any) => (Date.now() - new Date(p.updated_at).getTime()) / 3_600_000 > 48)
     .sort((a: any, b: any) => {
@@ -106,28 +96,21 @@ function useCommandCenterData() {
       return ta !== tb ? ta - tb : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
 
-  // Lead sources
   const sourceMap: Record<string, number> = {};
   prospects.forEach((p: any) => {
     const raw = p.source?.trim() || 'Unknown';
     const normalized = LEAD_SOURCE_NORMALIZE[raw.toLowerCase()] || raw;
     sourceMap[normalized] = (sourceMap[normalized] || 0) + 1;
   });
-  const sourceData = Object.entries(sourceMap)
-    .map(([source, count]) => ({ source, count }))
-    .sort((a, b) => b.count - a.count);
+  const sourceData = Object.entries(sourceMap).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count);
 
-  // Pipeline by status
   const statusMap: Record<string, number> = {};
   prospects.forEach((p: any) => {
     const s = p.status?.toLowerCase()?.trim() || 'active';
     statusMap[s] = (statusMap[s] || 0) + 1;
   });
-  const statusData = Object.entries(statusMap)
-    .map(([status, count]) => ({ status, count }))
-    .sort((a, b) => b.count - a.count);
+  const statusData = Object.entries(statusMap).map(([status, count]) => ({ status, count })).sort((a, b) => b.count - a.count);
 
-  // Zara captures (7d)
   const { data: zaraCaptures = 0 } = useQuery({
     queryKey: QK.zaraCaptures(uid ?? ''),
     queryFn: async () => {
@@ -143,7 +126,6 @@ function useCommandCenterData() {
     enabled: !!uid,
   });
 
-  // Unread messages
   const { data: unreadMessages = 0 } = useQuery({
     queryKey: QK.unread(uid ?? ''),
     queryFn: async () => {
@@ -241,21 +223,28 @@ export default function CommandCenterPage() {
         }
       />
 
-      <div className="p-4 md:p-6 space-y-5 pb-28 lg:pb-10 max-w-7xl mx-auto">
+      <div className="p-4 md:p-6 space-y-5 pb-28 lg:pb-10 max-w-[1440px] mx-auto">
 
         {/* ── ROW 1: Hero KPIs ──────────────────────────────────── */}
         <FadeUp delay={0.02}>
           <HeroKPIs data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }} />
         </FadeUp>
 
-        {/* ── ROW 2: Calendar (full width, prominent) ──────────── */}
-        <FadeUp delay={0.08}>
-          <CalendarWidget />
-        </FadeUp>
+        {/* ── ROW 2: Calendar + Facebook Ads side-by-side ────────── */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
+          <FadeUp delay={0.08} className="xl:col-span-3">
+            <CalendarWidget />
+          </FadeUp>
+          <FadeUp delay={0.12} className="xl:col-span-2">
+            <div className="h-full" style={{ minHeight: '420px' }}>
+              <FacebookAdsWidget />
+            </div>
+          </FadeUp>
+        </div>
 
         {/* ── ROW 3: Today's Focus + Needs Attention ────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <FadeUp delay={0.14} className="lg:col-span-2">
+          <FadeUp delay={0.16} className="lg:col-span-2">
             <div className="h-full">
               <TodaysFocus />
             </div>
@@ -268,8 +257,8 @@ export default function CommandCenterPage() {
         </div>
 
         {/* ── ROW 4: Pipeline Insights (full width) ─────────────── */}
-        <FadeUp delay={0.26}>
-          <div style={{ minHeight: '340px' }}>
+        <FadeUp delay={0.24}>
+          <div style={{ minHeight: '300px' }}>
             <PipelineInsights sourceData={sourceData} statusData={statusData} />
           </div>
         </FadeUp>
