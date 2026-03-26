@@ -141,24 +141,33 @@ function DayCell({
   events,
   isSelected,
   onSelect,
+  onDropEvent,
+  canDrop,
 }: {
   day: Date;
   currentMonth: Date;
   events: CalendarEvent[];
   isSelected: boolean;
   onSelect: (d: Date) => void;
+  onDropEvent?: (eventJson: string, targetDate: Date) => void;
+  canDrop?: boolean;
 }) {
+  const [dragOver, setDragOver] = useState(false);
   const inMonth = isSameMonth(day, currentMonth);
   const today = isToday(day);
 
   return (
     <button
       onClick={() => onSelect(day)}
+      onDragOver={canDrop ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
+      onDragLeave={canDrop ? () => setDragOver(false) : undefined}
+      onDrop={canDrop ? (e) => { e.preventDefault(); setDragOver(false); const data = e.dataTransfer.getData('application/calendar-event'); if (data && onDropEvent) onDropEvent(data, day); } : undefined}
       className={cn(
         'relative flex flex-col items-center justify-start p-1 h-10 w-full rounded-lg transition-all duration-150',
         !inMonth && 'opacity-30',
         isSelected && 'bg-primary/10 ring-1 ring-primary/30',
         !isSelected && inMonth && 'hover:bg-muted/40',
+        dragOver && 'bg-primary/20 ring-2 ring-primary/50 scale-105',
       )}
     >
       <span
@@ -187,21 +196,30 @@ function WeekDayColumn({
   events,
   isSelected,
   onSelect,
+  onDropEvent,
+  canDrop,
 }: {
   day: Date;
   events: CalendarEvent[];
   isSelected: boolean;
   onSelect: (d: Date) => void;
+  onDropEvent?: (eventJson: string, targetDate: Date) => void;
+  canDrop?: boolean;
 }) {
+  const [dragOver, setDragOver] = useState(false);
   const today = isToday(day);
 
   return (
     <button
       onClick={() => onSelect(day)}
+      onDragOver={canDrop ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
+      onDragLeave={canDrop ? () => setDragOver(false) : undefined}
+      onDrop={canDrop ? (e) => { e.preventDefault(); setDragOver(false); const data = e.dataTransfer.getData('application/calendar-event'); if (data && onDropEvent) onDropEvent(data, day); } : undefined}
       className={cn(
         'flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all duration-150 min-w-0',
         isSelected && 'bg-primary/10 ring-1 ring-primary/30',
         !isSelected && 'hover:bg-muted/40',
+        dragOver && 'bg-primary/20 ring-2 ring-primary/50 scale-105',
       )}
     >
       <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
@@ -355,9 +373,17 @@ function EventCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.25 }}
       className="group"
+      draggable={canEdit}
+      onDragStart={canEdit ? (e: any) => {
+        e.dataTransfer.setData('application/calendar-event', JSON.stringify(event));
+        e.dataTransfer.effectAllowed = 'move';
+      } : undefined}
     >
       <div
-        className="flex items-start gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:bg-card hover:border-border/60 transition-all duration-200"
+        className={cn(
+          'flex items-start gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:bg-card hover:border-border/60 transition-all duration-200',
+          canEdit && 'cursor-grab active:cursor-grabbing',
+        )}
         style={{ borderLeftWidth: '3px', borderLeftColor: color }}
       >
         <div className="flex-1 min-w-0">
