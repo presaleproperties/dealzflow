@@ -8,6 +8,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useProperties } from '@/hooks/useProperties';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { cn } from '@/lib/utils';
