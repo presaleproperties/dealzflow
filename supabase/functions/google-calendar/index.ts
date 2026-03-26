@@ -220,14 +220,24 @@ serve(async (req) => {
 
           await Promise.all(fetchPromises);
 
+          // Deduplicate: same event ID can appear on multiple calendars
+          const seen = new Map<string, any>();
+          for (const ev of allEvents) {
+            if (!seen.has(ev.id)) {
+              seen.set(ev.id, ev);
+            }
+            // If duplicate, keep the one from the "owner" calendar (primary-looking ID)
+          }
+          const dedupedEvents = Array.from(seen.values());
+
           // Sort all events by start time
-          allEvents.sort((a, b) => {
+          dedupedEvents.sort((a, b) => {
             const aTime = new Date(a.start || 0).getTime();
             const bTime = new Date(b.start || 0).getTime();
             return aTime - bTime;
           });
 
-          return new Response(JSON.stringify({ events: allEvents, authenticated: true }), {
+          return new Response(JSON.stringify({ events: dedupedEvents, authenticated: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
