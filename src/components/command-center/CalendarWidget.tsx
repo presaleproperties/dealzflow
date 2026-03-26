@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   format,
@@ -33,6 +33,9 @@ import {
   Trash2,
   X,
   Pencil,
+  Wifi,
+  WifiOff,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,8 +106,8 @@ function useCalendarEvents(month: Date) {
         authenticated: result.authenticated || false,
       };
     },
-    staleTime: 60_000,
-    refetchInterval: 30_000,
+    staleTime: 8_000,
+    refetchInterval: 10_000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     retry: 1,
@@ -132,8 +135,8 @@ function useCalendarConnection() {
       return data as { connected: boolean; calendarEmail: string | null };
     },
     enabled: !!session,
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: 20_000,
+    refetchInterval: 15_000,
   });
 }
 
@@ -557,10 +560,34 @@ export function CalendarWidget() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [showAddEvent, setShowAddEvent] = useState(false);
   const queryClient = useQueryClient();
+  const lastFetchTime = useRef<Date>(new Date());
+  const [liveStatus, setLiveStatus] = useState<'live' | 'stale' | 'error'>('live');
 
-  const { data, isLoading, isError } = useCalendarEvents(currentMonth);
+  const { data, isLoading, isError, dataUpdatedAt, isFetching } = useCalendarEvents(currentMonth);
   const events = data?.events || [];
   const isAuthenticated = data?.authenticated || false;
+
+  useEffect(() => {
+    if (dataUpdatedAt) {
+      lastFetchTime.current = new Date(dataUpdatedAt);
+      setLiveStatus('live');
+    }
+    if (isError) setLiveStatus('error');
+  }, [dataUpdatedAt, isError]);
+
+  // Check staleness every 5s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const age = Date.now() - lastFetchTime.current.getTime();
+      if (age > 30_000) setLiveStatus('stale');
+    }, 5_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const forceRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] });
+    queryClient.invalidateQueries({ queryKey: ['google-calendar-connection'] });
+  }, [queryClient]);
 
   const { data: connectionStatus } = useCalendarConnection();
   const isConnected = connectionStatus?.connected || false;
@@ -757,7 +784,31 @@ export function CalendarWidget() {
       <div className="px-5 py-3.5 border-b border-border/40 flex items-center gap-3 bg-card/80 backdrop-blur-sm">
         <CalendarDays className="w-4.5 h-4.5 text-primary" />
         <h2 className="text-sm font-bold text-foreground tracking-tight">Calendar</h2>
-        <span className="text-[10px] text-muted-foreground/60 ml-1">Live every 30s</span>
+        <div className="flex items-center gap-1.5 ml-1">
+          {liveStatus === 'live' ? (
+            <Wifi className={cn('w-3 h-3 text-emerald-500', isFetching && 'animate-pulse')} />
+          ) : liveStatus === 'stale' ? (
+            <WifiOff className="w-3 h-3 text-amber-500" />
+          ) : (
+            <WifiOff className="w-3 h-3 text-destructive" />
+          )}
+          <span className={cn(
+            'text-[10px] font-medium',
+            liveStatus === 'live' ? 'text-emerald-500' : liveStatus === 'stale' ? 'text-amber-500' : 'text-destructive',
+          )}>
+            {liveStatus === 'live' ? 'Live' : liveStatus === 'stale' ? 'Stale' : 'Offline'}
+          </span>
+          <button
+            onClick={forceRefresh}
+            className={cn(
+              'w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all',
+              isFetching && 'animate-spin text-primary',
+            )}
+            title="Force refresh"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </button>
+        </div>
 
         <div className="flex-1" />
 

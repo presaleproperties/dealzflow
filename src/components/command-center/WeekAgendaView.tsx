@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import {
   format,
   parseISO,
@@ -11,7 +11,7 @@ import {
   setMinutes,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, MapPin, Pencil, Trash2, ExternalLink, X, Plus } from 'lucide-react';
+import { Clock, MapPin, Pencil, Trash2, ExternalLink, X, Plus, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CalendarEvent {
@@ -73,6 +73,10 @@ function TimelineEvent({
   const [editStart, setEditStart] = useState('');
   const [editEnd, setEditEnd] = useState('');
   const [saving, setSaving] = useState(false);
+  const [isDraggingTime, setIsDraggingTime] = useState(false);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const dragStartY = useRef(0);
+  const dragStartTop = useRef(0);
 
   const color = getEventColor(event.id);
   const displayTitle = getDisplayTitle(event, isAuthenticated);
@@ -85,6 +89,61 @@ function TimelineEvent({
 
   const top = Math.max((minutesFromDayStart / 60) * HOUR_HEIGHT, 0);
   const height = Math.max((durationMins / 60) * HOUR_HEIGHT, 22);
+
+  const handleTimelineDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!canEdit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingTime(true);
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStartY.current = clientY;
+    dragStartTop.current = top;
+    setDragOffsetY(0);
+
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      const cy = 'touches' in ev ? ev.touches[0].clientY : ev.clientY;
+      setDragOffsetY(cy - dragStartY.current);
+    };
+
+    const onUp = (ev: MouseEvent | TouchEvent) => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      setIsDraggingTime(false);
+
+      const cy = 'changedTouches' in ev ? ev.changedTouches[0].clientY : ev.clientY;
+      const delta = cy - dragStartY.current;
+      const deltaMinutes = Math.round((delta / HOUR_HEIGHT) * 60 / 15) * 15; // snap to 15min
+      if (Math.abs(deltaMinutes) < 15) { setDragOffsetY(0); return; }
+
+      const newStartMinutes = minutesFromDayStart + deltaMinutes;
+      const newStartHour = START_HOUR + Math.floor(newStartMinutes / 60);
+      const newStartMin = ((newStartMinutes % 60) + 60) % 60;
+      const newEndMinutes = newStartMinutes + durationMins;
+      const newEndHour = START_HOUR + Math.floor(newEndMinutes / 60);
+      const newEndMin = ((newEndMinutes % 60) + 60) % 60;
+
+      if (newStartHour < START_HOUR || newEndHour > END_HOUR) { setDragOffsetY(0); return; }
+
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      onEdit(event.id, {
+        title: displayTitle,
+        startTime: `${pad(newStartHour)}:${pad(newStartMin)}`,
+        endTime: `${pad(newEndHour)}:${pad(newEndMin)}`,
+        allDay: false,
+        date: format(dayStart, 'yyyy-MM-dd'),
+      });
+      setDragOffsetY(0);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+  }, [canEdit, top, minutesFromDayStart, durationMins, event.id, displayTitle, dayStart, onEdit]);
+
+  const currentTop = isDraggingTime ? top + dragOffsetY : top;
 
   const startEdit = () => {
     setEditTitle(displayTitle);
@@ -154,21 +213,22 @@ function TimelineEvent({
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
       className={cn(
-        'absolute left-0 right-1 z-10 group rounded-lg overflow-hidden cursor-pointer transition-all hover:z-20 hover:shadow-lg',
-        canEdit && 'hover:ring-1 hover:ring-primary/30',
+        'absolute left-0 right-1 z-10 group rounded-lg overflow-hidden transition-all hover:z-20 hover:shadow-lg',
+        canEdit && 'hover:ring-1 hover:ring-primary/30 cursor-grab',
+        isDraggingTime && 'z-30 shadow-2xl ring-2 ring-primary/50 cursor-grabbing opacity-90',
       )}
-      style={{ top, height: Math.min(height, (END_HOUR - START_HOUR) * HOUR_HEIGHT - top), minHeight: 22 }}
-      draggable={canEdit}
-      onDragStart={canEdit ? (e: any) => {
-        e.dataTransfer.setData('application/calendar-event', JSON.stringify(event));
-        e.dataTransfer.effectAllowed = 'move';
-      } : undefined}
+      style={{ top: currentTop, height: Math.min(height, (END_HOUR - START_HOUR) * HOUR_HEIGHT - currentTop), minHeight: 22 }}
+      onMouseDown={canEdit ? handleTimelineDragStart : undefined}
+      onTouchStart={canEdit ? handleTimelineDragStart : undefined}
     >
       <div
         className="h-full px-2 py-1 flex flex-col justify-start"
         style={{ background: color, opacity: 0.9 }}
       >
-        <p className="text-[10px] font-bold text-white leading-tight truncate">{displayTitle}</p>
+        <div className="flex items-center gap-0.5">
+          {canEdit && <GripVertical className="w-2.5 h-2.5 text-white/50 shrink-0" />}
+          <p className="text-[10px] font-bold text-white leading-tight truncate">{displayTitle}</p>
+        </div>
         {height > 30 && (
           <p className="text-[9px] text-white/80 leading-tight mt-0.5">
             {format(eventStart, 'h:mm a')} – {format(eventEnd, 'h:mm a')}
