@@ -27,6 +27,22 @@ const SOURCE_COLORS: Record<string, string> = {
   manychat:  'hsl(214 100% 50%)',
 };
 
+const LEAD_SOURCE_NORMALIZE: Record<string, string> = {
+  tiktok: 'TikTok', tik_tok: 'TikTok', 'tik tok': 'TikTok',
+  instagram: 'Instagram', ig: 'Instagram', insta: 'Instagram',
+  facebook: 'Facebook', 'facebook ads': 'Facebook Ads', fb: 'Facebook',
+  google: 'Google', 'google ads': 'Google Ads',
+  referral: 'Referral', ref: 'Referral',
+  youtube: 'YouTube', yt: 'YouTube',
+  whatsapp: 'WhatsApp', sms: 'SMS', manychat: 'ManyChat',
+  team: 'Team', 'past client': 'Past Client',
+};
+
+function normalizeSource(source: string | null): string {
+  if (!source) return 'Unknown';
+  return LEAD_SOURCE_NORMALIZE[source.toLowerCase().trim()] || source;
+}
+
 function getSourceColor(source: string | null) {
   if (!source) return 'hsl(var(--muted-foreground))';
   const key = source.toLowerCase().trim();
@@ -51,9 +67,10 @@ function UrgencyDot({ created_at, updated_at }: { created_at: string; updated_at
   const now = Date.now();
   const updatedMs = new Date(updated_at).getTime();
   const hoursAgo = (now - updatedMs) / 3_600_000;
-  if (hoursAgo > 48) return <span className="w-2 h-2 rounded-full bg-destructive shrink-0" />;
-  if (hoursAgo > 24) return <span className="w-2 h-2 rounded-full bg-warning shrink-0" />;
-  return <span className="w-2 h-2 rounded-full bg-success shrink-0" />;
+  if (hoursAgo > 96) return <span className="w-2 h-2 rounded-full bg-destructive animate-pulse shrink-0" title="96+ hrs since contact" />;
+  if (hoursAgo > 48) return <span className="w-2 h-2 rounded-full bg-destructive shrink-0" title="48+ hrs since contact" />;
+  if (hoursAgo > 24) return <span className="w-2 h-2 rounded-full bg-warning shrink-0" title="24+ hrs since contact" />;
+  return <span className="w-2 h-2 rounded-full bg-success shrink-0" title="Recently contacted" />;
 }
 
 function formatBudget(budget: number | null): string {
@@ -126,7 +143,7 @@ export function NeedsAttention({ prospects }: Props) {
                               background: `${getSourceColor(p.source)}18`,
                             }}
                           >
-                            {p.source}
+                            {normalizeSource(p.source)}
                           </span>
                         )}
                       </div>

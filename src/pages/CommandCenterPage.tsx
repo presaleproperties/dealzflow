@@ -31,8 +31,8 @@ const QK = {
 // ─── Greeting helper ───────────────────────────────────────────────────────────
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
+  if (h >= 5 && h < 12) return 'Good morning';
+  if (h >= 12 && h < 17) return 'Good afternoon';
   return 'Good evening';
 }
 
@@ -125,7 +125,7 @@ function useCommandCenterData() {
     p.temperature?.toLowerCase() === 'hot',
   ).length;
 
-  // "Needs attention" = stale (updated > 24h ago, ordered hot first)
+  // "Needs attention" = stale (updated > 48h ago, ordered hot first)
   const needsAttention = [...prospects].sort((a: any, b: any) => {
     const tempOrder = { hot: 0, warm: 1, cold: 2 };
     const ta = tempOrder[(a.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
@@ -134,14 +134,29 @@ function useCommandCenterData() {
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   }).filter((p: any) => {
     const hoursAgo = (Date.now() - new Date(p.updated_at).getTime()) / 3_600_000;
-    return hoursAgo > 24;
+    return hoursAgo > 48;
   });
 
-  // Lead sources
+  // Lead sources — normalize display names
+  const LEAD_SOURCE_NORMALIZE: Record<string, string> = {
+    tiktok: 'TikTok', tik_tok: 'TikTok', 'tik tok': 'TikTok',
+    instagram: 'Instagram', ig: 'Instagram', insta: 'Instagram',
+    facebook: 'Facebook', 'facebook ads': 'Facebook Ads', fb: 'Facebook',
+    google: 'Google', 'google ads': 'Google Ads',
+    referral: 'Referral', ref: 'Referral',
+    youtube: 'YouTube', yt: 'YouTube',
+    whatsapp: 'WhatsApp',
+    sms: 'SMS',
+    manychat: 'ManyChat',
+    team: 'Team',
+    'past client': 'Past Client',
+  };
   const sourceMap: Record<string, number> = {};
   prospects.forEach((p: any) => {
-    const s = p.source?.trim() || 'Unknown';
-    sourceMap[s] = (sourceMap[s] || 0) + 1;
+    const raw = p.source?.trim() || 'Unknown';
+    const key = raw.toLowerCase();
+    const normalized = LEAD_SOURCE_NORMALIZE[key] || raw;
+    sourceMap[normalized] = (sourceMap[normalized] || 0) + 1;
   });
   const sourceData = Object.entries(sourceMap)
     .map(([source, count]) => ({ source, count }))
@@ -309,7 +324,7 @@ export default function CommandCenterPage() {
     <AppLayout>
       <Header
         title="Command Center"
-        subtitle={`${getGreeting()}, Uzair`}
+        subtitle={`${getGreeting()}, ${user?.user_metadata?.full_name?.split(' ')[0] || 'there'}`}
         showAddDeal={false}
         action={
           <div className="flex items-center gap-2 text-xs text-muted-foreground">

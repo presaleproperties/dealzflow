@@ -16,6 +16,21 @@ const SOURCE_PALETTE: Record<string, string> = {
   manychat:  '#0084FF',
 };
 
+const LEAD_SOURCE_NORMALIZE: Record<string, string> = {
+  tiktok: 'TikTok', tik_tok: 'TikTok', 'tik tok': 'TikTok',
+  instagram: 'Instagram', ig: 'Instagram', insta: 'Instagram',
+  facebook: 'Facebook', 'facebook ads': 'Facebook Ads', fb: 'Facebook',
+  google: 'Google', 'google ads': 'Google Ads',
+  referral: 'Referral', ref: 'Referral',
+  youtube: 'YouTube', yt: 'YouTube',
+  whatsapp: 'WhatsApp', sms: 'SMS', manychat: 'ManyChat',
+  team: 'Team', 'past client': 'Past Client',
+};
+
+function normalizeSource(source: string): string {
+  return LEAD_SOURCE_NORMALIZE[source.toLowerCase().trim()] || source;
+}
+
 function getColor(source: string, idx: number): string {
   const key = source?.toLowerCase()?.trim() ?? '';
   if (SOURCE_PALETTE[key]) return SOURCE_PALETTE[key];
@@ -32,7 +47,7 @@ export function LeadSources({ data }: Props) {
   const chartData = data.map((d, i) => ({
     ...d,
     color: getColor(d.source, i),
-    displayName: d.source || 'Unknown',
+    displayName: normalizeSource(d.source) || 'Unknown',
   }));
 
   return (
