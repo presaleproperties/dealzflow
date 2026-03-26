@@ -1,13 +1,19 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, isToday,
   addMonths, subMonths, addWeeks, subWeeks, parseISO,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Clock, MapPin, ExternalLink, CalendarDays, Grid3X3 } from 'lucide-react';
+import {
+  ChevronLeft, ChevronRight, Clock, MapPin, ExternalLink,
+  CalendarDays, Grid3X3, Plus, Link2, Link2Off, Trash2, X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface CalendarEvent {
@@ -41,30 +47,53 @@ function getEventColor(index: number) {
 function useCalendarEvents(month: Date) {
   const timeMin = startOfMonth(month).toISOString();
   const timeMax = endOfMonth(month).toISOString();
+  const { session } = useAuth();
 
   return useQuery({
     queryKey: ['google-calendar-events', timeMin, timeMax],
     queryFn: async () => {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Content-Type': 'application/json',
-        },
-      });
 
+      const headers: Record<string, string> = {
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        'Content-Type': 'application/json',
+      };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch(url, { headers });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         throw new Error(err.error || 'Failed to fetch events');
       }
-
       const result = await response.json();
-      return (result.events || []) as CalendarEvent[];
+      return {
+        events: (result.events || []) as CalendarEvent[],
+        authenticated: result.authenticated || false,
+      };
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
     retry: 1,
+  });
+}
+
+// ─── Calendar connection status hook ───────────────────────────────────────────
+function useCalendarConnection() {
+  const { session } = useAuth();
+
+  return useQuery({
+    queryKey: ['google-calendar-connection'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
+        body: { action: 'status' },
+      });
+      if (error) throw error;
+      return data as { connected: boolean; calendarEmail: string | null };
+    },
+    enabled: !!session,
+    staleTime: 30_000,
   });
 }
 
@@ -80,7 +109,6 @@ function DayCell({
 }) {
   const inMonth = isSameMonth(day, currentMonth);
   const today = isToday(day);
-  const hasEvents = events.length > 0;
 
   return (
     <button
@@ -100,14 +128,10 @@ function DayCell({
       )}>
         {format(day, 'd')}
       </span>
-      {hasEvents && (
+      {events.length > 0 && (
         <div className="flex items-center gap-0.5 mt-1">
           {events.slice(0, 3).map((_, i) => (
-            <span
-              key={i}
-              className="w-1 h-1 rounded-full"
-              style={{ background: getEventColor(i) }}
-            />
+            <span key={i} className="w-1 h-1 rounded-full" style={{ background: getEventColor(i) }} />
           ))}
         </div>
       )}
@@ -148,11 +172,7 @@ function WeekDayColumn({
       {events.length > 0 && (
         <div className="flex items-center gap-0.5">
           {events.slice(0, 2).map((_, i) => (
-            <span
-              key={i}
-              className="w-1 h-1 rounded-full"
-              style={{ background: getEventColor(i) }}
-            />
+            <span key={i} className="w-1 h-1 rounded-full" style={{ background: getEventColor(i) }} />
           ))}
           {events.length > 2 && (
             <span className="text-[8px] text-muted-foreground font-medium">+{events.length - 2}</span>
@@ -164,7 +184,12 @@ function WeekDayColumn({
 }
 
 // ─── Event card ────────────────────────────────────────────────────────────────
-function EventCard({ event, index }: { event: CalendarEvent; index: number }) {
+function EventCard({ event, index, canEdit, onDelete }: {
+  event: CalendarEvent;
+  index: number;
+  canEdit: boolean;
+  onDelete: (id: string) => void;
+}) {
   const color = getEventColor(index);
   const startTime = event.allDay ? 'All day' : format(parseISO(event.start), 'h:mm a');
   const endTime = !event.allDay && event.end ? format(parseISO(event.end), 'h:mm a') : null;
@@ -197,17 +222,126 @@ function EventCard({ event, index }: { event: CalendarEvent; index: number }) {
             )}
           </div>
         </div>
-        {event.htmlLink && (
-          <a
-            href={event.htmlLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0"
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
+        <div className="flex items-center gap-1 shrink-0">
+          {canEdit && (
+            <button
+              onClick={() => onDelete(event.id)}
+              className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
+          {event.htmlLink && (
+            <a
+              href={event.htmlLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Quick add event form ──────────────────────────────────────────────────────
+function QuickAddEvent({ date, onClose, onCreated }: {
+  date: Date;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
+  const [allDay, setAllDay] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleCreate = async () => {
+    if (!title.trim()) return;
+    setSaving(true);
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const event = allDay
+        ? { summary: title, start: { date: dateStr }, end: { date: dateStr } }
+        : {
+            summary: title,
+            start: { dateTime: `${dateStr}T${startTime}:00`, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+            end: { dateTime: `${dateStr}T${endTime}:00`, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+          };
+
+      const { error } = await supabase.functions.invoke('google-calendar', {
+        body: { action: 'create', event },
+      });
+      if (error) throw error;
+      toast.success('Event created');
+      onCreated();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create event');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="p-3 rounded-xl border border-primary/30 bg-primary/5 space-y-2.5"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-semibold text-primary">New Event — {format(date, 'MMM d')}</span>
+        <button onClick={onClose} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+      <input
+        autoFocus
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Event title"
+        className="w-full bg-background/80 border border-border/50 rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+        onKeyDown={e => e.key === 'Enter' && handleCreate()}
+      />
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
+          <input
+            type="checkbox"
+            checked={allDay}
+            onChange={e => setAllDay(e.target.checked)}
+            className="rounded border-border"
+          />
+          All day
+        </label>
+        {!allDay && (
+          <>
+            <input
+              type="time"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground"
+            />
+            <span className="text-[10px] text-muted-foreground">–</span>
+            <input
+              type="time"
+              value={endTime}
+              onChange={e => setEndTime(e.target.value)}
+              className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground"
+            />
+          </>
         )}
       </div>
+      <button
+        onClick={handleCreate}
+        disabled={!title.trim() || saving}
+        className="w-full py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
+      >
+        {saving ? 'Creating…' : 'Create Event'}
+      </button>
     </motion.div>
   );
 }
@@ -217,8 +351,77 @@ export function CalendarWidget() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data: events = [], isLoading, isError } = useCalendarEvents(currentMonth);
+  const { data, isLoading, isError } = useCalendarEvents(currentMonth);
+  const events = data?.events || [];
+  const isAuthenticated = data?.authenticated || false;
+
+  const { data: connectionStatus } = useCalendarConnection();
+  const isConnected = connectionStatus?.connected || false;
+
+  // Listen for OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const calAuth = params.get('calendar_auth');
+    if (calAuth === 'success') {
+      toast.success('Google Calendar connected!');
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-connection'] });
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (calAuth === 'error') {
+      toast.error(params.get('message') || 'Failed to connect Google Calendar');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // Connect handler
+  const handleConnect = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
+        body: {
+          action: 'get_auth_url',
+          redirectUrl: window.location.origin + '/command-center',
+        },
+      });
+      if (error) throw error;
+      if (data?.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to start connection');
+    }
+  };
+
+  // Disconnect handler
+  const handleDisconnect = async () => {
+    try {
+      await supabase.functions.invoke('google-calendar-auth', {
+        body: { action: 'disconnect' },
+      });
+      toast.success('Google Calendar disconnected');
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-connection'] });
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to disconnect');
+    }
+  };
+
+  // Delete event
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('google-calendar', {
+        body: { action: 'delete', eventId },
+      });
+      if (error) throw error;
+      toast.success('Event deleted');
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete event');
+    }
+  };
 
   // Build month calendar grid
   const monthStart = startOfMonth(currentMonth);
@@ -232,7 +435,6 @@ export function CalendarWidget() {
   const weekEnd = endOfWeek(selectedDate);
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
-  // Events for selected day
   const selectedEvents = useMemo(() => {
     return events.filter(e => {
       const eventDate = parseISO(e.start);
@@ -240,7 +442,6 @@ export function CalendarWidget() {
     });
   }, [events, selectedDate]);
 
-  // Events by day (for dots)
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach(e => {
@@ -329,9 +530,28 @@ export function CalendarWidget() {
           </button>
         </div>
 
+        {/* Connection status */}
+        {isConnected ? (
+          <button
+            onClick={handleDisconnect}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-emerald-500 hover:text-destructive hover:bg-destructive/10 transition-all"
+            title={`Connected: ${connectionStatus?.calendarEmail || 'Google Calendar'} — click to disconnect`}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <button
+            onClick={handleConnect}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+            title="Connect Google Calendar"
+          >
+            <Link2Off className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         <button
           onClick={goToday}
-          className="text-[10px] font-semibold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors ml-1"
+          className="text-[10px] font-semibold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors"
         >
           Today
         </button>
@@ -348,7 +568,6 @@ export function CalendarWidget() {
             transition={{ duration: 0.15 }}
             className="px-3 pt-3 pb-2"
           >
-            {/* Weekday headers */}
             <div className="grid grid-cols-7 mb-1">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
                 <div key={d} className="text-center text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1">
@@ -356,7 +575,6 @@ export function CalendarWidget() {
                 </div>
               ))}
             </div>
-            {/* Day grid */}
             <div className="grid grid-cols-7 gap-px">
               {monthDays.map(day => {
                 const key = format(day, 'yyyy-MM-dd');
@@ -407,56 +625,88 @@ export function CalendarWidget() {
             <span className="text-xs font-semibold text-foreground">
               {isToday(selectedDate) ? 'Today' : format(selectedDate, 'EEE, MMM d')}
             </span>
-            <span className="text-[10px] text-muted-foreground">
-              {selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">
+                {selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''}
+              </span>
+              {isConnected && (
+                <button
+                  onClick={() => setShowAddEvent(v => !v)}
+                  className={cn(
+                    'w-5 h-5 rounded-md flex items-center justify-center transition-all',
+                    showAddEvent
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/10',
+                  )}
+                  title="Add event"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Quick add form */}
+          <AnimatePresence>
+            {showAddEvent && isConnected && (
+              <div className="mb-3">
+                <QuickAddEvent
+                  date={selectedDate}
+                  onClose={() => setShowAddEvent(false)}
+                  onCreated={() => queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] })}
+                />
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Connect prompt */}
+          {!isConnected && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-3 p-3 rounded-xl border border-border/40 bg-muted/20 text-center"
+            >
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Connect Google Calendar for full access — see titles, create & edit events
+              </p>
+              <button
+                onClick={handleConnect}
+                className="text-[11px] font-semibold text-primary hover:underline"
+              >
+                Connect Now →
+              </button>
+            </motion.div>
+          )}
 
           <AnimatePresence mode="wait">
             {isLoading ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-2"
-              >
+              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
                 {[1, 2].map(i => (
                   <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
                 ))}
               </motion.div>
             ) : isError ? (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-6 text-center"
-              >
+              <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-6 text-center">
                 <p className="text-xs text-muted-foreground">Could not load events</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">Check your Google Calendar API key</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-1">Check your calendar connection</p>
               </motion.div>
             ) : selectedEvents.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-6 text-center"
-              >
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-6 text-center">
                 <p className="text-xs text-muted-foreground">No events scheduled</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">Enjoy the free time ✨</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-1">
+                  {isConnected ? 'Click + to add an event' : 'Enjoy the free time ✨'}
+                </p>
               </motion.div>
             ) : (
-              <motion.div
-                key="events"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-2"
-              >
+              <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
                 {selectedEvents.map((event, i) => (
-                  <EventCard key={event.id} event={event} index={i} />
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    index={i}
+                    canEdit={isConnected}
+                    onDelete={handleDeleteEvent}
+                  />
                 ))}
               </motion.div>
             )}
