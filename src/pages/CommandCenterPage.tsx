@@ -256,24 +256,24 @@ export default function CommandCenterPage() {
           <HeroKPIs data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }} />
         </FadeUp>
 
-        {/* ── ROW 2: Needs Attention (prominent) + Today's Focus ── */}
+        {/* ── ROW 2: Calendar (full width) ─────────────────────── */}
+        <FadeUp delay={0.06}>
+          <CalendarWidget />
+        </FadeUp>
+
+        {/* ── ROW 3: Needs Attention + Today's Focus ────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <FadeUp delay={0.06} className="lg:col-span-2">
+          <FadeUp delay={0.09} className="lg:col-span-2">
             <div className="h-full" style={{ minHeight: '360px' }}>
               <NeedsAttention prospects={needsAttention as any} />
             </div>
           </FadeUp>
-          <FadeUp delay={0.09} className="lg:col-span-1">
+          <FadeUp delay={0.12} className="lg:col-span-1">
             <div className="h-full">
               <TodaysFocus />
             </div>
           </FadeUp>
         </div>
-
-        {/* ── ROW 3: Calendar (full width, hero section) ─────────── */}
-        <FadeUp delay={0.12}>
-          <CalendarWidget />
-        </FadeUp>
 
         {/* ── ROW 4: Facebook Ads + Pipeline Insights side by side ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
