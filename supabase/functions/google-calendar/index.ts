@@ -162,43 +162,78 @@ serve(async (req) => {
     const timeMax = url.searchParams.get('timeMax');
     const maxResults = url.searchParams.get('maxResults') || '100';
 
-    // Try OAuth token first (full details)
+    // Try OAuth token first (full details) — fetch from ALL subscribed calendars
     if (userId) {
       const tokenResult = await getValidAccessToken(supabase, userId);
       if (tokenResult && !tokenResult.error) {
-        const params = new URLSearchParams({
-          timeMin,
-          maxResults,
-          singleEvents: 'true',
-          orderBy: 'startTime',
+        const authHeaders = { Authorization: `Bearer ${tokenResult.accessToken}` };
+
+        // 1. Get the user's calendar list (only selected/visible calendars)
+        const calListRes = await fetch(`${CALENDAR_API}/users/me/calendarList?minAccessRole=reader`, {
+          headers: authHeaders,
         });
-        if (timeMax) params.set('timeMax', timeMax);
+        const calListData = await calListRes.json();
 
-        const apiUrl = `${CALENDAR_API}/calendars/primary/events?${params}`;
-        const response = await fetch(apiUrl, {
-          headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
-        });
-        const data = await response.json();
+        if (calListRes.ok && calListData.items?.length) {
+          // Filter to only calendars the user has marked as "selected" (visible)
+          const selectedCalendars = (calListData.items as any[]).filter(
+            (cal: any) => cal.selected !== false
+          );
 
-        if (response.ok) {
-          const events = (data.items || []).map((item: any) => ({
-            id: item.id,
-            title: item.summary?.trim() || 'Untitled event',
-            description: item.description || null,
-            location: item.location || null,
-            start: item.start?.dateTime || item.start?.date || null,
-            end: item.end?.dateTime || item.end?.date || null,
-            allDay: !item.start?.dateTime,
-            color: item.colorId || null,
-            htmlLink: item.htmlLink || null,
-          }));
+          // 2. Fetch events from each selected calendar in parallel
+          const allEvents: any[] = [];
+          const fetchPromises = selectedCalendars.map(async (cal: any) => {
+            const params = new URLSearchParams({
+              timeMin,
+              maxResults,
+              singleEvents: 'true',
+              orderBy: 'startTime',
+            });
+            if (timeMax) params.set('timeMax', timeMax);
 
-          return new Response(JSON.stringify({ events, authenticated: true }), {
+            const apiUrl = `${CALENDAR_API}/calendars/${encodeURIComponent(cal.id)}/events?${params}`;
+            try {
+              const response = await fetch(apiUrl, { headers: authHeaders });
+              const data = await response.json();
+              if (response.ok && data.items) {
+                for (const item of data.items) {
+                  allEvents.push({
+                    id: item.id,
+                    title: item.summary?.trim() || 'Untitled event',
+                    description: item.description || null,
+                    location: item.location || null,
+                    start: item.start?.dateTime || item.start?.date || null,
+                    end: item.end?.dateTime || item.end?.date || null,
+                    allDay: !item.start?.dateTime,
+                    color: item.colorId || null,
+                    calendarColor: cal.backgroundColor || null,
+                    calendarName: cal.summary || null,
+                    calendarId: cal.id,
+                    htmlLink: item.htmlLink || null,
+                  });
+                }
+              }
+            } catch (e) {
+              console.error(`Failed to fetch events from calendar ${cal.id}:`, e);
+            }
+          });
+
+          await Promise.all(fetchPromises);
+
+          // Sort all events by start time
+          allEvents.sort((a, b) => {
+            const aTime = new Date(a.start || 0).getTime();
+            const bTime = new Date(b.start || 0).getTime();
+            return aTime - bTime;
+          });
+
+          return new Response(JSON.stringify({ events: allEvents, authenticated: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-        // If OAuth fails, fall through to API key
-        console.error('OAuth calendar fetch failed, falling back to API key:', data.error?.message);
+
+        // If calendar list fetch fails, fall through to API key
+        console.error('Calendar list fetch failed, falling back to API key:', calListData.error?.message);
       }
     }
 
