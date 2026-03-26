@@ -8,6 +8,22 @@ const corsHeaders = {
 
 const GRAPH_API = 'https://graph.facebook.com/v21.0';
 
+// Generate appsecret_proof: HMAC-SHA256 of access_token using app_secret
+async function generateAppSecretProof(token: string, appSecret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(token));
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -55,14 +71,6 @@ serve(async (req) => {
         if (exchangeData.access_token && !exchangeData.error) {
           META_ACCESS_TOKEN = exchangeData.access_token;
           console.log('Successfully exchanged for long-lived token, expires in:', exchangeData.expires_in, 'seconds');
-
-          // Update the stored secret via service role so future calls use the long-lived token
-          const supabaseAdmin = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
-            auth: { persistSession: false },
-          });
-          await supabaseAdmin.functions.invoke('manage-connection', {
-            body: { action: 'update_secret', name: 'META_ADS_ACCESS_TOKEN', value: exchangeData.access_token },
-          }).catch(e => console.warn('Could not auto-update stored token:', e));
         } else if (exchangeData.error) {
           console.warn('Token exchange failed (using current token):', exchangeData.error.message);
         }
@@ -71,19 +79,25 @@ serve(async (req) => {
       }
     }
 
+    // Build common params including appsecret_proof when app secret is available
+    const baseParams: Record<string, string> = { access_token: META_ACCESS_TOKEN };
+    if (META_APP_SECRET) {
+      baseParams.appsecret_proof = await generateAppSecretProof(META_ACCESS_TOKEN, META_APP_SECRET);
+    }
+
     const url = new URL(req.url);
     const datePreset = url.searchParams.get('date_preset') || 'last_7d';
 
     // Fetch account-level insights
     const insightsUrl = `${GRAPH_API}/${AD_ACCOUNT_ID}/insights?` + new URLSearchParams({
-      access_token: META_ACCESS_TOKEN,
+      ...baseParams,
       fields: 'spend,impressions,reach,clicks,ctr,cpc,cpm,actions,cost_per_action_type,frequency',
       date_preset: datePreset,
       level: 'account',
     });
 
     const campaignsUrl = `${GRAPH_API}/${AD_ACCOUNT_ID}/campaigns?` + new URLSearchParams({
-      access_token: META_ACCESS_TOKEN,
+      ...baseParams,
       fields: 'name,status,objective',
       limit: '20',
       filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED'] }]),
@@ -91,7 +105,7 @@ serve(async (req) => {
 
     // Fetch budget info
     const accountUrl = `${GRAPH_API}/${AD_ACCOUNT_ID}?` + new URLSearchParams({
-      access_token: META_ACCESS_TOKEN,
+      ...baseParams,
       fields: 'name,currency,amount_spent,balance,spend_cap',
     });
 
@@ -107,7 +121,6 @@ serve(async (req) => {
 
     if (insightsData.error) {
       console.error('Meta Ads insights error:', JSON.stringify(insightsData.error));
-      console.error('Insights URL used:', insightsUrl.replace(META_ACCESS_TOKEN, '***'));
     }
     if (accountData.error) {
       console.error('Meta Ads account error:', JSON.stringify(accountData.error));
@@ -141,7 +154,7 @@ serve(async (req) => {
     const campaignInsightsResults = await Promise.all(
       campaignList.map((c: any) =>
         fetch(`${GRAPH_API}/${c.id}/insights?` + new URLSearchParams({
-          access_token: META_ACCESS_TOKEN,
+          ...baseParams,
           fields: 'spend,impressions,clicks,actions,cost_per_action_type',
           date_preset: datePreset,
         })).then(r => r.json()).catch(() => ({ data: [] }))
