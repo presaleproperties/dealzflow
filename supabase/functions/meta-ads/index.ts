@@ -26,9 +26,11 @@ serve(async (req) => {
       });
     }
 
-    const META_ACCESS_TOKEN = Deno.env.get('META_ADS_ACCESS_TOKEN');
+    let META_ACCESS_TOKEN = Deno.env.get('META_ADS_ACCESS_TOKEN');
     const rawAccountId = Deno.env.get('META_AD_ACCOUNT_ID') || '';
     const AD_ACCOUNT_ID = rawAccountId.startsWith('act_') ? rawAccountId : `act_${rawAccountId}`;
+    const META_APP_ID = Deno.env.get('META_APP_ID');
+    const META_APP_SECRET = Deno.env.get('META_APP_SECRET');
 
     if (!META_ACCESS_TOKEN || !rawAccountId) {
       return new Response(JSON.stringify({
@@ -37,6 +39,36 @@ serve(async (req) => {
       }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Auto-exchange short-lived token for long-lived token if app credentials are available
+    if (META_APP_ID && META_APP_SECRET) {
+      try {
+        const exchangeUrl = `${GRAPH_API}/oauth/access_token?` + new URLSearchParams({
+          grant_type: 'fb_exchange_token',
+          client_id: META_APP_ID,
+          client_secret: META_APP_SECRET,
+          fb_exchange_token: META_ACCESS_TOKEN,
+        });
+        const exchangeRes = await fetch(exchangeUrl);
+        const exchangeData = await exchangeRes.json();
+        if (exchangeData.access_token && !exchangeData.error) {
+          META_ACCESS_TOKEN = exchangeData.access_token;
+          console.log('Successfully exchanged for long-lived token, expires in:', exchangeData.expires_in, 'seconds');
+
+          // Update the stored secret via service role so future calls use the long-lived token
+          const supabaseAdmin = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+            auth: { persistSession: false },
+          });
+          await supabaseAdmin.functions.invoke('manage-connection', {
+            body: { action: 'update_secret', name: 'META_ADS_ACCESS_TOKEN', value: exchangeData.access_token },
+          }).catch(e => console.warn('Could not auto-update stored token:', e));
+        } else if (exchangeData.error) {
+          console.warn('Token exchange failed (using current token):', exchangeData.error.message);
+        }
+      } catch (e) {
+        console.warn('Token exchange error (using current token):', e);
+      }
     }
 
     const url = new URL(req.url);
