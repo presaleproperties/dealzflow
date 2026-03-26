@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useAdmin";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
 
@@ -64,8 +65,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { data: isAdmin, isLoading: isCheckingAdmin } = useIsAdmin();
   
-  if (loading) {
+  if (loading || isCheckingAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-muted-foreground">Loading...</div>
@@ -77,8 +79,10 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
   
-  // AdminPage itself does the server-side admin role check via edge function
-  // This route just requires authentication; admin check is done in the page
+  if (!isAdmin) {
+    return <Navigate to="/command-center" replace />;
+  }
+  
   return <>{children}</>;
 }
 
