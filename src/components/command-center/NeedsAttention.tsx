@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Phone, MessageSquare, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { LeadDetailSheet } from './LeadDetailSheet';
@@ -157,12 +157,35 @@ export function NeedsAttention({ prospects }: Props) {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setSelected(p)}
-                      className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-muted/40 text-muted-foreground hover:bg-muted/70 border border-border/30 transition-colors"
-                    >
-                      View
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); window.open(`tel:`, '_self'); }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-success/10 text-success hover:bg-success/20 border border-success/20 transition-colors"
+                        title="Call"
+                      >
+                        <Phone className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); window.open(`sms:`, '_self'); }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-info/10 text-info hover:bg-info/20 border border-info/20 transition-colors"
+                        title="Text"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); window.open(`mailto:`, '_self'); }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
+                        title="Email"
+                      >
+                        <Mail className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => setSelected(p)}
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-muted/40 text-muted-foreground hover:bg-muted/70 border border-border/30 transition-colors ml-0.5"
+                      >
+                        View
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
