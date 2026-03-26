@@ -145,6 +145,28 @@ function TimelineEvent({
 
   const currentTop = isDraggingTime ? top + dragOffsetY : top;
 
+  // Calculate the preview time while dragging
+  const dragPreviewTimes = useMemo(() => {
+    if (!isDraggingTime) return null;
+    const snappedDelta = Math.round((dragOffsetY / HOUR_HEIGHT) * 60 / 15) * 15;
+    const newStartMins = minutesFromDayStart + snappedDelta;
+    const newEndMins = newStartMins + durationMins;
+    const newStartHour = START_HOUR + Math.floor(newStartMins / 60);
+    const newStartMin = ((newStartMins % 60) + 60) % 60;
+    const newEndHour = START_HOUR + Math.floor(newEndMins / 60);
+    const newEndMin = ((newEndMins % 60) + 60) % 60;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const fmtTime = (h: number, m: number) => {
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${h12}:${pad(m)} ${ampm}`;
+    };
+    return {
+      start: fmtTime(newStartHour, newStartMin),
+      end: fmtTime(newEndHour, newEndMin),
+    };
+  }, [isDraggingTime, dragOffsetY, minutesFromDayStart, durationMins]);
+
   const startEdit = () => {
     setEditTitle(displayTitle);
     setEditStart(format(eventStart, 'HH:mm'));
@@ -222,20 +244,29 @@ function TimelineEvent({
       onTouchStart={canEdit ? handleTimelineDragStart : undefined}
     >
       <div
-        className="h-full px-2 py-1 flex flex-col justify-start"
+        className="h-full px-2 py-1 flex flex-col justify-start relative"
         style={{ background: color, opacity: 0.9 }}
       >
         <div className="flex items-center gap-0.5">
           {canEdit && <GripVertical className="w-2.5 h-2.5 text-white/50 shrink-0" />}
           <p className="text-[10px] font-bold text-white leading-tight truncate">{displayTitle}</p>
         </div>
-        {height > 30 && (
+        {height > 30 && !isDraggingTime && (
           <p className="text-[9px] text-white/80 leading-tight mt-0.5">
             {format(eventStart, 'h:mm a')} – {format(eventEnd, 'h:mm a')}
           </p>
         )}
-        {height > 50 && event.location && (
+        {height > 50 && event.location && !isDraggingTime && (
           <p className="text-[8px] text-white/60 truncate mt-0.5">{event.location}</p>
+        )}
+
+        {/* Floating time indicator while dragging */}
+        {isDraggingTime && dragPreviewTimes && (
+          <div className="absolute -left-1 -top-8 z-50 bg-foreground text-background px-2.5 py-1 rounded-lg shadow-xl pointer-events-none whitespace-nowrap">
+            <p className="text-[11px] font-bold tabular-nums">
+              {dragPreviewTimes.start} – {dragPreviewTimes.end}
+            </p>
+          </div>
         )}
       </div>
 
