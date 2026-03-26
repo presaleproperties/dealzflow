@@ -51,7 +51,7 @@ serve(async (req) => {
 
     const campaignsUrl = `${GRAPH_API}/${AD_ACCOUNT_ID}/campaigns?` + new URLSearchParams({
       access_token: META_ACCESS_TOKEN,
-      fields: 'name,status,objective,insights.date_preset(' + datePreset + '){spend,impressions,clicks,actions,cost_per_action_type}',
+      fields: 'name,status,objective',
       limit: '20',
       filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED'] }]),
     });
