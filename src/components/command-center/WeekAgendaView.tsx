@@ -351,74 +351,20 @@ export function WeekAgendaView({
           </div>
 
           {/* Day columns */}
-          {weekDays.map((day, dayIndex) => {
-            const key = format(day, 'yyyy-MM-dd');
-            const dayEvents = timedByDay.get(key) || [];
-            const today = isToday(day);
-            const [dragOver, setDragOver] = useState(false);
-
-            return (
-              <div
-                key={key}
-                className={cn(
-                  'flex-1 min-w-0 relative border-l border-border/20',
-                  today && 'bg-primary/[0.02]',
-                  dragOver && 'bg-primary/10',
-                )}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  const data = e.dataTransfer.getData('application/calendar-event');
-                  if (data) onDropEvent(data, day);
-                }}
-              >
-                {/* Hour grid lines */}
-                {HOURS.map((hour) => (
-                  <div
-                    key={hour}
-                    className="absolute left-0 right-0 border-t border-border/15"
-                    style={{ top: (hour - START_HOUR) * HOUR_HEIGHT }}
-                  />
-                ))}
-                {/* Half-hour lines */}
-                {HOURS.map((hour) => (
-                  <div
-                    key={`half-${hour}`}
-                    className="absolute left-0 right-0 border-t border-border/8"
-                    style={{ top: (hour - START_HOUR) * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
-                  />
-                ))}
-
-                {/* Events */}
-                {dayEvents.map((event) => (
-                  <TimelineEvent
-                    key={event.id}
-                    event={event}
-                    dayStart={day}
-                    canEdit={canManageEvents}
-                    isAuthenticated={isAuthenticated}
-                    onDelete={onDeleteEvent}
-                    onEdit={onEditEvent}
-                  />
-                ))}
-
-                {/* Current time indicator */}
-                {today && showNowLine && (
-                  <div
-                    className="absolute left-0 right-0 z-20 pointer-events-none"
-                    style={{ top: nowTop }}
-                  >
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-destructive -ml-1 shrink-0" />
-                      <div className="flex-1 h-[2px] bg-destructive" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {weekDays.map((day) => (
+            <AgendaDayColumn
+              key={format(day, 'yyyy-MM-dd')}
+              day={day}
+              events={timedByDay.get(format(day, 'yyyy-MM-dd')) || []}
+              canManageEvents={canManageEvents}
+              isAuthenticated={isAuthenticated}
+              onDeleteEvent={onDeleteEvent}
+              onEditEvent={onEditEvent}
+              onDropEvent={onDropEvent}
+              showNowLine={showNowLine}
+              nowTop={nowTop}
+            />
+          ))}
         </div>
       </div>
     </div>
