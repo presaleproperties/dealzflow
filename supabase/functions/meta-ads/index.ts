@@ -27,7 +27,8 @@ serve(async (req) => {
     }
 
     const META_ACCESS_TOKEN = Deno.env.get('META_ADS_ACCESS_TOKEN');
-    const AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID');
+    const rawAccountId = Deno.env.get('META_AD_ACCOUNT_ID') || '';
+    const AD_ACCOUNT_ID = rawAccountId.startsWith('act_') ? rawAccountId : `act_${rawAccountId}`;
 
     if (!META_ACCESS_TOKEN || !AD_ACCOUNT_ID) {
       return new Response(JSON.stringify({
