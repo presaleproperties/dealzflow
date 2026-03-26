@@ -44,12 +44,6 @@ function useCalendarEvents(month: Date) {
   return useQuery({
     queryKey: ['google-calendar-events', timeMin, timeMax],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('google-calendar', {
-        body: null,
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      // Use query params via URL construction
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
       
