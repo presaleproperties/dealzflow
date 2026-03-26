@@ -25,14 +25,8 @@ function useMetaAds(datePreset: DatePreset) {
   return useQuery({
     queryKey: ['meta-ads', user?.id, datePreset],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('meta-ads', {
-        body: null,
-        headers: { 'Content-Type': 'application/json' },
-      });
-      // We need to use GET with query params instead
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const { data: { session } } = await supabase.auth.getSession();
-      const url = `https://${projectId}.supabase.co/functions/v1/meta-ads?date_preset=${datePreset}`;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-ads?date_preset=${datePreset}`;
       const res = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',

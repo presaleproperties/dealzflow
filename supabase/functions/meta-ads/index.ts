@@ -27,9 +27,10 @@ serve(async (req) => {
     }
 
     const META_ACCESS_TOKEN = Deno.env.get('META_ADS_ACCESS_TOKEN');
-    const AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID');
+    const rawAccountId = Deno.env.get('META_AD_ACCOUNT_ID') || '';
+    const AD_ACCOUNT_ID = rawAccountId.startsWith('act_') ? rawAccountId : `act_${rawAccountId}`;
 
-    if (!META_ACCESS_TOKEN || !AD_ACCOUNT_ID) {
+    if (!META_ACCESS_TOKEN || !rawAccountId) {
       return new Response(JSON.stringify({
         error: 'not_configured',
         message: 'Meta Ads credentials not configured',
@@ -51,7 +52,7 @@ serve(async (req) => {
 
     const campaignsUrl = `${GRAPH_API}/${AD_ACCOUNT_ID}/campaigns?` + new URLSearchParams({
       access_token: META_ACCESS_TOKEN,
-      fields: 'name,status,objective,insights.date_preset(' + datePreset + '){spend,impressions,clicks,actions,cost_per_action_type}',
+      fields: 'name,status,objective',
       limit: '20',
       filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED'] }]),
     });
@@ -74,9 +75,20 @@ serve(async (req) => {
 
     if (insightsData.error) {
       console.error('Meta Ads insights error:', JSON.stringify(insightsData.error));
+      console.error('Insights URL used:', insightsUrl.replace(META_ACCESS_TOKEN, '***'));
+    }
+    if (accountData.error) {
+      console.error('Meta Ads account error:', JSON.stringify(accountData.error));
+    }
+    if (campaignsData.error) {
+      console.error('Meta Ads campaigns error:', JSON.stringify(campaignsData.error));
+    }
+
+    // If all three fail, return error
+    if (insightsData.error && accountData.error) {
       return new Response(JSON.stringify({
         error: 'api_error',
-        message: insightsData.error.message || 'Meta API error',
+        message: insightsData.error.message || accountData.error.message || 'Meta API error',
       }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -92,9 +104,20 @@ serve(async (req) => {
     const linkClicks = actions.find(a => a.action_type === 'link_click')?.value || '0';
     const messaging = actions.find(a => a.action_type === 'onsite_conversion.messaging_conversation_started_7d')?.value || '0';
 
-    // Parse campaigns
-    const campaigns = (campaignsData.data || []).map((c: any) => {
-      const ci = c.insights?.data?.[0] || {};
+    // Fetch per-campaign insights separately
+    const campaignList = campaignsData.data || [];
+    const campaignInsightsResults = await Promise.all(
+      campaignList.map((c: any) =>
+        fetch(`${GRAPH_API}/${c.id}/insights?` + new URLSearchParams({
+          access_token: META_ACCESS_TOKEN,
+          fields: 'spend,impressions,clicks,actions,cost_per_action_type',
+          date_preset: datePreset,
+        })).then(r => r.json()).catch(() => ({ data: [] }))
+      )
+    );
+
+    const campaigns = campaignList.map((c: any, i: number) => {
+      const ci = campaignInsightsResults[i]?.data?.[0] || {};
       const cActions = (ci.actions || []) as Array<{ action_type: string; value: string }>;
       const cCostPerAction = (ci.cost_per_action_type || []) as Array<{ action_type: string; value: string }>;
       return {
