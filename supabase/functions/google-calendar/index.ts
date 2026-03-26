@@ -183,7 +183,7 @@ serve(async (req) => {
         if (response.ok) {
           const events = (data.items || []).map((item: any) => ({
             id: item.id,
-            title: item.summary || '(No title)',
+            title: item.summary?.trim() || 'Untitled event',
             description: item.description || null,
             location: item.location || null,
             start: item.start?.dateTime || item.start?.date || null,
