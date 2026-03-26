@@ -783,10 +783,10 @@ function ToggleCard({
   activeColor?: string;
 }) {
   const colorMap: Record<string, { border: string; bg: string; text: string; glow: string }> = {
-    'accent': { border: 'border-accent/70', bg: 'bg-accent/8', text: 'text-accent', glow: 'shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]' },
-    'primary': { border: 'border-primary/70', bg: 'bg-primary/8', text: 'text-primary', glow: 'shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]' },
-    'violet-500': { border: 'border-violet-500/70', bg: 'bg-violet-500/8', text: 'text-violet-400', glow: 'shadow-[0_0_0_3px_hsl(263_70%_50%/0.12)]' },
-    'success': { border: 'border-success/70', bg: 'bg-success/8', text: 'text-success', glow: 'shadow-[0_0_0_3px_hsl(var(--success)/0.12)]' },
+    'accent': { border: 'border-accent/70', bg: 'bg-accent/[0.08]', text: 'text-accent', glow: 'shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]' },
+    'primary': { border: 'border-primary/70', bg: 'bg-primary/[0.08]', text: 'text-primary', glow: 'shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]' },
+    'violet-500': { border: 'border-violet-500/70', bg: 'bg-violet-500/[0.08]', text: 'text-violet-400', glow: 'shadow-[0_0_0_3px_hsl(263_70%_50%/0.12)]' },
+    'success': { border: 'border-success/70', bg: 'bg-success/[0.08]', text: 'text-success', glow: 'shadow-[0_0_0_3px_hsl(var(--success)/0.12)]' },
   };
   
   const colors = colorMap[activeColor] || colorMap.accent;
@@ -855,7 +855,7 @@ function AppearanceSection() {
             className={cn(
               'relative p-4 rounded-xl border-2 transition-all duration-200 text-center group overflow-hidden',
               theme === value
-                ? 'border-accent/70 bg-accent/8 shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]'
+                ? 'border-accent/70 bg-accent/[0.08] shadow-[0_0_0_3px_hsl(var(--accent)/0.12)]'
                 : 'border-border/50 bg-muted/20 hover:border-border/80 hover:bg-muted/40',
             )}
           >

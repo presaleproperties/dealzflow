@@ -8,6 +8,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useProperties } from '@/hooks/useProperties';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ import { DealsWrittenCard } from '@/components/dashboard/DealsWrittenCard';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data: expenses = [] } = useExpenses();
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
@@ -72,7 +74,7 @@ export default function DashboardPage() {
     }
   };
 
-  const userName = (settings as any)?.full_name?.split(' ')[0] || undefined;
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || undefined;
   const now = new Date();
   const thisYear = now.getFullYear();
 
