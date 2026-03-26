@@ -74,7 +74,7 @@ export default function DashboardPage() {
     }
   };
 
-  const userName = (settings as any)?.profiles?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || undefined;
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || undefined;
   const now = new Date();
   const thisYear = now.getFullYear();
 
