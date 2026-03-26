@@ -30,7 +30,7 @@ serve(async (req) => {
     const rawAccountId = Deno.env.get('META_AD_ACCOUNT_ID') || '';
     const AD_ACCOUNT_ID = rawAccountId.startsWith('act_') ? rawAccountId : `act_${rawAccountId}`;
 
-    if (!META_ACCESS_TOKEN || !AD_ACCOUNT_ID) {
+    if (!META_ACCESS_TOKEN || !rawAccountId) {
       return new Response(JSON.stringify({
         error: 'not_configured',
         message: 'Meta Ads credentials not configured',
