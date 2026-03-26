@@ -489,6 +489,30 @@ export function CalendarWidget() {
     }
   };
 
+  // Edit event
+  const handleEditEvent = async (eventId: string, updates: { title: string; startTime: string; endTime: string; allDay: boolean }) => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const event = updates.allDay
+        ? { summary: updates.title, start: { date: dateStr }, end: { date: dateStr } }
+        : {
+            summary: updates.title,
+            start: { dateTime: `${dateStr}T${updates.startTime}:00`, timeZone: tz },
+            end: { dateTime: `${dateStr}T${updates.endTime}:00`, timeZone: tz },
+          };
+
+      const { error } = await supabase.functions.invoke('google-calendar', {
+        body: { action: 'update', eventId, event },
+      });
+      if (error) throw error;
+      toast.success('Event updated');
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update event');
+    }
+  };
+
   // Build month calendar grid
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
