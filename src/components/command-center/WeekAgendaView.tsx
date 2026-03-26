@@ -145,6 +145,28 @@ function TimelineEvent({
 
   const currentTop = isDraggingTime ? top + dragOffsetY : top;
 
+  // Calculate the preview time while dragging
+  const dragPreviewTimes = useMemo(() => {
+    if (!isDraggingTime) return null;
+    const snappedDelta = Math.round((dragOffsetY / HOUR_HEIGHT) * 60 / 15) * 15;
+    const newStartMins = minutesFromDayStart + snappedDelta;
+    const newEndMins = newStartMins + durationMins;
+    const newStartHour = START_HOUR + Math.floor(newStartMins / 60);
+    const newStartMin = ((newStartMins % 60) + 60) % 60;
+    const newEndHour = START_HOUR + Math.floor(newEndMins / 60);
+    const newEndMin = ((newEndMins % 60) + 60) % 60;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const fmtTime = (h: number, m: number) => {
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${h12}:${pad(m)} ${ampm}`;
+    };
+    return {
+      start: fmtTime(newStartHour, newStartMin),
+      end: fmtTime(newEndHour, newEndMin),
+    };
+  }, [isDraggingTime, dragOffsetY, minutesFromDayStart, durationMins]);
+
   const startEdit = () => {
     setEditTitle(displayTitle);
     setEditStart(format(eventStart, 'HH:mm'));
