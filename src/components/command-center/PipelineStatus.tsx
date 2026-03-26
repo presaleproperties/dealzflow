@@ -6,14 +6,28 @@ export interface StatusCount {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; textColor: string }> = {
-  new:       { label: 'New',       color: 'hsl(var(--muted-foreground) / 0.5)', textColor: 'hsl(var(--muted-foreground))' },
-  contacted: { label: 'Contacted', color: 'hsl(var(--info))',                   textColor: 'hsl(var(--info))' },
-  warm:      { label: 'Warm',      color: 'hsl(var(--warning))',                textColor: 'hsl(var(--warning))' },
-  hot:       { label: 'Hot',       color: 'hsl(var(--destructive))',            textColor: 'hsl(var(--destructive))' },
-  booked:    { label: 'Booked',    color: 'hsl(var(--primary))',                textColor: 'hsl(var(--primary))' },
-  qualified: { label: 'Qualified', color: 'hsl(var(--success))',                textColor: 'hsl(var(--success))' },
-  closed:    { label: 'Closed',    color: 'hsl(152 60% 28%)',                   textColor: 'hsl(152 69% 40%)' },
-  active:    { label: 'Active',    color: 'hsl(var(--info))',                   textColor: 'hsl(var(--info))' },
+  new:                { label: 'New',              color: 'hsl(var(--muted-foreground) / 0.5)', textColor: 'hsl(var(--muted-foreground))' },
+  new_lead:           { label: 'New Lead',         color: 'hsl(var(--muted-foreground) / 0.5)', textColor: 'hsl(var(--muted-foreground))' },
+  contacted:          { label: 'Contacted',        color: 'hsl(var(--info))',                   textColor: 'hsl(var(--info))' },
+  warm:               { label: 'Warm',             color: 'hsl(var(--warning))',                textColor: 'hsl(var(--warning))' },
+  hot:                { label: 'Hot',              color: 'hsl(var(--destructive))',            textColor: 'hsl(var(--destructive))' },
+  booked:             { label: 'Booked',           color: 'hsl(var(--primary))',                textColor: 'hsl(var(--primary))' },
+  qualified:          { label: 'Qualified',        color: 'hsl(var(--success))',                textColor: 'hsl(var(--success))' },
+  closed:             { label: 'Closed',           color: 'hsl(152 60% 28%)',                   textColor: 'hsl(152 69% 40%)' },
+  active:             { label: 'Active',           color: 'hsl(var(--info))',                   textColor: 'hsl(var(--info))' },
+  'in-contract':      { label: 'In Contract',      color: 'hsl(38 92% 50%)',                    textColor: 'hsl(38 92% 50%)' },
+  'in_contract':      { label: 'In Contract',      color: 'hsl(38 92% 50%)',                    textColor: 'hsl(38 92% 50%)' },
+  'pending-mortgage':  { label: 'Pending Mortgage', color: 'hsl(25 95% 53%)',                    textColor: 'hsl(25 95% 53%)' },
+  'pending_mortgage':  { label: 'Pending Mortgage', color: 'hsl(25 95% 53%)',                    textColor: 'hsl(25 95% 53%)' },
+  lost:               { label: 'Lost',             color: 'hsl(var(--destructive) / 0.6)',      textColor: 'hsl(var(--destructive))' },
+  'want-to-sell':     { label: 'Want to Sell',     color: 'hsl(270 48% 56%)',                   textColor: 'hsl(270 48% 56%)' },
+  'want_to_sell':     { label: 'Want to Sell',     color: 'hsl(270 48% 56%)',                   textColor: 'hsl(270 48% 56%)' },
+  'active-listing':   { label: 'Active Listing',   color: 'hsl(270 60% 60%)',                   textColor: 'hsl(270 60% 60%)' },
+  'active_listing':   { label: 'Active Listing',   color: 'hsl(270 60% 60%)',                   textColor: 'hsl(270 60% 60%)' },
+  'in-contract-listing': { label: 'In Contract',   color: 'hsl(38 92% 50%)',                    textColor: 'hsl(38 92% 50%)' },
+  sold:               { label: 'Sold',             color: 'hsl(152 69% 40%)',                   textColor: 'hsl(152 69% 40%)' },
+  'listing-lost':     { label: 'Lost',             color: 'hsl(var(--destructive) / 0.6)',      textColor: 'hsl(var(--destructive))' },
+  'listing_lost':     { label: 'Lost',             color: 'hsl(var(--destructive) / 0.6)',      textColor: 'hsl(var(--destructive))' },
 };
 
 interface Props {
@@ -42,8 +56,9 @@ export function PipelineStatus({ data }: Props) {
         ) : (
           <div className="space-y-3">
             {data.map((item, i) => {
-              const cfg = STATUS_CONFIG[item.status?.toLowerCase()] ?? {
-                label: item.status,
+              const rawStatus = item.status?.toLowerCase()?.replace(/\s+/g, '_');
+              const cfg = STATUS_CONFIG[rawStatus] ?? {
+                label: item.status?.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown',
                 color: 'hsl(var(--primary))',
                 textColor: 'hsl(var(--primary))',
               };
