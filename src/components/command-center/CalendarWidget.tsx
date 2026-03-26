@@ -796,6 +796,16 @@ export function CalendarWidget() {
           >
             <CalendarDays className="w-3.5 h-3.5" />
           </button>
+          <button
+            onClick={() => setViewMode('agenda')}
+            className={cn(
+              'w-7 h-7 rounded-md flex items-center justify-center transition-all',
+              viewMode === 'agenda' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            )}
+            title="Weekly agenda"
+          >
+            <List className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {isConnected ? (
