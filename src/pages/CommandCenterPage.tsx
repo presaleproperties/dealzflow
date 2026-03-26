@@ -11,21 +11,15 @@ import { cn } from '@/lib/utils';
 
 import { HeroKPIs } from '@/components/command-center/HeroKPIs';
 import { NeedsAttention } from '@/components/command-center/NeedsAttention';
-import { ZaraFunnel } from '@/components/command-center/ZaraFunnel';
-import { LeadSources } from '@/components/command-center/LeadSources';
-import { PipelineStatus } from '@/components/command-center/PipelineStatus';
-import { CalendarWidget } from '@/components/command-center/CalendarWidget';
-import { ActivityFeed } from '@/components/command-center/ActivityFeed';
-import { QuickActions } from '@/components/command-center/QuickActions';
 import { TodaysFocus } from '@/components/command-center/TodaysFocus';
+import { PipelineInsights } from '@/components/command-center/PipelineInsights';
+import { CalendarWidget } from '@/components/command-center/CalendarWidget';
 
-// ─── Query keys (centralised so realtime can invalidate them) ──────────────────
+// ─── Query keys ────────────────────────────────────────────────────────────────
 const QK = {
   prospects:    (uid: string) => ['cc-prospects',     uid] as const,
   zaraCaptures: (uid: string) => ['cc-zara-captures', uid] as const,
-  zaraFunnel:   (uid: string) => ['cc-zara-funnel',   uid] as const,
   unread:       (uid: string) => ['cc-unread',        uid] as const,
-  activity:     (uid: string) => ['cc-activity',      uid] as const,
 };
 
 // ─── Greeting helper ───────────────────────────────────────────────────────────
@@ -36,64 +30,45 @@ function getGreeting() {
   return 'Good evening';
 }
 
-// ─── Realtime hook — invalidates queries on table changes ──────────────────────
+// ─── Lead source normalization ─────────────────────────────────────────────────
+const LEAD_SOURCE_NORMALIZE: Record<string, string> = {
+  tiktok: 'TikTok', tik_tok: 'TikTok', 'tik tok': 'TikTok',
+  instagram: 'Instagram', ig: 'Instagram', insta: 'Instagram',
+  facebook: 'Facebook', 'facebook ads': 'Facebook Ads', fb: 'Facebook',
+  google: 'Google', 'google ads': 'Google Ads',
+  referral: 'Referral', ref: 'Referral',
+  youtube: 'YouTube', yt: 'YouTube',
+  whatsapp: 'WhatsApp', sms: 'SMS', manychat: 'ManyChat',
+  team: 'Team', 'past client': 'Past Client',
+};
+
+// ─── Realtime hook ─────────────────────────────────────────────────────────────
 function useRealtimeInvalidation(uid: string | undefined, onUpdate: () => void) {
   const qc = useQueryClient();
 
   useEffect(() => {
     if (!uid) return;
 
-    const invalidateProspects = () => {
+    const invalidateAll = () => {
       qc.invalidateQueries({ queryKey: QK.prospects(uid) });
-      onUpdate();
-    };
-    const invalidateConversations = () => {
+      qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
       qc.invalidateQueries({ queryKey: QK.unread(uid) });
       onUpdate();
     };
-    const invalidateZara = () => {
-      qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
-      qc.invalidateQueries({ queryKey: QK.zaraFunnel(uid) });
-      qc.invalidateQueries({ queryKey: QK.activity(uid) });
-      onUpdate();
-    };
 
-    // Subscribe to pipeline_prospects changes
-    const prospectsChannel = supabase
-      .channel('cc-pipeline-prospects')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'pipeline_prospects',
-        filter: `user_id=eq.${uid}`,
-      }, invalidateProspects)
+    const ch1 = supabase
+      .channel('cc-pipeline')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pipeline_prospects', filter: `user_id=eq.${uid}` }, invalidateAll)
       .subscribe();
 
-    // Subscribe to conversations changes
-    const conversationsChannel = supabase
-      .channel('cc-conversations')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'conversations',
-        filter: `user_id=eq.${uid}`,
-      }, invalidateConversations)
-      .subscribe();
-
-    // Subscribe to zara_activity changes (no user_id filter — join via conversations)
-    const zaraChannel = supabase
-      .channel('cc-zara-activity')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'zara_activity',
-      }, invalidateZara)
+    const ch2 = supabase
+      .channel('cc-convos')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `user_id=eq.${uid}` }, invalidateAll)
       .subscribe();
 
     return () => {
-      supabase.removeChannel(prospectsChannel);
-      supabase.removeChannel(conversationsChannel);
-      supabase.removeChannel(zaraChannel);
+      supabase.removeChannel(ch1);
+      supabase.removeChannel(ch2);
     };
   }, [uid, qc, onUpdate]);
 }
@@ -103,7 +78,6 @@ function useCommandCenterData() {
   const { user } = useAuth();
   const uid = user?.id;
 
-  // Active leads (pipeline_prospects where status not closed/lost)
   const { data: prospects = [] } = useQuery({
     queryKey: QK.prospects(uid ?? ''),
     queryFn: async () => {
@@ -118,44 +92,25 @@ function useCommandCenterData() {
     enabled: !!uid,
   });
 
-  // Pipeline value (sum of budgets)
   const pipelineValue = prospects.reduce((s: number, p: any) => s + (p.budget ?? 0), 0);
   const activeLeads = prospects.length;
-  const hotLeads = prospects.filter((p: any) =>
-    p.temperature?.toLowerCase() === 'hot',
-  ).length;
+  const hotLeads = prospects.filter((p: any) => p.temperature?.toLowerCase() === 'hot').length;
 
-  // "Needs attention" = stale (updated > 48h ago, ordered hot first)
-  const needsAttention = [...prospects].sort((a: any, b: any) => {
-    const tempOrder = { hot: 0, warm: 1, cold: 2 };
-    const ta = tempOrder[(a.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
-    const tb = tempOrder[(b.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
-    if (ta !== tb) return ta - tb;
-    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-  }).filter((p: any) => {
-    const hoursAgo = (Date.now() - new Date(p.updated_at).getTime()) / 3_600_000;
-    return hoursAgo > 48;
-  });
+  // Needs attention — stale > 48h
+  const needsAttention = [...prospects]
+    .filter((p: any) => (Date.now() - new Date(p.updated_at).getTime()) / 3_600_000 > 48)
+    .sort((a: any, b: any) => {
+      const tempOrder = { hot: 0, warm: 1, cold: 2 } as const;
+      const ta = tempOrder[(a.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
+      const tb = tempOrder[(b.temperature?.toLowerCase() as keyof typeof tempOrder)] ?? 3;
+      return ta !== tb ? ta - tb : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
 
-  // Lead sources — normalize display names
-  const LEAD_SOURCE_NORMALIZE: Record<string, string> = {
-    tiktok: 'TikTok', tik_tok: 'TikTok', 'tik tok': 'TikTok',
-    instagram: 'Instagram', ig: 'Instagram', insta: 'Instagram',
-    facebook: 'Facebook', 'facebook ads': 'Facebook Ads', fb: 'Facebook',
-    google: 'Google', 'google ads': 'Google Ads',
-    referral: 'Referral', ref: 'Referral',
-    youtube: 'YouTube', yt: 'YouTube',
-    whatsapp: 'WhatsApp',
-    sms: 'SMS',
-    manychat: 'ManyChat',
-    team: 'Team',
-    'past client': 'Past Client',
-  };
+  // Lead sources
   const sourceMap: Record<string, number> = {};
   prospects.forEach((p: any) => {
     const raw = p.source?.trim() || 'Unknown';
-    const key = raw.toLowerCase();
-    const normalized = LEAD_SOURCE_NORMALIZE[key] || raw;
+    const normalized = LEAD_SOURCE_NORMALIZE[raw.toLowerCase()] || raw;
     sourceMap[normalized] = (sourceMap[normalized] || 0) + 1;
   });
   const sourceData = Object.entries(sourceMap)
@@ -188,35 +143,7 @@ function useCommandCenterData() {
     enabled: !!uid,
   });
 
-  // Zara funnel data
-  const { data: zaraFunnelData } = useQuery({
-    queryKey: QK.zaraFunnel(uid ?? ''),
-    queryFn: async () => {
-      const [capturedRes, syncedRes, qualifiedRes] = await Promise.all([
-        supabase
-          .from('zara_activity')
-          .select('*', { count: 'exact', head: true })
-          .eq('action_type', 'captured'),
-        supabase
-          .from('zara_activity')
-          .select('*', { count: 'exact', head: true })
-          .eq('action_type', 'synced_to_leads'),
-        supabase
-          .from('zara_activity')
-          .select('*', { count: 'exact', head: true })
-          .eq('action_type', 'qualified'),
-      ]);
-      return {
-        widgetCaptures: capturedRes.count ?? 0,
-        hasContactInfo: Math.round((capturedRes.count ?? 0) * 0.72),
-        syncedToLeads: syncedRes.count ?? 0,
-        qualified: qualifiedRes.count ?? 0,
-      };
-    },
-    enabled: !!uid,
-  });
-
-  // Unread messages (conversations with heat > 0)
+  // Unread messages
   const { data: unreadMessages = 0 } = useQuery({
     queryKey: QK.unread(uid ?? ''),
     queryFn: async () => {
@@ -230,54 +157,22 @@ function useCommandCenterData() {
     enabled: !!uid,
   });
 
-  // Zara activity feed
-  const { data: activityFeed = [] } = useQuery({
-    queryKey: QK.activity(uid ?? ''),
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('zara_activity')
-        .select('id,action_type,description,created_at')
-        .order('created_at', { ascending: false })
-        .limit(15);
-      return data ?? [];
-    },
-    enabled: !!uid,
-  });
-
-  return {
-    pipelineValue,
-    activeLeads,
-    hotLeads,
-    zaraCaptures,
-    unreadMessages,
-    needsAttention,
-    sourceData,
-    statusData,
-    zaraFunnelData: zaraFunnelData ?? { widgetCaptures: 0, hasContactInfo: 0, syncedToLeads: 0, qualified: 0 },
-    activityFeed,
-  };
+  return { pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages, needsAttention, sourceData, statusData };
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
-const FadeUp = ({
-  children,
-  delay = 0,
-  className,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
-}) => (
+// ─── FadeUp ────────────────────────────────────────────────────────────────────
+const FadeUp = ({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) => (
   <motion.div
-    initial={{ opacity: 0, y: 14 }}
+    initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+    transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     className={className}
   >
     {children}
   </motion.div>
 );
 
+// ─── Page ──────────────────────────────────────────────────────────────────────
 export default function CommandCenterPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -292,43 +187,30 @@ export default function CommandCenterPage() {
     flashTimer.current = setTimeout(() => setLiveFlash(false), 2000);
   }, []);
 
-  // Manual refresh — invalidate all cc-* queries
   const handleRefresh = useCallback(() => {
     if (!user?.id) return;
     const uid = user.id;
-    qc.invalidateQueries({ queryKey: QK.prospects(uid) });
-    qc.invalidateQueries({ queryKey: QK.zaraCaptures(uid) });
-    qc.invalidateQueries({ queryKey: QK.zaraFunnel(uid) });
-    qc.invalidateQueries({ queryKey: QK.unread(uid) });
-    qc.invalidateQueries({ queryKey: QK.activity(uid) });
+    Object.values(QK).forEach(fn => qc.invalidateQueries({ queryKey: fn(uid) }));
     onLiveUpdate();
   }, [user?.id, qc, onLiveUpdate]);
 
-  // Wire up realtime subscriptions
   useRealtimeInvalidation(user?.id, onLiveUpdate);
 
   const {
-    pipelineValue,
-    activeLeads,
-    hotLeads,
-    zaraCaptures,
-    unreadMessages,
-    needsAttention,
-    sourceData,
-    statusData,
-    zaraFunnelData,
-    activityFeed,
+    pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages,
+    needsAttention, sourceData, statusData,
   } = useCommandCenterData();
+
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'there';
 
   return (
     <AppLayout>
       <Header
         title="Command Center"
-        subtitle={`${getGreeting()}, ${user?.user_metadata?.full_name?.split(' ')[0] || 'there'}`}
+        subtitle={`${getGreeting()}, ${firstName}`}
         showAddDeal={false}
         action={
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {/* Live indicator dot */}
             <AnimatePresence>
               {liveFlash && (
                 <motion.span
@@ -347,9 +229,7 @@ export default function CommandCenterPage() {
               'w-3.5 h-3.5 transition-colors duration-500',
               liveFlash ? 'text-success' : 'text-muted-foreground/40',
             )} />
-            <span className="hidden sm:inline text-[11px]">
-              {format(lastUpdated, 'h:mm a')}
-            </span>
+            <span className="hidden sm:inline text-[11px]">{format(lastUpdated, 'h:mm a')}</span>
             <button
               onClick={handleRefresh}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-xs font-medium"
@@ -361,63 +241,37 @@ export default function CommandCenterPage() {
         }
       />
 
-      <div className="p-4 md:p-6 space-y-5 pb-28 lg:pb-10">
+      <div className="p-4 md:p-6 space-y-5 pb-28 lg:pb-10 max-w-7xl mx-auto">
 
-        {/* ── ROW 1: Hero KPIs ─────────────────────────────────────────── */}
+        {/* ── ROW 1: Hero KPIs ──────────────────────────────────── */}
         <FadeUp delay={0.02}>
-          <HeroKPIs
-            data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }}
-          />
+          <HeroKPIs data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }} />
         </FadeUp>
 
-        {/* ── Today's Focus ─────────────────────────────────────────────── */}
-        <FadeUp delay={0.08}>
-          <TodaysFocus />
-        </FadeUp>
-
-        {/* ── ROW 2: Needs Attention (60%) + Zara Funnel (40%) ─────────── */}
+        {/* ── ROW 2: Today's Focus + Needs Attention ────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <FadeUp delay={0.08} className="lg:col-span-2">
+            <div className="h-full">
+              <TodaysFocus />
+            </div>
+          </FadeUp>
           <FadeUp delay={0.14} className="lg:col-span-3">
-            <div style={{ minHeight: '380px' }} className="h-full">
+            <div className="h-full" style={{ minHeight: '340px' }}>
               <NeedsAttention prospects={needsAttention as any} />
             </div>
           </FadeUp>
-          <FadeUp delay={0.2} className="lg:col-span-2">
-            <div style={{ minHeight: '380px' }} className="h-full">
-              <ZaraFunnel data={zaraFunnelData} />
-            </div>
-          </FadeUp>
         </div>
 
-        {/* ── ROW 3: Lead Sources (33%) + Pipeline Status (34%) + Calendar (33%) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <FadeUp delay={0.28}>
-            <div style={{ minHeight: '380px' }} className="h-full">
-              <LeadSources data={sourceData} />
+        {/* ── ROW 3: Pipeline Insights (tabbed) + Calendar ──────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <FadeUp delay={0.2}>
+            <div className="h-full" style={{ minHeight: '340px' }}>
+              <PipelineInsights sourceData={sourceData} statusData={statusData} />
             </div>
           </FadeUp>
-          <FadeUp delay={0.33}>
-            <div style={{ minHeight: '380px' }} className="h-full">
-              <PipelineStatus data={statusData} />
-            </div>
-          </FadeUp>
-          <FadeUp delay={0.38}>
-            <div style={{ minHeight: '380px' }} className="h-full">
+          <FadeUp delay={0.26}>
+            <div className="h-full" style={{ minHeight: '340px' }}>
               <CalendarWidget />
-            </div>
-          </FadeUp>
-        </div>
-
-        {/* ── ROW 4: Activity Feed (60%) + Quick Actions (40%) ─────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <FadeUp delay={0.44} className="lg:col-span-3">
-            <div style={{ minHeight: '340px' }} className="h-full">
-              <ActivityFeed entries={activityFeed as any} />
-            </div>
-          </FadeUp>
-          <FadeUp delay={0.48} className="lg:col-span-2">
-            <div style={{ minHeight: '340px' }} className="h-full">
-              <QuickActions />
             </div>
           </FadeUp>
         </div>

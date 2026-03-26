@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, Flame, Zap, MessageSquare, TrendingUp, Clock } from 'lucide-react';
+import { TrendingUp, Users, Flame, Zap, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KPIData {
@@ -13,98 +13,66 @@ interface KPIData {
 function formatMillion(val: number): string {
   if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
   if (val >= 1_000) return `$${(val / 1_000).toFixed(0)}K`;
-  return `$${val}`;
+  return `$${val.toLocaleString()}`;
 }
-
-const CARDS = (data: KPIData) => [
-  {
-    label: 'Pipeline Value',
-    value: formatMillion(data.pipelineValue),
-    icon: TrendingUp,
-    accent: 'hsl(var(--success))',
-    bg: 'hsl(var(--success) / 0.1)',
-  },
-  {
-    label: 'Active Leads',
-    value: data.activeLeads,
-    icon: Users,
-    accent: 'hsl(var(--info))',
-    bg: 'hsl(var(--info) / 0.1)',
-  },
-  {
-    label: 'Hot Leads',
-    value: data.hotLeads,
-    icon: Flame,
-    accent: 'hsl(var(--destructive))',
-    bg: 'hsl(var(--destructive) / 0.1)',
-  },
-  {
-    label: 'Zara Captures (7d)',
-    value: data.zaraCaptures,
-    icon: Zap,
-    accent: 'hsl(var(--primary))',
-    bg: 'hsl(var(--primary) / 0.1)',
-  },
-  {
-    label: 'Unread Messages',
-    value: data.unreadMessages,
-    icon: MessageSquare,
-    accent: 'hsl(var(--warning))',
-    bg: 'hsl(var(--warning) / 0.1)',
-  },
-  {
-    label: 'Avg Response',
-    value: 'No data',
-    valueAmber: true,
-    icon: Clock,
-    accent: 'hsl(var(--muted-foreground))',
-    bg: 'hsl(var(--muted) / 0.5)',
-  },
-];
 
 interface Props {
   data: KPIData;
 }
 
 export function HeroKPIs({ data }: Props) {
-  const cards = CARDS(data);
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      {cards.map((card, i) => {
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* Pipeline Value — hero card spanning 2 cols on mobile */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="col-span-2 lg:col-span-1"
+      >
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-5 h-full min-h-[110px] flex flex-col justify-between">
+          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -left-4 -bottom-4 w-16 h-16 rounded-full bg-white/5 blur-xl" />
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4 text-primary-foreground/70" />
+            <span className="text-[11px] font-medium text-primary-foreground/70 uppercase tracking-wider">Pipeline</span>
+          </div>
+          <p className="text-3xl font-bold text-primary-foreground tracking-tight tabular-nums leading-none">
+            {formatMillion(data.pipelineValue)}
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Secondary KPIs */}
+      {[
+        { label: 'Active Leads', value: data.activeLeads, icon: Users, accentVar: '--info' },
+        { label: 'Hot Leads', value: data.hotLeads, icon: Flame, accentVar: '--destructive' },
+        { label: 'Zara Captures', value: data.zaraCaptures, icon: Zap, accentVar: '--primary' },
+        { label: 'Unread', value: data.unreadMessages, icon: MessageSquare, accentVar: '--warning' },
+      ].map((card, i) => {
         const Icon = card.icon;
         return (
           <motion.div
             key={card.label}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.055, duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ delay: 0.06 + i * 0.05, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div
-              className="card-premium p-3.5 flex items-start gap-3 h-full relative overflow-hidden"
-              style={{ borderLeft: `3px solid ${card.accent}` }}
-            >
-              {/* Glow blob */}
+            <div className="rounded-2xl border border-border/60 bg-card p-4 h-full min-h-[110px] flex flex-col justify-between relative overflow-hidden group hover:border-border transition-colors duration-200">
               <div
-                className="absolute -right-3 -top-3 w-14 h-14 rounded-full opacity-20 blur-xl pointer-events-none"
-                style={{ background: card.accent }}
+                className="absolute -right-3 -top-3 w-16 h-16 rounded-full opacity-[0.08] blur-xl pointer-events-none transition-opacity group-hover:opacity-[0.14]"
+                style={{ background: `hsl(var(${card.accentVar}))` }}
               />
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                style={{ background: card.bg }}
-              >
-                <Icon className="w-4 h-4" style={{ color: card.accent }} />
+              <div className="flex items-center gap-2">
+                <Icon className="w-3.5 h-3.5" style={{ color: `hsl(var(${card.accentVar}))` }} />
+                <span className="text-[10.5px] font-medium text-muted-foreground uppercase tracking-wider">{card.label}</span>
               </div>
-              <div className="min-w-0">
-                <p
-                  className={cn(
-                    'text-xl font-bold tracking-tight tabular-nums leading-none mb-1',
-                    (card as any).valueAmber ? 'text-warning text-sm mt-1' : 'text-foreground',
-                  )}
-                >
-                  {card.value}
-                </p>
-                <p className="text-[10.5px] text-muted-foreground leading-snug">{card.label}</p>
-              </div>
+              <p className={cn(
+                'text-2xl font-bold tracking-tight tabular-nums leading-none mt-auto',
+                card.value === 0 ? 'text-muted-foreground/40' : 'text-foreground'
+              )}>
+                {card.value}
+              </p>
             </div>
           </motion.div>
         );
