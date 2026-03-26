@@ -796,6 +796,7 @@ export function CalendarWidget() {
                     index={i}
                     canEdit={isConnected}
                     onDelete={handleDeleteEvent}
+                    onEdit={handleEditEvent}
                   />
                 ))}
               </motion.div>
