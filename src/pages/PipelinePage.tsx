@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
 import { ProspectSheet } from '@/components/pipeline/ProspectSheet';
 
-const HOME_TYPES = ['Presale', 'Condo', 'Townhome', 'Detached', 'Listings'];
-const LEAD_SOURCES = ['Instagram', 'Tiktok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Past Client'];
+const HOME_TYPES = ['Condo', 'Townhome', 'Detached House', 'Semi-Detached', 'Duplex', 'Pre-Sale Condo', 'Pre-Sale Townhome', 'Land', 'Commercial', 'Listings'];
+const LEAD_SOURCES = ['Instagram', 'TikTok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Past Client'];
 
 // ── Buyer statuses ────────────────────────────────────────────────────
 const BUYER_STATUS_OPTIONS = ['active', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;

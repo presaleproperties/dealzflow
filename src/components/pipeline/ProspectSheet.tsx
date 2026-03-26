@@ -7,7 +7,7 @@ import { triggerHaptic } from '@/lib/haptics';
 import { formatCurrency } from '@/lib/format';
 
 const LEAD_SOURCES = ['Instagram', 'TikTok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Open House', 'Cold Call', 'Website', 'Past Client', 'Other'];
-const HOME_TYPES = ['Presale', 'Condo', 'Townhome', 'Detached', 'Listings'];
+const HOME_TYPES = ['Condo', 'Townhome', 'Detached House', 'Semi-Detached', 'Duplex', 'Pre-Sale Condo', 'Pre-Sale Townhome', 'Land', 'Commercial', 'Listings'];
 
 // ── Buyer statuses ─────────────────────────────────────────────────
 const BUYER_STATUS_OPTIONS = ['active', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;

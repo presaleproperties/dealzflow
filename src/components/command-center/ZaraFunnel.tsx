@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
+import { Zap, MessageCircle, TrendingUp, Users } from 'lucide-react';
 
 export interface FunnelData {
   widgetCaptures: number;
@@ -19,6 +19,12 @@ interface Props {
   data: FunnelData;
 }
 
+const EMPTY_TIPS = [
+  { icon: MessageCircle, text: 'Zara can follow up with leads via WhatsApp & Instagram' },
+  { icon: TrendingUp,    text: 'Track conversion rates from capture to qualified' },
+  { icon: Users,         text: 'Leads are auto-synced to your pipeline' },
+];
+
 export function ZaraFunnel({ data }: Props) {
   const values = STEPS.map(s => ({
     ...s,
@@ -37,14 +43,28 @@ export function ZaraFunnel({ data }: Props) {
 
       <div className="flex-1 p-5 flex flex-col justify-center">
         {!hasData ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="flex flex-col items-center justify-center py-6 text-center">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
               <Zap className="w-6 h-6 text-primary/50" />
             </div>
             <p className="text-sm font-semibold text-foreground">No captures yet</p>
-            <p className="text-xs text-muted-foreground mt-1 max-w-[180px] leading-relaxed">
+            <p className="text-xs text-muted-foreground mt-1 max-w-[220px] leading-relaxed">
               Zara will log captures and conversions here automatically
             </p>
+            <div className="mt-5 space-y-2.5 w-full max-w-[260px]">
+              {EMPTY_TIPS.map((tip, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  className="flex items-start gap-2.5 text-left p-2.5 rounded-xl bg-muted/30 border border-border/30"
+                >
+                  <tip.icon className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
+                  <span className="text-[11px] text-muted-foreground leading-snug">{tip.text}</span>
+                </motion.div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

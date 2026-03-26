@@ -55,14 +55,27 @@ export function ActivityFeed({ entries }: Props) {
 
       <div className="flex-1 overflow-y-auto">
         {entries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-14 px-6 text-center h-full min-h-[180px]">
+          <div className="flex flex-col items-center justify-center py-10 px-6 text-center h-full min-h-[180px]">
             <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
               <Zap className="w-5 h-5 text-muted-foreground/40" />
             </div>
             <p className="text-sm font-semibold text-foreground">No activity yet</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[200px]">
-              Zara will log captures here automatically
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">
+              Zara can help you with lead follow-up, market insights, and deal analysis. Activity will appear here automatically.
             </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 w-full max-w-[280px]">
+              {[
+                { icon: MessageCircle, label: 'Lead follow-up' },
+                { icon: Star, label: 'Lead qualification' },
+                { icon: ArrowRightLeft, label: 'Pipeline sync' },
+                { icon: CircleDot, label: 'Auto-capture' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/30">
+                  <item.icon className="w-3 h-3 text-primary/50 shrink-0" />
+                  <span className="text-[10px] font-medium text-muted-foreground">{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="divide-y divide-border/30">
