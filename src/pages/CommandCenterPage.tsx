@@ -5,9 +5,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Wifi } from 'lucide-react';
+import { RefreshCw, Wifi, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 import { HeroKPIs } from '@/components/command-center/HeroKPIs';
 import { NeedsAttention } from '@/components/command-center/NeedsAttention';
@@ -142,7 +143,7 @@ function useCommandCenterData() {
   return { pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages, needsAttention, sourceData, statusData };
 }
 
-// ─── FadeUp ────────────────────────────────────────────────────────────────────
+// ─── Section wrapper ───────────────────────────────────────────────────────────
 const FadeUp = ({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
@@ -153,6 +154,16 @@ const FadeUp = ({ children, delay = 0, className }: { children: React.ReactNode;
     {children}
   </motion.div>
 );
+
+// ─── Quick nav pills ───────────────────────────────────────────────────────────
+const NAV_PILLS = [
+  { label: 'Pipeline', to: '/pipeline' },
+  { label: 'Deals', to: '/deals' },
+  { label: 'Leads', to: '/leads' },
+  { label: 'Analytics', to: '/analytics' },
+  { label: 'Forecast', to: '/forecast' },
+  { label: 'Settings', to: '/settings' },
+];
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function CommandCenterPage() {
@@ -223,45 +234,60 @@ export default function CommandCenterPage() {
         }
       />
 
-      <div className="p-4 md:p-6 space-y-5 pb-28 lg:pb-10 max-w-[1440px] mx-auto">
+      <div className="p-4 md:p-6 space-y-6 pb-28 lg:pb-10 max-w-[1440px] mx-auto">
+
+        {/* ── Quick navigation pills ──────────────────────────── */}
+        <FadeUp delay={0}>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {NAV_PILLS.map(pill => (
+              <Link
+                key={pill.to}
+                to={pill.to}
+                className="shrink-0 px-4 py-2 rounded-full text-xs font-semibold border border-border/50 bg-card/80 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+              >
+                {pill.label}
+              </Link>
+            ))}
+          </div>
+        </FadeUp>
 
         {/* ── ROW 1: Hero KPIs ──────────────────────────────────── */}
-        <FadeUp delay={0.02}>
+        <FadeUp delay={0.03}>
           <HeroKPIs data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }} />
         </FadeUp>
 
-        {/* ── ROW 2: Calendar + Facebook Ads side-by-side ────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
-          <FadeUp delay={0.08} className="xl:col-span-3">
-            <CalendarWidget />
-          </FadeUp>
-          <FadeUp delay={0.12} className="xl:col-span-2">
-            <div className="h-full" style={{ minHeight: '420px' }}>
-              <FacebookAdsWidget />
+        {/* ── ROW 2: Needs Attention (prominent) + Today's Focus ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <FadeUp delay={0.06} className="lg:col-span-2">
+            <div className="h-full" style={{ minHeight: '360px' }}>
+              <NeedsAttention prospects={needsAttention as any} />
             </div>
           </FadeUp>
-        </div>
-
-        {/* ── ROW 3: Today's Focus + Needs Attention ────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <FadeUp delay={0.16} className="lg:col-span-2">
+          <FadeUp delay={0.09} className="lg:col-span-1">
             <div className="h-full">
               <TodaysFocus />
             </div>
           </FadeUp>
-          <FadeUp delay={0.2} className="lg:col-span-3">
-            <div className="h-full" style={{ minHeight: '340px' }}>
-              <NeedsAttention prospects={needsAttention as any} />
+        </div>
+
+        {/* ── ROW 3: Calendar (full width, hero section) ─────────── */}
+        <FadeUp delay={0.12}>
+          <CalendarWidget />
+        </FadeUp>
+
+        {/* ── ROW 4: Facebook Ads + Pipeline Insights side by side ── */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <FadeUp delay={0.15}>
+            <div className="h-full" style={{ minHeight: '420px' }}>
+              <FacebookAdsWidget />
+            </div>
+          </FadeUp>
+          <FadeUp delay={0.18}>
+            <div className="h-full" style={{ minHeight: '380px' }}>
+              <PipelineInsights sourceData={sourceData} statusData={statusData} />
             </div>
           </FadeUp>
         </div>
-
-        {/* ── ROW 4: Pipeline Insights (full width) ─────────────── */}
-        <FadeUp delay={0.24}>
-          <div style={{ minHeight: '300px' }}>
-            <PipelineInsights sourceData={sourceData} statusData={statusData} />
-          </div>
-        </FadeUp>
 
       </div>
     </AppLayout>
