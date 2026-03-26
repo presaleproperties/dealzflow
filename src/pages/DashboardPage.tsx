@@ -39,6 +39,7 @@ import { calculateTax, Province, TaxType } from '@/lib/taxCalculator';
 import { GCIGoalTracker } from '@/components/dashboard/GCIGoalTracker';
 import { DealsWrittenCard } from '@/components/dashboard/DealsWrittenCard';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
+import { TodayAgenda } from '@/components/dashboard/TodayAgenda';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -309,9 +310,10 @@ export default function DashboardPage() {
               </motion.div>
 
               <TabsContent value="insights" className="px-5 space-y-3 mt-0">
-                <FadeUp delay={0.0}><UpcomingRevenue syncedTransactions={syncedTransactions} /></FadeUp>
-                <FadeUp delay={0.07}><PipelinePreview layout="horizontal" /></FadeUp>
-                <FadeUp delay={0.14}><NeedsAttention syncedTransactions={syncedTransactions} /></FadeUp>
+                <FadeUp delay={0.0}><TodayAgenda /></FadeUp>
+                <FadeUp delay={0.07}><UpcomingRevenue syncedTransactions={syncedTransactions} /></FadeUp>
+                <FadeUp delay={0.14}><PipelinePreview layout="horizontal" /></FadeUp>
+                <FadeUp delay={0.21}><NeedsAttention syncedTransactions={syncedTransactions} /></FadeUp>
               </TabsContent>
 
               <TabsContent value="cashflow" className="px-5 space-y-3 mt-0">
@@ -377,7 +379,12 @@ export default function DashboardPage() {
                 <FadeUp delay={0.0}>
                   <InsightsGreeting syncedTransactions={syncedTransactions} revenueShare={revenueShare} userName={userName} receivedYTD={receivedYTD} revShareMonthlyAvg={revShareMonthlyAvg} />
                 </FadeUp>
-                <FadeUp delay={0.07}><PipelinePreview layout="horizontal" /></FadeUp>
+                <FadeUp delay={0.07}>
+                  <div className="grid md:grid-cols-2 gap-4 items-start">
+                    <TodayAgenda />
+                    <PipelinePreview layout="horizontal" />
+                  </div>
+                </FadeUp>
                 <FadeUp delay={0.14}>
                   <div className="grid md:grid-cols-2 gap-4 items-start">
                     <UpcomingRevenue syncedTransactions={syncedTransactions} />
