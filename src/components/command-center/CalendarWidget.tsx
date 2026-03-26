@@ -846,6 +846,8 @@ export function CalendarWidget() {
                     events={eventsByDay.get(key) || []}
                     isSelected={isSameDay(day, selectedDate)}
                     onSelect={setSelectedDate}
+                    onDropEvent={handleDropEvent}
+                    canDrop={canManageEvents}
                   />
                 );
               })}
@@ -870,6 +872,8 @@ export function CalendarWidget() {
                     events={eventsByDay.get(key) || []}
                     isSelected={isSameDay(day, selectedDate)}
                     onSelect={setSelectedDate}
+                    onDropEvent={handleDropEvent}
+                    canDrop={canManageEvents}
                   />
                 );
               })}
