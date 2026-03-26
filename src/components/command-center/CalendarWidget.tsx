@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Clock, MapPin, ExternalLink,
-  CalendarDays, Grid3X3, Plus, Link2, Link2Off, Trash2, X,
+  CalendarDays, Grid3X3, Plus, Link2, Link2Off, Trash2, X, Pencil, Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -184,15 +184,73 @@ function WeekDayColumn({
 }
 
 // ─── Event card ────────────────────────────────────────────────────────────────
-function EventCard({ event, index, canEdit, onDelete }: {
+function EventCard({ event, index, canEdit, onDelete, onEdit }: {
   event: CalendarEvent;
   index: number;
   canEdit: boolean;
   onDelete: (id: string) => void;
+  onEdit: (id: string, updates: { title: string; startTime: string; endTime: string; allDay: boolean }) => void;
 }) {
   const color = getEventColor(index);
   const startTime = event.allDay ? 'All day' : format(parseISO(event.start), 'h:mm a');
   const endTime = !event.allDay && event.end ? format(parseISO(event.end), 'h:mm a') : null;
+
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(event.title);
+  const [editStart, setEditStart] = useState(!event.allDay ? format(parseISO(event.start), 'HH:mm') : '09:00');
+  const [editEnd, setEditEnd] = useState(!event.allDay && event.end ? format(parseISO(event.end), 'HH:mm') : '10:00');
+  const [editAllDay, setEditAllDay] = useState(event.allDay);
+
+  const handleSave = () => {
+    if (!editTitle.trim()) return;
+    onEdit(event.id, { title: editTitle, startTime: editStart, endTime: editEnd, allDay: editAllDay });
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-3 rounded-xl border border-primary/30 bg-primary/5 space-y-2"
+        style={{ borderLeftWidth: '3px', borderLeftColor: color }}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-primary">Edit Event</span>
+          <button onClick={() => setEditing(false)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+        <input
+          autoFocus
+          value={editTitle}
+          onChange={e => setEditTitle(e.target.value)}
+          className="w-full bg-background/80 border border-border/50 rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+          onKeyDown={e => e.key === 'Enter' && handleSave()}
+        />
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={editAllDay} onChange={e => setEditAllDay(e.target.checked)} className="rounded border-border" />
+            All day
+          </label>
+          {!editAllDay && (
+            <>
+              <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground" />
+              <span className="text-[10px] text-muted-foreground">–</span>
+              <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground" />
+            </>
+          )}
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!editTitle.trim()}
+          className="w-full py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        >
+          Save Changes
+        </button>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -223,6 +281,14 @@ function EventCard({ event, index, canEdit, onDelete }: {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
           {canEdit && (
             <button
               onClick={() => onDelete(event.id)}
