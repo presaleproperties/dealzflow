@@ -248,33 +248,31 @@ export default function CommandCenterPage() {
           <HeroKPIs data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }} />
         </FadeUp>
 
-        {/* ── ROW 2: Today's Focus + Needs Attention ────────────── */}
+        {/* ── ROW 2: Calendar (full width, prominent) ──────────── */}
+        <FadeUp delay={0.08}>
+          <CalendarWidget />
+        </FadeUp>
+
+        {/* ── ROW 3: Today's Focus + Needs Attention ────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <FadeUp delay={0.08} className="lg:col-span-2">
+          <FadeUp delay={0.14} className="lg:col-span-2">
             <div className="h-full">
               <TodaysFocus />
             </div>
           </FadeUp>
-          <FadeUp delay={0.14} className="lg:col-span-3">
+          <FadeUp delay={0.2} className="lg:col-span-3">
             <div className="h-full" style={{ minHeight: '340px' }}>
               <NeedsAttention prospects={needsAttention as any} />
             </div>
           </FadeUp>
         </div>
 
-        {/* ── ROW 3: Pipeline Insights (tabbed) + Calendar ──────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <FadeUp delay={0.2}>
-            <div className="h-full" style={{ minHeight: '340px' }}>
-              <PipelineInsights sourceData={sourceData} statusData={statusData} />
-            </div>
-          </FadeUp>
-          <FadeUp delay={0.26}>
-            <div className="h-full" style={{ minHeight: '340px' }}>
-              <CalendarWidget />
-            </div>
-          </FadeUp>
-        </div>
+        {/* ── ROW 4: Pipeline Insights (full width) ─────────────── */}
+        <FadeUp delay={0.26}>
+          <div style={{ minHeight: '340px' }}>
+            <PipelineInsights sourceData={sourceData} statusData={statusData} />
+          </div>
+        </FadeUp>
 
       </div>
     </AppLayout>

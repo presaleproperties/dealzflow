@@ -750,15 +750,22 @@ export function CalendarWidget() {
       : `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card overflow-hidden flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2 shrink-0">
+    <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="px-5 py-3.5 border-b border-border/40 flex items-center gap-3 bg-card/80 backdrop-blur-sm">
+        <CalendarDays className="w-4.5 h-4.5 text-primary" />
+        <h2 className="text-sm font-bold text-foreground tracking-tight">Calendar</h2>
+        <span className="text-[10px] text-muted-foreground/60 ml-1">Live every 30s</span>
+
+        <div className="flex-1" />
+
         <button
           onClick={navigateBack}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <h2 className="text-sm font-semibold text-foreground flex-1 text-center">{headerLabel}</h2>
+        <span className="text-xs font-semibold text-foreground min-w-[120px] text-center">{headerLabel}</span>
         <button
           onClick={navigateForward}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
@@ -766,11 +773,11 @@ export function CalendarWidget() {
           <ChevronRight className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center bg-muted/40 rounded-lg p-0.5 ml-1">
+        <div className="flex items-center bg-muted/40 rounded-lg p-0.5 ml-2">
           <button
             onClick={() => setViewMode('month')}
             className={cn(
-              'w-6 h-6 rounded-md flex items-center justify-center transition-all',
+              'w-7 h-7 rounded-md flex items-center justify-center transition-all',
               viewMode === 'month' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
             title="Month view"
@@ -780,7 +787,7 @@ export function CalendarWidget() {
           <button
             onClick={() => setViewMode('week')}
             className={cn(
-              'w-6 h-6 rounded-md flex items-center justify-center transition-all',
+              'w-7 h-7 rounded-md flex items-center justify-center transition-all',
               viewMode === 'week' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
             title="Week view"
@@ -792,113 +799,113 @@ export function CalendarWidget() {
         {isConnected ? (
           <button
             onClick={handleDisconnect}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-success hover:text-destructive hover:bg-destructive/10 transition-all"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-success hover:text-destructive hover:bg-destructive/10 transition-all"
             title={`Connected: ${connectionStatus?.calendarEmail || 'Google Calendar'} — click to disconnect`}
           >
-            <Link2 className="w-3.5 h-3.5" />
+            <Link2 className="w-4 h-4" />
           </button>
         ) : (
           <button
             onClick={handleConnect}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
             title="Connect Google Calendar"
           >
-            <Link2Off className="w-3.5 h-3.5" />
+            <Link2Off className="w-4 h-4" />
           </button>
         )}
 
         <button
           onClick={goToday}
-          className="text-[10px] font-semibold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors"
+          className="text-[11px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
         >
           Today
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        {viewMode === 'month' ? (
-          <motion.div
-            key="month"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="px-3 pt-3 pb-2"
-          >
-            <div className="grid grid-cols-7 mb-1">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                <div
-                  key={d}
-                  className="text-center text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1"
-                >
-                  {d}
+      {/* ── Body: side-by-side on desktop ───────────────────────── */}
+      <div className="flex flex-col lg:flex-row">
+        {/* Left: Calendar grid */}
+        <div className="lg:w-[55%] xl:w-[60%] border-b lg:border-b-0 lg:border-r border-border/40">
+          <AnimatePresence mode="wait">
+            {viewMode === 'month' ? (
+              <motion.div
+                key="month"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="px-4 pt-4 pb-3"
+              >
+                <div className="grid grid-cols-7 mb-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                    <div
+                      key={d}
+                      className="text-center text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1.5"
+                    >
+                      {d}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-px">
-              {monthDays.map((day) => {
-                const key = format(day, 'yyyy-MM-dd');
-                return (
-                  <DayCell
-                    key={key}
-                    day={day}
-                    currentMonth={currentMonth}
-                    events={eventsByDay.get(key) || []}
-                    isSelected={isSameDay(day, selectedDate)}
-                    onSelect={setSelectedDate}
-                    onDropEvent={handleDropEvent}
-                    canDrop={canManageEvents}
-                  />
-                );
-              })}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="week"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="px-3 pt-3 pb-2"
-          >
-            <div className="grid grid-cols-7 gap-1">
-              {weekDays.map((day) => {
-                const key = format(day, 'yyyy-MM-dd');
-                return (
-                  <WeekDayColumn
-                    key={key}
-                    day={day}
-                    events={eventsByDay.get(key) || []}
-                    isSelected={isSameDay(day, selectedDate)}
-                    onSelect={setSelectedDate}
-                    onDropEvent={handleDropEvent}
-                    canDrop={canManageEvents}
-                  />
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <div className="grid grid-cols-7 gap-0.5">
+                  {monthDays.map((day) => {
+                    const key = format(day, 'yyyy-MM-dd');
+                    return (
+                      <DayCell
+                        key={key}
+                        day={day}
+                        currentMonth={currentMonth}
+                        events={eventsByDay.get(key) || []}
+                        isSelected={isSameDay(day, selectedDate)}
+                        onSelect={setSelectedDate}
+                        onDropEvent={handleDropEvent}
+                        canDrop={canManageEvents}
+                      />
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="week"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="px-4 pt-4 pb-3"
+              >
+                <div className="grid grid-cols-7 gap-1.5">
+                  {weekDays.map((day) => {
+                    const key = format(day, 'yyyy-MM-dd');
+                    return (
+                      <WeekDayColumn
+                        key={key}
+                        day={day}
+                        events={eventsByDay.get(key) || []}
+                        isSelected={isSameDay(day, selectedDate)}
+                        onSelect={setSelectedDate}
+                        onDropEvent={handleDropEvent}
+                        canDrop={canManageEvents}
+                      />
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-      <div className="flex-1 border-t border-border/40 overflow-y-auto">
-        <div className="px-4 py-3">
+          {/* Priority section under calendar grid */}
           {priorityEvents.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mb-3 p-3 rounded-xl border border-border/40 bg-muted/20"
+              className="mx-4 mb-3 p-3 rounded-xl border border-primary/10 bg-primary/5"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-semibold text-foreground">Priority from Calendar</span>
-                <span className="text-[10px] text-muted-foreground">Live every 30s</span>
-              </div>
-              <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Up Next</span>
+              <div className="mt-2 space-y-1.5">
                 {priorityEvents.map((event, i) => (
-                  <div key={event.id} className="flex items-center gap-2 text-[11px]">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: getEventColor(i) }} />
-                    <span className="text-muted-foreground w-[56px] shrink-0">
+                  <div key={event.id} className="flex items-center gap-2.5 text-[11px]">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: getEventColor(i) }} />
+                    <span className="text-muted-foreground w-[56px] shrink-0 font-medium">
                       {event.allDay ? 'All day' : format(parseISO(event.start), 'h:mm a')}
                     </span>
                     <span className="text-foreground truncate">{getDisplayTitle(event, isAuthenticated)}</span>
@@ -907,130 +914,136 @@ export function CalendarWidget() {
               </div>
             </motion.div>
           )}
+        </div>
 
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-foreground">
-              {isToday(selectedDate) ? 'Today' : format(selectedDate, 'EEE, MMM d')}
-            </span>
+        {/* Right: Events panel */}
+        <div className="lg:w-[45%] xl:w-[40%] flex flex-col min-h-[280px] lg:min-h-[360px]">
+          <div className="px-5 py-3 border-b border-border/40 flex items-center justify-between bg-muted/10">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs font-bold text-foreground">
+                {isToday(selectedDate) ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground font-medium">
                 {selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''}
               </span>
-              {canManageEvents && (
-                <button
-                  onClick={() => setShowAddEvent((v) => !v)}
-                  className={cn(
-                    'w-5 h-5 rounded-md flex items-center justify-center transition-all',
-                    showAddEvent
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-primary hover:bg-primary/10',
-                  )}
-                  title="Add event"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              )}
             </div>
+            {canManageEvents && (
+              <button
+                onClick={() => setShowAddEvent((v) => !v)}
+                className={cn(
+                  'w-6 h-6 rounded-md flex items-center justify-center transition-all',
+                  showAddEvent
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/10',
+                )}
+                title="Add event"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <AnimatePresence>
-            {showAddEvent && canManageEvents && (
-              <div className="mb-3">
-                <QuickAddEvent
-                  date={selectedDate}
-                  onClose={() => setShowAddEvent(false)}
-                  onCreated={() => queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] })}
-                />
-              </div>
+          <div className="flex-1 overflow-y-auto px-4 py-3">
+            <AnimatePresence>
+              {showAddEvent && canManageEvents && (
+                <div className="mb-3">
+                  <QuickAddEvent
+                    date={selectedDate}
+                    onClose={() => setShowAddEvent(false)}
+                    onCreated={() => queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] })}
+                  />
+                </div>
+              )}
+            </AnimatePresence>
+
+            {!isConnected && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-3 p-4 rounded-xl border border-primary/20 bg-primary/5 text-center"
+              >
+                <p className="text-xs text-muted-foreground mb-2">
+                  Connect Google Calendar for full titles + edit controls.
+                </p>
+                <button onClick={handleConnect} className="text-xs font-semibold text-primary hover:underline">
+                  Connect Now →
+                </button>
+              </motion.div>
             )}
-          </AnimatePresence>
 
-          {!isConnected && !isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-3 p-3 rounded-xl border border-border/40 bg-muted/20 text-center"
-            >
-              <p className="text-[11px] text-muted-foreground mb-2">
-                Connect Google Calendar for full titles + full edit controls.
-              </p>
-              <button onClick={handleConnect} className="text-[11px] font-semibold text-primary hover:underline">
-                Connect Now →
-              </button>
-            </motion.div>
-          )}
-
-          {isConnected && !isAuthenticated && !isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-3 p-2.5 rounded-xl border border-border/40 bg-muted/20 text-center"
-            >
-              <p className="text-[10px] text-muted-foreground">
-                Connected account detected. Re-authenticate to restore full title visibility.
-              </p>
-            </motion.div>
-          )}
-
-          <AnimatePresence mode="wait">
-            {isLoading ? (
+            {isConnected && !isAuthenticated && !isLoading && (
               <motion.div
-                key="loading"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-2"
+                className="mb-3 p-3 rounded-xl border border-border/40 bg-muted/20 text-center"
               >
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
-                ))}
-              </motion.div>
-            ) : isError ? (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-6 text-center"
-              >
-                <p className="text-xs text-muted-foreground">Could not load events</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">Check your calendar connection</p>
-              </motion.div>
-            ) : selectedEvents.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-6 text-center"
-              >
-                <p className="text-xs text-muted-foreground">No events scheduled</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-1">
-                  {canManageEvents ? 'Click + to add an event' : 'Live events auto-refresh every 30s'}
+                <p className="text-[11px] text-muted-foreground">
+                  Re-authenticate to restore full title visibility.
                 </p>
               </motion.div>
-            ) : (
-              <motion.div
-                key="events"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-2"
-              >
-                {selectedEvents.map((event, i) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={i}
-                    canEdit={canManageEvents}
-                    isAuthenticated={isAuthenticated}
-                    onDelete={handleDeleteEvent}
-                    onEdit={handleEditEvent}
-                  />
-                ))}
-              </motion.div>
             )}
-          </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              {isLoading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-2"
+                >
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
+                  ))}
+                </motion.div>
+              ) : isError ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center justify-center py-10 text-center"
+                >
+                  <p className="text-xs text-muted-foreground">Could not load events</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Check your calendar connection</p>
+                </motion.div>
+              ) : selectedEvents.length === 0 ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center justify-center py-10 text-center"
+                >
+                  <CalendarDays className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-xs text-muted-foreground">No events scheduled</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">
+                    {canManageEvents ? 'Click + to add an event' : 'Auto-refreshes every 30s'}
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="events"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-2"
+                >
+                  {selectedEvents.map((event, i) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      index={i}
+                      canEdit={canManageEvents}
+                      isAuthenticated={isAuthenticated}
+                      onDelete={handleDeleteEvent}
+                      onEdit={handleEditEvent}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>
