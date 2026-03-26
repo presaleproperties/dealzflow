@@ -10,6 +10,22 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
 const SCOPES = 'https://www.googleapis.com/auth/calendar';
 
+type OAuthState = {
+  userId: string;
+  redirectUrl: string;
+};
+
+function decodeOAuthState(state: string | null): OAuthState | null {
+  if (!state) return null;
+  try {
+    const parsed = JSON.parse(atob(state));
+    if (!parsed?.userId || !parsed?.redirectUrl) return null;
+    return { userId: parsed.userId, redirectUrl: parsed.redirectUrl };
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -34,21 +50,38 @@ serve(async (req) => {
     // ── GET with ?code= → OAuth callback from Google ──────────────────
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state'); // contains user_id + redirect URL
+    const oauthError = url.searchParams.get('error');
+    const oauthErrorDescription = url.searchParams.get('error_description');
+
+    if (oauthError) {
+      const parsedState = decodeOAuthState(state);
+      const message = oauthErrorDescription || oauthError;
+
+      if (parsedState?.redirectUrl) {
+        const errorRedirect = `${parsedState.redirectUrl}?calendar_auth=error&message=${encodeURIComponent(message)}`;
+        return Response.redirect(errorRedirect, 302);
+      }
+
+      return new Response(JSON.stringify({ error: `Google OAuth error: ${message}` }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (code && state) {
       let userId: string;
       let redirectUrl: string;
 
-      try {
-        const parsedState = JSON.parse(atob(state));
-        userId = parsedState.userId;
-        redirectUrl = parsedState.redirectUrl;
-      } catch {
+      const parsedState = decodeOAuthState(state);
+      if (!parsedState) {
         return new Response(JSON.stringify({ error: 'Invalid OAuth state' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      userId = parsedState.userId;
+      redirectUrl = parsedState.redirectUrl;
 
       // Exchange authorization code for tokens
       const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
@@ -143,6 +176,7 @@ serve(async (req) => {
 
       if (action === 'get_auth_url') {
         const redirectUrl = body.redirectUrl || 'https://commissioniq.lovable.app/command-center';
+        const loginHint = (typeof body.loginHint === 'string' && body.loginHint.trim()) || user.email || '';
         const stateData = btoa(JSON.stringify({ userId, redirectUrl }));
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -151,7 +185,9 @@ serve(async (req) => {
           `&response_type=code` +
           `&scope=${encodeURIComponent(SCOPES)}` +
           `&access_type=offline` +
+          `&include_granted_scopes=true` +
           `&prompt=${encodeURIComponent('consent select_account')}` +
+          (loginHint ? `&login_hint=${encodeURIComponent(loginHint)}` : '') +
           `&state=${encodeURIComponent(stateData)}`;
 
         return new Response(JSON.stringify({ authUrl }), {
