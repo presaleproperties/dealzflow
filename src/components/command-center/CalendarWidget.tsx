@@ -27,6 +27,7 @@ import {
   CalendarDays,
   Grid3X3,
   Plus,
+  List,
   Link2,
   Link2Off,
   Trash2,
@@ -35,6 +36,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { WeekAgendaView } from './WeekAgendaView';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -49,7 +51,7 @@ interface CalendarEvent {
   htmlLink: string | null;
 }
 
-type ViewMode = 'month' | 'week';
+type ViewMode = 'month' | 'week' | 'agenda';
 
 const EVENT_COLORS = [
   'hsl(var(--primary))',
