@@ -1,21 +1,43 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, isSameMonth, isSameDay, isToday,
-  addMonths, subMonths, addWeeks, subWeeks, parseISO,
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  addMonths,
+  subMonths,
+  addWeeks,
+  subWeeks,
+  parseISO,
+  addDays,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft, ChevronRight, Clock, MapPin, ExternalLink,
-  CalendarDays, Grid3X3, Plus, Link2, Link2Off, Trash2, X, Pencil, Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  MapPin,
+  ExternalLink,
+  CalendarDays,
+  Grid3X3,
+  Plus,
+  Link2,
+  Link2Off,
+  Trash2,
+  X,
+  Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
 interface CalendarEvent {
   id: string;
   title: string;
@@ -29,21 +51,24 @@ interface CalendarEvent {
 
 type ViewMode = 'month' | 'week';
 
-// ─── Color palette for events ──────────────────────────────────────────────────
 const EVENT_COLORS = [
   'hsl(var(--primary))',
   'hsl(var(--success))',
   'hsl(var(--warning))',
   'hsl(var(--info))',
   'hsl(var(--destructive))',
-  'hsl(270 48% 56%)',
+  'hsl(var(--accent))',
 ];
 
 function getEventColor(index: number) {
   return EVENT_COLORS[index % EVENT_COLORS.length];
 }
 
-// ─── Fetch events hook ─────────────────────────────────────────────────────────
+function getDisplayTitle(event: CalendarEvent, isAuthenticated: boolean) {
+  if (event.title && event.title !== '(No title)') return event.title;
+  return isAuthenticated ? 'Untitled event' : 'Busy';
+}
+
 function useCalendarEvents(month: Date) {
   const timeMin = startOfMonth(month).toISOString();
   const timeMax = endOfMonth(month).toISOString();
@@ -56,11 +81,12 @@ function useCalendarEvents(month: Date) {
       const url = `https://${projectId}.supabase.co/functions/v1/google-calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
 
       const headers: Record<string, string> = {
-        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         'Content-Type': 'application/json',
       };
+
       if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+        headers.Authorization = `Bearer ${session.access_token}`;
       }
 
       const response = await fetch(url, { headers });
@@ -68,18 +94,21 @@ function useCalendarEvents(month: Date) {
         const err = await response.json().catch(() => ({}));
         throw new Error(err.error || 'Failed to fetch events');
       }
+
       const result = await response.json();
       return {
         events: (result.events || []) as CalendarEvent[],
         authenticated: result.authenticated || false,
       };
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 60_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
     retry: 1,
   });
 }
 
-// ─── Calendar connection status hook ───────────────────────────────────────────
 function useCalendarConnection() {
   const { session } = useAuth();
 
@@ -89,17 +118,29 @@ function useCalendarConnection() {
       const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
         body: { action: 'status' },
       });
-      if (error) throw error;
+
+      if (error) {
+        const message = String(error?.message || '').toLowerCase();
+        if (message.includes('unauthorized')) {
+          return { connected: false, calendarEmail: null };
+        }
+        throw error;
+      }
+
       return data as { connected: boolean; calendarEmail: string | null };
     },
     enabled: !!session,
     staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 }
 
-// ─── Day cell (month view) ─────────────────────────────────────────────────────
 function DayCell({
-  day, currentMonth, events, isSelected, onSelect,
+  day,
+  currentMonth,
+  events,
+  isSelected,
+  onSelect,
 }: {
   day: Date;
   currentMonth: Date;
@@ -120,12 +161,14 @@ function DayCell({
         !isSelected && inMonth && 'hover:bg-muted/40',
       )}
     >
-      <span className={cn(
-        'text-[11px] font-medium leading-none',
-        today && 'text-primary font-bold',
-        !today && inMonth && 'text-foreground',
-        !today && !inMonth && 'text-muted-foreground',
-      )}>
+      <span
+        className={cn(
+          'text-[11px] font-medium leading-none',
+          today && 'text-primary font-bold',
+          !today && inMonth && 'text-foreground',
+          !today && !inMonth && 'text-muted-foreground',
+        )}
+      >
         {format(day, 'd')}
       </span>
       {events.length > 0 && (
@@ -139,9 +182,11 @@ function DayCell({
   );
 }
 
-// ─── Week day column ───────────────────────────────────────────────────────────
 function WeekDayColumn({
-  day, events, isSelected, onSelect,
+  day,
+  events,
+  isSelected,
+  onSelect,
 }: {
   day: Date;
   events: CalendarEvent[];
@@ -162,11 +207,13 @@ function WeekDayColumn({
       <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
         {format(day, 'EEE')}
       </span>
-      <span className={cn(
-        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors',
-        today && 'bg-primary text-primary-foreground',
-        !today && 'text-foreground',
-      )}>
+      <span
+        className={cn(
+          'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors',
+          today && 'bg-primary text-primary-foreground',
+          !today && 'text-foreground',
+        )}
+      >
         {format(day, 'd')}
       </span>
       {events.length > 0 && (
@@ -183,28 +230,57 @@ function WeekDayColumn({
   );
 }
 
-// ─── Event card ────────────────────────────────────────────────────────────────
-function EventCard({ event, index, canEdit, onDelete, onEdit }: {
+function EventCard({
+  event,
+  index,
+  canEdit,
+  isAuthenticated,
+  onDelete,
+  onEdit,
+}: {
   event: CalendarEvent;
   index: number;
   canEdit: boolean;
+  isAuthenticated: boolean;
   onDelete: (id: string) => void;
-  onEdit: (id: string, updates: { title: string; startTime: string; endTime: string; allDay: boolean }) => void;
+  onEdit: (id: string, updates: { title: string; startTime: string; endTime: string; allDay: boolean; date: string }) => Promise<void>;
 }) {
   const color = getEventColor(index);
+  const displayTitle = getDisplayTitle(event, isAuthenticated);
   const startTime = event.allDay ? 'All day' : format(parseISO(event.start), 'h:mm a');
   const endTime = !event.allDay && event.end ? format(parseISO(event.end), 'h:mm a') : null;
 
   const [editing, setEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(event.title);
+  const [editTitle, setEditTitle] = useState(displayTitle);
   const [editStart, setEditStart] = useState(!event.allDay ? format(parseISO(event.start), 'HH:mm') : '09:00');
   const [editEnd, setEditEnd] = useState(!event.allDay && event.end ? format(parseISO(event.end), 'HH:mm') : '10:00');
   const [editAllDay, setEditAllDay] = useState(event.allDay);
+  const [savingEdit, setSavingEdit] = useState(false);
 
-  const handleSave = () => {
-    if (!editTitle.trim()) return;
-    onEdit(event.id, { title: editTitle, startTime: editStart, endTime: editEnd, allDay: editAllDay });
-    setEditing(false);
+  useEffect(() => {
+    if (editing) return;
+    setEditTitle(displayTitle);
+    setEditStart(!event.allDay ? format(parseISO(event.start), 'HH:mm') : '09:00');
+    setEditEnd(!event.allDay && event.end ? format(parseISO(event.end), 'HH:mm') : '10:00');
+    setEditAllDay(event.allDay);
+  }, [event.id, event.title, event.start, event.end, event.allDay, displayTitle, editing]);
+
+  const handleSave = async () => {
+    if (!editTitle.trim() || savingEdit) return;
+
+    setSavingEdit(true);
+    try {
+      await onEdit(event.id, {
+        title: editTitle.trim(),
+        startTime: editStart,
+        endTime: editEnd,
+        allDay: editAllDay,
+        date: format(parseISO(event.start), 'yyyy-MM-dd'),
+      });
+      setEditing(false);
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   if (editing) {
@@ -217,36 +293,57 @@ function EventCard({ event, index, canEdit, onDelete, onEdit }: {
       >
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-primary">Edit Event</span>
-          <button onClick={() => setEditing(false)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => setEditing(false)}
+            className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground"
+          >
             <X className="w-3 h-3" />
           </button>
         </div>
+
         <input
           autoFocus
           value={editTitle}
-          onChange={e => setEditTitle(e.target.value)}
+          onChange={(e) => setEditTitle(e.target.value)}
           className="w-full bg-background/80 border border-border/50 rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-          onKeyDown={e => e.key === 'Enter' && handleSave()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
         />
+
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
-            <input type="checkbox" checked={editAllDay} onChange={e => setEditAllDay(e.target.checked)} className="rounded border-border" />
+            <input
+              type="checkbox"
+              checked={editAllDay}
+              onChange={(e) => setEditAllDay(e.target.checked)}
+              className="rounded border-border"
+            />
             All day
           </label>
           {!editAllDay && (
             <>
-              <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground" />
+              <input
+                type="time"
+                value={editStart}
+                onChange={(e) => setEditStart(e.target.value)}
+                className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground"
+              />
               <span className="text-[10px] text-muted-foreground">–</span>
-              <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground" />
+              <input
+                type="time"
+                value={editEnd}
+                onChange={(e) => setEditEnd(e.target.value)}
+                className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground"
+              />
             </>
           )}
         </div>
+
         <button
           onClick={handleSave}
-          disabled={!editTitle.trim()}
+          disabled={!editTitle.trim() || savingEdit}
           className="w-full py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
-          Save Changes
+          {savingEdit ? 'Saving…' : 'Save Changes'}
         </button>
       </motion.div>
     );
@@ -264,13 +361,12 @@ function EventCard({ event, index, canEdit, onDelete, onEdit }: {
         style={{ borderLeftWidth: '3px', borderLeftColor: color }}
       >
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-foreground leading-snug truncate">
-            {event.title}
-          </p>
+          <p className="text-xs font-semibold text-foreground leading-snug truncate">{displayTitle}</p>
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
             <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
               <Clock className="w-3 h-3" />
-              {startTime}{endTime ? ` – ${endTime}` : ''}
+              {startTime}
+              {endTime ? ` – ${endTime}` : ''}
             </span>
             {event.location && (
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground truncate max-w-[140px]">
@@ -284,7 +380,8 @@ function EventCard({ event, index, canEdit, onDelete, onEdit }: {
           {canEdit && (
             <button
               onClick={() => setEditing(true)}
-              className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              title="Edit event"
             >
               <Pencil className="w-3 h-3" />
             </button>
@@ -292,7 +389,8 @@ function EventCard({ event, index, canEdit, onDelete, onEdit }: {
           {canEdit && (
             <button
               onClick={() => onDelete(event.id)}
-              className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+              title="Delete event"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -302,7 +400,8 @@ function EventCard({ event, index, canEdit, onDelete, onEdit }: {
               href={event.htmlLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+              title="Open in Google Calendar"
             >
               <ExternalLink className="w-3 h-3" />
             </a>
@@ -313,8 +412,11 @@ function EventCard({ event, index, canEdit, onDelete, onEdit }: {
   );
 }
 
-// ─── Quick add event form ──────────────────────────────────────────────────────
-function QuickAddEvent({ date, onClose, onCreated }: {
+function QuickAddEvent({
+  date,
+  onClose,
+  onCreated,
+}: {
   date: Date;
   onClose: () => void;
   onCreated: () => void;
@@ -327,13 +429,15 @@ function QuickAddEvent({ date, onClose, onCreated }: {
 
   const handleCreate = async () => {
     if (!title.trim()) return;
+
     setSaving(true);
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
+      const nextDateStr = format(addDays(date, 1), 'yyyy-MM-dd');
       const event = allDay
-        ? { summary: title, start: { date: dateStr }, end: { date: dateStr } }
+        ? { summary: title.trim(), start: { date: dateStr }, end: { date: nextDateStr } }
         : {
-            summary: title,
+            summary: title.trim(),
             start: { dateTime: `${dateStr}T${startTime}:00`, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
             end: { dateTime: `${dateStr}T${endTime}:00`, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
           };
@@ -342,6 +446,7 @@ function QuickAddEvent({ date, onClose, onCreated }: {
         body: { action: 'create', event },
       });
       if (error) throw error;
+
       toast.success('Event created');
       onCreated();
       onClose();
@@ -361,24 +466,29 @@ function QuickAddEvent({ date, onClose, onCreated }: {
     >
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold text-primary">New Event — {format(date, 'MMM d')}</span>
-        <button onClick={onClose} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground">
+        <button
+          onClick={onClose}
+          className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground"
+        >
           <X className="w-3 h-3" />
         </button>
       </div>
+
       <input
         autoFocus
         value={title}
-        onChange={e => setTitle(e.target.value)}
+        onChange={(e) => setTitle(e.target.value)}
         placeholder="Event title"
         className="w-full bg-background/80 border border-border/50 rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-        onKeyDown={e => e.key === 'Enter' && handleCreate()}
+        onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
       />
+
       <div className="flex items-center gap-2">
         <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
           <input
             type="checkbox"
             checked={allDay}
-            onChange={e => setAllDay(e.target.checked)}
+            onChange={(e) => setAllDay(e.target.checked)}
             className="rounded border-border"
           />
           All day
@@ -388,19 +498,20 @@ function QuickAddEvent({ date, onClose, onCreated }: {
             <input
               type="time"
               value={startTime}
-              onChange={e => setStartTime(e.target.value)}
+              onChange={(e) => setStartTime(e.target.value)}
               className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground"
             />
             <span className="text-[10px] text-muted-foreground">–</span>
             <input
               type="time"
               value={endTime}
-              onChange={e => setEndTime(e.target.value)}
+              onChange={(e) => setEndTime(e.target.value)}
               className="bg-background/80 border border-border/50 rounded px-2 py-1 text-[10px] text-foreground"
             />
           </>
         )}
       </div>
+
       <button
         onClick={handleCreate}
         disabled={!title.trim() || saving}
@@ -412,13 +523,11 @@ function QuickAddEvent({ date, onClose, onCreated }: {
   );
 }
 
-// ─── Main widget ───────────────────────────────────────────────────────────────
 export function CalendarWidget() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const { session } = useAuth();
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useCalendarEvents(currentMonth);
@@ -427,8 +536,8 @@ export function CalendarWidget() {
 
   const { data: connectionStatus } = useCalendarConnection();
   const isConnected = connectionStatus?.connected || false;
+  const canManageEvents = isConnected && isAuthenticated;
 
-  // Listen for OAuth callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const calAuth = params.get('calendar_auth');
@@ -441,9 +550,8 @@ export function CalendarWidget() {
       toast.error(params.get('message') || 'Failed to connect Google Calendar');
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [queryClient]);
 
-  // Connect handler
   const handleConnect = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
@@ -461,7 +569,6 @@ export function CalendarWidget() {
     }
   };
 
-  // Disconnect handler
   const handleDisconnect = async () => {
     try {
       await supabase.functions.invoke('google-calendar-auth', {
@@ -475,7 +582,6 @@ export function CalendarWidget() {
     }
   };
 
-  // Delete event
   const handleDeleteEvent = async (eventId: string) => {
     try {
       const { error } = await supabase.functions.invoke('google-calendar', {
@@ -489,13 +595,23 @@ export function CalendarWidget() {
     }
   };
 
-  // Edit event
-  const handleEditEvent = async (eventId: string, updates: { title: string; startTime: string; endTime: string; allDay: boolean }) => {
+  const handleEditEvent = async (
+    eventId: string,
+    updates: { title: string; startTime: string; endTime: string; allDay: boolean; date: string },
+  ) => {
     try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      if (!updates.allDay && updates.endTime <= updates.startTime) {
+        toast.error('End time must be after start time');
+        return;
+      }
+
+      const date = parseISO(`${updates.date}T00:00:00`);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const nextDateStr = format(addDays(date, 1), 'yyyy-MM-dd');
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       const event = updates.allDay
-        ? { summary: updates.title, start: { date: dateStr }, end: { date: dateStr } }
+        ? { summary: updates.title, start: { date: dateStr }, end: { date: nextDateStr } }
         : {
             summary: updates.title,
             start: { dateTime: `${dateStr}T${updates.startTime}:00`, timeZone: tz },
@@ -506,6 +622,7 @@ export function CalendarWidget() {
         body: { action: 'update', eventId, event },
       });
       if (error) throw error;
+
       toast.success('Event updated');
       queryClient.invalidateQueries({ queryKey: ['google-calendar-events'] });
     } catch (err: any) {
@@ -513,28 +630,37 @@ export function CalendarWidget() {
     }
   };
 
-  // Build month calendar grid
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calStart = startOfWeek(monthStart);
   const calEnd = endOfWeek(monthEnd);
   const monthDays = eachDayOfInterval({ start: calStart, end: calEnd });
 
-  // Build week view days
   const weekStart = startOfWeek(selectedDate);
   const weekEnd = endOfWeek(selectedDate);
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const selectedEvents = useMemo(() => {
-    return events.filter(e => {
+    return events.filter((e) => {
       const eventDate = parseISO(e.start);
       return isSameDay(eventDate, selectedDate);
     });
   }, [events, selectedDate]);
 
+  const priorityEvents = useMemo(() => {
+    const now = new Date().getTime();
+    return [...events]
+      .filter((event) => {
+        const end = parseISO(event.end || event.start).getTime();
+        return end >= now;
+      })
+      .sort((a, b) => parseISO(a.start).getTime() - parseISO(b.start).getTime())
+      .slice(0, 3);
+  }, [events]);
+
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
-    events.forEach(e => {
+    events.forEach((e) => {
       const key = format(parseISO(e.start), 'yyyy-MM-dd');
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
@@ -544,7 +670,7 @@ export function CalendarWidget() {
 
   const navigateBack = () => {
     if (viewMode === 'month') {
-      setCurrentMonth(m => subMonths(m, 1));
+      setCurrentMonth((m) => subMonths(m, 1));
     } else {
       const newDate = subWeeks(selectedDate, 1);
       setSelectedDate(newDate);
@@ -554,7 +680,7 @@ export function CalendarWidget() {
 
   const navigateForward = () => {
     if (viewMode === 'month') {
-      setCurrentMonth(m => addMonths(m, 1));
+      setCurrentMonth((m) => addMonths(m, 1));
     } else {
       const newDate = addWeeks(selectedDate, 1);
       setSelectedDate(newDate);
@@ -567,14 +693,13 @@ export function CalendarWidget() {
     setSelectedDate(new Date());
   };
 
-  const headerLabel = viewMode === 'month'
-    ? format(currentMonth, 'MMMM yyyy')
-    : `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`;
+  const headerLabel =
+    viewMode === 'month'
+      ? format(currentMonth, 'MMMM yyyy')
+      : `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`;
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card overflow-hidden flex flex-col h-full">
-
-      {/* ── Header ──────────────────────────────────────────── */}
       <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2 shrink-0">
         <button
           onClick={navigateBack}
@@ -582,9 +707,7 @@ export function CalendarWidget() {
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <h2 className="text-sm font-semibold text-foreground flex-1 text-center">
-          {headerLabel}
-        </h2>
+        <h2 className="text-sm font-semibold text-foreground flex-1 text-center">{headerLabel}</h2>
         <button
           onClick={navigateForward}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
@@ -592,15 +715,12 @@ export function CalendarWidget() {
           <ChevronRight className="w-4 h-4" />
         </button>
 
-        {/* View toggle */}
         <div className="flex items-center bg-muted/40 rounded-lg p-0.5 ml-1">
           <button
             onClick={() => setViewMode('month')}
             className={cn(
               'w-6 h-6 rounded-md flex items-center justify-center transition-all',
-              viewMode === 'month'
-                ? 'bg-background text-primary shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
+              viewMode === 'month' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
             title="Month view"
           >
@@ -610,9 +730,7 @@ export function CalendarWidget() {
             onClick={() => setViewMode('week')}
             className={cn(
               'w-6 h-6 rounded-md flex items-center justify-center transition-all',
-              viewMode === 'week'
-                ? 'bg-background text-primary shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
+              viewMode === 'week' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
             title="Week view"
           >
@@ -620,11 +738,10 @@ export function CalendarWidget() {
           </button>
         </div>
 
-        {/* Connection status */}
         {isConnected ? (
           <button
             onClick={handleDisconnect}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-emerald-500 hover:text-destructive hover:bg-destructive/10 transition-all"
+            className="w-6 h-6 rounded-md flex items-center justify-center text-success hover:text-destructive hover:bg-destructive/10 transition-all"
             title={`Connected: ${connectionStatus?.calendarEmail || 'Google Calendar'} — click to disconnect`}
           >
             <Link2 className="w-3.5 h-3.5" />
@@ -647,7 +764,6 @@ export function CalendarWidget() {
         </button>
       </div>
 
-      {/* ── Calendar grid ───────────────────────────────────── */}
       <AnimatePresence mode="wait">
         {viewMode === 'month' ? (
           <motion.div
@@ -659,14 +775,17 @@ export function CalendarWidget() {
             className="px-3 pt-3 pb-2"
           >
             <div className="grid grid-cols-7 mb-1">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                <div key={d} className="text-center text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                <div
+                  key={d}
+                  className="text-center text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1"
+                >
                   {d}
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-7 gap-px">
-              {monthDays.map(day => {
+              {monthDays.map((day) => {
                 const key = format(day, 'yyyy-MM-dd');
                 return (
                   <DayCell
@@ -691,7 +810,7 @@ export function CalendarWidget() {
             className="px-3 pt-3 pb-2"
           >
             <div className="grid grid-cols-7 gap-1">
-              {weekDays.map(day => {
+              {weekDays.map((day) => {
                 const key = format(day, 'yyyy-MM-dd');
                 return (
                   <WeekDayColumn
@@ -708,9 +827,32 @@ export function CalendarWidget() {
         )}
       </AnimatePresence>
 
-      {/* ── Selected day events ─────────────────────────────── */}
       <div className="flex-1 border-t border-border/40 overflow-y-auto">
         <div className="px-4 py-3">
+          {priorityEvents.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-3 p-3 rounded-xl border border-border/40 bg-muted/20"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold text-foreground">Priority from Calendar</span>
+                <span className="text-[10px] text-muted-foreground">Live every 30s</span>
+              </div>
+              <div className="space-y-1.5">
+                {priorityEvents.map((event, i) => (
+                  <div key={event.id} className="flex items-center gap-2 text-[11px]">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: getEventColor(i) }} />
+                    <span className="text-muted-foreground w-[56px] shrink-0">
+                      {event.allDay ? 'All day' : format(parseISO(event.start), 'h:mm a')}
+                    </span>
+                    <span className="text-foreground truncate">{getDisplayTitle(event, isAuthenticated)}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-foreground">
               {isToday(selectedDate) ? 'Today' : format(selectedDate, 'EEE, MMM d')}
@@ -719,9 +861,9 @@ export function CalendarWidget() {
               <span className="text-[10px] text-muted-foreground">
                 {selectedEvents.length} event{selectedEvents.length !== 1 ? 's' : ''}
               </span>
-              {isConnected && (
+              {canManageEvents && (
                 <button
-                  onClick={() => setShowAddEvent(v => !v)}
+                  onClick={() => setShowAddEvent((v) => !v)}
                   className={cn(
                     'w-5 h-5 rounded-md flex items-center justify-center transition-all',
                     showAddEvent
@@ -736,9 +878,8 @@ export function CalendarWidget() {
             </div>
           </div>
 
-          {/* Quick add form */}
           <AnimatePresence>
-            {showAddEvent && isConnected && (
+            {showAddEvent && canManageEvents && (
               <div className="mb-3">
                 <QuickAddEvent
                   date={selectedDate}
@@ -749,7 +890,6 @@ export function CalendarWidget() {
             )}
           </AnimatePresence>
 
-          {/* Connect prompt */}
           {!isConnected && !isLoading && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -757,44 +897,78 @@ export function CalendarWidget() {
               className="mb-3 p-3 rounded-xl border border-border/40 bg-muted/20 text-center"
             >
               <p className="text-[11px] text-muted-foreground mb-2">
-                Connect Google Calendar for full access — see titles, create & edit events
+                Connect Google Calendar for full titles + full edit controls.
               </p>
-              <button
-                onClick={handleConnect}
-                className="text-[11px] font-semibold text-primary hover:underline"
-              >
+              <button onClick={handleConnect} className="text-[11px] font-semibold text-primary hover:underline">
                 Connect Now →
               </button>
             </motion.div>
           )}
 
+          {isConnected && !isAuthenticated && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-3 p-2.5 rounded-xl border border-border/40 bg-muted/20 text-center"
+            >
+              <p className="text-[10px] text-muted-foreground">
+                Connected account detected. Re-authenticate to restore full title visibility.
+              </p>
+            </motion.div>
+          )}
+
           <AnimatePresence mode="wait">
             {isLoading ? (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
-                {[1, 2].map(i => (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-2"
+              >
+                {[1, 2].map((i) => (
                   <div key={i} className="h-16 rounded-xl bg-muted/30 animate-pulse" />
                 ))}
               </motion.div>
             ) : isError ? (
-              <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-6 text-center">
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-6 text-center"
+              >
                 <p className="text-xs text-muted-foreground">Could not load events</p>
                 <p className="text-[10px] text-muted-foreground/60 mt-1">Check your calendar connection</p>
               </motion.div>
             ) : selectedEvents.length === 0 ? (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-6 text-center">
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-6 text-center"
+              >
                 <p className="text-xs text-muted-foreground">No events scheduled</p>
                 <p className="text-[10px] text-muted-foreground/60 mt-1">
-                  {isConnected ? 'Click + to add an event' : 'Enjoy the free time ✨'}
+                  {canManageEvents ? 'Click + to add an event' : 'Live events auto-refresh every 30s'}
                 </p>
               </motion.div>
             ) : (
-              <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+              <motion.div
+                key="events"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-2"
+              >
                 {selectedEvents.map((event, i) => (
                   <EventCard
                     key={event.id}
                     event={event}
                     index={i}
-                    canEdit={isConnected}
+                    canEdit={canManageEvents}
+                    isAuthenticated={isAuthenticated}
                     onDelete={handleDeleteEvent}
                     onEdit={handleEditEvent}
                   />
