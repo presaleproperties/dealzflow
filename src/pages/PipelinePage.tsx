@@ -54,17 +54,17 @@ const STATUS_DOT_COLORS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-primary/12 text-primary',
-  'in-contract': 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
-  'pending-mortgage': 'bg-orange-500/12 text-orange-600 dark:text-orange-400',
-  closed: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
-  lost: 'bg-destructive/12 text-destructive',
+  active: 'bg-primary/[0.12] text-primary',
+  'in-contract': 'bg-amber-500/[0.12] text-amber-600 dark:text-amber-400',
+  'pending-mortgage': 'bg-orange-500/[0.12] text-orange-600 dark:text-orange-400',
+  closed: 'bg-emerald-500/[0.12] text-emerald-600 dark:text-emerald-400',
+  lost: 'bg-destructive/[0.12] text-destructive',
   // listing statuses
-  'want-to-sell': 'bg-violet-500/12 text-violet-500 dark:text-violet-400',
-  'active-listing': 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
-  'in-contract-listing': 'bg-amber-500/12 text-amber-600 dark:text-amber-400',
-  sold: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400',
-  'listing-lost': 'bg-destructive/12 text-destructive',
+  'want-to-sell': 'bg-violet-500/[0.12] text-violet-600 dark:text-violet-400',
+  'active-listing': 'bg-violet-500/[0.15] text-violet-600 dark:text-violet-400',
+  'in-contract-listing': 'bg-amber-500/[0.12] text-amber-600 dark:text-amber-400',
+  sold: 'bg-emerald-500/[0.12] text-emerald-600 dark:text-emerald-400',
+  'listing-lost': 'bg-destructive/[0.12] text-destructive',
 };
 
 const TEMP_CONFIG: Record<string, { icon: any; color: string; dotColor: string; label: string }> = {

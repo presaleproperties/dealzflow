@@ -22,7 +22,7 @@ const CARDS = [
     accent: 'text-success',
     dot: 'bg-success',
     border: 'border-success/20',
-    bg: 'bg-success/8',
+    bg: 'bg-success/[0.08]',
   },
   {
     key: 'coming',
@@ -33,7 +33,7 @@ const CARDS = [
     accent: 'text-primary',
     dot: 'bg-primary',
     border: 'border-primary/20',
-    bg: 'bg-primary/8',
+    bg: 'bg-primary/[0.08]',
   },
   {
     key: 'expenses',
@@ -43,7 +43,7 @@ const CARDS = [
     accent: 'text-destructive',
     dot: 'bg-destructive',
     border: 'border-destructive/20',
-    bg: 'bg-destructive/8',
+    bg: 'bg-destructive/[0.08]',
   },
   {
     key: 'pipeline',
@@ -54,7 +54,7 @@ const CARDS = [
     accent: 'text-info',
     dot: 'bg-info',
     border: 'border-info/20',
-    bg: 'bg-info/8',
+    bg: 'bg-info/[0.08]',
   },
 ] as const;
 
