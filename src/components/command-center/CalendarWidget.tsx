@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, isToday,
-  addMonths, subMonths, parseISO,
+  addMonths, subMonths, addWeeks, subWeeks, parseISO,
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Clock, MapPin, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, ExternalLink, CalendarDays, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -20,6 +20,8 @@ interface CalendarEvent {
   allDay: boolean;
   htmlLink: string | null;
 }
+
+type ViewMode = 'month' | 'week';
 
 // ─── Color palette for events ──────────────────────────────────────────────────
 const EVENT_COLORS = [
@@ -66,7 +68,7 @@ function useCalendarEvents(month: Date) {
   });
 }
 
-// ─── Day cell ──────────────────────────────────────────────────────────────────
+// ─── Day cell (month view) ─────────────────────────────────────────────────────
 function DayCell({
   day, currentMonth, events, isSelected, onSelect,
 }: {
@@ -107,6 +109,54 @@ function DayCell({
               style={{ background: getEventColor(i) }}
             />
           ))}
+        </div>
+      )}
+    </button>
+  );
+}
+
+// ─── Week day column ───────────────────────────────────────────────────────────
+function WeekDayColumn({
+  day, events, isSelected, onSelect,
+}: {
+  day: Date;
+  events: CalendarEvent[];
+  isSelected: boolean;
+  onSelect: (d: Date) => void;
+}) {
+  const today = isToday(day);
+
+  return (
+    <button
+      onClick={() => onSelect(day)}
+      className={cn(
+        'flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all duration-150 min-w-0',
+        isSelected && 'bg-primary/10 ring-1 ring-primary/30',
+        !isSelected && 'hover:bg-muted/40',
+      )}
+    >
+      <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+        {format(day, 'EEE')}
+      </span>
+      <span className={cn(
+        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors',
+        today && 'bg-primary text-primary-foreground',
+        !today && 'text-foreground',
+      )}>
+        {format(day, 'd')}
+      </span>
+      {events.length > 0 && (
+        <div className="flex items-center gap-0.5">
+          {events.slice(0, 2).map((_, i) => (
+            <span
+              key={i}
+              className="w-1 h-1 rounded-full"
+              style={{ background: getEventColor(i) }}
+            />
+          ))}
+          {events.length > 2 && (
+            <span className="text-[8px] text-muted-foreground font-medium">+{events.length - 2}</span>
+          )}
         </div>
       )}
     </button>
@@ -166,15 +216,21 @@ function EventCard({ event, index }: { event: CalendarEvent; index: number }) {
 export function CalendarWidget() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
 
   const { data: events = [], isLoading, isError } = useCalendarEvents(currentMonth);
 
-  // Build calendar grid
+  // Build month calendar grid
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calStart = startOfWeek(monthStart);
   const calEnd = endOfWeek(monthEnd);
-  const days = eachDayOfInterval({ start: calStart, end: calEnd });
+  const monthDays = eachDayOfInterval({ start: calStart, end: calEnd });
+
+  // Build week view days
+  const weekStart = startOfWeek(selectedDate);
+  const weekEnd = endOfWeek(selectedDate);
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   // Events for selected day
   const selectedEvents = useMemo(() => {
@@ -195,28 +251,86 @@ export function CalendarWidget() {
     return map;
   }, [events]);
 
+  const navigateBack = () => {
+    if (viewMode === 'month') {
+      setCurrentMonth(m => subMonths(m, 1));
+    } else {
+      const newDate = subWeeks(selectedDate, 1);
+      setSelectedDate(newDate);
+      if (!isSameMonth(newDate, currentMonth)) setCurrentMonth(startOfMonth(newDate));
+    }
+  };
+
+  const navigateForward = () => {
+    if (viewMode === 'month') {
+      setCurrentMonth(m => addMonths(m, 1));
+    } else {
+      const newDate = addWeeks(selectedDate, 1);
+      setSelectedDate(newDate);
+      if (!isSameMonth(newDate, currentMonth)) setCurrentMonth(startOfMonth(newDate));
+    }
+  };
+
+  const goToday = () => {
+    setCurrentMonth(new Date());
+    setSelectedDate(new Date());
+  };
+
+  const headerLabel = viewMode === 'month'
+    ? format(currentMonth, 'MMMM yyyy')
+    : `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`;
+
   return (
     <div className="rounded-2xl border border-border/60 bg-card overflow-hidden flex flex-col h-full">
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2 shrink-0">
         <button
-          onClick={() => setCurrentMonth(m => subMonths(m, 1))}
+          onClick={navigateBack}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
         <h2 className="text-sm font-semibold text-foreground flex-1 text-center">
-          {format(currentMonth, 'MMMM yyyy')}
+          {headerLabel}
         </h2>
         <button
-          onClick={() => setCurrentMonth(m => addMonths(m, 1))}
+          onClick={navigateForward}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
+
+        {/* View toggle */}
+        <div className="flex items-center bg-muted/40 rounded-lg p-0.5 ml-1">
+          <button
+            onClick={() => setViewMode('month')}
+            className={cn(
+              'w-6 h-6 rounded-md flex items-center justify-center transition-all',
+              viewMode === 'month'
+                ? 'bg-background text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+            title="Month view"
+          >
+            <Grid3X3 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setViewMode('week')}
+            className={cn(
+              'w-6 h-6 rounded-md flex items-center justify-center transition-all',
+              viewMode === 'week'
+                ? 'bg-background text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+            title="Week view"
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <button
-          onClick={() => { setCurrentMonth(new Date()); setSelectedDate(new Date()); }}
+          onClick={goToday}
           className="text-[10px] font-semibold text-primary hover:bg-primary/10 px-2 py-1 rounded-md transition-colors ml-1"
         >
           Today
@@ -224,32 +338,67 @@ export function CalendarWidget() {
       </div>
 
       {/* ── Calendar grid ───────────────────────────────────── */}
-      <div className="px-3 pt-3 pb-2">
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 mb-1">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="text-center text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1">
-              {d}
+      <AnimatePresence mode="wait">
+        {viewMode === 'month' ? (
+          <motion.div
+            key="month"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="px-3 pt-3 pb-2"
+          >
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 mb-1">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                <div key={d} className="text-center text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider py-1">
+                  {d}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        {/* Day grid */}
-        <div className="grid grid-cols-7 gap-px">
-          {days.map(day => {
-            const key = format(day, 'yyyy-MM-dd');
-            return (
-              <DayCell
-                key={key}
-                day={day}
-                currentMonth={currentMonth}
-                events={eventsByDay.get(key) || []}
-                isSelected={isSameDay(day, selectedDate)}
-                onSelect={setSelectedDate}
-              />
-            );
-          })}
-        </div>
-      </div>
+            {/* Day grid */}
+            <div className="grid grid-cols-7 gap-px">
+              {monthDays.map(day => {
+                const key = format(day, 'yyyy-MM-dd');
+                return (
+                  <DayCell
+                    key={key}
+                    day={day}
+                    currentMonth={currentMonth}
+                    events={eventsByDay.get(key) || []}
+                    isSelected={isSameDay(day, selectedDate)}
+                    onSelect={setSelectedDate}
+                  />
+                );
+              })}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="week"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="px-3 pt-3 pb-2"
+          >
+            <div className="grid grid-cols-7 gap-1">
+              {weekDays.map(day => {
+                const key = format(day, 'yyyy-MM-dd');
+                return (
+                  <WeekDayColumn
+                    key={key}
+                    day={day}
+                    events={eventsByDay.get(key) || []}
+                    isSelected={isSameDay(day, selectedDate)}
+                    onSelect={setSelectedDate}
+                  />
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Selected day events ─────────────────────────────── */}
       <div className="flex-1 border-t border-border/40 overflow-y-auto">
