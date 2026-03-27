@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, Eye, MousePointerClick, Users, TrendingUp,
-  Megaphone, BarChart3, AlertCircle, ExternalLink,
+  Megaphone, BarChart3, AlertCircle, ExternalLink, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
