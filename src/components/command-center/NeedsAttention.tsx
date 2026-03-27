@@ -130,7 +130,7 @@ export function NeedsAttention({ prospects }: Props) {
                         {/* ✦ Clickable name */}
                         <button
                           onClick={() => setSelected(p)}
-                          className="text-xs font-semibold text-foreground truncate max-w-[120px] hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
+                          className="text-xs font-semibold text-foreground truncate max-w-[200px] hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
                         >
                           {p.client_name}
                         </button>
