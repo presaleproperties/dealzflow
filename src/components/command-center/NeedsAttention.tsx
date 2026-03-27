@@ -121,7 +121,7 @@ export function NeedsAttention({ prospects }: Props) {
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.28 + i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="px-4 py-3 hover:bg-muted/20 transition-colors"
+                  className="px-4 py-2 hover:bg-muted/20 transition-colors"
                 >
                   <div className="flex items-start gap-2.5">
                     <UrgencyDot created_at={p.created_at} updated_at={p.updated_at} />
