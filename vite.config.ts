@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      devOptions: { enabled: false },
       includeAssets: ["favicon.png", "icon-192.png", "icon-512.png", "splash-screen.png"],
       manifest: {
         name: "Dealzflow",
