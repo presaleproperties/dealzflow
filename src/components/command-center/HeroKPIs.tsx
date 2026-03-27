@@ -51,7 +51,7 @@ export function HeroKPIs({ data }: Props) {
       {[
         { label: 'Active Leads', value: data.activeLeads, icon: Users, accentVar: '--info', to: '/leads' },
         { label: 'Hot Leads', value: data.hotLeads, icon: Flame, accentVar: '--destructive', to: '/leads?temp=hot' },
-        { label: 'Zara Captures', value: data.zaraCaptures, icon: Zap, accentVar: '--primary', to: null },
+        { label: 'Zara Captures', value: data.zaraCaptures, icon: Zap, accentVar: '--primary', to: '/leads' },
         { label: 'Unread', value: data.unreadMessages, icon: MessageSquare, accentVar: '--warning', to: '/leads' },
       ].map((card, i) => {
         const Icon = card.icon;
