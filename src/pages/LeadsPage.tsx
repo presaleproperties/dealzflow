@@ -118,14 +118,27 @@ function Pill({ label, active, color, onClick }: { label: string; active: boolea
 // ─── Page ───────────────────────────────────────────────────────────────────────
 export default function LeadsPage() {
   const { data: leads = [], isLoading } = useLeads();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [tempFilter, setTempFilter] = useState<string | null>(null);
+  const [tempFilter, setTempFilter] = useState<string | null>(searchParams.get('temp'));
   const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selected, setSelected] = useState<ProspectRow | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(!!searchParams.get('temp'));
+
+  // Sync URL params on mount
+  useEffect(() => {
+    const t = searchParams.get('temp');
+    if (t) {
+      setTempFilter(t);
+      setShowFilters(true);
+      // Clean up URL after applying
+      searchParams.delete('temp');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   // Derived filter options
   const sources = useMemo(() => {
