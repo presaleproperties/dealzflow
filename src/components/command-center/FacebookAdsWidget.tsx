@@ -189,6 +189,23 @@ export function FacebookAdsWidget() {
   const isNotConfigured = data?.error === 'not_configured';
   const isApiError = data?.error === 'api_error';
 
+  // Non-admin users see "Coming Soon" placeholder
+  if (!isAdmin) {
+    return (
+      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden flex flex-col h-full">
+        <div className="px-5 py-3.5 border-b border-border/40 flex items-center gap-3 shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-[#1877F2]/10 flex items-center justify-center">
+            <Megaphone className="w-3.5 h-3.5 text-[#1877F2]" />
+          </div>
+          <h2 className="text-sm font-semibold text-foreground flex-1">Facebook Ads</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <ComingSoon />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-border/60 bg-card overflow-hidden flex flex-col h-full">
       {/* Header */}
