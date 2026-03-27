@@ -143,8 +143,45 @@ function CampaignRow({ campaign, maxSpend }: { campaign: any; maxSpend: number }
   );
 }
 
+// ─── Coming Soon (non-admin users) ─────────────────────────────────────────────
+function ComingSoon() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-[#1877F2]/10 flex items-center justify-center mb-5">
+        <Megaphone className="w-8 h-8 text-[#1877F2]/40" />
+      </div>
+      <div className="flex items-center gap-1.5 mb-2">
+        <Sparkles className="w-4 h-4 text-amber-500" />
+        <p className="text-sm font-semibold text-foreground">Ad Dashboard Coming Soon</p>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1 max-w-[260px] leading-relaxed">
+        Track your Facebook & Instagram ad performance, leads, and spend — all in one place.
+      </p>
+      <div className="mt-6 space-y-2 w-full max-w-[260px]">
+        {[
+          { icon: DollarSign, text: 'Real-time spend & ROI tracking' },
+          { icon: Users, text: 'Lead count & cost per lead' },
+          { icon: BarChart3, text: 'Campaign performance breakdown' },
+        ].map((tip, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 + i * 0.1 }}
+            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-muted/30 border border-border/30 text-left"
+          >
+            <tip.icon className="w-3.5 h-3.5 text-[#1877F2]/40 mt-0.5 shrink-0" />
+            <span className="text-[11px] text-muted-foreground leading-snug">{tip.text}</span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Widget ───────────────────────────────────────────────────────────────
 export function FacebookAdsWidget() {
+  const { data: isAdmin } = useIsAdmin();
   const [datePreset, setDatePreset] = useState<DatePreset>('last_7d');
   const { data, isLoading, isError } = useMetaAds(datePreset);
   const [tab, setTab] = useState<'overview' | 'campaigns'>('overview');
