@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Eye, EyeOff, ArrowLeft, Mail, CheckCircle, ShieldCheck, RefreshCw, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Mail, CheckCircle, ShieldCheck, RefreshCw, TrendingUp, DollarSign, BarChart3, Zap, Wifi, Clock, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
@@ -233,17 +233,33 @@ export default function AuthPage() {
         </div>
 
         {/* Central hero copy */}
-        <div className="relative space-y-8">
+        <div className="relative space-y-7">
+          {/* Audience badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">Built for Real Brokerage Agents</span>
+          </div>
+
+          <div>
+            <h2 className="text-3xl font-bold text-foreground mb-3 tracking-tight leading-snug">
+              Financial clarity for<br />every Real deal
+            </h2>
+            <p className="text-muted-foreground text-[15px] leading-relaxed">
+              Connect your ReZen account once. Your deals, commissions, and rev share sync automatically — no manual entry.
+            </p>
+          </div>
+
           {/* Feature pills */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
             {[
-              { icon: DollarSign, label: 'Commission tracking', desc: 'Every deal, every dollar' },
-              { icon: BarChart3, label: 'Cashflow forecasting', desc: 'Know what\'s coming' },
-              { icon: TrendingUp, label: 'Safe-to-spend', desc: 'Always stay on budget' },
-            ].map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-center gap-4 p-4 rounded-xl bg-background/60 border border-border/60 backdrop-blur-sm">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-primary" />
+              { icon: Zap, label: 'Auto-sync from ReZen', desc: 'Deals, payouts & rev share — always up to date', accent: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15' },
+              { icon: DollarSign, label: 'Safe-to-Spend', desc: 'Know exactly what you can spend after taxes', accent: 'text-primary bg-primary/10 border-primary/15' },
+              { icon: BarChart3, label: '12-month forecasting', desc: 'See slow months coming before they hurt', accent: 'text-blue-500 bg-blue-500/10 border-blue-500/15' },
+              { icon: Users, label: 'Rev share tracking', desc: 'Your full network and tiers synced from ReZen', accent: 'text-amber-500 bg-amber-500/10 border-amber-500/15' },
+            ].map(({ icon: Icon, label, desc, accent }) => (
+              <div key={label} className="flex items-center gap-4 p-3.5 rounded-xl bg-background/60 border border-border/60 backdrop-blur-sm">
+                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${accent}`}>
+                  <Icon className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{label}</p>
@@ -253,13 +269,20 @@ export default function AuthPage() {
             ))}
           </div>
 
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-3 tracking-tight leading-snug">
-              Financial clarity for<br />real estate agents
-            </h2>
-            <p className="text-muted-foreground text-[15px] leading-relaxed">
-              Stop guessing. Start knowing exactly where your money is, where it's going, and what you can safely spend.
-            </p>
+          {/* Integration badges */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <Wifi className="w-3 h-3 text-emerald-500" />
+              <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">ReZen — LIVE</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Clock className="w-3 h-3 text-amber-500" />
+              <span className="text-[10.5px] font-semibold text-amber-600 dark:text-amber-400">SkySlope — Soon</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Clock className="w-3 h-3 text-amber-500" />
+              <span className="text-[10.5px] font-semibold text-amber-600 dark:text-amber-400">Lofty — Soon</span>
+            </div>
           </div>
         </div>
 
