@@ -302,6 +302,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </CardContent>
           )}
         </Card>
 
