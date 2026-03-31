@@ -5,7 +5,7 @@ import {
   Shield, ArrowUpCircle, ArrowDownCircle, Loader2,
   Search, X, Trash2, KeyRound, Pencil,
   ClipboardList, Eye, Pencil as PencilIcon, Trash, RotateCcw, 
-  ChevronDown, ChevronRight, Ban, ShieldCheck, Calendar,
+  ChevronDown, ChevronRight, Ban, ShieldCheck, Calendar, Layers,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
