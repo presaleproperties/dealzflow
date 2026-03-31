@@ -188,6 +188,8 @@ export function useClientInventory() {
         isManual: deal.rawData?.source === 'manual_import',
         journeyId: deal.journeyId,
         syncedTransactionId: deal.id,
+        clientEmail: deal.clientEmail,
+        clientPhone: deal.clientPhone,
         dealStatus: deal.status,
         isPresale: detectIsPresale(deal),
         isPotentialDuplicate: deal.rawData?.potential_duplicate === true,
