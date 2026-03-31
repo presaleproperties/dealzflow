@@ -6,6 +6,7 @@ import {
   Search, X, Trash2, KeyRound, Pencil,
   ClipboardList, Eye, Pencil as PencilIcon, Trash, RotateCcw, 
   ChevronDown, ChevronRight, Ban, ShieldCheck, Calendar, Layers,
+  Copy, Check,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -60,7 +61,9 @@ export default function AdminPage() {
   const [showChart, setShowChart] = useState(false);
   const [banTarget, setBanTarget] = useState<{ id: string; name: string; isBanned: boolean } | null>(null);
   const [banReason, setBanReason] = useState('');
+  const [copiedMcp, setCopiedMcp] = useState(false);
 
+  const MCP_ENDPOINT = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/mcp-server`;
   const users = analytics?.users || [];
   
   const filteredUsers = useMemo(() => {
@@ -143,6 +146,22 @@ export default function AdminPage() {
             <Calendar className="w-3 h-3" />
             Chart
             {showChart ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          </button>
+        </div>
+
+        {/* ── MCP Endpoint ─────────────────────────────────── */}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 bg-card">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0">MCP</span>
+          <code className="text-[11px] text-foreground font-mono truncate flex-1">{MCP_ENDPOINT}</code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(MCP_ENDPOINT);
+              setCopiedMcp(true);
+              setTimeout(() => setCopiedMcp(false), 2000);
+            }}
+            className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {copiedMcp ? <><Check className="w-3 h-3 text-success" />Copied</> : <><Copy className="w-3 h-3" />Copy</>}
           </button>
         </div>
 
