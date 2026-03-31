@@ -73,6 +73,9 @@ export default function AdminPage() {
     );
   }, [users, searchQuery]);
 
+  const [showUsers, setShowUsers] = useState(true);
+  const [showDataFlow, setShowDataFlow] = useState(false);
+
   useEffect(() => {
     if (!isCheckingAdmin && !isAdmin) {
       navigate('/dashboard');
