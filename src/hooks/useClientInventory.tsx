@@ -219,6 +219,8 @@ export function useClientInventory() {
         isManual: true,
         journeyId: r.journey_id,
         syncedTransactionId: null,
+        clientEmail: null,
+        clientPhone: null,
         dealStatus: undefined,
         isPresale: false,
       }));
