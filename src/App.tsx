@@ -28,6 +28,7 @@ import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
 import CommandCenterPage from "./pages/CommandCenterPage";
 import NotFound from "./pages/NotFound";
+import ApiDocsPage from "./pages/ApiDocsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,6 +136,7 @@ const App = () => (
                  <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
