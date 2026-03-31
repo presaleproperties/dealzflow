@@ -49,10 +49,10 @@ export function HeroKPIs({ data }: Props) {
 
       {/* Secondary KPIs */}
       {[
-        { label: 'Active Leads', value: data.activeLeads, icon: Users, accentVar: '--info', to: '/leads' },
-        { label: 'Hot Leads', value: data.hotLeads, icon: Flame, accentVar: '--destructive', to: '/leads?temp=hot' },
-        { label: 'Zara Captures', value: data.zaraCaptures, icon: Zap, accentVar: '--primary', to: '/leads' },
-        { label: 'Unread', value: data.unreadMessages, icon: MessageSquare, accentVar: '--warning', to: '/leads' },
+        { label: 'Active Leads', value: data.activeLeads, icon: Users, accentVar: '--info', to: '/pipeline' },
+        { label: 'Hot Leads', value: data.hotLeads, icon: Flame, accentVar: '--destructive', to: '/pipeline?temp=hot' },
+        { label: 'Zara Captures', value: data.zaraCaptures, icon: Zap, accentVar: '--primary', to: '/pipeline' },
+        { label: 'Unread', value: data.unreadMessages, icon: MessageSquare, accentVar: '--warning', to: '/pipeline' },
       ].map((card, i) => {
         const Icon = card.icon;
         return (
