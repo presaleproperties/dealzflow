@@ -5,10 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Wifi, ChevronRight } from 'lucide-react';
+import { RefreshCw, Wifi } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
 
 import { HeroKPIs } from '@/components/command-center/HeroKPIs';
 import { NeedsAttention } from '@/components/command-center/NeedsAttention';
