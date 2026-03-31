@@ -154,15 +154,7 @@ const FadeUp = ({ children, delay = 0, className }: { children: React.ReactNode;
   </motion.div>
 );
 
-// ─── Quick nav pills ───────────────────────────────────────────────────────────
-const NAV_PILLS = [
-  { label: 'Pipeline', to: '/pipeline' },
-  { label: 'Deals', to: '/deals' },
-  
-  { label: 'Analytics', to: '/analytics' },
-  { label: 'Forecast', to: '/forecast' },
-  { label: 'Settings', to: '/settings' },
-];
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function CommandCenterPage() {
