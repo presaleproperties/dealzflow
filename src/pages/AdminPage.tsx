@@ -6,6 +6,7 @@ import {
   Search, X, Trash2, KeyRound, Pencil,
   ClipboardList, Eye, Pencil as PencilIcon, Trash, RotateCcw, 
   ChevronDown, ChevronRight, Ban, ShieldCheck, Calendar, Layers,
+  Copy, Check,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
