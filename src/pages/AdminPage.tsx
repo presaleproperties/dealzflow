@@ -165,34 +165,32 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* ── Users Table ──────────────────────────────────── */}
+        {/* ── Users Table (collapsible) ──────────────────── */}
         <Card>
-          <CardHeader className="p-4 pb-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">
-                Users ({users.length})
-              </CardTitle>
-              {searchQuery && (
-                <span className="text-[10px] text-muted-foreground">
-                  {filteredUsers.length} of {users.length}
-                </span>
-              )}
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9 h-8 text-sm"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+          <CardHeader className="p-4 pb-3">
+            <button onClick={() => setShowUsers(v => !v)} className="flex items-center gap-2 w-full text-left">
+              <Users className="w-3.5 h-3.5 text-muted-foreground" />
+              <CardTitle className="text-sm flex-1">Users ({users.length})</CardTitle>
+              {showUsers ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+            </button>
+            {showUsers && (
+              <div className="relative mt-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-9 h-8 text-sm"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
           </CardHeader>
+          {showUsers && (
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
