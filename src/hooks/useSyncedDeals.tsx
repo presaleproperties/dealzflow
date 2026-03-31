@@ -101,6 +101,14 @@ export function useSyncedDeals() {
         extractProjectNameFromAddress(tx.property_address) ||
         null;
 
+      // Extract client contact from DB columns first, fall back to participants
+      const clientParticipant = participants.find((p: Participant) =>
+        p.participantRole === 'BUYER' || p.participantRole === 'SELLER'
+      ) || participants.find((p: Participant) => p.participantRole === 'CLIENT');
+      
+      const clientEmail = tx.client_email || clientParticipant?.emailAddress || null;
+      const clientPhone = tx.client_phone || clientParticipant?.phoneNumber || null;
+
       return {
         id: tx.id,
         clientName: tx.client_name || 'Unknown',
@@ -120,6 +128,8 @@ export function useSyncedDeals() {
         firmDate: tx.firm_date,
         closeDate: tx.close_date,
         listingDate: tx.listing_date,
+        clientEmail,
+        clientPhone,
         participants,
         rawData: tx.raw_data,
       } as SyncedDeal;
