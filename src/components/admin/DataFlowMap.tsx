@@ -61,17 +61,10 @@ function FlowNode({ icon: Icon, title, subtitle, color, items }: {
 
 export function DataFlowMap() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <Layers className="w-4 h-4 text-muted-foreground" />
-          Data Flow Map — ReZen → Dashboard
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Complete routing of how data is pulled from ReZen API, stored, processed, and displayed.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-1">
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground mb-3">
+        Complete routing of how data is pulled from ReZen API, stored, processed, and displayed.
+      </p>
         {/* Source */}
         <FlowNode
           icon={Globe}
@@ -291,7 +284,6 @@ export function DataFlowMap() {
             'Updates platform_connections.last_synced_at',
           ]}
         />
-      </CardContent>
-    </Card>
+    </div>
   );
 }
