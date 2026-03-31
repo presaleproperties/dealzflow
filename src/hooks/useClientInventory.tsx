@@ -40,6 +40,8 @@ export interface ClientInventoryItem {
   isManual: boolean;
   journeyId: string | null;
   syncedTransactionId: string | null;
+  clientEmail: string | null;
+  clientPhone: string | null;
   // Enriched from synced deal
   dealStatus?: string;
   isPresale?: boolean;
