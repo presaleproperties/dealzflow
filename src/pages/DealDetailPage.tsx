@@ -43,12 +43,7 @@ export default function DealDetailPage() {
     return (
       <AppLayout>
         <Header title="Loading..." />
-        <div className="p-6 flex items-center justify-center min-h-[60vh]">
-          <div className="animate-pulse flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/20" />
-            <p className="text-sm text-muted-foreground">Loading deal...</p>
-          </div>
-        </div>
+        <PageLoader />
       </AppLayout>
     );
   }

@@ -69,7 +69,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   if (loading || isCheckingAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
+        <PageLoader />
       </div>
     );
   }
