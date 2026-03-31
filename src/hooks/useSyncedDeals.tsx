@@ -45,16 +45,19 @@ export interface Participant {
   firstName?: string;
   lastName?: string;
   emailAddress?: string;
+  phoneNumber?: string;
   company?: string;
   participantRole: string;
   payment?: { percent?: number };
+  external?: boolean;
+  paidByReal?: boolean;
 }
 
 export interface SyncedDeal {
   id: string;
   clientName: string;
   propertyAddress: string | null;
-  projectName: string | null; // Extracted from raw_data or parsed from address
+  projectName: string | null;
   status: 'active' | 'closed' | 'terminated' | 'pending';
   isListing: boolean;
   lifecycleState: string | null;
@@ -63,12 +66,14 @@ export interface SyncedDeal {
   salePrice: number | null;
   commissionAmount: number | null;
   myNetPayout: number | null;
-  displayCommission: number | null; // Gross for solo deals, net for team deals
+  displayCommission: number | null;
   isTeamDeal: boolean;
   mySplitPercent: number | null;
   firmDate: string | null;
   closeDate: string | null;
   listingDate: string | null;
+  clientEmail: string | null;
+  clientPhone: string | null;
   participants: Participant[];
   rawData?: any;
 }
@@ -96,6 +101,14 @@ export function useSyncedDeals() {
         extractProjectNameFromAddress(tx.property_address) ||
         null;
 
+      // Extract client contact from DB columns first, fall back to participants
+      const clientParticipant = participants.find((p: Participant) =>
+        p.participantRole === 'BUYER' || p.participantRole === 'SELLER'
+      ) || participants.find((p: Participant) => p.participantRole === 'CLIENT');
+      
+      const clientEmail = tx.client_email || clientParticipant?.emailAddress || null;
+      const clientPhone = tx.client_phone || clientParticipant?.phoneNumber || null;
+
       return {
         id: tx.id,
         clientName: tx.client_name || 'Unknown',
@@ -115,6 +128,8 @@ export function useSyncedDeals() {
         firmDate: tx.firm_date,
         closeDate: tx.close_date,
         listingDate: tx.listing_date,
+        clientEmail,
+        clientPhone,
         participants,
         rawData: tx.raw_data,
       } as SyncedDeal;

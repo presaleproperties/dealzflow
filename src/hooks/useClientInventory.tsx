@@ -40,6 +40,8 @@ export interface ClientInventoryItem {
   isManual: boolean;
   journeyId: string | null;
   syncedTransactionId: string | null;
+  clientEmail: string | null;
+  clientPhone: string | null;
   // Enriched from synced deal
   dealStatus?: string;
   isPresale?: boolean;
@@ -156,6 +158,8 @@ export function useClientInventory() {
         isManual: false,
         journeyId,
         syncedTransactionId: primary.id,
+        clientEmail: primary.clientEmail,
+        clientPhone: primary.clientPhone,
         dealStatus: primary.status,
         isPresale: true,
         isPotentialDuplicate: anyDupFlag,
@@ -184,6 +188,8 @@ export function useClientInventory() {
         isManual: deal.rawData?.source === 'manual_import',
         journeyId: deal.journeyId,
         syncedTransactionId: deal.id,
+        clientEmail: deal.clientEmail,
+        clientPhone: deal.clientPhone,
         dealStatus: deal.status,
         isPresale: detectIsPresale(deal),
         isPotentialDuplicate: deal.rawData?.potential_duplicate === true,
@@ -213,6 +219,8 @@ export function useClientInventory() {
         isManual: true,
         journeyId: r.journey_id,
         syncedTransactionId: null,
+        clientEmail: null,
+        clientPhone: null,
         dealStatus: undefined,
         isPresale: false,
       }));

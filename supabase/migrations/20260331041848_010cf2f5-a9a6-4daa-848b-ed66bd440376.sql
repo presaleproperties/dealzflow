@@ -1,0 +1,1 @@
+ALTER TABLE public.synced_transactions ADD COLUMN IF NOT EXISTS client_email text, ADD COLUMN IF NOT EXISTS client_phone text;

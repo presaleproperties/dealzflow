@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { Plus, Search, Building2, Home, Layers, Edit2, Trash2, MapPin, Calendar, DollarSign, AlertTriangle, ChevronDown, X } from 'lucide-react';
+import { Plus, Search, Building2, Home, Layers, Edit2, Trash2, MapPin, Calendar, DollarSign, AlertTriangle, ChevronDown, X, Mail, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
@@ -336,6 +336,18 @@ function InventoryRow({ item, index, onEdit, onDelete }: {
                 <Calendar className="w-3 h-3" />
                 {dateDisplay}
               </span>
+            )}
+            {item.clientEmail && (
+              <a href={`mailto:${item.clientEmail}`} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 shrink-0 transition-colors">
+                <Mail className="w-3 h-3" />
+                <span className="truncate max-w-[160px]">{item.clientEmail}</span>
+              </a>
+            )}
+            {item.clientPhone && (
+              <a href={`tel:${item.clientPhone}`} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 shrink-0 transition-colors">
+                <Phone className="w-3 h-3" />
+                <span>{item.clientPhone}</span>
+              </a>
             )}
           </div>
         </div>

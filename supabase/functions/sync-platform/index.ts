@@ -97,6 +97,21 @@ function extractTransactionFields(tx: any, yentaId: string) {
     }
   }
 
+  // Client contact info — find BUYER or SELLER participant (not the agent)
+  let clientEmail: string | null = null
+  let clientPhone: string | null = null
+  if (tx.participants && Array.isArray(tx.participants)) {
+    const clientParticipant = tx.participants.find((p: any) =>
+      p.participantRole === 'BUYER' || p.participantRole === 'SELLER'
+    ) || tx.participants.find((p: any) =>
+      p.participantRole === 'CLIENT'
+    )
+    if (clientParticipant) {
+      clientEmail = clientParticipant.emailAddress || null
+      clientPhone = clientParticipant.phoneNumber || null
+    }
+  }
+
   return {
     firm_date: firmDate,
     journey_id: journeyId,
@@ -109,6 +124,8 @@ function extractTransactionFields(tx: any, yentaId: string) {
     currency,
     my_net_payout: myNetPayout,
     my_split_percent: mySplitPercent,
+    client_email: clientEmail,
+    client_phone: clientPhone,
   }
 }
 

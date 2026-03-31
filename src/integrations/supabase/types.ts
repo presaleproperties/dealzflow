@@ -1151,7 +1151,9 @@ export type Database = {
           agent_name: string | null
           buyer_type: string | null
           city: string | null
+          client_email: string | null
           client_name: string | null
+          client_phone: string | null
           close_date: string | null
           commission_amount: number | null
           compliance_status: string | null
@@ -1183,7 +1185,9 @@ export type Database = {
           agent_name?: string | null
           buyer_type?: string | null
           city?: string | null
+          client_email?: string | null
           client_name?: string | null
+          client_phone?: string | null
           close_date?: string | null
           commission_amount?: number | null
           compliance_status?: string | null
@@ -1215,7 +1219,9 @@ export type Database = {
           agent_name?: string | null
           buyer_type?: string | null
           city?: string | null
+          client_email?: string | null
           client_name?: string | null
+          client_phone?: string | null
           close_date?: string | null
           commission_amount?: number | null
           compliance_status?: string | null
