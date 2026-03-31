@@ -2,6 +2,7 @@ import { useDeals } from './useDeals';
 import { usePayouts } from './usePayouts';
 import { useExpenses } from './useExpenses';
 import { useProperties } from './useProperties';
+import { usePipelineProspects } from './usePipelineProspects';
 import { format } from 'date-fns';
 
 export function useDataExport() {
@@ -9,6 +10,7 @@ export function useDataExport() {
   const { data: payouts = [] } = usePayouts();
   const { data: expenses = [] } = useExpenses();
   const { data: properties = [] } = useProperties();
+  const { data: prospects = [] } = usePipelineProspects();
 
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
@@ -107,11 +109,28 @@ export function useDataExport() {
     downloadCSV(exportData, 'properties');
   };
 
+  const exportPipeline = () => {
+    const exportData = prospects.map(p => ({
+      client_name: p.client_name,
+      deal_type: p.deal_type || '',
+      home_type: p.home_type,
+      status: p.status,
+      temperature: p.temperature,
+      potential_commission: p.potential_commission,
+      budget: p.budget || '',
+      source: p.source || '',
+      notes: p.notes || '',
+      created_at: p.created_at,
+    }));
+    downloadCSV(exportData, 'pipeline_prospects');
+  };
+
   const exportAll = () => {
     exportDeals();
     setTimeout(() => exportPayouts(), 100);
     setTimeout(() => exportExpenses(), 200);
     setTimeout(() => exportProperties(), 300);
+    setTimeout(() => exportPipeline(), 400);
   };
 
   return {
@@ -119,12 +138,14 @@ export function useDataExport() {
     exportPayouts,
     exportExpenses,
     exportProperties,
+    exportPipeline,
     exportAll,
     counts: {
       deals: deals.length,
       payouts: payouts.length,
       expenses: expenses.length,
       properties: properties.length,
+      pipeline: prospects.length,
     },
   };
 }

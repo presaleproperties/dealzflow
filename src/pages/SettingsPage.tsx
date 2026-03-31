@@ -1052,10 +1052,11 @@ function SubscriptionSection() {
 
 // Data Export Section
 function DataExportSection() {
-  const { exportDeals, exportPayouts, exportExpenses, exportAll, counts } = useDataExport();
+  const { exportDeals, exportPayouts, exportExpenses, exportPipeline, exportAll, counts } = useDataExport();
 
   const exports = [
     { label: 'Deals', count: counts.deals, action: exportDeals },
+    { label: 'Pipeline Prospects', count: counts.pipeline, action: exportPipeline },
     { label: 'Payouts', count: counts.payouts, action: exportPayouts },
     { label: 'Expenses', count: counts.expenses, action: exportExpenses },
   ];
