@@ -29,7 +29,7 @@ const navSections: NavSection[] = [
       { label: 'Forecast',         path: '/forecast',  icon: TrendingUp },
       { label: 'Analytics',        path: '/analytics', icon: BarChart2 },
       { label: 'Client Inventory', path: '/inventory', icon: Building2 },
-      { label: 'Leads',            path: '/leads',     icon: Users },
+      
     ],
   },
   {

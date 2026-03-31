@@ -159,7 +159,7 @@ const FadeUp = ({ children, delay = 0, className }: { children: React.ReactNode;
 const NAV_PILLS = [
   { label: 'Pipeline', to: '/pipeline' },
   { label: 'Deals', to: '/deals' },
-  { label: 'Leads', to: '/leads' },
+  
   { label: 'Analytics', to: '/analytics' },
   { label: 'Forecast', to: '/forecast' },
   { label: 'Settings', to: '/settings' },
