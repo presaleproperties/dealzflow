@@ -425,6 +425,8 @@ export default function ClientInventoryPage() {
         item.buyerName,
         item.projectName,
         item.propertyAddress,
+        item.clientEmail,
+        item.clientPhone,
       ].some(v => v?.toLowerCase().includes(q));
 
       const matchType = filterType === 'all' || item.propertyType === filterType;
