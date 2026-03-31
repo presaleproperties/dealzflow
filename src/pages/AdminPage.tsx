@@ -61,7 +61,9 @@ export default function AdminPage() {
   const [showChart, setShowChart] = useState(false);
   const [banTarget, setBanTarget] = useState<{ id: string; name: string; isBanned: boolean } | null>(null);
   const [banReason, setBanReason] = useState('');
+  const [copiedMcp, setCopiedMcp] = useState(false);
 
+  const MCP_ENDPOINT = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/mcp-server`;
   const users = analytics?.users || [];
   
   const filteredUsers = useMemo(() => {
