@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { PageLoader } from "@/components/ui/page-loader";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
 
 import AuthPage from "./pages/AuthPage";

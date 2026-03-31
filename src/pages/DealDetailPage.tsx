@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { useSyncedTransactions } from '@/hooks/usePlatformConnections';
 import { cn } from '@/lib/utils';
+import { PageLoader } from '@/components/ui/page-loader';
 import { triggerHaptic } from '@/lib/haptics';
 import { DealHeroCard } from '@/components/deals/DealHeroCard';
 import { DealStatsGrid } from '@/components/deals/DealStatsGrid';
