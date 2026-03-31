@@ -284,7 +284,6 @@ export function DataFlowMap() {
             'Updates platform_connections.last_synced_at',
           ]}
         />
-      </CardContent>
-    </Card>
+    </div>
   );
 }
