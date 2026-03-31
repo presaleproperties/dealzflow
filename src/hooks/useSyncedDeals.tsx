@@ -45,9 +45,12 @@ export interface Participant {
   firstName?: string;
   lastName?: string;
   emailAddress?: string;
+  phoneNumber?: string;
   company?: string;
   participantRole: string;
   payment?: { percent?: number };
+  external?: boolean;
+  paidByReal?: boolean;
 }
 
 export interface SyncedDeal {
