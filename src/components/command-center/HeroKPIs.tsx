@@ -24,66 +24,50 @@ interface Props {
 export function HeroKPIs({ data }: Props) {
   const navigate = useNavigate();
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-      {/* Pipeline Value — hero card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="col-span-2 lg:col-span-1 cursor-pointer"
-        onClick={() => navigate('/pipeline')}
-      >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-5 h-full min-h-[110px] flex flex-col justify-between hover:shadow-lg hover:shadow-primary/20 transition-shadow duration-200">
-          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -left-4 -bottom-4 w-16 h-16 rounded-full bg-white/5 blur-xl" />
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-primary-foreground/70" />
-            <span className="text-[11px] font-medium text-primary-foreground/70 uppercase tracking-wider">Pipeline</span>
-          </div>
-          <p className="text-3xl font-bold text-primary-foreground tracking-tight tabular-nums leading-none">
-            {formatMillion(data.pipelineValue)}
-          </p>
-        </div>
-      </motion.div>
+  const kpis = [
+    { label: 'Pipeline', value: formatMillion(data.pipelineValue), icon: TrendingUp, accentVar: '--primary', to: '/pipeline', isPrimary: true },
+    { label: 'Active', value: String(data.activeLeads), icon: Users, accentVar: '--info', to: '/pipeline' },
+    { label: 'Hot', value: String(data.hotLeads), icon: Flame, accentVar: '--destructive', to: '/pipeline?temp=hot' },
+    { label: 'Zara', value: String(data.zaraCaptures), icon: Zap, accentVar: '--primary', to: '/pipeline' },
+    { label: 'Unread', value: String(data.unreadMessages), icon: MessageSquare, accentVar: '--warning', to: '/pipeline' },
+  ];
 
-      {/* Secondary KPIs */}
-      {[
-        { label: 'Active Leads', value: data.activeLeads, icon: Users, accentVar: '--info', to: '/pipeline' },
-        { label: 'Hot Leads', value: data.hotLeads, icon: Flame, accentVar: '--destructive', to: '/pipeline?temp=hot' },
-        { label: 'Zara Captures', value: data.zaraCaptures, icon: Zap, accentVar: '--primary', to: '/pipeline' },
-        { label: 'Unread', value: data.unreadMessages, icon: MessageSquare, accentVar: '--warning', to: '/pipeline' },
-      ].map((card, i) => {
-        const Icon = card.icon;
+  return (
+    <div className="flex items-stretch gap-2">
+      {kpis.map((kpi, i) => {
+        const Icon = kpi.icon;
         return (
-          <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 16 }}
+          <motion.button
+            key={kpi.label}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06 + i * 0.05, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={card.to ? 'cursor-pointer' : ''}
-            onClick={() => card.to && navigate(card.to)}
+            transition={{ delay: i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            onClick={() => navigate(kpi.to)}
+            className={cn(
+              'flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer',
+              kpi.isPrimary
+                ? 'bg-primary text-primary-foreground border-primary/80 hover:shadow-md hover:shadow-primary/20'
+                : 'bg-card border-border/50 hover:border-border hover:shadow-sm',
+              kpi.isPrimary ? 'flex-shrink-0' : 'flex-shrink-0'
+            )}
           >
-            <div className={cn(
-              "rounded-2xl border border-border/60 bg-card p-4 h-full min-h-[110px] flex flex-col justify-between relative overflow-hidden group transition-all duration-200",
-              card.to ? "hover:border-border hover:shadow-md" : "hover:border-border"
+            <Icon
+              className="w-3.5 h-3.5 flex-shrink-0"
+              style={kpi.isPrimary ? undefined : { color: `hsl(var(${kpi.accentVar}))` }}
+            />
+            <span className={cn(
+              'text-sm font-bold tabular-nums leading-none',
+              kpi.isPrimary ? '' : (Number(kpi.value) === 0 ? 'text-muted-foreground/40' : 'text-foreground')
             )}>
-              <div
-                className="absolute -right-3 -top-3 w-16 h-16 rounded-full opacity-[0.08] blur-xl pointer-events-none transition-opacity group-hover:opacity-[0.14]"
-                style={{ background: `hsl(var(${card.accentVar}))` }}
-              />
-              <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5" style={{ color: `hsl(var(${card.accentVar}))` }} />
-                <span className="text-[10.5px] font-medium text-muted-foreground uppercase tracking-wider">{card.label}</span>
-              </div>
-              <p className={cn(
-                'text-2xl font-bold tracking-tight tabular-nums leading-none mt-auto',
-                card.value === 0 ? 'text-muted-foreground/40' : 'text-foreground'
-              )}>
-                {card.value}
-              </p>
-            </div>
-          </motion.div>
+              {kpi.value}
+            </span>
+            <span className={cn(
+              'text-[10px] font-medium uppercase tracking-wider hidden sm:inline',
+              kpi.isPrimary ? 'text-primary-foreground/70' : 'text-muted-foreground'
+            )}>
+              {kpi.label}
+            </span>
+          </motion.button>
         );
       })}
     </div>

@@ -5,10 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Wifi, ChevronRight } from 'lucide-react';
+import { RefreshCw, Wifi } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
 
 import { HeroKPIs } from '@/components/command-center/HeroKPIs';
 import { NeedsAttention } from '@/components/command-center/NeedsAttention';
@@ -155,15 +154,7 @@ const FadeUp = ({ children, delay = 0, className }: { children: React.ReactNode;
   </motion.div>
 );
 
-// ─── Quick nav pills ───────────────────────────────────────────────────────────
-const NAV_PILLS = [
-  { label: 'Pipeline', to: '/pipeline' },
-  { label: 'Deals', to: '/deals' },
-  
-  { label: 'Analytics', to: '/analytics' },
-  { label: 'Forecast', to: '/forecast' },
-  { label: 'Settings', to: '/settings' },
-];
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function CommandCenterPage() {
@@ -236,22 +227,7 @@ export default function CommandCenterPage() {
 
       <div className="p-4 md:p-6 space-y-6 pb-28 lg:pb-10 max-w-[1440px] mx-auto">
 
-        {/* ── Quick navigation pills ──────────────────────────── */}
-        <FadeUp delay={0}>
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {NAV_PILLS.map(pill => (
-              <Link
-                key={pill.to}
-                to={pill.to}
-                className="shrink-0 px-4 py-2 rounded-full text-xs font-semibold border border-border/50 bg-card/80 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
-              >
-                {pill.label}
-              </Link>
-            ))}
-          </div>
-        </FadeUp>
-
-        {/* ── ROW 1: Hero KPIs ──────────────────────────────────── */}
+        {/* ── ROW 1: Compact KPIs ─────────────────────────────── */}
         <FadeUp delay={0.03}>
           <HeroKPIs data={{ pipelineValue, activeLeads, hotLeads, zaraCaptures, unreadMessages }} />
         </FadeUp>
