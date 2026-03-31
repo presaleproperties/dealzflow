@@ -302,11 +302,24 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-          </CardContent>
+          )}
         </Card>
 
-        {/* ── Data Flow Map ────────────────────────────────── */}
-        <DataFlowMap />
+        {/* ── Data Flow Map (collapsible) ──────────────────── */}
+        <Card>
+          <CardHeader className="p-4 pb-3">
+            <button onClick={() => setShowDataFlow(v => !v)} className="flex items-center gap-2 w-full text-left">
+              <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+              <CardTitle className="text-sm flex-1">Data Flow Map</CardTitle>
+              {showDataFlow ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+            </button>
+          </CardHeader>
+          {showDataFlow && (
+            <CardContent className="p-4 pt-0">
+              <DataFlowMap />
+            </CardContent>
+          )}
+        </Card>
 
         {/* ── Audit Log (collapsible) ──────────────────────── */}
         <Card>
