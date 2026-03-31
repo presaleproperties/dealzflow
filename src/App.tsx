@@ -28,6 +28,7 @@ import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
 import CommandCenterPage from "./pages/CommandCenterPage";
 import NotFound from "./pages/NotFound";
+import ApiDocsPage from "./pages/ApiDocsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
