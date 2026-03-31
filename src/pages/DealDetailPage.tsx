@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { useSyncedTransactions } from '@/hooks/usePlatformConnections';
 import { cn } from '@/lib/utils';
+import { PageLoader } from '@/components/ui/page-loader';
 import { triggerHaptic } from '@/lib/haptics';
 import { DealHeroCard } from '@/components/deals/DealHeroCard';
 import { DealStatsGrid } from '@/components/deals/DealStatsGrid';
@@ -43,12 +44,7 @@ export default function DealDetailPage() {
     return (
       <AppLayout>
         <Header title="Loading..." />
-        <div className="p-6 flex items-center justify-center min-h-[60vh]">
-          <div className="animate-pulse flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/20" />
-            <p className="text-sm text-muted-foreground">Loading deal...</p>
-          </div>
-        </div>
+        <PageLoader />
       </AppLayout>
     );
   }

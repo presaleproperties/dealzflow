@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { PageLoader } from "@/components/ui/page-loader";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
 
 import AuthPage from "./pages/AuthPage";
@@ -50,7 +51,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
+        <PageLoader />
       </div>
     );
   }
@@ -69,7 +70,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   if (loading || isCheckingAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
+        <PageLoader />
       </div>
     );
   }
