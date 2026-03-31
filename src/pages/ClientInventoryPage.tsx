@@ -337,6 +337,18 @@ function InventoryRow({ item, index, onEdit, onDelete }: {
                 {dateDisplay}
               </span>
             )}
+            {item.clientEmail && (
+              <a href={`mailto:${item.clientEmail}`} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 shrink-0 transition-colors">
+                <Mail className="w-3 h-3" />
+                <span className="truncate max-w-[160px]">{item.clientEmail}</span>
+              </a>
+            )}
+            {item.clientPhone && (
+              <a href={`tel:${item.clientPhone}`} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 shrink-0 transition-colors">
+                <Phone className="w-3 h-3" />
+                <span>{item.clientPhone}</span>
+              </a>
+            )}
           </div>
         </div>
 
