@@ -74,14 +74,23 @@ export function ClientDetailSheet({ open, onClose, item }: Props) {
   // Count deals for this client
   const clientDealCount = useMemo(() => {
     if (!item) return 0;
-    const name = item.buyerName.toLowerCase();
+    const name = item.buyerName.toLowerCase().trim();
+    if (name.length < 3) return 0; // Too short to match reliably
+    // Split into parts for matching (first + last name)
+    const nameParts = name.split(/\s+/).filter(p => p.length >= 2);
     return deals.filter(d => {
-      const clientName = (d.clientName || '').toLowerCase();
+      const clientName = (d.clientName || '').toLowerCase().trim();
       const participants = d.participants.map(p =>
-        [p.firstName, p.lastName].filter(Boolean).join(' ').toLowerCase()
+        [p.firstName, p.lastName].filter(Boolean).join(' ').toLowerCase().trim()
       );
-      return clientName.includes(name) || name.includes(clientName) ||
-        participants.some(p => p.includes(name) || name.includes(p));
+      // Exact or near-exact match only
+      const exactMatch = clientName === name || participants.some(p => p === name);
+      // Partial: all name parts must appear in clientName or a participant
+      const allPartsMatch = nameParts.length >= 2 && (
+        nameParts.every(part => clientName.includes(part)) ||
+        participants.some(p => nameParts.every(part => p.includes(part)))
+      );
+      return exactMatch || allPartsMatch;
     }).length;
   }, [item, deals]);
 
