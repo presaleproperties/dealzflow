@@ -57,7 +57,7 @@ export interface SyncedDeal {
   id: string;
   clientName: string;
   propertyAddress: string | null;
-  projectName: string | null; // Extracted from raw_data or parsed from address
+  projectName: string | null;
   status: 'active' | 'closed' | 'terminated' | 'pending';
   isListing: boolean;
   lifecycleState: string | null;
@@ -66,12 +66,14 @@ export interface SyncedDeal {
   salePrice: number | null;
   commissionAmount: number | null;
   myNetPayout: number | null;
-  displayCommission: number | null; // Gross for solo deals, net for team deals
+  displayCommission: number | null;
   isTeamDeal: boolean;
   mySplitPercent: number | null;
   firmDate: string | null;
   closeDate: string | null;
   listingDate: string | null;
+  clientEmail: string | null;
+  clientPhone: string | null;
   participants: Participant[];
   rawData?: any;
 }
