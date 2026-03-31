@@ -158,6 +158,8 @@ export function useClientInventory() {
         isManual: false,
         journeyId,
         syncedTransactionId: primary.id,
+        clientEmail: primary.clientEmail,
+        clientPhone: primary.clientPhone,
         dealStatus: primary.status,
         isPresale: true,
         isPotentialDuplicate: anyDupFlag,
