@@ -48,7 +48,7 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
 export const SidebarCollapsedContext = createContext<boolean>(false);
 
-export function Sidebar() {
+export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
   const location = useLocation();
   const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
@@ -117,8 +117,9 @@ export function Sidebar() {
     <aside
       style={{ ...sbBg, borderRight: sbBorder }}
       className={cn(
-        'hidden md:flex flex-col h-screen fixed left-0 top-0 transition-all duration-300 ease-in-out z-40',
-        isCollapsed ? 'w-[60px]' : 'w-[218px]',
+        'flex-col h-screen transition-all duration-300 ease-in-out z-40',
+        forceVisible ? 'flex relative w-full' : 'hidden md:flex fixed left-0 top-0',
+        !forceVisible && (isCollapsed ? 'w-[60px]' : 'w-[218px]'),
       )}
     >
       {/* Logo */}

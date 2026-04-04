@@ -102,8 +102,8 @@ export function Header({
                   <Menu className="h-[18px] w-[18px]" strokeWidth={2.2} />
                 </button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-[240px] border-r-0" style={{ background: 'hsl(var(--sidebar-background))' }}>
-                <Sidebar />
+              <SheetContent side="left" className="p-0 w-[240px] border-r-0" style={{ background: 'hsl(222 47% 11%)' }}>
+                <Sidebar forceVisible />
               </SheetContent>
             </Sheet>
           )}
