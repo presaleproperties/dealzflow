@@ -48,7 +48,7 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
 export const SidebarCollapsedContext = createContext<boolean>(false);
 
-export function Sidebar() {
+export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
   const location = useLocation();
   const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
