@@ -1,0 +1,61 @@
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { Bold, Italic, List, ListOrdered, Heading2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
+
+interface Props {
+  content: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+}
+
+export function RichTextEditor({ content, onChange, placeholder = 'Write your email...' }: Props) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ placeholder }),
+    ],
+    content,
+    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm max-w-none min-h-[200px] p-4 outline-none text-foreground',
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content]);
+
+  if (!editor) return null;
+
+  const btnClass = 'h-8 w-8 p-0';
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden bg-background">
+      <div className="flex items-center gap-0.5 p-1.5 border-b border-border bg-muted/30">
+        <Button type="button" variant={editor.isActive('bold') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBold().run()}>
+          <Bold className="w-4 h-4" />
+        </Button>
+        <Button type="button" variant={editor.isActive('italic') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleItalic().run()}>
+          <Italic className="w-4 h-4" />
+        </Button>
+        <Button type="button" variant={editor.isActive('heading') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+          <Heading2 className="w-4 h-4" />
+        </Button>
+        <Button type="button" variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+          <List className="w-4 h-4" />
+        </Button>
+        <Button type="button" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+          <ListOrdered className="w-4 h-4" />
+        </Button>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  );
+}
