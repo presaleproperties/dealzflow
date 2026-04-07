@@ -1,0 +1,194 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
+
+export type CrmContact = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  phone_secondary: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  source: string | null;
+  status: string | null;
+  project: string | null;
+  assigned_to: string | null;
+  tags: string[];
+  budget_min: number | null;
+  budget_max: number | null;
+  bedrooms_preferred: string | null;
+  language: string | null;
+  lead_type: string | null;
+  lead_score: number | null;
+  notes: string | null;
+  co_buyer_name: string | null;
+  co_buyer_phone: string | null;
+  co_buyer_email: string | null;
+  last_contact_at: string | null;
+  next_followup_date: string | null;
+  status_changed_at: string | null;
+  lofty_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CrmContactInsert = {
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  source?: string;
+  status?: string;
+  project?: string;
+  assigned_to?: string;
+  tags?: string[];
+};
+
+export const LEAD_STATUSES = [
+  'New Lead',
+  'Contacted',
+  'Nurturing',
+  'Hot / Engaged',
+  'Showing Booked',
+  'Offer Made',
+  'Closed',
+  'Lost / Cold',
+] as const;
+
+export const LEAD_SOURCES = [
+  'Facebook Ad',
+  'Instagram',
+  'TikTok',
+  'Website Form',
+  'Manual Entry',
+  'Referral',
+] as const;
+
+export const AGENTS = [
+  'Uzair Muhammad',
+  'Sarb Grewal',
+  'Ravish Passy',
+  'Mona Kaur',
+] as const;
+
+export const PROJECTS = [
+  'Eden by Zenterra',
+  'The Rail District',
+  'Parkway 2',
+  'Reign',
+  'Belmont Residences',
+  'General',
+] as const;
+
+export function useCrmContacts() {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['crm-contacts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as CrmContact[];
+    },
+    staleTime: 30_000,
+  });
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('crm-contacts-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'crm_contacts' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+          queryClient.invalidateQueries({ queryKey: ['crm-dashboard-kpis'] });
+          queryClient.invalidateQueries({ queryKey: ['crm-pipeline-snapshot'] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+  return query;
+}
+
+export function useAddCrmContact() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (contact: CrmContactInsert) => {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .insert({
+          first_name: contact.first_name,
+          last_name: contact.last_name,
+          email: contact.email || null,
+          phone: contact.phone || null,
+          source: contact.source || null,
+          status: contact.status || 'New Lead',
+          project: contact.project || null,
+          assigned_to: contact.assigned_to || null,
+          tags: contact.tags ?? [],
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Lead added successfully');
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to add lead: ${err.message}`);
+    },
+  });
+}
+
+export function useBulkUpdateContacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, updates }: { ids: string[]; updates: Record<string, unknown> }) => {
+      const { error } = await supabase
+        .from('crm_contacts')
+        .update(updates)
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contacts updated');
+    },
+    onError: (err: Error) => {
+      toast.error(`Update failed: ${err.message}`);
+    },
+  });
+}
+
+export function useBulkDeleteContacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('crm_contacts')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contacts deleted');
+    },
+    onError: (err: Error) => {
+      toast.error(`Delete failed: ${err.message}`);
+    },
+  });
+}
