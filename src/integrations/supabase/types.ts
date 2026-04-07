@@ -355,14 +355,18 @@ export type Database = {
           address: string | null
           assigned_to: string | null
           bedrooms_preferred: string | null
+          birthday: string | null
           budget_max: number | null
           budget_min: number | null
           city: string | null
+          co_buyer_birthday: string | null
           co_buyer_email: string | null
           co_buyer_name: string | null
           co_buyer_phone: string | null
+          contact_type: string
           created_at: string | null
           email: string | null
+          email_secondary: string | null
           first_name: string
           id: string
           language: string | null
@@ -377,25 +381,30 @@ export type Database = {
           phone_secondary: string | null
           postal_code: string | null
           project: string | null
+          projects: string[]
           province: string | null
           source: string | null
           status: string | null
           status_changed_at: string | null
-          tags: Json | null
+          tags: string[] | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
           assigned_to?: string | null
           bedrooms_preferred?: string | null
+          birthday?: string | null
           budget_max?: number | null
           budget_min?: number | null
           city?: string | null
+          co_buyer_birthday?: string | null
           co_buyer_email?: string | null
           co_buyer_name?: string | null
           co_buyer_phone?: string | null
+          contact_type?: string
           created_at?: string | null
           email?: string | null
+          email_secondary?: string | null
           first_name: string
           id?: string
           language?: string | null
@@ -410,25 +419,30 @@ export type Database = {
           phone_secondary?: string | null
           postal_code?: string | null
           project?: string | null
+          projects?: string[]
           province?: string | null
           source?: string | null
           status?: string | null
           status_changed_at?: string | null
-          tags?: Json | null
+          tags?: string[] | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
           assigned_to?: string | null
           bedrooms_preferred?: string | null
+          birthday?: string | null
           budget_max?: number | null
           budget_min?: number | null
           city?: string | null
+          co_buyer_birthday?: string | null
           co_buyer_email?: string | null
           co_buyer_name?: string | null
           co_buyer_phone?: string | null
+          contact_type?: string
           created_at?: string | null
           email?: string | null
+          email_secondary?: string | null
           first_name?: string
           id?: string
           language?: string | null
@@ -443,11 +457,12 @@ export type Database = {
           phone_secondary?: string | null
           postal_code?: string | null
           project?: string | null
+          projects?: string[]
           province?: string | null
           source?: string | null
           status?: string | null
           status_changed_at?: string | null
-          tags?: Json | null
+          tags?: string[] | null
           updated_at?: string | null
         }
         Relationships: []

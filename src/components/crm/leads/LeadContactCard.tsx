@@ -1,14 +1,26 @@
-import { Phone, Mail, Globe, Calendar, UserCheck } from 'lucide-react';
+import { Phone, Mail, Globe, Calendar, UserCheck, Cake, Hash } from 'lucide-react';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
+const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
+  realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
+  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Past Client' },
+};
+
 export function LeadContactCard({ contact }: { contact: CrmContact }) {
+  const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
+
   const rows = [
+    { icon: Hash, label: 'Type', value: typeStyle.label, badge: true, badgeBg: typeStyle.bg, badgeColor: typeStyle.color },
     { icon: Phone, label: 'Phone', value: contact.phone, href: contact.phone ? `tel:${contact.phone}` : undefined },
     { icon: Mail, label: 'Email', value: contact.email, href: contact.email ? `mailto:${contact.email}` : undefined },
+    ...(contact.email_secondary ? [{ icon: Mail, label: 'Alt Email', value: contact.email_secondary, href: `mailto:${contact.email_secondary}` }] : []),
     { icon: Globe, label: 'Source', value: contact.source },
     { icon: Calendar, label: 'Added', value: format(new Date(contact.created_at), 'MMM d, yyyy') },
     { icon: UserCheck, label: 'Assigned', value: contact.assigned_to },
+    ...(contact.birthday ? [{ icon: Cake, label: 'Birthday', value: contact.birthday }] : []),
   ];
 
   return (
@@ -19,7 +31,11 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
           <div key={row.label} className="flex items-center gap-3">
             <row.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
             <span className="text-xs text-muted-foreground w-16 flex-shrink-0">{row.label}</span>
-            {row.href ? (
+            {'badge' in row && row.badge ? (
+              <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: row.badgeBg, color: row.badgeColor }}>
+                {row.value}
+              </Badge>
+            ) : row.href ? (
               <a href={row.href} className="text-sm text-primary hover:underline truncate">{row.value}</a>
             ) : (
               <span className="text-sm text-foreground truncate">{row.value ?? '—'}</span>
@@ -28,6 +44,20 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
         ))}
       </div>
 
+      {/* Projects */}
+      {((contact.projects ?? []).length > 0 || contact.project) && (
+        <div className="pt-2 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-1.5">Projects</p>
+          <div className="flex flex-wrap gap-1">
+            {((contact.projects ?? []).length > 0 ? contact.projects! : [contact.project!]).map(p => (
+              <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+                {p}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Co-buyer info */}
       {contact.co_buyer_name && (
         <div className="pt-2 border-t border-border">
@@ -35,6 +65,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
           <p className="text-sm text-foreground">{contact.co_buyer_name}</p>
           {contact.co_buyer_phone && <p className="text-xs text-muted-foreground">{contact.co_buyer_phone}</p>}
           {contact.co_buyer_email && <p className="text-xs text-muted-foreground">{contact.co_buyer_email}</p>}
+          {contact.co_buyer_birthday && <p className="text-xs text-muted-foreground">Birthday: {contact.co_buyer_birthday}</p>}
         </div>
       )}
 

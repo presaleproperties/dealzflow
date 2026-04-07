@@ -10,7 +10,7 @@ import { LeadStatusBadge } from './LeadStatusBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
-type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'updated_at' | 'created_at';
+type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'updated_at' | 'created_at' | 'contact_type';
 type SortDir = 'asc' | 'desc';
 
 interface LeadsTableProps {
@@ -35,11 +35,44 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
   'Lost / Cold': 'hsl(0 84% 60%)',
 };
 
+const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
+  realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
+  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Past Client' },
+};
+
+function ContactTypeBadge({ type }: { type: string }) {
+  const style = CONTACT_TYPE_STYLES[type] ?? CONTACT_TYPE_STYLES.lead;
+  return (
+    <Badge variant="outline" className="border-0 text-[10px] font-semibold px-1.5 py-0" style={{ background: style.bg, color: style.color }}>
+      {style.label}
+    </Badge>
+  );
+}
+
+function ProjectsList({ projects, project }: { projects?: string[]; project?: string | null }) {
+  const all = projects && projects.length > 0 ? projects : project ? [project] : [];
+  if (all.length === 0) return <span className="text-muted-foreground">—</span>;
+  const shown = all.slice(0, 2);
+  const extra = all.length - 2;
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {shown.map(p => (
+        <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+          {p}
+        </Badge>
+      ))}
+      {extra > 0 && <span className="text-[10px] text-muted-foreground">+{extra} more</span>}
+    </div>
+  );
+}
+
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
+  { key: 'contact_type', label: 'Type', className: 'hidden md:table-cell' },
   { key: 'name', label: 'Name' },
   { key: 'phone', label: 'Phone' },
   { key: 'email', label: 'Email', className: 'hidden lg:table-cell' },
-  { key: 'project', label: 'Project', className: 'hidden lg:table-cell' },
+  { key: 'project', label: 'Projects', className: 'hidden lg:table-cell' },
   { key: 'source', label: 'Source' },
   { key: 'status', label: 'Status' },
   { key: 'assigned_to', label: 'Assigned To', className: 'hidden lg:table-cell' },
@@ -52,12 +85,13 @@ function getSortValue(contact: CrmContact, key: SortKey): string {
     case 'name': return `${contact.first_name} ${contact.last_name}`.toLowerCase();
     case 'phone': return contact.phone ?? '';
     case 'email': return contact.email ?? '';
-    case 'project': return contact.project ?? '';
+    case 'project': return (contact.projects ?? []).join(',') || contact.project || '';
     case 'source': return contact.source ?? '';
     case 'status': return contact.status ?? '';
     case 'assigned_to': return contact.assigned_to ?? '';
     case 'updated_at': return contact.updated_at;
     case 'created_at': return contact.created_at;
+    case 'contact_type': return contact.contact_type ?? 'lead';
   }
 }
 
@@ -72,13 +106,22 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
       style={{ borderLeft: `3px solid ${borderColor}` }}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-base font-semibold text-foreground leading-snug truncate">
-          {contact.first_name} {contact.last_name}
-        </p>
+        <div className="flex items-center gap-2 min-w-0">
+          <ContactTypeBadge type={contact.contact_type} />
+          <p className="text-base font-semibold text-foreground leading-snug truncate">
+            {contact.first_name} {contact.last_name}
+          </p>
+        </div>
         <LeadStatusBadge status={contact.status} />
       </div>
       {contact.phone && (
         <p className="text-sm text-muted-foreground mt-1">{contact.phone}</p>
+      )}
+      {/* Projects */}
+      {((contact.projects ?? []).length > 0 || contact.project) && (
+        <div className="mt-1">
+          <ProjectsList projects={contact.projects} project={contact.project} />
+        </div>
       )}
       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
         {contact.source && (
@@ -152,7 +195,6 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
     );
   }
 
-  /* ── Mobile: Card View ── */
   if (isMobile) {
     return (
       <div>
@@ -180,7 +222,6 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
     );
   }
 
-  /* ── Desktop/Tablet: Table View ── */
   return (
     <div>
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
@@ -217,17 +258,16 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                     onCheckedChange={() => toggleOne(contact.id)}
                   />
                 </td>
+                <td className="px-3 py-2.5 hidden md:table-cell">
+                  <ContactTypeBadge type={contact.contact_type} />
+                </td>
                 <td className="px-3 py-2.5 font-medium text-foreground whitespace-nowrap">
                   {contact.first_name} {contact.last_name}
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap max-w-[180px] truncate hidden lg:table-cell">{contact.email ?? '—'}</td>
                 <td className="px-3 py-2.5 hidden lg:table-cell">
-                  {contact.project ? (
-                    <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
-                      {contact.project}
-                    </Badge>
-                  ) : <span className="text-muted-foreground">—</span>}
+                  <ProjectsList projects={contact.projects} project={contact.project} />
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</td>
                 <td className="px-3 py-2.5"><LeadStatusBadge status={contact.status} /></td>
