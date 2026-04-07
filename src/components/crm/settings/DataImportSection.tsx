@@ -39,6 +39,8 @@ const CRM_FIELDS = [
   { value: 'co_buyer_email', label: 'Co-Buyer Email' },
   { value: 'co_buyer_birthday', label: 'Co-Buyer Birthday' },
   { value: 'tags', label: 'Tags' },
+  { value: 'lofty_id', label: 'Lofty ID' },
+  { value: 'created_at', label: 'Created At' },
 ] as const;
 
 const AUTO_MAP: Record<string, string> = {
@@ -108,6 +110,12 @@ const AUTO_MAP: Record<string, string> = {
   'co-buyer birthday': 'co_buyer_birthday',
   'co_buyer_birthday': 'co_buyer_birthday',
   'tags': 'tags',
+  'lofty_id': 'lofty_id',
+  'lofty id': 'lofty_id',
+  'created_at': 'created_at',
+  'created at': 'created_at',
+  'date added': 'created_at',
+  'date_added': 'created_at',
 };
 
 // Array fields that should be split from CSV comma-separated values
@@ -236,13 +244,17 @@ export default function DataImportSection() {
             const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
             if (!isNaN(num)) record[field] = num;
           } else if (ARRAY_FIELDS.has(field)) {
-            // Split comma-separated values into text array
             record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
           } else if (field === 'contact_type') {
-            // Validate contact_type
             const normalized = val.toLowerCase().trim();
             if (['lead', 'realtor', 'past_client'].includes(normalized)) {
               record[field] = normalized;
+            }
+          } else if (field === 'created_at') {
+            // Parse as ISO timestamp; keep original value for Supabase
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) {
+              record[field] = d.toISOString();
             }
           } else {
             record[field] = val;
