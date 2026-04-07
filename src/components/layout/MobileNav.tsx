@@ -44,6 +44,10 @@ export function MobileNav() {
   const isCrmRoute = location.pathname.startsWith('/crm');
   const [showCrm, setShowCrm] = useState(false);
 
+  // On CRM routes, CrmMobileNav handles the bottom nav — hide this one on mobile
+  // On tablet (sm+), this nav is already hidden by CrmLayout, but we still hide on mobile
+  if (isCrmRoute) return null;
+
   const NAVY = 'hsl(222 25% 10%)';
   const GOLD = 'hsl(39 67% 55%)';
   const BORDER = 'hsl(222 20% 16% / 0.8)';
