@@ -154,5 +154,6 @@ export function CrmHeader() {
         </div>
       </div>
     </div>
+    </header>
   );
 }
