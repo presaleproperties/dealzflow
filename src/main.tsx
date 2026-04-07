@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+// @ts-ignore
 import '@fontsource-variable/plus-jakarta-sans';
 import App from "./App.tsx";
 import "./index.css";
