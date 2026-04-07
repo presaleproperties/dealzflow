@@ -97,12 +97,17 @@ function extractTransactionFields(tx: any, yentaId: string) {
     }
   }
 
-  // Client contact info — find BUYER or SELLER participant (not the agent)
+  // Client contact info — prioritize the actual client based on deal side
+  // For buyer deals: BUYER is the client; for listings: SELLER is the client
   let clientEmail: string | null = null
   let clientPhone: string | null = null
   if (tx.participants && Array.isArray(tx.participants)) {
+    const primaryRole = isListing ? 'SELLER' : 'BUYER'
+    const fallbackRole = isListing ? 'BUYER' : 'SELLER'
     const clientParticipant = tx.participants.find((p: any) =>
-      p.participantRole === 'BUYER' || p.participantRole === 'SELLER'
+      p.participantRole === primaryRole
+    ) || tx.participants.find((p: any) =>
+      p.participantRole === fallbackRole
     ) || tx.participants.find((p: any) =>
       p.participantRole === 'CLIENT'
     )
