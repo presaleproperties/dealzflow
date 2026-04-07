@@ -77,6 +77,8 @@ export const LEAD_SOURCES = [
   'Instagram',
   'TikTok',
   'Website Form',
+  'presaleproperties.com',
+  'Calendly',
   'WhatsApp',
   'Referral',
   'Manual Entry',
