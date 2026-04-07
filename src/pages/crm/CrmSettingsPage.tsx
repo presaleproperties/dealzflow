@@ -69,6 +69,8 @@ export default function CrmSettingsPage() {
       <Separator />
       <LeadSourcesSection />
       <Separator />
+      <DataImportSection />
+      <Separator />
       <IntegrationsSection />
       <Separator />
       <NotificationsSection />
