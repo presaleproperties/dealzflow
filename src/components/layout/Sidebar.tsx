@@ -42,6 +42,22 @@ const navSections: NavSection[] = [
   },
 ];
 
+const crmNavItems: NavItem[] = [
+  { label: 'CRM Dashboard',    path: '/crm/dashboard',   icon: LayoutDashboard },
+  { label: 'Leads',            path: '/crm/leads',       icon: Users },
+  { label: 'Pipeline',         path: '/crm/pipeline',    icon: Kanban },
+  { label: 'Email Center',     path: '/crm/email',       icon: Mail },
+  { label: 'WhatsApp',         path: '/crm/whatsapp',    icon: MessageCircle },
+  { label: 'Templates',        path: '/crm/templates',   icon: LayoutTemplate },
+  { label: 'Contacts',         path: '/crm/contacts',    icon: BookUser },
+  { label: 'Automations',      path: '/crm/automations', icon: Zap },
+  { label: 'Showings Calendar', path: '/crm/calendar',   icon: CalendarDays },
+  { label: 'Reports',          path: '/crm/reports',     icon: BarChart3 },
+  { label: 'CRM Settings',     path: '/crm/settings',    icon: Settings },
+];
+
+const ownerAdminOnlyCrmPaths = new Set(['/crm/automations', '/crm/settings']);
+
 const standaloneItems: NavItem[] = [
   { label: 'Settings', path: '/settings', icon: Settings2 },
 ];
