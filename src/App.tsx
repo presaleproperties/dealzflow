@@ -44,6 +44,7 @@ import CrmAutomationsPage from "./pages/crm/CrmAutomationsPage";
 import CrmCalendarPage from "./pages/crm/CrmCalendarPage";
 import CrmReportsPage from "./pages/crm/CrmReportsPage";
 import CrmSettingsPage from "./pages/crm/CrmSettingsPage";
+import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -156,7 +157,7 @@ const App = () => (
                   {/* CRM Routes — guarded by CrmRouteGuard inside CrmLayout */}
                   <Route path="/crm/dashboard" element={<ProtectedRoute><CrmLayout><CrmDashboardPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/whatsapp" element={<ProtectedRoute><CrmLayout><CrmWhatsAppPage /></CrmLayout></ProtectedRoute>} />
