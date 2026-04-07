@@ -282,6 +282,39 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_team: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          invited_by: string | null
+          is_active: boolean
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          invited_by?: string | null
+          is_active?: boolean
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          invited_by?: string | null
+          is_active?: boolean
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_focus: {
         Row: {
           completed: boolean

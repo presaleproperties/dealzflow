@@ -3,13 +3,15 @@ import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
-  LogOut, Command, Users,
+  LogOut, Command, Users, Kanban, Mail, MessageCircle, LayoutTemplate,
+  BookUser, Zap, CalendarDays, BarChart3, Settings,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -40,6 +42,22 @@ const navSections: NavSection[] = [
   },
 ];
 
+const crmNavItems: NavItem[] = [
+  { label: 'CRM Dashboard',    path: '/crm/dashboard',   icon: LayoutDashboard },
+  { label: 'Leads',            path: '/crm/leads',       icon: Users },
+  { label: 'Pipeline',         path: '/crm/pipeline',    icon: Kanban },
+  { label: 'Email Center',     path: '/crm/email',       icon: Mail },
+  { label: 'WhatsApp',         path: '/crm/whatsapp',    icon: MessageCircle },
+  { label: 'Templates',        path: '/crm/templates',   icon: LayoutTemplate },
+  { label: 'Contacts',         path: '/crm/contacts',    icon: BookUser },
+  { label: 'Automations',      path: '/crm/automations', icon: Zap },
+  { label: 'Showings Calendar', path: '/crm/calendar',   icon: CalendarDays },
+  { label: 'Reports',          path: '/crm/reports',     icon: BarChart3 },
+  { label: 'CRM Settings',     path: '/crm/settings',    icon: Settings },
+];
+
+const ownerAdminOnlyCrmPaths = new Set(['/crm/automations', '/crm/settings']);
+
 const standaloneItems: NavItem[] = [
   { label: 'Settings', path: '/settings', icon: Settings2 },
 ];
@@ -60,6 +78,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
   const location = useLocation();
   const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin } = useCrmAccess();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
     return saved === 'true';
@@ -195,6 +214,27 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
             </div>
           </div>
         ))}
+
+        {/* CRM Section — only for crm_team members */}
+        {isCrmMember && (
+          <div className={cn('mb-3', isCollapsed && 'w-full flex flex-col items-center')}>
+            {!isCollapsed ? (
+              <div className="px-2.5 pb-1 pt-0.5 text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                style={{ color: GOLD }}>
+                CRM
+              </div>
+            ) : (
+              <div className="h-px w-8 my-2" style={{ background: 'hsl(222 20% 18%)' }} />
+            )}
+            <div className={cn('space-y-0.5', isCollapsed && 'w-full flex flex-col items-center')}>
+              {crmNavItems
+                .filter(item => !ownerAdminOnlyCrmPaths.has(item.path) || isCrmAdmin)
+                .map((item) => (
+                  <NavLink key={item.path} item={item} />
+                ))}
+            </div>
+          </div>
+        )}
 
         <div className="h-px w-full my-1" style={{ background: 'hsl(222 20% 16%)' }} />
 
