@@ -8,6 +8,7 @@ export type CrmContact = {
   first_name: string;
   last_name: string;
   email: string | null;
+  email_secondary: string | null;
   phone: string | null;
   phone_secondary: string | null;
   address: string | null;
@@ -17,6 +18,7 @@ export type CrmContact = {
   source: string | null;
   status: string | null;
   project: string | null;
+  projects: string[];
   assigned_to: string | null;
   tags: string[];
   budget_min: number | null;
@@ -26,9 +28,12 @@ export type CrmContact = {
   lead_type: string | null;
   lead_score: number | null;
   notes: string | null;
+  contact_type: string;
+  birthday: string | null;
   co_buyer_name: string | null;
   co_buyer_phone: string | null;
   co_buyer_email: string | null;
+  co_buyer_birthday: string | null;
   last_contact_at: string | null;
   next_followup_date: string | null;
   status_changed_at: string | null;
@@ -41,13 +46,20 @@ export type CrmContactInsert = {
   first_name: string;
   last_name: string;
   email?: string;
+  email_secondary?: string;
   phone?: string;
   source?: string;
   status?: string;
   project?: string;
+  projects?: string[];
   assigned_to?: string;
   tags?: string[];
+  contact_type?: string;
+  birthday?: string;
+  co_buyer_birthday?: string;
 };
+
+export const CONTACT_TYPES = ['lead', 'realtor', 'past_client'] as const;
 
 export const LEAD_STATUSES = [
   'New Lead',
@@ -65,15 +77,15 @@ export const LEAD_SOURCES = [
   'Instagram',
   'TikTok',
   'Website Form',
-  'Manual Entry',
+  'WhatsApp',
   'Referral',
+  'Manual Entry',
 ] as const;
 
 export const AGENTS = [
   'Uzair Muhammad',
   'Sarb Grewal',
   'Ravish Passy',
-  'Mona Kaur',
 ] as const;
 
 export const PROJECTS = [
@@ -83,6 +95,12 @@ export const PROJECTS = [
   'Reign',
   'Belmont Residences',
   'General',
+] as const;
+
+export const LEAD_TYPES = [
+  'First-Time Buyer',
+  'Investor',
+  'Both',
 ] as const;
 
 export function useCrmContacts() {
@@ -96,7 +114,12 @@ export function useCrmContacts() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as CrmContact[];
+      return (data ?? []).map(d => ({
+        ...d,
+        tags: (d.tags as string[] | null) ?? [],
+        projects: (d.projects as string[] | null) ?? [],
+        contact_type: (d as Record<string, unknown>).contact_type as string ?? 'lead',
+      })) as CrmContact[];
     },
     staleTime: 30_000,
   });
@@ -121,6 +144,26 @@ export function useCrmContacts() {
   return query;
 }
 
+/** Extract unique values from all contacts for dynamic filter options */
+export function useDynamicFilterOptions(contacts: CrmContact[]) {
+  const allProjects = new Set<string>();
+  const allLanguages = new Set<string>();
+  const allTags = new Set<string>();
+
+  contacts.forEach(c => {
+    (c.projects ?? []).forEach(p => { if (p) allProjects.add(p); });
+    if (c.project) allProjects.add(c.project);
+    if (c.language) allLanguages.add(c.language);
+    (c.tags ?? []).forEach(t => { if (t) allTags.add(t); });
+  });
+
+  return {
+    projects: Array.from(allProjects).sort(),
+    languages: Array.from(allLanguages).sort(),
+    tags: Array.from(allTags).sort(),
+  };
+}
+
 export function useAddCrmContact() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -135,9 +178,11 @@ export function useAddCrmContact() {
           source: contact.source || null,
           status: contact.status || 'New Lead',
           project: contact.project || null,
+          projects: contact.projects ?? [],
           assigned_to: contact.assigned_to || null,
           tags: contact.tags ?? [],
-        })
+          contact_type: contact.contact_type || 'lead',
+        } as Record<string, unknown>)
         .select()
         .single();
       if (error) throw error;
