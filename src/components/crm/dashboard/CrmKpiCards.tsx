@@ -83,25 +83,25 @@ export function CrmKpiCards() {
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
       {cards.map((card) => (
         <div
           key={card.label}
-          className="bg-card rounded-xl border border-border p-4 shadow-sm flex items-start gap-3"
+          className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 shadow-sm flex items-start gap-2 sm:gap-3"
         >
           <div
-            className="flex items-center justify-center w-10 h-10 rounded-xl flex-shrink-0"
+            className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex-shrink-0"
             style={{ background: card.bg }}
           >
-            <card.icon className="w-5 h-5" style={{ color: card.color }} strokeWidth={2} />
+            <card.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: card.color }} strokeWidth={2} />
           </div>
           <div className="min-w-0">
             {isLoading ? (
-              <Skeleton className="h-7 w-16 mb-1" />
+              <Skeleton className="h-6 sm:h-7 w-12 sm:w-16 mb-1" />
             ) : (
-              <p className="text-2xl font-bold text-foreground leading-none">{card.value}</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">{card.value}</p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">{card.label}</p>
           </div>
         </div>
       ))}

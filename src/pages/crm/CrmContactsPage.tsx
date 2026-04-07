@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -15,6 +16,7 @@ function getInitials(first: string, last: string) {
 
 export default function CrmContactsPage() {
   const { data: contacts = [], isLoading } = useCrmContacts();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -36,26 +38,30 @@ export default function CrmContactsPage() {
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Group by first letter of last_name for anchors
   const letterSet = useMemo(() => new Set(sorted.map(c => (c.last_name?.[0] ?? '').toUpperCase())), [sorted]);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-3">
         <h1 className="text-lg font-bold text-foreground">Contacts</h1>
-        <div className="relative w-full max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, phone, email..." className="pl-9 h-9 text-sm" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search name, phone, email..."
+            className="pl-9 h-10 sm:h-9 text-sm min-h-[44px] sm:min-h-0"
+          />
         </div>
       </div>
 
       {/* Alphabet bar */}
-      <div className="flex flex-wrap gap-0.5 mb-4">
+      <div className="flex flex-wrap gap-0.5 mb-3 sm:mb-4">
         {ALPHA.map(l => (
           <button
             key={l}
             onClick={() => jumpTo(l)}
-            className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${letterSet.has(l) ? 'text-foreground hover:bg-primary/10' : 'text-muted-foreground/40 cursor-default'}`}
+            className={`w-6 h-6 sm:w-7 sm:h-7 rounded text-[10px] sm:text-xs font-semibold transition-colors ${letterSet.has(l) ? 'text-foreground hover:bg-primary/10' : 'text-muted-foreground/40 cursor-default'}`}
             disabled={!letterSet.has(l)}
           >
             {l}
@@ -67,7 +73,47 @@ export default function CrmContactsPage() {
         <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
       ) : sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-16">No contacts found.</p>
+      ) : isMobile ? (
+        /* ── Mobile Card View ── */
+        <div ref={listRef} className="space-y-2">
+          {(() => {
+            let lastLetter = '';
+            return sorted.map(c => {
+              const letter = (c.last_name?.[0] ?? '').toUpperCase();
+              const showAnchor = letter !== lastLetter;
+              lastLetter = letter;
+              return (
+                <div key={c.id} {...(showAnchor ? { 'data-letter': letter } : {})}>
+                  {showAnchor && (
+                    <p className="text-[11px] font-bold text-muted-foreground px-1 pt-2 pb-1">{letter}</p>
+                  )}
+                  <Link
+                    to={`/crm/leads/${c.id}`}
+                    className="block bg-card rounded-[10px] border border-border p-3 shadow-sm active:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex items-center justify-center w-9 h-9 rounded-full text-[11px] font-bold flex-shrink-0"
+                        style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+                      >
+                        {getInitials(c.first_name, c.last_name)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {c.first_name} {c.last_name}
+                        </p>
+                        {c.phone && <p className="text-[13px] text-muted-foreground truncate">{c.phone}</p>}
+                      </div>
+                      <LeadStatusBadge status={c.status} />
+                    </div>
+                  </Link>
+                </div>
+              );
+            });
+          })()}
+        </div>
       ) : (
+        /* ── Desktop/Tablet Table View ── */
         <div ref={listRef} className="border border-border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
@@ -77,7 +123,7 @@ export default function CrmContactsPage() {
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Phone</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Email</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Project</th>
-                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Status</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Tags</th>
               </tr>
             </thead>
@@ -118,7 +164,7 @@ export default function CrmContactsPage() {
                           </Badge>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
-                      <td className="px-4 py-2.5 hidden sm:table-cell">
+                      <td className="px-4 py-2.5">
                         <LeadStatusBadge status={c.status} />
                       </td>
                       <td className="px-4 py-2.5 hidden lg:table-cell">

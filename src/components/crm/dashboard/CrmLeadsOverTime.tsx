@@ -3,8 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, subDays, startOfDay } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function CrmLeadsOverTime() {
+  const isMobile = useIsMobile();
+
   const { data, isLoading } = useQuery({
     queryKey: ['crm-leads-over-time'],
     queryFn: async () => {
@@ -14,7 +17,6 @@ export function CrmLeadsOverTime() {
         .select('created_at')
         .gte('created_at', thirtyDaysAgo.toISOString());
 
-      // Build day buckets
       const buckets: Record<string, number> = {};
       for (let i = 30; i >= 0; i--) {
         const key = format(subDays(new Date(), i), 'yyyy-MM-dd');
@@ -33,13 +35,15 @@ export function CrmLeadsOverTime() {
     staleTime: 60_000,
   });
 
+  const chartHeight = isMobile ? 200 : 220;
+
   return (
-    <div className="bg-card rounded-xl border border-border p-5 shadow-sm h-full">
-      <h3 className="text-sm font-semibold text-foreground mb-4">Leads Over Time</h3>
+    <div className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 lg:p-5 shadow-sm h-full">
+      <h3 className="text-sm font-semibold text-foreground mb-3 sm:mb-4">Leads Over Time</h3>
       {isLoading ? (
-        <Skeleton className="h-[220px] w-full" />
+        <Skeleton className="h-[200px] sm:h-[220px] w-full" />
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
             <defs>
               <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
@@ -54,7 +58,7 @@ export function CrmLeadsOverTime() {
               className="fill-muted-foreground"
               tickLine={false}
               axisLine={false}
-              interval="preserveStartEnd"
+              interval={isMobile ? 1 : 'preserveStartEnd'}
             />
             <YAxis
               tick={{ fontSize: 10 }}
