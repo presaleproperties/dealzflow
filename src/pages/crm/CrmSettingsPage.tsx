@@ -29,7 +29,7 @@ const PIPELINE_STAGES = [
 ];
 
 const LEAD_SOURCES = [
-  'Facebook Ad', 'Website Form', 'Manual Entry', 'Referral', 'TikTok', 'Instagram',
+  'Facebook Ad', 'Instagram', 'TikTok', 'Website Form', 'presaleproperties.com', 'Calendly', 'WhatsApp', 'Referral', 'Manual Entry',
 ];
 
 const INTEGRATIONS = [
