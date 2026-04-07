@@ -91,7 +91,7 @@ export function CrmRecentActivity() {
   });
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+    <div className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 lg:p-5 shadow-sm">
       <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
       {isLoading ? (
         <div className="space-y-3">
