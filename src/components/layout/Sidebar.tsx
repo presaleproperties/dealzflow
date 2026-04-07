@@ -78,7 +78,9 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
   const location = useLocation();
   const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin } = useCrmAccess();
+
+  const toggleCollapse = () => {
     const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
     return saved === 'true';
   });
