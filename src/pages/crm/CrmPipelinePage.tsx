@@ -1,5 +1,5 @@
-import { Kanban } from 'lucide-react';
-import { CrmPagePlaceholder } from '@/components/crm/CrmPagePlaceholder';
+import { PipelineKanban } from '@/components/crm/pipeline/PipelineKanban';
+
 export default function CrmPipelinePage() {
-  return <CrmPagePlaceholder title="Pipeline" icon={Kanban} />;
+  return <PipelineKanban />;
 }
