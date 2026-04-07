@@ -46,6 +46,14 @@ const standaloneItems: NavItem[] = [
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
+// Gold accent palette
+const GOLD = 'hsl(39 67% 55%)';
+const GOLD_BG = 'hsl(39 67% 55% / 0.12)';
+const DARK_BG = 'hsl(222 25% 10%)';
+const DARK_BORDER = 'hsl(222 20% 16% / 0.6)';
+const INACTIVE_TEXT = 'hsl(220 10% 64%)';
+const SECTION_LABEL = 'hsl(224 8% 46%)';
+
 export const SidebarCollapsedContext = createContext<boolean>(false);
 
 export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
@@ -66,13 +74,12 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
     });
   };
 
-  // Sidebar CSS vars helpers
-  const sbBg = { background: 'hsl(222 47% 11%)' };
-  const sbBorder = '1px solid hsl(222 40% 16% / 0.6)';
+  const sbBg = { background: DARK_BG };
+  const sbBorder = `1px solid ${DARK_BORDER}`;
 
   const navItemStyle = (isActive: boolean) => ({
-    background: isActive ? 'hsl(172 72% 47% / 0.15)' : undefined,
-    color: isActive ? 'hsl(172 72% 47%)' : 'hsl(220 20% 60%)',
+    background: isActive ? GOLD_BG : undefined,
+    color: isActive ? GOLD : INACTIVE_TEXT,
   });
 
   const NavLink = ({ item }: { item: NavItem }) => {
@@ -85,7 +92,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
         style={navItemStyle(isActive)}
         className={cn(
           'relative flex items-center gap-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 group select-none',
-          'hover:bg-[hsl(222_40%_17%)] hover:text-white',
+          'hover:bg-[hsl(39_67%_55%_/_0.08)] hover:text-white',
           isCollapsed ? 'justify-center w-10 h-10 mx-auto' : 'px-2.5 py-[6px]',
         )}
       >
@@ -144,7 +151,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
               isCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100',
             )}
           >
-            Dealz<span style={{ color: 'hsl(172 72% 47%)' }}>flow</span>
+            Dealz<span style={{ color: GOLD }}>flow</span>
           </span>
         </Link>
       </div>
@@ -152,10 +159,10 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
       {/* Collapse toggle */}
       <button
         onClick={toggleCollapse}
-        style={{ background: 'hsl(222 47% 11%)', borderColor: 'hsl(222 40% 22%)' }}
+        style={{ background: DARK_BG, borderColor: 'hsl(222 20% 22%)' }}
         className={cn(
           'absolute -right-[11px] top-[56px] -translate-y-1/2 w-[22px] h-[22px] rounded-full border flex items-center justify-center transition-all duration-200 z-10',
-          'text-[hsl(220_20%_55%)] hover:text-[hsl(172_72%_47%)]',
+          'text-[hsl(220_10%_55%)] hover:text-[hsl(39_67%_55%)]',
           'shadow-[0_1px_6px_0_hsl(0_0%_0%/0.4)]',
         )}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -175,11 +182,11 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
           <div key={section.label} className={cn('mb-3', isCollapsed && 'w-full flex flex-col items-center')}>
             {!isCollapsed ? (
               <div className="px-2.5 pb-1 pt-0.5 text-[9.5px] font-bold uppercase tracking-[0.1em]"
-                style={{ color: 'hsl(220 20% 35%)' }}>
+                style={{ color: SECTION_LABEL }}>
                 {section.label}
               </div>
             ) : si > 0 ? (
-              <div className="h-px w-8 my-2" style={{ background: 'hsl(222 40% 18%)' }} />
+              <div className="h-px w-8 my-2" style={{ background: 'hsl(222 20% 18%)' }} />
             ) : null}
             <div className={cn('space-y-0.5', isCollapsed && 'w-full flex flex-col items-center')}>
               {section.items.map((item) => (
@@ -189,7 +196,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
           </div>
         ))}
 
-        <div className="h-px w-full my-1" style={{ background: 'hsl(222 40% 16%)' }} />
+        <div className="h-px w-full my-1" style={{ background: 'hsl(222 20% 16%)' }} />
 
         <div className={cn('space-y-0.5', isCollapsed && 'w-full flex flex-col items-center')}>
           {standaloneItems.map((item) => (
@@ -199,7 +206,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
 
         {isAdmin && (
           <>
-            <div className="h-px w-full my-1" style={{ background: 'hsl(222 40% 16%)' }} />
+            <div className="h-px w-full my-1" style={{ background: 'hsl(222 20% 16%)' }} />
             <div className={cn(isCollapsed && 'w-full flex justify-center')}>
               {isCollapsed ? (
                 <Tooltip delayDuration={0}>
@@ -246,7 +253,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
               <button
                 onClick={signOut}
                 className="flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150 hover:text-destructive hover:bg-destructive/15"
-                style={{ color: 'hsl(220 20% 40%)' }}
+                style={{ color: INACTIVE_TEXT }}
               >
                 <LogOut className="w-[14px] h-[14px]" strokeWidth={1.8} />
               </button>
@@ -257,7 +264,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
           <button
             onClick={signOut}
             className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-xl text-[12.5px] font-medium transition-all duration-150 hover:text-destructive hover:bg-destructive/15"
-            style={{ color: 'hsl(220 20% 40%)' }}
+            style={{ color: INACTIVE_TEXT }}
           >
             <LogOut className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={1.8} />
             <span>Sign out</span>
