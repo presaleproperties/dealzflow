@@ -70,7 +70,7 @@ export function useCreateCampaign() {
     }) => {
       const { data, error } = await supabase
         .from('crm_email_campaigns')
-        .insert(campaign)
+        .insert([campaign])
         .select()
         .single();
       if (error) throw error;
