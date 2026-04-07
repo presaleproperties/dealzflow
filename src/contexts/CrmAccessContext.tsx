@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { createContext, useContext, useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,6 +21,18 @@ const CrmAccessContext = createContext<CrmAccessState>({
 
 export function CrmAccessProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Clear all CRM-related cached data when user signs out
+  useEffect(() => {
+    if (!user) {
+      queryClient.removeQueries({ queryKey: ['crm_team_membership'] });
+      queryClient.removeQueries({ predicate: (q) => {
+        const key = q.queryKey[0];
+        return typeof key === 'string' && key.startsWith('crm');
+      }});
+    }
+  }, [user, queryClient]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['crm_team_membership', user?.id],
@@ -42,6 +54,9 @@ export function CrmAccessProvider({ children }: { children: React.ReactNode }) {
   });
 
   const value = useMemo<CrmAccessState>(() => {
+    if (!user) {
+      return { isMember: false, isLoading: false, role: null, isOwnerOrAdmin: false };
+    }
     const isActive = data?.is_active === true;
     const role = isActive ? (data?.role as CrmRole) : null;
     return {
@@ -50,7 +65,7 @@ export function CrmAccessProvider({ children }: { children: React.ReactNode }) {
       role,
       isOwnerOrAdmin: role === 'owner' || role === 'admin',
     };
-  }, [data, isLoading]);
+  }, [data, isLoading, user]);
 
   return (
     <CrmAccessContext.Provider value={value}>
