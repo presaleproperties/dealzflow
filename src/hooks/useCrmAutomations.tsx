@@ -83,13 +83,13 @@ export function useCreateAutomation() {
     }) => {
       const { data: auto, error: autoErr } = await supabase
         .from('crm_automations')
-        .insert(payload.automation)
+        .insert({ ...payload.automation, trigger_config: payload.automation.trigger_config as unknown as Json })
         .select()
         .single();
       if (autoErr) throw autoErr;
 
       if (payload.steps.length > 0) {
-        const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: auto.id }));
+        const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: auto.id, action_config: s.action_config as unknown as Json }));
         const { error: stepsErr } = await supabase.from('crm_automation_steps').insert(stepsWithId);
         if (stepsErr) throw stepsErr;
       }
@@ -111,16 +111,18 @@ export function useUpdateAutomation() {
       automation: Partial<{ name: string; trigger_type: string; trigger_config: Record<string, unknown>; is_active: boolean }>;
       steps?: { step_order: number; action_type: string; action_config: Record<string, unknown> }[];
     }) => {
+      const updateData = { ...payload.automation } as Record<string, unknown>;
+      if (updateData.trigger_config) updateData.trigger_config = updateData.trigger_config as unknown as Json;
       const { error: autoErr } = await supabase
         .from('crm_automations')
-        .update(payload.automation)
+        .update(updateData as { name?: string; trigger_type?: string; trigger_config?: Json; is_active?: boolean })
         .eq('id', payload.id);
       if (autoErr) throw autoErr;
 
       if (payload.steps) {
         await supabase.from('crm_automation_steps').delete().eq('automation_id', payload.id);
         if (payload.steps.length > 0) {
-          const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: payload.id }));
+          const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: payload.id, action_config: s.action_config as unknown as Json }));
           const { error: stepsErr } = await supabase.from('crm_automation_steps').insert(stepsWithId);
           if (stepsErr) throw stepsErr;
         }
