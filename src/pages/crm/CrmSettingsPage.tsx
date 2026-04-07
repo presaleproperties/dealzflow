@@ -430,9 +430,27 @@ function IntegrationsSection() {
    5. Notifications
    ══════════════════════════════════════════ */
 function NotificationsSection() {
-  const [toggles, setToggles] = useState<Record<string, boolean>>(
-    Object.fromEntries(NOTIFICATION_DEFAULTS.map(n => [n.key, true]))
-  );
+  const DEFAULTS: Record<string, boolean> = {
+    new_lead: true,
+    showing_reminder: true,
+    task_due: true,
+    email_opened: false,
+    whatsapp_reply: true,
+  };
+
+  const [toggles, setToggles] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem('crm-notification-toggles');
+      if (stored) return { ...DEFAULTS, ...JSON.parse(stored) };
+    } catch {}
+    return DEFAULTS;
+  });
+
+  const handleToggle = (key: string, value: boolean) => {
+    const next = { ...toggles, [key]: value };
+    setToggles(next);
+    localStorage.setItem('crm-notification-toggles', JSON.stringify(next));
+  };
 
   return (
     <Card>
@@ -446,7 +464,7 @@ function NotificationsSection() {
             <span className="text-sm text-foreground">{n.label}</span>
             <Switch
               checked={toggles[n.key]}
-              onCheckedChange={(v) => setToggles(prev => ({ ...prev, [n.key]: v }))}
+              onCheckedChange={(v) => handleToggle(n.key, v)}
             />
           </div>
         ))}
