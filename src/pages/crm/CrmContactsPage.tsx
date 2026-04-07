@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCrmContacts } from '@/hooks/useCrmContacts';
+import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
+import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
+import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -14,11 +16,63 @@ function getInitials(first: string, last: string) {
   return ((first?.[0] ?? '') + (last?.[0] ?? '')).toUpperCase();
 }
 
+const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
+  realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
+  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Past Client' },
+};
+
 export default function CrmContactsPage() {
   const { data: contacts = [], isLoading } = useCrmContacts();
+  const dynamicOpts = useDynamicFilterOptions(contacts);
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
+  const [filterContactType, setFilterContactType] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterSource, setFilterSource] = useState<string[]>([]);
+  const [filterAgent, setFilterAgent] = useState<string[]>([]);
+  const [filterProject, setFilterProject] = useState<string[]>([]);
+  const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
+  const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const activeFilterCount = [
+    filterContactType ? 1 : 0,
+    filterStatus.length > 0 ? 1 : 0,
+    filterSource.length > 0 ? 1 : 0,
+    filterAgent.length > 0 ? 1 : 0,
+    filterProject.length > 0 ? 1 : 0,
+    filterLeadType.length > 0 ? 1 : 0,
+    filterLanguage.length > 0 ? 1 : 0,
+    filterTags.length > 0 ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  const clearAllFilters = () => {
+    setFilterContactType('');
+    setFilterStatus([]);
+    setFilterSource([]);
+    setFilterAgent([]);
+    setFilterProject([]);
+    setFilterLeadType([]);
+    setFilterLanguage([]);
+    setFilterTags([]);
+  };
+
+  const clearFilter = (key: string) => {
+    const map: Record<string, () => void> = {
+      contactType: () => setFilterContactType(''),
+      status: () => setFilterStatus([]),
+      source: () => setFilterSource([]),
+      agent: () => setFilterAgent([]),
+      project: () => setFilterProject([]),
+      leadType: () => setFilterLeadType([]),
+      language: () => setFilterLanguage([]),
+      tags: () => setFilterTags([]),
+    };
+    map[key]?.();
+  };
 
   const sorted = useMemo(() => {
     let list = [...contacts].sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''));
@@ -30,8 +84,20 @@ export default function CrmContactsPage() {
         c.email?.toLowerCase().includes(q)
       );
     }
+    if (filterContactType) list = list.filter(c => c.contact_type === filterContactType);
+    if (filterStatus.length > 0) list = list.filter(c => c.status && filterStatus.includes(c.status));
+    if (filterSource.length > 0) list = list.filter(c => c.source && filterSource.includes(c.source));
+    if (filterAgent.length > 0) list = list.filter(c => c.assigned_to && filterAgent.includes(c.assigned_to));
+    if (filterProject.length > 0) list = list.filter(c =>
+      filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
+    );
+    if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
+    if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
+    if (filterTags.length > 0) list = list.filter(c =>
+      filterTags.some(ft => (c.tags ?? []).includes(ft))
+    );
     return list;
-  }, [contacts, search]);
+  }, [contacts, search, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags]);
 
   const jumpTo = (letter: string) => {
     const el = listRef.current?.querySelector(`[data-letter="${letter}"]`);
@@ -39,6 +105,34 @@ export default function CrmContactsPage() {
   };
 
   const letterSet = useMemo(() => new Set(sorted.map(c => (c.last_name?.[0] ?? '').toUpperCase())), [sorted]);
+
+  const filterPills = [
+    { key: 'contactType', label: 'Type', values: filterContactType ? [filterContactType] : [] },
+    { key: 'status', label: 'Status', values: filterStatus },
+    { key: 'source', label: 'Source', values: filterSource },
+    { key: 'agent', label: 'Agent', values: filterAgent },
+    { key: 'project', label: 'Project', values: filterProject },
+    { key: 'leadType', label: 'Lead Type', values: filterLeadType },
+    { key: 'language', label: 'Language', values: filterLanguage },
+    { key: 'tags', label: 'Tags', values: filterTags },
+  ];
+
+  const filterSection = (
+    <>
+      <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
+        <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
+        <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
+        <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
+        <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
+      </div>
+      <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
+        <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
+        <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
+        <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
+        <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
+      </div>
+    </>
+  );
 
   return (
     <div>
@@ -55,8 +149,41 @@ export default function CrmContactsPage() {
         </div>
       </div>
 
+      {/* Filters */}
+      {isMobile ? (
+        <div className="space-y-2 mb-3">
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="flex items-center gap-2 text-sm font-medium text-foreground w-full justify-between py-2"
+          >
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{activeFilterCount} active</Badge>
+              )}
+            </div>
+            {filtersExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {filtersExpanded && <div className="space-y-2">{filterSection}</div>}
+        </div>
+      ) : (
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Filters</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{activeFilterCount} active</Badge>
+            )}
+          </div>
+          {filterSection}
+        </div>
+      )}
+
+      <ActiveFilterPills filters={filterPills} onClear={clearFilter} onClearAll={clearAllFilters} />
+
       {/* Alphabet bar */}
-      <div className="flex flex-wrap gap-0.5 mb-3 sm:mb-4">
+      <div className="flex flex-wrap gap-0.5 mb-3 sm:mb-4 mt-2">
         {ALPHA.map(l => (
           <button
             key={l}
@@ -74,7 +201,6 @@ export default function CrmContactsPage() {
       ) : sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-16">No contacts found.</p>
       ) : isMobile ? (
-        /* ── Mobile Card View ── */
         <div ref={listRef} className="space-y-2">
           {(() => {
             let lastLetter = '';
@@ -82,6 +208,7 @@ export default function CrmContactsPage() {
               const letter = (c.last_name?.[0] ?? '').toUpperCase();
               const showAnchor = letter !== lastLetter;
               lastLetter = letter;
+              const typeStyle = CONTACT_TYPE_STYLES[c.contact_type] ?? CONTACT_TYPE_STYLES.lead;
               return (
                 <div key={c.id} {...(showAnchor ? { 'data-letter': letter } : {})}>
                   {showAnchor && (
@@ -99,9 +226,14 @@ export default function CrmContactsPage() {
                         {getInitials(c.first_name, c.last_name)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                          {c.first_name} {c.last_name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="border-0 text-[9px] font-semibold px-1 py-0" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+                            {typeStyle.label}
+                          </Badge>
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            {c.first_name} {c.last_name}
+                          </p>
+                        </div>
                         {c.phone && <p className="text-[13px] text-muted-foreground truncate">{c.phone}</p>}
                       </div>
                       <LeadStatusBadge status={c.status} />
@@ -113,16 +245,16 @@ export default function CrmContactsPage() {
           })()}
         </div>
       ) : (
-        /* ── Desktop/Tablet Table View ── */
         <div ref={listRef} className="border border-border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-12" />
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Type</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Phone</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Email</th>
-                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Project</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Projects</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden lg:table-cell">Tags</th>
               </tr>
@@ -135,6 +267,7 @@ export default function CrmContactsPage() {
                   const showAnchor = letter !== lastLetter;
                   lastLetter = letter;
                   const tags = (c.tags ?? []) as string[];
+                  const typeStyle = CONTACT_TYPE_STYLES[c.contact_type] ?? CONTACT_TYPE_STYLES.lead;
                   return (
                     <tr
                       key={c.id}
@@ -145,6 +278,11 @@ export default function CrmContactsPage() {
                         <div className="flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-bold flex-shrink-0" style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}>
                           {getInitials(c.first_name, c.last_name)}
                         </div>
+                      </td>
+                      <td className="px-4 py-2.5 hidden md:table-cell">
+                        <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+                          {typeStyle.label}
+                        </Badge>
                       </td>
                       <td className="px-4 py-2.5">
                         <Link to={`/crm/leads/${c.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
@@ -158,10 +296,14 @@ export default function CrmContactsPage() {
                         {c.email ? <a href={`mailto:${c.email}`} className="text-sm text-primary hover:underline truncate block max-w-[180px]">{c.email}</a> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden lg:table-cell">
-                        {c.project ? (
-                          <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
-                            {c.project}
-                          </Badge>
+                        {(c.projects ?? []).length > 0 || c.project ? (
+                          <div className="flex flex-wrap gap-1">
+                            {((c.projects ?? []).length > 0 ? c.projects! : [c.project!]).slice(0, 2).map(p => (
+                              <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+                                {p}
+                              </Badge>
+                            ))}
+                          </div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5">

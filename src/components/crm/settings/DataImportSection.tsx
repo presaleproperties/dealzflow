@@ -14,6 +14,7 @@ const CRM_FIELDS = [
   { value: 'first_name', label: 'First Name' },
   { value: 'last_name', label: 'Last Name' },
   { value: 'email', label: 'Email' },
+  { value: 'email_secondary', label: 'Email (Secondary / Spouse)' },
   { value: 'phone', label: 'Phone' },
   { value: 'phone_secondary', label: 'Phone (Secondary)' },
   { value: 'address', label: 'Address' },
@@ -22,17 +23,21 @@ const CRM_FIELDS = [
   { value: 'postal_code', label: 'Postal Code' },
   { value: 'source', label: 'Source' },
   { value: 'status', label: 'Status' },
-  { value: 'project', label: 'Project' },
+  { value: 'project', label: 'Project (Primary)' },
+  { value: 'projects', label: 'Projects (Multiple)' },
   { value: 'assigned_to', label: 'Assigned To' },
+  { value: 'contact_type', label: 'Contact Type' },
   { value: 'budget_min', label: 'Budget Min' },
   { value: 'budget_max', label: 'Budget Max' },
   { value: 'bedrooms_preferred', label: 'Bedrooms Preferred' },
   { value: 'language', label: 'Language' },
   { value: 'lead_type', label: 'Lead Type' },
+  { value: 'birthday', label: 'Birthday' },
   { value: 'notes', label: 'Notes' },
   { value: 'co_buyer_name', label: 'Co-Buyer Name' },
   { value: 'co_buyer_phone', label: 'Co-Buyer Phone' },
   { value: 'co_buyer_email', label: 'Co-Buyer Email' },
+  { value: 'co_buyer_birthday', label: 'Co-Buyer Birthday' },
   { value: 'tags', label: 'Tags' },
 ] as const;
 
@@ -45,6 +50,11 @@ const AUTO_MAP: Record<string, string> = {
   'last_name': 'last_name',
   'email': 'email',
   'e-mail': 'email',
+  'email secondary': 'email_secondary',
+  'email_secondary': 'email_secondary',
+  'secondary email': 'email_secondary',
+  'spouse email': 'email_secondary',
+  'alt email': 'email_secondary',
   'phone': 'phone',
   'phone number': 'phone',
   'phone_number': 'phone',
@@ -67,9 +77,13 @@ const AUTO_MAP: Record<string, string> = {
   'lead_source': 'source',
   'status': 'status',
   'project': 'project',
+  'projects': 'projects',
   'assigned to': 'assigned_to',
   'assigned_to': 'assigned_to',
   'agent': 'assigned_to',
+  'contact type': 'contact_type',
+  'contact_type': 'contact_type',
+  'type': 'contact_type',
   'budget min': 'budget_min',
   'budget_min': 'budget_min',
   'min budget': 'budget_min',
@@ -81,7 +95,9 @@ const AUTO_MAP: Record<string, string> = {
   'language': 'language',
   'lead type': 'lead_type',
   'lead_type': 'lead_type',
-  'type': 'lead_type',
+  'birthday': 'birthday',
+  'dob': 'birthday',
+  'date of birth': 'birthday',
   'notes': 'notes',
   'co-buyer name': 'co_buyer_name',
   'co_buyer_name': 'co_buyer_name',
@@ -89,8 +105,13 @@ const AUTO_MAP: Record<string, string> = {
   'co_buyer_phone': 'co_buyer_phone',
   'co-buyer email': 'co_buyer_email',
   'co_buyer_email': 'co_buyer_email',
+  'co-buyer birthday': 'co_buyer_birthday',
+  'co_buyer_birthday': 'co_buyer_birthday',
   'tags': 'tags',
 };
+
+// Array fields that should be split from CSV comma-separated values
+const ARRAY_FIELDS = new Set(['tags', 'projects']);
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
@@ -159,7 +180,6 @@ export default function DataImportSection() {
       }
       setCsvHeaders(headers);
       setCsvRows(rows);
-      // Auto-map headers
       const autoMapped: Record<number, string> = {};
       headers.forEach((h, i) => {
         const key = h.toLowerCase().trim();
@@ -215,16 +235,29 @@ export default function DataImportSection() {
           if (field === 'budget_min' || field === 'budget_max') {
             const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
             if (!isNaN(num)) record[field] = num;
-          } else if (field === 'tags') {
-            try {
-              record[field] = JSON.parse(val);
-            } catch {
-              record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
+          } else if (ARRAY_FIELDS.has(field)) {
+            // Split comma-separated values into text array
+            record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
+          } else if (field === 'contact_type') {
+            // Validate contact_type
+            const normalized = val.toLowerCase().trim();
+            if (['lead', 'realtor', 'past_client'].includes(normalized)) {
+              record[field] = normalized;
             }
           } else {
             record[field] = val;
           }
         });
+
+        // If projects array is set but project (single) is not, set project to first item
+        if (record.projects && Array.isArray(record.projects) && (record.projects as string[]).length > 0 && !record.project) {
+          record.project = (record.projects as string[])[0];
+        }
+        // If project is set but projects is not, set projects to [project]
+        if (record.project && !record.projects) {
+          record.projects = [record.project as string];
+        }
+
         return record;
       }).filter(r => r.first_name && r.last_name);
 
@@ -270,7 +303,6 @@ export default function DataImportSection() {
         <CardDescription>Import contacts from a CSV file into the CRM</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Upload Phase */}
         {phase === 'upload' && (
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -285,17 +317,10 @@ export default function DataImportSection() {
             <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium text-foreground">Drop a CSV file here or click to browse</p>
             <p className="text-xs text-muted-foreground mt-1">Accepts .csv files only</p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleInputChange}
-            />
+            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleInputChange} />
           </div>
         )}
 
-        {/* Mapping Phase */}
         {phase === 'mapping' && (
           <>
             <div className="flex items-center justify-between">
@@ -312,16 +337,12 @@ export default function DataImportSection() {
               <Button variant="ghost" size="sm" onClick={reset}>Change File</Button>
             </div>
 
-            {/* Mapping UI */}
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
               {csvHeaders.map((header, i) => (
                 <div key={i} className="flex items-center gap-3 py-1.5 px-3 rounded-md bg-muted/20 border border-border/30">
                   <span className="text-sm font-medium text-foreground min-w-[140px] truncate">{header}</span>
                   <span className="text-muted-foreground text-xs">→</span>
-                  <Select
-                    value={mapping[i] || '__skip__'}
-                    onValueChange={(v) => updateMapping(i, v)}
-                  >
+                  <Select value={mapping[i] || '__skip__'} onValueChange={(v) => updateMapping(i, v)}>
                     <SelectTrigger className="h-8 text-xs flex-1">
                       <SelectValue />
                     </SelectTrigger>
@@ -332,13 +353,14 @@ export default function DataImportSection() {
                     </SelectContent>
                   </Select>
                   {mapping[i] && mapping[i] !== '__skip__' && (
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px]">Mapped</Badge>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px]">
+                      {ARRAY_FIELDS.has(mapping[i]) ? 'Array' : 'Mapped'}
+                    </Badge>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Preview Table */}
             {mappedHeaders.length > 0 && previewRows.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">Preview (first 5 rows)</p>
@@ -377,7 +399,6 @@ export default function DataImportSection() {
           </>
         )}
 
-        {/* Importing Phase */}
         {phase === 'importing' && (
           <div className="space-y-3 py-4">
             <p className="text-sm font-medium text-foreground">Importing contacts…</p>
@@ -386,7 +407,6 @@ export default function DataImportSection() {
           </div>
         )}
 
-        {/* Done Phase */}
         {phase === 'done' && result && (
           <div className="space-y-4 py-4">
             <div className="flex items-start gap-3">
