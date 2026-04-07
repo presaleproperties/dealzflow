@@ -1,0 +1,191 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
+import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+
+const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
+
+interface AddLeadDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
+  const addContact = useAddCrmContact();
+  const [form, setForm] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    project: '',
+    source: '',
+    status: 'New Lead',
+    assigned_to: '',
+    tags: [] as string[],
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!form.first_name.trim()) errs.first_name = 'First name is required';
+    if (!form.last_name.trim()) errs.last_name = 'Last name is required';
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email';
+    if (form.first_name.length > 100) errs.first_name = 'Max 100 characters';
+    if (form.last_name.length > 100) errs.last_name = 'Max 100 characters';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    await addContact.mutateAsync({
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      project: form.project || undefined,
+      source: form.source || undefined,
+      status: form.status,
+      assigned_to: form.assigned_to || undefined,
+      tags: form.tags,
+    });
+    setForm({ first_name: '', last_name: '', phone: '', email: '', project: '', source: '', status: 'New Lead', assigned_to: '', tags: [] });
+    setErrors({});
+    onOpenChange(false);
+  };
+
+  const toggleTag = (tag: string) => {
+    setForm((prev) => ({
+      ...prev,
+      tags: prev.tags.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag],
+    }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Lead</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="first_name">First Name *</Label>
+              <Input
+                id="first_name"
+                value={form.first_name}
+                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                maxLength={100}
+                className={errors.first_name ? 'border-destructive' : ''}
+              />
+              {errors.first_name && <p className="text-xs text-destructive mt-1">{errors.first_name}</p>}
+            </div>
+            <div>
+              <Label htmlFor="last_name">Last Name *</Label>
+              <Input
+                id="last_name"
+                value={form.last_name}
+                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                maxLength={100}
+                className={errors.last_name ? 'border-destructive' : ''}
+              />
+              {errors.last_name && <p className="text-xs text-destructive mt-1">{errors.last_name}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} maxLength={20} />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                maxLength={255}
+                className={errors.email ? 'border-destructive' : ''}
+              />
+              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Project</Label>
+              <Select value={form.project} onValueChange={(v) => setForm({ ...form, project: v })}>
+                <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
+                <SelectContent>
+                  {PROJECTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Source</Label>
+              <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
+                <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+                <SelectContent>
+                  {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Assigned To</Label>
+              <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
+                <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                <SelectContent>
+                  {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Tags</Label>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {TAG_OPTIONS.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={form.tags.includes(tag) ? 'default' : 'outline'}
+                  className="cursor-pointer select-none transition-all"
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                  {form.tags.includes(tag) && <X className="w-3 h-3 ml-1" />}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={addContact.isPending} className="bg-primary text-primary-foreground">
+              {addContact.isPending ? 'Adding...' : 'Add Lead'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
