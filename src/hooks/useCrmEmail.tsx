@@ -65,7 +65,7 @@ export function useCreateCampaign() {
       body_html: string;
       status: string;
       recipients_count: number;
-      segment_filter: Record<string, unknown>;
+      segment_filter: Record<string, string | number | boolean | null>;
       sent_at?: string;
     }) => {
       const { data, error } = await supabase
