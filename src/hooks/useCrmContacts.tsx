@@ -168,21 +168,19 @@ export function useAddCrmContact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (contact: CrmContactInsert) => {
+      const row = {
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        email: contact.email || null,
+        phone: contact.phone || null,
+        source: contact.source || null,
+        status: contact.status || 'New Lead',
+        project: contact.project || null,
+        assigned_to: contact.assigned_to || null,
+      };
       const { data, error } = await supabase
         .from('crm_contacts')
-        .insert({
-          first_name: contact.first_name,
-          last_name: contact.last_name,
-          email: contact.email || null,
-          phone: contact.phone || null,
-          source: contact.source || null,
-          status: contact.status || 'New Lead',
-          project: contact.project || null,
-          projects: contact.projects ?? [],
-          assigned_to: contact.assigned_to || null,
-          tags: contact.tags ?? [],
-          contact_type: contact.contact_type || 'lead',
-        } as Record<string, unknown>)
+        .insert(row)
         .select()
         .single();
       if (error) throw error;
