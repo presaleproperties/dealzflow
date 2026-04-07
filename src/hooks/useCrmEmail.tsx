@@ -98,3 +98,33 @@ export function useCreateTemplate() {
     onError: (err: Error) => toast.error(err.message),
   });
 }
+
+export function useUpdateTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; subject?: string; body_html?: string; project?: string | null } }) => {
+      const { error } = await supabase.from('crm_email_templates').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-email-templates'] });
+      toast.success('Template updated');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function useDeleteTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('crm_email_templates').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-email-templates'] });
+      toast.success('Template deleted');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
