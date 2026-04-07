@@ -84,14 +84,14 @@ export default {
         md: "0.5rem",
         sm: "0.375rem",
       },
-      boxShadow: {
-          'ios': '0 0 0 0.5px hsl(var(--border) / 0.35), 0 1px 2px 0 hsl(220 18% 8% / 0.03), 0 3px 10px -2px hsl(220 18% 8% / 0.06), 0 8px 22px -6px hsl(220 18% 8% / 0.04)',
-          'ios-lg': '0 0 0 0.5px hsl(var(--border) / 0.25), 0 3px 6px -2px hsl(220 18% 8% / 0.07), 0 14px 28px -8px hsl(220 18% 8% / 0.1), 0 22px 44px -10px hsl(220 18% 8% / 0.07)',
-          'ios-xl': '0 0 0 0.5px hsl(var(--border) / 0.2), 0 6px 16px -4px hsl(220 18% 8% / 0.09), 0 20px 44px -12px hsl(220 18% 8% / 0.13), 0 36px 72px -16px hsl(220 18% 8% / 0.08)',
-          'premium': 'inset 0 1px 0 0 rgba(255,255,255,0.18), 0 4px 14px -2px hsl(160 56% 30% / 0.28), 0 14px 32px -8px hsl(160 56% 30% / 0.16)',
-          'premium-lg': 'inset 0 1px 0 0 rgba(255,255,255,0.22), 0 6px 20px -4px hsl(160 56% 30% / 0.32), 0 22px 44px -10px hsl(160 56% 30% / 0.2)',
-          'glow-primary': '0 0 28px -6px hsl(160 64% 48% / 0.38)',
-          'glow-accent': '0 0 28px -6px hsl(160 68% 56% / 0.3)',
+        boxShadow: {
+          'ios': '0 0 0 1px hsl(var(--border) / 0.4), 0 1px 2px 0 hsl(222 16% 8% / 0.04), 0 4px 12px -2px hsl(222 16% 8% / 0.07), 0 10px 24px -6px hsl(222 16% 8% / 0.05)',
+          'ios-lg': '0 0 0 1px hsl(var(--border) / 0.3), 0 4px 8px -2px hsl(222 16% 8% / 0.08), 0 16px 32px -8px hsl(222 16% 8% / 0.12), 0 24px 48px -10px hsl(222 16% 8% / 0.08)',
+          'ios-xl': '0 0 0 1px hsl(var(--border) / 0.25), 0 8px 20px -4px hsl(222 16% 8% / 0.1), 0 24px 48px -12px hsl(222 16% 8% / 0.15), 0 40px 80px -16px hsl(222 16% 8% / 0.1)',
+          'premium': 'inset 0 1px 0 0 rgba(255,255,255,0.2), 0 4px 16px -2px hsl(231 60% 40% / 0.3), 0 16px 36px -8px hsl(231 60% 40% / 0.18)',
+          'premium-lg': 'inset 0 1px 0 0 rgba(255,255,255,0.24), 0 8px 24px -4px hsl(231 60% 40% / 0.35), 0 24px 48px -10px hsl(231 60% 40% / 0.22)',
+          'glow-primary': '0 0 32px -6px hsl(231 70% 60% / 0.4)',
+          'glow-accent': '0 0 32px -6px hsl(231 70% 68% / 0.35)',
         },
       keyframes: {
         "accordion-down": {
