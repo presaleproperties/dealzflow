@@ -101,13 +101,19 @@ export function useSyncedDeals() {
         extractProjectNameFromAddress(tx.property_address) ||
         null;
 
-      // Extract client contact from DB columns first, fall back to participants
+      // Extract client contact: prioritize BUYER participant data over DB columns
+      // because DB client_email/client_phone often contains the SELLER (developer) contact
+      const isListing = participants.some((p: Participant) => p.participantRole === 'SELLERS_AGENT');
+      const primaryClientRole = isListing ? 'SELLER' : 'BUYER';
       const clientParticipant = participants.find((p: Participant) =>
+        p.participantRole === primaryClientRole
+      ) || participants.find((p: Participant) =>
         p.participantRole === 'BUYER' || p.participantRole === 'SELLER'
       ) || participants.find((p: Participant) => p.participantRole === 'CLIENT');
       
-      const clientEmail = tx.client_email || clientParticipant?.emailAddress || null;
-      const clientPhone = tx.client_phone || clientParticipant?.phoneNumber || null;
+      // Use participant email/phone first (accurate), fall back to DB columns only if no participant data
+      const clientEmail = clientParticipant?.emailAddress || tx.client_email || null;
+      const clientPhone = clientParticipant?.phoneNumber || tx.client_phone || null;
 
       return {
         id: tx.id,
