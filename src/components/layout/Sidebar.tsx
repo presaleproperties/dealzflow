@@ -3,13 +3,15 @@ import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useState, useEffect, createContext, useContext } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
-  LogOut, Command, Users,
+  LogOut, Command, Users, Kanban, Mail, MessageCircle, LayoutTemplate,
+  BookUser, Zap, CalendarDays, BarChart3, Settings,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
