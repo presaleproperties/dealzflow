@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { PageLoader } from '@/components/ui/page-loader';
 
@@ -7,10 +8,20 @@ interface CrmRouteGuardProps {
   requireRole?: ('owner' | 'admin')[];
 }
 
+const GUARD_TIMEOUT_MS = 3000;
+
 export function CrmRouteGuard({ children, requireRole }: CrmRouteGuardProps) {
   const { isMember, isLoading, role } = useCrmAccess();
+  const [timedOut, setTimedOut] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => setTimedOut(true), GUARD_TIMEOUT_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  if (isLoading && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <PageLoader />
@@ -18,7 +29,7 @@ export function CrmRouteGuard({ children, requireRole }: CrmRouteGuardProps) {
     );
   }
 
-  if (!isMember) {
+  if ((isLoading && timedOut) || !isMember) {
     return <Navigate to="/dashboard" replace />;
   }
 
