@@ -61,8 +61,8 @@ export default function CrmSettingsPage() {
   if (accessLoading || !isOwnerOrAdmin) return null;
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      <h1 className="text-2xl font-bold text-foreground">CRM Settings</h1>
+    <div className="space-y-6 sm:space-y-8 max-w-4xl">
+      <h1 className="text-xl sm:text-2xl font-bold text-foreground">CRM Settings</h1>
       <TeamManagement />
       <Separator />
       <PipelineStages />
@@ -138,11 +138,8 @@ function TeamManagement() {
 
   const inviteMember = useMutation({
     mutationFn: async () => {
-      // We can't look up auth.users from the client. Insert with a placeholder user_id
-      // and match by email. The admin RLS allows inserting.
-      // For now, insert with a generated UUID – the owner must ensure the email user exists.
       const { error } = await supabase.from('crm_team').insert({
-        user_id: crypto.randomUUID(), // placeholder – real flow would look up by email
+        user_id: crypto.randomUUID(),
         email: inviteEmail,
         display_name: inviteName || null,
         role: inviteRole,
@@ -168,111 +165,115 @@ function TeamManagement() {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 sm:px-6">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg">Team Management</CardTitle>
-          <span className="text-sm text-muted-foreground ml-2">
-            {members.length} of unlimited team members
+          <CardTitle className="text-base sm:text-lg">Team Management</CardTitle>
+          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2">
+            {members.length} members
           </span>
         </div>
-        <Button size="sm" onClick={() => setInviteOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-1.5" /> Invite Team Member
+        <Button size="sm" onClick={() => setInviteOpen(true)} className="min-h-[44px] sm:min-h-0 w-full sm:w-auto">
+          <UserPlus className="h-4 w-4 mr-1.5" /> Invite
         </Button>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Added</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
-            )}
-            {members.map(m => {
-              const isOwner = m.role === 'owner';
-              return (
-                <TableRow key={m.id}>
-                  <TableCell className="font-medium flex items-center gap-2">
-                    {isOwner && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                    {m.display_name || '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{m.email || '—'}</TableCell>
-                  <TableCell>
-                    {isOwner ? (
-                      <Badge variant="outline" className={roleBadgeColor('owner')}>owner</Badge>
-                    ) : (
-                      <Select
-                        value={m.role}
-                        onValueChange={(v) => updateRole.mutate({ id: m.id, role: v })}
-                      >
-                        <SelectTrigger className="w-28 h-7 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">admin</SelectItem>
-                          <SelectItem value="agent">agent</SelectItem>
-                          <SelectItem value="viewer">viewer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isOwner ? (
-                      <Badge variant="outline" className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Active</Badge>
-                    ) : (
-                      <Switch
-                        checked={m.is_active}
-                        onCheckedChange={(v) => toggleActive.mutate({ id: m.id, is_active: v })}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(m.created_at), 'MMM d, yyyy')}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!isOwner && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                            Remove
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {m.display_name || m.email} will lose access to the CRM. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
+      <CardContent className="px-2 sm:px-6">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead className="hidden sm:table-cell">Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Added</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
+              )}
+              {members.map(m => {
+                const isOwner = m.role === 'owner';
+                return (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        {isOwner && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                        <span className="truncate">{m.display_name || '—'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden sm:table-cell">{m.email || '—'}</TableCell>
+                    <TableCell>
+                      {isOwner ? (
+                        <Badge variant="outline" className={roleBadgeColor('owner')}>owner</Badge>
+                      ) : (
+                        <Select
+                          value={m.role}
+                          onValueChange={(v) => updateRole.mutate({ id: m.id, role: v })}
+                        >
+                          <SelectTrigger className="w-24 sm:w-28 h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">admin</SelectItem>
+                            <SelectItem value="agent">agent</SelectItem>
+                            <SelectItem value="viewer">viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isOwner ? (
+                        <Badge variant="outline" className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Active</Badge>
+                      ) : (
+                        <Switch
+                          checked={m.is_active}
+                          onCheckedChange={(v) => toggleActive.mutate({ id: m.id, is_active: v })}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
+                      {format(new Date(m.created_at), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {!isOwner && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive min-h-[44px] sm:min-h-0">
                               Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {m.display_name || m.email} will lose access to the CRM.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
           </DialogHeader>
@@ -284,6 +285,7 @@ function TeamManagement() {
                 placeholder="team@example.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
+                className="min-h-[44px] sm:min-h-0"
               />
             </div>
             <div className="space-y-1.5">
@@ -292,12 +294,13 @@ function TeamManagement() {
                 placeholder="Jane Doe"
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
+                className="min-h-[44px] sm:min-h-0"
               />
             </div>
             <div className="space-y-1.5">
               <Label>Role</Label>
               <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="min-h-[44px] sm:min-h-0"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="agent">Agent</SelectItem>
@@ -306,14 +309,15 @@ function TeamManagement() {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              This person needs a Dealzflow account first. If they haven't signed up yet, ask them to create one with this email.
+              This person needs an account first. Ask them to sign up with this email.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setInviteOpen(false)} className="min-h-[44px] sm:min-h-0">Cancel</Button>
             <Button
               disabled={!inviteEmail || inviteMember.isPending}
               onClick={() => inviteMember.mutate()}
+              className="min-h-[44px] sm:min-h-0"
             >
               {inviteMember.isPending ? 'Adding…' : 'Add Member'}
             </Button>
@@ -329,16 +333,16 @@ function TeamManagement() {
    ══════════════════════════════════════════ */
 function PipelineStages() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Pipeline Stages</CardTitle>
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="px-3 sm:px-6">
+        <CardTitle className="text-base sm:text-lg">Pipeline Stages</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1">
+      <CardContent className="space-y-1 px-3 sm:px-6">
         {PIPELINE_STAGES.map((stage, i) => (
-          <div key={stage} className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-muted/30 border border-border/40">
-            <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab" />
-            <span className="text-sm font-medium text-foreground">{stage}</span>
-            <span className="ml-auto text-xs text-muted-foreground">Stage {i + 1}</span>
+          <div key={stage} className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-md bg-muted/30 border border-border/40 min-h-[40px]">
+            <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab shrink-0" />
+            <span className="text-sm font-medium text-foreground truncate">{stage}</span>
+            <span className="ml-auto text-xs text-muted-foreground shrink-0">Stage {i + 1}</span>
           </div>
         ))}
         <p className="text-xs text-muted-foreground pt-2">Drag-to-reorder coming soon.</p>
@@ -364,25 +368,25 @@ function LeadSourcesSection() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Lead Sources</CardTitle>
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="px-3 sm:px-6">
+        <CardTitle className="text-base sm:text-lg">Lead Sources</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 px-3 sm:px-6">
         <div className="flex flex-wrap gap-2">
           {sources.map(s => (
             <Badge key={s} variant="outline" className="text-sm py-1 px-3">{s}</Badge>
           ))}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input
             placeholder="New source name"
             value={newSource}
             onChange={(e) => setNewSource(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addSource()}
-            className="max-w-xs"
+            className="sm:max-w-xs min-h-[44px] sm:min-h-0"
           />
-          <Button variant="outline" size="sm" onClick={addSource} disabled={!newSource.trim()}>
+          <Button variant="outline" size="sm" onClick={addSource} disabled={!newSource.trim()} className="min-h-[44px] sm:min-h-0">
             <Plus className="h-4 w-4 mr-1" /> Add Source
           </Button>
         </div>
@@ -402,13 +406,13 @@ function IntegrationsSection() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Integrations</CardTitle>
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="px-3 sm:px-6">
+        <CardTitle className="text-base sm:text-lg">Integrations</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2">
+      <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-2 px-3 sm:px-6">
         {INTEGRATIONS.map(intg => (
-          <div key={intg.name} className="flex items-start gap-3 p-4 rounded-lg border border-border/60 bg-muted/20">
+          <div key={intg.name} className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
             <div className="p-2 rounded-md bg-primary/10 shrink-0">
               <intg.icon className="h-5 w-5 text-primary" />
             </div>
@@ -419,7 +423,7 @@ function IntegrationsSection() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">{intg.desc}</p>
               {intg.status === 'disconnected' && (
-                <Button variant="outline" size="sm" className="mt-2 h-7 text-xs">Reconnect</Button>
+                <Button variant="outline" size="sm" className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0">Reconnect</Button>
               )}
             </div>
           </div>
@@ -456,14 +460,14 @@ function NotificationsSection() {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center gap-2">
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
         <Bell className="h-5 w-5 text-primary" />
-        <CardTitle className="text-lg">Notifications</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Notifications</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-1 sm:space-y-3 px-3 sm:px-6">
         {NOTIFICATION_DEFAULTS.map(n => (
-          <div key={n.key} className="flex items-center justify-between py-1">
+          <div key={n.key} className="flex items-center justify-between py-2 sm:py-1 min-h-[44px]">
             <span className="text-sm text-foreground">{n.label}</span>
             <Switch
               checked={toggles[n.key]}

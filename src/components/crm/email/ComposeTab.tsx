@@ -70,20 +70,20 @@ export function ComposeTab() {
                 onChange={e => { setSearchTo(e.target.value); setSelectedContact(null); setToOpen(true); }}
                 onFocus={() => setToOpen(true)}
                 placeholder="Search contact..."
-                className="pl-9"
+                className="pl-9 min-h-[44px] sm:min-h-0"
               />
             </div>
           </PopoverTrigger>
-          <PopoverContent className="w-[400px] p-0" align="start">
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] sm:w-[400px] p-0" align="start">
             <div className="max-h-[200px] overflow-y-auto">
               {filteredContacts.map(c => (
                 <div
                   key={c.id}
-                  className="px-3 py-2 hover:bg-muted/50 cursor-pointer text-sm"
+                  className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center"
                   onClick={() => { setSelectedContact(c); setToOpen(false); }}
                 >
                   <span className="font-medium text-foreground">{c.first_name} {c.last_name}</span>
-                  {c.email && <span className="text-muted-foreground ml-2">{c.email}</span>}
+                  {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
                 </div>
               ))}
               {filteredContacts.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">No contacts found</p>}
@@ -97,7 +97,7 @@ export function ComposeTab() {
         <div>
           <Label>Template (optional)</Label>
           <Select onValueChange={loadTemplate}>
-            <SelectTrigger><SelectValue placeholder="Load a template..." /></SelectTrigger>
+            <SelectTrigger className="min-h-[44px] sm:min-h-0"><SelectValue placeholder="Load a template..." /></SelectTrigger>
             <SelectContent>
               {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
             </SelectContent>
@@ -108,7 +108,7 @@ export function ComposeTab() {
       {/* Subject */}
       <div>
         <Label>Subject *</Label>
-        <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject" maxLength={200} />
+        <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject" maxLength={200} className="min-h-[44px] sm:min-h-0" />
       </div>
 
       {/* Body */}
@@ -117,9 +117,10 @@ export function ComposeTab() {
         <RichTextEditor content={body} onChange={setBody} />
       </div>
 
-      <div className="flex justify-end">
+      {/* Send button — full width on mobile, sticky */}
+      <div className="flex justify-end sm:static sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
         <Button
-          className="gap-1.5 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white"
+          className="gap-1.5 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white w-full sm:w-auto min-h-[44px]"
           disabled={!selectedContact || !subject.trim() || !body.trim() || addMessage.isPending}
           onClick={handleSend}
         >
