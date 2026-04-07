@@ -25,7 +25,7 @@ export function CrmLeadsBySource() {
   });
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 shadow-sm h-full">
+    <div className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 lg:p-5 shadow-sm h-full">
       <h3 className="text-sm font-semibold text-foreground mb-4">Leads by Source</h3>
       {isLoading ? (
         <Skeleton className="h-[220px] w-full" />

@@ -46,7 +46,6 @@ export default function CrmLeadsPage() {
     return list;
   }, [contacts, search, filterStatus, filterSource, filterProject, filterAgent]);
 
-  // Reset page when filters change
   const handleFilterChange = (setter: (v: string) => void) => (val: string) => {
     setter(val);
     setPage(1);
@@ -54,61 +53,75 @@ export default function CrmLeadsPage() {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h1 className="text-xl font-bold text-foreground">Leads</h1>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                placeholder="Search leads..."
-                className="pl-8 h-9 w-52 text-sm"
-              />
-            </div>
-
-            <Select value={filterStatus} onValueChange={handleFilterChange(setFilterStatus)}>
-              <SelectTrigger className="h-9 w-auto text-xs gap-1">
-                <span>Status</span>
-              </SelectTrigger>
-              <SelectContent>
-                {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterSource} onValueChange={handleFilterChange(setFilterSource)}>
-              <SelectTrigger className="h-9 w-auto text-xs gap-1">
-                <span>Source</span>
-              </SelectTrigger>
-              <SelectContent>
-                {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterProject} onValueChange={handleFilterChange(setFilterProject)}>
-              <SelectTrigger className="h-9 w-auto text-xs gap-1">
-                <span>Project</span>
-              </SelectTrigger>
-              <SelectContent>
-                {PROJECTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterAgent} onValueChange={handleFilterChange(setFilterAgent)}>
-              <SelectTrigger className="h-9 w-auto text-xs gap-1">
-                <span>Agent</span>
-              </SelectTrigger>
-              <SelectContent>
-                {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5">
+        <div className="space-y-2 sm:space-y-0">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads</h1>
+            {/* Add Lead — desktop inline, mobile full row below */}
+            <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5 hidden sm:flex">
               <Plus className="w-4 h-4" /> Add Lead
             </Button>
           </div>
+
+          {/* Row 1: Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Search leads..."
+              className="pl-8 h-10 sm:h-9 w-full sm:w-52 text-sm"
+            />
+          </div>
+
+          {/* Row 2: Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Select value={filterStatus} onValueChange={handleFilterChange(setFilterStatus)}>
+                <SelectTrigger className="h-10 sm:h-9 flex-1 sm:flex-none sm:w-auto text-xs gap-1 min-h-[44px] sm:min-h-0">
+                  <span>Status</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterSource} onValueChange={handleFilterChange(setFilterSource)}>
+                <SelectTrigger className="h-10 sm:h-9 flex-1 sm:flex-none sm:w-auto text-xs gap-1 min-h-[44px] sm:min-h-0">
+                  <span>Source</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="hidden lg:flex gap-2">
+              <Select value={filterProject} onValueChange={handleFilterChange(setFilterProject)}>
+                <SelectTrigger className="h-9 w-auto text-xs gap-1">
+                  <span>Project</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {PROJECTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterAgent} onValueChange={handleFilterChange(setFilterAgent)}>
+                <SelectTrigger className="h-9 w-auto text-xs gap-1">
+                  <span>Agent</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Mobile: Add Lead full-width */}
+          <Button onClick={() => setShowAdd(true)} size="sm" className="h-11 w-full bg-primary text-primary-foreground gap-1.5 sm:hidden min-h-[44px]">
+            <Plus className="w-4 h-4" /> Add Lead
+          </Button>
         </div>
 
         {/* Filter pills */}

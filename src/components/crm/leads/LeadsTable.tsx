@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { LeadStatusBadge } from './LeadStatusBadge';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'updated_at' | 'created_at';
@@ -23,14 +24,25 @@ interface LeadsTableProps {
 
 const PAGE_SIZE = 25;
 
+const STATUS_BORDER_COLORS: Record<string, string> = {
+  'New Lead': 'hsl(210 62% 46%)',
+  'Contacted': 'hsl(210 62% 46%)',
+  'Nurturing': 'hsl(38 92% 50%)',
+  'Hot / Engaged': 'hsl(0 84% 60%)',
+  'Showing Booked': 'hsl(142 71% 45%)',
+  'Offer Made': 'hsl(270 60% 55%)',
+  'Closed': 'hsl(142 71% 35%)',
+  'Lost / Cold': 'hsl(0 84% 60%)',
+};
+
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'name', label: 'Name' },
   { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'project', label: 'Project' },
+  { key: 'email', label: 'Email', className: 'hidden lg:table-cell' },
+  { key: 'project', label: 'Project', className: 'hidden lg:table-cell' },
   { key: 'source', label: 'Source' },
   { key: 'status', label: 'Status' },
-  { key: 'assigned_to', label: 'Assigned To' },
+  { key: 'assigned_to', label: 'Assigned To', className: 'hidden lg:table-cell' },
   { key: 'updated_at', label: 'Last Touch', className: 'hidden xl:table-cell' },
   { key: 'created_at', label: 'Added', className: 'hidden xl:table-cell' },
 ];
@@ -49,8 +61,40 @@ function getSortValue(contact: CrmContact, key: SortKey): string {
   }
 }
 
+/* ── Mobile Lead Card ── */
+function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => void }) {
+  const borderColor = STATUS_BORDER_COLORS[contact.status ?? 'New Lead'] ?? 'hsl(210 62% 46%)';
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left bg-card rounded-[10px] border border-border p-3 shadow-sm transition-colors active:bg-muted/40"
+      style={{ borderLeft: `3px solid ${borderColor}` }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-base font-semibold text-foreground leading-snug truncate">
+          {contact.first_name} {contact.last_name}
+        </p>
+        <LeadStatusBadge status={contact.status} />
+      </div>
+      {contact.phone && (
+        <p className="text-sm text-muted-foreground mt-1">{contact.phone}</p>
+      )}
+      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+        {contact.source && (
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{contact.source}</Badge>
+        )}
+        {contact.assigned_to && (
+          <span className="text-[12px] text-muted-foreground">{contact.assigned_to}</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
 export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange, page, onPageChange }: LeadsTableProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -108,6 +152,35 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
     );
   }
 
+  /* ── Mobile: Card View ── */
+  if (isMobile) {
+    return (
+      <div>
+        <div className="space-y-2">
+          {paginated.map((contact) => (
+            <LeadCard
+              key={contact.id}
+              contact={contact}
+              onClick={() => navigate(`/crm/leads/${contact.id}`)}
+            />
+          ))}
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-3 px-1">
+            <span className="text-xs text-muted-foreground">
+              {sorted.length} lead{sorted.length !== 1 ? 's' : ''} — page {page}/{totalPages}
+            </span>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" className="h-8 text-xs min-h-[44px]" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Prev</Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs min-h-[44px]" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── Desktop/Tablet: Table View ── */
   return (
     <div>
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
@@ -148,8 +221,8 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                   {contact.first_name} {contact.last_name}
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap max-w-[180px] truncate">{contact.email ?? '—'}</td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap max-w-[180px] truncate hidden lg:table-cell">{contact.email ?? '—'}</td>
+                <td className="px-3 py-2.5 hidden lg:table-cell">
                   {contact.project ? (
                     <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
                       {contact.project}
@@ -158,7 +231,7 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</td>
                 <td className="px-3 py-2.5"><LeadStatusBadge status={contact.status} /></td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.assigned_to ?? '—'}</td>
+                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap hidden lg:table-cell">{contact.assigned_to ?? '—'}</td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap text-xs hidden xl:table-cell">
                   {formatDistanceToNow(new Date(contact.updated_at), { addSuffix: true })}
                 </td>
@@ -171,7 +244,6 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-4 px-1">
           <span className="text-xs text-muted-foreground">
