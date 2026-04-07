@@ -1,5 +1,5 @@
-import { MessageCircle } from 'lucide-react';
-import { CrmPagePlaceholder } from '@/components/crm/CrmPagePlaceholder';
+import { WhatsAppChat } from '@/components/crm/whatsapp/WhatsAppChat';
+
 export default function CrmWhatsAppPage() {
-  return <CrmPagePlaceholder title="WhatsApp" icon={MessageCircle} />;
+  return <WhatsAppChat />;
 }
