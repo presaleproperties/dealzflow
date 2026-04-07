@@ -5,11 +5,11 @@ import { AnalyticsTab } from '@/components/crm/email/AnalyticsTab';
 
 export default function CrmEmailPage() {
   return (
-    <Tabs defaultValue="campaigns" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-        <TabsTrigger value="compose">Compose</TabsTrigger>
-        <TabsTrigger value="analytics">Analytics</TabsTrigger>
+    <Tabs defaultValue="campaigns" className="space-y-3 sm:space-y-4">
+      <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
+        <TabsTrigger value="campaigns" className="text-[13px] sm:text-sm min-h-[44px] sm:min-h-0">Campaigns</TabsTrigger>
+        <TabsTrigger value="compose" className="text-[13px] sm:text-sm min-h-[44px] sm:min-h-0">Compose</TabsTrigger>
+        <TabsTrigger value="analytics" className="text-[13px] sm:text-sm min-h-[44px] sm:min-h-0">Analytics</TabsTrigger>
       </TabsList>
       <TabsContent value="campaigns"><CampaignsTab /></TabsContent>
       <TabsContent value="compose"><ComposeTab /></TabsContent>
