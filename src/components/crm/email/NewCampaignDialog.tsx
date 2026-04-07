@@ -47,7 +47,7 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
   };
 
   const handleSend = async () => {
-    const segmentFilter: Record<string, unknown> = { type: filterType };
+    const segmentFilter: Record<string, string | number | boolean | null> = { type: filterType };
     if (filterType !== 'all') segmentFilter.value = filterValue;
 
     await createCampaign.mutateAsync({
