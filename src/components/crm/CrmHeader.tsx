@@ -42,7 +42,11 @@ export function CrmHeader() {
   );
 
   return (
-    <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-4 lg:px-6 border-b border-border bg-card/80">
+    <header
+      className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-xl"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
+    <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-4 lg:px-6">
       {/* Left: Hamburger (< 1024px) + CRM label */}
       <div className="flex items-center gap-2 min-w-0">
         {/* Hamburger for < 1024px */}
