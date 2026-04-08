@@ -720,6 +720,47 @@ export type Database = {
           },
         ]
       }
+      crm_notes: {
+        Row: {
+          contact_id: string
+          content: string
+          created_at: string | null
+          id: string
+          is_pinned: boolean | null
+          note_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          contact_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          note_type?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          contact_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          note_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_notes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_notifications: {
         Row: {
           body: string | null
