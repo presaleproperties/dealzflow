@@ -92,6 +92,16 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = query.overlaps('tags', filters.tags);
       }
 
+      // A-Z letter filter
+      if (filters.letterFilter) {
+        query = query.ilike('last_name', `${filters.letterFilter}%`);
+      }
+
+      // Pipeline view filter
+      if (filters.pipelineView === 'active') {
+        query = query.not('status', 'in', '("Closed","Lost / Cold")');
+      }
+
       // Sort
       const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
       query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });

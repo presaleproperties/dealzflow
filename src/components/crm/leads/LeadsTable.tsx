@@ -29,6 +29,7 @@ interface LeadsTableProps {
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
+  visibleColumns: Set<string>;
 }
 
 const STATUS_BORDER_COLORS: Record<string, string> = {
@@ -47,6 +48,14 @@ const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: st
   realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
   past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Client' },
 };
+
+const TAG_COLORS = [
+  { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' },
+  { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)' },
+  { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' },
+  { bg: 'hsl(38 92% 50% / 0.12)', color: 'hsl(38 92% 50%)' },
+  { bg: 'hsl(0 84% 60% / 0.12)', color: 'hsl(0 84% 60%)' },
+];
 
 function ContactTypeBadge({ type }: { type: string }) {
   const style = CONTACT_TYPE_STYLES[type] ?? CONTACT_TYPE_STYLES.lead;
@@ -74,17 +83,39 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
   );
 }
 
-// Map display column keys to sort keys
-const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email', className: 'hidden lg:table-cell' },
-  { key: 'project', label: 'Projects', className: 'hidden lg:table-cell' },
-  { key: 'source', label: 'Source' },
-  { key: 'status', label: 'Status' },
-  { key: 'assigned_to', label: 'Assigned To', className: 'hidden lg:table-cell' },
-  { key: 'last_touch_at', label: 'Last Touch', className: 'hidden xl:table-cell' },
-  { key: 'created_at', label: 'Added', className: 'hidden xl:table-cell' },
+function TagsList({ tags }: { tags: string[] }) {
+  if (!tags || tags.length === 0) return <span className="text-muted-foreground">—</span>;
+  const shown = tags.slice(0, 2);
+  const extra = tags.length - 2;
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {shown.map((tag, i) => {
+        const c = TAG_COLORS[i % TAG_COLORS.length];
+        return (
+          <Badge key={tag} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap" style={{ background: c.bg, color: c.color }}>
+            {tag}
+          </Badge>
+        );
+      })}
+      {extra > 0 && <span className="text-[10px] text-muted-foreground">+{extra}</span>}
+    </div>
+  );
+}
+
+// All possible columns
+type ColumnDef = { key: string; sortKey?: SortKey; label: string; className?: string };
+
+const ALL_COLUMNS: ColumnDef[] = [
+  { key: 'name', sortKey: 'name', label: 'Name' },
+  { key: 'phone', sortKey: 'phone', label: 'Phone' },
+  { key: 'email', sortKey: 'email', label: 'Email' },
+  { key: 'project', sortKey: 'project', label: 'Projects' },
+  { key: 'source', sortKey: 'source', label: 'Source' },
+  { key: 'status', sortKey: 'status', label: 'Status' },
+  { key: 'tags', label: 'Tags' },
+  { key: 'assigned_to', sortKey: 'assigned_to', label: 'Assigned To' },
+  { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Touch' },
+  { key: 'created_at', sortKey: 'created_at', label: 'Added' },
 ];
 
 /* ── Mobile Lead Card ── */
@@ -141,7 +172,6 @@ function PaginationBar({
   const from = (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, totalCount);
 
-  // Generate page numbers to show: current ± 2
   const pages = useMemo(() => {
     const result: number[] = [];
     const start = Math.max(1, page - 2);
@@ -173,22 +203,10 @@ function PaginationBar({
       </div>
 
       <div className="flex items-center gap-1">
-        <Button
-          variant="outline" size="icon"
-          className="h-7 w-7"
-          disabled={page <= 1 || isFetching}
-          onClick={() => onPageChange(1)}
-          title="First page"
-        >
+        <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1 || isFetching} onClick={() => onPageChange(1)} title="First page">
           <ChevronsLeft className="w-3.5 h-3.5" />
         </Button>
-        <Button
-          variant="outline" size="icon"
-          className="h-7 w-7"
-          disabled={page <= 1 || isFetching}
-          onClick={() => onPageChange(page - 1)}
-          title="Previous page"
-        >
+        <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1 || isFetching} onClick={() => onPageChange(page - 1)} title="Previous page">
           <ChevronLeft className="w-3.5 h-3.5" />
         </Button>
 
@@ -206,27 +224,13 @@ function PaginationBar({
         ))}
 
         {isMobile && (
-          <span className="text-xs text-muted-foreground px-2">
-            {page} / {totalPages}
-          </span>
+          <span className="text-xs text-muted-foreground px-2">{page} / {totalPages}</span>
         )}
 
-        <Button
-          variant="outline" size="icon"
-          className="h-7 w-7"
-          disabled={page >= totalPages || isFetching}
-          onClick={() => onPageChange(page + 1)}
-          title="Next page"
-        >
+        <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages || isFetching} onClick={() => onPageChange(page + 1)} title="Next page">
           <ChevronRight className="w-3.5 h-3.5" />
         </Button>
-        <Button
-          variant="outline" size="icon"
-          className="h-7 w-7"
-          disabled={page >= totalPages || isFetching}
-          onClick={() => onPageChange(totalPages)}
-          title="Last page"
-        >
+        <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages || isFetching} onClick={() => onPageChange(totalPages)} title="Last page">
           <ChevronsRight className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -234,14 +238,87 @@ function PaginationBar({
   );
 }
 
+/* ── Cell renderer ── */
+function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) {
+  switch (col.key) {
+    case 'name':
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium text-foreground whitespace-nowrap inline-flex items-center gap-1.5">
+            {formatContactName(contact.first_name, contact.last_name)}
+            {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </span>
+          <span className="text-xs text-muted-foreground mt-0.5">
+            {(CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead).label}
+          </span>
+        </div>
+      );
+    case 'phone':
+      return <span className="text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</span>;
+    case 'email':
+      return <span className="text-muted-foreground whitespace-nowrap max-w-[180px] truncate block">{contact.email ?? '—'}</span>;
+    case 'project':
+      return <ProjectsList projects={contact.projects} project={contact.project} />;
+    case 'source':
+      return <span className="text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</span>;
+    case 'status':
+      return <LeadStatusBadge status={contact.status} />;
+    case 'tags':
+      return <TagsList tags={contact.tags} />;
+    case 'assigned_to':
+      return <span className="text-muted-foreground whitespace-nowrap">{contact.assigned_to ?? '—'}</span>;
+    case 'last_touch_at':
+      if (!contact.last_touch_at) return <span className="text-muted-foreground italic text-xs">No activity</span>;
+      return (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-xs" style={{
+                color: (() => {
+                  const days = Math.floor((Date.now() - new Date(contact.last_touch_at).getTime()) / 86400000);
+                  if (days <= 7) return 'hsl(142 71% 45%)';
+                  if (days <= 30) return 'hsl(38 92% 50%)';
+                  return 'hsl(0 60% 55%)';
+                })()
+              }}>
+                {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {format(new Date(contact.last_touch_at), 'MMM d, yyyy h:mm a')}
+              {contact.last_touch_type && ` · ${contact.last_touch_type.replace(/_/g, ' ')}`}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    case 'created_at':
+      return <span className="text-muted-foreground whitespace-nowrap text-xs">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>;
+    default:
+      return <span>—</span>;
+  }
+}
+
 export function LeadsTable({
   contacts, isLoading, isFetching, totalCount,
   selectedIds, onSelectionChange,
   page, pageSize, onPageChange, onPageSizeChange,
-  sortKey, sortDir, onSort,
+  sortKey, sortDir, onSort, visibleColumns,
 }: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
   const allPageIds = contacts.map((c) => c.id);
   const allSelected = contacts.length > 0 && contacts.every((c) => selectedIds.includes(c.id));
@@ -283,10 +360,9 @@ export function LeadsTable({
   if (isMobile) {
     return (
       <div>
-        {/* Fetching indicator */}
         {isFetching && (
           <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full mb-2">
-            <div className="h-full w-1/3 bg-primary rounded-full animate-[shimmer_1s_ease-in-out_infinite]" style={{ animation: 'shimmer 1s ease-in-out infinite alternate', animationName: 'none' }} />
+            <div className="h-full w-1/3 bg-primary rounded-full animate-pulse" />
           </div>
         )}
         <div className="space-y-2">
@@ -310,7 +386,6 @@ export function LeadsTable({
 
   return (
     <div>
-      {/* Thin loading bar at top when fetching new page */}
       {isFetching && (
         <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full mb-1">
           <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
@@ -324,15 +399,15 @@ export function LeadsTable({
               <th className="w-10 px-3 py-2.5">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
               </th>
-              {COLUMNS.map((col) => (
+              {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors ${col.className ?? ''}`}
-                  onClick={() => onSort(col.key)}
+                  className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                  onClick={() => col.sortKey && onSort(col.sortKey)}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.label}
-                    <SortIcon col={col.key} />
+                    {col.sortKey && <SortIcon col={col.sortKey} />}
                   </span>
                 </th>
               ))}
@@ -351,65 +426,11 @@ export function LeadsTable({
                     onCheckedChange={() => toggleOne(contact.id)}
                   />
                 </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex flex-col">
-                    <span className="font-medium text-foreground whitespace-nowrap inline-flex items-center gap-1.5">
-                      {formatContactName(contact.first_name, contact.last_name)}
-                      {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
-                        <TooltipProvider delayDuration={200}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs">
-                              Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </span>
-                    <span className="text-xs text-muted-foreground mt-0.5">
-                      {(CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead).label}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap max-w-[180px] truncate hidden lg:table-cell">{contact.email ?? '—'}</td>
-                <td className="px-3 py-2.5 hidden lg:table-cell">
-                  <ProjectsList projects={contact.projects} project={contact.project} />
-                </td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</td>
-                <td className="px-3 py-2.5"><LeadStatusBadge status={contact.status} /></td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap hidden lg:table-cell">{contact.assigned_to ?? '—'}</td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-xs hidden xl:table-cell">
-                  {contact.last_touch_at ? (
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span style={{
-                            color: (() => {
-                              const days = Math.floor((Date.now() - new Date(contact.last_touch_at).getTime()) / 86400000);
-                              if (days <= 7) return 'hsl(142 71% 45%)';
-                              if (days <= 30) return 'hsl(38 92% 50%)';
-                              return 'hsl(0 60% 55%)';
-                            })()
-                          }}>
-                            {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">
-                          {format(new Date(contact.last_touch_at), 'MMM d, yyyy h:mm a')}
-                          {contact.last_touch_type && ` · ${contact.last_touch_type.replace(/_/g, ' ')}`}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <span className="text-muted-foreground italic">No activity</span>
-                  )}
-                </td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap text-xs hidden xl:table-cell">
-                  {format(new Date(contact.created_at), 'MMM d, yyyy')}
-                </td>
+                {columns.map((col) => (
+                  <td key={col.key} className="px-3 py-2.5">
+                    <CellContent col={col} contact={contact} />
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
