@@ -5,14 +5,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 
 const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
 
 interface AddLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function EmailWarning({ validation, onFix }: { validation: EmailValidation; onFix: () => void }) {
+  if (!validation.suggestion) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      <AlertTriangle className="w-3 h-3 flex-shrink-0" style={{ color: 'hsl(38 92% 50%)' }} />
+      <span className="text-xs" style={{ color: 'hsl(38 92% 50%)' }}>{validation.suggestion}</span>
+      <button
+        type="button"
+        onClick={onFix}
+        className="text-xs font-semibold underline ml-0.5"
+        style={{ color: 'hsl(38 92% 50%)' }}
+      >
+        Fix it
+      </button>
+    </div>
+  );
 }
 
 export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
@@ -30,12 +49,29 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [emailValidation, setEmailValidation] = useState<EmailValidation>({ isValid: true, suggestion: null, correctedEmail: null });
+
+  const handleEmailChange = (email: string) => {
+    setForm({ ...form, email });
+    if (email.trim()) {
+      setEmailValidation(validateEmail(email));
+    } else {
+      setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
+    }
+  };
+
+  const fixEmail = () => {
+    if (emailValidation.correctedEmail) {
+      setForm({ ...form, email: emailValidation.correctedEmail });
+      setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
+    }
+  };
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.first_name.trim()) errs.first_name = 'First name is required';
     if (!form.last_name.trim()) errs.last_name = 'Last name is required';
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Invalid email';
+    if (form.email && !validateEmail(form.email).isValid) errs.email = 'Invalid email format';
     if (form.first_name.length > 100) errs.first_name = 'Max 100 characters';
     if (form.last_name.length > 100) errs.last_name = 'Max 100 characters';
     setErrors(errs);
@@ -58,6 +94,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     });
     setForm({ first_name: '', last_name: '', phone: '', email: '', project: '', source: '', status: 'New Lead', assigned_to: '', tags: [] });
     setErrors({});
+    setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
     onOpenChange(false);
   };
 
@@ -111,11 +148,12 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
                 id="email"
                 type="email"
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(e) => handleEmailChange(e.target.value)}
                 maxLength={255}
-                className={errors.email ? 'border-destructive' : ''}
+                className={errors.email ? 'border-destructive' : emailValidation.suggestion ? 'border-warning' : ''}
               />
               {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+              <EmailWarning validation={emailValidation} onFix={fixEmail} />
             </div>
           </div>
 

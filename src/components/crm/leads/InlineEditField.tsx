@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, AlertTriangle } from 'lucide-react';
+import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 
 interface InlineEditFieldProps {
   value: string | null | undefined;
@@ -7,19 +8,31 @@ interface InlineEditFieldProps {
   placeholder?: string;
   href?: string;
   className?: string;
+  type?: 'text' | 'email';
 }
 
-export function InlineEditField({ value, onSave, placeholder = '—', href, className = '' }: InlineEditFieldProps) {
+export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text' }: InlineEditFieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
+  const [emailWarning, setEmailWarning] = useState<EmailValidation>({ isValid: true, suggestion: null, correctedEmail: null });
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editing) {
       setDraft(value ?? '');
+      setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [editing, value]);
+
+  const handleChange = (val: string) => {
+    setDraft(val);
+    if (type === 'email' && val.trim()) {
+      setEmailWarning(validateEmail(val));
+    } else {
+      setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
+    }
+  };
 
   const save = () => {
     const trimmed = draft.trim();
@@ -27,21 +40,45 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
       onSave(trimmed);
     }
     setEditing(false);
+    setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
+  };
+
+  const fixEmail = () => {
+    if (emailWarning.correctedEmail) {
+      setDraft(emailWarning.correctedEmail);
+      setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
+    }
   };
 
   if (editing) {
     return (
-      <input
-        ref={inputRef}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={save}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') save();
-          if (e.key === 'Escape') setEditing(false);
-        }}
-        className={`text-sm bg-transparent border-b border-primary/40 outline-none text-foreground w-full ${className}`}
-      />
+      <div className="flex-1 min-w-0">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={save}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') save();
+            if (e.key === 'Escape') setEditing(false);
+          }}
+          className={`text-sm bg-transparent border-b outline-none text-foreground w-full ${emailWarning.suggestion ? 'border-warning' : 'border-primary/40'} ${className}`}
+        />
+        {emailWarning.suggestion && (
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <AlertTriangle className="w-3 h-3 flex-shrink-0" style={{ color: 'hsl(38 92% 50%)' }} />
+            <span className="text-[11px]" style={{ color: 'hsl(38 92% 50%)' }}>{emailWarning.suggestion}</span>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); fixEmail(); }}
+              className="text-[11px] font-semibold underline"
+              style={{ color: 'hsl(38 92% 50%)' }}
+            >
+              Fix it
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
