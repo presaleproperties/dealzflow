@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -72,7 +72,7 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-card rounded-lg border border-border p-2.5 sm:p-3 mb-2 shadow-sm cursor-grab transition-shadow ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}
+          className={`bg-card rounded-lg border border-border p-2.5 sm:p-3 mb-2 shadow-sm cursor-grab transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg]' : 'hover:shadow-md'}`}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -117,6 +117,8 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   );
 }
 
+const CARDS_PER_PAGE = 50;
+
 export function PipelineKanban() {
   const { data: contacts = [], isLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(contacts);
@@ -132,6 +134,11 @@ export function PipelineKanban() {
   const [filterAgent, setFilterAgent] = useState('all');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
+
+  const loadMore = useCallback((stage: string) => {
+    setVisibleCounts(prev => ({ ...prev, [stage]: (prev[stage] || CARDS_PER_PAGE) + CARDS_PER_PAGE }));
+  }, []);
 
   const filtered = useMemo(() => {
     let list = contacts;
@@ -179,9 +186,13 @@ export function PipelineKanban() {
     const contact = contacts.find(c => c.id === contactId);
     if (!contact || contact.status === newStatus) return;
 
+    const name = formatContactName(contact.first_name, contact.last_name);
     updateContact.mutate(
       { id: contactId, updates: { status: newStatus, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } },
-      { onSuccess: () => toast.success(`Status updated to ${newStatus}`) }
+      {
+        onSuccess: () => toast.success(`Moved ${name} to ${newStatus}`, { duration: 2000 }),
+        onError: () => toast.error(`Failed to move ${name}. Reverted.`),
+      }
     );
   };
 
@@ -250,22 +261,36 @@ export function PipelineKanban() {
 
                   {/* Droppable area */}
                   <Droppable droppableId={stage}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-colors ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
-                        style={{ maxHeight: 'calc(100vh - 280px)' }}
-                      >
-                        {columns[stage].map((contact, idx) => (
-                          <LeadCard key={contact.id} contact={contact} index={idx} />
-                        ))}
-                        {provided.placeholder}
-                        {columns[stage].length === 0 && (
-                          <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
-                        )}
-                      </div>
-                    )}
+                    {(provided, snapshot) => {
+                      const allCards = columns[stage];
+                      const limit = visibleCounts[stage] || CARDS_PER_PAGE;
+                      const visible = allCards.slice(0, limit);
+                      const remaining = allCards.length - limit;
+                      return (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200 ${snapshot.isDraggingOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
+                          style={{ maxHeight: 'calc(100vh - 280px)' }}
+                        >
+                          {visible.map((contact, idx) => (
+                            <LeadCard key={contact.id} contact={contact} index={idx} />
+                          ))}
+                          {provided.placeholder}
+                          {remaining > 0 && (
+                            <button
+                              onClick={() => loadMore(stage)}
+                              className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                            >
+                              Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
+                            </button>
+                          )}
+                          {allCards.length === 0 && (
+                            <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
+                          )}
+                        </div>
+                      );
+                    }}
                   </Droppable>
                 </div>
               ))}
