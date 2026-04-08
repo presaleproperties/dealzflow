@@ -38,7 +38,7 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
   realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
-  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Past Client' },
+  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Client' },
 };
 
 function ContactTypeBadge({ type }: { type: string }) {
