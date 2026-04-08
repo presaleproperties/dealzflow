@@ -71,7 +71,6 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
 }
 
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
-  { key: 'contact_type', label: 'Type', className: 'hidden md:table-cell' },
   { key: 'name', label: 'Name' },
   { key: 'phone', label: 'Phone' },
   { key: 'email', label: 'Email', className: 'hidden lg:table-cell' },
