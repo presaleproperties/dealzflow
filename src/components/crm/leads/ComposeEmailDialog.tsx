@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, Send } from 'lucide-react';
 import { useSendGmail, useGmailStatus } from '@/hooks/useGmail';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -19,9 +20,15 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const sendGmail = useSendGmail();
   const addMessage = useAddCrmMessage();
   const { data: gmailStatus } = useGmailStatus();
+  const { data: emailSettings } = useEmailSettings();
   const [form, setForm] = useState({ subject: '', body: '' });
 
   const isGmailConnected = gmailStatus?.connected ?? false;
+  const gmailEmail = gmailStatus?.gmailEmail;
+  const senderName = emailSettings?.sender_name;
+  const fromDisplay = isGmailConnected && gmailEmail
+    ? (senderName ? `${senderName} <${gmailEmail}>` : gmailEmail)
+    : 'Not connected';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +74,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3 pt-2">
+          <div>
+            <Label>From</Label>
+            <Input value={fromDisplay} disabled className="bg-muted text-xs" />
+          </div>
           <div>
             <Label>To</Label>
             <Input value={contact.email ?? '—'} disabled className="bg-muted" />
