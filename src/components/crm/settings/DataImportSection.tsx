@@ -269,6 +269,10 @@ export default function DataImportSection() {
         if (record.project && !record.projects) {
           record.projects = [record.project as string];
         }
+        // Ensure projects is always an array (NOT NULL constraint)
+        if (!record.projects) {
+          record.projects = [];
+        }
 
         return record;
       }).filter(r => r.first_name && r.last_name);
