@@ -105,7 +105,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'reg', sortKey: 'created_at', label: 'Reg' },
   { key: 'project', sortKey: 'project', label: 'Projects' },
   { key: 'source', sortKey: 'source', label: 'Source' },
-  { key: 'status', sortKey: 'status', label: 'Status' },
+  { key: 'pipeline', label: 'Pipeline' },
   { key: 'tags', label: 'Tags' },
   { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Touch' },
@@ -195,8 +195,11 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
       return <ProjectsList projects={contact.projects} project={contact.project} />;
     case 'source':
       return <span className="text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</span>;
-    case 'status':
-      return <LeadStatusBadge status={contact.status} />;
+    case 'pipeline': {
+      const lt = (contact as any).lead_type as string | null;
+      const label = lt ? (LEAD_TYPE_LABELS[lt] ?? lt) : '—';
+      return <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap bg-muted/60 text-foreground">{label}</Badge>;
+    }
     case 'tags':
       return <TagsList tags={contact.tags} />;
     case 'assigned_to':
