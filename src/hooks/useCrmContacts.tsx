@@ -38,6 +38,9 @@ export type CrmContact = {
   next_followup_date: string | null;
   status_changed_at: string | null;
   lofty_id: string | null;
+  last_touch_at: string | null;
+  last_touch_type: string | null;
+  stage_changed_at: string | null;
   created_at: string;
   updated_at: string;
 };

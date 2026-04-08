@@ -51,14 +51,19 @@ function getInitials(name: string | null) {
 }
 
 function daysInStage(contact: CrmContact) {
-  const ref = contact.status_changed_at || contact.updated_at || contact.created_at;
+  const ref = contact.stage_changed_at || contact.status_changed_at;
+  if (!ref) return null;
   const diff = Date.now() - new Date(ref).getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
 function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   const days = daysInStage(contact);
-  const lastTouch = contact.updated_at || contact.created_at;
+  const daysColor = days === null ? undefined : days <= 7 ? 'hsl(142 71% 45%)' : days <= 14 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
+  const touchColor = !contact.last_touch_at ? undefined : (() => {
+    const d = Math.floor((Date.now() - new Date(contact.last_touch_at).getTime()) / 86400000);
+    return d <= 7 ? 'hsl(142 71% 45%)' : d <= 30 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
+  })();
 
   return (
     <Draggable draggableId={contact.id} index={index}>
@@ -95,8 +100,16 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
             )}
           </div>
           <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
-            <span>{days}d in stage</span>
-            <span>{formatDistanceToNow(new Date(lastTouch), { addSuffix: true })}</span>
+            <span style={daysColor ? { color: daysColor } : undefined}>
+              {days !== null ? `${days}d in stage` : '—'}
+            </span>
+            {contact.last_touch_at ? (
+              <span style={{ color: touchColor }}>
+                {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
+              </span>
+            ) : (
+              <span className="italic">No activity</span>
+            )}
           </div>
         </div>
       )}
