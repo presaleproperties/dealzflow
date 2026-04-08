@@ -10,20 +10,36 @@ const STAGES = [
   { label: 'Showing Booked', color: 'hsl(270 60% 55%)' },
   { label: 'Offer Made', color: 'hsl(142 71% 45%)' },
   { label: 'Closed', color: 'hsl(142 71% 35%)' },
+  { label: 'Lost / Cold', color: 'hsl(0 0% 45%)' },
 ];
 
 export function CrmPipelineSnapshot() {
   const { data, isLoading } = useQuery({
     queryKey: ['crm-pipeline-snapshot'],
     queryFn: async () => {
-      const { data: contacts } = await supabase
-        .from('crm_contacts')
-        .select('status');
+      const PAGE_SIZE = 1000;
+      let allContacts: { status: string | null }[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch, error } = await supabase
+          .from('crm_contacts')
+          .select('status')
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (batch && batch.length > 0) {
+          allContacts = allContacts.concat(batch);
+          from += PAGE_SIZE;
+          hasMore = batch.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
 
       const counts: Record<string, number> = {};
       STAGES.forEach((s) => (counts[s.label] = 0));
-      (contacts ?? []).forEach((c) => {
-        if (counts[c.status] !== undefined) counts[c.status]++;
+      allContacts.forEach((c) => {
+        if (c.status && counts[c.status] !== undefined) counts[c.status]++;
       });
       return counts;
     },

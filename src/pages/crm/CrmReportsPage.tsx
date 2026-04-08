@@ -21,16 +21,30 @@ export default function CrmReportsPage() {
   const { data: showings = [] } = useQuery({
     queryKey: ['crm-reports-showings'],
     queryFn: async () => {
-      const { data } = await supabase.from('crm_showings').select('*');
-      return data ?? [];
+      const PAGE_SIZE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch } = await supabase.from('crm_showings').select('*').range(from, from + PAGE_SIZE - 1);
+        if (batch && batch.length > 0) { all = all.concat(batch); from += PAGE_SIZE; hasMore = batch.length === PAGE_SIZE; } else { hasMore = false; }
+      }
+      return all;
     },
   });
 
   const { data: messages = [] } = useQuery({
     queryKey: ['crm-reports-messages'],
     queryFn: async () => {
-      const { data } = await supabase.from('crm_messages').select('sent_by, direction');
-      return data ?? [];
+      const PAGE_SIZE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch } = await supabase.from('crm_messages').select('sent_by, direction').range(from, from + PAGE_SIZE - 1);
+        if (batch && batch.length > 0) { all = all.concat(batch); from += PAGE_SIZE; hasMore = batch.length === PAGE_SIZE; } else { hasMore = false; }
+      }
+      return all;
     },
   });
 
