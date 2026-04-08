@@ -91,7 +91,15 @@ export function useUpdateCrmContact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Record<string, unknown> }) => {
-      const { error } = await supabase.from('crm_contacts').update(updates).eq('id', id);
+      // Auto-set status to Closed when contact_type is changed to past_client
+      const finalUpdates = { ...updates };
+      if (finalUpdates.contact_type === 'past_client') {
+        finalUpdates.status = 'Closed';
+        if (!finalUpdates.status_changed_at) {
+          finalUpdates.status_changed_at = new Date().toISOString();
+        }
+      }
+      const { error } = await supabase.from('crm_contacts').update(finalUpdates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: (_, { id }) => {
