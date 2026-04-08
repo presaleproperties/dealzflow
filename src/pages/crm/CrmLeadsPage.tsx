@@ -244,9 +244,9 @@ export default function CrmLeadsPage() {
 
   return (
     <>
-      <div className="flex h-full min-h-0">
+      <div className="flex flex-1 min-h-0 h-full">
         {/* Main content */}
-        <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto">
+        <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto pr-1">
           {/* Header */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
