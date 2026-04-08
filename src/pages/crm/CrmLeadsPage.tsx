@@ -237,22 +237,7 @@ export default function CrmLeadsPage() {
     { key: 'tags', label: 'Tags', values: filterTags },
   ];
 
-  const filterSection = (
-    <>
-      <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
-        <ContactTypeFilter value={filterContactType} onChange={v => { setFilterContactType(v); setPage(1); }} />
-        <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={v => { setFilterStatus(v); setPage(1); }} />
-        <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={v => { setFilterSource(v); setPage(1); }} />
-        <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={v => { setFilterAgent(v); setPage(1); }} />
-      </div>
-      <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
-        <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={v => { setFilterProject(v); setPage(1); }} />
-        <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={v => { setFilterLeadType(v); setPage(1); }} />
-        <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={v => { setFilterLanguage(v); setPage(1); }} />
-        <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={v => { setFilterTags(v); setPage(1); }} />
-      </div>
-    </>
-  );
+  // Filter section removed — now using FilterPanel sidebar
 
   // Check if "All Leads" segment or no segment is active (i.e. first segment with empty filter)
   const isAllSegment = !activeSegmentId || (activeSegment && Object.keys(activeSegment.filter_config).length === 0);
