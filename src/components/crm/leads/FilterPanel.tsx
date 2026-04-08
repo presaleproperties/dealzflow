@@ -109,7 +109,7 @@ function FilterAccordion({
                 >
                   {selected.includes(opt) && <Check className="w-3 h-3 text-primary-foreground" />}
                 </div>
-                <span className="truncate">{opt}</span>
+                <span className="truncate">{optionLabels?.[opt] ?? opt}</span>
               </button>
             ))}
             {filtered.length === 0 && (
@@ -188,7 +188,7 @@ export function FilterPanel({
           <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
           <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
           <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
-          <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
+          <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
           <FilterAccordion label="Language" options={dynamicLanguages} selected={filterLanguage} onChange={setFilterLanguage} />
           <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
         </div>
