@@ -431,6 +431,8 @@ export type Database = {
           lead_score: number | null
           lead_type: string | null
           lofty_id: string | null
+          lofty_synced_at: string | null
+          lofty_updated_at: string | null
           next_followup_date: string | null
           notes: string | null
           phone: string | null
@@ -443,6 +445,7 @@ export type Database = {
           stage_changed_at: string | null
           status: string | null
           status_changed_at: string | null
+          sync_source: string | null
           tags: string[] | null
           updated_at: string | null
         }
@@ -472,6 +475,8 @@ export type Database = {
           lead_score?: number | null
           lead_type?: string | null
           lofty_id?: string | null
+          lofty_synced_at?: string | null
+          lofty_updated_at?: string | null
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
@@ -484,6 +489,7 @@ export type Database = {
           stage_changed_at?: string | null
           status?: string | null
           status_changed_at?: string | null
+          sync_source?: string | null
           tags?: string[] | null
           updated_at?: string | null
         }
@@ -513,6 +519,8 @@ export type Database = {
           lead_score?: number | null
           lead_type?: string | null
           lofty_id?: string | null
+          lofty_synced_at?: string | null
+          lofty_updated_at?: string | null
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
@@ -525,6 +533,7 @@ export type Database = {
           stage_changed_at?: string | null
           status?: string | null
           status_changed_at?: string | null
+          sync_source?: string | null
           tags?: string[] | null
           updated_at?: string | null
         }
@@ -987,6 +996,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_sync_log: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string | null
+          error_message: string | null
+          event_type: string | null
+          id: string
+          lofty_lead_id: string | null
+          payload_preview: string | null
+          source: string
+          status: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          lofty_lead_id?: string | null
+          payload_preview?: string | null
+          source?: string
+          status?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          lofty_lead_id?: string | null
+          payload_preview?: string | null
+          source?: string
+          status?: string | null
+        }
+        Relationships: []
       }
       crm_tasks: {
         Row: {
