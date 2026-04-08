@@ -193,8 +193,27 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
       return <span className="text-muted-foreground whitespace-nowrap max-w-[180px] truncate block">{contact.email ?? '—'}</span>;
     case 'project':
       return <ProjectsList projects={contact.projects} project={contact.project} />;
-    case 'source':
-      return <span className="text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</span>;
+    case 'source': {
+      const syncSource = (contact as any).sync_source as string | null;
+      const isLofty = syncSource === 'zapier_lofty' || syncSource === 'lofty_api_sync';
+      return (
+        <span className="text-muted-foreground whitespace-nowrap inline-flex items-center gap-1">
+          {contact.source ?? '—'}
+          {isLofty && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] px-1 py-0 rounded bg-primary/10 text-primary font-medium">Lofty</span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Synced from Lofty{(contact as any).lofty_synced_at ? ` on ${new Date((contact as any).lofty_synced_at).toLocaleString()}` : ''}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </span>
+      );
+    }
     case 'pipeline': {
       const lt = (contact as any).lead_type as string | null;
       const label = lt ? (LEAD_TYPE_LABELS[lt] ?? lt) : '—';
