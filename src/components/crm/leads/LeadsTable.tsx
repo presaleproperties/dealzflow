@@ -71,7 +71,6 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
 }
 
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
-  { key: 'contact_type', label: 'Type', className: 'hidden md:table-cell' },
   { key: 'name', label: 'Name' },
   { key: 'phone', label: 'Phone' },
   { key: 'email', label: 'Email', className: 'hidden lg:table-cell' },
@@ -264,25 +263,27 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                     onCheckedChange={() => toggleOne(contact.id)}
                   />
                 </td>
-                <td className="px-3 py-2.5 hidden md:table-cell">
-                  <ContactTypeBadge type={contact.contact_type} />
-                </td>
-                <td className="px-3 py-2.5 font-medium text-foreground whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1.5">
-                    {formatContactName(contact.first_name, contact.last_name)}
-                    {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
-                      <TooltipProvider delayDuration={200}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
-                            Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </span>
+                <td className="px-3 py-2.5">
+                  <div className="flex flex-col">
+                    <span className="font-medium text-foreground whitespace-nowrap inline-flex items-center gap-1.5">
+                      {formatContactName(contact.first_name, contact.last_name)}
+                      {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      {(CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead).label}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap max-w-[180px] truncate hidden lg:table-cell">{contact.email ?? '—'}</td>
