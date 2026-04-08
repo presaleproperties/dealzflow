@@ -129,35 +129,58 @@ interface ImportResult {
 }
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length === 0) return { headers: [], rows: [] };
+  const normalized = text
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
 
-  const parseLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (ch === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
+  const parsedRows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentCell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < normalized.length; i++) {
+    const ch = normalized[i];
+
+    if (ch === '"') {
+      if (inQuotes && normalized[i + 1] === '"') {
+        currentCell += '"';
+        i++;
       } else {
-        current += ch;
+        inQuotes = !inQuotes;
       }
+      continue;
     }
-    result.push(current.trim());
-    return result;
-  };
 
-  const headers = parseLine(lines[0]);
-  const rows = lines.slice(1).map(parseLine);
+    if (ch === ',' && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      currentCell = '';
+      continue;
+    }
+
+    if (ch === '\n' && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      if (currentRow.some(cell => cell !== '')) {
+        parsedRows.push(currentRow);
+      }
+      currentRow = [];
+      currentCell = '';
+      continue;
+    }
+
+    currentCell += ch;
+  }
+
+  if (currentCell.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentCell.trim());
+    if (currentRow.some(cell => cell !== '')) {
+      parsedRows.push(currentRow);
+    }
+  }
+
+  if (parsedRows.length === 0) return { headers: [], rows: [] };
+
+  const [headers, ...rows] = parsedRows;
   return { headers, rows };
 }
 
