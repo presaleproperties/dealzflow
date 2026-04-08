@@ -8,6 +8,8 @@ export type EmailSettings = {
   sender_name: string | null;
   reply_to: string | null;
   signature_html: string | null;
+  signature_mode: string;
+  signature_builder_data: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 };
@@ -32,7 +34,13 @@ export function useEmailSettings() {
 export function useUpsertEmailSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (settings: { sender_name?: string; reply_to?: string; signature_html?: string }) => {
+    mutationFn: async (settings: {
+      sender_name?: string;
+      reply_to?: string;
+      signature_html?: string;
+      signature_mode?: string;
+      signature_builder_data?: Record<string, string> | null;
+    }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
