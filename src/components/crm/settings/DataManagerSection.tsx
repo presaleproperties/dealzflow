@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatContactName } from '@/lib/format';
+import SourceBackfillSection from './SourceBackfillSection';
 import { format } from 'date-fns';
 
 const EXPORT_FIELDS = [
@@ -239,6 +240,9 @@ export default function DataManagerSection() {
                 </div>
               </>
             )}
+
+            {/* Source Backfill Tool */}
+            <SourceBackfillSection />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
