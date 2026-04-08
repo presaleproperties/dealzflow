@@ -1,14 +1,16 @@
-import { useState, useMemo } from 'react';
-import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from './RichTextEditor';
+import { TemplatePicker } from './TemplatePicker';
 import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
@@ -19,9 +21,24 @@ import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type SendMode = 'individual' | 'campaign';
+
+function replaceMergeTags(html: string, contact: CrmContact | null, senderName?: string, agentEmail?: string, agentPhone?: string): string {
+  let result = html;
+  if (contact) {
+    result = result.replace(/\{\{lead_name\}\}/gi, `${contact.first_name} ${contact.last_name}`);
+    result = result.replace(/\{\{first_name\}\}/gi, contact.first_name || '');
+    result = result.replace(/\{\{last_name\}\}/gi, contact.last_name || '');
+  }
+  result = result.replace(/\{\{agent_name\}\}/gi, senderName || 'Agent');
+  result = result.replace(/\{\{agent_email\}\}/gi, agentEmail || '');
+  result = result.replace(/\{\{agent_phone\}\}/gi, agentPhone || '');
+  result = result.replace(/\{\{company_name\}\}/gi, 'The Presale Properties Group');
+  return result;
+}
 
 export function ComposeTab() {
   const { data: contacts = [] } = useCrmContacts();
@@ -62,6 +79,16 @@ export function ComposeTab() {
   // Shared
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+
+  // Template state
+  const [activeTemplate, setActiveTemplate] = useState<CrmEmailTemplate | null>(null);
+  const [htmlBody, setHtmlBody] = useState('');
+  const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const isHtmlMode = !!activeTemplate;
 
   // From display
   const fromDisplay = useMemo(() => {
@@ -118,25 +145,49 @@ export function ComposeTab() {
     ).slice(0, 5);
   }, [contacts, excludeSearch, excludedIds]);
 
-  const loadTemplate = (id: string) => {
-    const tpl = templates.find(t => t.id === id);
-    if (tpl) {
-      setSubject(tpl.subject);
-      setBody(tpl.body_html ?? '');
+  // Update iframe when htmlBody changes
+  useEffect(() => {
+    if (iframeRef.current && isHtmlMode) {
+      const doc = iframeRef.current.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(htmlBody || '<p style="color:#888;font-family:sans-serif;padding:20px;">No content</p>');
+        doc.close();
+      }
     }
+  }, [htmlBody, isHtmlMode, previewWidth]);
+
+  const handleSelectTemplate = (tpl: CrmEmailTemplate) => {
+    setActiveTemplate(tpl);
+    const agentPhone = (emailSettings as any)?.signature_builder_data?.phone || '';
+    const agentEmail = emailSettings?.reply_to || gmailStatus?.gmailEmail || '';
+    const merged = replaceMergeTags(
+      tpl.body_html || '',
+      selectedContact,
+      emailSettings?.sender_name || undefined,
+      agentEmail,
+      agentPhone,
+    );
+    setHtmlBody(merged);
+    if (tpl.subject && !subject) setSubject(tpl.subject);
+    setShowHtmlEditor(false);
+  };
+
+  const clearTemplate = () => {
+    setActiveTemplate(null);
+    setHtmlBody('');
   };
 
   const handleSend = async () => {
+    const bodyContent = isHtmlMode ? htmlBody : body;
     if (mode === 'individual') {
-      if (!selectedContact || !subject.trim() || !body.trim()) return;
-
-      // Use Gmail send if connected
+      if (!selectedContact || !subject.trim() || (!bodyContent.trim())) return;
       if (gmailStatus?.connected && selectedContact.email) {
         await sendGmail.mutateAsync({
           to: selectedContact.email,
           subject,
-          bodyText: body.replace(/<[^>]*>/g, ''),
-          bodyHtml: body,
+          bodyText: bodyContent.replace(/<[^>]*>/g, ''),
+          bodyHtml: bodyContent,
           contactId: selectedContact.id,
           ...(cc.trim() ? { cc: cc.trim() } : {}),
           ...(bcc.trim() ? { bcc: bcc.trim() } : {}),
@@ -145,7 +196,7 @@ export function ComposeTab() {
         await addMessage.mutateAsync({
           contact_id: selectedContact.id,
           direction: 'outbound',
-          content: `Subject: ${subject}\n\n${body}`,
+          content: `Subject: ${subject}\n\n${bodyContent}`,
           channel: 'email',
           sent_by: 'Agent',
           message_type: 'text',
@@ -158,13 +209,15 @@ export function ComposeTab() {
     }
     setSubject('');
     setBody('');
+    clearTemplate();
   };
 
   const isSending = addMessage.isPending || sendGmail.isPending;
+  const bodyContent = isHtmlMode ? htmlBody : body;
 
   const canSend = mode === 'individual'
-    ? !!selectedContact && subject.trim() && body.trim()
-    : campaignRecipients.length > 0 && subject.trim() && body.trim();
+    ? !!selectedContact && subject.trim() && bodyContent.trim()
+    : campaignRecipients.length > 0 && subject.trim() && bodyContent.trim();
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -189,7 +242,6 @@ export function ComposeTab() {
       {/* Individual: From + To + CC/BCC */}
       {mode === 'individual' && (
         <>
-          {/* From (read-only) */}
           <div>
             <Label className="text-muted-foreground">From</Label>
             <div className="px-3 py-2 rounded-md border border-border/40 bg-muted/20 text-sm text-foreground/80">
@@ -197,14 +249,10 @@ export function ComposeTab() {
             </div>
           </div>
 
-          {/* To */}
           <div>
             <div className="flex items-center justify-between">
               <Label>To</Label>
-              <button
-                onClick={() => setShowCcBcc(!showCcBcc)}
-                className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
-              >
+              <button onClick={() => setShowCcBcc(!showCcBcc)} className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
                 {showCcBcc ? 'Hide CC/BCC' : 'CC BCC'}
               </button>
             </div>
@@ -224,11 +272,7 @@ export function ComposeTab() {
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] sm:w-[400px] p-0" align="start">
                 <div className="max-h-[200px] overflow-y-auto">
                   {filteredContacts.map(c => (
-                    <div
-                      key={c.id}
-                      className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center"
-                      onClick={() => { setSelectedContact(c); setToOpen(false); }}
-                    >
+                    <div key={c.id} className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center" onClick={() => { setSelectedContact(c); setToOpen(false); }}>
                       <span className="font-medium text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
                       {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
                     </div>
@@ -239,26 +283,15 @@ export function ComposeTab() {
             </Popover>
           </div>
 
-          {/* CC / BCC */}
           {showCcBcc && (
             <div className="space-y-3">
               <div>
                 <Label className="text-xs">CC</Label>
-                <Input
-                  value={cc}
-                  onChange={e => setCc(e.target.value)}
-                  placeholder="email1@example.com, email2@example.com"
-                  className="min-h-[44px] sm:min-h-0"
-                />
+                <Input value={cc} onChange={e => setCc(e.target.value)} placeholder="email1@example.com, email2@example.com" className="min-h-[44px] sm:min-h-0" />
               </div>
               <div>
                 <Label className="text-xs">BCC</Label>
-                <Input
-                  value={bcc}
-                  onChange={e => setBcc(e.target.value)}
-                  placeholder="email1@example.com, email2@example.com"
-                  className="min-h-[44px] sm:min-h-0"
-                />
+                <Input value={bcc} onChange={e => setBcc(e.target.value)} placeholder="email1@example.com, email2@example.com" className="min-h-[44px] sm:min-h-0" />
               </div>
             </div>
           )}
@@ -268,10 +301,7 @@ export function ComposeTab() {
       {/* Campaign: Recipients section */}
       {mode === 'campaign' && (
         <div className="space-y-3 p-4 bg-muted/20 rounded-xl border border-border/40">
-          <button
-            onClick={() => setFiltersExpanded(!filtersExpanded)}
-            className="flex items-center gap-2 text-sm font-medium text-foreground w-full justify-between"
-          >
+          <button onClick={() => setFiltersExpanded(!filtersExpanded)} className="flex items-center gap-2 text-sm font-medium text-foreground w-full justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               <span>Recipients</span>
@@ -300,32 +330,17 @@ export function ComposeTab() {
               </div>
 
               <div className="flex items-center gap-2 pt-1">
-                <Checkbox
-                  id="include-alt"
-                  checked={includeAltEmails}
-                  onCheckedChange={(v) => setIncludeAltEmails(!!v)}
-                />
-                <label htmlFor="include-alt" className="text-xs text-foreground cursor-pointer">
-                  Include spouse/alt emails
-                </label>
+                <Checkbox id="include-alt" checked={includeAltEmails} onCheckedChange={(v) => setIncludeAltEmails(!!v)} />
+                <label htmlFor="include-alt" className="text-xs text-foreground cursor-pointer">Include spouse/alt emails</label>
               </div>
 
               <div>
                 <Label className="text-xs">Exclude contacts</Label>
-                <Input
-                  value={excludeSearch}
-                  onChange={e => setExcludeSearch(e.target.value)}
-                  placeholder="Search to exclude..."
-                  className="h-8 text-xs"
-                />
+                <Input value={excludeSearch} onChange={e => setExcludeSearch(e.target.value)} placeholder="Search to exclude..." className="h-8 text-xs" />
                 {excludeResults.length > 0 && (
                   <div className="mt-1 border border-border rounded-md overflow-hidden">
                     {excludeResults.map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => { setExcludedIds(prev => new Set([...prev, c.id])); setExcludeSearch(''); }}
-                        className="flex items-center gap-2 w-full px-2 py-1.5 text-xs hover:bg-muted/40 text-left"
-                      >
+                      <button key={c.id} onClick={() => { setExcludedIds(prev => new Set([...prev, c.id])); setExcludeSearch(''); }} className="flex items-center gap-2 w-full px-2 py-1.5 text-xs hover:bg-muted/40 text-left">
                         <span className="text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
                         <span className="text-muted-foreground">{c.email}</span>
                       </button>
@@ -338,12 +353,7 @@ export function ComposeTab() {
                       const c = contacts.find(x => x.id === id);
                       if (!c) return null;
                       return (
-                        <Badge
-                          key={id}
-                          variant="secondary"
-                          className="text-[10px] cursor-pointer gap-0.5"
-                          onClick={() => setExcludedIds(prev => { const n = new Set(prev); n.delete(id); return n; })}
-                        >
+                        <Badge key={id} variant="secondary" className="text-[10px] cursor-pointer gap-0.5" onClick={() => setExcludedIds(prev => { const n = new Set(prev); n.delete(id); return n; })}>
                           {formatContactName(c.first_name, c.last_name)} ×
                         </Badge>
                       );
@@ -363,17 +373,19 @@ export function ComposeTab() {
       {/* Template selector */}
       <div>
         <Label>Use Template</Label>
-        {templates.length > 0 ? (
-          <Select onValueChange={loadTemplate}>
-            <SelectTrigger className="min-h-[44px] sm:min-h-0"><SelectValue placeholder="Load a template..." /></SelectTrigger>
-            <SelectContent>
-              {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        {activeTemplate ? (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-sm">
+            <FileText className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-foreground font-medium truncate">Template: {activeTemplate.name}</span>
+            <button onClick={clearTemplate} className="ml-auto shrink-0 text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         ) : (
-          <p className="text-xs text-muted-foreground mt-1">
-            No templates yet. <Link to="/crm/templates" className="text-primary hover:underline">Create one</Link>
-          </p>
+          <Button variant="outline" className="w-full justify-start text-muted-foreground h-10" onClick={() => setTemplatePickerOpen(true)}>
+            <FileText className="w-4 h-4 mr-2" />
+            {templates.length > 0 ? 'Select a template...' : 'No templates yet'}
+          </Button>
         )}
       </div>
 
@@ -383,11 +395,50 @@ export function ComposeTab() {
         <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject" maxLength={200} className="min-h-[44px] sm:min-h-0" />
       </div>
 
-      {/* Body */}
-      <div>
-        <Label>Body *</Label>
-        <RichTextEditor content={body} onChange={setBody} />
-      </div>
+      {/* Body — HTML mode vs plain mode */}
+      {isHtmlMode ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Email Body (HTML Template)</Label>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5">
+                <button onClick={() => setPreviewWidth('desktop')} className={`p-1 rounded transition-colors ${previewWidth === 'desktop' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                  <Monitor className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setPreviewWidth('mobile')} className={`p-1 rounded transition-colors ${previewWidth === 'mobile' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                  <Smartphone className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <button onClick={() => setShowHtmlEditor(!showHtmlEditor)} className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1">
+                <Code className="w-3.5 h-3.5" />
+                {showHtmlEditor ? 'Hide HTML' : 'Edit HTML'}
+              </button>
+            </div>
+          </div>
+
+          {/* HTML Preview */}
+          <div className="flex justify-center">
+            <div className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all" style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}>
+              <iframe ref={iframeRef} title="Email Preview" className="w-full border-0" style={{ height: '400px' }} sandbox="allow-same-origin" />
+            </div>
+          </div>
+
+          {/* Raw HTML editor */}
+          {showHtmlEditor && (
+            <Textarea
+              value={htmlBody}
+              onChange={e => setHtmlBody(e.target.value)}
+              className="min-h-[200px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40"
+              spellCheck={false}
+            />
+          )}
+        </div>
+      ) : (
+        <div>
+          <Label>Body *</Label>
+          <RichTextEditor content={body} onChange={setBody} />
+        </div>
+      )}
 
       {/* Signature preview */}
       {emailSettings?.signature_html && (
@@ -398,10 +449,7 @@ export function ComposeTab() {
           </div>
           <div className="rounded-lg border border-border/30 bg-muted/10 p-3 opacity-60">
             <div className="text-xs text-muted-foreground mb-1.5">--</div>
-            <div
-              className="prose prose-sm dark:prose-invert max-w-none text-sm"
-              dangerouslySetInnerHTML={{ __html: emailSettings.signature_html }}
-            />
+            <div className="prose prose-sm dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: emailSettings.signature_html }} />
           </div>
         </div>
       )}
@@ -409,7 +457,7 @@ export function ComposeTab() {
       {/* Send button */}
       <div className="flex justify-end sm:static sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
         <Button
-          className="gap-1.5 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white w-full sm:w-auto min-h-[44px]"
+          className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto min-h-[44px]"
           disabled={!canSend || isSending}
           onClick={handleSend}
         >
@@ -419,6 +467,9 @@ export function ComposeTab() {
             : isSending ? 'Sending...' : 'Send Email'}
         </Button>
       </div>
+
+      {/* Template Picker Modal */}
+      <TemplatePicker open={templatePickerOpen} onOpenChange={setTemplatePickerOpen} onSelect={handleSelectTemplate} />
     </div>
   );
 }
