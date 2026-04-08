@@ -304,18 +304,15 @@ export default function DataImportSection() {
         record.projects = [];
       }
 
-      const firstName = (record.first_name as string || '').trim();
-      const lastName = (record.last_name as string || '').trim();
-
-      if (!firstName && !lastName) {
-        skipped.push({ rowNum: rowIndex + 2, reason: 'Missing first name AND last name', data: row.slice(0, 3).join(', ') });
-      } else if (!firstName) {
-        skipped.push({ rowNum: rowIndex + 2, reason: 'Missing first name', data: `last_name: ${lastName}` });
-      } else if (!lastName) {
-        skipped.push({ rowNum: rowIndex + 2, reason: 'Missing last name', data: `first_name: ${firstName}` });
-      } else {
-        allRecords.push({ record, rowNum: rowIndex + 2 });
+      // Fill missing names with placeholders so no row is ever skipped
+      if (!record.first_name || !(record.first_name as string).trim()) {
+        record.first_name = 'Unknown';
       }
+      if (!record.last_name || !(record.last_name as string).trim()) {
+        record.last_name = 'Unknown';
+      }
+
+      allRecords.push({ record, rowNum: rowIndex + 2 });
     });
 
     // Insert in batches, falling back to individual inserts on batch failure
