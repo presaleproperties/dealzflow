@@ -479,21 +479,50 @@ export default function DataImportSection() {
         {phase === 'done' && result && (
           <div className="space-y-4 py-4">
             <div className="flex items-start gap-3">
-              {result.errors === 0 ? (
-                <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
+              {result.errors === 0 && result.skipped.length === 0 ? (
+                <CheckCircle2 className="h-6 w-6 text-primary shrink-0 mt-0.5" />
               ) : (
-                <AlertCircle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+                <AlertCircle className="h-6 w-6 text-destructive shrink-0 mt-0.5" />
               )}
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Imported {result.success} contacts successfully.{' '}
-                  {result.errors > 0 && <span className="text-destructive">{result.errors} errors.</span>}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Contacts are now available in the Leads tab.
+                  Imported {result.success} contacts successfully.
+                  {result.errors > 0 && <span className="text-destructive"> {result.errors} database errors.</span>}
+                  {result.skipped.length > 0 && <span className="text-muted-foreground"> {result.skipped.length} rows skipped.</span>}
                 </p>
               </div>
             </div>
+
+            {result.skipped.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Skipped rows (missing required name fields):</p>
+                <div className="max-h-[150px] overflow-y-auto rounded-md border border-border/40 p-2 space-y-1">
+                  {result.skipped.slice(0, 50).map((s, i) => (
+                    <p key={i} className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">Row {s.rowNum}:</span> {s.reason} — {s.data}
+                    </p>
+                  ))}
+                  {result.skipped.length > 50 && (
+                    <p className="text-xs text-muted-foreground">…and {result.skipped.length - 50} more</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {result.dbErrors.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-destructive">Database errors:</p>
+                <div className="max-h-[150px] overflow-y-auto rounded-md border border-destructive/30 p-2 space-y-1">
+                  {result.dbErrors.slice(0, 20).map((e, i) => (
+                    <p key={i} className="text-xs text-destructive">{e}</p>
+                  ))}
+                  {result.dbErrors.length > 20 && (
+                    <p className="text-xs text-muted-foreground">…and {result.dbErrors.length - 20} more</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Button variant="outline" size="sm" onClick={reset}>Import Another File</Button>
           </div>
         )}
