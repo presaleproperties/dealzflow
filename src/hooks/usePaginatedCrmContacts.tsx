@@ -104,6 +104,16 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = query.not('status', 'in', '("Closed","Lost / Cold")');
       }
 
+      // Saved view filters
+      if (filters.savedViewFilters) {
+        query = applyJsonFilters(query, filters.savedViewFilters);
+      }
+
+      // Segment filters
+      if (filters.segmentFilters) {
+        query = applyJsonFilters(query, filters.segmentFilters);
+      }
+
       // Sort
       const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
       query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });
