@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCrmContacts } from '@/hooks/useCrmContacts';
 
 const STAGES = [
   { label: 'New Lead', color: 'hsl(39 67% 55%)' },
@@ -14,39 +14,18 @@ const STAGES = [
 ];
 
 export function CrmPipelineSnapshot() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['crm-pipeline-snapshot'],
-    queryFn: async () => {
-      const PAGE_SIZE = 1000;
-      let allContacts: { status: string | null }[] = [];
-      let from = 0;
-      let hasMore = true;
-      while (hasMore) {
-        const { data: batch, error } = await supabase
-          .from('crm_contacts')
-          .select('status')
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        if (batch && batch.length > 0) {
-          allContacts = allContacts.concat(batch);
-          from += PAGE_SIZE;
-          hasMore = batch.length === PAGE_SIZE;
-        } else {
-          hasMore = false;
-        }
-      }
+  const { data: contacts = [], isLoading } = useCrmContacts();
 
-      const counts: Record<string, number> = {};
-      STAGES.forEach((s) => (counts[s.label] = 0));
-      allContacts.forEach((c) => {
-        if (c.status && counts[c.status] !== undefined) counts[c.status]++;
-      });
-      return counts;
-    },
-    staleTime: 60_000,
-  });
+  const data = useMemo(() => {
+    const counts: Record<string, number> = {};
+    STAGES.forEach((s) => (counts[s.label] = 0));
+    contacts.forEach((c) => {
+      if (c.status && counts[c.status] !== undefined) counts[c.status]++;
+    });
+    return counts;
+  }, [contacts]);
 
-  const total = data ? Object.values(data).reduce((s, v) => s + v, 0) : 0;
+  const total = Object.values(data).reduce((s, v) => s + v, 0);
 
   return (
     <div className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 lg:p-5 shadow-sm">
@@ -57,11 +36,11 @@ export function CrmPipelineSnapshot() {
         <p className="text-sm text-muted-foreground py-4 text-center">No contacts in pipeline yet.</p>
       ) : (
         <>
-          {/* Funnel bar — horizontal scroll on mobile */}
+          {/* Funnel bar */}
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 snap-x snap-mandatory no-scrollbar">
             <div className="flex h-10 rounded-lg overflow-hidden mb-3 min-w-[480px] sm:min-w-0">
               {STAGES.map((stage) => {
-                const count = data?.[stage.label] ?? 0;
+                const count = data[stage.label] ?? 0;
                 if (count === 0) return null;
                 const pct = (count / total) * 100;
                 return (
@@ -81,7 +60,7 @@ export function CrmPipelineSnapshot() {
           {/* Legend */}
           <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1">
             {STAGES.map((stage) => {
-              const count = data?.[stage.label] ?? 0;
+              const count = data[stage.label] ?? 0;
               return (
                 <div key={stage.label} className="flex items-center gap-1.5">
                   <span

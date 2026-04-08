@@ -1,44 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCrmContacts } from '@/hooks/useCrmContacts';
 
 export function CrmLeadsBySource() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['crm-leads-by-source'],
-    queryFn: async () => {
-      const PAGE_SIZE = 1000;
-      let allContacts: { source: string | null }[] = [];
-      let from = 0;
-      let hasMore = true;
+  const { data: contacts = [], isLoading } = useCrmContacts();
 
-      while (hasMore) {
-        const { data: batch, error } = await supabase
-          .from('crm_contacts')
-          .select('source')
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        if (batch && batch.length > 0) {
-          allContacts = allContacts.concat(batch);
-          from += PAGE_SIZE;
-          hasMore = batch.length === PAGE_SIZE;
-        } else {
-          hasMore = false;
-        }
-      }
-
-      const counts: Record<string, number> = {};
-      allContacts.forEach((c) => {
-        const src = c.source || 'Unknown';
-        counts[src] = (counts[src] ?? 0) + 1;
-      });
-
-      return Object.entries(counts)
-        .map(([source, count]) => ({ source, count }))
-        .sort((a, b) => b.count - a.count);
-    },
-    staleTime: 60_000,
-  });
+  const data = useMemo(() => {
+    const counts: Record<string, number> = {};
+    contacts.forEach((c) => {
+      const src = c.source || 'Unknown';
+      counts[src] = (counts[src] ?? 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [contacts]);
 
   return (
     <div className="bg-card rounded-[10px] lg:rounded-xl border border-border p-3 sm:p-4 lg:p-5 shadow-sm h-full">

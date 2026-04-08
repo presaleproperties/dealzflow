@@ -1,54 +1,33 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, subDays, startOfDay } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCrmContacts } from '@/hooks/useCrmContacts';
 
 export function CrmLeadsOverTime() {
   const isMobile = useIsMobile();
+  const { data: contacts = [], isLoading } = useCrmContacts();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['crm-leads-over-time'],
-    queryFn: async () => {
-      const thirtyDaysAgo = subDays(new Date(), 30);
-      const PAGE_SIZE = 1000;
-      let allContacts: { created_at: string }[] = [];
-      let from = 0;
-      let hasMore = true;
-      while (hasMore) {
-        const { data: batch, error } = await supabase
-          .from('crm_contacts')
-          .select('created_at')
-          .gte('created_at', thirtyDaysAgo.toISOString())
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        if (batch && batch.length > 0) {
-          allContacts = allContacts.concat(batch);
-          from += PAGE_SIZE;
-          hasMore = batch.length === PAGE_SIZE;
-        } else {
-          hasMore = false;
-        }
-      }
-
-      const buckets: Record<string, number> = {};
-      for (let i = 30; i >= 0; i--) {
-        const key = format(subDays(new Date(), i), 'yyyy-MM-dd');
-        buckets[key] = 0;
-      }
-      allContacts.forEach((c) => {
-        const key = format(startOfDay(new Date(c.created_at)), 'yyyy-MM-dd');
-        if (buckets[key] !== undefined) buckets[key]++;
-      });
-
-      return Object.entries(buckets).map(([date, count]) => ({
-        date: format(new Date(date), 'MMM d'),
-        leads: count,
-      }));
-    },
-    staleTime: 60_000,
-  });
+  const chartData = useMemo(() => {
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const buckets: Record<string, number> = {};
+    for (let i = 30; i >= 0; i--) {
+      const key = format(subDays(new Date(), i), 'yyyy-MM-dd');
+      buckets[key] = 0;
+    }
+    contacts.forEach((c) => {
+      if (!c.created_at) return;
+      const d = new Date(c.created_at);
+      if (d < thirtyDaysAgo) return;
+      const key = format(startOfDay(d), 'yyyy-MM-dd');
+      if (buckets[key] !== undefined) buckets[key]++;
+    });
+    return Object.entries(buckets).map(([date, count]) => ({
+      date: format(new Date(date), 'MMM d'),
+      leads: count,
+    }));
+  }, [contacts]);
 
   const chartHeight = isMobile ? 200 : 220;
 
@@ -59,7 +38,7 @@ export function CrmLeadsOverTime() {
         <Skeleton className="h-[200px] sm:h-[220px] w-full" />
       ) : (
         <ResponsiveContainer width="100%" height={chartHeight}>
-          <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
             <defs>
               <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="hsl(39 67% 55%)" stopOpacity={0.3} />
