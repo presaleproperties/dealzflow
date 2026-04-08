@@ -11,6 +11,7 @@ import { LeadActivityTimeline } from '@/components/crm/leads/LeadActivityTimelin
 import { LeadQuickActions } from '@/components/crm/leads/LeadQuickActions';
 import { LeadUpcomingCard } from '@/components/crm/leads/LeadUpcomingCard';
 import { LeadScoreCard } from '@/components/crm/leads/LeadScoreCard';
+import { LeadEmailHistory } from '@/components/crm/leads/LeadEmailHistory';
 import { Badge } from '@/components/ui/badge';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import type { CrmContact } from '@/hooks/useCrmContacts';
