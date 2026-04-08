@@ -49,7 +49,7 @@ const crmNavItems: NavItem[] = [
   { label: 'Email Center',     path: '/crm/email',       icon: Mail },
   { label: 'WhatsApp',         path: '/crm/whatsapp',    icon: MessageCircle },
   { label: 'Templates',        path: '/crm/templates',   icon: LayoutTemplate },
-  { label: 'Contacts',         path: '/crm/contacts',    icon: BookUser },
+  // Contacts removed — merged into Leads
   { label: 'Automations',      path: '/crm/automations', icon: Zap },
   { label: 'Showings Calendar', path: '/crm/calendar',   icon: CalendarDays },
   { label: 'Reports',          path: '/crm/reports',     icon: BarChart3 },

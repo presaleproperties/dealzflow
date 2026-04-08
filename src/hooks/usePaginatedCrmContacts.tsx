@@ -28,6 +28,8 @@ interface PaginatedFilters {
   leadTypes: string[];
   languages: string[];
   tags: string[];
+  letterFilter: string; // A-Z filter on last_name
+  pipelineView: 'all' | 'active' | 'directory'; // view mode
 }
 
 interface PaginatedParams {
@@ -88,6 +90,16 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
       }
       if (filters.tags.length > 0) {
         query = query.overlaps('tags', filters.tags);
+      }
+
+      // A-Z letter filter
+      if (filters.letterFilter) {
+        query = query.ilike('last_name', `${filters.letterFilter}%`);
+      }
+
+      // Pipeline view filter
+      if (filters.pipelineView === 'active') {
+        query = query.not('status', 'in', '("Closed","Lost / Cold")');
       }
 
       // Sort
