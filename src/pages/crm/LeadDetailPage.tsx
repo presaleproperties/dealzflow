@@ -2,10 +2,10 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Phone, MessageCircle, Mail, ChevronLeft, ChevronRight,
-  Calendar, Target, DollarSign, Building2, Hash, BedDouble, Fingerprint,
-  MapPin, Languages, Globe, Cake, User, Plus, ListTodo, CheckCircle2,
+  Calendar, Plus, ListTodo, CheckCircle2,
   StickyNote, Zap, Send, Pin, PinOff, Pencil, MoreHorizontal, Trash2,
-  Download, Clock, ArrowUpRight, ArrowDownLeft, X, Eye, ChevronDown, ChevronUp,
+  Download, ArrowUpRight, ArrowDownLeft, X, ChevronDown, ChevronUp,
+  Clock, ExternalLink,
 } from 'lucide-react';
 import { formatContactName, formatCurrency } from '@/lib/format';
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from 'date-fns';
@@ -26,7 +26,6 @@ import { useLeadNotes, useAddNote, useUpdateNote, useDeleteNote, type CrmNote } 
 import { useCrmEmailLog } from '@/hooks/useGmail';
 import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
-import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
@@ -35,10 +34,10 @@ import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 /* ─── Type styles ─── */
-const TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  lead: { bg: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)', label: 'Lead' },
-  realtor: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Realtor' },
-  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Client' },
+const TYPE_STYLES: Record<string, { label: string; className: string }> = {
+  lead: { label: 'Lead', className: 'bg-primary/15 text-primary' },
+  realtor: { label: 'Realtor', className: 'bg-blue-500/15 text-blue-500' },
+  past_client: { label: 'Client', className: 'bg-emerald-500/15 text-emerald-600' },
 };
 
 /* ─── Helpers ─── */
@@ -88,9 +87,7 @@ function LeftSidebar({
   };
 
   const openWhatsApp = () => {
-    if (contact.phone) {
-      window.open(`https://wa.me/${contact.phone.replace(/\D/g, '')}`, '_blank');
-    }
+    if (contact.phone) window.open(`https://wa.me/${contact.phone.replace(/\D/g, '')}`, '_blank');
   };
 
   const addTag = () => {
@@ -107,20 +104,22 @@ function LeftSidebar({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Name & Type */}
         <div>
-          <h1 className="text-lg font-bold text-foreground leading-tight">
-            {formatContactName(contact.first_name, contact.last_name)}
-          </h1>
-          <Badge variant="outline" className="border-0 text-[10px] font-semibold mt-1" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-bold text-foreground leading-tight tracking-tight">
+              {formatContactName(contact.first_name, contact.last_name)}
+            </h1>
+          </div>
+          <Badge variant="outline" className={cn('border-0 text-[10px] font-semibold', typeStyle.className)}>
             {typeStyle.label}
           </Badge>
         </div>
 
         {/* Pipeline stage */}
         <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
-          <SelectTrigger className="h-9 text-sm">
+          <SelectTrigger className="h-9 text-sm bg-card border-border">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -128,12 +127,12 @@ function LeftSidebar({
           </SelectContent>
         </Select>
 
-        {/* Quick Action Buttons */}
+        {/* Quick Actions */}
         <div className="grid grid-cols-3 gap-2">
           <Button
             size="sm"
-            className="h-9 text-xs gap-1 border-0 text-white"
-            style={{ background: 'hsl(142 71% 40%)' }}
+            variant="outline"
+            className="h-9 text-xs gap-1.5 bg-emerald-500/10 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700"
             onClick={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
             disabled={!contact.phone}
           >
@@ -141,8 +140,8 @@ function LeftSidebar({
           </Button>
           <Button
             size="sm"
-            className="h-9 text-xs gap-1 border-0 text-foreground"
-            style={{ background: 'hsl(39 67% 55% / 0.2)' }}
+            variant="outline"
+            className="h-9 text-xs gap-1.5 bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
             onClick={openWhatsApp}
             disabled={!contact.phone}
           >
@@ -150,105 +149,103 @@ function LeftSidebar({
           </Button>
           <Button
             size="sm"
-            className="h-9 text-xs gap-1 border-0 text-white"
-            style={{ background: 'hsl(250 60% 55%)' }}
+            variant="outline"
+            className="h-9 text-xs gap-1.5 bg-violet-500/10 border-violet-500/20 text-violet-500 hover:bg-violet-500/20"
             onClick={() => setShowEmail(true)}
           >
             <Mail className="w-3.5 h-3.5" /> Email
           </Button>
         </div>
 
-        {/* Insight cards */}
+        {/* Insight row */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-card rounded-lg border border-border p-2.5 text-center">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 mx-auto mb-1" style={{ borderColor: leadScore.color }}>
-              <span className="text-xs font-bold" style={{ color: leadScore.color }}>{leadScore.score}</span>
-            </div>
-            <p className="text-[10px] text-muted-foreground">Lead Score</p>
-          </div>
-          <div className="bg-card rounded-lg border border-border p-2.5 text-center">
-            <p className="text-sm font-semibold text-foreground">{lastTouchLabel}</p>
-            <p className="text-[10px] text-muted-foreground">Last Touch</p>
-          </div>
-          <div className="bg-card rounded-lg border border-border p-2.5 text-center">
-            <p className="text-sm font-semibold text-foreground">{daysInPipeline}</p>
-            <p className="text-[10px] text-muted-foreground">Days</p>
-          </div>
+          <InsightCard
+            value={<span style={{ color: leadScore.color }}>{leadScore.score}</span>}
+            label="Score"
+            sublabel={leadScore.label}
+            accent={leadScore.color}
+          />
+          <InsightCard value={lastTouchLabel} label="Last Touch" />
+          <InsightCard value={`${daysInPipeline}d`} label="In Pipeline" />
         </div>
 
-        {/* Details rows */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Details</h3>
+        {/* Details */}
+        <div className="space-y-1">
+          <SectionHeader>Contact</SectionHeader>
           <DetailRow label="Phone" value={contact.phone} href={contact.phone ? `tel:${contact.phone}` : undefined} field="phone" contactId={contact.id} />
           <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
           {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
+        </div>
+
+        <div className="space-y-1">
+          <SectionHeader>Lead Info</SectionHeader>
           <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
-          <div className="flex items-center justify-between py-1">
-            <span className="text-xs text-muted-foreground">Reg Date</span>
-            <span className="text-sm text-foreground">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-xs text-muted-foreground">Registered</span>
+            <span className="text-xs text-foreground">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
           </div>
           {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-1.5">
               <span className="text-xs text-muted-foreground">Budget</span>
-              <span className="text-sm text-foreground">
+              <span className="text-xs text-foreground">
                 {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
               </span>
             </div>
           )}
-          {contact.lead_type && <DetailRow label="Lead Type" value={contact.lead_type} field="lead_type" contactId={contact.id} />}
+          {contact.lead_type && <DetailRow label="Type" value={contact.lead_type} field="lead_type" contactId={contact.id} />}
           <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} />
           <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} />
           {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
+        </div>
 
-          {/* Projects */}
-          {projects.length > 0 && (
-            <div className="py-1">
-              <span className="text-xs text-muted-foreground block mb-1">Projects</span>
-              <div className="flex flex-wrap gap-1">
-                {projects.map(p => (
-                  <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
-                    {p}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Tags */}
-          <div className="py-1">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Tags</span>
-              <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground">
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {tags.map(tag => (
-                <Badge key={tag} className="border-0 text-[10px] font-semibold gap-1 pr-1.5" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
-                  {tag}
-                  <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-70" onClick={() => removeTag(tag)} />
+        {/* Projects */}
+        {projects.length > 0 && (
+          <div className="space-y-1.5">
+            <SectionHeader>Projects</SectionHeader>
+            <div className="flex flex-wrap gap-1.5">
+              {projects.map(p => (
+                <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold bg-primary/10 text-primary">
+                  {p}
                 </Badge>
               ))}
-              {tags.length === 0 && !addingTag && <span className="text-xs text-muted-foreground">None</span>}
             </div>
-            {addingTag && (
-              <div className="flex gap-1.5 mt-1.5">
-                <Input value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Tag..." className="h-7 text-xs" autoFocus onKeyDown={e => e.key === 'Enter' && addTag()} />
-                <Button size="sm" className="h-7 text-xs px-2" onClick={addTag}>Add</Button>
-                <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => { setAddingTag(false); setNewTag(''); }}>✕</Button>
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Tags */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <SectionHeader>Tags</SectionHeader>
+            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map(tag => (
+              <Badge key={tag} className="border-0 text-[10px] font-semibold gap-1 pr-1.5 bg-primary/10 text-primary">
+                {tag}
+                <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-70 transition-opacity" onClick={() => removeTag(tag)} />
+              </Badge>
+            ))}
+            {tags.length === 0 && !addingTag && <span className="text-[11px] text-muted-foreground">No tags</span>}
+          </div>
+          {addingTag && (
+            <div className="flex gap-1.5 mt-1">
+              <Input value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Tag name..." className="h-7 text-xs" autoFocus onKeyDown={e => e.key === 'Enter' && addTag()} />
+              <Button size="sm" className="h-7 text-xs px-2.5" onClick={addTag}>Add</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => { setAddingTag(false); setNewTag(''); }}>✕</Button>
+            </div>
+          )}
         </div>
 
         {/* Co-Buyer */}
-        <div className="border-t border-border pt-3">
-          <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Co-Buyer
-            {coBuyerOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        <div className="border-t border-border pt-4">
+          <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
+            <SectionHeader>Co-Buyer</SectionHeader>
+            {coBuyerOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
           </button>
           {coBuyerOpen && (
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-2 space-y-1">
               {hasCoBuyer ? (
                 <>
                   <DetailRow label="Name" value={contact.co_buyer_name} field="co_buyer_name" contactId={contact.id} />
@@ -256,31 +253,31 @@ function LeftSidebar({
                   <DetailRow label="Email" value={contact.co_buyer_email} field="co_buyer_email" contactId={contact.id} type="email" />
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground">No co-buyer info</p>
+                <p className="text-[11px] text-muted-foreground py-1">No co-buyer info</p>
               )}
             </div>
           )}
         </div>
 
-        {/* Assigned To */}
-        <div className="border-t border-border pt-3 space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned To</h3>
+        {/* Agent */}
+        <div className="border-t border-border pt-4 space-y-2">
+          <SectionHeader>Assigned To</SectionHeader>
           <Select value={contact.assigned_to ?? ''} onValueChange={(v) => saveWithLog('assigned_to', v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select agent" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
             <SelectContent>
               {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Lead Nav */}
+        {/* Lead Navigation */}
         {navInfo && (
           <div className="border-t border-border pt-3 flex items-center justify-between">
-            <button onClick={() => onNavigate('prev')} disabled={navInfo.index <= 0} className="p-1 rounded hover:bg-muted disabled:opacity-30">
+            <button onClick={() => onNavigate('prev')} disabled={navInfo.index <= 0} className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs text-muted-foreground">{navInfo.index + 1} of {navInfo.total}</span>
-            <button onClick={() => onNavigate('next')} disabled={navInfo.index >= navInfo.total - 1} className="p-1 rounded hover:bg-muted disabled:opacity-30">
+            <span className="text-[11px] text-muted-foreground tabular-nums">{navInfo.index + 1} of {navInfo.total}</span>
+            <button onClick={() => onNavigate('next')} disabled={navInfo.index >= navInfo.total - 1} className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -294,20 +291,34 @@ function LeftSidebar({
   );
 }
 
-/* Detail row component */
+/* ─── Small reusable pieces ─── */
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{children}</h3>;
+}
+
+function InsightCard({ value, label, sublabel, accent }: { value: React.ReactNode; label: string; sublabel?: string; accent?: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card/80 p-2.5 text-center space-y-0.5">
+      <p className="text-base font-bold text-foreground leading-tight">{value}</p>
+      <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
+      {sublabel && <p className="text-[9px] font-medium leading-tight" style={{ color: accent }}>{sublabel}</p>}
+    </div>
+  );
+}
+
 function DetailRow({ label, value, href, field, contactId, type }: {
   label: string; value: string | null | undefined; href?: string; field: string; contactId: string; type?: 'text' | 'email';
 }) {
   const updateContact = useUpdateCrmContact();
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="flex items-center justify-between py-1.5 group">
       <span className="text-xs text-muted-foreground">{label}</span>
       <InlineEditField
         value={value}
         onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
         href={href}
         type={type}
-        className="text-sm text-right"
+        className="text-xs text-right"
       />
     </div>
   );
@@ -318,13 +329,13 @@ function DetailRow({ label, value, href, field, contactId, type }: {
    ═══════════════════════════════════════════════════ */
 type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'system';
 
-const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string }> = {
-  manual: { icon: StickyNote, label: 'Note' },
-  system: { icon: Zap, label: 'System' },
-  email: { icon: Mail, label: 'Email' },
-  call_log: { icon: Phone, label: 'Call' },
-  import: { icon: Download, label: 'Imported' },
-  zapier: { icon: Zap, label: 'Zapier' },
+const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string; color: string }> = {
+  manual: { icon: StickyNote, label: 'Note', color: 'text-primary' },
+  system: { icon: Zap, label: 'System', color: 'text-muted-foreground' },
+  email: { icon: Mail, label: 'Email', color: 'text-violet-500' },
+  call_log: { icon: Phone, label: 'Call', color: 'text-emerald-500' },
+  import: { icon: Download, label: 'Imported', color: 'text-muted-foreground' },
+  zapier: { icon: Zap, label: 'Zapier', color: 'text-orange-500' },
 };
 
 function CenterColumn({ contact }: { contact: CrmContact }) {
@@ -396,36 +407,45 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
-      <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0">
-        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-4 py-2.5">Overview</TabsTrigger>
-        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-4 py-2.5">
-          Showings {showings.length > 0 && <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{showings.length}</Badge>}
+      <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0">
+        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm px-5 py-3 font-medium">
+          Overview
+        </TabsTrigger>
+        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm px-5 py-3 font-medium">
+          Showings
+          {showings.length > 0 && (
+            <span className="ml-1.5 text-[10px] bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 font-semibold">
+              {showings.length}
+            </span>
+          )}
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-4 space-y-4">
-        {/* Note input */}
-        <div className="flex gap-2">
-          <Select value={noteType} onValueChange={setNoteType}>
-            <SelectTrigger className="w-[100px] h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="manual">Note</SelectItem>
-              <SelectItem value="call_log">Call Log</SelectItem>
-              <SelectItem value="email">Email Log</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            placeholder="Add a note..."
-            className="flex-1 h-9 text-sm"
-            onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave(); }
-            }}
-          />
-          <Button size="sm" className="h-9 px-3" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
-            <Send className="w-3.5 h-3.5" />
-          </Button>
+      <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-5 space-y-5">
+        {/* Compose */}
+        <div className="bg-card rounded-xl border border-border p-3 space-y-3">
+          <div className="flex gap-2">
+            <Select value={noteType} onValueChange={setNoteType}>
+              <SelectTrigger className="w-[100px] h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Note</SelectItem>
+                <SelectItem value="call_log">Call Log</SelectItem>
+                <SelectItem value="email">Email Log</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              placeholder="Add a note..."
+              className="flex-1 h-9 text-sm"
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave(); }
+              }}
+            />
+            <Button size="sm" className="h-9 w-9 p-0 shrink-0" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Filter pills */}
@@ -435,26 +455,26 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border',
+                'px-3 py-1.5 rounded-full text-[11px] font-medium transition-all',
                 filter === f.key
-                  ? 'bg-primary/15 text-primary border-primary/30'
-                  : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
+                  ? 'bg-primary/15 text-primary ring-1 ring-primary/25'
+                  : 'bg-muted/40 text-muted-foreground hover:bg-muted/60',
               )}
             >
               {f.label}
-              {counts[f.key] > 0 && <span className="ml-1 text-[10px] opacity-70">{counts[f.key]}</span>}
+              {counts[f.key] > 0 && <span className="ml-1 opacity-60">{counts[f.key]}</span>}
             </button>
           ))}
         </div>
 
         {/* Timeline */}
-        <div className="relative space-y-1">
+        <div className="relative space-y-1.5">
           {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
-            <div className="absolute left-[13px] top-4 bottom-4 w-px bg-border/50" />
+            <div className="absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
 
           {pinnedNotes.length > 0 && (
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2 mb-5">
               <div className="flex items-center gap-1.5 pl-9">
                 <Pin className="w-3 h-3 text-primary" />
                 <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Pinned</span>
@@ -477,7 +497,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
           )}
 
           {groupedNotes.map(group => (
-            <div key={group.label} className="space-y-2 mb-4">
+            <div key={group.label} className="space-y-2 mb-5">
               <div className="pl-9">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{group.label}</span>
               </div>
@@ -499,14 +519,18 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
           ))}
 
           {filteredNotes.length === 0 && (
-            <p className="text-sm text-muted-foreground py-12 text-center">
-              No activity yet. Add a note, send an email, or book a showing to get started.
-            </p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                <StickyNote className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">No activity yet</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Add a note, send an email, or book a showing</p>
+            </div>
           )}
         </div>
       </TabsContent>
 
-      <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-4">
+      <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-5">
         <ShowingsTab contactId={contact.id} showings={showings} />
       </TabsContent>
     </Tabs>
@@ -542,29 +566,32 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
 
   return (
     <div className="group relative flex gap-3">
-      <div className="relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 bg-muted/50 border border-border/60">
-        <Icon className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.8} />
+      <div className={cn("relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 border border-border/60 bg-background", meta.color)}>
+        <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
       </div>
-      <div className={cn('flex-1 min-w-0 rounded-xl border border-border/40 bg-card/60 p-3', note.is_pinned && 'border-l-2 border-l-primary/60')}>
+      <div className={cn(
+        'flex-1 min-w-0 rounded-xl border bg-card p-3.5 transition-shadow hover:shadow-sm',
+        note.is_pinned ? 'border-primary/30 bg-primary/[0.03]' : 'border-border/50',
+      )}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span className="font-medium text-foreground/70">{meta.label}</span>
-            <span>·</span>
+            <span className="opacity-40">·</span>
             <span>{time}</span>
             {note.is_pinned && <Pin className="w-3 h-3 text-primary" />}
           </div>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => updateNote.mutate({ id: note.id, contactId, updates: { is_pinned: !note.is_pinned } })} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10">
+            <button onClick={() => updateNote.mutate({ id: note.id, contactId, updates: { is_pinned: !note.is_pinned } })} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               {note.is_pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
             </button>
             {isOwn && (
               <>
-                <button onClick={() => onSetEditing(note.id, note.content)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50">
+                <button onClick={() => onSetEditing(note.id, note.content)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
                   <Pencil className="w-3 h-3" />
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50">
+                    <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
                       <MoreHorizontal className="w-3.5 h-3.5" />
                     </button>
                   </DropdownMenuTrigger>
@@ -578,7 +605,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
           </div>
         </div>
-        <p className="text-sm text-foreground/80 whitespace-pre-wrap mt-1.5 leading-relaxed">{note.content}</p>
+        <p className="text-sm text-foreground/80 whitespace-pre-wrap mt-2 leading-relaxed">{note.content}</p>
       </div>
     </div>
   );
@@ -587,27 +614,44 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
 /* Showings tab */
 function ShowingsTab({ contactId, showings }: { contactId: string; showings: any[] }) {
   const [showBooking, setShowBooking] = useState(false);
+
+  const statusColor: Record<string, string> = {
+    confirmed: 'bg-emerald-500/15 text-emerald-600',
+    cancelled: 'bg-destructive/15 text-destructive',
+    completed: 'bg-primary/15 text-primary',
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Showings</h3>
-        <Button size="sm" className="h-7 text-xs gap-1" onClick={() => setShowBooking(true)}>
+        <h3 className="text-sm font-semibold text-foreground">Showings</h3>
+        <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setShowBooking(true)}>
           <Plus className="w-3.5 h-3.5" /> Book Showing
         </Button>
       </div>
       {showings.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">No showings yet.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+            <Calendar className="w-5 h-5 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium text-muted-foreground">No showings yet</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Book a showing to track property visits</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {showings.map((s: any) => (
-            <div key={s.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card">
-              <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">{s.project}{s.unit ? ` — ${s.unit}` : ''}</p>
-                <p className="text-xs text-muted-foreground">{format(new Date(s.showing_date), 'MMM d, yyyy')} at {s.showing_time}</p>
-                {s.notes && <p className="text-xs text-muted-foreground mt-1">{s.notes}</p>}
+            <div key={s.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-violet-500" />
               </div>
-              <Badge variant="outline" className="text-[10px]">{s.status ?? 'Confirmed'}</Badge>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">{s.project}{s.unit ? ` — ${s.unit}` : ''}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(s.showing_date), 'MMM d, yyyy')} at {s.showing_time}</p>
+                {s.notes && <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">{s.notes}</p>}
+              </div>
+              <Badge variant="outline" className={cn('text-[10px] border-0 font-semibold', statusColor[s.status] ?? 'bg-muted text-muted-foreground')}>
+                {s.status ?? 'Confirmed'}
+              </Badge>
             </div>
           ))}
         </div>
@@ -635,17 +679,11 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Tasks */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tasks</h3>
-            <button onClick={() => setShowTask(true)} className="text-muted-foreground hover:text-foreground">
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
+        <WidgetSection title="Tasks" count={pendingTasks.length} onAdd={() => setShowTask(true)}>
           {pendingTasks.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">No tasks. Click + to add one.</p>
+            <EmptyWidget icon={ListTodo} message="No pending tasks" />
           ) : (
             <div className="space-y-1.5">
               {pendingTasks.map((t: any) => (
@@ -653,23 +691,19 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
               ))}
             </div>
           )}
-        </div>
+        </WidgetSection>
 
         {/* Upcoming Showings */}
-        <div className="border-t border-border pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Showings</h3>
-            <button onClick={() => setShowShowing(true)} className="text-muted-foreground hover:text-foreground">
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
+        <WidgetSection title="Showings" count={upcomingShowings.length} onAdd={() => setShowShowing(true)}>
           {upcomingShowings.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">No upcoming showings.</p>
+            <EmptyWidget icon={Calendar} message="No upcoming showings" />
           ) : (
             <div className="space-y-1.5">
               {upcomingShowings.slice(0, 5).map((s: any) => (
-                <div key={s.id} className="flex items-start gap-2 p-2 rounded-lg bg-card border border-border">
-                  <Calendar className="w-3.5 h-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <div key={s.id} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                  <div className="w-7 h-7 rounded-md bg-violet-500/10 flex items-center justify-center shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-violet-500" />
+                  </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-foreground truncate">{s.project}</p>
                     <p className="text-[11px] text-muted-foreground">{format(new Date(s.showing_date), 'MMM d')} · {s.showing_time}</p>
@@ -678,23 +712,28 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
               ))}
             </div>
           )}
-        </div>
+        </WidgetSection>
 
         {/* Email History */}
-        <div className="border-t border-border pt-4">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email Activity</h3>
+        <WidgetSection title="Email Activity">
           {emailsLoading ? (
-            <Skeleton className="h-16 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+            </div>
           ) : !emails || emails.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">No email activity yet.</p>
+            <EmptyWidget icon={Mail} message="No email activity" />
           ) : (
             <div className="space-y-1.5">
               {emails.slice(0, 5).map((email: any) => (
-                <div key={email.id} className="flex items-start gap-2 p-2 rounded-lg bg-card border border-border">
-                  <div className={`p-1 rounded shrink-0 ${email.direction === 'outbound' ? 'bg-primary/10' : 'bg-emerald-500/10'}`}>
+                <div key={email.id} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-card border border-border/50 hover:border-border transition-colors">
+                  <div className={cn(
+                    'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
+                    email.direction === 'outbound' ? 'bg-primary/10' : 'bg-emerald-500/10'
+                  )}>
                     {email.direction === 'outbound'
-                      ? <ArrowUpRight className="w-3 h-3 text-primary" />
-                      : <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+                      ? <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
+                      : <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
                     }
                   </div>
                   <div className="min-w-0 flex-1">
@@ -705,7 +744,7 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
               ))}
             </div>
           )}
-        </div>
+        </WidgetSection>
       </div>
 
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
@@ -714,18 +753,56 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
   );
 }
 
-/* Task row */
-function TaskRow({ task }: { task: any }) {
+/* Widget helpers */
+function WidgetSection({ title, count, onAdd, children }: { title: string; count?: number; onAdd?: () => void; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 p-2 rounded-lg bg-card border border-border">
+    <div className="border-b border-border pb-5 last:border-b-0 last:pb-0">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <SectionHeader>{title}</SectionHeader>
+          {count != null && count > 0 && (
+            <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 font-semibold">{count}</span>
+          )}
+        </div>
+        {onAdd && (
+          <button onClick={onAdd} className="text-muted-foreground hover:text-foreground transition-colors">
+            <Plus className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EmptyWidget({ icon: Icon, message }: { icon: typeof ListTodo; message: string }) {
+  return (
+    <div className="flex items-center gap-2.5 py-4 justify-center">
+      <Icon className="w-4 h-4 text-muted-foreground/50" />
+      <span className="text-xs text-muted-foreground/70">{message}</span>
+    </div>
+  );
+}
+
+function TaskRow({ task }: { task: any }) {
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+  return (
+    <div className={cn(
+      'flex items-start gap-2.5 p-2.5 rounded-lg bg-card border transition-colors',
+      isOverdue ? 'border-destructive/30' : 'border-border/50 hover:border-border'
+    )}>
       <Checkbox className="mt-0.5 h-3.5 w-3.5" />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-foreground">{task.title}</p>
         {task.due_date && (
-          <p className="text-[11px] text-muted-foreground">{format(new Date(task.due_date), 'MMM d, yyyy')}</p>
+          <p className={cn('text-[11px] mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
+            {isOverdue ? 'Overdue · ' : ''}{format(new Date(task.due_date), 'MMM d, yyyy')}
+          </p>
         )}
       </div>
-      {task.priority === 'high' && <span className="text-[10px] text-destructive font-medium">High</span>}
+      {task.priority === 'high' && (
+        <span className="text-[10px] text-destructive font-semibold bg-destructive/10 px-1.5 py-0.5 rounded">High</span>
+      )}
     </div>
   );
 }
@@ -744,7 +821,6 @@ export default function LeadDetailPage() {
   const { data: tasks = [] } = useCrmContactTasks(id);
   const { data: notes = [] } = useLeadNotes(id);
 
-  // Lead score
   const leadScore = useMemo(() => {
     const inbound = messages.filter((m: any) => m.direction === 'inbound').length;
     const showingCount = showings.length;
@@ -756,26 +832,23 @@ export default function LeadDetailPage() {
     return { score, color, label };
   }, [messages, showings, tasks, notes]);
 
-  // Last touch — use the DB column directly
   const lastTouchLabel = useMemo(() => {
     if (!contact) return 'N/A';
     const lt = (contact as any).last_touch_at;
-    if (!lt) return 'No activity';
+    if (!lt) return 'None';
     const diff = Date.now() - new Date(lt).getTime();
     const hours = Math.floor(diff / 3600000);
-    if (hours < 1) return 'Just now';
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 1) return 'Now';
+    if (hours < 24) return `${hours}h`;
     const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return `${days}d`;
   }, [contact]);
 
-  // Days in pipeline
   const daysInPipeline = useMemo(() => {
     if (!contact) return 0;
     return Math.floor((Date.now() - new Date(contact.created_at).getTime()) / 86400000);
   }, [contact]);
 
-  // Navigation
   const navInfo = useMemo(() => {
     if (!id || allContacts.length === 0) return null;
     const idx = allContacts.findIndex(c => c.id === id);
@@ -790,14 +863,58 @@ export default function LeadDetailPage() {
     navigate(`/crm/leads/${allContacts[newIdx].id}`);
   };
 
+  // Loading skeleton
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-96 rounded-xl" />
-          <Skeleton className="h-96 rounded-xl" />
-          <Skeleton className="h-96 rounded-xl" />
+      <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100vh - 60px)' }}>
+        <div className="px-4 py-2.5 border-b border-border bg-background flex-shrink-0">
+          <Skeleton className="h-5 w-32" />
+        </div>
+        <div className="flex flex-1 min-h-0">
+          <div className="w-[280px] flex-shrink-0 border-r border-border bg-muted/20 p-4 space-y-4">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-9 w-full" />
+            <div className="grid grid-cols-3 gap-2">
+              <Skeleton className="h-9 rounded-lg" />
+              <Skeleton className="h-9 rounded-lg" />
+              <Skeleton className="h-9 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Skeleton className="h-16 rounded-lg" />
+              <Skeleton className="h-16 rounded-lg" />
+              <Skeleton className="h-16 rounded-lg" />
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <Skeleton className="h-4 w-14" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0 p-5 space-y-4">
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <div className="flex gap-2">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-7 w-16 rounded-full" />)}
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="w-7 h-7 rounded-full shrink-0" />
+                  <Skeleton className="h-20 flex-1 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/20 p-4 space-y-4">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-4 w-20 mt-4" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
         </div>
       </div>
     );
@@ -812,18 +929,22 @@ export default function LeadDetailPage() {
     );
   }
 
-  // Mobile: stacked layout
+  // Mobile layout
   if (isMobile) {
     return (
-      <div className="space-y-4 pb-4">
-        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Back to Leads
+      <div className="space-y-4 pb-6">
+        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back
         </Link>
-        <LeftSidebar contact={contact as CrmContact} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} navInfo={navInfo} onNavigate={handleNavigate} />
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+          <LeftSidebar contact={contact as CrmContact} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} navInfo={navInfo} onNavigate={handleNavigate} />
+        </div>
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden" style={{ minHeight: 400 }}>
           <CenterColumn contact={contact as CrmContact} />
         </div>
-        <RightSidebar contact={contact as CrmContact} />
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+          <RightSidebar contact={contact as CrmContact} />
+        </div>
       </div>
     );
   }
@@ -832,7 +953,7 @@ export default function LeadDetailPage() {
   return (
     <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100vh - 60px)' }}>
       {/* Back bar */}
-      <div className="px-4 py-2 border-b border-border bg-background flex-shrink-0">
+      <div className="px-5 py-2.5 border-b border-border bg-background flex-shrink-0 flex items-center justify-between">
         <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to Leads
         </Link>
@@ -841,7 +962,7 @@ export default function LeadDetailPage() {
       {/* 3 columns */}
       <div className="flex flex-1 min-h-0">
         {/* Left sidebar */}
-        <div className="w-[280px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-4">
+        <div className="w-[280px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-4">
           <LeftSidebar contact={contact as CrmContact} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} navInfo={navInfo} onNavigate={handleNavigate} />
         </div>
 
@@ -851,7 +972,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-4">
+        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/20 overflow-y-auto p-4">
           <RightSidebar contact={contact as CrmContact} />
         </div>
       </div>
