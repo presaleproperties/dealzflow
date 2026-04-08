@@ -262,65 +262,87 @@ export default function DataImportSection() {
     const BATCH = 50;
     let success = 0;
     let errors = 0;
+    const skipped: SkippedRow[] = [];
+    const dbErrors: string[] = [];
 
-    for (let i = 0; i < csvRows.length; i += BATCH) {
-      const batch = csvRows.slice(i, i + BATCH);
-      const records = batch.map(row => {
-        const record: Record<string, unknown> = {};
-        Object.entries(mapping).forEach(([colIdx, field]) => {
-          if (field === '__skip__') return;
-          const val = row[Number(colIdx)]?.trim() ?? '';
-          if (!val) return;
-          if (field === 'budget_min' || field === 'budget_max') {
-            const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
-            if (!isNaN(num)) record[field] = num;
-          } else if (ARRAY_FIELDS.has(field)) {
-            record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
-          } else if (field === 'contact_type') {
-            const normalized = val.toLowerCase().trim();
-            if (['lead', 'realtor', 'past_client'].includes(normalized)) {
-              record[field] = normalized;
-            }
-          } else if (field === 'created_at') {
-            // Parse as ISO timestamp; keep original value for Supabase
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) {
-              record[field] = d.toISOString();
-            }
-          } else {
-            record[field] = val;
+    // Build all records first, tracking skipped rows
+    const allRecords: { record: Record<string, unknown>; rowNum: number }[] = [];
+
+    csvRows.forEach((row, rowIndex) => {
+      const record: Record<string, unknown> = {};
+      Object.entries(mapping).forEach(([colIdx, field]) => {
+        if (field === '__skip__') return;
+        const val = row[Number(colIdx)]?.trim() ?? '';
+        if (!val) return;
+        if (field === 'budget_min' || field === 'budget_max') {
+          const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
+          if (!isNaN(num)) record[field] = num;
+        } else if (ARRAY_FIELDS.has(field)) {
+          record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
+        } else if (field === 'contact_type') {
+          const normalized = val.toLowerCase().trim();
+          if (['lead', 'realtor', 'past_client'].includes(normalized)) {
+            record[field] = normalized;
           }
-        });
-
-        // If projects array is set but project (single) is not, set project to first item
-        if (record.projects && Array.isArray(record.projects) && (record.projects as string[]).length > 0 && !record.project) {
-          record.project = (record.projects as string[])[0];
-        }
-        // If project is set but projects is not, set projects to [project]
-        if (record.project && !record.projects) {
-          record.projects = [record.project as string];
-        }
-        // Ensure projects is always an array (NOT NULL constraint)
-        if (!record.projects) {
-          record.projects = [];
-        }
-
-        return record;
-      }).filter(r => r.first_name && r.last_name);
-
-      if (records.length > 0) {
-        const { error } = await supabase.from('crm_contacts').insert(records as never[]);
-        if (error) {
-          errors += records.length;
+        } else if (field === 'created_at') {
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) {
+            record[field] = d.toISOString();
+          }
         } else {
-          success += records.length;
+          record[field] = val;
         }
+      });
+
+      if (record.projects && Array.isArray(record.projects) && (record.projects as string[]).length > 0 && !record.project) {
+        record.project = (record.projects as string[])[0];
+      }
+      if (record.project && !record.projects) {
+        record.projects = [record.project as string];
+      }
+      if (!record.projects) {
+        record.projects = [];
       }
 
-      setProgress(Math.min(100, Math.round(((i + batch.length) / csvRows.length) * 100)));
+      const firstName = (record.first_name as string || '').trim();
+      const lastName = (record.last_name as string || '').trim();
+
+      if (!firstName && !lastName) {
+        skipped.push({ rowNum: rowIndex + 2, reason: 'Missing first name AND last name', data: row.slice(0, 3).join(', ') });
+      } else if (!firstName) {
+        skipped.push({ rowNum: rowIndex + 2, reason: 'Missing first name', data: `last_name: ${lastName}` });
+      } else if (!lastName) {
+        skipped.push({ rowNum: rowIndex + 2, reason: 'Missing last name', data: `first_name: ${firstName}` });
+      } else {
+        allRecords.push({ record, rowNum: rowIndex + 2 });
+      }
+    });
+
+    // Insert in batches, falling back to individual inserts on batch failure
+    for (let i = 0; i < allRecords.length; i += BATCH) {
+      const batch = allRecords.slice(i, i + BATCH);
+      const batchRecords = batch.map(b => b.record);
+
+      const { error } = await supabase.from('crm_contacts').insert(batchRecords as never[]);
+      if (error) {
+        // Batch failed — try one-by-one to save as many as possible
+        for (const item of batch) {
+          const { error: singleErr } = await supabase.from('crm_contacts').insert(item.record as never);
+          if (singleErr) {
+            errors++;
+            dbErrors.push(`Row ${item.rowNum}: ${singleErr.message}`);
+          } else {
+            success++;
+          }
+        }
+      } else {
+        success += batch.length;
+      }
+
+      setProgress(Math.min(100, Math.round(((i + batch.length) / allRecords.length) * 100)));
     }
 
-    setResult({ success, errors });
+    setResult({ success, errors, skipped, dbErrors });
     setPhase('done');
   };
 
