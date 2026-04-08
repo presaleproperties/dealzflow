@@ -1,4 +1,5 @@
-import { AppLayout } from '@/components/layout/AppLayout';
+import { Sidebar, useSidebarCollapsed } from '@/components/layout/Sidebar';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { CrmHeader } from './CrmHeader';
 import { CrmMobileNav } from './CrmMobileNav';
 import { CrmRouteGuard } from './CrmRouteGuard';
