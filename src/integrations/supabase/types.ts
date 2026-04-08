@@ -744,6 +744,42 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_lead_segments: {
+        Row: {
+          color: string
+          created_at: string
+          emoji: string | null
+          filter_config: Json
+          id: string
+          is_default: boolean
+          name: string
+          sort_order: number
+          user_id: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          filter_config?: Json
+          id?: string
+          is_default?: boolean
+          name: string
+          sort_order?: number
+          user_id?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          filter_config?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          sort_order?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       crm_messages: {
         Row: {
           channel: string | null
@@ -872,6 +908,36 @@ export type Database = {
           title?: string
           type?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_saved_views: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          is_default: boolean
+          name: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          name: string
+          sort_order?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          sort_order?: number
+          user_id?: string
         }
         Relationships: []
       }
