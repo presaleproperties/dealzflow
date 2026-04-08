@@ -130,7 +130,10 @@ export default function CrmLeadsPage() {
         {/* Header */}
         <div className="space-y-2 sm:space-y-0">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads</h1>
+              <Badge variant="outline" className="text-xs font-medium">{filtered.length} total</Badge>
+            </div>
             <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5 hidden sm:flex">
               <Plus className="w-4 h-4" /> Add Lead
             </Button>
