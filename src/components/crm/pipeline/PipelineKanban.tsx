@@ -185,7 +185,7 @@ export function PipelineKanban() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {PROJECTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            {dynamicOpts.projects.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterAgent} onValueChange={setFilterAgent}>
@@ -194,7 +194,7 @@ export function PipelineKanban() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Agents</SelectItem>
-            {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            {dynamicAgents.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
