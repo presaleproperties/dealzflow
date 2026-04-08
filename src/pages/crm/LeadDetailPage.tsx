@@ -612,7 +612,7 @@ function ShowingsTab({ contactId, showings }: { contactId: string; showings: any
           ))}
         </div>
       )}
-      <BookShowingDialog contactId={contactId} open={showBooking} onOpenChange={setShowBooking} />
+      <BookShowingDialog contactId={contactId} project={null} open={showBooking} onOpenChange={setShowBooking} />
     </div>
   );
 }
@@ -716,8 +716,6 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
 
 /* Task row */
 function TaskRow({ task }: { task: any }) {
-  const queryClient = (await import('@tanstack/react-query')).useQueryClient ? undefined : undefined;
-  // Simple display row — mark-complete handled elsewhere
   return (
     <div className="flex items-start gap-2 p-2 rounded-lg bg-card border border-border">
       <Checkbox className="mt-0.5 h-3.5 w-3.5" />
