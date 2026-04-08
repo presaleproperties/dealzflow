@@ -32,14 +32,14 @@ const ALL_COLUMN_KEYS = [
   { key: 'reg', label: 'Reg' },
   { key: 'project', label: 'Projects' },
   { key: 'source', label: 'Source' },
-  { key: 'status', label: 'Status' },
+  { key: 'pipeline', label: 'Pipeline' },
   { key: 'tags', label: 'Tags' },
   { key: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', label: 'Last Touch' },
   { key: 'created_at', label: 'Added' },
 ] as const;
 
-const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'status', 'tags', 'assigned_to', 'last_touch_at']);
+const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at']);
 
 // Built-in view tabs
 const BUILT_IN_VIEWS = [
