@@ -372,6 +372,8 @@ export type Database = {
           language: string | null
           last_contact_at: string | null
           last_name: string
+          last_touch_at: string | null
+          last_touch_type: string | null
           lead_score: number | null
           lead_type: string | null
           lofty_id: string | null
@@ -384,6 +386,7 @@ export type Database = {
           projects: string[]
           province: string | null
           source: string | null
+          stage_changed_at: string | null
           status: string | null
           status_changed_at: string | null
           tags: string[] | null
@@ -410,6 +413,8 @@ export type Database = {
           language?: string | null
           last_contact_at?: string | null
           last_name: string
+          last_touch_at?: string | null
+          last_touch_type?: string | null
           lead_score?: number | null
           lead_type?: string | null
           lofty_id?: string | null
@@ -422,6 +427,7 @@ export type Database = {
           projects?: string[]
           province?: string | null
           source?: string | null
+          stage_changed_at?: string | null
           status?: string | null
           status_changed_at?: string | null
           tags?: string[] | null
@@ -448,6 +454,8 @@ export type Database = {
           language?: string | null
           last_contact_at?: string | null
           last_name?: string
+          last_touch_at?: string | null
+          last_touch_type?: string | null
           lead_score?: number | null
           lead_type?: string | null
           lofty_id?: string | null
@@ -460,6 +468,7 @@ export type Database = {
           projects?: string[]
           province?: string | null
           source?: string | null
+          stage_changed_at?: string | null
           status?: string | null
           status_changed_at?: string | null
           tags?: string[] | null
