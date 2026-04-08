@@ -1,9 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
+
+/* ── Error Boundary ── */
+class SectionErrorBoundary extends Component<
+  { children: ReactNode; name: string },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; name: string }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[${this.props.name}] section error:`, error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-[10px] lg:rounded-xl border border-border bg-muted/30 p-6 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Something went wrong loading {this.props.name}.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Try refreshing the page.</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import {
   Shield, Lock, UserPlus, GripVertical, Plus, Bell,
   MessageSquare, Mail, Calendar, Megaphone, Database,
@@ -64,19 +96,19 @@ export default function CrmSettingsPage() {
   return (
     <div className="space-y-6 sm:space-y-8 max-w-4xl">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground">CRM Settings</h1>
-      <TeamManagement />
+      <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
       <Separator />
-      <PipelineStages />
+      <SectionErrorBoundary name="Pipeline Stages"><PipelineStages /></SectionErrorBoundary>
       <Separator />
-      <LeadSourcesSection />
+      <SectionErrorBoundary name="Lead Sources"><LeadSourcesSection /></SectionErrorBoundary>
       <Separator />
-      <DataImportSection />
+      <SectionErrorBoundary name="Data Import"><DataImportSection /></SectionErrorBoundary>
       <Separator />
-      <DataManagerSection />
+      <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
       <Separator />
-      <IntegrationsSection />
+      <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
       <Separator />
-      <NotificationsSection />
+      <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
     </div>
   );
 }
