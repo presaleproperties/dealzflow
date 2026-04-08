@@ -639,33 +639,45 @@ export type Database = {
       crm_email_templates: {
         Row: {
           body_html: string | null
+          category: string
           created_at: string | null
           id: string
+          is_active: boolean
           last_used_at: string | null
+          merge_tags: string[] | null
           name: string
           project: string | null
           subject: string
           times_used: number | null
+          updated_at: string | null
         }
         Insert: {
           body_html?: string | null
+          category?: string
           created_at?: string | null
           id?: string
+          is_active?: boolean
           last_used_at?: string | null
+          merge_tags?: string[] | null
           name: string
           project?: string | null
           subject: string
           times_used?: number | null
+          updated_at?: string | null
         }
         Update: {
           body_html?: string | null
+          category?: string
           created_at?: string | null
           id?: string
+          is_active?: boolean
           last_used_at?: string | null
+          merge_tags?: string[] | null
           name?: string
           project?: string | null
           subject?: string
           times_used?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
