@@ -167,7 +167,7 @@ export function PipelineKanban() {
     if (!contact || contact.status === newStatus) return;
 
     updateContact.mutate(
-      { id: contactId, updates: { status: newStatus, status_changed_at: new Date().toISOString() } },
+      { id: contactId, updates: { status: newStatus, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } },
       { onSuccess: () => toast.success(`Status updated to ${newStatus}`) }
     );
   };

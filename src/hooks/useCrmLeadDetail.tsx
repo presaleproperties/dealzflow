@@ -90,7 +90,7 @@ export function useCrmContactTasks(contactId: string | undefined) {
 export function useUpdateCrmContact() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Record<string, unknown> }) => {
+    mutationFn: async ({ id, updates, oldValues }: { id: string; updates: Record<string, unknown>; oldValues?: Record<string, unknown> }) => {
       // Auto-set status to Closed when contact_type is changed to past_client
       const finalUpdates = { ...updates };
       if (finalUpdates.contact_type === 'past_client') {
@@ -101,10 +101,33 @@ export function useUpdateCrmContact() {
       }
       const { error } = await supabase.from('crm_contacts').update(finalUpdates).eq('id', id);
       if (error) throw error;
+
+      // Log system notes for key changes
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && oldValues) {
+        const systemNotes: string[] = [];
+
+        if (updates.status && oldValues.status && updates.status !== oldValues.status) {
+          systemNotes.push(`Stage changed from "${oldValues.status}" to "${updates.status}"`);
+        }
+        if (updates.assigned_to && oldValues.assigned_to && updates.assigned_to !== oldValues.assigned_to) {
+          systemNotes.push(`Lead reassigned from "${oldValues.assigned_to}" to "${updates.assigned_to}"`);
+        }
+
+        for (const content of systemNotes) {
+          await (supabase.from('crm_notes' as any) as any).insert({
+            contact_id: id,
+            user_id: session.user.id,
+            content,
+            note_type: 'system',
+          });
+        }
+      }
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-notes', id] });
     },
     onError: (err: Error) => toast.error(err.message),
   });

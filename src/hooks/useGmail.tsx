@@ -69,10 +69,24 @@ export function useSendGmail() {
       if (data?.error) throw new Error(data.error);
       return data as { success: boolean; messageId: string };
     },
-    onSuccess: (_, vars) => {
+    onSuccess: async (_, vars) => {
       qc.invalidateQueries({ queryKey: ['crm-contact-messages', vars.contactId] });
       qc.invalidateQueries({ queryKey: ['crm-email-log', vars.contactId] });
       toast.success('Email sent via Gmail');
+
+      // Log system note for email sent
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await (supabase.from('crm_notes' as any) as any).insert({
+            contact_id: vars.contactId,
+            user_id: session.user.id,
+            content: `Email sent: "${vars.subject}"`,
+            note_type: 'email',
+          });
+          qc.invalidateQueries({ queryKey: ['crm-notes', vars.contactId] });
+        }
+      } catch {}
     },
     onError: (err: Error) => toast.error(`Failed to send: ${err.message}`),
   });

@@ -16,11 +16,11 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const [showEmail, setShowEmail] = useState(false);
 
   const handleStatusChange = (status: string) => {
-    updateContact.mutate({ id: contact.id, updates: { status, status_changed_at: new Date().toISOString() } });
+    updateContact.mutate({ id: contact.id, updates: { status, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
   };
 
   const handleAgentChange = (agent: string) => {
-    updateContact.mutate({ id: contact.id, updates: { assigned_to: agent } });
+    updateContact.mutate({ id: contact.id, updates: { assigned_to: agent }, oldValues: { assigned_to: contact.assigned_to } });
   };
 
   const openWhatsApp = () => {

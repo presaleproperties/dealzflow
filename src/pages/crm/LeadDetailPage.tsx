@@ -9,9 +9,8 @@ import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { LeadContactCard } from '@/components/crm/leads/LeadContactCard';
 import { LeadDetailsCard } from '@/components/crm/leads/LeadDetailsCard';
 import { LeadCoBuyerCard } from '@/components/crm/leads/LeadCoBuyerCard';
-import { LeadNotesCard } from '@/components/crm/leads/LeadNotesCard';
+import { LeadNotesActivity } from '@/components/crm/leads/LeadNotesActivity';
 import { LeadTagsCard } from '@/components/crm/leads/LeadTagsCard';
-import { LeadActivityTimeline } from '@/components/crm/leads/LeadActivityTimeline';
 import { LeadQuickActions } from '@/components/crm/leads/LeadQuickActions';
 import { LeadUpcomingCard } from '@/components/crm/leads/LeadUpcomingCard';
 import { LeadScoreCard } from '@/components/crm/leads/LeadScoreCard';
@@ -110,9 +109,8 @@ export default function LeadDetailPage() {
           <LeadContactCard contact={contact} />
           <LeadDetailsCard contact={contact} />
           <LeadCoBuyerCard contact={contact} />
-          <LeadNotesCard contact={contact} />
+          <LeadNotesActivity contactId={contact.id} />
           <LeadTagsCard contact={contact} />
-          <LeadActivityTimeline contactId={contact.id} />
           <LeadEmailHistory contactId={contact.id} />
         </div>
 
