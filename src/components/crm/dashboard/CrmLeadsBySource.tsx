@@ -7,12 +7,28 @@ export function CrmLeadsBySource() {
   const { data, isLoading } = useQuery({
     queryKey: ['crm-leads-by-source'],
     queryFn: async () => {
-      const { data: contacts } = await supabase
-        .from('crm_contacts')
-        .select('source');
+      const PAGE_SIZE = 1000;
+      let allContacts: { source: string | null }[] = [];
+      let from = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: batch, error } = await supabase
+          .from('crm_contacts')
+          .select('source')
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (batch && batch.length > 0) {
+          allContacts = allContacts.concat(batch);
+          from += PAGE_SIZE;
+          hasMore = batch.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
 
       const counts: Record<string, number> = {};
-      (contacts ?? []).forEach((c) => {
+      allContacts.forEach((c) => {
         const src = c.source || 'Unknown';
         counts[src] = (counts[src] ?? 0) + 1;
       });
