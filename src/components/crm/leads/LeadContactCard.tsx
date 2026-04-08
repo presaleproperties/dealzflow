@@ -27,7 +27,7 @@ function CopyButton({ value }: { value: string }) {
   };
   return (
     <button onClick={handle} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground ml-1.5">
-      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
   );
 }
