@@ -699,7 +699,7 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
         {/* Upcoming Showings */}
         <WidgetSection title="Appointments" count={upcomingShowings.length} onAdd={() => setShowShowing(true)}>
           {upcomingShowings.length === 0 ? (
-            <EmptyWidget icon={Calendar} message="No upcoming showings" />
+            <EmptyWidget icon={Calendar} message="No upcoming appointments" />
           ) : (
             <div className="space-y-1.5">
               {upcomingShowings.slice(0, 5).map((s: any) => (
