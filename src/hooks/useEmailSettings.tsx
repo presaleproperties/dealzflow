@@ -18,13 +18,12 @@ export function useEmailSettings() {
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
-      const { data, error } = await supabase
-        .from('crm_email_settings' as any)
+      const { data, error } = await (supabase.from('crm_email_settings' as any) as any)
         .select('*')
         .eq('user_id', session.user.id)
         .maybeSingle();
       if (error) throw error;
-      return data as EmailSettings | null;
+      return (data as EmailSettings | null);
     },
     staleTime: 60_000,
   });
