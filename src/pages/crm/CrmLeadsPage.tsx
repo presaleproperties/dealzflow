@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Filter, ChevronDown, ChevronUp } from 'lucide-react';
-import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
+import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
+import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 import { LeadsTable } from '@/components/crm/leads/LeadsTable';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BulkActionsBar } from '@/components/crm/leads/BulkActionsBar';
@@ -12,11 +14,15 @@ import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function CrmLeadsPage() {
-  const { data: contacts = [], isLoading } = useCrmContacts();
-  const dynamicOpts = useDynamicFilterOptions(contacts);
+  // We still use the full dataset hook just for dynamic filter options (projects, languages, tags)
+  const { data: allContacts = [] } = useCrmContacts();
+  const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
+
   const [filterContactType, setFilterContactType] = useState('');
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterSource, setFilterSource] = useState<string[]>([]);
@@ -27,8 +33,39 @@ export default function CrmLeadsPage() {
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [sortKey, setSortKey] = useState<SortKey>('created_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    if (searchTimeout) clearTimeout(searchTimeout);
+    const t = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1);
+    }, 300);
+    setSearchTimeoutId(t);
+  }, [searchTimeout]);
+
+  const { contacts, totalCount, isLoading, isFetching } = usePaginatedCrmContacts({
+    page,
+    pageSize,
+    sortKey,
+    sortDir,
+    filters: {
+      search: debouncedSearch,
+      contactType: filterContactType,
+      statuses: filterStatus,
+      sources: filterSource,
+      agents: filterAgent,
+      projects: filterProject,
+      leadTypes: filterLeadType,
+      languages: filterLanguage,
+      tags: filterTags,
+    },
+  });
 
   const activeFilterCount = [
     filterContactType ? 1 : 0,
@@ -68,31 +105,20 @@ export default function CrmLeadsPage() {
     setPage(1);
   };
 
-  const filtered = useMemo(() => {
-    let list = contacts;
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(c =>
-        `${c.first_name} ${c.last_name}`.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q) ||
-        c.phone?.includes(q) ||
-        c.project?.toLowerCase().includes(q)
-      );
+  const handleSort = useCallback((key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
     }
-    if (filterContactType) list = list.filter(c => c.contact_type === filterContactType);
-    if (filterStatus.length > 0) list = list.filter(c => c.status && filterStatus.includes(c.status));
-    if (filterSource.length > 0) list = list.filter(c => c.source && filterSource.includes(c.source));
-    if (filterAgent.length > 0) list = list.filter(c => c.assigned_to && filterAgent.includes(c.assigned_to));
-    if (filterProject.length > 0) list = list.filter(c =>
-      filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
-    );
-    if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
-    if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
-    if (filterTags.length > 0) list = list.filter(c =>
-      filterTags.some(ft => (c.tags ?? []).includes(ft))
-    );
-    return list;
-  }, [contacts, search, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags]);
+    setPage(1);
+  }, [sortKey]);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setPage(1);
+  }, []);
 
   const filterPills = [
     { key: 'contactType', label: 'Type', values: filterContactType ? [filterContactType] : [] },
@@ -107,14 +133,12 @@ export default function CrmLeadsPage() {
 
   const filterSection = (
     <>
-      {/* Row 1: Contact Type, Status, Source, Assigned To */}
       <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
         <ContactTypeFilter value={filterContactType} onChange={v => { setFilterContactType(v); setPage(1); }} />
         <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={v => { setFilterStatus(v); setPage(1); }} />
         <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={v => { setFilterSource(v); setPage(1); }} />
         <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={v => { setFilterAgent(v); setPage(1); }} />
       </div>
-      {/* Row 2: Project, Lead Type, Language, Tags */}
       <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
         <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={v => { setFilterProject(v); setPage(1); }} />
         <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={v => { setFilterLeadType(v); setPage(1); }} />
@@ -132,7 +156,7 @@ export default function CrmLeadsPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads</h1>
-              <Badge variant="outline" className="text-xs font-medium">{filtered.length} total</Badge>
+              <Badge variant="outline" className="text-xs font-medium">{totalCount.toLocaleString()} total</Badge>
             </div>
             <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5 hidden sm:flex">
               <Plus className="w-4 h-4" /> Add Lead
@@ -144,7 +168,7 @@ export default function CrmLeadsPage() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search leads..."
               className="pl-8 h-10 sm:h-9 w-full text-sm"
             />
@@ -195,12 +219,19 @@ export default function CrmLeadsPage() {
 
         {/* Table */}
         <LeadsTable
-          contacts={filtered}
+          contacts={contacts}
           isLoading={isLoading}
+          isFetching={isFetching}
+          totalCount={totalCount}
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
           page={page}
+          pageSize={pageSize}
           onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleSort}
         />
       </div>
 
