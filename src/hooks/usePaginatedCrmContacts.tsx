@@ -2,6 +2,29 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CrmContact } from './useCrmContacts';
 
+function applyJsonFilters(query: any, filters: Record<string, unknown>) {
+  if (!filters || Object.keys(filters).length === 0) return query;
+  if (filters.status && Array.isArray(filters.status) && (filters.status as string[]).length > 0) {
+    query = query.in('status', filters.status as string[]);
+  }
+  if (filters.source && Array.isArray(filters.source) && (filters.source as string[]).length > 0) {
+    query = query.in('source', filters.source as string[]);
+  }
+  if (filters.lead_type && Array.isArray(filters.lead_type) && (filters.lead_type as string[]).length > 0) {
+    query = query.in('lead_type', filters.lead_type as string[]);
+  }
+  if (filters.assigned_to && typeof filters.assigned_to === 'string') {
+    query = query.eq('assigned_to', filters.assigned_to);
+  }
+  if (filters.tags && Array.isArray(filters.tags) && (filters.tags as string[]).length > 0) {
+    query = query.overlaps('tags', filters.tags as string[]);
+  }
+  if (filters.contact_type && typeof filters.contact_type === 'string') {
+    query = query.eq('contact_type', filters.contact_type);
+  }
+  return query;
+}
+
 export type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'last_touch_at' | 'created_at';
 export type SortDir = 'asc' | 'desc';
 
