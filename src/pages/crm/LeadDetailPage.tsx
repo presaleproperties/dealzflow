@@ -101,7 +101,7 @@ export default function LeadDetailPage() {
           <LeadContactCard contact={contact} />
           <LeadTagsCard contact={contact} />
           <LeadActivityTimeline contactId={contact.id} />
-        </div>
+          <LeadEmailHistory contactId={contact.id} />
 
         {/* Right 35% */}
         <div className="lg:col-span-2 space-y-4">

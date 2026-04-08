@@ -22,7 +22,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { useEffect } from 'react';
 import { useGmailStatus, useConnectGmail, useDisconnectGmail } from '@/hooks/useGmail';
 
 const PIPELINE_STAGES = [
