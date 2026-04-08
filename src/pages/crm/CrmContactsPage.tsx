@@ -19,7 +19,6 @@ const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 function getInitials(first: string, last: string) {
   return getContactInitials(first, last);
 }
-}
 
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
