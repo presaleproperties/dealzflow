@@ -5,7 +5,7 @@ const TYPE_LABELS: Record<string, string> = {
   '': 'All',
   lead: 'Lead',
   realtor: 'Realtor',
-  past_client: 'Past Client',
+  past_client: 'Client',
 };
 
 interface ContactTypeFilterProps {
