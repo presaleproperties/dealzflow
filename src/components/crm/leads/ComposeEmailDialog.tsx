@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Send } from 'lucide-react';
+import { AlertCircle, Send, Eye } from 'lucide-react';
 import { useSendGmail, useGmailStatus } from '@/hooks/useGmail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
