@@ -44,7 +44,6 @@ import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import LoftySyncSection from '@/components/crm/settings/LoftySyncSection';
-import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
