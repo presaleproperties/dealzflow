@@ -13,6 +13,7 @@ import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
+import { formatContactName } from '@/lib/format';
 import type { CrmConversation } from '@/hooks/useCrmWhatsApp';
 
 export function WhatsAppChat() {
@@ -34,7 +35,7 @@ export function WhatsAppChat() {
     if (!search) return conversations;
     const q = search.toLowerCase();
     return conversations.filter(c => {
-      const name = c.contact ? `${c.contact.first_name} ${c.contact.last_name}` : '';
+      const name = c.contact ? formatContactName(c.contact.first_name, c.contact.last_name) : '';
       return name.toLowerCase().includes(q) || c.last_message_preview?.toLowerCase().includes(q);
     });
   }, [conversations, search]);
@@ -126,7 +127,7 @@ export function WhatsAppChat() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-foreground truncate">
-                          {selected.contact ? `${selected.contact.first_name} ${selected.contact.last_name}` : 'Unknown'}
+                          {selected.contact ? formatContactName(selected.contact.first_name, selected.contact.last_name) : 'Unknown'}
                         </span>
                         {selected.contact?.status && <LeadStatusBadge status={selected.contact.status} />}
                       </div>
@@ -243,7 +244,7 @@ export function WhatsAppChat() {
 }
 
 function ConversationRow({ conv, isActive, onClick }: { conv: CrmConversation; isActive: boolean; onClick: () => void }) {
-  const name = conv.contact ? `${conv.contact.first_name} ${conv.contact.last_name}` : 'Unknown';
+  const name = conv.contact ? formatContactName(conv.contact.first_name, conv.contact.last_name) : 'Unknown';
   const unread = conv.unread_count ?? 0;
 
   return (

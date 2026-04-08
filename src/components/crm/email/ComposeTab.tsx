@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from './RichTextEditor';
 import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
@@ -54,7 +55,7 @@ export function ComposeTab() {
     if (!searchTo) return contacts.slice(0, 10);
     const q = searchTo.toLowerCase();
     return contacts.filter(c =>
-      `${c.first_name} ${c.last_name}`.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
+      formatContactName(c.first_name, c.last_name).toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
     ).slice(0, 10);
   }, [contacts, searchTo]);
 
@@ -95,7 +96,7 @@ export function ComposeTab() {
     if (!excludeSearch) return [];
     const q = excludeSearch.toLowerCase();
     return contacts.filter(c =>
-      `${c.first_name} ${c.last_name}`.toLowerCase().includes(q) && !excludedIds.has(c.id)
+      formatContactName(c.first_name, c.last_name).toLowerCase().includes(q) && !excludedIds.has(c.id)
     ).slice(0, 5);
   }, [contacts, excludeSearch, excludedIds]);
 
@@ -158,7 +159,7 @@ export function ComposeTab() {
               <div className="relative cursor-pointer">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  value={selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name} <${selectedContact.email ?? 'no email'}>` : searchTo}
+                  value={selectedContact ? `${formatContactName(selectedContact.first_name, selectedContact.last_name)} <${selectedContact.email ?? 'no email'}>` : searchTo}
                   onChange={e => { setSearchTo(e.target.value); setSelectedContact(null); setToOpen(true); }}
                   onFocus={() => setToOpen(true)}
                   placeholder="Search contact..."
@@ -174,7 +175,7 @@ export function ComposeTab() {
                     className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center"
                     onClick={() => { setSelectedContact(c); setToOpen(false); }}
                   >
-                    <span className="font-medium text-foreground">{c.first_name} {c.last_name}</span>
+                    <span className="font-medium text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
                     {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
                   </div>
                 ))}
@@ -248,7 +249,7 @@ export function ComposeTab() {
                         onClick={() => { setExcludedIds(prev => new Set([...prev, c.id])); setExcludeSearch(''); }}
                         className="flex items-center gap-2 w-full px-2 py-1.5 text-xs hover:bg-muted/40 text-left"
                       >
-                        <span className="text-foreground">{c.first_name} {c.last_name}</span>
+                        <span className="text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
                         <span className="text-muted-foreground">{c.email}</span>
                       </button>
                     ))}
@@ -266,7 +267,7 @@ export function ComposeTab() {
                           className="text-[10px] cursor-pointer gap-0.5"
                           onClick={() => setExcludedIds(prev => { const n = new Set(prev); n.delete(id); return n; })}
                         >
-                          {c.first_name} {c.last_name} ×
+                          {formatContactName(c.first_name, c.last_name)} ×
                         </Badge>
                       );
                     })}

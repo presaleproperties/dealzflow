@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatContactName } from '@/lib/format';
 import { format } from 'date-fns';
 
 const EXPORT_FIELDS = [
@@ -48,7 +49,7 @@ export default function DataManagerSection() {
     if (typeFilter !== 'all' && c.contact_type !== typeFilter) return false;
     if (search) {
       const q = search.toLowerCase();
-      return c.first_name.toLowerCase().includes(q) || c.last_name.toLowerCase().includes(q) ||
+      return formatContactName(c.first_name, c.last_name).toLowerCase().includes(q) ||
         (c.email || '').toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q) ||
         (c.source || '').toLowerCase().includes(q);
     }
@@ -219,7 +220,7 @@ export default function DataManagerSection() {
                       {pageContacts.map(c => (
                         <TableRow key={c.id} className={selectedIds.has(c.id) ? 'bg-primary/5' : ''}>
                           <TableCell className="px-2 py-1"><Checkbox checked={selectedIds.has(c.id)} onCheckedChange={() => toggleSelect(c.id)} /></TableCell>
-                          <TableCell className="text-[11px] px-2 py-1 font-medium">{c.first_name} {c.last_name}</TableCell>
+                          <TableCell className="text-[11px] px-2 py-1 font-medium">{formatContactName(c.first_name, c.last_name)}</TableCell>
                           <TableCell className="text-[11px] px-2 py-1 text-muted-foreground max-w-[140px] truncate">{c.email || '—'}</TableCell>
                           <TableCell className="text-[11px] px-2 py-1">{c.source || '—'}</TableCell>
                           <TableCell className="px-2 py-1"><Badge variant="outline" className="text-[9px] px-1">{c.contact_type === 'past_client' ? 'Client' : c.contact_type}</Badge></TableCell>

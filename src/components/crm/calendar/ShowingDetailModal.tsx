@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { formatContactName } from '@/lib/format';
 import { Link } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import type { CrmShowingWithContact } from '@/hooks/useCrmShowings';
@@ -23,7 +24,7 @@ export function ShowingDetailModal({ showing, onClose, onUpdateStatus }: Props) 
   if (!showing) return null;
 
   const contactName = showing.crm_contacts
-    ? `${showing.crm_contacts.first_name} ${showing.crm_contacts.last_name}`
+    ? formatContactName(showing.crm_contacts.first_name, showing.crm_contacts.last_name)
     : 'Unknown';
   const status = showing.status ?? 'confirmed';
 
