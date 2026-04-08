@@ -756,20 +756,18 @@ export default function LeadDetailPage() {
     return { score, color, label };
   }, [messages, showings, tasks, notes]);
 
-  // Last touch
+  // Last touch — use the DB column directly
   const lastTouchLabel = useMemo(() => {
-    const dates: Date[] = [];
-    if (notes.length > 0) dates.push(new Date(notes[0].created_at));
-    if (messages.length > 0) dates.push(new Date((messages[0] as any).created_at));
-    if (dates.length === 0) return 'N/A';
-    const latest = new Date(Math.max(...dates.map(d => d.getTime())));
-    const diff = Date.now() - latest.getTime();
+    if (!contact) return 'N/A';
+    const lt = (contact as any).last_touch_at;
+    if (!lt) return 'No activity';
+    const diff = Date.now() - new Date(lt).getTime();
     const hours = Math.floor(diff / 3600000);
     if (hours < 1) return 'Just now';
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
-  }, [notes, messages]);
+  }, [contact]);
 
   // Days in pipeline
   const daysInPipeline = useMemo(() => {

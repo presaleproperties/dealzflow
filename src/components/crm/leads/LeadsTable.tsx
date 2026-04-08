@@ -78,7 +78,7 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'source', label: 'Source' },
   { key: 'status', label: 'Status' },
   { key: 'assigned_to', label: 'Assigned To', className: 'hidden lg:table-cell' },
-  { key: 'updated_at', label: 'Last Touch', className: 'hidden xl:table-cell' },
+  { key: 'updated_at', label: 'Last Touch', className: 'hidden xl:table-cell' },  // sort key stays updated_at but renders last_touch_at
   { key: 'created_at', label: 'Added', className: 'hidden xl:table-cell' },
 ];
 
@@ -91,7 +91,7 @@ function getSortValue(contact: CrmContact, key: SortKey): string {
     case 'source': return contact.source ?? '';
     case 'status': return contact.status ?? '';
     case 'assigned_to': return contact.assigned_to ?? '';
-    case 'updated_at': return contact.updated_at;
+    case 'updated_at': return contact.last_touch_at ?? '';
     case 'created_at': return contact.created_at;
     case 'contact_type': return contact.contact_type ?? 'lead';
   }
@@ -293,8 +293,31 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.source ?? '—'}</td>
                 <td className="px-3 py-2.5"><LeadStatusBadge status={contact.status} /></td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap hidden lg:table-cell">{contact.assigned_to ?? '—'}</td>
-                <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap text-xs hidden xl:table-cell">
-                  {formatDistanceToNow(new Date(contact.updated_at), { addSuffix: true })}
+                <td className="px-3 py-2.5 whitespace-nowrap text-xs hidden xl:table-cell">
+                  {contact.last_touch_at ? (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span style={{
+                            color: (() => {
+                              const days = Math.floor((Date.now() - new Date(contact.last_touch_at).getTime()) / 86400000);
+                              if (days <= 7) return 'hsl(142 71% 45%)';
+                              if (days <= 30) return 'hsl(38 92% 50%)';
+                              return 'hsl(0 60% 55%)';
+                            })()
+                          }}>
+                            {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          {format(new Date(contact.last_touch_at), 'MMM d, yyyy h:mm a')}
+                          {contact.last_touch_type && ` · ${contact.last_touch_type.replace(/_/g, ' ')}`}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <span className="text-muted-foreground italic">No activity</span>
+                  )}
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap text-xs hidden xl:table-cell">
                   {format(new Date(contact.created_at), 'MMM d, yyyy')}
