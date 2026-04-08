@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowUpDown, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName } from '@/lib/format';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -9,23 +9,27 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { CrmContact } from '@/hooks/useCrmContacts';
-
-type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'updated_at' | 'created_at' | 'contact_type';
-type SortDir = 'asc' | 'desc';
+import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 
 interface LeadsTableProps {
   contacts: CrmContact[];
   isLoading: boolean;
+  isFetching: boolean;
+  totalCount: number;
   selectedIds: string[];
   onSelectionChange: (ids: string[]) => void;
   page: number;
+  pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (key: SortKey) => void;
 }
-
-const PAGE_SIZE = 25;
 
 const STATUS_BORDER_COLORS: Record<string, string> = {
   'New Lead': 'hsl(210 62% 46%)',
@@ -70,6 +74,7 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
   );
 }
 
+// Map display column keys to sort keys
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'name', label: 'Name' },
   { key: 'phone', label: 'Phone' },
@@ -78,24 +83,9 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'source', label: 'Source' },
   { key: 'status', label: 'Status' },
   { key: 'assigned_to', label: 'Assigned To', className: 'hidden lg:table-cell' },
-  { key: 'updated_at', label: 'Last Touch', className: 'hidden xl:table-cell' },  // sort key stays updated_at but renders last_touch_at
+  { key: 'last_touch_at', label: 'Last Touch', className: 'hidden xl:table-cell' },
   { key: 'created_at', label: 'Added', className: 'hidden xl:table-cell' },
 ];
-
-function getSortValue(contact: CrmContact, key: SortKey): string {
-  switch (key) {
-    case 'name': return formatContactName(contact.first_name, contact.last_name).toLowerCase();
-    case 'phone': return contact.phone ?? '';
-    case 'email': return contact.email ?? '';
-    case 'project': return (contact.projects ?? []).join(',') || contact.project || '';
-    case 'source': return contact.source ?? '';
-    case 'status': return contact.status ?? '';
-    case 'assigned_to': return contact.assigned_to ?? '';
-    case 'updated_at': return contact.last_touch_at ?? '';
-    case 'created_at': return contact.created_at;
-    case 'contact_type': return contact.contact_type ?? 'lead';
-  }
-}
 
 /* ── Mobile Lead Card ── */
 function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => void }) {
@@ -122,7 +112,6 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
       {contact.phone && (
         <p className="text-sm text-muted-foreground mt-1">{contact.phone}</p>
       )}
-      {/* Projects */}
       {((contact.projects ?? []).length > 0 || contact.project) && (
         <div className="mt-1">
           <ProjectsList projects={contact.projects} project={contact.project} />
@@ -140,31 +129,122 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   );
 }
 
-export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange, page, onPageChange }: LeadsTableProps) {
+/* ── Pagination Bar ── */
+function PaginationBar({
+  page, pageSize, totalCount, isFetching,
+  onPageChange, onPageSizeChange, isMobile,
+}: {
+  page: number; pageSize: number; totalCount: number; isFetching: boolean;
+  onPageChange: (p: number) => void; onPageSizeChange: (s: number) => void; isMobile: boolean;
+}) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const from = (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, totalCount);
+
+  // Generate page numbers to show: current ± 2
+  const pages = useMemo(() => {
+    const result: number[] = [];
+    const start = Math.max(1, page - 2);
+    const end = Math.min(totalPages, page + 2);
+    for (let i = start; i <= end; i++) result.push(i);
+    return result;
+  }, [page, totalPages]);
+
+  if (totalCount === 0) return null;
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 px-1">
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground">
+          Showing {from.toLocaleString()}–{to.toLocaleString()} of {totalCount.toLocaleString()} leads
+        </span>
+        {!isMobile && (
+          <Select value={String(pageSize)} onValueChange={v => onPageSizeChange(Number(v))}>
+            <SelectTrigger className="h-7 w-[80px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="outline" size="icon"
+          className="h-7 w-7"
+          disabled={page <= 1 || isFetching}
+          onClick={() => onPageChange(1)}
+          title="First page"
+        >
+          <ChevronsLeft className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="outline" size="icon"
+          className="h-7 w-7"
+          disabled={page <= 1 || isFetching}
+          onClick={() => onPageChange(page - 1)}
+          title="Previous page"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </Button>
+
+        {!isMobile && pages.map(p => (
+          <Button
+            key={p}
+            variant={p === page ? 'default' : 'outline'}
+            size="icon"
+            className={`h-7 w-7 text-xs ${p === page ? 'bg-primary text-primary-foreground' : ''}`}
+            disabled={isFetching}
+            onClick={() => onPageChange(p)}
+          >
+            {p}
+          </Button>
+        ))}
+
+        {isMobile && (
+          <span className="text-xs text-muted-foreground px-2">
+            {page} / {totalPages}
+          </span>
+        )}
+
+        <Button
+          variant="outline" size="icon"
+          className="h-7 w-7"
+          disabled={page >= totalPages || isFetching}
+          onClick={() => onPageChange(page + 1)}
+          title="Next page"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="outline" size="icon"
+          className="h-7 w-7"
+          disabled={page >= totalPages || isFetching}
+          onClick={() => onPageChange(totalPages)}
+          title="Last page"
+        >
+          <ChevronsRight className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function LeadsTable({
+  contacts, isLoading, isFetching, totalCount,
+  selectedIds, onSelectionChange,
+  page, pageSize, onPageChange, onPageSizeChange,
+  sortKey, sortDir, onSort,
+}: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [sortKey, setSortKey] = useState<SortKey>('created_at');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const sorted = useMemo(() => {
-    return [...contacts].sort((a, b) => {
-      const va = getSortValue(a, sortKey);
-      const vb = getSortValue(b, sortKey);
-      const cmp = va.localeCompare(vb);
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [contacts, sortKey, sortDir]);
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const allPageIds = paginated.map((c) => c.id);
-  const allSelected = paginated.length > 0 && paginated.every((c) => selectedIds.includes(c.id));
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortKey(key); setSortDir('asc'); }
-  };
+  const allPageIds = contacts.map((c) => c.id);
+  const allSelected = contacts.length > 0 && contacts.every((c) => selectedIds.includes(c.id));
 
   const toggleAll = () => {
     if (allSelected) onSelectionChange(selectedIds.filter((id) => !allPageIds.includes(id)));
@@ -192,10 +272,10 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
     );
   }
 
-  if (contacts.length === 0) {
+  if (totalCount === 0 && contacts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-muted-foreground text-sm">No leads yet. Click "Add Lead" to get started.</p>
+        <p className="text-muted-foreground text-sm">No leads found. Try adjusting your filters or click "Add Lead" to get started.</p>
       </div>
     );
   }
@@ -203,8 +283,14 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
   if (isMobile) {
     return (
       <div>
+        {/* Fetching indicator */}
+        {isFetching && (
+          <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full mb-2">
+            <div className="h-full w-1/3 bg-primary rounded-full animate-[shimmer_1s_ease-in-out_infinite]" style={{ animation: 'shimmer 1s ease-in-out infinite alternate', animationName: 'none' }} />
+          </div>
+        )}
         <div className="space-y-2">
-          {paginated.map((contact) => (
+          {contacts.map((contact) => (
             <LeadCard
               key={contact.id}
               contact={contact}
@@ -212,24 +298,26 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
             />
           ))}
         </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-3 px-1">
-            <span className="text-xs text-muted-foreground">
-              {sorted.length} lead{sorted.length !== 1 ? 's' : ''} — page {page}/{totalPages}
-            </span>
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" className="h-8 text-xs min-h-[44px]" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Prev</Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs min-h-[44px]" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          page={page} pageSize={pageSize} totalCount={totalCount}
+          isFetching={isFetching}
+          onPageChange={onPageChange} onPageSizeChange={onPageSizeChange}
+          isMobile
+        />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      {/* Thin loading bar at top when fetching new page */}
+      {isFetching && (
+        <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full mb-1">
+          <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
+        </div>
+      )}
+
+      <div className={`overflow-x-auto rounded-xl border border-border bg-card transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
@@ -240,7 +328,7 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                 <th
                   key={col.key}
                   className={`px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors ${col.className ?? ''}`}
-                  onClick={() => toggleSort(col.key)}
+                  onClick={() => onSort(col.key)}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.label}
@@ -251,7 +339,7 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
             </tr>
           </thead>
           <tbody>
-            {paginated.map((contact) => (
+            {contacts.map((contact) => (
               <tr
                 key={contact.id}
                 className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
@@ -328,21 +416,12 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 px-1">
-          <span className="text-xs text-muted-foreground">
-            {sorted.length} lead{sorted.length !== 1 ? 's' : ''} — page {page} of {totalPages}
-          </span>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" className="h-7 text-xs" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" className="h-7 text-xs" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <PaginationBar
+        page={page} pageSize={pageSize} totalCount={totalCount}
+        isFetching={isFetching}
+        onPageChange={onPageChange} onPageSizeChange={onPageSizeChange}
+        isMobile={false}
+      />
     </div>
   );
 }

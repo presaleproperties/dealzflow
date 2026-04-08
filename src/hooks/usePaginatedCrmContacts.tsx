@@ -1,0 +1,127 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { CrmContact } from './useCrmContacts';
+
+export type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'last_touch_at' | 'created_at';
+export type SortDir = 'asc' | 'desc';
+
+// Map frontend sort keys to actual DB columns
+const SORT_COLUMN_MAP: Record<SortKey, string> = {
+  name: 'first_name',
+  phone: 'phone',
+  email: 'email',
+  project: 'project',
+  source: 'source',
+  status: 'status',
+  assigned_to: 'assigned_to',
+  last_touch_at: 'last_touch_at',
+  created_at: 'created_at',
+};
+
+interface PaginatedFilters {
+  search: string;
+  contactType: string;
+  statuses: string[];
+  sources: string[];
+  agents: string[];
+  projects: string[];
+  leadTypes: string[];
+  languages: string[];
+  tags: string[];
+}
+
+interface PaginatedParams {
+  page: number;
+  pageSize: number;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  filters: PaginatedFilters;
+}
+
+interface PaginatedResult {
+  contacts: CrmContact[];
+  totalCount: number;
+  isLoading: boolean;
+  isFetching: boolean;
+}
+
+export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResult {
+  const { page, pageSize, sortKey, sortDir, filters } = params;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['crm-contacts-paginated', page, pageSize, sortKey, sortDir, filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('crm_contacts')
+        .select('*', { count: 'exact' });
+
+      // Search across name, email, phone
+      if (filters.search) {
+        const q = `%${filters.search}%`;
+        query = query.or(`first_name.ilike.${q},last_name.ilike.${q},email.ilike.${q},phone.ilike.${q}`);
+      }
+
+      // Filters
+      if (filters.contactType) {
+        query = query.eq('contact_type', filters.contactType);
+      }
+      if (filters.statuses.length > 0) {
+        query = query.in('status', filters.statuses);
+      }
+      if (filters.sources.length > 0) {
+        query = query.in('source', filters.sources);
+      }
+      if (filters.agents.length > 0) {
+        query = query.in('assigned_to', filters.agents);
+      }
+      if (filters.projects.length > 0) {
+        // Match contacts whose projects array overlaps with filter
+        query = query.overlaps('projects', filters.projects);
+      }
+      if (filters.leadTypes.length > 0) {
+        query = query.in('lead_type', filters.leadTypes);
+      }
+      if (filters.languages.length > 0) {
+        query = query.in('language', filters.languages);
+      }
+      if (filters.tags.length > 0) {
+        query = query.overlaps('tags', filters.tags);
+      }
+
+      // Sort
+      const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
+      query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });
+
+      // If sorting by first_name, also sort by last_name as secondary
+      if (sortKey === 'name') {
+        query = query.order('last_name', { ascending: sortDir === 'asc', nullsFirst: false });
+      }
+
+      // Pagination
+      query = query.range(from, to);
+
+      const { data: rows, error, count } = await query;
+      if (error) throw error;
+
+      const contacts = (rows ?? []).map(d => ({
+        ...d,
+        tags: (d.tags as string[] | null) ?? [],
+        projects: (d.projects as string[] | null) ?? [],
+        contact_type: d.contact_type ?? 'lead',
+      })) as CrmContact[];
+
+      return { contacts, totalCount: count ?? 0 };
+    },
+    staleTime: 15_000,
+    placeholderData: (prev) => prev, // keep previous data while loading new page
+  });
+
+  return {
+    contacts: data?.contacts ?? [],
+    totalCount: data?.totalCount ?? 0,
+    isLoading,
+    isFetching,
+  };
+}
