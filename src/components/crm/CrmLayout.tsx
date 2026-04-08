@@ -23,7 +23,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
         >
           <CrmHeader />
           {/* Mobile: 12px padding, tablet: 16px, desktop: 24px. Bottom padding for mobile nav */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-3 sm:p-4 lg:p-6 pb-20 sm:pb-4 lg:pb-6">
+          <div className="flex-1 min-h-0 p-3 sm:p-4 lg:p-6 pb-20 sm:pb-4 lg:pb-6 flex flex-col overflow-hidden">
             {children}
           </div>
         </div>
