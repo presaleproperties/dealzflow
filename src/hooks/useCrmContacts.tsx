@@ -192,9 +192,11 @@ export function useAddCrmContact() {
         email: contact.email || null,
         phone: contact.phone || null,
         source: contact.source || null,
-        status: contact.status || 'New Lead',
+        status: contact.contact_type === 'past_client' ? 'Closed' : (contact.status || 'New Lead'),
         project: contact.project || null,
         assigned_to: contact.assigned_to || null,
+        contact_type: contact.contact_type || 'lead',
+        ...(contact.contact_type === 'past_client' ? { status_changed_at: new Date().toISOString() } : {}),
       };
       const { data, error } = await supabase
         .from('crm_contacts')
