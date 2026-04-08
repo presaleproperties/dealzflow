@@ -123,7 +123,7 @@ export function PipelineKanban() {
         c.phone?.includes(q)
       );
     }
-    if (filterProject !== 'all') list = list.filter(c => c.project === filterProject);
+    if (filterProject !== 'all') list = list.filter(c => (c.projects ?? []).includes(filterProject) || c.project === filterProject);
     if (filterAgent !== 'all') list = list.filter(c => c.assigned_to === filterAgent);
     return list;
   }, [contacts, search, filterProject, filterAgent]);
