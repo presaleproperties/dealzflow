@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Mail, MessageCircle, Clock, UserPlus, RefreshCw, Tag, CheckSquare,
+  Mail, MessageCircle, Clock, UserPlus, RefreshCw, Tag, CheckSquare, Bell,
   Plus, Trash2, ArrowDown, Zap, GripVertical,
 } from 'lucide-react';
 import { TRIGGER_TYPES, ACTION_TYPES, useCreateAutomation, useUpdateAutomation, useCrmAutomationSteps } from '@/hooks/useCrmAutomations';
@@ -19,6 +19,7 @@ import type { CrmAutomation } from '@/hooks/useCrmAutomations';
 const ACTION_ICONS: Record<string, React.ElementType> = {
   send_email: Mail, send_whatsapp: MessageCircle, wait: Clock,
   assign_agent: UserPlus, update_status: RefreshCw, add_tag: Tag, create_task: CheckSquare,
+  send_notification: Bell,
 };
 
 type StepDraft = { action_type: string; action_config: Record<string, unknown> };
@@ -27,15 +28,17 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   editing: CrmAutomation | null;
+  templatePrefill?: { name: string; description?: string; trigger_type: string; trigger_config: Record<string, unknown> | {}; steps: { action_type: string; action_config: Record<string, unknown> }[] } | null;
 }
 
-export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) {
+export function AutomationBuilderDialog({ open, onOpenChange, editing, templatePrefill }: Props) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [triggerType, setTriggerType] = useState('new_lead');
   const [triggerConfig, setTriggerConfig] = useState<Record<string, unknown>>({});
   const [actions, setActions] = useState<StepDraft[]>([]);
-  const [isActive, setIsActive] = useState(true);
+  const [isActive, setIsActive] = useState(false);
 
   const { data: existingSteps } = useCrmAutomationSteps(editing?.id ?? null);
   const { data: templates } = useCrmEmailTemplates();
@@ -43,17 +46,27 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
   const updateMut = useUpdateAutomation();
 
   useEffect(() => {
-    if (open && editing) {
+    if (!open) return;
+    if (editing) {
       setName(editing.name);
+      setDescription(editing.description ?? '');
       setTriggerType(editing.trigger_type);
       setTriggerConfig((editing.trigger_config as Record<string, unknown>) ?? {});
       setIsActive(editing.is_active ?? true);
       setStep(0);
-    } else if (open && !editing) {
-      setName(''); setTriggerType('new_lead'); setTriggerConfig({});
-      setActions([]); setIsActive(true); setStep(0);
+    } else if (templatePrefill) {
+      setName(templatePrefill.name);
+      setDescription(templatePrefill.description ?? '');
+      setTriggerType(templatePrefill.trigger_type);
+      setTriggerConfig({ ...(templatePrefill.trigger_config || {}) });
+      setActions(templatePrefill.steps?.map(s => ({ ...s })) ?? []);
+      setIsActive(false);
+      setStep(0);
+    } else {
+      setName(''); setDescription(''); setTriggerType('new_lead'); setTriggerConfig({});
+      setActions([]); setIsActive(false); setStep(0);
     }
-  }, [open, editing]);
+  }, [open, editing, templatePrefill]);
 
   useEffect(() => {
     if (existingSteps && existingSteps.length > 0 && editing) {
@@ -84,12 +97,12 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
     if (editing) {
       updateMut.mutate({
         id: editing.id,
-        automation: { name, trigger_type: triggerType, trigger_config: triggerConfig, is_active: isActive },
+        automation: { name, description, trigger_type: triggerType, trigger_config: triggerConfig, is_active: isActive },
         steps: stepsPayload,
       }, { onSuccess: () => onOpenChange(false) });
     } else {
       createMut.mutate({
-        automation: { name, trigger_type: triggerType, trigger_config: triggerConfig, is_active: isActive },
+        automation: { name, description, trigger_type: triggerType, trigger_config: triggerConfig, is_active: isActive },
         steps: stepsPayload,
       }, { onSuccess: () => onOpenChange(false) });
     }
@@ -127,8 +140,8 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
       case 'no_response':
         return (
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Days without response</Label>
-            <Input type="number" min={1} value={(triggerConfig.days as number) ?? 3}
+            <Label className="text-xs text-muted-foreground">Days without activity</Label>
+            <Input type="number" min={1} value={(triggerConfig.days as number) ?? 14}
               onChange={e => setTriggerConfig(p => ({ ...p, days: Number(e.target.value) }))} />
           </div>
         );
@@ -224,9 +237,23 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
                 onChange={e => updateActionConfig(idx, 'tag', e.target.value)} />
             )}
             {action.action_type === 'create_task' && (
-              <Input placeholder="Task title" className="h-9"
-                value={(action.action_config.title as string) ?? ''}
-                onChange={e => updateActionConfig(idx, 'title', e.target.value)} />
+              <div className="space-y-2">
+                <Input placeholder="Task title" className="h-9"
+                  value={(action.action_config.title as string) ?? ''}
+                  onChange={e => updateActionConfig(idx, 'title', e.target.value)} />
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">Due in</Label>
+                  <Input type="number" min={1} className="w-16 h-8"
+                    value={(action.action_config.due_days as number) ?? 3}
+                    onChange={e => updateActionConfig(idx, 'due_days', Number(e.target.value))} />
+                  <span className="text-xs text-muted-foreground">days</span>
+                </div>
+              </div>
+            )}
+            {action.action_type === 'send_notification' && (
+              <Input placeholder="Notification message (optional)" className="h-9"
+                value={(action.action_config.message as string) ?? ''}
+                onChange={e => updateActionConfig(idx, 'message', e.target.value)} />
             )}
           </div>
         </div>
@@ -260,13 +287,27 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. New Facebook Lead Nurture" />
             </div>
             <div className="space-y-2">
+              <Label>Description (optional)</Label>
+              <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. When a new lead comes in, assign to Uzair" />
+            </div>
+            <div className="space-y-2">
               <Label>Trigger Type</Label>
-              <Select value={triggerType} onValueChange={setTriggerType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TRIGGER_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {TRIGGER_TYPES.map(t => (
+                  <div
+                    key={t.value}
+                    onClick={() => setTriggerType(t.value)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      triggerType === t.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border/50 hover:border-primary/30'
+                    }`}
+                  >
+                    <p className="text-sm font-medium">{t.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
             {renderTriggerConfig()}
             <div className="flex justify-end">
@@ -287,22 +328,25 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
               </div>
             )}
 
-            <div className="flex flex-wrap gap-1.5">
-              {ACTION_TYPES.map(at => {
-                const Icon = ACTION_ICONS[at.value] ?? Zap;
-                return (
-                  <Button key={at.value} variant="outline" size="sm" className="gap-1.5 text-xs"
-                    onClick={() => addAction(at.value)}>
-                    <Icon className="h-3.5 w-3.5" />
-                    {at.label}
-                  </Button>
-                );
-              })}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Add an action:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {ACTION_TYPES.map(at => {
+                  const Icon = ACTION_ICONS[at.value] ?? Zap;
+                  return (
+                    <Button key={at.value} variant="outline" size="sm" className="gap-1.5 text-xs"
+                      onClick={() => addAction(at.value)}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {at.label}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setStep(0)}>← Back</Button>
-              <Button onClick={() => setStep(2)}>Next: Review →</Button>
+              <Button onClick={() => setStep(2)} disabled={actions.length === 0}>Next: Review →</Button>
             </div>
           </div>
         )}
@@ -313,10 +357,11 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing }: Props) 
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">{name}</h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{isActive ? 'Active' : 'Paused'}</span>
+                  <span className="text-xs text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
                   <Switch checked={isActive} onCheckedChange={setIsActive} />
                 </div>
               </div>
+              {description && <p className="text-xs text-muted-foreground">{description}</p>}
               <div>
                 <span className="text-xs text-muted-foreground">Trigger: </span>
                 <Badge variant="secondary" className="text-xs">
