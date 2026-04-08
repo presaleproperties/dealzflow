@@ -43,6 +43,8 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
+import LoftySyncSection from '@/components/crm/settings/LoftySyncSection';
+import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +73,6 @@ const INTEGRATIONS = [
   { name: 'WhatsApp Business (Twilio)', icon: MessageSquare, status: 'connected' as const, desc: 'Two-way messaging with leads via WhatsApp' },
   { name: 'Google Calendar', icon: Calendar, status: 'connected' as const, desc: 'Sync showings and appointments' },
   { name: 'Facebook Ads', icon: Megaphone, status: 'disconnected' as const, desc: 'Lead generation from Meta ad campaigns' },
-  { name: 'Lofty CRM', icon: Database, status: 'migrating' as const, desc: 'Legacy CRM data migration' },
 ];
 
 const NOTIFICATION_DEFAULTS = [
@@ -108,6 +109,8 @@ export default function CrmSettingsPage() {
       <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
       <Separator />
       <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
+      <Separator />
+      <SectionErrorBoundary name="Lofty Sync"><LoftySyncSection /></SectionErrorBoundary>
       <Separator />
       <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
       <Separator />
