@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Send, Search, Users, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,9 @@ import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, A
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
+import { useSendGmail } from '@/hooks/useGmail';
+import { useGmailStatus } from '@/hooks/useGmail';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -24,6 +28,9 @@ export function ComposeTab() {
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const { data: templates = [] } = useCrmEmailTemplates();
   const addMessage = useAddCrmMessage();
+  const sendGmail = useSendGmail();
+  const { data: gmailStatus } = useGmailStatus();
+  const { data: emailSettings } = useEmailSettings();
   const isMobile = useIsMobile();
 
   const [mode, setMode] = useState<SendMode>('individual');
@@ -32,6 +39,11 @@ export function ComposeTab() {
   const [searchTo, setSearchTo] = useState('');
   const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [toOpen, setToOpen] = useState(false);
+
+  // CC/BCC
+  const [showCcBcc, setShowCcBcc] = useState(false);
+  const [cc, setCc] = useState('');
+  const [bcc, setBcc] = useState('');
 
   // Campaign mode filters
   const [filterContactType, setFilterContactType] = useState('');
@@ -50,6 +62,14 @@ export function ComposeTab() {
   // Shared
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+
+  // From display
+  const fromDisplay = useMemo(() => {
+    const email = gmailStatus?.gmailEmail || '';
+    const name = emailSettings?.sender_name;
+    if (name && email) return `${name} <${email}>`;
+    return email || 'Not connected';
+  }, [gmailStatus, emailSettings]);
 
   const filteredContacts = useMemo(() => {
     if (!searchTo) return contacts.slice(0, 10);
@@ -74,9 +94,7 @@ export function ComposeTab() {
     if (filterTags.length > 0) list = list.filter(c =>
       filterTags.some(ft => (c.tags ?? []).includes(ft))
     );
-    // Only contacts with emails
     list = list.filter(c => c.email);
-    // Exclude specific contacts
     list = list.filter(c => !excludedIds.has(c.id));
     return list;
   }, [contacts, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags, excludedIds]);
@@ -111,20 +129,38 @@ export function ComposeTab() {
   const handleSend = async () => {
     if (mode === 'individual') {
       if (!selectedContact || !subject.trim() || !body.trim()) return;
-      await addMessage.mutateAsync({
-        contact_id: selectedContact.id,
-        direction: 'outbound',
-        content: `Subject: ${subject}\n\n${body}`,
-        channel: 'email',
-        sent_by: 'Agent',
-        message_type: 'text',
-      });
+
+      // Use Gmail send if connected
+      if (gmailStatus?.connected && selectedContact.email) {
+        await sendGmail.mutateAsync({
+          to: selectedContact.email,
+          subject,
+          bodyText: body.replace(/<[^>]*>/g, ''),
+          bodyHtml: body,
+          contactId: selectedContact.id,
+          ...(cc.trim() ? { cc: cc.trim() } : {}),
+          ...(bcc.trim() ? { bcc: bcc.trim() } : {}),
+        } as any);
+      } else {
+        await addMessage.mutateAsync({
+          contact_id: selectedContact.id,
+          direction: 'outbound',
+          content: `Subject: ${subject}\n\n${body}`,
+          channel: 'email',
+          sent_by: 'Agent',
+          message_type: 'text',
+        });
+      }
       setSelectedContact(null);
       setSearchTo('');
+      setCc('');
+      setBcc('');
     }
     setSubject('');
     setBody('');
   };
+
+  const isSending = addMessage.isPending || sendGmail.isPending;
 
   const canSend = mode === 'individual'
     ? !!selectedContact && subject.trim() && body.trim()
@@ -150,40 +186,83 @@ export function ComposeTab() {
         </button>
       </div>
 
-      {/* Individual: To field */}
+      {/* Individual: From + To + CC/BCC */}
       {mode === 'individual' && (
-        <div>
-          <Label>To</Label>
-          <Popover open={toOpen} onOpenChange={setToOpen}>
-            <PopoverTrigger asChild>
-              <div className="relative cursor-pointer">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <>
+          {/* From (read-only) */}
+          <div>
+            <Label className="text-muted-foreground">From</Label>
+            <div className="px-3 py-2 rounded-md border border-border/40 bg-muted/20 text-sm text-foreground/80">
+              {fromDisplay}
+            </div>
+          </div>
+
+          {/* To */}
+          <div>
+            <div className="flex items-center justify-between">
+              <Label>To</Label>
+              <button
+                onClick={() => setShowCcBcc(!showCcBcc)}
+                className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                {showCcBcc ? 'Hide CC/BCC' : 'CC BCC'}
+              </button>
+            </div>
+            <Popover open={toOpen} onOpenChange={setToOpen}>
+              <PopoverTrigger asChild>
+                <div className="relative cursor-pointer">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={selectedContact ? `${formatContactName(selectedContact.first_name, selectedContact.last_name)} <${selectedContact.email ?? 'no email'}>` : searchTo}
+                    onChange={e => { setSearchTo(e.target.value); setSelectedContact(null); setToOpen(true); }}
+                    onFocus={() => setToOpen(true)}
+                    placeholder="Search contact..."
+                    className="pl-9 min-h-[44px] sm:min-h-0"
+                  />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] sm:w-[400px] p-0" align="start">
+                <div className="max-h-[200px] overflow-y-auto">
+                  {filteredContacts.map(c => (
+                    <div
+                      key={c.id}
+                      className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center"
+                      onClick={() => { setSelectedContact(c); setToOpen(false); }}
+                    >
+                      <span className="font-medium text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
+                      {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
+                    </div>
+                  ))}
+                  {filteredContacts.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">No contacts found</p>}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* CC / BCC */}
+          {showCcBcc && (
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">CC</Label>
                 <Input
-                  value={selectedContact ? `${formatContactName(selectedContact.first_name, selectedContact.last_name)} <${selectedContact.email ?? 'no email'}>` : searchTo}
-                  onChange={e => { setSearchTo(e.target.value); setSelectedContact(null); setToOpen(true); }}
-                  onFocus={() => setToOpen(true)}
-                  placeholder="Search contact..."
-                  className="pl-9 min-h-[44px] sm:min-h-0"
+                  value={cc}
+                  onChange={e => setCc(e.target.value)}
+                  placeholder="email1@example.com, email2@example.com"
+                  className="min-h-[44px] sm:min-h-0"
                 />
               </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] sm:w-[400px] p-0" align="start">
-              <div className="max-h-[200px] overflow-y-auto">
-                {filteredContacts.map(c => (
-                  <div
-                    key={c.id}
-                    className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center"
-                    onClick={() => { setSelectedContact(c); setToOpen(false); }}
-                  >
-                    <span className="font-medium text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
-                    {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
-                  </div>
-                ))}
-                {filteredContacts.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">No contacts found</p>}
+              <div>
+                <Label className="text-xs">BCC</Label>
+                <Input
+                  value={bcc}
+                  onChange={e => setBcc(e.target.value)}
+                  placeholder="email1@example.com, email2@example.com"
+                  className="min-h-[44px] sm:min-h-0"
+                />
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Campaign: Recipients section */}
@@ -220,7 +299,6 @@ export function ComposeTab() {
                 <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
               </div>
 
-              {/* Include alt emails */}
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox
                   id="include-alt"
@@ -232,7 +310,6 @@ export function ComposeTab() {
                 </label>
               </div>
 
-              {/* Exclude contacts */}
               <div>
                 <Label className="text-xs">Exclude contacts</Label>
                 <Input
@@ -275,7 +352,6 @@ export function ComposeTab() {
                 )}
               </div>
 
-              {/* Summary */}
               <div className="text-xs font-medium text-foreground bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
                 Sending to {campaignRecipients.length} contacts ({totalEmailAddresses} email addresses{includeAltEmails ? ' including spouse/alt emails' : ''})
               </div>
@@ -285,17 +361,21 @@ export function ComposeTab() {
       )}
 
       {/* Template selector */}
-      {templates.length > 0 && (
-        <div>
-          <Label>Template (optional)</Label>
+      <div>
+        <Label>Use Template</Label>
+        {templates.length > 0 ? (
           <Select onValueChange={loadTemplate}>
             <SelectTrigger className="min-h-[44px] sm:min-h-0"><SelectValue placeholder="Load a template..." /></SelectTrigger>
             <SelectContent>
               {templates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
-      )}
+        ) : (
+          <p className="text-xs text-muted-foreground mt-1">
+            No templates yet. <Link to="/crm/templates" className="text-primary hover:underline">Create one</Link>
+          </p>
+        )}
+      </div>
 
       {/* Subject */}
       <div>
@@ -309,17 +389,34 @@ export function ComposeTab() {
         <RichTextEditor content={body} onChange={setBody} />
       </div>
 
+      {/* Signature preview */}
+      {emailSettings?.signature_html && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+            <Eye className="h-3 w-3" />
+            <span>Signature (auto-appended)</span>
+          </div>
+          <div className="rounded-lg border border-border/30 bg-muted/10 p-3 opacity-60">
+            <div className="text-xs text-muted-foreground mb-1.5">--</div>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none text-sm"
+              dangerouslySetInnerHTML={{ __html: emailSettings.signature_html }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Send button */}
       <div className="flex justify-end sm:static sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
         <Button
           className="gap-1.5 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white w-full sm:w-auto min-h-[44px]"
-          disabled={!canSend || addMessage.isPending}
+          disabled={!canSend || isSending}
           onClick={handleSend}
         >
           <Send className="w-4 h-4" />
           {mode === 'campaign'
             ? `Send to ${campaignRecipients.length} contacts`
-            : addMessage.isPending ? 'Sending...' : 'Send Email'}
+            : isSending ? 'Sending...' : 'Send Email'}
         </Button>
       </div>
     </div>
