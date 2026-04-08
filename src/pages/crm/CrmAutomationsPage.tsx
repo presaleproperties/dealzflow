@@ -199,7 +199,7 @@ export default function CrmAutomationsPage() {
         </div>
       )}
 
-      <AutomationBuilderDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} templatePrefill={templatePrefill} />
+      <AutomationBuilderDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} templatePrefill={templatePrefill ? { ...templatePrefill, steps: templatePrefill.steps.map(s => ({ ...s, action_config: { ...s.action_config } })) } : null} />
       <TemplatePickerDialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen} onSelect={handleTemplatePick} />
       <AutomationLogSheet
         automationId={logAutomation?.id ?? null}
