@@ -12,17 +12,32 @@ export function CrmLeadsOverTime() {
     queryKey: ['crm-leads-over-time'],
     queryFn: async () => {
       const thirtyDaysAgo = subDays(new Date(), 30);
-      const { data: contacts } = await supabase
-        .from('crm_contacts')
-        .select('created_at')
-        .gte('created_at', thirtyDaysAgo.toISOString());
+      const PAGE_SIZE = 1000;
+      let allContacts: { created_at: string }[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch, error } = await supabase
+          .from('crm_contacts')
+          .select('created_at')
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (batch && batch.length > 0) {
+          allContacts = allContacts.concat(batch);
+          from += PAGE_SIZE;
+          hasMore = batch.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
 
       const buckets: Record<string, number> = {};
       for (let i = 30; i >= 0; i--) {
         const key = format(subDays(new Date(), i), 'yyyy-MM-dd');
         buckets[key] = 0;
       }
-      (contacts ?? []).forEach((c) => {
+      allContacts.forEach((c) => {
         const key = format(startOfDay(new Date(c.created_at)), 'yyyy-MM-dd');
         if (buckets[key] !== undefined) buckets[key]++;
       });

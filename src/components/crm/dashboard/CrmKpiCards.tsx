@@ -17,8 +17,27 @@ export function CrmKpiCards() {
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(now.getDate() - 30);
 
-      const [contacts, showings, campaigns] = await Promise.all([
-        supabase.from('crm_contacts').select('id, status'),
+      // Paginate contacts to handle >1000 records
+      const PAGE_SIZE = 1000;
+      let allContacts: { id: string; status: string | null }[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch, error } = await supabase
+          .from('crm_contacts')
+          .select('id, status')
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (batch && batch.length > 0) {
+          allContacts = allContacts.concat(batch);
+          from += PAGE_SIZE;
+          hasMore = batch.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      const [showings, campaigns] = await Promise.all([
         supabase
           .from('crm_showings')
           .select('id')
@@ -30,8 +49,6 @@ export function CrmKpiCards() {
           .eq('status', 'sent')
           .gte('sent_at', thirtyDaysAgo.toISOString()),
       ]);
-
-      const allContacts = contacts.data ?? [];
       const activeLeads = allContacts.filter(
         (c) => c.status !== 'Closed' && c.status !== 'Lost / Cold'
       ).length;
