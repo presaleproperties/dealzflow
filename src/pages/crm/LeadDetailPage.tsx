@@ -185,9 +185,9 @@ function LeftSidebar({
             <span className="text-xs text-foreground ml-auto">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
           </div>
           {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-xs text-muted-foreground">Budget</span>
-              <span className="text-xs text-foreground">
+            <div className="flex items-center gap-3 py-1.5">
+              <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Budget</span>
+              <span className="text-xs text-foreground ml-auto">
                 {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
               </span>
             </div>
