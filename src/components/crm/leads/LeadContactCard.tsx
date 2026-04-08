@@ -26,6 +26,7 @@ type Row = {
   href?: (v: string) => string;
   format?: (v: string) => string;
   show?: boolean;
+  inputType?: 'text' | 'email';
 };
 
 export function LeadContactCard({ contact }: { contact: CrmContact }) {
@@ -38,8 +39,8 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
   const rows: Row[] = [
     { icon: Phone, label: 'Phone', field: 'phone', href: (v) => `tel:${v}` },
     { icon: Phone, label: 'Phone 2', field: 'phone_secondary', href: (v) => `tel:${v}`, show: !!contact.phone_secondary },
-    { icon: Mail, label: 'Email', field: 'email', href: (v) => `mailto:${v}` },
-    { icon: Mail, label: 'Email 2', field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary },
+    { icon: Mail, label: 'Email', field: 'email', href: (v) => `mailto:${v}`, inputType: 'email' },
+    { icon: Mail, label: 'Email 2', field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary, inputType: 'email' },
     { icon: MapPin, label: 'City', field: 'city' },
     { icon: Languages, label: 'Language', field: 'language' },
     { icon: Cake, label: 'Birthday', field: 'birthday', format: (v) => tryFormatDate(v) ?? v, show: !!contact.birthday },
@@ -63,6 +64,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
                 value={displayVal}
                 onSave={(v) => save(row.field, v)}
                 href={val && row.href ? row.href(val) : undefined}
+                type={row.inputType}
               />
             </div>
           );
