@@ -110,8 +110,11 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <ContactTypeBadge type={contact.contact_type} />
-          <p className="text-base font-semibold text-foreground leading-snug truncate">
+          <p className="text-base font-semibold text-foreground leading-snug truncate inline-flex items-center gap-1.5">
             {contact.first_name} {contact.last_name}
+            {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+            )}
           </p>
         </div>
         <LeadStatusBadge status={contact.status} />
