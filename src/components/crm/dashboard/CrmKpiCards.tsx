@@ -20,24 +20,20 @@ export function CrmKpiCards() {
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(now.getDate() - 30);
 
-      const [showings, campaigns] = await Promise.all([
+      const [showings, emailLogs] = await Promise.all([
         supabase
           .from('crm_showings')
           .select('id')
           .gte('showing_date', startOfWeek.toISOString().split('T')[0])
           .lt('showing_date', endOfWeek.toISOString().split('T')[0]),
         supabase
-          .from('crm_email_campaigns')
-          .select('recipients_count')
-          .eq('status', 'sent')
+          .from('crm_email_log')
+          .select('id', { count: 'exact', head: true })
           .gte('sent_at', thirtyDaysAgo.toISOString()),
       ]);
 
       const showingsThisWeek = showings.data?.length ?? 0;
-      const emailsSent = (campaigns.data ?? []).reduce(
-        (sum, c) => sum + (c.recipients_count ?? 0),
-        0
-      );
+      const emailsSent = emailLogs.count ?? 0;
 
       return { showingsThisWeek, emailsSent };
     },
@@ -78,6 +74,7 @@ export function CrmKpiCards() {
     {
       label: 'Conversion Rate',
       value: `${conversionRate}%`,
+      subtitle: 'Closed ÷ Total leads',
       icon: TrendingUp,
       color: 'hsl(39 67% 55%)',
       bg: 'hsl(39 67% 55% / 0.12)',
@@ -103,7 +100,9 @@ export function CrmKpiCards() {
             ) : (
               <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">{card.value}</p>
             )}
-            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">{card.label}</p>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate" title={(card as any).subtitle || card.label}>
+              {card.label}
+            </p>
           </div>
         </div>
       ))}
