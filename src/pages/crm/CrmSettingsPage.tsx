@@ -96,19 +96,19 @@ export default function CrmSettingsPage() {
   return (
     <div className="space-y-6 sm:space-y-8 max-w-4xl">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground">CRM Settings</h1>
-      <TeamManagement />
+      <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
       <Separator />
-      <PipelineStages />
+      <SectionErrorBoundary name="Pipeline Stages"><PipelineStages /></SectionErrorBoundary>
       <Separator />
-      <LeadSourcesSection />
+      <SectionErrorBoundary name="Lead Sources"><LeadSourcesSection /></SectionErrorBoundary>
       <Separator />
-      <DataImportSection />
+      <SectionErrorBoundary name="Data Import"><DataImportSection /></SectionErrorBoundary>
       <Separator />
-      <DataManagerSection />
+      <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
       <Separator />
-      <IntegrationsSection />
+      <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
       <Separator />
-      <NotificationsSection />
+      <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
     </div>
   );
 }
