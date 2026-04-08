@@ -180,14 +180,14 @@ function LeftSidebar({
         <div className="space-y-1">
           <SectionHeader>Lead Info</SectionHeader>
           <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
-          <div className="flex items-center justify-between py-1.5">
-            <span className="text-xs text-muted-foreground">Registered</span>
-            <span className="text-xs text-foreground">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+          <div className="flex items-center gap-3 py-1.5">
+            <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Registered</span>
+            <span className="text-xs text-foreground ml-auto">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
           </div>
           {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-xs text-muted-foreground">Budget</span>
-              <span className="text-xs text-foreground">
+            <div className="flex items-center gap-3 py-1.5">
+              <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Budget</span>
+              <span className="text-xs text-foreground ml-auto">
                 {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
               </span>
             </div>
@@ -311,15 +311,17 @@ function DetailRow({ label, value, href, field, contactId, type }: {
 }) {
   const updateContact = useUpdateCrmContact();
   return (
-    <div className="flex items-center justify-between py-1.5 group">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <InlineEditField
-        value={value}
-        onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
-        href={href}
-        type={type}
-        className="text-xs text-right"
-      />
+    <div className="flex items-center gap-3 py-1.5 group">
+      <span className="text-xs text-muted-foreground shrink-0 w-[60px]">{label}</span>
+      <div className="flex-1 min-w-0 flex justify-end">
+        <InlineEditField
+          value={value}
+          onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
+          href={href}
+          type={type}
+          className="text-xs text-right truncate max-w-full"
+        />
+      </div>
     </div>
   );
 }
