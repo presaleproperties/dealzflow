@@ -180,9 +180,9 @@ function LeftSidebar({
         <div className="space-y-1">
           <SectionHeader>Lead Info</SectionHeader>
           <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
-          <div className="flex items-center justify-between py-1.5">
-            <span className="text-xs text-muted-foreground">Registered</span>
-            <span className="text-xs text-foreground">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+          <div className="flex items-center gap-3 py-1.5">
+            <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Registered</span>
+            <span className="text-xs text-foreground ml-auto">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
           </div>
           {(contact.budget_min != null || contact.budget_max != null) && (
             <div className="flex items-center justify-between py-1.5">
