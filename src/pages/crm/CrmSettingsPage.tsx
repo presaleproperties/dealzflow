@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { useGmailStatus, useConnectGmail, useDisconnectGmail } from '@/hooks/useGmail';
+import { useMailerLiteStatus, useVerifyMailerLiteKey, useSaveMailerLiteKey, useSyncToMailerLite } from '@/hooks/useMailerLite';
 
 const PIPELINE_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
@@ -35,7 +36,6 @@ const LEAD_SOURCES = [
 
 const INTEGRATIONS = [
   { name: 'WhatsApp Business (Twilio)', icon: MessageSquare, status: 'connected' as const, desc: 'Two-way messaging with leads via WhatsApp' },
-  { name: 'MailerLite', icon: Mail, status: 'connected' as const, desc: 'Email campaigns and automation' },
   { name: 'Google Calendar', icon: Calendar, status: 'connected' as const, desc: 'Sync showings and appointments' },
   { name: 'Facebook Ads', icon: Megaphone, status: 'disconnected' as const, desc: 'Lead generation from Meta ad campaigns' },
   { name: 'Lofty CRM', icon: Database, status: 'migrating' as const, desc: 'Legacy CRM data migration' },
