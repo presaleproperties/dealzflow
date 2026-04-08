@@ -103,3 +103,23 @@ export function getExtendedMonthRange(projectionMonths: number = 24): string[] {
   
   return months;
 }
+
+/** Format a contact name, hiding empty/placeholder last names */
+export function formatContactName(firstName?: string | null, lastName?: string | null): string {
+  const f = (firstName ?? '').trim();
+  const l = (lastName ?? '').trim();
+  const isEmptyLast = !l || l === '—' || l === '-' || l.toLowerCase() === 'unknown';
+  if (!f && isEmptyLast) return 'Unknown';
+  if (isEmptyLast) return f;
+  return `${f} ${l}`;
+}
+
+/** Get initials for avatar, handling empty last names */
+export function getContactInitials(firstName?: string | null, lastName?: string | null): string {
+  const f = (firstName ?? '').trim();
+  const l = (lastName ?? '').trim();
+  const isEmptyLast = !l || l === '—' || l === '-' || l.toLowerCase() === 'unknown';
+  if (!f && isEmptyLast) return '?';
+  if (isEmptyLast) return f.charAt(0).toUpperCase();
+  return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase();
+}
