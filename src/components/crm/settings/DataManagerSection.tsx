@@ -240,6 +240,9 @@ export default function DataManagerSection() {
                 </div>
               </>
             )}
+
+            {/* Source Backfill Tool */}
+            <SourceBackfillSection />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
