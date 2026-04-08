@@ -9,6 +9,7 @@ import {
   MessageSquare, Mail, Calendar, Megaphone, Database,
 } from 'lucide-react';
 import DataImportSection from '@/components/crm/settings/DataImportSection';
+import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +71,8 @@ export default function CrmSettingsPage() {
       <LeadSourcesSection />
       <Separator />
       <DataImportSection />
+      <Separator />
+      <DataManagerSection />
       <Separator />
       <IntegrationsSection />
       <Separator />
