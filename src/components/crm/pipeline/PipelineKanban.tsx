@@ -5,46 +5,61 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useCrmContacts, LEAD_STATUSES, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useCrmContacts, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { formatContactName } from '@/lib/format';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
-const STAGE_COLORS: Record<string, string> = {
-  'New Lead': 'hsl(39 67% 55% / 0.06)',
-  'Contacted': 'hsl(210 62% 46% / 0.06)',
-  'Nurturing': 'hsl(38 92% 50% / 0.06)',
-  'Hot / Engaged': 'hsl(0 84% 60% / 0.08)',
-  'Showing Booked': 'hsl(142 71% 45% / 0.06)',
-  'Offer Made': 'hsl(270 60% 55% / 0.06)',
-  'Closed': 'hsl(142 71% 30% / 0.1)',
-  'Lost / Cold': 'hsl(220 10% 50% / 0.06)',
+/* ─── Segment-based colors ─── */
+const SEGMENT_COLORS: Record<string, { bg: string; border: string; dot: string }> = {
+  'New Leads':      { bg: 'hsl(39 67% 55% / 0.06)',  border: 'hsl(39 67% 55% / 0.3)',  dot: 'hsl(39 67% 55%)' },
+  'Presale':        { bg: 'hsl(210 62% 46% / 0.06)', border: 'hsl(210 62% 46% / 0.3)', dot: 'hsl(210 62% 46%)' },
+  'Pre-Sale 🔥':    { bg: 'hsl(0 84% 60% / 0.06)',   border: 'hsl(0 84% 60% / 0.3)',   dot: 'hsl(0 84% 60%)' },
+  'Re-Sale 🔥':     { bg: 'hsl(25 90% 55% / 0.06)',  border: 'hsl(25 90% 55% / 0.3)',  dot: 'hsl(25 90% 55%)' },
+  'Commercial':     { bg: 'hsl(220 50% 50% / 0.06)', border: 'hsl(220 50% 50% / 0.3)', dot: 'hsl(220 50% 50%)' },
+  'Showing Booked': { bg: 'hsl(142 71% 45% / 0.06)', border: 'hsl(142 71% 45% / 0.3)', dot: 'hsl(142 71% 45%)' },
+  'Offer Made':     { bg: 'hsl(270 60% 55% / 0.06)', border: 'hsl(270 60% 55% / 0.3)', dot: 'hsl(270 60% 55%)' },
+  'Nurturing':      { bg: 'hsl(38 92% 50% / 0.06)',  border: 'hsl(38 92% 50% / 0.3)',  dot: 'hsl(38 92% 50%)' },
+  'Closed':         { bg: 'hsl(142 71% 30% / 0.10)', border: 'hsl(142 71% 30% / 0.3)', dot: 'hsl(142 71% 30%)' },
+  'Lost / Cold':    { bg: 'hsl(220 10% 50% / 0.06)', border: 'hsl(220 10% 50% / 0.3)', dot: 'hsl(220 10% 50%)' },
 };
 
-const STAGE_BORDER: Record<string, string> = {
-  'New Lead': 'hsl(39 67% 55% / 0.3)',
-  'Contacted': 'hsl(210 62% 46% / 0.3)',
-  'Nurturing': 'hsl(38 92% 50% / 0.3)',
-  'Hot / Engaged': 'hsl(0 84% 60% / 0.3)',
-  'Showing Booked': 'hsl(142 71% 45% / 0.3)',
-  'Offer Made': 'hsl(270 60% 55% / 0.3)',
-  'Closed': 'hsl(142 71% 30% / 0.3)',
-  'Lost / Cold': 'hsl(220 10% 50% / 0.3)',
-};
+const DEFAULT_COLOR = { bg: 'hsl(220 10% 50% / 0.06)', border: 'hsl(220 10% 50% / 0.3)', dot: 'hsl(220 10% 50%)' };
 
-const STAGE_DOT: Record<string, string> = {
-  'New Lead': 'hsl(39 67% 55%)',
-  'Contacted': 'hsl(210 62% 46%)',
-  'Nurturing': 'hsl(38 92% 50%)',
-  'Hot / Engaged': 'hsl(0 84% 60%)',
-  'Showing Booked': 'hsl(142 71% 45%)',
-  'Offer Made': 'hsl(270 60% 55%)',
-  'Closed': 'hsl(142 71% 30%)',
-  'Lost / Cold': 'hsl(220 10% 50%)',
-};
+function getSegmentColor(name: string) {
+  return SEGMENT_COLORS[name] ?? DEFAULT_COLOR;
+}
 
+/* ─── Match contact to a segment ─── */
+function contactMatchesSegment(contact: CrmContact, filter: Record<string, unknown>): boolean {
+  if (!filter || Object.keys(filter).length === 0) return true;
+
+  if (filter.status && Array.isArray(filter.status) && (filter.status as string[]).length > 0) {
+    if (!(filter.status as string[]).includes(contact.status ?? '')) return false;
+  }
+  if (filter.lead_type && Array.isArray(filter.lead_type) && (filter.lead_type as string[]).length > 0) {
+    if (!(filter.lead_type as string[]).includes(contact.lead_type ?? '')) return false;
+  }
+  if (filter.source && Array.isArray(filter.source) && (filter.source as string[]).length > 0) {
+    if (!(filter.source as string[]).includes(contact.source ?? '')) return false;
+  }
+  if (filter.tags && Array.isArray(filter.tags) && (filter.tags as string[]).length > 0) {
+    const contactTags = contact.tags ?? [];
+    if (!(filter.tags as string[]).some(t => contactTags.includes(t))) return false;
+  }
+  if (filter.contact_type && typeof filter.contact_type === 'string') {
+    if (contact.contact_type !== filter.contact_type) return false;
+  }
+  if (filter.assigned_to && typeof filter.assigned_to === 'string') {
+    if (contact.assigned_to !== filter.assigned_to) return false;
+  }
+  return true;
+}
+
+/* ─── Helpers ─── */
 function getInitials(name: string | null) {
   if (!name) return '?';
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -53,10 +68,10 @@ function getInitials(name: string | null) {
 function daysInStage(contact: CrmContact) {
   const ref = contact.stage_changed_at || contact.status_changed_at;
   if (!ref) return null;
-  const diff = Date.now() - new Date(ref).getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
+  return Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/* ─── Lead Card ─── */
 function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   const days = daysInStage(contact);
   const daysColor = days === null ? undefined : days <= 7 ? 'hsl(142 71% 45%)' : days <= 14 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
@@ -120,7 +135,8 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
 const CARDS_PER_PAGE = 50;
 
 export function PipelineKanban() {
-  const { data: contacts = [], isLoading } = useCrmContacts();
+  const { data: contacts = [], isLoading: contactsLoading } = useCrmContacts();
+  const { data: segments = [], isLoading: segmentsLoading } = useCrmLeadSegments();
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const dynamicAgents = useMemo(() => {
     const agents = new Set<string>();
@@ -136,8 +152,16 @@ export function PipelineKanban() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
 
-  const loadMore = useCallback((stage: string) => {
-    setVisibleCounts(prev => ({ ...prev, [stage]: (prev[stage] || CARDS_PER_PAGE) + CARDS_PER_PAGE }));
+  // Pipeline segments = all segments EXCEPT the "All Leads" catch-all
+  const pipelineSegments = useMemo(() =>
+    segments.filter(s => {
+      const fc = s.filter_config;
+      return fc && Object.keys(fc).length > 0;
+    }),
+  [segments]);
+
+  const loadMore = useCallback((segId: string) => {
+    setVisibleCounts(prev => ({ ...prev, [segId]: (prev[segId] || CARDS_PER_PAGE) + CARDS_PER_PAGE }));
   }, []);
 
   const filtered = useMemo(() => {
@@ -155,46 +179,72 @@ export function PipelineKanban() {
     return list;
   }, [contacts, search, filterProject, filterAgent]);
 
+  // Place contacts into segment columns (first match wins)
   const columns = useMemo(() => {
     const map: Record<string, CrmContact[]> = {};
-    LEAD_STATUSES.forEach(s => { map[s] = []; });
+    pipelineSegments.forEach(s => { map[s.id] = []; });
+
     filtered.forEach(c => {
-      const status = c.status ?? 'New Lead';
-      if (map[status]) map[status].push(c);
-      else map['New Lead'].push(c);
+      for (const seg of pipelineSegments) {
+        if (contactMatchesSegment(c, seg.filter_config)) {
+          map[seg.id].push(c);
+          break; // first match wins
+        }
+      }
     });
+
     return map;
-  }, [filtered]);
+  }, [filtered, pipelineSegments]);
 
   // Track active column via scroll on mobile
   useEffect(() => {
     if (!isMobile || !scrollRef.current) return;
     const el = scrollRef.current;
     const onScroll = () => {
-      const colWidth = el.scrollWidth / LEAD_STATUSES.length;
+      const colWidth = el.scrollWidth / pipelineSegments.length;
       const idx = Math.round(el.scrollLeft / colWidth);
-      setActiveIdx(Math.min(idx, LEAD_STATUSES.length - 1));
+      setActiveIdx(Math.min(idx, pipelineSegments.length - 1));
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
-  }, [isMobile]);
+  }, [isMobile, pipelineSegments.length]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-    const newStatus = result.destination.droppableId;
+    const targetSegId = result.destination.droppableId;
     const contactId = result.draggableId;
     const contact = contacts.find(c => c.id === contactId);
-    if (!contact || contact.status === newStatus) return;
+    const targetSeg = pipelineSegments.find(s => s.id === targetSegId);
+    if (!contact || !targetSeg) return;
+
+    // Build update payload from target segment's filter_config
+    const updates: Record<string, unknown> = {};
+    const oldValues: Record<string, unknown> = {};
+    const fc = targetSeg.filter_config;
+
+    if (fc.status && Array.isArray(fc.status) && (fc.status as string[]).length > 0) {
+      updates.status = (fc.status as string[])[0];
+      oldValues.status = contact.status;
+      updates.status_changed_at = new Date().toISOString();
+    }
+    if (fc.lead_type && Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
+      updates.lead_type = (fc.lead_type as string[])[0];
+      oldValues.lead_type = contact.lead_type;
+    }
+
+    if (Object.keys(updates).length === 0) return;
 
     const name = formatContactName(contact.first_name, contact.last_name);
     updateContact.mutate(
-      { id: contactId, updates: { status: newStatus, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } },
+      { id: contactId, updates, oldValues },
       {
-        onSuccess: () => toast.success(`Moved ${name} to ${newStatus}`, { duration: 2000 }),
+        onSuccess: () => toast.success(`Moved ${name} to ${targetSeg.name}`, { duration: 2000 }),
         onError: () => toast.error(`Failed to move ${name}. Reverted.`),
       }
     );
   };
+
+  const isLoading = contactsLoading || segmentsLoading;
 
   return (
     <div className="flex flex-col h-full">
@@ -231,6 +281,8 @@ export function PipelineKanban() {
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading pipeline…</div>
+      ) : pipelineSegments.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">No pipeline stages configured</div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
           <div
@@ -238,86 +290,94 @@ export function PipelineKanban() {
             className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none"
           >
             <div className="flex gap-2 sm:gap-3 min-w-max h-full">
-              {LEAD_STATUSES.map(stage => (
-                <div
-                  key={stage}
-                  className="flex flex-col rounded-xl border border-border/50 flex-shrink-0 snap-start"
-                  style={{
-                    background: STAGE_COLORS[stage],
-                    width: isMobile ? '85vw' : undefined,
-                    minWidth: isMobile ? '85vw' : '260px',
-                  }}
-                >
-                  {/* Column header */}
+              {pipelineSegments.map(seg => {
+                const colors = getSegmentColor(seg.name);
+                const segContacts = columns[seg.id] ?? [];
+                return (
                   <div
-                    className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-t-xl border-b"
-                    style={{ borderColor: STAGE_BORDER[stage] }}
-                  >
-                    <span className="text-xs font-semibold text-foreground">{stage}</span>
-                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 min-w-[20px] justify-center">
-                      {columns[stage].length}
-                    </Badge>
-                  </div>
-
-                  {/* Droppable area */}
-                  <Droppable droppableId={stage}>
-                    {(provided, snapshot) => {
-                      const allCards = columns[stage];
-                      const limit = visibleCounts[stage] || CARDS_PER_PAGE;
-                      const visible = allCards.slice(0, limit);
-                      const remaining = allCards.length - limit;
-                      return (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200 ${snapshot.isDraggingOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
-                          style={{ maxHeight: 'calc(100vh - 280px)' }}
-                        >
-                          {visible.map((contact, idx) => (
-                            <LeadCard key={contact.id} contact={contact} index={idx} />
-                          ))}
-                          {provided.placeholder}
-                          {remaining > 0 && (
-                            <button
-                              onClick={() => loadMore(stage)}
-                              className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                            >
-                              Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
-                            </button>
-                          )}
-                          {allCards.length === 0 && (
-                            <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
-                          )}
-                        </div>
-                      );
+                    key={seg.id}
+                    className="flex flex-col rounded-xl border border-border/50 flex-shrink-0 snap-start"
+                    style={{
+                      background: colors.bg,
+                      width: isMobile ? '85vw' : undefined,
+                      minWidth: isMobile ? '85vw' : '260px',
                     }}
-                  </Droppable>
-                </div>
-              ))}
+                  >
+                    {/* Column header */}
+                    <div
+                      className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-t-xl border-b"
+                      style={{ borderColor: colors.border }}
+                    >
+                      <span className="text-xs font-semibold text-foreground">
+                        {seg.emoji ? `${seg.emoji} ` : ''}{seg.name}
+                      </span>
+                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 min-w-[20px] justify-center">
+                        {segContacts.length}
+                      </Badge>
+                    </div>
+
+                    {/* Droppable area */}
+                    <Droppable droppableId={seg.id}>
+                      {(provided, snapshot) => {
+                        const limit = visibleCounts[seg.id] || CARDS_PER_PAGE;
+                        const visible = segContacts.slice(0, limit);
+                        const remaining = segContacts.length - limit;
+                        return (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200 ${snapshot.isDraggingOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
+                            style={{ maxHeight: 'calc(100vh - 280px)' }}
+                          >
+                            {visible.map((contact, idx) => (
+                              <LeadCard key={contact.id} contact={contact} index={idx} />
+                            ))}
+                            {provided.placeholder}
+                            {remaining > 0 && (
+                              <button
+                                onClick={() => loadMore(seg.id)}
+                                className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                              >
+                                Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
+                              </button>
+                            )}
+                            {segContacts.length === 0 && (
+                              <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
+                            )}
+                          </div>
+                        );
+                      }}
+                    </Droppable>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           {/* Mobile dot indicators */}
           {isMobile && (
             <div className="flex justify-center gap-1.5 pt-2 pb-1">
-              {LEAD_STATUSES.map((stage, idx) => (
-                <button
-                  key={stage}
-                  className="w-2 h-2 rounded-full transition-all duration-200"
-                  style={{
-                    background: idx === activeIdx ? STAGE_DOT[stage] : 'hsl(220 10% 50% / 0.3)',
-                    transform: idx === activeIdx ? 'scale(1.3)' : 'scale(1)',
-                  }}
-                  onClick={() => {
-                    scrollRef.current?.children[0]?.children[idx]?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'nearest',
-                      inline: 'start',
-                    });
-                  }}
-                  aria-label={stage}
-                />
-              ))}
+              {pipelineSegments.map((seg, idx) => {
+                const colors = getSegmentColor(seg.name);
+                return (
+                  <button
+                    key={seg.id}
+                    className="w-2 h-2 rounded-full transition-all duration-200"
+                    style={{
+                      background: idx === activeIdx ? colors.dot : 'hsl(220 10% 50% / 0.3)',
+                      transform: idx === activeIdx ? 'scale(1.3)' : 'scale(1)',
+                    }}
+                    onClick={() => {
+                      scrollRef.current?.children[0]?.children[idx]?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'start',
+                      });
+                    }}
+                    aria-label={seg.name}
+                  />
+                );
+              })}
             </div>
           )}
         </DragDropContext>
