@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { useEffect } from 'react';
+import { useGmailStatus, useConnectGmail, useDisconnectGmail } from '@/hooks/useGmail';
 
 const PIPELINE_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
@@ -402,10 +402,31 @@ function LeadSourcesSection() {
    4. Integrations
    ══════════════════════════════════════════ */
 function IntegrationsSection() {
+  const { data: gmailStatus } = useGmailStatus();
+  const connectGmail = useConnectGmail();
+  const disconnectGmail = useDisconnectGmail();
+
+  // Handle Gmail OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const gmailAuth = params.get('gmail_auth');
+    if (gmailAuth === 'success') {
+      toast.success('Gmail connected successfully');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (gmailAuth === 'error') {
+      toast.error(params.get('message') || 'Gmail connection failed');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const statusBadge = (status: 'connected' | 'disconnected' | 'migrating') => {
     if (status === 'connected') return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">Connected</Badge>;
     if (status === 'disconnected') return <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">Disconnected</Badge>;
     return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30" variant="outline">Migrating</Badge>;
+  };
+
+  const handleConnectGmail = () => {
+    connectGmail.mutate(window.location.origin + '/crm/settings');
   };
 
   return (
@@ -414,6 +435,49 @@ function IntegrationsSection() {
         <CardTitle className="text-base sm:text-lg">Integrations</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-2 px-3 sm:px-6">
+        {/* Gmail integration - dynamic */}
+        <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
+          <div className="p-2 rounded-md bg-primary/10 shrink-0">
+            <Mail className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm text-foreground">Gmail</span>
+              {gmailStatus?.connected
+                ? statusBadge('connected')
+                : statusBadge('disconnected')
+              }
+            </div>
+            {gmailStatus?.connected && gmailStatus.gmailEmail ? (
+              <p className="text-xs text-muted-foreground mt-1">Connected as {gmailStatus.gmailEmail}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">Send individual emails to contacts via Gmail</p>
+            )}
+            {gmailStatus?.connected ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0"
+                onClick={() => disconnectGmail.mutate()}
+                disabled={disconnectGmail.isPending}
+              >
+                Disconnect
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0"
+                onClick={handleConnectGmail}
+                disabled={connectGmail.isPending}
+              >
+                Connect Gmail
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Static integrations */}
         {INTEGRATIONS.map(intg => (
           <div key={intg.name} className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
             <div className="p-2 rounded-md bg-primary/10 shrink-0">
