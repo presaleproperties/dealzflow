@@ -1,18 +1,16 @@
-import { useState } from 'react';
-import { X, Eraser, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, Eraser, ChevronDown, ChevronRight, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
 import { ContactTypeFilter } from './ContactTypeFilter';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Check } from 'lucide-react';
 
 interface FilterPanelProps {
   open: boolean;
   onClose: () => void;
-  // Filter values
   filterContactType: string;
   setFilterContactType: (v: string) => void;
   filterStatus: string[];
@@ -29,11 +27,9 @@ interface FilterPanelProps {
   setFilterLanguage: (v: string[]) => void;
   filterTags: string[];
   setFilterTags: (v: string[]) => void;
-  // Dynamic options
   dynamicProjects: string[];
   dynamicLanguages: string[];
   dynamicTags: string[];
-  // Actions
   onClearAll: () => void;
   activeFilterCount: number;
 }
@@ -50,6 +46,14 @@ function FilterAccordion({
   onChange: (v: string[]) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [search, setSearch] = useState('');
+  const showSearch = options.length >= 5;
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return options;
+    const q = search.toLowerCase();
+    return options.filter(o => o.toLowerCase().includes(q));
+  }, [options, search]);
 
   const toggle = (val: string) => {
     onChange(selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val]);
@@ -58,7 +62,7 @@ function FilterAccordion({
   return (
     <div className="border-b border-border/30">
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => { setExpanded(!expanded); if (expanded) setSearch(''); }}
         className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
       >
         <span className="flex items-center gap-2">
@@ -76,27 +80,42 @@ function FilterAccordion({
         )}
       </button>
       {expanded && (
-        <div className="px-2 pb-2 space-y-0.5">
-          {options.map(opt => (
-            <button
-              key={opt}
-              onClick={() => toggle(opt)}
-              className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[13px] text-foreground hover:bg-muted/40 rounded-md transition-colors"
-            >
-              <div
-                className={cn(
-                  'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-                  selected.includes(opt) ? 'bg-primary border-primary' : 'border-border/60'
-                )}
-              >
-                {selected.includes(opt) && <Check className="w-3 h-3 text-primary-foreground" />}
-              </div>
-              <span className="truncate">{opt}</span>
-            </button>
-          ))}
-          {options.length === 0 && (
-            <p className="px-2 py-2 text-xs text-muted-foreground">No options</p>
+        <div className="px-2 pb-2">
+          {showSearch && (
+            <div className="relative mb-1.5 px-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={`Search ${label.toLowerCase()}...`}
+                className="h-8 pl-8 text-xs bg-muted/30 border-border/40"
+              />
+            </div>
           )}
+          <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
+            {filtered.map(opt => (
+              <button
+                key={opt}
+                onClick={() => toggle(opt)}
+                className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[13px] text-foreground hover:bg-muted/40 rounded-md transition-colors"
+              >
+                <div
+                  className={cn(
+                    'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
+                    selected.includes(opt) ? 'bg-primary border-primary' : 'border-border/60'
+                  )}
+                >
+                  {selected.includes(opt) && <Check className="w-3 h-3 text-primary-foreground" />}
+                </div>
+                <span className="truncate">{opt}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-2 py-2 text-xs text-muted-foreground">
+                {search ? 'No matches' : 'No options'}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -131,7 +150,7 @@ export function FilterPanel({
   if (!open) return null;
 
   return (
-    <div className="w-[280px] shrink-0 border-l border-border/40 bg-card/50 flex flex-col h-full">
+    <div className="w-[280px] shrink-0 border-l border-border/40 bg-card/80 backdrop-blur-sm flex flex-col h-full ml-3 rounded-l-xl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
         <div className="flex items-center gap-2">
@@ -161,8 +180,8 @@ export function FilterPanel({
       </div>
 
       {/* Scrollable filter list */}
-      <ScrollArea className="flex-1">
-        <div className="divide-y divide-border/0">
+      <ScrollArea className="flex-1 min-h-0">
+        <div>
           <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
           <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
           <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
