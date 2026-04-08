@@ -35,9 +35,10 @@ export function CrmLeadsBySource() {
               type="category"
               tick={{ fontSize: 11 }}
               className="fill-muted-foreground"
-              width={100}
+              width={120}
               tickLine={false}
               axisLine={false}
+              tickFormatter={(v: string) => v.length > 18 ? v.slice(0, 16) + '…' : v}
             />
             <Tooltip
               contentStyle={{
