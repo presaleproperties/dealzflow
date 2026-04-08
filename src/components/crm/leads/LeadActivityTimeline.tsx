@@ -117,7 +117,7 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
               <div key={entry.id} className="relative flex gap-3 py-2.5 group">
                 <div
                   className="relative z-10 flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 border-2 border-card"
-                  style={{ background: entry.color + ' / 0.15)'.replace(')', '') }}
+                  style={{ background: entry.color.replace(')', ' / 0.15)') }}
                 >
                   <entry.icon className="w-3 h-3" style={{ color: entry.color }} strokeWidth={2.2} />
                 </div>

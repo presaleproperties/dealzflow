@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useCrmContacts, LEAD_STATUSES, PROJECTS, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
@@ -105,6 +105,12 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
 
 export function PipelineKanban() {
   const { data: contacts = [], isLoading } = useCrmContacts();
+  const dynamicOpts = useDynamicFilterOptions(contacts);
+  const dynamicAgents = useMemo(() => {
+    const agents = new Set<string>();
+    contacts.forEach(c => { if (c.assigned_to) agents.add(c.assigned_to); });
+    return Array.from(agents).sort();
+  }, [contacts]);
   const updateContact = useUpdateCrmContact();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
@@ -123,7 +129,7 @@ export function PipelineKanban() {
         c.phone?.includes(q)
       );
     }
-    if (filterProject !== 'all') list = list.filter(c => c.project === filterProject);
+    if (filterProject !== 'all') list = list.filter(c => (c.projects ?? []).includes(filterProject) || c.project === filterProject);
     if (filterAgent !== 'all') list = list.filter(c => c.assigned_to === filterAgent);
     return list;
   }, [contacts, search, filterProject, filterAgent]);
@@ -184,7 +190,7 @@ export function PipelineKanban() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {PROJECTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            {dynamicOpts.projects.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterAgent} onValueChange={setFilterAgent}>
@@ -193,7 +199,7 @@ export function PipelineKanban() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Agents</SelectItem>
-            {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            {dynamicAgents.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
