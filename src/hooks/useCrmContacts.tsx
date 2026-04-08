@@ -111,12 +111,28 @@ export function useCrmContacts() {
   const query = useQuery({
     queryKey: ['crm-contacts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('crm_contacts')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map(d => ({
+      const PAGE_SIZE = 1000;
+      let allData: Record<string, unknown>[] = [];
+      let from = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('crm_contacts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = allData.concat(data);
+          from += PAGE_SIZE;
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      return allData.map(d => ({
         ...d,
         tags: (d.tags as string[] | null) ?? [],
         projects: (d.projects as string[] | null) ?? [],
