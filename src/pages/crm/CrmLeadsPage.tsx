@@ -244,59 +244,48 @@ export default function CrmLeadsPage() {
 
   return (
     <>
-      <div className="space-y-3 sm:space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads & Contacts</h1>
-            <p className="text-xs text-muted-foreground hidden sm:block">Manage your leads, contacts, and pipeline from one place</p>
+      <div className="flex h-full min-h-0">
+        {/* Main content */}
+        <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads & Contacts</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">Manage your leads, contacts, and pipeline from one place</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5 hidden sm:flex">
+                    <Settings2 className="w-3.5 h-3.5" /> Columns
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-48 p-2">
+                  <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
+                  {ALL_COLUMN_KEYS.map(col => (
+                    <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={visibleColumns.has(col.key)}
+                        onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
+                        disabled={'locked' in col && col.locked}
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                </PopoverContent>
+              </Popover>
+              <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5 hidden sm:flex">
+                <Plus className="w-4 h-4" /> Add Lead
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-1.5 hidden sm:flex">
-                  <Settings2 className="w-3.5 h-3.5" /> Columns
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-48 p-2">
-                <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
-                {ALL_COLUMN_KEYS.map(col => (
-                  <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
-                    <Checkbox
-                      checked={visibleColumns.has(col.key)}
-                      onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
-                      disabled={'locked' in col && col.locked}
-                    />
-                    {col.label}
-                  </label>
-                ))}
-              </PopoverContent>
-            </Popover>
-            <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5 hidden sm:flex">
-              <Plus className="w-4 h-4" /> Add Lead
-            </Button>
-          </div>
-        </div>
 
-        {/* ROW 1: Saved Views Tabs */}
-        <div className="overflow-x-auto">
-          <div className="flex items-center gap-0.5 min-w-max border-b border-border/40 pb-0">
-            {BUILT_IN_VIEWS.map(view => (
-              <button
-                key={view.id}
-                onClick={() => handleViewChange(view.id)}
-                className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                  activeViewId === view.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                }`}
-              >
-                {view.name}
-              </button>
-            ))}
-            {savedViews.map(view => (
-              <div key={view.id} className="relative group flex items-center">
+          {/* ROW 1: Saved Views Tabs */}
+          <div className="overflow-x-auto">
+            <div className="flex items-center gap-0.5 min-w-max border-b border-border/40 pb-0">
+              {BUILT_IN_VIEWS.map(view => (
                 <button
+                  key={view.id}
                   onClick={() => handleViewChange(view.id)}
                   className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
                     activeViewId === view.id
@@ -306,120 +295,162 @@ export default function CrmLeadsPage() {
                 >
                   {view.name}
                 </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 -ml-1">
-                      <MoreHorizontal className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem className="text-destructive" onClick={() => deleteView.mutate(view.id)}>
-                      <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
-            <button
-              onClick={() => setShowCreateView(true)}
-              className="px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground whitespace-nowrap border-b-2 border-transparent transition-colors"
-            >
-              + View
-            </button>
-            <div className="flex-1" />
-            <Badge variant="outline" className="text-[10px] font-medium mb-1">{totalCount.toLocaleString()} total</Badge>
-          </div>
-        </div>
-
-        {/* ROW 2: Pipeline Segment Pills */}
-        {segments.length > 0 && (
-          <ScrollArea className="w-full">
-            <div className="flex items-center gap-1.5 pb-1 min-w-max">
-              {segments.map(seg => {
-                const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
-                const count = segmentCounts[seg.id];
-                return (
+              ))}
+              {savedViews.map(view => (
+                <div key={view.id} className="relative group flex items-center">
                   <button
-                    key={seg.id}
-                    onClick={() => handleSegmentClick(seg)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
-                      isActive
-                        ? 'text-white shadow-sm'
-                        : 'bg-transparent border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                    onClick={() => handleViewChange(view.id)}
+                    className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                      activeViewId === view.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
                     }`}
-                    style={isActive ? { background: seg.color, borderColor: seg.color } : undefined}
                   >
-                    {seg.emoji && <span>{seg.emoji}</span>}
-                    {seg.name}
-                    {count !== undefined && (
-                      <span className={`text-[10px] font-bold ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
-                        {count.toLocaleString()}
-                      </span>
-                    )}
+                    {view.name}
                   </button>
-                );
-              })}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 -ml-1">
+                        <MoreHorizontal className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem className="text-destructive" onClick={() => deleteView.mutate(view.id)}>
+                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+              <button
+                onClick={() => setShowCreateView(true)}
+                className="px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground whitespace-nowrap border-b-2 border-transparent transition-colors"
+              >
+                + View
+              </button>
+              <div className="flex-1" />
+              <Badge variant="outline" className="text-[10px] font-medium mb-1">{totalCount.toLocaleString()} total</Badge>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        )}
+          </div>
 
-        {/* A-Z letter filter */}
-        {(pipelineView === 'directory' || letterFilter) && (
-          <div className="flex items-center gap-0.5 flex-wrap">
-            <button
-              onClick={() => { setLetterFilter(''); setPage(1); }}
-              className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
-                !letterFilter ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >All</button>
-            {ALPHABET.map(letter => (
-              <button key={letter} onClick={() => handleLetterClick(letter)}
-                className={`w-7 h-7 rounded text-[11px] font-semibold transition-colors ${
-                  letterFilter === letter ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          {/* ROW 2: Pipeline Segment Pills */}
+          {segments.length > 0 && (
+            <ScrollArea className="w-full">
+              <div className="flex items-center gap-1.5 pb-1 min-w-max">
+                {segments.map(seg => {
+                  const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
+                  const count = segmentCounts[seg.id];
+                  return (
+                    <button
+                      key={seg.id}
+                      onClick={() => handleSegmentClick(seg)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
+                        isActive
+                          ? 'text-white shadow-sm'
+                          : 'bg-transparent border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                      }`}
+                      style={isActive ? { background: seg.color, borderColor: seg.color } : undefined}
+                    >
+                      {seg.emoji && <span>{seg.emoji}</span>}
+                      {seg.name}
+                      {count !== undefined && (
+                        <span className={`text-[10px] font-bold ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
+                          {count.toLocaleString()}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          )}
+
+          {/* A-Z letter filter */}
+          {(pipelineView === 'directory' || letterFilter) && (
+            <div className="flex items-center gap-0.5 flex-wrap">
+              <button
+                onClick={() => { setLetterFilter(''); setPage(1); }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  !letterFilter ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
-              >{letter}</button>
-            ))}
-          </div>
-        )}
+              >All</button>
+              {ALPHABET.map(letter => (
+                <button key={letter} onClick={() => handleLetterClick(letter)}
+                  className={`w-7 h-7 rounded text-[11px] font-semibold transition-colors ${
+                    letterFilter === letter ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
+                >{letter}</button>
+              ))}
+            </div>
+          )}
 
-        {/* Search + Filter toggle */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={search} onChange={e => handleSearchChange(e.target.value)}
-              placeholder="Search by name, email, or phone..." className="pl-8 h-10 sm:h-9 w-full text-sm" />
+          {/* Search + Filter toggle */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input value={search} onChange={e => handleSearchChange(e.target.value)}
+                placeholder="Search by name, email, or phone..." className="pl-8 h-10 sm:h-9 w-full text-sm" />
+            </div>
+            <Button
+              variant={filtersExpanded ? 'default' : 'outline'}
+              size="sm"
+              className="h-9 gap-1.5 shrink-0"
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">{activeFilterCount}</Badge>
+              )}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" className="h-9 gap-1.5 shrink-0"
-            onClick={() => setFiltersExpanded(!filtersExpanded)}>
-            <Filter className="w-3.5 h-3.5" />
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">{activeFilterCount}</Badge>
-            )}
+
+          {/* Mobile: Add Lead */}
+          <Button onClick={() => setShowAdd(true)} size="sm" className="h-11 w-full bg-primary text-primary-foreground gap-1.5 sm:hidden min-h-[44px]">
+            <Plus className="w-4 h-4" /> Add Lead
           </Button>
+
+          {/* Filter pills */}
+          <ActiveFilterPills filters={filterPills} onClear={clearFilter} onClearAll={clearAllFilters} />
+
+          {/* Bulk actions */}
+          <BulkActionsBar selectedIds={selectedIds} onClearSelection={() => setSelectedIds([])} />
+
+          {/* Table */}
+          <LeadsTable
+            contacts={contacts} isLoading={isLoading} isFetching={isFetching} totalCount={totalCount}
+            selectedIds={selectedIds} onSelectionChange={setSelectedIds}
+            page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={handlePageSizeChange}
+            sortKey={sortKey} sortDir={sortDir} onSort={handleSort} visibleColumns={visibleColumns}
+          />
         </div>
 
-        {/* Expandable filters */}
-        {filtersExpanded && <div className="space-y-2">{filterSection}</div>}
-
-        {/* Mobile: Add Lead */}
-        <Button onClick={() => setShowAdd(true)} size="sm" className="h-11 w-full bg-primary text-primary-foreground gap-1.5 sm:hidden min-h-[44px]">
-          <Plus className="w-4 h-4" /> Add Lead
-        </Button>
-
-        {/* Filter pills */}
-        <ActiveFilterPills filters={filterPills} onClear={clearFilter} onClearAll={clearAllFilters} />
-
-        {/* Bulk actions */}
-        <BulkActionsBar selectedIds={selectedIds} onClearSelection={() => setSelectedIds([])} />
-
-        {/* Table */}
-        <LeadsTable
-          contacts={contacts} isLoading={isLoading} isFetching={isFetching} totalCount={totalCount}
-          selectedIds={selectedIds} onSelectionChange={setSelectedIds}
-          page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={handlePageSizeChange}
-          sortKey={sortKey} sortDir={sortDir} onSort={handleSort} visibleColumns={visibleColumns}
+        {/* Right-side Filter Panel */}
+        <FilterPanel
+          open={filtersExpanded}
+          onClose={() => setFiltersExpanded(false)}
+          filterContactType={filterContactType}
+          setFilterContactType={v => { setFilterContactType(v); setPage(1); }}
+          filterStatus={filterStatus}
+          setFilterStatus={v => { setFilterStatus(v); setPage(1); }}
+          filterSource={filterSource}
+          setFilterSource={v => { setFilterSource(v); setPage(1); }}
+          filterAgent={filterAgent}
+          setFilterAgent={v => { setFilterAgent(v); setPage(1); }}
+          filterProject={filterProject}
+          setFilterProject={v => { setFilterProject(v); setPage(1); }}
+          filterLeadType={filterLeadType}
+          setFilterLeadType={v => { setFilterLeadType(v); setPage(1); }}
+          filterLanguage={filterLanguage}
+          setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
+          filterTags={filterTags}
+          setFilterTags={v => { setFilterTags(v); setPage(1); }}
+          dynamicProjects={dynamicOpts.projects}
+          dynamicLanguages={dynamicOpts.languages}
+          dynamicTags={dynamicOpts.tags}
+          onClearAll={clearAllFilters}
+          activeFilterCount={activeFilterCount}
         />
       </div>
 
