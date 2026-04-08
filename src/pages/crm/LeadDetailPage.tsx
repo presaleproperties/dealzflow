@@ -697,7 +697,7 @@ function RightSidebar({ contact }: { contact: CrmContact }) {
         </WidgetSection>
 
         {/* Upcoming Showings */}
-        <WidgetSection title="Showings" count={upcomingShowings.length} onAdd={() => setShowShowing(true)}>
+        <WidgetSection title="Appointments" count={upcomingShowings.length} onAdd={() => setShowShowing(true)}>
           {upcomingShowings.length === 0 ? (
             <EmptyWidget icon={Calendar} message="No upcoming showings" />
           ) : (
