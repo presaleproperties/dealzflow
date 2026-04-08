@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowUpDown, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
+import { formatContactName } from '@/lib/format';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -84,7 +85,7 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
 
 function getSortValue(contact: CrmContact, key: SortKey): string {
   switch (key) {
-    case 'name': return `${contact.first_name} ${contact.last_name}`.toLowerCase();
+    case 'name': return formatContactName(contact.first_name, contact.last_name).toLowerCase();
     case 'phone': return contact.phone ?? '';
     case 'email': return contact.email ?? '';
     case 'project': return (contact.projects ?? []).join(',') || contact.project || '';
@@ -111,7 +112,7 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
         <div className="flex items-center gap-2 min-w-0">
           <ContactTypeBadge type={contact.contact_type} />
           <p className="text-base font-semibold text-foreground leading-snug truncate inline-flex items-center gap-1.5">
-            {contact.first_name} {contact.last_name}
+            {formatContactName(contact.first_name, contact.last_name)}
             {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
               <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
             )}
@@ -268,7 +269,7 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                 </td>
                 <td className="px-3 py-2.5 font-medium text-foreground whitespace-nowrap">
                   <span className="inline-flex items-center gap-1.5">
-                    {contact.first_name} {contact.last_name}
+                    {formatContactName(contact.first_name, contact.last_name)}
                     {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
                       <TooltipProvider delayDuration={200}>
                         <Tooltip>

@@ -10,13 +10,14 @@ import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/Mul
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/dataCompleteness';
+import { formatContactName, getContactInitials } from '@/lib/format';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 function getInitials(first: string, last: string) {
-  return ((first?.[0] ?? '') + (last?.[0] ?? '')).toUpperCase();
+  return getContactInitials(first, last);
 }
 
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -95,7 +96,7 @@ export default function CrmContactsPage() {
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(c =>
-        `${c.first_name} ${c.last_name}`.toLowerCase().includes(q) ||
+        formatContactName(c.first_name, c.last_name).toLowerCase().includes(q) ||
         c.phone?.toLowerCase().includes(q) ||
         c.email?.toLowerCase().includes(q)
       );
@@ -269,7 +270,7 @@ export default function CrmContactsPage() {
                             {typeStyle.label}
                           </Badge>
                           <p className="text-sm font-semibold text-foreground truncate inline-flex items-center gap-1">
-                            {c.first_name} {c.last_name}
+                            {formatContactName(c.first_name, c.last_name)}
                             {missing.length > 0 && (
                               <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
                             )}
@@ -328,7 +329,7 @@ export default function CrmContactsPage() {
                       </td>
                       <td className="px-4 py-2.5">
                         <Link to={`/crm/leads/${c.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5">
-                          {c.first_name} {c.last_name}
+                          {formatContactName(c.first_name, c.last_name)}
                           {missing.length > 0 && (
                             <TooltipProvider delayDuration={200}>
                               <Tooltip>

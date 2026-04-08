@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCrmShowings, useUpdateShowingStatus } from '@/hooks/useCrmShowings';
 import { AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+import { formatContactName } from '@/lib/format';
 import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
 import { ShowingDetailModal } from '@/components/crm/calendar/ShowingDetailModal';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -44,7 +45,7 @@ export default function CrmCalendarPage() {
 
   const events = useMemo(() => {
     return filteredShowings.map(s => {
-      const name = s.crm_contacts ? `${s.crm_contacts.first_name} ${s.crm_contacts.last_name}` : 'Unknown';
+      const name = s.crm_contacts ? formatContactName(s.crm_contacts.first_name, s.crm_contacts.last_name) : 'Unknown';
       const status = s.status ?? 'confirmed';
       return {
         id: s.id,
@@ -136,7 +137,7 @@ export default function CrmCalendarPage() {
           {upcomingShowings.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">No upcoming showings</p>
           ) : upcomingShowings.map(s => {
-            const name = s.crm_contacts ? `${s.crm_contacts.first_name} ${s.crm_contacts.last_name}` : 'Unknown';
+            const name = s.crm_contacts ? formatContactName(s.crm_contacts.first_name, s.crm_contacts.last_name) : 'Unknown';
             const status = s.status ?? 'confirmed';
             return (
               <button

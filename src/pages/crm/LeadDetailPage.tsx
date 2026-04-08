@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Info, X } from 'lucide-react';
+import { formatContactName } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
@@ -77,7 +78,7 @@ export default function LeadDetailPage() {
         </Link>
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-xl font-bold text-foreground">
-            {contact.first_name} {contact.last_name}
+            {formatContactName(contact.first_name, contact.last_name)}
           </h1>
           <LeadStatusBadge status={contact.status} />
           {contact.project && (

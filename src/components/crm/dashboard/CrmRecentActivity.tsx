@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MessageCircle, UserPlus, CalendarDays, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { formatContactName } from '@/lib/format';
 
 interface ActivityItem {
   id: string;
@@ -57,7 +58,7 @@ export function CrmRecentActivity() {
           id: `contact-${c.id}`,
           icon: UserPlus,
           color: 'hsl(39 67% 55%)',
-          text: `New contact: ${c.first_name} ${c.last_name}`,
+          text: `New contact: ${formatContactName(c.first_name, c.last_name)}`,
           time: formatDistanceToNow(new Date(c.created_at), { addSuffix: true }),
           raw: new Date(c.created_at),
         })
