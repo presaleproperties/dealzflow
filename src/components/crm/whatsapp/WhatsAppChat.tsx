@@ -1,35 +1,43 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { formatDistanceToNow, format } from 'date-fns';
-import { useCrmConversations, useCrmConversationMessages } from '@/hooks/useCrmWhatsApp';
-import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
-import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
+import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { formatContactName } from '@/lib/format';
-import type { CrmConversation } from '@/hooks/useCrmWhatsApp';
+import { NewConversationDialog } from './NewConversationDialog';
+import {
+  useWAConversations,
+  useWAMessages,
+  useWATemplates,
+  useSendWAMessage,
+  useCreateWAConversation,
+  type WAConversation,
+  type WATemplate,
+} from '@/hooks/useWhatsAppData';
 
 export function WhatsAppChat() {
-  const { data: conversations = [], isLoading: loadingConvs } = useCrmConversations();
-  const { data: templates = [] } = useCrmEmailTemplates();
-  const addMessage = useAddCrmMessage();
+  const { data: conversations = [], isLoading: loadingConvs } = useWAConversations();
+  const { data: templates = [] } = useWATemplates();
+  const sendMessage = useSendWAMessage();
+  const createConversation = useCreateWAConversation();
   const isMobile = useIsMobile();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [msgText, setMsgText] = useState('');
   const [tplOpen, setTplOpen] = useState(false);
+  const [newConvOpen, setNewConvOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const selected = conversations.find(c => c.id === selectedId) ?? null;
-  const { data: messages = [], isLoading: loadingMsgs } = useCrmConversationMessages(selectedId ?? undefined);
+  const { data: messages = [], isLoading: loadingMsgs } = useWAMessages(selectedId ?? undefined);
 
   const filtered = useMemo(() => {
     if (!search) return conversations;
@@ -46,47 +54,73 @@ export function WhatsAppChat() {
 
   const handleSend = async () => {
     if (!msgText.trim() || !selected) return;
-    await addMessage.mutateAsync({
-      contact_id: selected.contact_id,
-      conversation_id: selected.id,
-      direction: 'outbound',
+    await sendMessage.mutateAsync({
+      conversationId: selected.id,
       content: msgText.trim(),
-      channel: 'whatsapp',
-      sent_by: 'Agent',
-      message_type: 'text',
     });
     setMsgText('');
   };
 
-  const insertTemplate = (body: string | null) => {
-    if (body) {
-      const text = body.replace(/<[^>]+>/g, '').trim();
-      setMsgText(text);
-    }
+  const insertTemplate = (tpl: WATemplate) => {
+    if (!selected?.contact) return;
+    let text = tpl.body_text;
+    // Auto-fill {{1}} with contact first name
+    text = text.replace('{{1}}', selected.contact.first_name || '');
+    setMsgText(text);
     setTplOpen(false);
   };
 
-  // Mobile: show conversation list OR chat, not both
+  const handleNewConversation = async (contact: { id: string; first_name: string; last_name: string; phone: string }) => {
+    const convId = await createConversation.mutateAsync({
+      contactId: contact.id,
+      phoneNumber: contact.phone,
+    });
+    setSelectedId(convId);
+  };
+
   const showList = !isMobile || !selectedId;
   const showChat = !isMobile || !!selectedId;
 
   return (
     <TooltipProvider>
-      <div className="flex h-[calc(100vh-180px)] min-h-[400px] sm:min-h-[500px] border border-border rounded-xl overflow-hidden bg-card">
+      {/* API not connected banner */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-sm"
+        style={{ background: 'hsl(39 67% 55% / 0.1)', border: '1px solid hsl(39 67% 55% / 0.25)' }}>
+        <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(39 67% 55%)' }} />
+        <span className="text-foreground">
+          WhatsApp API not connected. Messages will be queued.{' '}
+          <Link to="/crm/settings" className="text-primary hover:underline font-medium">Connect in Settings → Integrations</Link>
+        </span>
+      </div>
+
+      <div className="flex h-[calc(100vh-220px)] min-h-[400px] sm:min-h-[500px] border border-border rounded-xl overflow-hidden bg-card">
         {/* Left panel — Conversation list */}
         {showList && (
           <div className={`${isMobile ? 'w-full' : 'w-full sm:w-[320px] lg:w-[340px]'} flex-shrink-0 border-r border-border flex flex-col`}>
-            <div className="p-3 border-b border-border">
+            {/* New conversation button + search */}
+            <div className="p-3 border-b border-border space-y-2">
+              <Button
+                onClick={() => setNewConvOpen(true)}
+                className="w-full bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                New Conversation
+              </Button>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search conversations..." className="pl-9 h-10 sm:h-9 text-sm min-h-[44px] sm:min-h-0" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search conversations..." className="pl-9 h-9 text-sm" />
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               {loadingConvs ? (
                 <div className="p-3 space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
               ) : filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-10">No conversations</p>
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+                  <MessageCircle className="w-8 h-8 opacity-30" />
+                  <p className="text-sm">No conversations yet</p>
+                  <p className="text-xs">Click "New Conversation" to start</p>
+                </div>
               ) : filtered.map(conv => (
                 <ConversationRow
                   key={conv.id}
@@ -112,7 +146,6 @@ export function WhatsAppChat() {
                 {/* Chat header */}
                 <div className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border bg-muted/20">
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    {/* Back button on mobile */}
                     {isMobile && (
                       <button
                         onClick={() => setSelectedId(null)}
@@ -131,7 +164,7 @@ export function WhatsAppChat() {
                         </span>
                         {selected.contact?.status && <LeadStatusBadge status={selected.contact.status} />}
                       </div>
-                      <p className="text-xs text-muted-foreground">{selected.contact?.phone ?? 'No phone'}</p>
+                      <p className="text-xs text-muted-foreground">{selected.phone_number ?? 'No phone'}</p>
                     </div>
                   </div>
                   {selected.contact && (
@@ -146,7 +179,7 @@ export function WhatsAppChat() {
                   {loadingMsgs ? (
                     <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-3/5 rounded-xl" />)}</div>
                   ) : messages.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-10">No messages yet</p>
+                    <p className="text-sm text-muted-foreground text-center py-10">No messages yet. Send a message to start the conversation.</p>
                   ) : messages.map(msg => {
                     const isOut = msg.direction === 'outbound';
                     return (
@@ -164,8 +197,8 @@ export function WhatsAppChat() {
                               {msg.created_at ? format(new Date(msg.created_at), 'h:mm a') : ''}
                             </span>
                             {isOut && (
-                              msg.read ? <CheckCheck className="w-3 h-3" style={{ color: 'hsl(210 62% 46%)' }} /> :
-                              msg.delivered ? <CheckCheck className="w-3 h-3 text-muted-foreground" /> :
+                              msg.status === 'read' ? <CheckCheck className="w-3 h-3" style={{ color: 'hsl(210 62% 46%)' }} /> :
+                              msg.status === 'delivered' ? <CheckCheck className="w-3 h-3 text-muted-foreground" /> :
                               <Check className="w-3 h-3 text-muted-foreground" />
                             )}
                           </div>
@@ -176,7 +209,7 @@ export function WhatsAppChat() {
                   <div ref={bottomRef} />
                 </div>
 
-                {/* Composer — sticky bottom */}
+                {/* Composer */}
                 <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 border-t border-border bg-card">
                   {!isMobile && (
                     <>
@@ -195,21 +228,24 @@ export function WhatsAppChat() {
                             <FileText className="w-4 h-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[260px] p-0" align="start">
+                        <PopoverContent className="w-[280px] p-0" align="start">
                           <div className="p-2 border-b border-border">
-                            <p className="text-xs font-medium text-muted-foreground">Quick Templates</p>
+                            <p className="text-xs font-medium text-muted-foreground">WhatsApp Templates</p>
                           </div>
-                          <div className="max-h-[200px] overflow-y-auto">
+                          <div className="max-h-[220px] overflow-y-auto">
                             {templates.length === 0 ? (
                               <p className="px-3 py-4 text-xs text-muted-foreground text-center">No templates</p>
                             ) : templates.map(t => (
                               <div
                                 key={t.id}
-                                className="px-3 py-2 hover:bg-muted/50 cursor-pointer"
-                                onClick={() => insertTemplate(t.body_html)}
+                                className="px-3 py-2.5 hover:bg-muted/50 cursor-pointer border-b border-border/30 last:border-0"
+                                onClick={() => insertTemplate(t)}
                               >
-                                <p className="text-sm font-medium text-foreground">{t.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{t.subject}</p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-medium text-foreground">{t.name}</p>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{t.category}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{t.body_text}</p>
                               </div>
                             ))}
                           </div>
@@ -228,7 +264,7 @@ export function WhatsAppChat() {
                   <Button
                     size="sm"
                     className="h-10 w-10 sm:h-9 sm:w-9 p-0 flex-shrink-0 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white min-h-[44px] sm:min-h-0"
-                    disabled={!msgText.trim() || addMessage.isPending}
+                    disabled={!msgText.trim() || sendMessage.isPending}
                     onClick={handleSend}
                   >
                     <Send className="w-4 h-4" />
@@ -239,11 +275,17 @@ export function WhatsAppChat() {
           </div>
         )}
       </div>
+
+      <NewConversationDialog
+        open={newConvOpen}
+        onOpenChange={setNewConvOpen}
+        onSelect={handleNewConversation}
+      />
     </TooltipProvider>
   );
 }
 
-function ConversationRow({ conv, isActive, onClick }: { conv: CrmConversation; isActive: boolean; onClick: () => void }) {
+function ConversationRow({ conv, isActive, onClick }: { conv: WAConversation; isActive: boolean; onClick: () => void }) {
   const name = conv.contact ? formatContactName(conv.contact.first_name, conv.contact.last_name) : 'Unknown';
   const unread = conv.unread_count ?? 0;
 

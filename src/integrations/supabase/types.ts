@@ -948,6 +948,130 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_whatsapp_conversations: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          phone_number: string
+          status: string
+          unread_count: number
+          user_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          phone_number: string
+          status?: string
+          unread_count?: number
+          user_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          phone_number?: string
+          status?: string
+          unread_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_whatsapp_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_whatsapp_messages: {
+        Row: {
+          content: string | null
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          message_type: string
+          status: string
+          template_name: string | null
+          user_id: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message_type?: string
+          status?: string
+          template_name?: string | null
+          user_id: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message_type?: string
+          status?: string
+          template_name?: string | null
+          user_id?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_whatsapp_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "crm_whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_whatsapp_templates: {
+        Row: {
+          body_text: string
+          category: string
+          created_at: string
+          id: string
+          language: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          body_text: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          body_text?: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_focus: {
         Row: {
           completed: boolean
