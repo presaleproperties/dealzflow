@@ -106,7 +106,19 @@ export const LEAD_TYPES = [
   'First-Time Buyer',
   'Investor',
   'Both',
+  'presale',
+  'resale',
+  'commercial',
 ] as const;
+
+export const LEAD_TYPE_LABELS: Record<string, string> = {
+  'First-Time Buyer': 'First-Time Buyer',
+  'Investor': 'Investor',
+  'Both': 'Both',
+  'presale': 'Pre-Sale',
+  'resale': 'Re-Sale',
+  'commercial': 'Commercial',
+};
 
 export function useCrmContacts() {
   const queryClient = useQueryClient();

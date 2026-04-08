@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useCrmContact, useCrmContactMessages, useCrmContactShowings, useCrmContactTasks, useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { useCrmContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { useLeadNotes, useAddNote, useUpdateNote, useDeleteNote, type CrmNote } from '@/hooks/useCrmNotes';
 import { useCrmEmailLog } from '@/hooks/useGmail';
 import { useAuth } from '@/hooks/useAuth';
@@ -193,7 +193,17 @@ function LeftSidebar({
                 </span>
               </div>
             )}
-            {contact.lead_type && <DetailRow label="Type" value={contact.lead_type} field="lead_type" contactId={contact.id} />}
+            <div className="space-y-1">
+              <span className="text-[11px] text-muted-foreground">Pipeline</span>
+              <Select value={contact.lead_type ?? ''} onValueChange={(v) => saveWithLog('lead_type', v)}>
+                <SelectTrigger className="h-8 text-xs bg-card border-border">
+                  <SelectValue placeholder="Select pipeline">{LEAD_TYPE_LABELS[contact.lead_type ?? ''] || contact.lead_type || 'Not set'}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAD_TYPES.map(t => <SelectItem key={t} value={t}>{LEAD_TYPE_LABELS[t] || t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} />
             <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} />
             {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
