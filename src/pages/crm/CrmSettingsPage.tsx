@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { useGmailStatus, useConnectGmail, useDisconnectGmail } from '@/hooks/useGmail';
+import { useMailerLiteStatus, useVerifyMailerLiteKey, useSaveMailerLiteKey, useSyncToMailerLite } from '@/hooks/useMailerLite';
 
 const PIPELINE_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
@@ -35,7 +36,6 @@ const LEAD_SOURCES = [
 
 const INTEGRATIONS = [
   { name: 'WhatsApp Business (Twilio)', icon: MessageSquare, status: 'connected' as const, desc: 'Two-way messaging with leads via WhatsApp' },
-  { name: 'MailerLite', icon: Mail, status: 'connected' as const, desc: 'Email campaigns and automation' },
   { name: 'Google Calendar', icon: Calendar, status: 'connected' as const, desc: 'Sync showings and appointments' },
   { name: 'Facebook Ads', icon: Megaphone, status: 'disconnected' as const, desc: 'Lead generation from Meta ad campaigns' },
   { name: 'Lofty CRM', icon: Database, status: 'migrating' as const, desc: 'Legacy CRM data migration' },
@@ -406,7 +406,13 @@ function IntegrationsSection() {
   const connectGmail = useConnectGmail();
   const disconnectGmail = useDisconnectGmail();
 
-  // Handle Gmail OAuth callback
+  const { data: mlStatus } = useMailerLiteStatus();
+  const verifyMlKey = useVerifyMailerLiteKey();
+  const saveMlKey = useSaveMailerLiteKey();
+  const syncToMl = useSyncToMailerLite();
+  const [mlApiKey, setMlApiKey] = useState('');
+  const [mlKeyVerified, setMlKeyVerified] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const gmailAuth = params.get('gmail_auth');
@@ -429,13 +435,30 @@ function IntegrationsSection() {
     connectGmail.mutate(window.location.origin + '/crm/settings');
   };
 
+  const handleVerifyMlKey = async () => {
+    if (!mlApiKey.trim()) return;
+    const result = await verifyMlKey.mutateAsync(mlApiKey.trim());
+    if (result.valid) {
+      setMlKeyVerified(true);
+      toast.success(`API key valid! ${result.subscriberCount} subscribers found.`);
+    } else {
+      toast.error(result.error || 'Invalid API key');
+    }
+  };
+
+  const handleSaveMlKey = async () => {
+    await saveMlKey.mutateAsync(mlApiKey.trim());
+    setMlApiKey('');
+    setMlKeyVerified(false);
+  };
+
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
       <CardHeader className="px-3 sm:px-6">
         <CardTitle className="text-base sm:text-lg">Integrations</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-2 px-3 sm:px-6">
-        {/* Gmail integration - dynamic */}
+        {/* Gmail integration */}
         <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
           <div className="p-2 rounded-md bg-primary/10 shrink-0">
             <Mail className="h-5 w-5 text-primary" />
@@ -443,10 +466,7 @@ function IntegrationsSection() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-sm text-foreground">Gmail</span>
-              {gmailStatus?.connected
-                ? statusBadge('connected')
-                : statusBadge('disconnected')
-              }
+              {gmailStatus?.connected ? statusBadge('connected') : statusBadge('disconnected')}
             </div>
             {gmailStatus?.connected && gmailStatus.gmailEmail ? (
               <p className="text-xs text-muted-foreground mt-1">Connected as {gmailStatus.gmailEmail}</p>
@@ -454,25 +474,61 @@ function IntegrationsSection() {
               <p className="text-xs text-muted-foreground mt-1">Send individual emails to contacts via Gmail</p>
             )}
             {gmailStatus?.connected ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0"
-                onClick={() => disconnectGmail.mutate()}
-                disabled={disconnectGmail.isPending}
-              >
-                Disconnect
-              </Button>
+              <Button variant="outline" size="sm" className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0"
+                onClick={() => disconnectGmail.mutate()} disabled={disconnectGmail.isPending}>Disconnect</Button>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0"
-                onClick={handleConnectGmail}
-                disabled={connectGmail.isPending}
-              >
-                Connect Gmail
-              </Button>
+              <Button variant="outline" size="sm" className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0"
+                onClick={handleConnectGmail} disabled={connectGmail.isPending}>Connect Gmail</Button>
+            )}
+          </div>
+        </div>
+
+        {/* MailerLite integration - dynamic */}
+        <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
+          <div className="p-2 rounded-md bg-primary/10 shrink-0">
+            <Mail className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm text-foreground">MailerLite</span>
+              {mlStatus?.connected ? statusBadge('connected') : statusBadge('disconnected')}
+            </div>
+            {mlStatus?.connected ? (
+              <>
+                <p className="text-xs text-muted-foreground mt-1">{mlStatus.subscriberCount} subscribers · Email campaigns & automation</p>
+                <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" className="h-7 text-xs min-h-[36px] sm:min-h-0"
+                    onClick={() => syncToMl.mutate()} disabled={syncToMl.isPending}>
+                    {syncToMl.isPending ? 'Syncing...' : 'Sync Contacts'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground mt-1">Email campaigns and automation</p>
+                <div className="space-y-2 mt-2">
+                  <Input
+                    placeholder="MailerLite API key"
+                    value={mlApiKey}
+                    onChange={e => { setMlApiKey(e.target.value); setMlKeyVerified(false); }}
+                    className="h-8 text-xs"
+                    type="password"
+                  />
+                  <div className="flex gap-2">
+                    {!mlKeyVerified ? (
+                      <Button variant="outline" size="sm" className="h-7 text-xs min-h-[36px] sm:min-h-0"
+                        onClick={handleVerifyMlKey} disabled={!mlApiKey.trim() || verifyMlKey.isPending}>
+                        {verifyMlKey.isPending ? 'Verifying...' : 'Verify Key'}
+                      </Button>
+                    ) : (
+                      <Button size="sm" className="h-7 text-xs min-h-[36px] sm:min-h-0"
+                        onClick={handleSaveMlKey} disabled={saveMlKey.isPending}>
+                        {saveMlKey.isPending ? 'Saving...' : 'Save & Connect'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
