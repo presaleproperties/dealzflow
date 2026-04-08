@@ -22,9 +22,13 @@ export type CrmEmailTemplate = {
   subject: string;
   body_html: string | null;
   project: string | null;
+  category: string;
+  merge_tags: string[] | null;
+  is_active: boolean;
   times_used: number | null;
   last_used_at: string | null;
   created_at: string | null;
+  updated_at: string | null;
 };
 
 export function useCrmCampaigns() {
@@ -87,7 +91,7 @@ export function useCreateCampaign() {
 export function useCreateTemplate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (tpl: { name: string; subject: string; body_html: string; project?: string }) => {
+    mutationFn: async (tpl: { name: string; subject: string; body_html: string; project?: string; category?: string; merge_tags?: string[] }) => {
       const { error } = await supabase.from('crm_email_templates').insert(tpl);
       if (error) throw error;
     },
@@ -102,7 +106,7 @@ export function useCreateTemplate() {
 export function useUpdateTemplate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; subject?: string; body_html?: string; project?: string | null } }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; subject?: string; body_html?: string; project?: string | null; category?: string; merge_tags?: string[] } }) => {
       const { error } = await supabase.from('crm_email_templates').update(updates).eq('id', id);
       if (error) throw error;
     },
