@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Info, X } from 'lucide-react';
+import { ArrowLeft, Info, X, Calendar } from 'lucide-react';
 import { formatContactName } from '@/lib/format';
+import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { LeadContactCard } from '@/components/crm/leads/LeadContactCard';
+import { LeadDetailsCard } from '@/components/crm/leads/LeadDetailsCard';
+import { LeadCoBuyerCard } from '@/components/crm/leads/LeadCoBuyerCard';
+import { LeadNotesCard } from '@/components/crm/leads/LeadNotesCard';
 import { LeadTagsCard } from '@/components/crm/leads/LeadTagsCard';
 import { LeadActivityTimeline } from '@/components/crm/leads/LeadActivityTimeline';
 import { LeadQuickActions } from '@/components/crm/leads/LeadQuickActions';
@@ -91,6 +95,11 @@ export default function LeadDetailPage() {
             </Badge>
           )}
         </div>
+        <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+          <Calendar className="w-3.5 h-3.5" />
+          Added {format(new Date(contact.created_at), 'MMM d, yyyy')}
+          {contact.assigned_to && <span>· Assigned to <span className="font-medium text-foreground">{contact.assigned_to}</span></span>}
+        </div>
       </div>
 
       {/* Two columns */}
@@ -98,6 +107,9 @@ export default function LeadDetailPage() {
         {/* Left 65% */}
         <div className="lg:col-span-3 space-y-4">
           <LeadContactCard contact={contact} />
+          <LeadDetailsCard contact={contact} />
+          <LeadCoBuyerCard contact={contact} />
+          <LeadNotesCard contact={contact} />
           <LeadTagsCard contact={contact} />
           <LeadActivityTimeline contactId={contact.id} />
         </div>
