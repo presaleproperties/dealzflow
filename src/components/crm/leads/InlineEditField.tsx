@@ -87,19 +87,20 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
 
   return (
     <span
-      className={`group inline-flex items-center gap-1 cursor-pointer hover:text-primary transition-colors ${isMuted ? 'text-muted-foreground' : ''} ${className}`}
+      className={`group inline-flex items-center gap-1 cursor-pointer hover:text-primary transition-colors min-w-0 ${isMuted ? 'text-muted-foreground' : ''} ${className}`}
       onClick={() => setEditing(true)}
     >
       {href && value ? (
         <a
           href={href}
-          className="text-sm text-primary hover:underline truncate"
+          className="text-sm text-primary hover:underline truncate min-w-0"
           onClick={(e) => e.stopPropagation()}
+          title={display}
         >
           {display}
         </a>
       ) : (
-        <span className={`text-sm truncate ${isMuted ? 'text-muted-foreground' : 'text-foreground'}`}>{display}</span>
+        <span className={`text-sm truncate min-w-0 ${isMuted ? 'text-muted-foreground' : 'text-foreground'}`} title={value || undefined}>{display}</span>
       )}
       <Pencil className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
     </span>
