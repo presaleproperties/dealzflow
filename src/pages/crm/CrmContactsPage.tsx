@@ -321,26 +321,24 @@ export default function CrmContactsPage() {
                           {getInitials(c.first_name, c.last_name)}
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 hidden md:table-cell">
-                        <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: typeStyle.bg, color: typeStyle.color }}>
-                          {typeStyle.label}
-                        </Badge>
-                      </td>
                       <td className="px-4 py-2.5">
-                        <Link to={`/crm/leads/${c.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5">
-                          {formatContactName(c.first_name, c.last_name)}
-                          {missing.length > 0 && (
-                            <TooltipProvider delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs">
-                                  Missing: {missing.map(formatFieldName).join(', ')}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
+                        <Link to={`/crm/leads/${c.id}`} className="group">
+                          <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors inline-flex items-center gap-1.5">
+                            {formatContactName(c.first_name, c.last_name)}
+                            {missing.length > 0 && (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    Missing: {missing.map(formatFieldName).join(', ')}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </span>
+                          <span className="block text-xs text-muted-foreground mt-0.5">{typeStyle.label}</span>
                         </Link>
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
