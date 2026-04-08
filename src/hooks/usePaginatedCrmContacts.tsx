@@ -28,8 +28,10 @@ interface PaginatedFilters {
   leadTypes: string[];
   languages: string[];
   tags: string[];
-  letterFilter: string; // A-Z filter on last_name
-  pipelineView: 'all' | 'active' | 'directory'; // view mode
+  letterFilter: string;
+  pipelineView: 'all' | 'active' | 'directory';
+  segmentFilters?: Record<string, unknown>; // extra filters from active segment
+  savedViewFilters?: Record<string, unknown>; // extra filters from saved view
 }
 
 interface PaginatedParams {
