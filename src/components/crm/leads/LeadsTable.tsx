@@ -4,6 +4,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName } from '@/lib/format';
+import { LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -57,12 +58,6 @@ const TAG_COLORS = [
   { bg: 'hsl(0 84% 60% / 0.12)', color: 'hsl(0 84% 60%)' },
 ];
 
-const LEAD_TYPE_LABELS: Record<string, string> = {
-  presale: 'Presale',
-  resale: 'Re-Sale',
-  commercial: 'Commercial',
-  other: 'Other',
-};
 
 function TagsList({ tags }: { tags: string[] }) {
   if (!tags || tags.length === 0) return <span className="text-muted-foreground">—</span>;
