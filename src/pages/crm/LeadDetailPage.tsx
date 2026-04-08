@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
@@ -10,6 +11,30 @@ import { LeadQuickActions } from '@/components/crm/leads/LeadQuickActions';
 import { LeadUpcomingCard } from '@/components/crm/leads/LeadUpcomingCard';
 import { LeadScoreCard } from '@/components/crm/leads/LeadScoreCard';
 import { Badge } from '@/components/ui/badge';
+import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
+import type { CrmContact } from '@/hooks/useCrmContacts';
+
+function IncompleteBanner({ contact }: { contact: CrmContact }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (contact.contact_type !== 'past_client' || dismissed) return null;
+  const missing = getMissingFields(contact);
+  if (missing.length === 0) return null;
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm"
+      style={{ background: '#FFF8E1', borderLeft: '3px solid #F59E0B' }}
+    >
+      <Info className="w-4 h-4 flex-shrink-0" style={{ color: '#F59E0B' }} />
+      <span className="text-foreground/80 flex-1">
+        Incomplete profile — missing: {missing.map(formatFieldName).join(', ')}
+      </span>
+      <button onClick={() => setDismissed(true)} className="text-foreground/40 hover:text-foreground/70">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +69,7 @@ export default function LeadDetailPage() {
 
   return (
     <div className="space-y-5">
+      <IncompleteBanner contact={contact as CrmContact} />
       {/* Back link + heading */}
       <div>
         <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3">

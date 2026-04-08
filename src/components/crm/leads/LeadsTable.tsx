@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react';
+import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -108,8 +110,11 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <ContactTypeBadge type={contact.contact_type} />
-          <p className="text-base font-semibold text-foreground leading-snug truncate">
+          <p className="text-base font-semibold text-foreground leading-snug truncate inline-flex items-center gap-1.5">
             {contact.first_name} {contact.last_name}
+            {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+            )}
           </p>
         </div>
         <LeadStatusBadge status={contact.status} />
@@ -262,7 +267,21 @@ export function LeadsTable({ contacts, isLoading, selectedIds, onSelectionChange
                   <ContactTypeBadge type={contact.contact_type} />
                 </td>
                 <td className="px-3 py-2.5 font-medium text-foreground whitespace-nowrap">
-                  {contact.first_name} {contact.last_name}
+                  <span className="inline-flex items-center gap-1.5">
+                    {contact.first_name} {contact.last_name}
+                    {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </span>
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</td>
                 <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap max-w-[180px] truncate hidden lg:table-cell">{contact.email ?? '—'}</td>

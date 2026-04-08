@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,9 @@ import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/dataCompleteness';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -19,13 +22,14 @@ function getInitials(first: string, last: string) {
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
   realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
-  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Past Client' },
+  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Client' },
 };
 
 export default function CrmContactsPage() {
   const { data: contacts = [], isLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const isMobile = useIsMobile();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [filterContactType, setFilterContactType] = useState('');
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
@@ -35,8 +39,17 @@ export default function CrmContactsPage() {
   const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
   const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
   const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [filterDataStatus, setFilterDataStatus] = useState('all');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Apply URL params on mount
+  useEffect(() => {
+    const type = searchParams.get('type');
+    const dataStatus = searchParams.get('data_status');
+    if (type) setFilterContactType(type);
+    if (dataStatus) setFilterDataStatus(dataStatus);
+  }, [searchParams]);
 
   const activeFilterCount = [
     filterContactType ? 1 : 0,
@@ -47,6 +60,7 @@ export default function CrmContactsPage() {
     filterLeadType.length > 0 ? 1 : 0,
     filterLanguage.length > 0 ? 1 : 0,
     filterTags.length > 0 ? 1 : 0,
+    filterDataStatus !== 'all' ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   const clearAllFilters = () => {
@@ -58,6 +72,7 @@ export default function CrmContactsPage() {
     setFilterLeadType([]);
     setFilterLanguage([]);
     setFilterTags([]);
+    setFilterDataStatus('all');
   };
 
   const clearFilter = (key: string) => {
@@ -70,6 +85,7 @@ export default function CrmContactsPage() {
       leadType: () => setFilterLeadType([]),
       language: () => setFilterLanguage([]),
       tags: () => setFilterTags([]),
+      dataStatus: () => setFilterDataStatus('all'),
     };
     map[key]?.();
   };
@@ -96,8 +112,13 @@ export default function CrmContactsPage() {
     if (filterTags.length > 0) list = list.filter(c =>
       filterTags.some(ft => (c.tags ?? []).includes(ft))
     );
+    if (filterDataStatus === 'complete') {
+      list = list.filter(c => c.contact_type === 'past_client' && isProfileComplete(c));
+    } else if (filterDataStatus === 'incomplete') {
+      list = list.filter(c => c.contact_type === 'past_client' && !isProfileComplete(c));
+    }
     return list;
-  }, [contacts, search, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags]);
+  }, [contacts, search, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags, filterDataStatus]);
 
   const jumpTo = (letter: string) => {
     const el = listRef.current?.querySelector(`[data-letter="${letter}"]`);
@@ -115,6 +136,7 @@ export default function CrmContactsPage() {
     { key: 'leadType', label: 'Lead Type', values: filterLeadType },
     { key: 'language', label: 'Language', values: filterLanguage },
     { key: 'tags', label: 'Tags', values: filterTags },
+    { key: 'dataStatus', label: 'Data Status', values: filterDataStatus !== 'all' ? [filterDataStatus] : [] },
   ];
 
   const filterSection = (
@@ -130,6 +152,21 @@ export default function CrmContactsPage() {
         <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
         <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
         <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
+      </div>
+      <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Data Status</label>
+          <Select value={filterDataStatus} onValueChange={setFilterDataStatus}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="complete">Complete</SelectItem>
+              <SelectItem value="incomplete">Incomplete</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </>
   );
@@ -209,6 +246,7 @@ export default function CrmContactsPage() {
               const showAnchor = letter !== lastLetter;
               lastLetter = letter;
               const typeStyle = CONTACT_TYPE_STYLES[c.contact_type] ?? CONTACT_TYPE_STYLES.lead;
+              const missing = c.contact_type === 'past_client' ? getMissingFields(c) : [];
               return (
                 <div key={c.id} {...(showAnchor ? { 'data-letter': letter } : {})}>
                   {showAnchor && (
@@ -230,8 +268,11 @@ export default function CrmContactsPage() {
                           <Badge variant="outline" className="border-0 text-[9px] font-semibold px-1 py-0" style={{ background: typeStyle.bg, color: typeStyle.color }}>
                             {typeStyle.label}
                           </Badge>
-                          <p className="text-sm font-semibold text-foreground truncate">
+                          <p className="text-sm font-semibold text-foreground truncate inline-flex items-center gap-1">
                             {c.first_name} {c.last_name}
+                            {missing.length > 0 && (
+                              <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                            )}
                           </p>
                         </div>
                         {c.phone && <p className="text-[13px] text-muted-foreground truncate">{c.phone}</p>}
@@ -268,6 +309,7 @@ export default function CrmContactsPage() {
                   lastLetter = letter;
                   const tags = (c.tags ?? []) as string[];
                   const typeStyle = CONTACT_TYPE_STYLES[c.contact_type] ?? CONTACT_TYPE_STYLES.lead;
+                  const missing = c.contact_type === 'past_client' ? getMissingFields(c) : [];
                   return (
                     <tr
                       key={c.id}
@@ -285,8 +327,20 @@ export default function CrmContactsPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-2.5">
-                        <Link to={`/crm/leads/${c.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                        <Link to={`/crm/leads/${c.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5">
                           {c.first_name} {c.last_name}
+                          {missing.length > 0 && (
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  Missing: {missing.map(formatFieldName).join(', ')}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </Link>
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
