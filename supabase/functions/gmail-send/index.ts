@@ -45,7 +45,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { to, subject, bodyHtml, bodyText, contactId } = body;
+    const { to, cc, bcc, subject, bodyHtml, bodyText, contactId } = body;
 
     if (!to || !subject || (!bodyHtml && !bodyText)) {
       return new Response(JSON.stringify({ error: 'Missing required fields: to, subject, body' }), {
@@ -54,6 +54,13 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Fetch email settings (sender name, reply-to, signature)
+    const { data: emailSettings } = await supabase
+      .from('crm_email_settings')
+      .select('sender_name, reply_to, signature_html')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
     // Get Gmail tokens
     const { data: tokenData, error: tokenError } = await supabase
@@ -105,26 +112,46 @@ serve(async (req) => {
         .eq('user_id', user.id);
     }
 
+    // Build From header with display name
+    const rawEmail = tokenData.gmail_email || user.email || '';
+    const senderName = emailSettings?.sender_name;
+    const fromEmail = senderName ? `"${senderName}" <${rawEmail}>` : rawEmail;
+    const replyTo = emailSettings?.reply_to;
+
+    // Append signature to body
+    const signature = emailSettings?.signature_html || '';
+    const fullBodyHtml = bodyHtml
+      ? (signature ? `${bodyHtml}<br><br>--<br>${signature}` : bodyHtml)
+      : null;
+    const fullBodyText = bodyText
+      ? (signature ? `${bodyText}\n\n--\n${signature.replace(/<[^>]*>/g, '')}` : bodyText)
+      : null;
+
     // Build RFC 2822 message
-    const fromEmail = tokenData.gmail_email || user.email || '';
-    const emailContent = bodyHtml
+    const emailContent = fullBodyHtml
       ? [
           `From: ${fromEmail}`,
           `To: ${to}`,
+          ...(cc ? [`Cc: ${cc}`] : []),
+          ...(bcc ? [`Bcc: ${bcc}`] : []),
+          ...(replyTo ? [`Reply-To: ${replyTo}`] : []),
           `Subject: ${subject}`,
           `MIME-Version: 1.0`,
           `Content-Type: text/html; charset=UTF-8`,
           ``,
-          bodyHtml,
+          fullBodyHtml,
         ].join('\r\n')
       : [
           `From: ${fromEmail}`,
           `To: ${to}`,
+          ...(cc ? [`Cc: ${cc}`] : []),
+          ...(bcc ? [`Bcc: ${bcc}`] : []),
+          ...(replyTo ? [`Reply-To: ${replyTo}`] : []),
           `Subject: ${subject}`,
           `MIME-Version: 1.0`,
           `Content-Type: text/plain; charset=UTF-8`,
           ``,
-          bodyText,
+          fullBodyText,
         ].join('\r\n');
 
     // Base64url encode
@@ -160,10 +187,11 @@ serve(async (req) => {
         body: bodyText || bodyHtml || '',
         direction: 'outbound',
         gmail_message_id: sendData.id || null,
+        cc: cc || null,
+        bcc: bcc || null,
       });
 
       // Also log as activity in crm_messages
-      // Find or create a conversation for email channel
       let convId: string | null = null;
       const { data: existingConv } = await supabase
         .from('crm_conversations')
@@ -192,7 +220,7 @@ serve(async (req) => {
           direction: 'outbound',
           content: `Subject: ${subject}\n\n${bodyText || bodyHtml || ''}`,
           channel: 'email',
-          sent_by: fromEmail,
+          sent_by: rawEmail,
           message_type: 'text',
         });
       }
