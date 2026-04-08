@@ -550,6 +550,50 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_email_log: {
+        Row: {
+          body: string | null
+          contact_id: string
+          created_at: string
+          direction: string
+          gmail_message_id: string | null
+          id: string
+          sent_at: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          contact_id: string
+          created_at?: string
+          direction?: string
+          gmail_message_id?: string | null
+          id?: string
+          sent_at?: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          contact_id?: string
+          created_at?: string
+          direction?: string
+          gmail_message_id?: string | null
+          id?: string
+          sent_at?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_email_templates: {
         Row: {
           body_html: string | null
@@ -1008,6 +1052,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gmail_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          gmail_email: string | null
+          id: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          gmail_email?: string | null
+          id?: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          gmail_email?: string | null
+          id?: string
+          refresh_token?: string
+          token_expires_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       google_calendar_tokens: {
         Row: {
