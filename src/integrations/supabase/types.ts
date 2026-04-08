@@ -606,7 +606,9 @@ export type Database = {
           id: string
           reply_to: string | null
           sender_name: string | null
+          signature_builder_data: Json | null
           signature_html: string | null
+          signature_mode: string
           updated_at: string
           user_id: string
         }
@@ -615,7 +617,9 @@ export type Database = {
           id?: string
           reply_to?: string | null
           sender_name?: string | null
+          signature_builder_data?: Json | null
           signature_html?: string | null
+          signature_mode?: string
           updated_at?: string
           user_id: string
         }
@@ -624,7 +628,9 @@ export type Database = {
           id?: string
           reply_to?: string | null
           sender_name?: string | null
+          signature_builder_data?: Json | null
           signature_html?: string | null
+          signature_mode?: string
           updated_at?: string
           user_id?: string
         }
