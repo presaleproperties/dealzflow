@@ -6,16 +6,21 @@ export function useMailerLiteStatus() {
   return useQuery({
     queryKey: ['mailerlite-status'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return { connected: false, subscriberCount: 0 };
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return { connected: false, subscriberCount: 0 };
 
-      const { data, error } = await supabase.functions.invoke('mailerlite-api', {
-        body: { action: 'status' },
-      });
-      if (error) return { connected: false, subscriberCount: 0 };
-      return data as { connected: boolean; subscriberCount: number };
+        const { data, error } = await supabase.functions.invoke('mailerlite-api', {
+          body: { action: 'status' },
+        });
+        if (error) return { connected: false, subscriberCount: 0 };
+        return data as { connected: boolean; subscriberCount: number };
+      } catch {
+        return { connected: false, subscriberCount: 0 };
+      }
     },
     staleTime: 30_000,
+    retry: false,
   });
 }
 
@@ -52,13 +57,18 @@ export function useMailerLiteGroups() {
   return useQuery({
     queryKey: ['mailerlite-groups'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('mailerlite-api', {
-        body: { action: 'groups' },
-      });
-      if (error) throw error;
-      return (data?.groups || []) as Array<{ id: string; name: string; active_count: number }>;
+      try {
+        const { data, error } = await supabase.functions.invoke('mailerlite-api', {
+          body: { action: 'groups' },
+        });
+        if (error) return [];
+        return (data?.groups || []) as Array<{ id: string; name: string; active_count: number }>;
+      } catch {
+        return [];
+      }
     },
     staleTime: 60_000,
+    retry: false,
   });
 }
 
@@ -85,29 +95,34 @@ export function useMailerLiteCampaigns() {
   return useQuery({
     queryKey: ['mailerlite-campaigns'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('mailerlite-api', {
-        body: { action: 'campaigns', limit: 50 },
-      });
-      if (error) throw error;
-      return (data?.campaigns || []) as Array<{
-        id: string;
-        name: string;
-        status: string;
-        type: string;
-        emails: Array<{ subject: string }>;
-        stats: {
-          sent: number;
-          opens_count: number;
-          clicks_count: number;
-          open_rate: { float: number };
-          click_rate: { float: number };
-        };
-        finished_at: string | null;
-        scheduled_for: string | null;
-        created_at: string;
-      }>;
+      try {
+        const { data, error } = await supabase.functions.invoke('mailerlite-api', {
+          body: { action: 'campaigns', limit: 50 },
+        });
+        if (error) return [];
+        return (data?.campaigns || []) as Array<{
+          id: string;
+          name: string;
+          status: string;
+          type: string;
+          emails: Array<{ subject: string }>;
+          stats: {
+            sent: number;
+            opens_count: number;
+            clicks_count: number;
+            open_rate: { float: number };
+            click_rate: { float: number };
+          };
+          finished_at: string | null;
+          scheduled_for: string | null;
+          created_at: string;
+        }>;
+      } catch {
+        return [];
+      }
     },
     staleTime: 30_000,
+    retry: false,
   });
 }
 

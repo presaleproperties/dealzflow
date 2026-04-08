@@ -112,8 +112,9 @@ Deno.serve(async (req) => {
     // For all other actions, we need a stored API key
     const apiKey = await getMailerLiteKey(supabaseAdmin, user.id);
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'MailerLite not connected. Add your API key in CRM Settings.' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // Return 200 with connected: false — this is a normal state, not an error
+      return new Response(JSON.stringify({ connected: false, message: 'No API key configured', subscriberCount: 0, groups: [], campaigns: [] }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
