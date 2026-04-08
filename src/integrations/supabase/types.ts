@@ -552,7 +552,9 @@ export type Database = {
       }
       crm_email_log: {
         Row: {
+          bcc: string | null
           body: string | null
+          cc: string | null
           contact_id: string
           created_at: string
           direction: string
@@ -563,7 +565,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bcc?: string | null
           body?: string | null
+          cc?: string | null
           contact_id: string
           created_at?: string
           direction?: string
@@ -574,7 +578,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bcc?: string | null
           body?: string | null
+          cc?: string | null
           contact_id?: string
           created_at?: string
           direction?: string
@@ -593,6 +599,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_email_settings: {
+        Row: {
+          created_at: string
+          id: string
+          reply_to: string | null
+          sender_name: string | null
+          signature_html: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reply_to?: string | null
+          sender_name?: string | null
+          signature_html?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reply_to?: string | null
+          sender_name?: string | null
+          signature_html?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       crm_email_templates: {
         Row: {
