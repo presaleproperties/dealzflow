@@ -282,6 +282,51 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_automation_logs: {
+        Row: {
+          action_result: string
+          automation_id: string
+          contact_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          trigger_data: Json | null
+        }
+        Insert: {
+          action_result?: string
+          automation_id: string
+          contact_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          trigger_data?: Json | null
+        }
+        Update: {
+          action_result?: string
+          automation_id?: string
+          contact_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          trigger_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "crm_automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_automation_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_automation_steps: {
         Row: {
           action_config: Json | null
@@ -320,9 +365,12 @@ export type Database = {
       crm_automations: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           is_active: boolean | null
+          last_run_at: string | null
           name: string
+          runs_count: number
           total_converted: number | null
           total_enrolled: number | null
           trigger_config: Json | null
@@ -330,9 +378,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
+          last_run_at?: string | null
           name: string
+          runs_count?: number
           total_converted?: number | null
           total_enrolled?: number | null
           trigger_config?: Json | null
@@ -340,9 +391,12 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
+          last_run_at?: string | null
           name?: string
+          runs_count?: number
           total_converted?: number | null
           total_enrolled?: number | null
           trigger_config?: Json | null
