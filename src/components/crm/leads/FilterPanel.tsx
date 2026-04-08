@@ -39,11 +39,13 @@ function FilterAccordion({
   options,
   selected,
   onChange,
+  optionLabels,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
+  optionLabels?: Record<string, string>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState('');
