@@ -105,6 +105,7 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
 
 export function PipelineKanban() {
   const { data: contacts = [], isLoading } = useCrmContacts();
+  const dynamicOpts = useDynamicFilterOptions(contacts);
   const updateContact = useUpdateCrmContact();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
