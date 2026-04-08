@@ -181,6 +181,22 @@ function LeftSidebar({
             <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
             {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
             <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
+            {((contact as any).sync_source === 'zapier_lofty' || (contact as any).sync_source === 'lofty_api_sync') && (
+              <div className="space-y-0.5 py-1.5">
+                {(contact as any).lofty_id && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Lofty ID</span>
+                    <span className="text-[10px] text-muted-foreground/60 ml-auto font-mono">{(contact as any).lofty_id}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Synced</span>
+                  <span className="text-[10px] text-muted-foreground/60 ml-auto">
+                    {(contact as any).lofty_synced_at ? format(new Date((contact as any).lofty_synced_at), 'MMM d, yyyy h:mm a') : 'via Lofty'}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3 py-1.5">
               <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Reg Date</span>
               <span className="text-xs text-foreground ml-auto">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
