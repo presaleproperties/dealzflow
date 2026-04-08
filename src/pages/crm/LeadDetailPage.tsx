@@ -104,28 +104,29 @@ function LeftSidebar({
 
   return (
     <>
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Name & Type */}
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold text-foreground leading-tight tracking-tight">
-              {formatContactName(contact.first_name, contact.last_name)}
-            </h1>
-          </div>
-          <Badge variant="outline" className={cn('border-0 text-[10px] font-semibold', typeStyle.className)}>
+          <h1 className="text-xl font-bold text-foreground leading-tight tracking-tight">
+            {formatContactName(contact.first_name, contact.last_name)}
+          </h1>
+          <Badge variant="outline" className={cn('border-0 text-[10px] font-semibold mt-1', typeStyle.className)}>
             {typeStyle.label}
           </Badge>
         </div>
 
         {/* Pipeline stage */}
-        <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
-          <SelectTrigger className="h-9 text-sm bg-card border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <span className="text-[11px] text-muted-foreground">Pipeline</span>
+          <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
+            <SelectTrigger className="h-9 text-sm bg-card border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-3 gap-2">
@@ -157,52 +158,78 @@ function LeftSidebar({
           </Button>
         </div>
 
-        {/* Insight row */}
-        <div className="grid grid-cols-3 gap-2">
-          <InsightCard
-            value={<span style={{ color: leadScore.color }}>{leadScore.score}</span>}
-            label="Score"
-            sublabel={leadScore.label}
-            accent={leadScore.color}
-          />
-          <InsightCard value={lastTouchLabel} label="Last Touch" />
-          <InsightCard value={`${daysInPipeline}d`} label="In Pipeline" />
+        {/* Insight */}
+        <div className="space-y-2">
+          <SectionHeader>Insight</SectionHeader>
+          <div className="grid grid-cols-3 gap-2">
+            <InsightCard
+              value={<span style={{ color: leadScore.color }}>{leadScore.score}</span>}
+              label="Lead Score"
+              sublabel={leadScore.label}
+              accent={leadScore.color}
+            />
+            <InsightCard value={lastTouchLabel} label="Last Touch" />
+            <InsightCard value={`${daysInPipeline}d`} label="In Pipeline" />
+          </div>
         </div>
 
         {/* Details */}
-        <div className="space-y-1">
-          <SectionHeader>Contact</SectionHeader>
-          <DetailRow label="Phone" value={contact.phone} href={contact.phone ? `tel:${contact.phone}` : undefined} field="phone" contactId={contact.id} />
-          <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
-          {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
+        <div className="border-t border-border pt-4 space-y-2">
+          <SectionHeader>Details</SectionHeader>
+          <div className="space-y-0.5">
+            <DetailRow label="Phone" value={contact.phone} href={contact.phone ? `tel:${contact.phone}` : undefined} field="phone" contactId={contact.id} />
+            <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
+            {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
+            <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
+            <div className="flex items-center gap-3 py-1.5">
+              <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Reg Date</span>
+              <span className="text-xs text-foreground ml-auto">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+            </div>
+            {(contact.budget_min != null || contact.budget_max != null) && (
+              <div className="flex items-center gap-3 py-1.5">
+                <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Budget</span>
+                <span className="text-xs text-foreground ml-auto">
+                  {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
+                </span>
+              </div>
+            )}
+            {contact.lead_type && <DetailRow label="Type" value={contact.lead_type} field="lead_type" contactId={contact.id} />}
+            <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} />
+            <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} />
+            {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <SectionHeader>Lead Info</SectionHeader>
-          <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
-          <div className="flex items-center gap-3 py-1.5">
-            <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Registered</span>
-            <span className="text-xs text-foreground ml-auto">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+        {/* Tags - inline like reference */}
+        <div className="flex items-start gap-2 py-1">
+          <span className="text-xs text-muted-foreground shrink-0 mt-0.5">Tag:</span>
+          <div className="flex flex-wrap gap-1.5 flex-1">
+            {tags.map(tag => (
+              <Badge key={tag} className="border-0 text-[10px] font-semibold gap-1 pr-1.5 bg-primary/10 text-primary">
+                {tag}
+                <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-70 transition-opacity" onClick={() => removeTag(tag)} />
+              </Badge>
+            ))}
+            {!addingTag && (
+              <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center gap-3 py-1.5">
-              <span className="text-xs text-muted-foreground shrink-0 w-[60px]">Budget</span>
-              <span className="text-xs text-foreground ml-auto">
-                {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
-              </span>
-            </div>
-          )}
-          {contact.lead_type && <DetailRow label="Type" value={contact.lead_type} field="lead_type" contactId={contact.id} />}
-          <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} />
-          <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} />
-          {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
         </div>
+        {addingTag && (
+          <div className="flex gap-1.5">
+            <Input value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Tag name..." className="h-7 text-xs" autoFocus onKeyDown={e => e.key === 'Enter' && addTag()} />
+            <Button size="sm" className="h-7 text-xs px-2.5" onClick={addTag}>Add</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => { setAddingTag(false); setNewTag(''); }}>✕</Button>
+          </div>
+        )}
 
         {/* Projects */}
         {projects.length > 0 && (
-          <div className="space-y-1.5">
-            <SectionHeader>Projects</SectionHeader>
-            <div className="flex flex-wrap gap-1.5">
+          <div className="flex items-start gap-2 py-1">
+            <span className="text-xs text-muted-foreground shrink-0 mt-0.5">Project:</span>
+            <div className="flex flex-wrap gap-1.5 flex-1">
               {projects.map(p => (
                 <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold bg-primary/10 text-primary">
                   {p}
@@ -212,36 +239,10 @@ function LeftSidebar({
           </div>
         )}
 
-        {/* Tags */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <SectionHeader>Tags</SectionHeader>
-            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map(tag => (
-              <Badge key={tag} className="border-0 text-[10px] font-semibold gap-1 pr-1.5 bg-primary/10 text-primary">
-                {tag}
-                <X className="w-2.5 h-2.5 cursor-pointer hover:opacity-70 transition-opacity" onClick={() => removeTag(tag)} />
-              </Badge>
-            ))}
-            {tags.length === 0 && !addingTag && <span className="text-[11px] text-muted-foreground">No tags</span>}
-          </div>
-          {addingTag && (
-            <div className="flex gap-1.5 mt-1">
-              <Input value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Tag name..." className="h-7 text-xs" autoFocus onKeyDown={e => e.key === 'Enter' && addTag()} />
-              <Button size="sm" className="h-7 text-xs px-2.5" onClick={addTag}>Add</Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => { setAddingTag(false); setNewTag(''); }}>✕</Button>
-            </div>
-          )}
-        </div>
-
-        {/* Co-Buyer */}
+        {/* Co-Buyer / Add Family Member */}
         <div className="border-t border-border pt-4">
           <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
-            <SectionHeader>Co-Buyer</SectionHeader>
+            <SectionHeader>{hasCoBuyer ? 'Co-Buyer' : 'Family Member'}</SectionHeader>
             {coBuyerOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
           </button>
           {coBuyerOpen && (
@@ -259,7 +260,7 @@ function LeftSidebar({
           )}
         </div>
 
-        {/* Agent */}
+        {/* Assigned To */}
         <div className="border-t border-border pt-4 space-y-2">
           <SectionHeader>Assigned To</SectionHeader>
           <Select value={contact.assigned_to ?? ''} onValueChange={(v) => saveWithLog('assigned_to', v)}>
