@@ -1,0 +1,100 @@
+import { Hash, Target, DollarSign, Building2, Fingerprint, BedDouble } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
+import { InlineEditField } from './InlineEditField';
+import { formatCurrency } from '@/lib/format';
+import type { CrmContact } from '@/hooks/useCrmContacts';
+
+const TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
+  realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
+  past_client: { bg: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)', label: 'Client' },
+};
+
+export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
+  const updateContact = useUpdateCrmContact();
+  const typeStyle = TYPE_STYLES[contact.contact_type] ?? TYPE_STYLES.lead;
+
+  const save = (field: string, value: string | number | null) => {
+    updateContact.mutate({ id: contact.id, updates: { [field]: value } });
+  };
+
+  const hasBudget = contact.budget_min != null || contact.budget_max != null;
+  const projects = (contact.projects?.length ? contact.projects : contact.project ? [contact.project] : []);
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">Lead Details</h3>
+      <div className="space-y-2.5">
+        {/* Contact Type */}
+        <div className="flex items-center gap-3">
+          <Hash className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+          <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Type</span>
+          <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+            {typeStyle.label}
+          </Badge>
+        </div>
+
+        {/* Lead Type */}
+        {contact.lead_type && (
+          <div className="flex items-center gap-3">
+            <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Lead Type</span>
+            <InlineEditField value={contact.lead_type} onSave={(v) => save('lead_type', v || null)} />
+          </div>
+        )}
+
+        {/* Budget */}
+        {hasBudget && (
+          <div className="flex items-center gap-3">
+            <DollarSign className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Budget</span>
+            <span className="text-sm text-foreground">
+              {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
+            </span>
+          </div>
+        )}
+
+        {/* Bedrooms */}
+        {contact.bedrooms_preferred && (
+          <div className="flex items-center gap-3">
+            <BedDouble className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Beds</span>
+            <InlineEditField value={contact.bedrooms_preferred} onSave={(v) => save('bedrooms_preferred', v || null)} />
+          </div>
+        )}
+
+        {/* Projects */}
+        {projects.length > 0 && (
+          <div className="flex items-start gap-3">
+            <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0 mt-0.5">Projects</span>
+            <div className="flex flex-wrap gap-1">
+              {projects.map(p => (
+                <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+                  {p}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Source */}
+        <div className="flex items-center gap-3">
+          <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+          <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Source</span>
+          <InlineEditField value={contact.source} onSave={(v) => save('source', v || null)} />
+        </div>
+
+        {/* Lofty ID */}
+        {contact.lofty_id && (
+          <div className="flex items-center gap-3">
+            <Fingerprint className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Lofty ID</span>
+            <span className="text-[11px] text-muted-foreground font-mono truncate">{contact.lofty_id}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
