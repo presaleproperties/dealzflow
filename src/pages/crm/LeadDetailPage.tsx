@@ -311,15 +311,17 @@ function DetailRow({ label, value, href, field, contactId, type }: {
 }) {
   const updateContact = useUpdateCrmContact();
   return (
-    <div className="flex items-center justify-between py-1.5 group">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <InlineEditField
-        value={value}
-        onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
-        href={href}
-        type={type}
-        className="text-xs text-right"
-      />
+    <div className="flex items-center gap-3 py-1.5 group">
+      <span className="text-xs text-muted-foreground shrink-0 w-[60px]">{label}</span>
+      <div className="flex-1 min-w-0 flex justify-end">
+        <InlineEditField
+          value={value}
+          onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
+          href={href}
+          type={type}
+          className="text-xs text-right truncate max-w-full"
+        />
+      </div>
     </div>
   );
 }
