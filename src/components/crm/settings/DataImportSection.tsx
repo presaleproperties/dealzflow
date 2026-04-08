@@ -123,9 +123,17 @@ const ARRAY_FIELDS = new Set(['tags', 'projects']);
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
+interface SkippedRow {
+  rowNum: number;
+  reason: string;
+  data: string;
+}
+
 interface ImportResult {
   success: number;
   errors: number;
+  skipped: SkippedRow[];
+  dbErrors: string[];
 }
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
