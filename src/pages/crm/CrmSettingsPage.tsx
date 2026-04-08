@@ -43,7 +43,6 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
-import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
