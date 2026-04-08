@@ -37,7 +37,7 @@ serve(async (req) => {
     const oauthError = url.searchParams.get('error');
 
     if (oauthError) {
-      let redirectUrl = 'https://commissioniq.lovable.app/crm/settings';
+      let redirectUrl = 'https://dealzflow.ca/crm/settings';
       try {
         const parsed = JSON.parse(atob(state || ''));
         if (parsed?.redirectUrl) redirectUrl = parsed.redirectUrl;

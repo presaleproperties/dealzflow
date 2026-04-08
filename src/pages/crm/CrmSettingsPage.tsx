@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
+import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +108,8 @@ export default function CrmSettingsPage() {
       <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
       <Separator />
       <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
+      <Separator />
+      <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
       <Separator />
       <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
     </div>
