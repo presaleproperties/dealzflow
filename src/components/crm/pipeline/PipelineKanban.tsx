@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useCrmContacts, LEAD_STATUSES, PROJECTS, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
