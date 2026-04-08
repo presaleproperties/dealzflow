@@ -292,7 +292,6 @@ export default function CrmContactsPage() {
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-12" />
-                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Type</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Phone</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Email</th>
