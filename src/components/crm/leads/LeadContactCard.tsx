@@ -1,27 +1,39 @@
-import { Phone, Mail, MapPin, Languages, Cake } from 'lucide-react';
+import { Phone, Mail, MapPin, Languages, Cake, Copy, Check } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
+import { useState } from 'react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 function tryFormatDate(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  // Try ISO, then common formats
   for (const fmt of ['yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'MMMM d, yyyy']) {
     try {
       const d = parse(raw, fmt, new Date());
       if (isValid(d)) return format(d, 'MMMM d, yyyy');
     } catch {}
   }
-  // Fallback: try native Date
   const d = new Date(raw);
   if (isValid(d) && !isNaN(d.getTime())) return format(d, 'MMMM d, yyyy');
-  return raw; // Return as-is if we can't parse
+  return raw;
+}
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const handle = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <button onClick={handle} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground ml-1.5">
+      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
 }
 
 type Row = {
   icon: React.ComponentType<any>;
-  label: string;
   field: keyof CrmContact;
   href?: (v: string) => string;
   format?: (v: string) => string;
@@ -37,35 +49,34 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
   };
 
   const rows: Row[] = [
-    { icon: Phone, label: 'Phone', field: 'phone', href: (v) => `tel:${v}` },
-    { icon: Phone, label: 'Phone 2', field: 'phone_secondary', href: (v) => `tel:${v}`, show: !!contact.phone_secondary },
-    { icon: Mail, label: 'Email', field: 'email', href: (v) => `mailto:${v}`, inputType: 'email' },
-    { icon: Mail, label: 'Email 2', field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary, inputType: 'email' },
-    { icon: MapPin, label: 'City', field: 'city' },
-    { icon: Languages, label: 'Language', field: 'language' },
-    { icon: Cake, label: 'Birthday', field: 'birthday', format: (v) => tryFormatDate(v) ?? v, show: !!contact.birthday },
+    { icon: Mail, field: 'email', href: (v) => `mailto:${v}`, inputType: 'email' },
+    { icon: Mail, field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary, inputType: 'email' },
+    { icon: Phone, field: 'phone', href: (v) => `tel:${v}` },
+    { icon: Phone, field: 'phone_secondary', href: (v) => `tel:${v}`, show: !!contact.phone_secondary },
+    { icon: MapPin, field: 'city' },
+    { icon: Languages, field: 'language' },
+    { icon: Cake, field: 'birthday', format: (v) => tryFormatDate(v) ?? v, show: !!contact.birthday },
   ];
 
-  // Always show phone, email, city, language. Show optional ones only if they have data
   const visibleRows = rows.filter(r => r.show === undefined || r.show);
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Contact Info</h3>
-      <div className="space-y-2.5">
+    <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-1">
+      <h3 className="text-sm font-semibold text-foreground mb-3">Contact Info</h3>
+      <div className="space-y-1">
         {visibleRows.map((row) => {
           const val = contact[row.field] as string | null;
           const displayVal = val && row.format ? row.format(val) : val;
           return (
-            <div key={row.label} className="flex items-center gap-3">
-              <row.icon className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
-              <span className="text-xs text-muted-foreground w-16 flex-shrink-0">{row.label}</span>
+            <div key={row.field} className="group flex items-center gap-2 py-1">
               <InlineEditField
                 value={displayVal}
                 onSave={(v) => save(row.field, v)}
                 href={val && row.href ? row.href(val) : undefined}
                 type={row.inputType}
+                className="text-sm"
               />
+              {val && <CopyButton value={val} />}
             </div>
           );
         })}
