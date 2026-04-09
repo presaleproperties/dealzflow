@@ -13,6 +13,7 @@ import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
 
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { CheckboxDropdown } from './CheckboxDropdown';
 
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'condo', label: 'Condo' },
@@ -59,8 +60,8 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     property_type_pref: '',
     is_pre_approved: false,
     referral_source: '',
-    city_pref: '',
-    language: '',
+    city_pref: '' as string,
+    language: '' as string,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -244,24 +245,24 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             </div>
             <div>
               <Label>Preferred City</Label>
-              <Select value={form.city_pref} onValueChange={v => setForm({ ...form, city_pref: v })}>
-                <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
-                <SelectContent>
-                  {FRASER_VALLEY_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CheckboxDropdown
+                options={FRASER_VALLEY_CITIES}
+                selected={form.city_pref ? form.city_pref.split(', ').filter(Boolean) : []}
+                onChange={v => setForm({ ...form, city_pref: v.join(', ') })}
+                placeholder="Select cities"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Language</Label>
-              <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
-                <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
-                <SelectContent>
-                  {CRM_LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CheckboxDropdown
+                options={CRM_LANGUAGES}
+                selected={form.language ? form.language.split(', ').filter(Boolean) : []}
+                onChange={v => setForm({ ...form, language: v.join(', ') })}
+                placeholder="Select languages"
+              />
             </div>
           </div>
 
