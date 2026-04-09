@@ -71,6 +71,21 @@ export default function CrmLeadsPage() {
   const [showCreateView, setShowCreateView] = useState(false);
   const [newViewName, setNewViewName] = useState('');
 
+  // View counts from allContacts
+  const viewCounts = useMemo(() => {
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
+    return {
+      '__all': allContacts.length,
+      '__new': allContacts.filter(c => c.status === 'New Lead').length,
+      '__hot': allContacts.filter(c => c.status === 'Hot / Engaged').length,
+      '__nurturing': allContacts.filter(c => c.status === 'Nurturing').length,
+      '__my': allContacts.filter(c => c.assigned_to === 'Uzair').length,
+      '__uncontacted': allContacts.filter(c => !c.last_touch_at || new Date(c.last_touch_at).getTime() < sevenDaysAgo).length,
+      '__active': allContacts.filter(c => c.status !== 'Closed' && c.status !== 'Lost / Cold').length,
+      '__directory': allContacts.length,
+    } as Record<string, number>;
+  }, [allContacts]);
+
   // Segments
   const { data: segments = [] } = useCrmLeadSegments();
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
