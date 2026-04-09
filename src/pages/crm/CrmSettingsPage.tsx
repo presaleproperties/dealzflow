@@ -1,4 +1,4 @@
-import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
+import { useState, useEffect, useRef, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,9 +92,23 @@ const NOTIFICATION_DEFAULTS = [
   { key: 'whatsapp_reply', label: 'WhatsApp Reply Alert' },
 ];
 
+const SETTINGS_SECTIONS = [
+  { id: 'settings-team', label: 'Team', icon: Shield },
+  { id: 'settings-pipeline', label: 'Pipeline', icon: Database },
+  { id: 'settings-sources', label: 'Sources', icon: Plus },
+  { id: 'settings-import', label: 'Import', icon: Database },
+  { id: 'settings-data', label: 'Data Manager', icon: Database },
+  { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
+  { id: 'settings-lofty', label: 'Lofty Sync', icon: Database },
+  { id: 'settings-email', label: 'Email', icon: Mail },
+  { id: 'settings-notifications', label: 'Notifications', icon: Bell },
+] as const;
+
 export default function CrmSettingsPage() {
   const { isOwnerOrAdmin, isLoading: accessLoading } = useCrmAccess();
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState<string>(SETTINGS_SECTIONS[0].id);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!accessLoading && !isOwnerOrAdmin) {
@@ -102,28 +116,115 @@ export default function CrmSettingsPage() {
     }
   }, [accessLoading, isOwnerOrAdmin, navigate]);
 
+  // Intersection Observer to track active section
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        }
+      },
+      { root: container, rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+    );
+    SETTINGS_SECTIONS.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [accessLoading, isOwnerOrAdmin]);
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   if (accessLoading || !isOwnerOrAdmin) return null;
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-4xl">
-      <h1 className="text-xl sm:text-2xl font-bold text-foreground">CRM Settings</h1>
-      <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Pipeline Stages"><PipelineStages /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Lead Sources"><LeadSourcesSection /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Data Import"><DataImportSection /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Lofty Sync"><LoftySyncSection /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
-      <Separator />
-      <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
+    <div className="flex flex-col md:flex-row gap-0 md:gap-6 h-full min-h-0">
+      {/* Mobile: horizontal tab bar */}
+      <div className="md:hidden overflow-x-auto border-b border-border bg-background sticky top-0 z-10 -mx-3 -mt-3 px-3 sm:-mx-4 sm:-mt-4 sm:px-4">
+        <div className="flex gap-1 py-2 min-w-max">
+          {SETTINGS_SECTIONS.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                activeSection === id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: sticky sidebar nav */}
+      <nav className="hidden md:flex flex-col w-44 shrink-0 sticky top-0 self-start pt-1">
+        <h1 className="text-lg font-bold text-foreground mb-4">CRM Settings</h1>
+        <div className="space-y-0.5">
+          {SETTINGS_SECTIONS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors text-left ${
+                activeSection === id
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Main content — scrollable */}
+      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-24 space-y-6 sm:space-y-8 max-w-3xl">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground md:hidden">CRM Settings</h1>
+
+        <div id="settings-team" className="scroll-mt-16">
+          <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-pipeline" className="scroll-mt-16">
+          <SectionErrorBoundary name="Pipeline Stages"><PipelineStages /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-sources" className="scroll-mt-16">
+          <SectionErrorBoundary name="Lead Sources"><LeadSourcesSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-import" className="scroll-mt-16">
+          <SectionErrorBoundary name="Data Import"><DataImportSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-data" className="scroll-mt-16">
+          <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-integrations" className="scroll-mt-16">
+          <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-lofty" className="scroll-mt-16">
+          <SectionErrorBoundary name="Lofty Sync"><LoftySyncSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-email" className="scroll-mt-16">
+          <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-notifications" className="scroll-mt-16">
+          <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
+        </div>
+      </div>
     </div>
   );
 }
