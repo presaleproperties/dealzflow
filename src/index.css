@@ -137,12 +137,13 @@
     @apply bg-background text-foreground;
     font-feature-settings: "kern" 1;
     letter-spacing: -0.01em;
+    font-size: 15px;
   }
 
-  h1 { @apply text-[32px] font-bold tracking-[-0.035em] leading-tight; }
-  h2 { @apply text-[24px] font-semibold tracking-[-0.028em] leading-tight; }
-  h3 { @apply text-[18px] font-semibold tracking-[-0.022em]; }
-  h4, h5, h6 { @apply font-semibold tracking-tight; }
+  h1 { @apply text-[34px] font-bold tracking-[-0.035em] leading-tight; }
+  h2 { @apply text-[26px] font-semibold tracking-[-0.028em] leading-tight; }
+  h3 { @apply text-[20px] font-semibold tracking-[-0.022em]; }
+  h4, h5, h6 { @apply text-base font-semibold tracking-tight; }
 
   html { scroll-behavior: smooth; }
 
@@ -291,10 +292,10 @@
   }
 
   /* ── Data table ── */
-  .data-table { @apply w-full text-sm; }
+  .data-table { @apply w-full text-[0.9375rem]; }
   .data-table th {
     @apply text-left font-semibold text-muted-foreground px-4 py-3 border-b border-border/50;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.055em;
     background: hsl(30 6% 97%);
@@ -445,12 +446,12 @@
 
   /* ── Metric label style ── */
   .metric-label {
-    @apply text-[10.5px] font-semibold uppercase tracking-[0.075em] text-muted-foreground;
+    @apply text-[11.5px] font-semibold uppercase tracking-[0.075em] text-muted-foreground;
   }
 
   /* ── Section heading ── */
   .section-heading {
-    @apply text-[13px] font-semibold text-foreground tracking-[-0.01em];
+    @apply text-[14px] font-semibold text-foreground tracking-[-0.01em];
   }
 
   /* ── Inset surface (for nested cards) ── */
