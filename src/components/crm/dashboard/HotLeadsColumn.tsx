@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Phone, MessageCircle, Mail, StickyNote, CalendarDays, ChevronDown, Settings2 } from 'lucide-react';
+import { Flame, Phone, Mail, StickyNote, CalendarDays, ChevronDown, Settings2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
