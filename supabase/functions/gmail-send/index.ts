@@ -45,7 +45,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { to, cc, bcc, subject, bodyHtml, bodyText, contactId } = body;
+    const { to, cc, bcc, subject, bodyHtml, bodyText, contactId, includeSignature = true } = body;
 
     if (!to || !subject || (!bodyHtml && !bodyText)) {
       return new Response(JSON.stringify({ error: 'Missing required fields: to, subject, body' }), {
