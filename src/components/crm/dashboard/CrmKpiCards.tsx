@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, CalendarDays, Mail, TrendingUp } from 'lucide-react';
+import { Users, CalendarDays, Mail, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 
 export function CrmKpiCards() {
@@ -19,8 +20,10 @@ export function CrmKpiCards() {
 
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(now.getDate() - 30);
+      const sixtyDaysAgo = new Date(now);
+      sixtyDaysAgo.setDate(now.getDate() - 60);
 
-      const [showings, emailLogs, crmMessages] = await Promise.all([
+      const [showings, emailLogs, crmMessages, prevEmailLogs, prevCrmMessages] = await Promise.all([
         supabase
           .from('crm_showings')
           .select('id')
@@ -35,12 +38,28 @@ export function CrmKpiCards() {
           .select('id', { count: 'exact', head: true })
           .eq('direction', 'outbound')
           .gte('created_at', thirtyDaysAgo.toISOString()),
+        // Previous 30-day period for comparison
+        supabase
+          .from('crm_email_log')
+          .select('id', { count: 'exact', head: true })
+          .gte('sent_at', sixtyDaysAgo.toISOString())
+          .lt('sent_at', thirtyDaysAgo.toISOString()),
+        supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('direction', 'outbound')
+          .gte('created_at', sixtyDaysAgo.toISOString())
+          .lt('created_at', thirtyDaysAgo.toISOString()),
       ]);
 
       const showingsThisWeek = showings.data?.length ?? 0;
       const emailsSent = (emailLogs.count ?? 0) + (crmMessages.count ?? 0);
+      const prevEmailsSent = (prevEmailLogs.count ?? 0) + (prevCrmMessages.count ?? 0);
+      const emailChange = prevEmailsSent > 0
+        ? Math.round(((emailsSent - prevEmailsSent) / prevEmailsSent) * 100)
+        : null;
 
-      return { showingsThisWeek, emailsSent };
+      return { showingsThisWeek, emailsSent, emailChange };
     },
     staleTime: 60_000,
   });
@@ -53,6 +72,9 @@ export function CrmKpiCards() {
   const closed = contacts.filter((c) => c.status === 'Closed').length;
   const total = contacts.length;
   const conversionRate = total > 0 ? Math.round((closed / total) * 100) : 0;
+
+  const emailsSent = supplementary?.emailsSent ?? 0;
+  const emailChange = supplementary?.emailChange;
 
   const cards = [
     {
@@ -71,7 +93,10 @@ export function CrmKpiCards() {
     },
     {
       label: 'Emails Sent (30d)',
-      value: supplementary?.emailsSent ?? 0,
+      value: emailsSent === 0 ? 'No emails sent yet' : emailsSent,
+      subtitle: emailsSent === 0 ? undefined : 'Last 30 days',
+      change: emailChange,
+      cta: emailsSent === 0 ? '/crm/email' : undefined,
       icon: Mail,
       color: 'hsl(38 92% 50%)',
       bg: 'hsl(38 92% 50% / 0.12)',
@@ -102,12 +127,25 @@ export function CrmKpiCards() {
           <div className="min-w-0">
             {isLoading ? (
               <Skeleton className="h-6 sm:h-7 w-12 sm:w-16 mb-1" />
+            ) : typeof card.value === 'string' && card.value.startsWith('No ') ? (
+              <p className="text-sm font-medium text-muted-foreground leading-tight">{card.value}</p>
             ) : (
               <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">{card.value}</p>
+            )}
+            {(card as any).change != null && !isLoading && (
+              <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold mt-0.5 ${(card as any).change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {(card as any).change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                {(card as any).change >= 0 ? '+' : ''}{(card as any).change}% vs prev
+              </span>
             )}
             <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate" title={(card as any).subtitle || card.label}>
               {card.label}
             </p>
+            {(card as any).cta && !isLoading && (
+              <Link to={(card as any).cta} className="text-[10px] text-primary hover:underline mt-0.5 inline-block">
+                Send your first email →
+              </Link>
+            )}
           </div>
         </div>
       ))}
