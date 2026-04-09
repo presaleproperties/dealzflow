@@ -107,7 +107,7 @@ const SETTINGS_SECTIONS = [
 export default function CrmSettingsPage() {
   const { isOwnerOrAdmin, isLoading: accessLoading } = useCrmAccess();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState(SETTINGS_SECTIONS[0].id);
+  const [activeSection, setActiveSection] = useState<string>(SETTINGS_SECTIONS[0].id);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
