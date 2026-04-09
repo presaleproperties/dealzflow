@@ -89,6 +89,33 @@ serve(async (req) => {
       throw new Error(`Error fetching deals: ${dealsError.message}`);
     }
 
+    // Fetch CRM contacts count
+    const { count: totalCrmContacts, error: crmCountError } = await supabaseAdmin
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true });
+
+    const { count: crmWithEmail, error: crmEmailError } = await supabaseAdmin
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .not("email", "is", null)
+      .neq("email", "");
+
+    const { count: crmWithPhone, error: crmPhoneError } = await supabaseAdmin
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .not("phone", "is", null)
+      .neq("phone", "");
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { count: crmRecent, error: crmRecentError } = await supabaseAdmin
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", thirtyDaysAgo);
+
+    if (crmCountError) {
+      console.warn("Error fetching CRM contacts count:", crmCountError.message);
+    }
+
     // Get auth users for email info (using admin API)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
     
