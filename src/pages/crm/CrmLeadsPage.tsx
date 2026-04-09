@@ -187,6 +187,7 @@ export default function CrmLeadsPage() {
       pipelineView,
       savedViewFilters: savedViewFilters,
       segmentFilters: activeSegment?.filter_config as Record<string, unknown> | undefined,
+      uncontacted7: !!(activeView.filters as Record<string, unknown>)._uncontacted_7,
     },
   });
 
