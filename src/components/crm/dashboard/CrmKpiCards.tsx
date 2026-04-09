@@ -73,6 +73,9 @@ export function CrmKpiCards() {
   const total = contacts.length;
   const conversionRate = total > 0 ? Math.round((closed / total) * 100) : 0;
 
+  const emailsSent = supplementary?.emailsSent ?? 0;
+  const emailChange = supplementary?.emailChange;
+
   const cards = [
     {
       label: 'Active Leads',
@@ -90,7 +93,10 @@ export function CrmKpiCards() {
     },
     {
       label: 'Emails Sent (30d)',
-      value: supplementary?.emailsSent ?? 0,
+      value: emailsSent === 0 ? 'No emails sent yet' : emailsSent,
+      subtitle: emailsSent === 0 ? undefined : 'Last 30 days',
+      change: emailChange,
+      cta: emailsSent === 0 ? '/crm/email' : undefined,
       icon: Mail,
       color: 'hsl(38 92% 50%)',
       bg: 'hsl(38 92% 50% / 0.12)',
