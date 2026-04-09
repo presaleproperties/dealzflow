@@ -95,10 +95,15 @@ export default function CrmLeadsPage() {
   // Active segment
   const activeSegment = useMemo(() => segments.find(s => s.id === activeSegmentId), [segments, activeSegmentId]);
 
-  // Build saved view base filters (excluding _pipeline which is handled separately)
+  // Build saved view base filters (excluding _pipeline and special flags)
   const savedViewFilters = useMemo(() => {
     const f = { ...(activeView.filters as Record<string, unknown>) };
     delete f._pipeline;
+    delete f._uncontacted_7;
+    // Resolve __current_user__ placeholder
+    if (f.assigned_to === '__current_user__') {
+      f.assigned_to = 'Uzair'; // Default agent name
+    }
     return Object.keys(f).length > 0 ? f : undefined;
   }, [activeView]);
 
