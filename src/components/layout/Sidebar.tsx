@@ -144,7 +144,7 @@ export function Sidebar({ forceVisible = false }: { forceVisible?: boolean }) {
       style={{ ...sbBg, borderRight: sbBorder }}
       className={cn(
         'flex-col h-screen transition-all duration-300 ease-in-out z-40',
-        forceVisible ? 'flex relative w-full' : 'hidden md:flex fixed left-0 top-0',
+        forceVisible ? 'flex relative w-full' : 'hidden lg:flex fixed left-0 top-0',
         !forceVisible && (isCollapsed ? 'w-[60px]' : 'w-[218px]'),
       )}
     >

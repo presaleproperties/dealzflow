@@ -18,7 +18,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
         <Sidebar />
         <div
           className={`flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'md:ml-[54px]' : 'md:ml-[218px]'
+            isCollapsed ? 'lg:ml-[54px]' : 'lg:ml-[218px]'
           }`}
         >
           <CrmHeader />
