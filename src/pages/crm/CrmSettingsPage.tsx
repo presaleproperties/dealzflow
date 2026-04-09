@@ -561,6 +561,10 @@ function IntegrationsSection() {
   const [mlKeyVerified, setMlKeyVerified] = useState(false);
   const [mlVerifyError, setMlVerifyError] = useState('');
 
+  const { waStatus, isLoading: waLoading } = useWhatsAppStatus();
+  const [testingWa, setTestingWa] = useState(false);
+  const [waTestResult, setWaTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
   // Test connection states
   const [testingGmail, setTestingGmail] = useState(false);
   const [gmailTestResult, setGmailTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
