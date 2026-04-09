@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, MessageCircle, Mail } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName } from '@/lib/format';
 import { LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
@@ -114,6 +114,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'city_pref', label: 'City Pref' },
   { key: 'property_type_pref', label: 'Prop Type' },
   { key: 'is_pre_approved', label: 'Pre-Approved' },
+  { key: 'quick_actions', label: 'Actions' },
 ];
 
 /* ── Last Touch with color coding ── */
@@ -243,6 +244,39 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
       return (contact as any).is_pre_approved
         ? <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
         : <span className="text-muted-foreground text-xs">No</span>;
+    case 'quick_actions':
+      return (
+        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+          {contact.phone && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
+                  <Phone className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">Call</TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a href={`/crm/whatsapp?lead=${contact.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
+                <MessageCircle className="w-4 h-4" style={{ color: 'hsl(142 71% 45%)' }} />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">WhatsApp</TooltipContent>
+          </Tooltip>
+          {contact.email && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a href={`/crm/email?to=${encodeURIComponent(contact.email)}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
+                  <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">Email</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      );
     default:
       return <span>—</span>;
   }

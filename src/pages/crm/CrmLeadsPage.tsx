@@ -44,11 +44,16 @@ const ALL_COLUMN_KEYS = [
   { key: 'is_pre_approved', label: 'Pre-Approved' },
 ] as const;
 
-const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at']);
+const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
 // Built-in view tabs
 const BUILT_IN_VIEWS = [
   { id: '__all', name: 'All Leads', filters: {} },
+  { id: '__new', name: 'New', filters: { status: ['New Lead'] } },
+  { id: '__hot', name: 'Hot Leads', filters: { status: ['Hot / Engaged'] } },
+  { id: '__nurturing', name: 'Nurturing', filters: { status: ['Nurturing'] } },
+  { id: '__my', name: 'My Leads', filters: { assigned_to: '__current_user__' } },
+  { id: '__uncontacted', name: 'Uncontacted 7+', filters: { _uncontacted_7: true } },
   { id: '__active', name: 'Active Pipeline', filters: { _pipeline: 'active' } },
   { id: '__directory', name: 'Directory', filters: { _pipeline: 'directory' } },
 ] as const;
@@ -65,6 +70,21 @@ export default function CrmLeadsPage() {
   const [activeViewId, setActiveViewId] = useState('__all');
   const [showCreateView, setShowCreateView] = useState(false);
   const [newViewName, setNewViewName] = useState('');
+
+  // View counts from allContacts
+  const viewCounts = useMemo(() => {
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
+    return {
+      '__all': allContacts.length,
+      '__new': allContacts.filter(c => c.status === 'New Lead').length,
+      '__hot': allContacts.filter(c => c.status === 'Hot / Engaged').length,
+      '__nurturing': allContacts.filter(c => c.status === 'Nurturing').length,
+      '__my': allContacts.filter(c => c.assigned_to === 'Uzair').length,
+      '__uncontacted': allContacts.filter(c => !c.last_touch_at || new Date(c.last_touch_at).getTime() < sevenDaysAgo).length,
+      '__active': allContacts.filter(c => c.status !== 'Closed' && c.status !== 'Lost / Cold').length,
+      '__directory': allContacts.length,
+    } as Record<string, number>;
+  }, [allContacts]);
 
   // Segments
   const { data: segments = [] } = useCrmLeadSegments();
@@ -90,17 +110,22 @@ export default function CrmLeadsPage() {
   // Active segment
   const activeSegment = useMemo(() => segments.find(s => s.id === activeSegmentId), [segments, activeSegmentId]);
 
-  // Build saved view base filters (excluding _pipeline which is handled separately)
+  // Build saved view base filters (excluding _pipeline and special flags)
   const savedViewFilters = useMemo(() => {
     const f = { ...(activeView.filters as Record<string, unknown>) };
     delete f._pipeline;
+    delete f._uncontacted_7;
+    // Resolve __current_user__ placeholder
+    if (f.assigned_to === '__current_user__') {
+      f.assigned_to = 'Uzair'; // Default agent name
+    }
     return Object.keys(f).length > 0 ? f : undefined;
   }, [activeView]);
 
   // Segment counts (scoped to saved view)
   const { data: segmentCounts = {} } = useSegmentCounts(segments, savedViewFilters ?? {});
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
   const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -120,12 +145,33 @@ export default function CrmLeadsPage() {
   const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
   const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1);
   const [pageSize, setPageSize] = useState(50);
-  const [sortKey, setSortKey] = useState<SortKey>('created_at');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get('sort') as SortKey) || 'created_at');
+  const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Read initial view from URL
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam && viewParam !== activeViewId) {
+      setActiveViewId(viewParam);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // URL sync: write state to URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeViewId !== '__all') params.set('view', activeViewId);
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (sortKey !== 'created_at') params.set('sort', sortKey);
+    if (sortDir !== 'desc') params.set('dir', sortDir);
+    if (page > 1) params.set('page', String(page));
+    if (activeSegmentId) params.set('segment', activeSegmentId);
+    setSearchParams(params, { replace: true });
+  }, [activeViewId, debouncedSearch, sortKey, sortDir, page, activeSegmentId, setSearchParams]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
@@ -156,6 +202,7 @@ export default function CrmLeadsPage() {
       pipelineView,
       savedViewFilters: savedViewFilters,
       segmentFilters: activeSegment?.filter_config as Record<string, unknown> | undefined,
+      uncontacted7: !!(activeView.filters as Record<string, unknown>)._uncontacted_7,
     },
   });
 
@@ -304,19 +351,27 @@ export default function CrmLeadsPage() {
           {/* ROW 1: Saved Views Tabs */}
           <div className="overflow-x-auto">
             <div className="flex items-center gap-0.5 min-w-max border-b border-border/40 pb-0">
-              {BUILT_IN_VIEWS.map(view => (
-                <button
-                  key={view.id}
-                  onClick={() => handleViewChange(view.id)}
-                  className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                    activeViewId === view.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                  }`}
-                >
-                  {view.name}
-                </button>
-              ))}
+              {BUILT_IN_VIEWS.map(view => {
+                const count = viewCounts[view.id];
+                return (
+                  <button
+                    key={view.id}
+                    onClick={() => handleViewChange(view.id)}
+                    className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                      activeViewId === view.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                    }`}
+                  >
+                    {view.name}
+                    {count !== undefined && (
+                      <span className={`ml-1 text-[11px] ${activeViewId === view.id ? 'text-primary/70' : 'text-muted-foreground/60'}`}>
+                        ({count})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
               {savedViews.map(view => (
                 <div key={view.id} className="relative group flex items-center">
                   <button

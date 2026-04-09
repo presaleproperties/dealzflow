@@ -53,8 +53,9 @@ interface PaginatedFilters {
   tags: string[];
   letterFilter: string;
   pipelineView: 'all' | 'active' | 'directory';
-  segmentFilters?: Record<string, unknown>; // extra filters from active segment
-  savedViewFilters?: Record<string, unknown>; // extra filters from saved view
+  segmentFilters?: Record<string, unknown>;
+  savedViewFilters?: Record<string, unknown>;
+  uncontacted7?: boolean;
 }
 
 interface PaginatedParams {
@@ -130,6 +131,12 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
       // Saved view filters
       if (filters.savedViewFilters) {
         query = applyJsonFilters(query, filters.savedViewFilters);
+      }
+
+      // Uncontacted 7+ days special filter
+      if (filters.uncontacted7) {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+        query = query.or(`last_touch_at.is.null,last_touch_at.lt.${sevenDaysAgo}`);
       }
 
       // Segment filters
