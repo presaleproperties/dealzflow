@@ -187,6 +187,8 @@ export default function CrmLeadsPage() {
       source: () => setFilterSource([]), agent: () => setFilterAgent([]),
       project: () => setFilterProject([]), leadType: () => setFilterLeadType([]),
       language: () => setFilterLanguage([]), tags: () => setFilterTags([]),
+      propertyType: () => setFilterPropertyType([]), city: () => setFilterCity([]),
+      preApproved: () => setFilterPreApproved([]), campaign: () => setFilterCampaign([]),
     };
     map[key]?.(); setPage(1);
   };
@@ -465,9 +467,19 @@ export default function CrmLeadsPage() {
           setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
           filterTags={filterTags}
           setFilterTags={v => { setFilterTags(v); setPage(1); }}
+          filterPropertyType={filterPropertyType}
+          setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
+          filterCity={filterCity}
+          setFilterCity={v => { setFilterCity(v); setPage(1); }}
+          filterPreApproved={filterPreApproved}
+          setFilterPreApproved={v => { setFilterPreApproved(v); setPage(1); }}
+          filterCampaign={filterCampaign}
+          setFilterCampaign={v => { setFilterCampaign(v); setPage(1); }}
           dynamicProjects={dynamicOpts.projects}
           dynamicLanguages={dynamicOpts.languages}
           dynamicTags={dynamicOpts.tags}
+          dynamicCities={dynamicOpts.cities}
+          dynamicCampaigns={dynamicOpts.campaigns}
           onClearAll={clearAllFilters}
           activeFilterCount={activeFilterCount}
         />
