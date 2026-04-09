@@ -132,6 +132,12 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = applyJsonFilters(query, filters.savedViewFilters);
       }
 
+      // Uncontacted 7+ days special filter
+      if (filters.uncontacted7) {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+        query = query.or(`last_touch_at.is.null,last_touch_at.lt.${sevenDaysAgo}`);
+      }
+
       // Segment filters
       if (filters.segmentFilters) {
         query = applyJsonFilters(query, filters.segmentFilters);
