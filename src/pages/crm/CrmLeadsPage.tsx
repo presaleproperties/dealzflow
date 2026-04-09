@@ -110,7 +110,7 @@ export default function CrmLeadsPage() {
   // Segment counts (scoped to saved view)
   const { data: segmentCounts = {} } = useSegmentCounts(segments, savedViewFilters ?? {});
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
   const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -130,12 +130,33 @@ export default function CrmLeadsPage() {
   const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
   const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1);
   const [pageSize, setPageSize] = useState(50);
-  const [sortKey, setSortKey] = useState<SortKey>('created_at');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get('sort') as SortKey) || 'created_at');
+  const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Read initial view from URL
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    if (viewParam && viewParam !== activeViewId) {
+      setActiveViewId(viewParam);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // URL sync: write state to URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeViewId !== '__all') params.set('view', activeViewId);
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (sortKey !== 'created_at') params.set('sort', sortKey);
+    if (sortDir !== 'desc') params.set('dir', sortDir);
+    if (page > 1) params.set('page', String(page));
+    if (activeSegmentId) params.set('segment', activeSegmentId);
+    setSearchParams(params, { replace: true });
+  }, [activeViewId, debouncedSearch, sortKey, sortDir, page, activeSegmentId, setSearchParams]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
