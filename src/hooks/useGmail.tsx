@@ -6,16 +6,21 @@ export function useGmailStatus() {
   return useQuery({
     queryKey: ['gmail-status'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return { connected: false, gmailEmail: null };
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return { connected: false, gmailEmail: null };
 
-      const { data, error } = await supabase.functions.invoke('gmail-auth', {
-        body: { action: 'status' },
-      });
-      if (error) throw error;
-      return data as { connected: boolean; gmailEmail: string | null };
+        const { data, error } = await supabase.functions.invoke('gmail-auth', {
+          body: { action: 'status' },
+        });
+        if (error) return { connected: false, gmailEmail: null };
+        return data as { connected: boolean; gmailEmail: string | null };
+      } catch {
+        return { connected: false, gmailEmail: null };
+      }
     },
     staleTime: 30_000,
+    retry: false,
   });
 }
 

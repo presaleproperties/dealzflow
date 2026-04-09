@@ -21,14 +21,24 @@ class SectionErrorBoundary extends Component<
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(`[${this.props.name}] section error:`, error, info);
   }
+  handleRetry = () => {
+    this.setState({ hasError: false });
+  };
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-[10px] lg:rounded-xl border border-border bg-muted/30 p-6 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Something went wrong loading {this.props.name}.</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Try refreshing the page.</p>
+        <div className="rounded-[10px] lg:rounded-xl border border-destructive/30 bg-destructive/5 p-6 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              This integration encountered an error. Please check your API key in Settings.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {this.props.name} failed to load. Other sections are unaffected.
+            </p>
+            <Button variant="outline" size="sm" onClick={this.handleRetry} className="h-7 text-xs mt-1">
+              Retry
+            </Button>
           </div>
         </div>
       );
