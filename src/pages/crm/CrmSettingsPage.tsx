@@ -144,9 +144,9 @@ export default function CrmSettingsPage() {
   if (accessLoading || !isOwnerOrAdmin) return null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-0 md:gap-6 h-full min-h-0">
-      {/* Mobile: horizontal tab bar */}
-      <div className="md:hidden overflow-x-auto border-b border-border bg-background sticky top-0 z-10 -mx-3 -mt-3 px-3 sm:-mx-4 sm:-mt-4 sm:px-4">
+    <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 h-full min-h-0">
+      {/* Mobile/Tablet: horizontal tab bar */}
+      <div className="lg:hidden overflow-x-auto border-b border-border bg-background sticky top-0 z-10 -mx-3 -mt-3 px-3 sm:-mx-4 sm:-mt-4 sm:px-4">
         <div className="flex gap-1 py-2 min-w-max">
           {SETTINGS_SECTIONS.map(({ id, label }) => (
             <button
@@ -165,7 +165,7 @@ export default function CrmSettingsPage() {
       </div>
 
       {/* Desktop: sticky sidebar nav */}
-      <nav className="hidden md:flex flex-col w-44 shrink-0 sticky top-0 self-start pt-1">
+      <nav className="hidden lg:flex flex-col w-44 shrink-0 sticky top-0 self-start pt-1">
         <h1 className="text-lg font-bold text-foreground mb-4">CRM Settings</h1>
         <div className="space-y-0.5">
           {SETTINGS_SECTIONS.map(({ id, label, icon: Icon }) => (
@@ -186,8 +186,8 @@ export default function CrmSettingsPage() {
       </nav>
 
       {/* Main content — scrollable */}
-      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-24 space-y-6 sm:space-y-8 max-w-3xl">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground md:hidden">CRM Settings</h1>
+      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto pb-20 lg:pb-24 space-y-6 sm:space-y-8 max-w-3xl">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground lg:hidden">CRM Settings</h1>
 
         <div id="settings-team" className="scroll-mt-16">
           <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
