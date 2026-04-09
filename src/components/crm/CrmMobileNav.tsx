@@ -15,7 +15,7 @@ const primaryItems: NavItem[] = [
   { label: 'Dashboard', path: '/crm/dashboard',  icon: LayoutDashboard },
   { label: 'Leads',     path: '/crm/leads',      icon: Users },
   { label: 'Pipeline',  path: '/crm/pipeline',   icon: Kanban },
-  { label: 'WhatsApp',  path: '/crm/whatsapp',   icon: MessageCircle },
+  { label: 'Email',     path: '/crm/email',       icon: Mail },
 ];
 
 const moreItems: NavItem[] = [

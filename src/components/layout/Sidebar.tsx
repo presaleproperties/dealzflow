@@ -47,9 +47,7 @@ const crmNavItems: NavItem[] = [
   { label: 'Leads',            path: '/crm/leads',       icon: Users },
   { label: 'Pipeline',         path: '/crm/pipeline',    icon: Kanban },
   { label: 'Email Center',     path: '/crm/email',       icon: Mail },
-  { label: 'WhatsApp',         path: '/crm/whatsapp',    icon: MessageCircle },
   { label: 'Templates',        path: '/crm/templates',   icon: LayoutTemplate },
-  // Contacts removed — merged into Leads
   { label: 'Automations',      path: '/crm/automations', icon: Zap },
   { label: 'Showings Calendar', path: '/crm/calendar',   icon: CalendarDays },
   { label: 'Reports',          path: '/crm/reports',     icon: BarChart3 },

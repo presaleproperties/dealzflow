@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Flame, MessageCircle, Mail, TrendingUp } from 'lucide-react';
+import { Users, Flame, Mail, TrendingUp, ListTodo } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { useQuery } from '@tanstack/react-query';
@@ -16,24 +16,21 @@ export function CommandCenterStats() {
       const now = new Date();
       const sevenDaysAgo = new Date(now);
       sevenDaysAgo.setDate(now.getDate() - 7);
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
 
-      const [convos, emails] = await Promise.all([
-        supabase
-          .from('crm_whatsapp_conversations')
-          .select('id', { count: 'exact', head: true })
-          .gte('last_message_at', sevenDaysAgo.toISOString()),
+      const [emails, tasks] = await Promise.all([
         supabase
           .from('crm_email_log')
           .select('id', { count: 'exact', head: true })
           .gte('sent_at', sevenDaysAgo.toISOString()),
+        supabase
+          .from('crm_tasks')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['pending', 'in_progress']),
       ]);
 
       return {
-        activeConvos: convos.count ?? 0,
         emailsSent7d: emails.count ?? 0,
+        pendingTasks: tasks.count ?? 0,
       };
     },
     staleTime: 60_000,
@@ -59,7 +56,7 @@ export function CommandCenterStats() {
   const cards = [
     { label: 'Active Leads', value: stats.active, icon: Users, color: 'hsl(39 67% 55%)', onClick: () => navigate('/crm/leads') },
     { label: '🔥 Hot Leads', value: stats.hot, icon: Flame, color: 'hsl(0 84% 60%)', accent: true, onClick: () => navigate('/crm/pipeline') },
-    { label: 'Active Convos', value: extra?.activeConvos ?? 0, icon: MessageCircle, color: 'hsl(142 71% 45%)', onClick: () => navigate('/crm/whatsapp') },
+    { label: 'Pending Tasks', value: extra?.pendingTasks ?? 0, icon: ListTodo, color: 'hsl(270 60% 55%)', onClick: () => navigate('/crm/leads') },
     { label: 'Emails (7d)', value: extra?.emailsSent7d ?? 0, icon: Mail, color: 'hsl(262 60% 55%)', onClick: () => navigate('/crm/email') },
     { label: 'Leads This Week', value: stats.leadsThisWeek, icon: TrendingUp, color: 'hsl(210 62% 46%)', onClick: () => navigate('/crm/leads') },
   ];
