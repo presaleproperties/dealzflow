@@ -351,19 +351,27 @@ export default function CrmLeadsPage() {
           {/* ROW 1: Saved Views Tabs */}
           <div className="overflow-x-auto">
             <div className="flex items-center gap-0.5 min-w-max border-b border-border/40 pb-0">
-              {BUILT_IN_VIEWS.map(view => (
-                <button
-                  key={view.id}
-                  onClick={() => handleViewChange(view.id)}
-                  className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                    activeViewId === view.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                  }`}
-                >
-                  {view.name}
-                </button>
-              ))}
+              {BUILT_IN_VIEWS.map(view => {
+                const count = viewCounts[view.id];
+                return (
+                  <button
+                    key={view.id}
+                    onClick={() => handleViewChange(view.id)}
+                    className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                      activeViewId === view.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                    }`}
+                  >
+                    {view.name}
+                    {count !== undefined && (
+                      <span className={`ml-1 text-[11px] ${activeViewId === view.id ? 'text-primary/70' : 'text-muted-foreground/60'}`}>
+                        ({count})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
               {savedViews.map(view => (
                 <div key={view.id} className="relative group flex items-center">
                   <button
