@@ -45,7 +45,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { to, cc, bcc, subject, bodyHtml, bodyText, contactId } = body;
+    const { to, cc, bcc, subject, bodyHtml, bodyText, contactId, includeSignature = true } = body;
 
     if (!to || !subject || (!bodyHtml && !bodyText)) {
       return new Response(JSON.stringify({ error: 'Missing required fields: to, subject, body' }), {
@@ -118,8 +118,8 @@ serve(async (req) => {
     const fromEmail = senderName ? `"${senderName}" <${rawEmail}>` : rawEmail;
     const replyTo = emailSettings?.reply_to;
 
-    // Append signature to body
-    const signature = emailSettings?.signature_html || '';
+    // Append signature to body (unless explicitly disabled)
+    const signature = includeSignature ? (emailSettings?.signature_html || '') : '';
     const fullBodyHtml = bodyHtml
       ? (signature ? `${bodyHtml}<br><br>--<br>${signature}` : bodyHtml)
       : null;
