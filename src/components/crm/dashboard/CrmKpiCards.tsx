@@ -20,8 +20,10 @@ export function CrmKpiCards() {
 
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(now.getDate() - 30);
+      const sixtyDaysAgo = new Date(now);
+      sixtyDaysAgo.setDate(now.getDate() - 60);
 
-      const [showings, emailLogs, crmMessages] = await Promise.all([
+      const [showings, emailLogs, crmMessages, prevEmailLogs, prevCrmMessages] = await Promise.all([
         supabase
           .from('crm_showings')
           .select('id')
@@ -36,12 +38,28 @@ export function CrmKpiCards() {
           .select('id', { count: 'exact', head: true })
           .eq('direction', 'outbound')
           .gte('created_at', thirtyDaysAgo.toISOString()),
+        // Previous 30-day period for comparison
+        supabase
+          .from('crm_email_log')
+          .select('id', { count: 'exact', head: true })
+          .gte('sent_at', sixtyDaysAgo.toISOString())
+          .lt('sent_at', thirtyDaysAgo.toISOString()),
+        supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('direction', 'outbound')
+          .gte('created_at', sixtyDaysAgo.toISOString())
+          .lt('created_at', thirtyDaysAgo.toISOString()),
       ]);
 
       const showingsThisWeek = showings.data?.length ?? 0;
       const emailsSent = (emailLogs.count ?? 0) + (crmMessages.count ?? 0);
+      const prevEmailsSent = (prevEmailLogs.count ?? 0) + (prevCrmMessages.count ?? 0);
+      const emailChange = prevEmailsSent > 0
+        ? Math.round(((emailsSent - prevEmailsSent) / prevEmailsSent) * 100)
+        : null;
 
-      return { showingsThisWeek, emailsSent };
+      return { showingsThisWeek, emailsSent, emailChange };
     },
     staleTime: 60_000,
   });
