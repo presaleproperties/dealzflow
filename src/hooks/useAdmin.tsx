@@ -30,6 +30,10 @@ interface AdminSummary {
   recentSignups: number;
   mrr: number;
   activeSubscriptions: number;
+  crmContacts: number;
+  crmWithEmail: number;
+  crmWithPhone: number;
+  crmRecent: number;
 }
 
 interface SignupsByMonth {
