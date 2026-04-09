@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { ContactTypeFilter } from './ContactTypeFilter';
 
 interface FilterPanelProps {
@@ -209,10 +210,10 @@ export function FilterPanel({
           <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
           <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
           <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
-          <FilterAccordion label="Language" options={dynamicLanguages} selected={filterLanguage} onChange={setFilterLanguage} />
+          <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
           <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
           <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
-          <FilterAccordion label="City Preference" options={dynamicCities} selected={filterCity} onChange={setFilterCity} />
+          <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
           <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
           <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
         </div>
