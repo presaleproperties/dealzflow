@@ -3,11 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, ChevronDown, ChevronUp, Settings2, MoreHorizontal, Trash2, X } from 'lucide-react';
+import { Search, Plus, Filter, Settings2, Eye } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
-import { useCrmSavedViews, useCreateSavedView, useDeleteSavedView } from '@/hooks/useCrmSavedViews';
 import { useCrmLeadSegments, useSegmentCounts } from '@/hooks/useCrmLeadSegments';
 import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { LeadsTable } from '@/components/crm/leads/LeadsTable';
@@ -18,9 +17,7 @@ import { FilterPanel } from '@/components/crm/leads/FilterPanel';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -46,62 +43,50 @@ const ALL_COLUMN_KEYS = [
 
 const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
-// Built-in view tabs
-const BUILT_IN_VIEWS = [
-  { id: '__all', name: 'All Leads', filters: {} },
-  { id: '__new', name: 'New', filters: { status: ['New Lead'] } },
-  { id: '__hot', name: 'Hot Leads', filters: { status: ['Hot / Engaged'] } },
-  { id: '__nurturing', name: 'Nurturing', filters: { status: ['Nurturing'] } },
-  { id: '__my', name: 'My Leads', filters: { assigned_to: '__current_user__' } },
-  { id: '__uncontacted', name: 'Uncontacted 7+', filters: { _uncontacted_7: true } },
-  { id: '__active', name: 'Active Pipeline', filters: { _pipeline: 'active' } },
-  { id: '__directory', name: 'Directory', filters: { _pipeline: 'directory' } },
-] as const;
+// Quick view definitions
+type QuickViewId = '__all' | '__hot' | '__my' | '__uncontacted' | '__active' | '__directory';
+const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Record<string, unknown> }[] = [
+  { id: '__all', label: 'All Leads', emoji: '📋', filters: {} },
+  { id: '__hot', label: 'Hot Leads', emoji: '🔥', filters: { status: ['Hot / Engaged'] } },
+  { id: '__my', label: 'My Leads', emoji: '👤', filters: { assigned_to: '__current_user__' } },
+  { id: '__uncontacted', label: 'Uncontacted 7+ Days', emoji: '⚠️', filters: { _uncontacted_7: true } },
+  { id: '__active', label: 'Active Pipeline', emoji: '📊', filters: { _pipeline: 'active' } },
+  { id: '__directory', label: 'Full Directory', emoji: '📒', filters: { _pipeline: 'directory' } },
+];
 
 export default function CrmLeadsPage() {
   const { data: allContacts = [] } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
 
-  // Saved views
-  const { data: savedViews = [] } = useCrmSavedViews();
-  const createView = useCreateSavedView();
-  const deleteView = useDeleteSavedView();
-  const [activeViewId, setActiveViewId] = useState('__all');
-  const [showCreateView, setShowCreateView] = useState(false);
-  const [newViewName, setNewViewName] = useState('');
+  // Quick view state
+  const [activeViewId, setActiveViewId] = useState<QuickViewId>('__all');
 
-  // View counts from allContacts
+  // View counts
   const viewCounts = useMemo(() => {
     const sevenDaysAgo = Date.now() - 7 * 86400000;
     return {
       '__all': allContacts.length,
-      '__new': allContacts.filter(c => c.status === 'New Lead').length,
       '__hot': allContacts.filter(c => c.status === 'Hot / Engaged').length,
-      '__nurturing': allContacts.filter(c => c.status === 'Nurturing').length,
       '__my': allContacts.filter(c => c.assigned_to === 'Uzair').length,
       '__uncontacted': allContacts.filter(c => !c.last_touch_at || new Date(c.last_touch_at).getTime() < sevenDaysAgo).length,
       '__active': allContacts.filter(c => c.status !== 'Closed' && c.status !== 'Lost / Cold').length,
       '__directory': allContacts.length,
-    } as Record<string, number>;
+    } as Record<QuickViewId, number>;
   }, [allContacts]);
 
   // Segments
   const { data: segments = [] } = useCrmLeadSegments();
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
 
-  // Determine active view filters
+  // Determine active view
   const activeView = useMemo(() => {
-    const builtIn = BUILT_IN_VIEWS.find(v => v.id === activeViewId);
-    if (builtIn) return builtIn;
-    const custom = savedViews.find(v => v.id === activeViewId);
-    if (custom) return custom;
-    return BUILT_IN_VIEWS[0];
-  }, [activeViewId, savedViews]);
+    return QUICK_VIEWS.find(v => v.id === activeViewId) ?? QUICK_VIEWS[0];
+  }, [activeViewId]);
 
   // Determine pipeline view mode from active view
   const pipelineView = useMemo(() => {
-    const f = activeView.filters as Record<string, unknown>;
+    const f = activeView.filters;
     if (f._pipeline === 'active') return 'active' as const;
     if (f._pipeline === 'directory') return 'directory' as const;
     return 'all' as const;
@@ -110,19 +95,18 @@ export default function CrmLeadsPage() {
   // Active segment
   const activeSegment = useMemo(() => segments.find(s => s.id === activeSegmentId), [segments, activeSegmentId]);
 
-  // Build saved view base filters (excluding _pipeline and special flags)
+  // Build saved view base filters
   const savedViewFilters = useMemo(() => {
-    const f = { ...(activeView.filters as Record<string, unknown>) };
+    const f = { ...activeView.filters };
     delete f._pipeline;
     delete f._uncontacted_7;
-    // Resolve __current_user__ placeholder
     if (f.assigned_to === '__current_user__') {
-      f.assigned_to = 'Uzair'; // Default agent name
+      f.assigned_to = 'Uzair';
     }
     return Object.keys(f).length > 0 ? f : undefined;
   }, [activeView]);
 
-  // Segment counts (scoped to saved view)
+  // Segment counts
   const { data: segmentCounts = {} } = useSegmentCounts(segments, savedViewFilters ?? {});
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -154,14 +138,14 @@ export default function CrmLeadsPage() {
 
   // Read initial view from URL
   useEffect(() => {
-    const viewParam = searchParams.get('view');
-    if (viewParam && viewParam !== activeViewId) {
+    const viewParam = searchParams.get('view') as QuickViewId | null;
+    if (viewParam && QUICK_VIEWS.some(v => v.id === viewParam) && viewParam !== activeViewId) {
       setActiveViewId(viewParam);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // URL sync: write state to URL params
+  // URL sync
   useEffect(() => {
     const params = new URLSearchParams();
     if (activeViewId !== '__all') params.set('view', activeViewId);
@@ -202,7 +186,7 @@ export default function CrmLeadsPage() {
       pipelineView,
       savedViewFilters: savedViewFilters,
       segmentFilters: activeSegment?.filter_config as Record<string, unknown> | undefined,
-      uncontacted7: !!(activeView.filters as Record<string, unknown>)._uncontacted_7,
+      uncontacted7: !!activeView.filters._uncontacted_7,
     },
   });
 
@@ -248,7 +232,7 @@ export default function CrmLeadsPage() {
 
   const handlePageSizeChange = useCallback((size: number) => { setPageSize(size); setPage(1); }, []);
 
-  const handleViewChange = (viewId: string) => {
+  const handleViewChange = (viewId: QuickViewId) => {
     setActiveViewId(viewId);
     setPage(1);
     setActiveSegmentId(null);
@@ -277,19 +261,6 @@ export default function CrmLeadsPage() {
     });
   };
 
-  const handleCreateView = () => {
-    if (!newViewName.trim()) return;
-    const filters: Record<string, unknown> = {};
-    if (filterStatus.length > 0) filters.status = filterStatus;
-    if (filterSource.length > 0) filters.source = filterSource;
-    if (filterAgent.length > 0) filters.assigned_to = filterAgent[0];
-    if (filterLeadType.length > 0) filters.lead_type = filterLeadType;
-    if (filterTags.length > 0) filters.tags = filterTags;
-    createView.mutate({ name: newViewName.trim(), filters }, {
-      onSuccess: () => { setShowCreateView(false); setNewViewName(''); },
-    });
-  };
-
   const filterPills = [
     { key: 'contactType', label: 'Type', values: filterContactType ? [filterContactType] : [] },
     { key: 'status', label: 'Status', values: filterStatus },
@@ -305,10 +276,10 @@ export default function CrmLeadsPage() {
     { key: 'campaign', label: 'Campaign', values: filterCampaign },
   ];
 
-  // Filter section removed — now using FilterPanel sidebar
-
-  // Check if "All Leads" segment or no segment is active (i.e. first segment with empty filter)
   const isAllSegment = !activeSegmentId || (activeSegment && Object.keys(activeSegment.filter_config).length === 0);
+
+  const activeQuickView = QUICK_VIEWS.find(v => v.id === activeViewId);
+  const isDefaultView = activeViewId === '__all';
 
   return (
     <>
@@ -348,68 +319,7 @@ export default function CrmLeadsPage() {
             </div>
           </div>
 
-          {/* ROW 1: Saved Views Tabs */}
-          <div className="overflow-x-auto">
-            <div className="flex items-center gap-0.5 min-w-max border-b border-border/40 pb-0">
-              {BUILT_IN_VIEWS.map(view => {
-                const count = viewCounts[view.id];
-                return (
-                  <button
-                    key={view.id}
-                    onClick={() => handleViewChange(view.id)}
-                    className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                      activeViewId === view.id
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                    }`}
-                  >
-                    {view.name}
-                    {count !== undefined && (
-                      <span className={`ml-1 text-[11px] ${activeViewId === view.id ? 'text-primary/70' : 'text-muted-foreground/60'}`}>
-                        ({count})
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-              {savedViews.map(view => (
-                <div key={view.id} className="relative group flex items-center">
-                  <button
-                    onClick={() => handleViewChange(view.id)}
-                    className={`px-3 py-2 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                      activeViewId === view.id
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                    }`}
-                  >
-                    {view.name}
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 -ml-1">
-                        <MoreHorizontal className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuItem className="text-destructive" onClick={() => deleteView.mutate(view.id)}>
-                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ))}
-              <button
-                onClick={() => setShowCreateView(true)}
-                className="px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground whitespace-nowrap border-b-2 border-transparent transition-colors"
-              >
-                + View
-              </button>
-              <div className="flex-1" />
-              <Badge variant="outline" className="text-[10px] font-medium mb-1">{totalCount.toLocaleString()} total</Badge>
-            </div>
-          </div>
-
-          {/* ROW 2: Pipeline Segment Pills */}
+          {/* Pipeline Segment Pills */}
           {segments.length > 0 && (
             <ScrollArea className="w-full">
               <div className="flex items-center gap-1.5 pb-1 min-w-max">
@@ -461,13 +371,46 @@ export default function CrmLeadsPage() {
             </div>
           )}
 
-          {/* Search + Filter toggle */}
+          {/* Search + Quick Views + Filter toggle */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input value={search} onChange={e => handleSearchChange(e.target.value)}
                 placeholder="Search by name, email, or phone..." className="pl-8 h-10 sm:h-9 w-full text-sm" />
             </div>
+
+            {/* Quick Views dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={isDefaultView ? 'outline' : 'default'}
+                  size="sm"
+                  className={`h-9 gap-1.5 shrink-0 ${!isDefaultView ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">
+                    {isDefaultView ? 'Quick Views' : activeQuickView?.label}
+                  </span>
+                  {!isDefaultView && <span className="sm:hidden">View</span>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {QUICK_VIEWS.map(view => (
+                  <DropdownMenuItem
+                    key={view.id}
+                    onClick={() => handleViewChange(view.id)}
+                    className={`gap-2 ${activeViewId === view.id ? 'bg-primary/10 text-primary font-semibold' : ''}`}
+                  >
+                    <span>{view.emoji}</span>
+                    <span className="flex-1">{view.label}</span>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                      {(viewCounts[view.id] ?? 0).toLocaleString()}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant={filtersExpanded ? 'default' : 'outline'}
               size="sm"
@@ -541,33 +484,6 @@ export default function CrmLeadsPage() {
       </div>
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} />
-
-      {/* Create View Dialog */}
-      <Dialog open={showCreateView} onOpenChange={setShowCreateView}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Save Current View</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 mt-2">
-            <div className="space-y-1.5">
-              <Label className="text-sm">View Name</Label>
-              <Input value={newViewName} onChange={e => setNewViewName(e.target.value)}
-                placeholder="e.g. Hot Facebook Leads" autoFocus
-                onKeyDown={e => e.key === 'Enter' && handleCreateView()} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Current active filters will be saved with this view.
-              {activeFilterCount === 0 && ' (No filters active — this will show all leads)'}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowCreateView(false)}>Cancel</Button>
-              <Button onClick={handleCreateView} disabled={!newViewName.trim() || createView.isPending}>
-                {createView.isPending ? 'Saving…' : 'Save View'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
