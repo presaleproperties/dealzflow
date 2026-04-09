@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, CalendarDays, Mail, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, CalendarDays, Mail, TrendingUp, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from 'react-router-dom';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 
@@ -104,7 +105,8 @@ export function CrmKpiCards() {
     {
       label: 'Conversion Rate',
       value: `${conversionRate}%`,
-      subtitle: 'Closed ÷ Total leads',
+      subtitle: `${closed.toLocaleString()} of ${total.toLocaleString()} leads`,
+      tooltip: 'Percentage of all leads that reached Closed status. Formula: (Closed ÷ Total Leads) × 100',
       icon: TrendingUp,
       color: 'hsl(39 67% 55%)',
       bg: 'hsl(39 67% 55% / 0.12)',
@@ -138,9 +140,24 @@ export function CrmKpiCards() {
                 {(card as any).change >= 0 ? '+' : ''}{(card as any).change}% vs prev
               </span>
             )}
-            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate" title={(card as any).subtitle || card.label}>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate inline-flex items-center gap-1" title={(card as any).subtitle || card.label}>
               {card.label}
+              {(card as any).tooltip && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs max-w-[220px]">
+                      {(card as any).tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </p>
+            {(card as any).subtitle && !isLoading && (
+              <p className="text-[10px] text-muted-foreground/60 truncate">{(card as any).subtitle}</p>
+            )}
             {(card as any).cta && !isLoading && (
               <Link to={(card as any).cta} className="text-[10px] text-primary hover:underline mt-0.5 inline-block">
                 Send your first email →
