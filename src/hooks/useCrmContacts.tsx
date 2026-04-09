@@ -182,18 +182,24 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const allProjects = new Set<string>();
   const allLanguages = new Set<string>();
   const allTags = new Set<string>();
+  const allCities = new Set<string>();
+  const allCampaigns = new Set<string>();
 
   contacts.forEach(c => {
     (c.projects ?? []).forEach(p => { if (p) allProjects.add(p); });
     if (c.project) allProjects.add(c.project);
     if (c.language) allLanguages.add(c.language);
     (c.tags ?? []).forEach(t => { if (t) allTags.add(t); });
+    if ((c as any).city_pref) allCities.add((c as any).city_pref);
+    if ((c as any).campaign_source) allCampaigns.add((c as any).campaign_source);
   });
 
   return {
     projects: Array.from(allProjects).sort(),
     languages: Array.from(allLanguages).sort(),
     tags: Array.from(allTags).sort(),
+    cities: Array.from(allCities).sort(),
+    campaigns: Array.from(allCampaigns).sort(),
   };
 }
 

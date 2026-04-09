@@ -38,6 +38,10 @@ const ALL_COLUMN_KEYS = [
   { key: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', label: 'Last Touch' },
   { key: 'created_at', label: 'Added' },
+  { key: 'campaign_source', label: 'Campaign' },
+  { key: 'city_pref', label: 'City Pref' },
+  { key: 'property_type_pref', label: 'Prop Type' },
+  { key: 'is_pre_approved', label: 'Pre-Approved' },
 ] as const;
 
 const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at']);
@@ -160,11 +164,16 @@ export default function CrmLeadsPage() {
     filterLeadType.length > 0 ? 1 : 0,
     filterLanguage.length > 0 ? 1 : 0,
     filterTags.length > 0 ? 1 : 0,
+    filterPropertyType.length > 0 ? 1 : 0,
+    filterCity.length > 0 ? 1 : 0,
+    filterPreApproved.length > 0 ? 1 : 0,
+    filterCampaign.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   const clearAllFilters = () => {
     setFilterContactType(''); setFilterStatus([]); setFilterSource([]); setFilterAgent([]);
     setFilterProject([]); setFilterLeadType([]); setFilterLanguage([]); setFilterTags([]);
+    setFilterPropertyType([]); setFilterCity([]); setFilterPreApproved([]); setFilterCampaign([]);
     setLetterFilter(''); setPage(1);
   };
 
@@ -237,6 +246,10 @@ export default function CrmLeadsPage() {
     { key: 'leadType', label: 'Lead Type', values: filterLeadType },
     { key: 'language', label: 'Language', values: filterLanguage },
     { key: 'tags', label: 'Tags', values: filterTags },
+    { key: 'propertyType', label: 'Prop Type', values: filterPropertyType },
+    { key: 'city', label: 'City', values: filterCity },
+    { key: 'preApproved', label: 'Pre-Approved', values: filterPreApproved },
+    { key: 'campaign', label: 'Campaign', values: filterCampaign },
   ];
 
   // Filter section removed — now using FilterPanel sidebar
