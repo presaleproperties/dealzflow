@@ -20,7 +20,7 @@ export function CrmKpiCards() {
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(now.getDate() - 30);
 
-      const [showings, emailLogs] = await Promise.all([
+      const [showings, emailLogs, crmMessages] = await Promise.all([
         supabase
           .from('crm_showings')
           .select('id')
@@ -30,10 +30,15 @@ export function CrmKpiCards() {
           .from('crm_email_log')
           .select('id', { count: 'exact', head: true })
           .gte('sent_at', thirtyDaysAgo.toISOString()),
+        supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('direction', 'outbound')
+          .gte('created_at', thirtyDaysAgo.toISOString()),
       ]);
 
       const showingsThisWeek = showings.data?.length ?? 0;
-      const emailsSent = emailLogs.count ?? 0;
+      const emailsSent = (emailLogs.count ?? 0) + (crmMessages.count ?? 0);
 
       return { showingsThisWeek, emailsSent };
     },
