@@ -24,8 +24,8 @@ import {
 } from '@/hooks/useWhatsAppData';
 
 export function WhatsAppChat() {
-  const { status: waStatus, isLoading: statusLoading } = useWhatsAppStatus();
-  const isConnected = waStatus?.connected ?? false;
+  const { waStatus, isLoading: statusLoading } = useWhatsAppStatus();
+  const isConnected = waStatus.connected;
   const { data: conversations = [], isLoading: loadingConvs } = useWAConversations();
   const { data: templates = [] } = useWATemplates();
   const sendMessage = useSendWAMessage();
