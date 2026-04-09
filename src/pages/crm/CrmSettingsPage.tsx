@@ -68,6 +68,7 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { useGmailStatus, useConnectGmail, useDisconnectGmail } from '@/hooks/useGmail';
 import { useMailerLiteStatus, useVerifyMailerLiteKey, useSaveMailerLiteKey, useSyncToMailerLite } from '@/hooks/useMailerLite';
+import { useWhatsAppStatus } from '@/hooks/useWhatsAppStatus';
 
 const PIPELINE_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
