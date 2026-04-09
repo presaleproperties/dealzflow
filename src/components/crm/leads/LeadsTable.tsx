@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail, Check } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName } from '@/lib/format';
-import { LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { LEAD_TYPE_LABELS, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 
@@ -44,6 +46,17 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
   'Lost / Cold': 'hsl(0 84% 60%)',
 };
 
+const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  'New Lead':        { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' },
+  'Contacted':       { bg: 'hsl(210 62% 46% / 0.10)', color: 'hsl(210 62% 56%)' },
+  'Nurturing':       { bg: 'hsl(39 67% 55% / 0.12)',  color: 'hsl(39 67% 55%)' },
+  'Hot / Engaged':   { bg: 'hsl(0 84% 60% / 0.12)',   color: 'hsl(0 84% 60%)' },
+  'Showing Booked':  { bg: 'hsl(142 71% 45% / 0.12)', color: 'hsl(142 71% 45%)' },
+  'Offer Made':      { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)' },
+  'Closed':          { bg: 'hsl(142 71% 35% / 0.12)', color: 'hsl(142 71% 35%)' },
+  'Lost / Cold':     { bg: 'hsl(0 60% 55% / 0.10)',   color: 'hsl(0 60% 55%)' },
+};
+
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
   realtor: { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)', label: 'Realtor' },
@@ -60,7 +73,7 @@ const TAG_COLORS = [
 
 
 function TagsList({ tags }: { tags: string[] }) {
-  if (!tags || tags.length === 0) return <span className="text-muted-foreground">—</span>;
+  if (!tags || tags.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
   const shown = tags.slice(0, 2);
   const extra = tags.length - 2;
   return (
@@ -68,7 +81,7 @@ function TagsList({ tags }: { tags: string[] }) {
       {shown.map((tag, i) => {
         const c = TAG_COLORS[i % TAG_COLORS.length];
         return (
-          <Badge key={tag} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap" style={{ background: c.bg, color: c.color }}>
+          <Badge key={tag} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5" style={{ background: c.bg, color: c.color }}>
             {tag}
           </Badge>
         );
@@ -80,13 +93,13 @@ function TagsList({ tags }: { tags: string[] }) {
 
 function ProjectsList({ projects, project }: { projects?: string[]; project?: string | null }) {
   const all = projects && projects.length > 0 ? projects : project ? [project] : [];
-  if (all.length === 0) return <span className="text-muted-foreground">—</span>;
+  if (all.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
   const shown = all.slice(0, 2);
   const extra = all.length - 2;
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {shown.map(p => (
-        <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+        <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
           {p}
         </Badge>
       ))}
@@ -117,13 +130,74 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'quick_actions', label: 'Actions' },
 ];
 
+/* ── Inline Status Editor ── */
+function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
+  const sc = STATUS_COLORS[contact.status ?? 'New Lead'] ?? STATUS_COLORS['New Lead'];
+  return (
+    <div onClick={e => e.stopPropagation()}>
+      <Select
+        value={contact.status ?? 'New Lead'}
+        onValueChange={v => {
+          updateContact.mutate({ id: contact.id, updates: { status: v, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
+          toast.success(`Status → ${v}`);
+        }}
+      >
+        <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-[11px] font-semibold shadow-none hover:bg-muted/40 rounded-md px-1.5 w-auto min-w-0 gap-1" style={{ color: sc.color }}>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
+            <SelectValue />
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          {LEAD_STATUSES.map(s => {
+            const c = STATUS_COLORS[s] ?? STATUS_COLORS['New Lead'];
+            return (
+              <SelectItem key={s} value={s} className="text-xs">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
+                  {s}
+                  {s === contact.status && <Check className="w-3 h-3 text-primary ml-1" />}
+                </span>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/* ── Inline Agent Editor ── */
+function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
+  return (
+    <div onClick={e => e.stopPropagation()}>
+      <Select
+        value={contact.assigned_to ?? ''}
+        onValueChange={v => {
+          updateContact.mutate({ id: contact.id, updates: { assigned_to: v }, oldValues: { assigned_to: contact.assigned_to } });
+          toast.success(`Assigned → ${v}`);
+        }}
+      >
+        <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-xs shadow-none hover:bg-muted/40 rounded-md px-1.5 w-auto min-w-0 text-muted-foreground">
+          <SelectValue placeholder="Unassigned" />
+        </SelectTrigger>
+        <SelectContent>
+          {AGENTS.map(a => (
+            <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 /* ── Last Touch with color coding ── */
 function LastTouchCell({ contact }: { contact: CrmContact }) {
   if (!contact.last_touch_at) {
     return (
       <div className="flex flex-col">
-        <span className="text-muted-foreground italic text-xs">No activity</span>
-        <span className="text-[10px] text-destructive font-medium">Take Action</span>
+        <span className="text-muted-foreground italic text-[11px]">No activity</span>
+        <span className="text-[10px] text-destructive font-medium">Needs attention</span>
       </div>
     );
   }
@@ -135,10 +209,10 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex flex-col">
-            <span className="text-xs font-medium" style={{ color }}>
+            <span className="text-[11px] font-medium" style={{ color }}>
               {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
             </span>
-            {days >= 14 && <span className="text-[10px] text-destructive font-medium">Take Action</span>}
+            {days >= 14 && <span className="text-[10px] text-destructive font-medium">Needs attention</span>}
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
@@ -151,107 +225,102 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) {
+function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
+      const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
       return (
-        <div className="flex flex-col">
-          <span className="font-medium text-foreground whitespace-nowrap inline-flex items-center gap-1.5">
-            {formatContactName(contact.first_name, contact.last_name)}
-            {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </span>
-          <span className="text-[10px] text-muted-foreground mt-0.5">
-            {leadType ? (LEAD_TYPE_LABELS[leadType] ?? leadType) : (CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead).label}
-          </span>
+        <div className="flex items-center gap-2.5">
+          {/* Avatar circle */}
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+            {contact.first_name?.[0]?.toUpperCase()}{contact.last_name?.[0]?.toUpperCase()}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-semibold text-[13px] text-foreground truncate inline-flex items-center gap-1.5">
+              {formatContactName(contact.first_name, contact.last_name)}
+              {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </span>
+            <span className="text-[10px] text-muted-foreground">
+              {leadType ? (LEAD_TYPE_LABELS[leadType] ?? leadType) : typeStyle.label}
+            </span>
+          </div>
         </div>
       );
     }
     case 'contactInfo':
       return (
-        <div className="flex flex-col text-xs text-muted-foreground">
+        <div className="flex flex-col text-[11px] text-muted-foreground gap-0.5">
           <span className="truncate max-w-[180px]">{contact.email ?? '—'}</span>
           <span>{contact.phone ?? '—'}</span>
         </div>
       );
     case 'reg':
       return (
-        <div className="flex flex-col text-xs">
+        <div className="flex flex-col text-[11px] gap-0.5">
           <span className="text-muted-foreground">{formatDistanceToNow(new Date(contact.created_at), { addSuffix: true })}</span>
           <span className="text-[10px] text-muted-foreground/70">{contact.source ?? '—'}</span>
         </div>
       );
     case 'phone':
-      return <span className="text-muted-foreground whitespace-nowrap">{contact.phone ?? '—'}</span>;
+      return <span className="text-muted-foreground whitespace-nowrap text-[11px]">{contact.phone ?? '—'}</span>;
     case 'email':
-      return <span className="text-muted-foreground whitespace-nowrap max-w-[180px] truncate block">{contact.email ?? '—'}</span>;
+      return <span className="text-muted-foreground whitespace-nowrap max-w-[180px] truncate block text-[11px]">{contact.email ?? '—'}</span>;
     case 'project':
       return <ProjectsList projects={contact.projects} project={contact.project} />;
     case 'source': {
       const syncSource = (contact as any).sync_source as string | null;
       const isLofty = syncSource === 'zapier_lofty' || syncSource === 'lofty_api_sync';
       return (
-        <span className="text-muted-foreground whitespace-nowrap inline-flex items-center gap-1">
+        <span className="text-muted-foreground whitespace-nowrap text-[11px] inline-flex items-center gap-1">
           {contact.source ?? '—'}
           {isLofty && (
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-[10px] px-1 py-0 rounded bg-primary/10 text-primary font-medium">Lofty</span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Synced from Lofty{(contact as any).lofty_synced_at ? ` on ${new Date((contact as any).lofty_synced_at).toLocaleString()}` : ''}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span className="text-[9px] px-1 py-0 rounded bg-primary/10 text-primary font-medium">Lofty</span>
           )}
         </span>
       );
     }
-    case 'pipeline': {
-      const lt = (contact as any).lead_type as string | null;
-      const label = lt ? (LEAD_TYPE_LABELS[lt] ?? lt) : '—';
-      return <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap bg-muted/60 text-foreground">{label}</Badge>;
-    }
+    case 'pipeline':
+      return <InlineStatusCell contact={contact} updateContact={updateContact} />;
     case 'tags':
       return <TagsList tags={contact.tags} />;
     case 'assigned_to':
-      return <span className="text-muted-foreground whitespace-nowrap text-xs">{contact.assigned_to ?? '—'}</span>;
+      return <InlineAgentCell contact={contact} updateContact={updateContact} />;
     case 'last_touch_at':
       return <LastTouchCell contact={contact} />;
     case 'created_at':
-      return <span className="text-muted-foreground whitespace-nowrap text-xs">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>;
+      return <span className="text-muted-foreground whitespace-nowrap text-[11px]">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>;
     case 'campaign_source':
-      return <span className="text-muted-foreground whitespace-nowrap text-xs truncate max-w-[140px] block">{(contact as any).campaign_source ?? '—'}</span>;
+      return <span className="text-muted-foreground whitespace-nowrap text-[11px] truncate max-w-[140px] block">{(contact as any).campaign_source ?? '—'}</span>;
     case 'city_pref':
       return (contact as any).city_pref
-        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
-        : <span className="text-muted-foreground">—</span>;
+        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+        : <span className="text-muted-foreground text-xs">—</span>;
     case 'property_type_pref':
-      return <span className="text-muted-foreground whitespace-nowrap text-xs capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
+      return <span className="text-muted-foreground whitespace-nowrap text-[11px] capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
     case 'is_pre_approved':
       return (contact as any).is_pre_approved
-        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
+        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold px-1.5 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
         : <span className="text-muted-foreground text-xs">No</span>;
     case 'quick_actions':
       return (
-        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
           {contact.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
-                  <Phone className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <Phone className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                 </a>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call</TooltipContent>
@@ -261,7 +330,7 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
             <Tooltip>
               <TooltipTrigger asChild>
                 <a href={`/crm/email?to=${encodeURIComponent(contact.email)}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
-                  <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <Mail className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                 </a>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Email</TooltipContent>
@@ -277,20 +346,28 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
 /* ── Mobile Lead Card ── */
 function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => void }) {
   const borderColor = STATUS_BORDER_COLORS[contact.status ?? 'New Lead'] ?? 'hsl(210 62% 46%)';
+  const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
   return (
     <button onClick={onClick}
-      className="w-full text-left bg-card rounded-[10px] border border-border p-3 shadow-sm transition-colors active:bg-muted/40"
+      className="w-full text-left bg-card rounded-xl border border-border p-3.5 shadow-sm transition-colors active:bg-muted/40"
       style={{ borderLeft: `3px solid ${borderColor}` }}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-base font-semibold text-foreground leading-snug truncate">
-          {formatContactName(contact.first_name, contact.last_name)}
-        </p>
-        <LeadStatusBadge status={contact.status} />
-      </div>
-      {contact.phone && <p className="text-sm text-muted-foreground mt-1">{contact.phone}</p>}
-      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-        {contact.source && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{contact.source}</Badge>}
-        {contact.assigned_to && <span className="text-[12px] text-muted-foreground">{contact.assigned_to}</span>}
+      <div className="flex items-start gap-2.5">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: typeStyle.bg, color: typeStyle.color }}>
+          {contact.first_name?.[0]?.toUpperCase()}{contact.last_name?.[0]?.toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[15px] font-semibold text-foreground leading-snug truncate">
+              {formatContactName(contact.first_name, contact.last_name)}
+            </p>
+            <LeadStatusBadge status={contact.status} />
+          </div>
+          {contact.phone && <p className="text-[13px] text-muted-foreground mt-0.5">{contact.phone}</p>}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            {contact.source && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{contact.source}</Badge>}
+            {contact.assigned_to && <span className="text-[11px] text-muted-foreground">{contact.assigned_to}</span>}
+          </div>
+        </div>
       </div>
     </button>
   );
@@ -318,14 +395,14 @@ function PaginationBar({
   if (totalCount === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 px-1">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 px-1">
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">
-          Showing {from.toLocaleString()}–{to.toLocaleString()} of {totalCount.toLocaleString()} leads
+        <span className="text-[11px] text-muted-foreground">
+          {from.toLocaleString()}–{to.toLocaleString()} of {totalCount.toLocaleString()}
         </span>
         {!isMobile && (
           <Select value={String(pageSize)} onValueChange={v => onPageSizeChange(Number(v))}>
-            <SelectTrigger className="h-7 w-[80px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-7 w-[72px] text-[11px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="25">25</SelectItem>
               <SelectItem value="50">50</SelectItem>
@@ -339,10 +416,10 @@ function PaginationBar({
         <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1 || isFetching} onClick={() => onPageChange(page - 1)}><ChevronLeft className="w-3.5 h-3.5" /></Button>
         {!isMobile && pages.map(p => (
           <Button key={p} variant={p === page ? 'default' : 'outline'} size="icon"
-            className={`h-7 w-7 text-xs ${p === page ? 'bg-primary text-primary-foreground' : ''}`}
+            className={`h-7 w-7 text-[11px] ${p === page ? 'bg-primary text-primary-foreground' : ''}`}
             disabled={isFetching} onClick={() => onPageChange(p)}>{p}</Button>
         ))}
-        {isMobile && <span className="text-xs text-muted-foreground px-2">{page} / {totalPages}</span>}
+        {isMobile && <span className="text-[11px] text-muted-foreground px-2">{page} / {totalPages}</span>}
         <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages || isFetching} onClick={() => onPageChange(page + 1)}><ChevronRight className="w-3.5 h-3.5" /></Button>
         <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages || isFetching} onClick={() => onPageChange(totalPages)}><ChevronsRight className="w-3.5 h-3.5" /></Button>
       </div>
@@ -358,6 +435,7 @@ export function LeadsTable({
 }: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const updateContact = useUpdateCrmContact();
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
@@ -381,15 +459,18 @@ export function LeadsTable({
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
       </div>
     );
   }
 
   if (totalCount === 0 && contacts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-muted-foreground text-sm">No leads found. Try adjusting your filters or click "Add Lead" to get started.</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+          <Mail className="w-7 h-7 text-muted-foreground" />
+        </div>
+        <p className="text-muted-foreground text-sm">No leads found. Try adjusting your filters or add a new lead.</p>
       </div>
     );
   }
@@ -420,38 +501,45 @@ export function LeadsTable({
           <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
         </div>
       )}
-      <div className={`overflow-x-auto rounded-xl border border-border bg-card transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="w-10 px-3 py-2.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
-              {columns.map(col => (
-                <th key={col.key}
-                  className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
-                  onClick={() => col.sortKey && onSort(col.sortKey)}>
-                  <span className="inline-flex items-center gap-1">
-                    {col.label}
-                    {col.sortKey && <SortIcon col={col.sortKey} />}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {contacts.map(contact => (
-              <tr key={contact.id}
-                className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
-                onClick={() => navigate(`/crm/leads/${contact.id}`)}>
-                <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
-                  <Checkbox checked={selectedIds.includes(contact.id)} onCheckedChange={() => toggleOne(contact.id)} />
-                </td>
+      <div className={`overflow-x-auto rounded-xl border border-border bg-card shadow-sm transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
+        <TooltipProvider delayDuration={200}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/20">
+                <th className="w-10 px-3 py-3"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
                 {columns.map(col => (
-                  <td key={col.key} className="px-3 py-2.5"><CellContent col={col} contact={contact} /></td>
+                  <th key={col.key}
+                    className="px-3 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
+                    onClick={() => col.sortKey && onSort(col.sortKey)}>
+                    <span className="inline-flex items-center gap-1">
+                      {col.label}
+                      {col.sortKey && <SortIcon col={col.sortKey} />}
+                    </span>
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {contacts.map(contact => {
+                const isSelected = selectedIds.includes(contact.id);
+                return (
+                  <tr key={contact.id}
+                    className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
+                    onClick={() => navigate(`/crm/leads/${contact.id}`)}>
+                    <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
+                    </td>
+                    {columns.map(col => (
+                      <td key={col.key} className="px-3 py-3">
+                        <CellContent col={col} contact={contact} updateContact={updateContact} />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </TooltipProvider>
       </div>
       <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
         onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
