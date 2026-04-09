@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, Settings2, Eye } from 'lucide-react';
+import { Search, Plus, Filter, Settings2, Eye, X } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
@@ -111,8 +111,8 @@ export default function CrmLeadsPage() {
   const segmentCounts = useMemo(() => computeSegmentCounts(allContacts, segments), [allContacts, segments]);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
-  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [letterFilter, setLetterFilter] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(DEFAULT_VISIBLE);
@@ -377,7 +377,15 @@ export default function CrmLeadsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input value={search} onChange={e => handleSearchChange(e.target.value)}
-                placeholder="Search by name, email, or phone..." className="pl-8 h-10 sm:h-9 w-full text-sm" />
+                placeholder="Search by name, email, or phone..." className="pl-8 pr-8 h-10 sm:h-9 w-full text-sm" />
+              {search && (
+                <button
+                  onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* Quick Views dropdown */}
