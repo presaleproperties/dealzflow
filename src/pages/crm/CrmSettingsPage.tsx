@@ -68,6 +68,7 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { useGmailStatus, useConnectGmail, useDisconnectGmail } from '@/hooks/useGmail';
 import { useMailerLiteStatus, useVerifyMailerLiteKey, useSaveMailerLiteKey, useSyncToMailerLite } from '@/hooks/useMailerLite';
+import { useWhatsAppStatus } from '@/hooks/useWhatsAppStatus';
 
 const PIPELINE_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
@@ -79,7 +80,6 @@ const LEAD_SOURCES = [
 ];
 
 const INTEGRATIONS = [
-  { name: 'WhatsApp Business (Twilio)', icon: MessageSquare, status: 'connected' as const, desc: 'Two-way messaging with leads via WhatsApp' },
   { name: 'Google Calendar', icon: Calendar, status: 'connected' as const, desc: 'Sync showings and appointments' },
   { name: 'Facebook Ads', icon: Megaphone, status: 'disconnected' as const, desc: 'Lead generation from Meta ad campaigns' },
 ];
@@ -562,6 +562,10 @@ function IntegrationsSection() {
   const [mlKeyVerified, setMlKeyVerified] = useState(false);
   const [mlVerifyError, setMlVerifyError] = useState('');
 
+  const { waStatus, isLoading: waLoading } = useWhatsAppStatus();
+  const [testingWa, setTestingWa] = useState(false);
+  const [waTestResult, setWaTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
   // Test connection states
   const [testingGmail, setTestingGmail] = useState(false);
   const [gmailTestResult, setGmailTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -772,7 +776,60 @@ function IntegrationsSection() {
           </div>
         </div>
 
-        {/* Static integrations */}
+        {/* WhatsApp / Twilio integration (dynamic) */}
+        <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
+          <div className="p-2 rounded-md bg-primary/10 shrink-0">
+            <MessageSquare className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm text-foreground">WhatsApp Business (Twilio)</span>
+              {waLoading ? (
+                <Badge variant="outline" className="text-[10px] font-medium border-border text-muted-foreground">Checking…</Badge>
+              ) : statusBadge(waStatus.connected ? 'connected' : 'disconnected')}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {waStatus.connected
+                ? `Two-way messaging via WhatsApp${waStatus.phoneNumber ? ` · ${waStatus.phoneNumber}` : ''}`
+                : 'Two-way messaging with leads via WhatsApp'}
+            </p>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs min-h-[36px] sm:min-h-0"
+                disabled={testingWa}
+                onClick={async () => {
+                  setTestingWa(true);
+                  setWaTestResult(null);
+                  try {
+                    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                    const res = await fetch(`https://${projectId}.supabase.co/functions/v1/whatsapp-status`, {
+                      headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+                    });
+                    const data = await res.json();
+                    setWaTestResult(data.connected
+                      ? { ok: true, msg: `Connected${data.phoneNumber ? ` — ${data.phoneNumber}` : ''}` }
+                      : { ok: false, msg: data.error || 'Not connected' }
+                    );
+                  } catch (e: any) {
+                    setWaTestResult({ ok: false, msg: e.message || 'Test failed' });
+                  } finally {
+                    setTestingWa(false);
+                  }
+                }}
+              >
+                {testingWa ? 'Testing...' : 'Test Connection'}
+              </Button>
+            </div>
+            {waTestResult && (
+              <p className={`text-[11px] mt-1.5 ${waTestResult.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+                {waTestResult.ok ? '✓' : '✕'} {waTestResult.msg}
+              </p>
+            )}
+          </div>
+        </div>
+
         {INTEGRATIONS.map(intg => (
           <div key={intg.name} className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
             <div className="p-2 rounded-md bg-primary/10 shrink-0">

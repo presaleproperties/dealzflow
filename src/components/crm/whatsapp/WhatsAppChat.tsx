@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
+import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, ArrowLeft, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { formatContactName } from '@/lib/format';
 import { NewConversationDialog } from './NewConversationDialog';
+import { useWhatsAppStatus } from '@/hooks/useWhatsAppStatus';
 import {
   useWAConversations,
   useWAMessages,
@@ -23,6 +24,8 @@ import {
 } from '@/hooks/useWhatsAppData';
 
 export function WhatsAppChat() {
+  const { waStatus, isLoading: statusLoading } = useWhatsAppStatus();
+  const isConnected = waStatus.connected;
   const { data: conversations = [], isLoading: loadingConvs } = useWAConversations();
   const { data: templates = [] } = useWATemplates();
   const sendMessage = useSendWAMessage();
@@ -83,15 +86,26 @@ export function WhatsAppChat() {
 
   return (
     <TooltipProvider>
-      {/* API not connected banner */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-sm"
-        style={{ background: 'hsl(39 67% 55% / 0.1)', border: '1px solid hsl(39 67% 55% / 0.25)' }}>
-        <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(39 67% 55%)' }} />
-        <span className="text-foreground">
-          WhatsApp API not connected. Messages will be queued.{' '}
-          <Link to="/crm/settings" className="text-primary hover:underline font-medium">Connect in Settings → Integrations</Link>
-        </span>
-      </div>
+      {/* Connection status banner */}
+      {!statusLoading && !isConnected && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-sm"
+          style={{ background: 'hsl(39 67% 55% / 0.1)', border: '1px solid hsl(39 67% 55% / 0.25)' }}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(39 67% 55%)' }} />
+          <span className="text-foreground">
+            WhatsApp API not connected. Messages will be queued.{' '}
+            <Link to="/crm/settings" className="text-primary hover:underline font-medium">Connect in Settings → Integrations</Link>
+          </span>
+        </div>
+      )}
+      {!statusLoading && isConnected && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-sm"
+          style={{ background: 'hsl(142 71% 45% / 0.08)', border: '1px solid hsl(142 71% 45% / 0.2)' }}>
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(142 71% 45%)' }} />
+          <span className="text-foreground">
+            WhatsApp connected{waStatus?.phoneNumber ? ` · ${waStatus.phoneNumber}` : ''}
+          </span>
+        </div>
+      )}
 
       <div className="flex h-[calc(100vh-220px)] min-h-[400px] sm:min-h-[500px] border border-border rounded-xl overflow-hidden bg-card">
         {/* Left panel — Conversation list */}
