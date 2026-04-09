@@ -152,9 +152,3 @@ export function CrmKpiCards() {
     </div>
   );
 }
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
