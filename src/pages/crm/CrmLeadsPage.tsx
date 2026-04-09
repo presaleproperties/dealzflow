@@ -45,12 +45,15 @@ const ALL_COLUMN_KEYS = [
 const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
 // Quick view definitions
-type QuickViewId = '__all' | '__hot' | '__my' | '__uncontacted' | '__active' | '__directory';
+type QuickViewId = '__all' | '__hot' | '__my' | '__uncontacted' | '__active' | '__directory' | '__stale' | '__birthday' | '__highscore';
 const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Record<string, unknown> }[] = [
   { id: '__all', label: 'All Leads', emoji: '📋', filters: {} },
   { id: '__hot', label: 'Hot Leads', emoji: '🔥', filters: { status: ['Hot / Engaged'] } },
   { id: '__my', label: 'My Leads', emoji: '👤', filters: { assigned_to: '__current_user__' } },
-  { id: '__uncontacted', label: 'Uncontacted 7+ Days', emoji: '⚠️', filters: { _uncontacted_7: true } },
+  { id: '__uncontacted', label: 'No Contact 7d+', emoji: '⚠️', filters: { _uncontacted_7: true } },
+  { id: '__stale', label: 'Stale (30d+)', emoji: '💤', filters: { _stale_30: true } },
+  { id: '__highscore', label: 'High Score', emoji: '⭐', filters: { _high_score: true } },
+  { id: '__birthday', label: 'Birthday This Month', emoji: '🎂', filters: { _birthday_month: true } },
   { id: '__active', label: 'Active Pipeline', emoji: '📊', filters: { _pipeline: 'active' } },
   { id: '__directory', label: 'Full Directory', emoji: '📒', filters: { _pipeline: 'directory' } },
 ];
@@ -66,11 +69,20 @@ export default function CrmLeadsPage() {
   // View counts
   const viewCounts = useMemo(() => {
     const sevenDaysAgo = Date.now() - 7 * 86400000;
+    const thirtyDaysAgo = Date.now() - 30 * 86400000;
+    const currentMonth = new Date().getMonth() + 1;
     return {
       '__all': allContacts.length,
       '__hot': allContacts.filter(c => c.status === 'Hot / Engaged').length,
       '__my': allContacts.filter(c => c.assigned_to === 'Uzair').length,
       '__uncontacted': allContacts.filter(c => !c.last_touch_at || new Date(c.last_touch_at).getTime() < sevenDaysAgo).length,
+      '__stale': allContacts.filter(c => !c.last_touch_at || new Date(c.last_touch_at).getTime() < thirtyDaysAgo).length,
+      '__highscore': allContacts.filter(c => (c.lead_score ?? 0) >= 70).length,
+      '__birthday': allContacts.filter(c => {
+        if (!c.birthday) return false;
+        const bMonth = new Date(c.birthday).getMonth() + 1;
+        return bMonth === currentMonth;
+      }).length,
       '__active': allContacts.filter(c => c.status !== 'Closed' && c.status !== 'Lost / Cold').length,
       '__directory': allContacts.length,
     } as Record<QuickViewId, number>;
