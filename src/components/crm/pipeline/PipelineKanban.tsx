@@ -137,8 +137,8 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
 const CARDS_PER_PAGE = 50;
 
 export function PipelineKanban() {
-  const { data: contacts = [], isLoading: contactsLoading } = useCrmContacts();
-  const { data: segments = [], isLoading: segmentsLoading } = useCrmLeadSegments();
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useCrmContacts();
+  const { data: segments = [], isLoading: segmentsLoading, error: segmentsError, refetch: refetchSegments } = useCrmLeadSegments();
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const dynamicAgents = useMemo(() => {
     const agents = new Set<string>();
@@ -153,6 +153,7 @@ export function PipelineKanban() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
+  const [showTimeout, setShowTimeout] = useState(false);
 
   // Pipeline segments = all segments EXCEPT the "All Leads" catch-all
   const pipelineSegments = useMemo(() =>
