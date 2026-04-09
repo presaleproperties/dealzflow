@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
+import { Search, Send, Paperclip, FileText, MessageCircle, Check, CheckCheck, ArrowLeft, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { formatContactName } from '@/lib/format';
 import { NewConversationDialog } from './NewConversationDialog';
+import { useWhatsAppStatus } from '@/hooks/useWhatsAppStatus';
 import {
   useWAConversations,
   useWAMessages,
