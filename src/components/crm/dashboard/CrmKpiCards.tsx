@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, CalendarDays, Mail, TrendingUp } from 'lucide-react';
+import { Users, CalendarDays, Mail, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 
 export function CrmKpiCards() {
