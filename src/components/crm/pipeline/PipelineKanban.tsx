@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Search } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -136,8 +137,8 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
 const CARDS_PER_PAGE = 50;
 
 export function PipelineKanban() {
-  const { data: contacts = [], isLoading: contactsLoading } = useCrmContacts();
-  const { data: segments = [], isLoading: segmentsLoading } = useCrmLeadSegments();
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useCrmContacts();
+  const { data: segments = [], isLoading: segmentsLoading, error: segmentsError, refetch: refetchSegments } = useCrmLeadSegments();
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const dynamicAgents = useMemo(() => {
     const agents = new Set<string>();
@@ -152,6 +153,7 @@ export function PipelineKanban() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
+  const [showTimeout, setShowTimeout] = useState(false);
 
   // Pipeline segments = all segments EXCEPT the "All Leads" catch-all
   const pipelineSegments = useMemo(() =>
@@ -246,6 +248,31 @@ export function PipelineKanban() {
   };
 
   const isLoading = contactsLoading || segmentsLoading;
+  const error = contactsError || segmentsError;
+
+  // Loading timeout
+  useEffect(() => {
+    if (!isLoading) { setShowTimeout(false); return; }
+    const timer = setTimeout(() => setShowTimeout(true), 10000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  const handleRetry = () => {
+    setShowTimeout(false);
+    refetchContacts();
+    refetchSegments();
+  };
+
+  if (error && !isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <p className="text-muted-foreground">Failed to load pipeline</p>
+        <Button onClick={handleRetry} variant="outline" size="sm">
+          <RefreshCw className="w-4 h-4 mr-2" /> Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -281,29 +308,40 @@ export function PipelineKanban() {
       </div>
 
       {isLoading ? (
-        <div className="flex-1 overflow-x-auto pb-4">
-          <div className="flex gap-2 sm:gap-3 min-w-max h-full">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex flex-col rounded-xl border border-border/50 bg-muted/20" style={{ minWidth: isMobile ? '85vw' : '260px' }}>
-                <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/30">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-5 w-8 rounded-full" />
-                </div>
-                <div className="p-2 space-y-2">
-                  {Array.from({ length: 3 }).map((_, j) => (
-                    <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <div className="flex justify-between">
-                        <Skeleton className="h-3 w-16" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          {showTimeout ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <p className="text-muted-foreground">Taking longer than expected…</p>
+              <Button onClick={handleRetry} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" /> Retry
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-x-auto pb-4 w-full">
+              <div className="flex gap-2 sm:gap-3 min-w-max h-full">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex flex-col rounded-xl border border-border/50 bg-muted/20" style={{ minWidth: isMobile ? '85vw' : '260px' }}>
+                    <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/30">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-8 rounded-full" />
                     </div>
-                  ))}
-                </div>
+                    <div className="p-2 space-y-2">
+                      {Array.from({ length: 3 }).map((_, j) => (
+                        <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <div className="flex justify-between">
+                            <Skeleton className="h-3 w-16" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       ) : pipelineSegments.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">No pipeline stages configured</div>
