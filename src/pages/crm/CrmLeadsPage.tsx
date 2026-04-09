@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,8 +96,9 @@ export default function CrmLeadsPage() {
   // Segment counts (scoped to saved view)
   const { data: segmentCounts = {} } = useSegmentCounts(segments, savedViewFilters ?? {});
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
   const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [letterFilter, setLetterFilter] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(DEFAULT_VISIBLE);
