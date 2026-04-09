@@ -10,7 +10,7 @@ import {
   ChevronLeft, ChevronRight,
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
-  LogOut, Command, Users, Kanban, Mail, MessageCircle, LayoutTemplate,
+  LogOut, Command, Users, Kanban, Mail, LayoutTemplate,
   BookUser, Zap, CalendarDays, BarChart3, Settings,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
