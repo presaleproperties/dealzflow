@@ -231,31 +231,25 @@ function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact:
       const leadType = (contact as any).lead_type as string | null;
       const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
       return (
-        <div className="flex items-center gap-2.5">
-          {/* Avatar circle */}
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ background: typeStyle.bg, color: typeStyle.color }}>
-            {contact.first_name?.[0]?.toUpperCase()}{contact.last_name?.[0]?.toUpperCase()}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-[13px] text-foreground truncate inline-flex items-center gap-1.5">
-              {formatContactName(contact.first_name, contact.last_name)}
-              {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              {leadType ? (LEAD_TYPE_LABELS[leadType] ?? leadType) : typeStyle.label}
-            </span>
-          </div>
+        <div className="flex flex-col min-w-0">
+          <span className="font-semibold text-[13px] text-foreground truncate inline-flex items-center gap-1.5">
+            {formatContactName(contact.first_name, contact.last_name)}
+            {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Missing: {getMissingFields(contact).map(formatFieldName).join(', ')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {leadType ? (LEAD_TYPE_LABELS[leadType] ?? leadType) : typeStyle.label}
+          </span>
         </div>
       );
     }
