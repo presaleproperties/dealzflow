@@ -12,11 +12,7 @@ import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 
 const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
 
-const FRASER_VALLEY_CITIES = [
-  'Surrey', 'Langley', 'Abbotsford', 'Coquitlam', 'Delta', 'Burnaby',
-  'New Westminster', 'Port Coquitlam', 'Port Moody', 'White Rock',
-  'Maple Ridge', 'Mission', 'Chilliwack',
-];
+import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'condo', label: 'Condo' },
@@ -64,6 +60,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     is_pre_approved: false,
     referral_source: '',
     city_pref: '',
+    language: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -114,8 +111,9 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       is_pre_approved: form.is_pre_approved,
       referral_source: form.referral_source.trim() || undefined,
       city_pref: form.city_pref || undefined,
+      language: form.language || undefined,
     } as any);
-    setForm({ first_name: '', last_name: '', phone: '', email: '', project: '', source: '', status: 'New Lead', assigned_to: '', tags: [], campaign_source: '', property_type_pref: '', is_pre_approved: false, referral_source: '', city_pref: '' });
+    setForm({ first_name: '', last_name: '', phone: '', email: '', project: '', source: '', status: 'New Lead', assigned_to: '', tags: [], campaign_source: '', property_type_pref: '', is_pre_approved: false, referral_source: '', city_pref: '', language: '' });
     setErrors({});
     setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
     onOpenChange(false);
@@ -250,6 +248,18 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
                 <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
                 <SelectContent>
                   {FRASER_VALLEY_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Language</Label>
+              <Select value={form.language} onValueChange={v => setForm({ ...form, language: v })}>
+                <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
+                <SelectContent>
+                  {CRM_LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
