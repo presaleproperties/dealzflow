@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, MessageCircle, CalendarDays, ListTodo, ArrowRightLeft, UserCheck } from 'lucide-react';
+import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
@@ -23,12 +23,6 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
     updateContact.mutate({ id: contact.id, updates: { assigned_to: agent }, oldValues: { assigned_to: contact.assigned_to } });
   };
 
-  const openWhatsApp = () => {
-    if (contact.phone) {
-      const num = contact.phone.replace(/\D/g, '');
-      window.open(`https://wa.me/${num}`, '_blank');
-    }
-  };
 
   return (
     <>
@@ -38,9 +32,6 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={() => setShowEmail(true)}>
             <Mail className="w-3.5 h-3.5 text-primary" /> Send Email
-          </Button>
-          <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={openWhatsApp} disabled={!contact.phone}>
-            <MessageCircle className="w-3.5 h-3.5" style={{ color: 'hsl(142 71% 45%)' }} /> WhatsApp
           </Button>
           <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={() => setShowShowing(true)}>
             <CalendarDays className="w-3.5 h-3.5" style={{ color: 'hsl(270 60% 55%)' }} /> Book Showing

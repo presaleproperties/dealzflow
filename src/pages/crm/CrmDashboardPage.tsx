@@ -1,8 +1,9 @@
 import { CommandCenterStats } from '@/components/crm/dashboard/CommandCenterStats';
 import { HotLeadsColumn } from '@/components/crm/dashboard/HotLeadsColumn';
-import { ActiveConversationsColumn } from '@/components/crm/dashboard/ActiveConversationsColumn';
 import { ActivityFeedColumn } from '@/components/crm/dashboard/ActivityFeedColumn';
 import { PipelinePulse } from '@/components/crm/dashboard/PipelinePulse';
+import { TasksWidget } from '@/components/crm/dashboard/TasksWidget';
+import { LeadConversionFunnel } from '@/components/crm/dashboard/LeadConversionFunnel';
 
 export default function CrmDashboardPage() {
   return (
@@ -10,19 +11,22 @@ export default function CrmDashboardPage() {
       {/* Row 1: Stat Bar */}
       <CommandCenterStats />
 
-      {/* Row 2: Three-Column Command Center */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Row 2: Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         {/* Column 1: Hot Leads */}
         <HotLeadsColumn />
 
-        {/* Column 2: Active Conversations */}
-        <ActiveConversationsColumn />
-
-        {/* Column 3: Activity Feed + Pipeline Pulse */}
-        <div className="space-y-3 sm:space-y-4 md:col-span-2 lg:col-span-1">
+        {/* Column 2: Tasks + Activity + Insights */}
+        <div className="space-y-3 sm:space-y-4">
+          <TasksWidget />
           <ActivityFeedColumn />
-          <PipelinePulse />
         </div>
+      </div>
+
+      {/* Row 3: Funnel + Pulse side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <LeadConversionFunnel />
+        <PipelinePulse />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import {
-  LayoutDashboard, Users, Kanban, MessageCircle, MoreHorizontal,
+  LayoutDashboard, Users, Kanban, MoreHorizontal,
   Mail, LayoutTemplate, BookUser, Zap, CalendarDays, BarChart3, Settings, X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -15,7 +15,7 @@ const primaryItems: NavItem[] = [
   { label: 'Dashboard', path: '/crm/dashboard',  icon: LayoutDashboard },
   { label: 'Leads',     path: '/crm/leads',      icon: Users },
   { label: 'Pipeline',  path: '/crm/pipeline',   icon: Kanban },
-  { label: 'WhatsApp',  path: '/crm/whatsapp',   icon: MessageCircle },
+  { label: 'Email',     path: '/crm/email',       icon: Mail },
 ];
 
 const moreItems: NavItem[] = [

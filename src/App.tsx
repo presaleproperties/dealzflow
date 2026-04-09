@@ -37,7 +37,7 @@ import CrmDashboardPage from "./pages/crm/CrmDashboardPage";
 import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import CrmPipelinePage from "./pages/crm/CrmPipelinePage";
 import CrmEmailPage from "./pages/crm/CrmEmailPage";
-import CrmWhatsAppPage from "./pages/crm/CrmWhatsAppPage";
+
 import CrmTemplatesPage from "./pages/crm/CrmTemplatesPage";
 // CrmContactsPage removed — merged into CrmLeadsPage
 import CrmAutomationsPage from "./pages/crm/CrmAutomationsPage";
@@ -160,7 +160,7 @@ const App = () => (
                   <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/whatsapp" element={<ProtectedRoute><CrmLayout><CrmWhatsAppPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/whatsapp" element={<Navigate to="/crm/dashboard" replace />} />
                   <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/contacts" element={<Navigate to="/crm/leads" replace />} />
                   <Route path="/crm/automations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmAutomationsPage /></CrmLayout></ProtectedRoute>} />
