@@ -118,8 +118,8 @@ serve(async (req) => {
     const fromEmail = senderName ? `"${senderName}" <${rawEmail}>` : rawEmail;
     const replyTo = emailSettings?.reply_to;
 
-    // Append signature to body
-    const signature = emailSettings?.signature_html || '';
+    // Append signature to body (unless explicitly disabled)
+    const signature = includeSignature ? (emailSettings?.signature_html || '') : '';
     const fullBodyHtml = bodyHtml
       ? (signature ? `${bodyHtml}<br><br>--<br>${signature}` : bodyHtml)
       : null;
