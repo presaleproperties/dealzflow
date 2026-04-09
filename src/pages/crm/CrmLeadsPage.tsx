@@ -7,7 +7,8 @@ import { Search, Plus, Filter, Settings2, Eye } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
-import { useCrmLeadSegments, useSegmentCounts } from '@/hooks/useCrmLeadSegments';
+import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
+import { computeSegmentCounts } from '@/lib/segmentMatching';
 import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { LeadsTable } from '@/components/crm/leads/LeadsTable';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
@@ -106,8 +107,8 @@ export default function CrmLeadsPage() {
     return Object.keys(f).length > 0 ? f : undefined;
   }, [activeView]);
 
-  // Segment counts
-  const { data: segmentCounts = {} } = useSegmentCounts(segments, savedViewFilters ?? {});
+  // Segment counts — uses same first-match-wins logic as Pipeline Kanban
+  const segmentCounts = useMemo(() => computeSegmentCounts(allContacts, segments), [allContacts, segments]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');

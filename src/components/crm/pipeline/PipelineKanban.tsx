@@ -35,31 +35,8 @@ function getSegmentColor(name: string) {
   return SEGMENT_COLORS[name] ?? DEFAULT_COLOR;
 }
 
-/* ─── Match contact to a segment ─── */
-function contactMatchesSegment(contact: CrmContact, filter: Record<string, unknown>): boolean {
-  if (!filter || Object.keys(filter).length === 0) return true;
-
-  if (filter.status && Array.isArray(filter.status) && (filter.status as string[]).length > 0) {
-    if (!(filter.status as string[]).includes(contact.status ?? '')) return false;
-  }
-  if (filter.lead_type && Array.isArray(filter.lead_type) && (filter.lead_type as string[]).length > 0) {
-    if (!(filter.lead_type as string[]).includes(contact.lead_type ?? '')) return false;
-  }
-  if (filter.source && Array.isArray(filter.source) && (filter.source as string[]).length > 0) {
-    if (!(filter.source as string[]).includes(contact.source ?? '')) return false;
-  }
-  if (filter.tags && Array.isArray(filter.tags) && (filter.tags as string[]).length > 0) {
-    const contactTags = contact.tags ?? [];
-    if (!(filter.tags as string[]).some(t => contactTags.includes(t))) return false;
-  }
-  if (filter.contact_type && typeof filter.contact_type === 'string') {
-    if (contact.contact_type !== filter.contact_type) return false;
-  }
-  if (filter.assigned_to && typeof filter.assigned_to === 'string') {
-    if (contact.assigned_to !== filter.assigned_to) return false;
-  }
-  return true;
-}
+/* ─── Shared segment matching ─── */
+import { contactMatchesSegment } from '@/lib/segmentMatching';
 
 /* ─── Helpers ─── */
 function getInitials(name: string | null) {
