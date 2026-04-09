@@ -200,6 +200,9 @@ export default function CrmLeadsPage() {
       savedViewFilters: savedViewFilters,
       segmentFilters: activeSegment?.filter_config as Record<string, unknown> | undefined,
       uncontacted7: !!activeView.filters._uncontacted_7,
+      stale30: !!activeView.filters._stale_30,
+      highScore: !!activeView.filters._high_score,
+      birthdayMonth: !!activeView.filters._birthday_month,
     },
   });
 
