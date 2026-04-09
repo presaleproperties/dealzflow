@@ -248,6 +248,31 @@ export function PipelineKanban() {
   };
 
   const isLoading = contactsLoading || segmentsLoading;
+  const error = contactsError || segmentsError;
+
+  // Loading timeout
+  useEffect(() => {
+    if (!isLoading) { setShowTimeout(false); return; }
+    const timer = setTimeout(() => setShowTimeout(true), 10000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  const handleRetry = () => {
+    setShowTimeout(false);
+    refetchContacts();
+    refetchSegments();
+  };
+
+  if (error && !isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <p className="text-muted-foreground">Failed to load pipeline</p>
+        <Button onClick={handleRetry} variant="outline" size="sm">
+          <RefreshCw className="w-4 h-4 mr-2" /> Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
