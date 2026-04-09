@@ -53,8 +53,9 @@ interface PaginatedFilters {
   tags: string[];
   letterFilter: string;
   pipelineView: 'all' | 'active' | 'directory';
-  segmentFilters?: Record<string, unknown>; // extra filters from active segment
-  savedViewFilters?: Record<string, unknown>; // extra filters from saved view
+  segmentFilters?: Record<string, unknown>;
+  savedViewFilters?: Record<string, unknown>;
+  uncontacted7?: boolean;
 }
 
 interface PaginatedParams {
