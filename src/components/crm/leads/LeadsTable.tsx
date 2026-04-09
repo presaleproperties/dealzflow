@@ -110,6 +110,10 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Touch' },
   { key: 'created_at', sortKey: 'created_at', label: 'Added' },
+  { key: 'campaign_source', label: 'Campaign' },
+  { key: 'city_pref', label: 'City Pref' },
+  { key: 'property_type_pref', label: 'Prop Type' },
+  { key: 'is_pre_approved', label: 'Pre-Approved' },
 ];
 
 /* ── Last Touch with color coding ── */
@@ -227,6 +231,18 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
       return <LastTouchCell contact={contact} />;
     case 'created_at':
       return <span className="text-muted-foreground whitespace-nowrap text-xs">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>;
+    case 'campaign_source':
+      return <span className="text-muted-foreground whitespace-nowrap text-xs truncate max-w-[140px] block">{(contact as any).campaign_source ?? '—'}</span>;
+    case 'city_pref':
+      return (contact as any).city_pref
+        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+        : <span className="text-muted-foreground">—</span>;
+    case 'property_type_pref':
+      return <span className="text-muted-foreground whitespace-nowrap text-xs capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
+    case 'is_pre_approved':
+      return (contact as any).is_pre_approved
+        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
+        : <span className="text-muted-foreground text-xs">No</span>;
     default:
       return <span>—</span>;
   }

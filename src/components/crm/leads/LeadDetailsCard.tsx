@@ -1,4 +1,4 @@
-import { Hash, Target, DollarSign, Building2, Fingerprint, BedDouble } from 'lucide-react';
+import { Hash, Target, DollarSign, Building2, Fingerprint, BedDouble, MapPin, Home, Megaphone, Users, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
@@ -92,6 +92,53 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
             <Fingerprint className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
             <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Lofty ID</span>
             <span className="text-[11px] text-muted-foreground font-mono truncate">{contact.lofty_id}</span>
+          </div>
+        )}
+
+        {/* Pre-Approved */}
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+          <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Approved</span>
+          {(contact as any).is_pre_approved ? (
+            <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Pre-Approved</Badge>
+          ) : (
+            <span className="text-xs text-muted-foreground">Not Pre-Approved</span>
+          )}
+        </div>
+
+        {/* Property Type Preference */}
+        {(contact as any).property_type_pref && (
+          <div className="flex items-center gap-3">
+            <Home className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Prop Type</span>
+            <Badge variant="outline" className="border-0 text-[10px] font-semibold capitalize bg-muted/60 text-foreground">{(contact as any).property_type_pref}</Badge>
+          </div>
+        )}
+
+        {/* Preferred City */}
+        {(contact as any).city_pref && (
+          <div className="flex items-center gap-3">
+            <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">City</span>
+            <Badge variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+          </div>
+        )}
+
+        {/* Campaign Source */}
+        {(contact as any).campaign_source && (
+          <div className="flex items-center gap-3">
+            <Megaphone className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Campaign</span>
+            <span className="text-sm text-foreground truncate">{(contact as any).campaign_source}</span>
+          </div>
+        )}
+
+        {/* Referral Source */}
+        {(contact as any).referral_source && (
+          <div className="flex items-center gap-3">
+            <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Referral</span>
+            <span className="text-sm text-foreground truncate">{(contact as any).referral_source}</span>
           </div>
         )}
       </div>
