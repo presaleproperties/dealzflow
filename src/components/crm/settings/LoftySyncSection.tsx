@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Database, Copy, ChevronDown, RefreshCw, CheckCircle2, AlertTriangle, Clock, Loader2 } from 'lucide-react';
+import { Database, Copy, ChevronDown, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -15,8 +15,6 @@ const WEBHOOK_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabas
 
 export default function LoftySyncSection() {
   const [setupOpen, setSetupOpen] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<Record<string, number> | null>(null);
 
   // Fetch sync stats
   const { data: syncStats } = useQuery({
@@ -80,21 +78,6 @@ export default function LoftySyncSection() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard`);
-  };
-
-  const handleFullSync = async () => {
-    setSyncing(true);
-    setSyncResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke('lofty-full-sync');
-      if (error) throw error;
-      setSyncResult(data);
-      toast.success(`Sync complete: ${data.inserted} new, ${data.updated} updated`);
-    } catch (err) {
-      toast.error('Sync failed: ' + String(err));
-    } finally {
-      setSyncing(false);
-    }
   };
 
   return (
@@ -176,20 +159,6 @@ export default function LoftySyncSection() {
             </div>
           </CollapsibleContent>
         </Collapsible>
-
-        {/* Sync Now Button */}
-        <div className="flex items-center gap-3">
-          <Button onClick={handleFullSync} disabled={syncing} className="gap-2">
-            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            {syncing ? 'Syncing...' : 'Sync Now (Full API Sync)'}
-          </Button>
-          {syncResult && (
-            <span className="text-xs text-muted-foreground">
-              {syncResult.inserted} new, {syncResult.updated} updated, {syncResult.skipped} skipped
-              {syncResult.errors > 0 && `, ${syncResult.errors} errors`}
-            </span>
-          )}
-        </div>
 
         {/* Sync Log Table */}
         {syncLogs.length > 0 && (
