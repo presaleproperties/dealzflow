@@ -82,6 +82,7 @@ Deno.serve(async (req: Request) => {
   try {
     while (hasMore) {
       const url = `https://api.lofty.com/api/v1/leads?page=${page}&per_page=${pageSize}`;
+      console.log(`Fetching Lofty API: ${url}, key length: ${LOFTY_API_KEY.length}, key prefix: ${LOFTY_API_KEY.substring(0, 8)}...`);
       const resp = await fetch(url, {
         headers: {
           Authorization: `token ${LOFTY_API_KEY}`,
@@ -90,8 +91,11 @@ Deno.serve(async (req: Request) => {
         },
       });
 
+      console.log(`Lofty API response status: ${resp.status}`);
+
       if (!resp.ok) {
         const errorText = await resp.text();
+        console.error(`Lofty API error body: ${errorText}`);
         return new Response(
           JSON.stringify({
             error: `Lofty API error: ${resp.status}`,
