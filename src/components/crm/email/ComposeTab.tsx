@@ -190,6 +190,7 @@ export function ComposeTab() {
           bodyText: bodyContent.replace(/<[^>]*>/g, ''),
           bodyHtml: bodyContent,
           contactId: selectedContact.id,
+          includeSignature,
           ...(cc.trim() ? { cc: cc.trim() } : {}),
           ...(bcc.trim() ? { bcc: bcc.trim() } : {}),
         } as any);
