@@ -13,6 +13,7 @@ import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
 
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { CheckboxDropdown } from './CheckboxDropdown';
 
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'condo', label: 'Condo' },
