@@ -56,6 +56,9 @@ interface PaginatedFilters {
   segmentFilters?: Record<string, unknown>;
   savedViewFilters?: Record<string, unknown>;
   uncontacted7?: boolean;
+  stale30?: boolean;
+  highScore?: boolean;
+  birthdayMonth?: boolean;
 }
 
 interface PaginatedParams {
@@ -137,6 +140,24 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
       if (filters.uncontacted7) {
         const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
         query = query.or(`last_touch_at.is.null,last_touch_at.lt.${sevenDaysAgo}`);
+      }
+
+      // Stale 30+ days
+      if (filters.stale30) {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+        query = query.or(`last_touch_at.is.null,last_touch_at.lt.${thirtyDaysAgo}`);
+      }
+
+      // High score leads
+      if (filters.highScore) {
+        query = query.gte('lead_score', 70);
+      }
+
+      // Birthday this month
+      if (filters.birthdayMonth) {
+        const month = new Date().getMonth() + 1;
+        const monthStr = String(month).padStart(2, '0');
+        query = query.not('birthday', 'is', null).ilike('birthday', `%-${monthStr}-%`);
       }
 
       // Segment filters
