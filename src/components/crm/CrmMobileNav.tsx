@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import {
-  LayoutDashboard, Users, Kanban, MessageCircle, MoreHorizontal,
+  LayoutDashboard, Users, Kanban, MoreHorizontal,
   Mail, LayoutTemplate, BookUser, Zap, CalendarDays, BarChart3, Settings, X,
 } from 'lucide-react';
 import { useState } from 'react';
