@@ -49,6 +49,11 @@ const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags
 // Built-in view tabs
 const BUILT_IN_VIEWS = [
   { id: '__all', name: 'All Leads', filters: {} },
+  { id: '__new', name: 'New', filters: { status: ['New Lead'] } },
+  { id: '__hot', name: 'Hot Leads', filters: { status: ['Hot / Engaged'] } },
+  { id: '__nurturing', name: 'Nurturing', filters: { status: ['Nurturing'] } },
+  { id: '__my', name: 'My Leads', filters: { assigned_to: '__current_user__' } },
+  { id: '__uncontacted', name: 'Uncontacted 7+', filters: { _uncontacted_7: true } },
   { id: '__active', name: 'Active Pipeline', filters: { _pipeline: 'active' } },
   { id: '__directory', name: 'Directory', filters: { _pipeline: 'directory' } },
 ] as const;
