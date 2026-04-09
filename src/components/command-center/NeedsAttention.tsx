@@ -196,7 +196,7 @@ export function NeedsAttention({ prospects }: Props) {
         {count > 0 && (
           <div className="px-5 py-3 border-t border-border/40 shrink-0">
             <Link
-              to="/pipeline"
+              to="/crm/leads"
               className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               View all leads <ChevronRight className="w-3.5 h-3.5" />
