@@ -84,7 +84,8 @@ Deno.serve(async (req: Request) => {
       const url = `https://api.lofty.com/api/v1/leads?page=${page}&per_page=${pageSize}`;
       const resp = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${LOFTY_API_KEY}`,
+          Authorization: `token ${LOFTY_API_KEY}`,
+          "Content-type": "application/json",
           Accept: "application/json",
         },
       });
