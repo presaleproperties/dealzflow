@@ -79,6 +79,7 @@ export function ComposeTab() {
   // Shared
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [includeSignature, setIncludeSignature] = useState(true);
 
   // Template state
   const [activeTemplate, setActiveTemplate] = useState<CrmEmailTemplate | null>(null);
