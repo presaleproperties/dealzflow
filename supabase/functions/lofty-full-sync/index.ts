@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const LOFTY_API_BASE_URL = "https://api.lofty.com/api/v1";
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -59,7 +61,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const LOFTY_API_KEY = Deno.env.get("LOFTY_API_KEY");
+  const LOFTY_API_KEY = Deno.env.get("LOFTY_API_KEY")?.trim();
   if (!LOFTY_API_KEY) {
     return new Response(
       JSON.stringify({ error: "Lofty API key not configured" }),
@@ -81,25 +83,21 @@ Deno.serve(async (req: Request) => {
 
   try {
     while (hasMore) {
-      const url = `https://api.lofty.com/api/v1/leads?page=${page}&per_page=${pageSize}`;
-      console.log(`Fetching Lofty API: ${url}, key length: ${LOFTY_API_KEY.length}, key prefix: ${LOFTY_API_KEY.substring(0, 8)}...`);
-      const resp = await fetch(url, {
-        headers: {
-          Authorization: `token ${LOFTY_API_KEY}`,
-          "Content-type": "application/json",
-          Accept: "application/json",
-        },
-      });
+      const url = `${LOFTY_API_BASE_URL}/leads?page=${page}&per_page=${pageSize}`;
+      const resp = await fetchLoftyLeads(url, LOFTY_API_KEY);
 
-      console.log(`Lofty API response status: ${resp.status}`);
+      console.log(
+        `Lofty API response status: ${resp.status} using ${resp.authScheme}`
+      );
 
-      if (!resp.ok) {
-        const errorText = await resp.text();
+      if (!resp.response.ok) {
+        const errorText = await resp.response.text();
         console.error(`Lofty API error body: ${errorText}`);
         return new Response(
           JSON.stringify({
-            error: `Lofty API error: ${resp.status}`,
+            error: `Lofty API error: ${resp.response.status}`,
             details: errorText,
+            auth_scheme: resp.authScheme,
           }),
           {
             status: 502,
@@ -108,7 +106,7 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      const data = await resp.json();
+      const data = await resp.response.json();
       const leads = Array.isArray(data) ? data : data.leads || data.data || [];
       totalFromLofty += leads.length;
 
@@ -303,4 +301,63 @@ function parseTags(tags: unknown): string[] {
   if (typeof tags === "string")
     return tags.split(",").map((t: string) => t.trim()).filter(Boolean);
   return [];
+}
+
+async function fetchLoftyLeads(url: string, apiKey: string) {
+  const authStrategies = buildLoftyAuthStrategies(apiKey);
+
+  let lastResult: { response: Response; authScheme: string } | null = null;
+
+  for (const strategy of authStrategies) {
+    console.log(`Fetching Lofty API: ${url} with ${strategy.label}`);
+
+    const response = await fetch(url, {
+      headers: {
+        ...strategy.headers,
+        "Content-type": "application/json",
+        Accept: "application/json",
+      },
+    });
+
+    if (response.ok || response.status !== 401) {
+      return { response, authScheme: strategy.label };
+    }
+
+    lastResult = { response, authScheme: strategy.label };
+  }
+
+  return (
+    lastResult ?? {
+      response: new Response("Lofty authentication failed", { status: 401 }),
+      authScheme: "none",
+    }
+  );
+}
+
+function buildLoftyAuthStrategies(apiKey: string) {
+  const looksLikeJwt = apiKey.split(".").length === 3;
+
+  const strategies = looksLikeJwt
+    ? [
+        {
+          label: "Authorization Bearer",
+          headers: { Authorization: `Bearer ${apiKey}` },
+        },
+        {
+          label: "Authorization token",
+          headers: { Authorization: `token ${apiKey}` },
+        },
+      ]
+    : [
+        {
+          label: "Authorization token",
+          headers: { Authorization: `token ${apiKey}` },
+        },
+        {
+          label: "Authorization Bearer",
+          headers: { Authorization: `Bearer ${apiKey}` },
+        },
+      ];
+
+  return strategies;
 }
