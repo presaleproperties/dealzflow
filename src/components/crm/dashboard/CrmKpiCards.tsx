@@ -127,12 +127,31 @@ export function CrmKpiCards() {
           <div className="min-w-0">
             {isLoading ? (
               <Skeleton className="h-6 sm:h-7 w-12 sm:w-16 mb-1" />
+            ) : typeof card.value === 'string' && card.value.startsWith('No ') ? (
+              <p className="text-sm font-medium text-muted-foreground leading-tight">{card.value}</p>
             ) : (
               <p className="text-xl sm:text-2xl font-bold text-foreground leading-none">{card.value}</p>
+            )}
+            {(card as any).change != null && !isLoading && (
+              <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold mt-0.5 ${(card as any).change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {(card as any).change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                {(card as any).change >= 0 ? '+' : ''}{(card as any).change}% vs prev
+              </span>
             )}
             <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate" title={(card as any).subtitle || card.label}>
               {card.label}
             </p>
+            {(card as any).cta && !isLoading && (
+              <Link to={(card as any).cta} className="text-[10px] text-primary hover:underline mt-0.5 inline-block">
+                Send your first email →
+              </Link>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
           </div>
         </div>
       ))}
