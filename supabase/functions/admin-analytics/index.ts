@@ -239,6 +239,10 @@ serve(async (req) => {
           recentSignups,
           mrr: stripeRevenue || mrr,
           activeSubscriptions: stripeSubscriptions || proUsers,
+          crmContacts: totalCrmContacts ?? 0,
+          crmWithEmail: crmWithEmail ?? 0,
+          crmWithPhone: crmWithPhone ?? 0,
+          crmRecent: crmRecent ?? 0,
         },
         signupsByMonth,
         users: users.sort((a, b) => 
