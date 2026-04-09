@@ -4,12 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X, AlertTriangle } from 'lucide-react';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
 import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 
 const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
+
+const FRASER_VALLEY_CITIES = [
+  'Surrey', 'Langley', 'Abbotsford', 'Coquitlam', 'Delta', 'Burnaby',
+  'New Westminster', 'Port Coquitlam', 'Port Moody', 'White Rock',
+  'Maple Ridge', 'Mission', 'Chilliwack',
+];
+
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'condo', label: 'Condo' },
+  { value: 'townhome', label: 'Townhome' },
+  { value: 'both', label: 'Both' },
+];
 
 interface AddLeadDialogProps {
   open: boolean;
@@ -46,6 +59,11 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     status: 'New Lead',
     assigned_to: '',
     tags: [] as string[],
+    campaign_source: '',
+    property_type_pref: '',
+    is_pre_approved: false,
+    referral_source: '',
+    city_pref: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -91,8 +109,13 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       status: form.status,
       assigned_to: form.assigned_to || undefined,
       tags: form.tags,
-    });
-    setForm({ first_name: '', last_name: '', phone: '', email: '', project: '', source: '', status: 'New Lead', assigned_to: '', tags: [] });
+      campaign_source: form.campaign_source.trim() || undefined,
+      property_type_pref: form.property_type_pref || undefined,
+      is_pre_approved: form.is_pre_approved,
+      referral_source: form.referral_source.trim() || undefined,
+      city_pref: form.city_pref || undefined,
+    } as any);
+    setForm({ first_name: '', last_name: '', phone: '', email: '', project: '', source: '', status: 'New Lead', assigned_to: '', tags: [], campaign_source: '', property_type_pref: '', is_pre_approved: false, referral_source: '', city_pref: '' });
     setErrors({});
     setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
     onOpenChange(false);
@@ -199,6 +222,43 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             </div>
           </div>
 
+          {/* New fields: Campaign, Property Type, Pre-Approved, Referral, City */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Campaign Source</Label>
+              <Input placeholder="e.g. FB_Surrey_Condos_Apr2026" value={form.campaign_source} onChange={e => setForm({ ...form, campaign_source: e.target.value })} />
+            </div>
+            <div>
+              <Label>Referral Source</Label>
+              <Input placeholder="e.g. Parm Heer, Google" value={form.referral_source} onChange={e => setForm({ ...form, referral_source: e.target.value })} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Property Type Preference</Label>
+              <Select value={form.property_type_pref} onValueChange={v => setForm({ ...form, property_type_pref: v })}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  {PROPERTY_TYPE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Preferred City</Label>
+              <Select value={form.city_pref} onValueChange={v => setForm({ ...form, city_pref: v })}>
+                <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
+                <SelectContent>
+                  {FRASER_VALLEY_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Switch checked={form.is_pre_approved} onCheckedChange={v => setForm({ ...form, is_pre_approved: v })} />
+            <Label>Pre-Approved?</Label>
+          </div>
           <div>
             <Label>Tags</Label>
             <div className="flex flex-wrap gap-1.5 mt-1.5">

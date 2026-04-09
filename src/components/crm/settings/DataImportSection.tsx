@@ -41,6 +41,11 @@ const CRM_FIELDS = [
   { value: 'tags', label: 'Tags' },
   { value: 'lofty_id', label: 'Lofty ID' },
   { value: 'created_at', label: 'Created At' },
+  { value: 'campaign_source', label: 'Campaign Source' },
+  { value: 'property_type_pref', label: 'Property Type Preference' },
+  { value: 'is_pre_approved', label: 'Pre-Approved' },
+  { value: 'referral_source', label: 'Referral Source' },
+  { value: 'city_pref', label: 'Preferred City' },
 ] as const;
 
 const AUTO_MAP: Record<string, string> = {
@@ -116,10 +121,28 @@ const AUTO_MAP: Record<string, string> = {
   'created at': 'created_at',
   'date added': 'created_at',
   'date_added': 'created_at',
+  'campaign': 'campaign_source',
+  'campaign_source': 'campaign_source',
+  'campaign source': 'campaign_source',
+  'property_type': 'property_type_pref',
+  'property_preference': 'property_type_pref',
+  'property type preference': 'property_type_pref',
+  'property_type_pref': 'property_type_pref',
+  'pre_approved': 'is_pre_approved',
+  'preapproved': 'is_pre_approved',
+  'pre-approved': 'is_pre_approved',
+  'is_pre_approved': 'is_pre_approved',
+  'referral': 'referral_source',
+  'referral_source': 'referral_source',
+  'referral source': 'referral_source',
+  'city_pref': 'city_pref',
+  'preferred_city': 'city_pref',
+  'preferred city': 'city_pref',
 };
 
 // Array fields that should be split from CSV comma-separated values
 const ARRAY_FIELDS = new Set(['tags', 'projects']);
+const BOOLEAN_FIELDS = new Set(['is_pre_approved']);
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
@@ -284,6 +307,9 @@ export default function DataImportSection() {
           if (['lead', 'realtor', 'past_client'].includes(normalized)) {
             record[field] = normalized;
           }
+        } else if (BOOLEAN_FIELDS.has(field)) {
+          const lower = val.toLowerCase();
+          record[field] = ['yes', 'true', '1'].includes(lower);
         } else if (field === 'created_at') {
           const d = new Date(val);
           if (!isNaN(d.getTime())) {

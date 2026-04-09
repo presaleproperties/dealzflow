@@ -38,6 +38,10 @@ const ALL_COLUMN_KEYS = [
   { key: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', label: 'Last Touch' },
   { key: 'created_at', label: 'Added' },
+  { key: 'campaign_source', label: 'Campaign' },
+  { key: 'city_pref', label: 'City Pref' },
+  { key: 'property_type_pref', label: 'Prop Type' },
+  { key: 'is_pre_approved', label: 'Pre-Approved' },
 ] as const;
 
 const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at']);
@@ -111,6 +115,10 @@ export default function CrmLeadsPage() {
   const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
   const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
   const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [filterPropertyType, setFilterPropertyType] = useState<string[]>([]);
+  const [filterCity, setFilterCity] = useState<string[]>([]);
+  const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
+  const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -160,11 +168,16 @@ export default function CrmLeadsPage() {
     filterLeadType.length > 0 ? 1 : 0,
     filterLanguage.length > 0 ? 1 : 0,
     filterTags.length > 0 ? 1 : 0,
+    filterPropertyType.length > 0 ? 1 : 0,
+    filterCity.length > 0 ? 1 : 0,
+    filterPreApproved.length > 0 ? 1 : 0,
+    filterCampaign.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   const clearAllFilters = () => {
     setFilterContactType(''); setFilterStatus([]); setFilterSource([]); setFilterAgent([]);
     setFilterProject([]); setFilterLeadType([]); setFilterLanguage([]); setFilterTags([]);
+    setFilterPropertyType([]); setFilterCity([]); setFilterPreApproved([]); setFilterCampaign([]);
     setLetterFilter(''); setPage(1);
   };
 
@@ -174,6 +187,8 @@ export default function CrmLeadsPage() {
       source: () => setFilterSource([]), agent: () => setFilterAgent([]),
       project: () => setFilterProject([]), leadType: () => setFilterLeadType([]),
       language: () => setFilterLanguage([]), tags: () => setFilterTags([]),
+      propertyType: () => setFilterPropertyType([]), city: () => setFilterCity([]),
+      preApproved: () => setFilterPreApproved([]), campaign: () => setFilterCampaign([]),
     };
     map[key]?.(); setPage(1);
   };
@@ -237,6 +252,10 @@ export default function CrmLeadsPage() {
     { key: 'leadType', label: 'Lead Type', values: filterLeadType },
     { key: 'language', label: 'Language', values: filterLanguage },
     { key: 'tags', label: 'Tags', values: filterTags },
+    { key: 'propertyType', label: 'Prop Type', values: filterPropertyType },
+    { key: 'city', label: 'City', values: filterCity },
+    { key: 'preApproved', label: 'Pre-Approved', values: filterPreApproved },
+    { key: 'campaign', label: 'Campaign', values: filterCampaign },
   ];
 
   // Filter section removed — now using FilterPanel sidebar
@@ -448,9 +467,19 @@ export default function CrmLeadsPage() {
           setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
           filterTags={filterTags}
           setFilterTags={v => { setFilterTags(v); setPage(1); }}
+          filterPropertyType={filterPropertyType}
+          setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
+          filterCity={filterCity}
+          setFilterCity={v => { setFilterCity(v); setPage(1); }}
+          filterPreApproved={filterPreApproved}
+          setFilterPreApproved={v => { setFilterPreApproved(v); setPage(1); }}
+          filterCampaign={filterCampaign}
+          setFilterCampaign={v => { setFilterCampaign(v); setPage(1); }}
           dynamicProjects={dynamicOpts.projects}
           dynamicLanguages={dynamicOpts.languages}
           dynamicTags={dynamicOpts.tags}
+          dynamicCities={dynamicOpts.cities}
+          dynamicCampaigns={dynamicOpts.campaigns}
           onClearAll={clearAllFilters}
           activeFilterCount={activeFilterCount}
         />

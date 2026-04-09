@@ -27,9 +27,19 @@ interface FilterPanelProps {
   setFilterLanguage: (v: string[]) => void;
   filterTags: string[];
   setFilterTags: (v: string[]) => void;
+  filterPropertyType: string[];
+  setFilterPropertyType: (v: string[]) => void;
+  filterCity: string[];
+  setFilterCity: (v: string[]) => void;
+  filterPreApproved: string[];
+  setFilterPreApproved: (v: string[]) => void;
+  filterCampaign: string[];
+  setFilterCampaign: (v: string[]) => void;
   dynamicProjects: string[];
   dynamicLanguages: string[];
   dynamicTags: string[];
+  dynamicCities: string[];
+  dynamicCampaigns: string[];
   onClearAll: () => void;
   activeFilterCount: number;
 }
@@ -143,9 +153,19 @@ export function FilterPanel({
   setFilterLanguage,
   filterTags,
   setFilterTags,
+  filterPropertyType,
+  setFilterPropertyType,
+  filterCity,
+  setFilterCity,
+  filterPreApproved,
+  setFilterPreApproved,
+  filterCampaign,
+  setFilterCampaign,
   dynamicProjects,
   dynamicLanguages,
   dynamicTags,
+  dynamicCities,
+  dynamicCampaigns,
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
@@ -191,6 +211,10 @@ export function FilterPanel({
           <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
           <FilterAccordion label="Language" options={dynamicLanguages} selected={filterLanguage} onChange={setFilterLanguage} />
           <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
+          <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
+          <FilterAccordion label="City Preference" options={dynamicCities} selected={filterCity} onChange={setFilterCity} />
+          <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
+          <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
         </div>
       </ScrollArea>
     </div>
