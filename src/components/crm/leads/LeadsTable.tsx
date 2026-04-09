@@ -257,14 +257,6 @@ function CellContent({ col, contact }: { col: ColumnDef; contact: CrmContact }) 
               <TooltipContent side="top" className="text-xs">Call</TooltipContent>
             </Tooltip>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <a href={`/crm/whatsapp?lead=${contact.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
-                <MessageCircle className="w-4 h-4" style={{ color: 'hsl(142 71% 45%)' }} />
-              </a>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">WhatsApp</TooltipContent>
-          </Tooltip>
           {contact.email && (
             <Tooltip>
               <TooltipTrigger asChild>

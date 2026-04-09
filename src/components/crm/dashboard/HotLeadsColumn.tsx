@@ -126,16 +126,6 @@ function LeadCard({ c, noteId, setNoteId, noteText, setNoteText, handleSaveNote,
               <TooltipContent side="top" className="text-xs">Call</TooltipContent>
             </Tooltip>
           )}
-          {c.phone && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a href={`https://wa.me/${c.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener" className="p-1.5 rounded-md hover:bg-muted/60 transition-colors">
-                  <MessageCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">WhatsApp</TooltipContent>
-            </Tooltip>
-          )}
           {c.email && (
             <Tooltip>
               <TooltipTrigger asChild>
