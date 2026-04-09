@@ -115,6 +115,10 @@ export default function CrmLeadsPage() {
   const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
   const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
   const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [filterPropertyType, setFilterPropertyType] = useState<string[]>([]);
+  const [filterCity, setFilterCity] = useState<string[]>([]);
+  const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
+  const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
