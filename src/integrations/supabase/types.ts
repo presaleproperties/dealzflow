@@ -412,7 +412,9 @@ export type Database = {
           birthday: string | null
           budget_max: number | null
           budget_min: number | null
+          campaign_source: string | null
           city: string | null
+          city_pref: string | null
           co_buyer_birthday: string | null
           co_buyer_email: string | null
           co_buyer_name: string | null
@@ -423,6 +425,7 @@ export type Database = {
           email_secondary: string | null
           first_name: string
           id: string
+          is_pre_approved: boolean | null
           language: string | null
           last_contact_at: string | null
           last_name: string
@@ -440,7 +443,9 @@ export type Database = {
           postal_code: string | null
           project: string | null
           projects: string[]
+          property_type_pref: string | null
           province: string | null
+          referral_source: string | null
           source: string | null
           stage_changed_at: string | null
           status: string | null
@@ -456,7 +461,9 @@ export type Database = {
           birthday?: string | null
           budget_max?: number | null
           budget_min?: number | null
+          campaign_source?: string | null
           city?: string | null
+          city_pref?: string | null
           co_buyer_birthday?: string | null
           co_buyer_email?: string | null
           co_buyer_name?: string | null
@@ -467,6 +474,7 @@ export type Database = {
           email_secondary?: string | null
           first_name: string
           id?: string
+          is_pre_approved?: boolean | null
           language?: string | null
           last_contact_at?: string | null
           last_name: string
@@ -484,7 +492,9 @@ export type Database = {
           postal_code?: string | null
           project?: string | null
           projects?: string[]
+          property_type_pref?: string | null
           province?: string | null
+          referral_source?: string | null
           source?: string | null
           stage_changed_at?: string | null
           status?: string | null
@@ -500,7 +510,9 @@ export type Database = {
           birthday?: string | null
           budget_max?: number | null
           budget_min?: number | null
+          campaign_source?: string | null
           city?: string | null
+          city_pref?: string | null
           co_buyer_birthday?: string | null
           co_buyer_email?: string | null
           co_buyer_name?: string | null
@@ -511,6 +523,7 @@ export type Database = {
           email_secondary?: string | null
           first_name?: string
           id?: string
+          is_pre_approved?: boolean | null
           language?: string | null
           last_contact_at?: string | null
           last_name?: string
@@ -528,7 +541,9 @@ export type Database = {
           postal_code?: string | null
           project?: string | null
           projects?: string[]
+          property_type_pref?: string | null
           province?: string | null
+          referral_source?: string | null
           source?: string | null
           stage_changed_at?: string | null
           status?: string | null
