@@ -137,6 +137,10 @@ export default function AdminPage() {
           <StatPill label="MRR" value={formatCurrency(summary?.mrr || 0)} accent="bg-success" />
           <StatPill label="7d signups" value={summary?.recentSignups || 0} accent="bg-primary" />
           <StatPill label="Deals" value={summary?.totalDeals || 0} accent="bg-indigo-500" />
+          <StatPill label="CRM Contacts" value={summary?.crmContacts || 0} accent="bg-emerald-500" />
+          <StatPill label="w/ Email" value={summary?.crmWithEmail || 0} accent="bg-teal-500" />
+          <StatPill label="w/ Phone" value={summary?.crmWithPhone || 0} accent="bg-sky-500" />
+          <StatPill label="30d New" value={summary?.crmRecent || 0} accent="bg-violet-500" />
           <StatPill label="Conv." value={conversionRate} accent="bg-cyan-500" />
           
           <button
