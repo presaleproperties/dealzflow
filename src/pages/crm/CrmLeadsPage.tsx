@@ -44,7 +44,7 @@ const ALL_COLUMN_KEYS = [
   { key: 'is_pre_approved', label: 'Pre-Approved' },
 ] as const;
 
-const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at']);
+const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
 // Built-in view tabs
 const BUILT_IN_VIEWS = [
