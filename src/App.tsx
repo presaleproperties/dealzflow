@@ -44,6 +44,7 @@ import CrmAutomationsPage from "./pages/crm/CrmAutomationsPage";
 import CrmCalendarPage from "./pages/crm/CrmCalendarPage";
 import CrmReportsPage from "./pages/crm/CrmReportsPage";
 import CrmSettingsPage from "./pages/crm/CrmSettingsPage";
+import CrmIntegrationsPage from "./pages/crm/CrmIntegrationsPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const queryClient = new QueryClient({
@@ -167,6 +168,7 @@ const App = () => (
                   <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

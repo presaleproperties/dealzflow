@@ -11,7 +11,7 @@ import {
   LayoutDashboard, GitBranch, Handshake, DollarSign,
   Receipt, TrendingUp, BarChart2, Building2, Network, Settings2, ShieldAlert,
   LogOut, Command, Users, Kanban, Mail, LayoutTemplate,
-  BookUser, Zap, CalendarDays, BarChart3, Settings,
+  BookUser, Zap, CalendarDays, BarChart3, Settings, Plug,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -52,9 +52,10 @@ const crmNavItems: NavItem[] = [
   { label: 'Showings Calendar', path: '/crm/calendar',   icon: CalendarDays },
   { label: 'Reports',          path: '/crm/reports',     icon: BarChart3 },
   { label: 'CRM Settings',     path: '/crm/settings',    icon: Settings },
+  { label: 'Integrations',     path: '/crm/integrations', icon: Plug },
 ];
 
-const ownerAdminOnlyCrmPaths = new Set(['/crm/automations', '/crm/settings']);
+const ownerAdminOnlyCrmPaths = new Set(['/crm/automations', '/crm/settings', '/crm/integrations']);
 
 const standaloneItems: NavItem[] = [
   { label: 'Settings', path: '/settings', icon: Settings2 },
