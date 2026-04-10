@@ -133,6 +133,39 @@ export type Database = {
           },
         ]
       }
+      booking_events: {
+        Row: {
+          created_at: string
+          event_type: string | null
+          id: string
+          lead_email: string | null
+          lead_name: string | null
+          scheduled_at: string | null
+          source: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          lead_email?: string | null
+          lead_name?: string | null
+          scheduled_at?: string | null
+          source?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          lead_email?: string | null
+          lead_name?: string | null
+          scheduled_at?: string | null
+          source?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -2175,6 +2208,48 @@ export type Database = {
           yearly_gci_goal?: number | null
           yearly_revshare_goal?: number | null
           zapier_webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      sync_log: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_count: number
+          error_message: string | null
+          id: string
+          records_created: number
+          records_processed: number
+          records_updated: number
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_count?: number
+          error_message?: string | null
+          id?: string
+          records_created?: number
+          records_processed?: number
+          records_updated?: number
+          started_at?: string
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_count?: number
+          error_message?: string | null
+          id?: string
+          records_created?: number
+          records_processed?: number
+          records_updated?: number
+          started_at?: string
+          status?: string
+          sync_type?: string
         }
         Relationships: []
       }
