@@ -183,7 +183,7 @@ export default function CrmTemplatesPage() {
 
   // EDITOR VIEW
   if (viewMode === 'editor') {
-    return <TemplateEditor template={editing} onClose={closeEditor} />;
+    return <TemplateEditor template={editing} onClose={closeEditor} onSendCampaign={(tpl) => { closeEditor(); setCampaignTemplate(tpl); }} />;
   }
 
   // LIST VIEW
