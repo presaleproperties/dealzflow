@@ -302,7 +302,8 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[85dvh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-4xl h-[85dvh] p-0 gap-0 overflow-hidden" aria-describedby={undefined}>
+        <DialogTitle className="sr-only">{editing ? 'Edit Automation' : 'Create Automation'}</DialogTitle>
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/80 shrink-0">
           <div className="flex items-center gap-3">
