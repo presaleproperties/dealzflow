@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,9 +36,10 @@ function detectMergeTags(html: string): string[] {
 interface Props {
   template: EmailTemplate | null;
   onClose: () => void;
+  onSendCampaign?: (tpl: EmailTemplate) => void;
 }
 
-export function TemplateEditor({ template, onClose }: Props) {
+export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
   const createTemplate = useCreateEmailTemplate();
   const updateTemplate = useUpdateEmailTemplate();
   const softDelete = useSoftDeleteEmailTemplate();
@@ -152,6 +153,11 @@ export function TemplateEditor({ template, onClose }: Props) {
         <div className="flex items-center gap-2">
           {isEdit && (
             <>
+              {onSendCampaign && template && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onSendCampaign(template)}>
+                  <Mail className="w-3.5 h-3.5" /> Use in Campaign
+                </Button>
+              )}
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDuplicate}>
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Button>
