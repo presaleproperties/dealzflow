@@ -454,7 +454,7 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
           </div>
 
           {/* Config panel (right) */}
-          <div className="w-[320px] border-l border-border/50 bg-card/50 flex flex-col shrink-0 hidden sm:flex">
+          <div className="w-full sm:w-[320px] border-t sm:border-t-0 sm:border-l border-border/50 bg-card/50 flex flex-col shrink-0 min-h-[200px] sm:min-h-0">
             <div className="px-4 py-3 border-b border-border/30">
               <h3 className="text-sm font-semibold">
                 {selectedNode === 'trigger' ? 'Trigger Settings' : typeof selectedNode === 'number' ? 'Action Settings' : 'Settings'}
