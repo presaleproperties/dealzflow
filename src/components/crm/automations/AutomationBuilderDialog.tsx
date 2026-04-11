@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -302,37 +302,38 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[85dvh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-4xl h-[85dvh] p-0 gap-0 overflow-hidden" aria-describedby={undefined}>
+        <DialogTitle className="sr-only">{editing ? 'Edit Automation' : 'Create Automation'}</DialogTitle>
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/80 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-primary" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 pr-10 sm:pr-12 py-2 sm:py-3 border-b border-border/50 bg-card/80 shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
             </div>
             <Input
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Automation name..."
-              className="border-0 bg-transparent text-base font-semibold h-8 px-0 focus-visible:ring-0 w-[200px] sm:w-[300px]"
+              className="border-0 bg-transparent text-sm sm:text-base font-semibold h-8 px-0 focus-visible:ring-0 min-w-0 flex-1"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 mr-2">
-              <span className="text-xs text-muted-foreground">{isActive ? 'Active' : 'Draft'}</span>
-              <Switch checked={isActive} onCheckedChange={setIsActive} className="scale-90" />
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-2 mr-1 sm:mr-2">
+              <span className="text-[11px] sm:text-xs text-muted-foreground">{isActive ? 'Active' : 'Draft'}</span>
+              <Switch checked={isActive} onCheckedChange={setIsActive} className="scale-[0.8] sm:scale-90" />
             </div>
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-8">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-8 text-xs">
               Cancel
             </Button>
             <Button size="sm" onClick={handleSave} disabled={!name.trim() || isSaving}
-              className="h-8 gap-1.5 bg-primary hover:bg-primary/90">
+              className="h-8 gap-1 sm:gap-1.5 bg-primary hover:bg-primary/90 text-xs">
               <Save className="h-3.5 w-3.5" />
               {editing ? 'Save' : 'Create'}
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0">
           {/* Flow canvas (left) */}
           <div className="flex-1 bg-muted/10 overflow-y-auto">
             <div className="p-6 flex flex-col items-center min-h-full">
@@ -453,7 +454,7 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
           </div>
 
           {/* Config panel (right) */}
-          <div className="w-[320px] border-l border-border/50 bg-card/50 flex flex-col shrink-0 hidden sm:flex">
+          <div className="w-full sm:w-[320px] border-t sm:border-t-0 sm:border-l border-border/50 bg-card/50 flex flex-col shrink-0 min-h-[200px] sm:min-h-0">
             <div className="px-4 py-3 border-b border-border/30">
               <h3 className="text-sm font-semibold">
                 {selectedNode === 'trigger' ? 'Trigger Settings' : typeof selectedNode === 'number' ? 'Action Settings' : 'Settings'}
