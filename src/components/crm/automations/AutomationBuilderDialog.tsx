@@ -333,7 +333,7 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
           </div>
         </div>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0">
           {/* Flow canvas (left) */}
           <div className="flex-1 bg-muted/10 overflow-y-auto">
             <div className="p-6 flex flex-col items-center min-h-full">
