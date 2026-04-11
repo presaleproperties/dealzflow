@@ -1,24 +1,23 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, Plus, Search, LayoutGrid, List, Sparkles, TrendingUp, Users, Activity } from 'lucide-react';
+import { Zap, Plus, Search, Sparkles, Users, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useCrmAutomations, useToggleAutomation, useDeleteAutomation, useCreateAutomation, AUTOMATION_TEMPLATES } from '@/hooks/useCrmAutomations';
-import { AutomationBuilderDialog } from '@/components/crm/automations/AutomationBuilderDialog';
+import { useCrmAutomations, useToggleAutomation, useDeleteAutomation, AUTOMATION_TEMPLATES } from '@/hooks/useCrmAutomations';
+import { AutomationBuilder } from '@/components/crm/automations/AutomationBuilder';
 import { AutomationLogSheet } from '@/components/crm/automations/AutomationLogSheet';
-import { TemplatePickerDialog } from '@/components/crm/automations/TemplatePickerDialog';
 import { AutomationCard } from '@/components/crm/automations/AutomationCard';
 import type { CrmAutomation, CrmAutomationStep } from '@/hooks/useCrmAutomations';
 
 type FilterMode = 'all' | 'active' | 'inactive';
+type ViewMode = 'list' | 'builder';
 
 export default function CrmAutomationsPage() {
   const { data: automations, isLoading } = useCrmAutomations();
   const toggleMut = useToggleAutomation();
   const deleteMut = useDeleteAutomation();
 
-  // Fetch all steps for all automations to show flow previews
   const automationIds = (automations ?? []).map(a => a.id);
   const { data: allSteps } = useQuery({
     queryKey: ['crm-automation-steps-all', automationIds],
@@ -42,27 +41,25 @@ export default function CrmAutomationsPage() {
     return acc;
   }, {});
 
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editing, setEditing] = useState<CrmAutomation | null>(null);
-  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [templatePrefill, setTemplatePrefill] = useState<typeof AUTOMATION_TEMPLATES[number] | null>(null);
   const [logSheetOpen, setLogSheetOpen] = useState(false);
   const [logAutomation, setLogAutomation] = useState<{ id: string; name: string } | null>(null);
   const [filter, setFilter] = useState<FilterMode>('all');
   const [search, setSearch] = useState('');
-  const [templatePrefill, setTemplatePrefill] = useState<typeof AUTOMATION_TEMPLATES[number] | null>(null);
 
-  const openCreate = () => { setEditing(null); setTemplatePrefill(null); setDialogOpen(true); };
-  const openEdit = (a: CrmAutomation) => { setEditing(a); setTemplatePrefill(null); setDialogOpen(true); };
+  const openCreate = () => { setEditing(null); setTemplatePrefill(null); setViewMode('builder'); };
+  const openEdit = (a: CrmAutomation) => { setEditing(a); setTemplatePrefill(null); setViewMode('builder'); };
 
   const handleTemplatePick = (tpl: typeof AUTOMATION_TEMPLATES[number]) => {
     setEditing(null);
     setTemplatePrefill(tpl);
-    setDialogOpen(true);
+    setViewMode('builder');
   };
 
   const handleDuplicate = (a: CrmAutomation) => {
     setEditing(null);
-    setTemplatePrefill(null);
     const prefill = {
       id: 'duplicate', name: `${a.name} (Copy)`, description: a.description ?? '',
       trigger_type: a.trigger_type, trigger_config: a.trigger_config ?? {},
@@ -70,13 +67,30 @@ export default function CrmAutomationsPage() {
       icon: 'Zap',
     };
     setTemplatePrefill(prefill as any);
-    setDialogOpen(true);
+    setViewMode('builder');
   };
 
   const handleViewLog = (a: CrmAutomation) => {
     setLogAutomation({ id: a.id, name: a.name });
     setLogSheetOpen(true);
   };
+
+  const handleBuilderClose = () => {
+    setViewMode('list');
+    setEditing(null);
+    setTemplatePrefill(null);
+  };
+
+  // If in builder mode, show the inline builder full-width
+  if (viewMode === 'builder') {
+    return (
+      <AutomationBuilder
+        editing={editing}
+        templatePrefill={templatePrefill ? { ...templatePrefill, steps: templatePrefill.steps.map(s => ({ ...s, action_config: { ...s.action_config } })) } : null}
+        onClose={handleBuilderClose}
+      />
+    );
+  }
 
   const filtered = (automations ?? []).filter(a => {
     if (filter === 'active' && !a.is_active) return false;
@@ -105,9 +119,6 @@ export default function CrmAutomationsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setTemplatePickerOpen(true)} className="gap-1.5 h-9">
-            <Sparkles className="h-3.5 w-3.5" /> Templates
-          </Button>
           <Button onClick={openCreate} className="gap-1.5 h-9 bg-primary hover:bg-primary/90" size="sm">
             <Plus className="h-4 w-4" /> New Automation
           </Button>
@@ -159,28 +170,49 @@ export default function CrmAutomationsPage() {
         </div>
       </div>
 
+      {/* Templates section */}
+      {(!automations?.length || automations.length < 3) && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> Quick Start Templates
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {AUTOMATION_TEMPLATES.slice(0, 6).map(tpl => (
+              <button
+                key={tpl.id}
+                onClick={() => handleTemplatePick(tpl)}
+                className="flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-card/40 hover:bg-card/80 hover:border-primary/30 cursor-pointer transition-all text-left group"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                  <Zap className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground">{tpl.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{tpl.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map(i => <div key={i} className="h-48 rounded-xl bg-muted/20 animate-pulse" />)}
         </div>
       ) : !automations?.length ? (
-        <div className="text-center py-20 border border-dashed border-border/50 rounded-2xl bg-muted/5">
-          <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <Zap className="h-10 w-10 text-primary" />
+        <div className="text-center py-16 border border-dashed border-border/50 rounded-2xl bg-muted/5">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Zap className="h-8 w-8 text-primary" />
           </div>
-          <h3 className="text-xl font-bold text-foreground">Build your first automation</h3>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-            Create powerful workflows to automatically nurture leads, send messages, assign agents, and more — just like ManyChat
+          <h3 className="text-lg font-bold text-foreground">Build your first automation</h3>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-md mx-auto">
+            Create powerful workflows to automatically nurture leads, send messages, assign agents, and more
           </p>
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <Button onClick={() => setTemplatePickerOpen(true)} variant="outline" className="gap-1.5 h-10">
-              <Sparkles className="h-4 w-4" /> Start from Template
-            </Button>
-            <Button onClick={openCreate} className="gap-1.5 h-10 bg-primary hover:bg-primary/90">
-              <Plus className="h-4 w-4" /> Build from Scratch
-            </Button>
-          </div>
+          <Button onClick={openCreate} className="gap-1.5 h-10 bg-primary hover:bg-primary/90 mt-5">
+            <Plus className="h-4 w-4" /> Build from Scratch
+          </Button>
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-12">No matching automations</p>
@@ -201,9 +233,6 @@ export default function CrmAutomationsPage() {
         </div>
       )}
 
-      <AutomationBuilderDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing}
-        templatePrefill={templatePrefill ? { ...templatePrefill, steps: templatePrefill.steps.map(s => ({ ...s, action_config: { ...s.action_config } })) } : null} />
-      <TemplatePickerDialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen} onSelect={handleTemplatePick} />
       <AutomationLogSheet
         automationId={logAutomation?.id ?? null}
         automationName={logAutomation?.name ?? ''}
