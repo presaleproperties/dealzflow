@@ -1417,6 +1417,69 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          area_tags: string[]
+          category: string
+          created_at: string
+          created_by: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          is_favorite: boolean
+          last_used_at: string | null
+          name: string
+          preview_text: string | null
+          project_tags: string[]
+          source: string
+          subject: string | null
+          synced_at: string
+          thumbnail_url: string | null
+          times_used: number
+          updated_at: string
+        }
+        Insert: {
+          area_tags?: string[]
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          is_favorite?: boolean
+          last_used_at?: string | null
+          name: string
+          preview_text?: string | null
+          project_tags?: string[]
+          source?: string
+          subject?: string | null
+          synced_at?: string
+          thumbnail_url?: string | null
+          times_used?: number
+          updated_at?: string
+        }
+        Update: {
+          area_tags?: string[]
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          is_favorite?: boolean
+          last_used_at?: string | null
+          name?: string
+          preview_text?: string | null
+          project_tags?: string[]
+          source?: string
+          subject?: string | null
+          synced_at?: string
+          thumbnail_url?: string | null
+          times_used?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expense_budgets: {
         Row: {
           category: string
