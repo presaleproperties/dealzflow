@@ -305,7 +305,7 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
       <DialogContent className="max-w-4xl h-[85dvh] p-0 gap-0 overflow-hidden" aria-describedby={undefined}>
         <DialogTitle className="sr-only">{editing ? 'Edit Automation' : 'Create Automation'}</DialogTitle>
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/80 shrink-0">
+        <div className="flex items-center justify-between px-4 pr-12 py-3 border-b border-border/50 bg-card/80 shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-primary" />
