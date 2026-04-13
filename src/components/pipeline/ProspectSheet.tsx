@@ -39,9 +39,9 @@ const ALL_STATUS_COLORS = { ...BUYER_STATUS_COLORS, ...LISTING_STATUS_COLORS };
 const DEAL_TYPE_OPTIONS = ['buyer', 'seller'] as const;
 
 const TEMP_CONFIG = {
-  hot:  { color: 'bg-rose-500/15 text-rose-500 border-rose-500/30',   label: 'Hot',  dot: 'bg-rose-500' },
-  warm: { color: 'bg-amber-500/15 text-amber-600 border-amber-500/30', label: 'Warm', dot: 'bg-amber-500' },
-  cold: { color: 'bg-sky-500/15 text-sky-500 border-sky-500/30',       label: 'Cold', dot: 'bg-sky-500' },
+  hot:  { color: 'bg-muted/20 text-foreground border-border/30',   label: 'Hot' },
+  warm: { color: 'bg-muted/20 text-foreground border-border/30', label: 'Warm' },
+  cold: { color: 'bg-muted/20 text-foreground border-border/30',       label: 'Cold' },
 };
 
 interface Props {
@@ -155,8 +155,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   </p>
                   <h2 className="text-lg font-bold tracking-tight truncate">{draft.client_name || 'Unnamed Lead'}</h2>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold border", tc.color)}>
-                      <span className={cn("w-1.5 h-1.5 rounded-full", tc.dot)} />
+                    <span className={cn("inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-semibold border", tc.color)}>
                       {tc.label}
                     </span>
                     <span className={cn("inline-flex px-2.5 py-1 rounded-lg text-[10px] font-semibold border capitalize", statusColor)}>
@@ -239,7 +238,6 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                             isSelected ? cfg.color : "bg-muted/20 text-muted-foreground/40 border-border/30 hover:bg-muted/40"
                           )}
                         >
-                          <span className={cn("w-2 h-2 rounded-full", isSelected ? cfg.dot : "bg-muted-foreground/20")} />
                           {cfg.label}
                         </button>
                       );

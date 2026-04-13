@@ -48,10 +48,10 @@ const STATUS_COLORS: Record<string, string> = {
   'listing-lost': 'bg-destructive/[0.12] text-destructive',
 };
 
-const TEMP_CONFIG: Record<string, { dot: string; text: string; label: string; bg: string; border: string }> = {
-  hot:  { dot: 'bg-rose-500', text: 'text-rose-500', label: 'Hot',  bg: 'bg-rose-500/10', border: 'border-l-rose-500/70' },
-  warm: { dot: 'bg-amber-500', text: 'text-amber-500', label: 'Warm', bg: 'bg-amber-500/10', border: 'border-l-amber-500/70' },
-  cold: { dot: 'bg-sky-500', text: 'text-sky-500', label: 'Cold', bg: 'bg-sky-500/10', border: 'border-l-sky-500/70' },
+const TEMP_CONFIG: Record<string, { label: string; text: string; border: string }> = {
+  hot:  { label: 'Hot',  text: 'text-foreground', border: 'border-l-border' },
+  warm: { label: 'Warm', text: 'text-foreground', border: 'border-l-border' },
+  cold: { label: 'Cold', text: 'text-foreground', border: 'border-l-border' },
 };
 const TEMP_OPTIONS = ['hot', 'warm', 'cold'];
 
@@ -155,24 +155,22 @@ function QuickAddRow({ onAdd, defaultDealType, defaultHomeType, defaultStatus }:
   );
 }
 
-// ── Temperature dot indicator ────────────────────────────────────────
-function TempDot({ temp, size = 'sm', interactive, onToggle }: {
-  temp: string; size?: 'sm' | 'md'; interactive?: boolean; onToggle?: () => void;
+// ── Temperature label ────────────────────────────────────────────────
+function TempLabel({ temp, interactive, onToggle }: {
+  temp: string; interactive?: boolean; onToggle?: () => void;
 }) {
   const cfg = TEMP_CONFIG[temp] || TEMP_CONFIG.warm;
-  const sizeClass = size === 'md' ? 'w-8 h-8' : 'w-7 h-7';
-  const dotSize = size === 'md' ? 'w-2.5 h-2.5' : 'w-2 h-2';
 
   if (interactive) {
     return (
-      <button onClick={onToggle} className={cn(sizeClass, "rounded-lg flex items-center justify-center transition-all hover:scale-110", cfg.bg)}>
-        <span className={cn(dotSize, "rounded-full", cfg.dot)} />
+      <button onClick={onToggle} className="shrink-0 px-2 py-1 rounded-lg bg-muted/20 hover:bg-muted/30 transition-all hover:scale-105">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">{cfg.label}</span>
       </button>
     );
   }
   return (
-    <div className={cn(sizeClass, "rounded-lg flex items-center justify-center shrink-0", cfg.bg)}>
-      <span className={cn(dotSize, "rounded-full", cfg.dot)} />
+    <div className="shrink-0 px-2 py-1 rounded-lg bg-muted/20">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">{cfg.label}</span>
     </div>
   );
 }
@@ -193,7 +191,7 @@ function MobileProspectCard({ p, idx, handleSave, onOpen }: {
       )}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
-      <TempDot temp={p.temperature || 'warm'} interactive onToggle={() => {
+      <TempLabel temp={p.temperature || 'warm'} interactive onToggle={() => {
         const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length];
         handleSave(p.id, 'temperature', next);
         triggerHaptic('light');
@@ -269,7 +267,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       </div>
 
       <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <TempDot temp={p.temperature || 'warm'} interactive onToggle={() => {
+        <TempLabel temp={p.temperature || 'warm'} interactive onToggle={() => {
           const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length];
           handleSave(p.id, 'temperature', next);
           triggerHaptic('light');
@@ -439,8 +437,7 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       if (id) { handleSave(id, 'temperature', tg.temp); triggerHaptic('light'); }
                     }}>
                     <div className="flex items-center gap-2.5 px-4 py-2.5 border-t border-border/30 bg-muted/20">
-                      <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)} />
-                      <span className={cn("text-[10px] font-bold uppercase tracking-[0.1em]", cfg.text)}>{cfg.label}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50">{cfg.label}</span>
                       <div className="flex-1 h-px bg-border/30" />
                       <span className="text-[10px] font-medium text-muted-foreground/40 tabular-nums">{tg.items.length}</span>
                     </div>
@@ -499,9 +496,7 @@ function BoardCard({ prospect, onOpen, isDragOver, isBeingDragged }: {
       )}>
       <div className="flex items-start justify-between gap-2 mb-2.5">
         <p className="text-[13px] font-bold truncate leading-tight text-foreground">{prospect.client_name}</p>
-        <div className={cn("shrink-0 w-5 h-5 rounded-md flex items-center justify-center", tc.bg)}>
-          <span className={cn("w-1.5 h-1.5 rounded-full", tc.dot)} />
-        </div>
+        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 bg-muted/20 px-1.5 py-0.5 rounded-md">{tc.label}</span>
       </div>
 
       <div className="flex items-center gap-1.5 mb-2.5">
@@ -878,10 +873,10 @@ export default function PipelinePage() {
                         className={cn(
                           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
                           isActive
-                            ? cn(cfg.text, "bg-muted/20 ring-1 ring-border/40")
+                            ? "text-foreground bg-muted/20 ring-1 ring-border/40"
                             : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/20"
                         )}>
-                        <span className={cn("w-2 h-2 rounded-full", isActive ? cfg.dot : "bg-muted-foreground/20")} />
+                        <span className="tabular-nums">{cfg.label}</span>
                         <span className="tabular-nums">{count}</span>
                       </button>
                     );
