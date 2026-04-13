@@ -56,34 +56,34 @@ Deno.serve(async (req: Request) => {
       const url = `${LOFTY_API_BASE}/api/v2/leads?page=${page}&pageSize=${pageSize}`;
       console.log(`Fetching Lofty leads page ${page}...`);
 
-      const res = await fetch(url, {
+      // Lofty API Key auth uses "token [KEY]" per docs
+      let res = await fetch(url, {
         headers: {
-          "Authorization": `Bearer ${LOFTY_API_KEY}`,
+          "Authorization": `token ${LOFTY_API_KEY}`,
           "Content-Type": "application/json",
         },
       });
 
+      // If token auth fails, try Bearer (in case it's an OAuth token)
+      if (res.status === 401) {
+        await res.text();
+        res = await fetch(url, {
+          headers: {
+            "Authorization": `Bearer ${LOFTY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        });
+      }
+
       if (!res.ok) {
         const body = await res.text();
         console.error(`Lofty API error [${res.status}]:`, body);
-
-        // If 401, try token auth format
-        if (res.status === 401) {
-          const retryRes = await fetch(url, {
-            headers: {
-              "Authorization": `token ${LOFTY_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (!retryRes.ok) {
-            const retryBody = await retryRes.text();
-            await logSync(supabase, "failed", 0, 0, 0, `Auth failed with both Bearer and token: ${retryBody.substring(0, 300)}`);
-            return new Response(
-              JSON.stringify({ success: false, error: `Lofty API auth failed: ${retryRes.status}` }),
-              { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
-          }
-          const retryData = await retryRes.json();
+        await logSync(supabase, "failed", 0, 0, 0, `Lofty API error: ${res.status} - ${body.substring(0, 300)}`);
+        return new Response(
+          JSON.stringify({ success: false, error: `Lofty API returned ${res.status}`, details: body.substring(0, 300) }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
           const leads = retryData.data ?? retryData.leads ?? retryData ?? [];
           if (Array.isArray(leads) && leads.length > 0) {
             allLeads = allLeads.concat(leads);
