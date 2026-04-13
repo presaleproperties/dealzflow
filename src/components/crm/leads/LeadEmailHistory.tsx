@@ -1,6 +1,6 @@
 import { Mail, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { useCrmEmailLog } from '@/hooks/useGmail';
+import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LeadEmailHistory({ contactId }: { contactId: string }) {

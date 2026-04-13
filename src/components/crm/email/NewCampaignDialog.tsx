@@ -6,12 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { useCrmEmailTemplates, useCreateCampaign } from '@/hooks/useCrmEmail';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, PROJECTS } from '@/hooks/useCrmContacts';
-import { useMailerLiteStatus, useMailerLiteGroups, useCreateMailerLiteCampaign, useSendMailerLiteCampaign } from '@/hooks/useMailerLite';
 import { toast } from 'sonner';
 
 interface Props {
@@ -22,13 +20,7 @@ interface Props {
 export function NewCampaignDialog({ open, onOpenChange }: Props) {
   const { data: templates = [] } = useCrmEmailTemplates();
   const { data: contacts = [] } = useCrmContacts();
-  const { data: mlStatus } = useMailerLiteStatus();
-  const { data: mlGroups = [] } = useMailerLiteGroups();
   const createCampaign = useCreateCampaign();
-  const createMlCampaign = useCreateMailerLiteCampaign();
-  const sendMlCampaign = useSendMailerLiteCampaign();
-
-  const isMailerLiteConnected = mlStatus?.connected ?? false;
 
   const [step, setStep] = useState(0);
   const [subject, setSubject] = useState('');
@@ -36,19 +28,11 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
   // Local CRM filter mode
   const [filterType, setFilterType] = useState('all');
   const [filterValue, setFilterValue] = useState('');
-  // MailerLite group selection
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [scheduleType, setScheduleType] = useState<'now' | 'schedule'>('now');
   const [scheduleDate, setScheduleDate] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   const recipientCount = (() => {
-    if (isMailerLiteConnected) {
-      if (selectedGroupIds.length === 0) return mlStatus?.subscriberCount ?? 0;
-      return mlGroups
-        .filter(g => selectedGroupIds.includes(g.id))
-        .reduce((sum, g) => sum + (g.active_count || 0), 0);
-    }
     if (filterType === 'all') return contacts.length;
     return contacts.filter(c => {
       if (filterType === 'status') return c.status === filterValue;
@@ -66,48 +50,20 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
     }
   };
 
-  const toggleGroup = (groupId: string) => {
-    setSelectedGroupIds(prev =>
-      prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
-    );
-  };
-
   const handleSend = async () => {
     setIsSending(true);
     try {
-      if (isMailerLiteConnected) {
-        // Create campaign via MailerLite
-        const result = await createMlCampaign.mutateAsync({
-          name: subject,
-          subject,
-          content: body,
-          groupIds: selectedGroupIds,
-          recipientCount,
-        });
+      const segmentFilter: Record<string, string | number | boolean | null> = { type: filterType };
+      if (filterType !== 'all') segmentFilter.value = filterValue;
 
-        // Send or schedule
-        if (result.campaignId) {
-          await sendMlCampaign.mutateAsync({
-            campaignId: result.campaignId,
-            schedule: scheduleType === 'schedule' && scheduleDate
-              ? new Date(scheduleDate).toISOString()
-              : undefined,
-          });
-        }
-      } else {
-        // Fallback: local-only campaign
-        const segmentFilter: Record<string, string | number | boolean | null> = { type: filterType };
-        if (filterType !== 'all') segmentFilter.value = filterValue;
-
-        await createCampaign.mutateAsync({
-          subject,
-          body_html: body,
-          status: scheduleType === 'now' ? 'sent' : 'scheduled',
-          recipients_count: recipientCount,
-          segment_filter: segmentFilter,
-          sent_at: scheduleType === 'now' ? new Date().toISOString() : scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
-        });
-      }
+      await createCampaign.mutateAsync({
+        subject,
+        body_html: body,
+        status: scheduleType === 'now' ? 'sent' : 'scheduled',
+        recipients_count: recipientCount,
+        segment_filter: segmentFilter,
+        sent_at: scheduleType === 'now' ? new Date().toISOString() : scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
+      });
       resetAndClose();
     } catch {
       // error is handled by mutation hooks
@@ -122,7 +78,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
     setBody('');
     setFilterType('all');
     setFilterValue('');
-    setSelectedGroupIds([]);
     setScheduleType('now');
     setScheduleDate('');
     onOpenChange(false);
@@ -137,15 +92,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Campaign</DialogTitle></DialogHeader>
-
-        {!isMailerLiteConnected && (
-          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
-            <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-            <span className="text-amber-700 dark:text-amber-400">
-              MailerLite not connected. Campaign will be saved locally only. Connect MailerLite in CRM Settings to send real emails.
-            </span>
-          </div>
-        )}
 
         <Tabs value={String(step)} onValueChange={v => setStep(Number(v))}>
           <TabsList className="grid grid-cols-4 mb-4">
@@ -201,29 +147,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
 
           {/* Step 2: Audience */}
           <TabsContent value="2" className="space-y-3">
-            {isMailerLiteConnected ? (
-              <>
-                <p className="text-sm text-muted-foreground">Select MailerLite groups to send to. Leave empty to send to all subscribers.</p>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto">
-                  {mlGroups.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">No groups found. Sync contacts first in CRM Settings.</p>
-                  ) : (
-                    mlGroups.map(g => (
-                      <label key={g.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted/20 cursor-pointer transition-colors">
-                        <Checkbox
-                          checked={selectedGroupIds.includes(g.id)}
-                          onCheckedChange={() => toggleGroup(g.id)}
-                        />
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-foreground">{g.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2">{g.active_count || 0} subscribers</span>
-                        </div>
-                      </label>
-                    ))
-                  )}
-                </div>
-              </>
-            ) : (
               <>
                 <div>
                   <Label>Filter by</Label>
@@ -249,7 +172,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
                   </div>
                 )}
               </>
-            )}
 
             <div className="bg-muted/30 rounded-lg p-3">
               <p className="text-sm font-medium text-foreground">{recipientCount} recipients</p>
@@ -267,13 +189,10 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
               <p className="text-sm font-medium text-foreground">{subject}</p>
               <p className="text-xs text-muted-foreground mt-2">Recipients</p>
               <p className="text-sm text-foreground">
-                {recipientCount} {isMailerLiteConnected ? 'subscribers' : 'leads'}
-                {isMailerLiteConnected && selectedGroupIds.length > 0 && (
-                  <span className="text-muted-foreground"> · {selectedGroupIds.length} group{selectedGroupIds.length !== 1 ? 's' : ''}</span>
-                )}
+                {recipientCount} leads
               </p>
               <p className="text-xs text-muted-foreground mt-2">Sending via</p>
-              <p className="text-sm text-foreground">{isMailerLiteConnected ? 'MailerLite' : 'Local (not sent)'}</p>
+              <p className="text-sm text-foreground">Local (saved)</p>
               <p className="text-xs text-muted-foreground mt-2">Preview</p>
               <div className="bg-card border border-border rounded-lg p-3 text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: body }} />
             </div>

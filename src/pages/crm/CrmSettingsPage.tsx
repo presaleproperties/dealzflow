@@ -53,7 +53,6 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
-import LoftySyncSection from '@/components/crm/settings/LoftySyncSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -206,10 +205,6 @@ export default function CrmSettingsPage() {
         <Separator />
         <div id="settings-integrations" className="scroll-mt-16">
           <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-lofty" className="scroll-mt-16">
-          <SectionErrorBoundary name="Lofty Sync"><LoftySyncSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-email" className="scroll-mt-16">

@@ -23,7 +23,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useCrmContact, useCrmContactMessages, useCrmContactShowings, useCrmContactTasks, useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmContacts, LEAD_STATUSES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { useLeadNotes, useAddNote, useUpdateNote, useDeleteNote, type CrmNote } from '@/hooks/useCrmNotes';
-import { useCrmEmailLog } from '@/hooks/useGmail';
+import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';

@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmCampaigns } from '@/hooks/useCrmEmail';
-import { useMailerLiteStatus, useMailerLiteCampaigns } from '@/hooks/useMailerLite';
 import { NewCampaignDialog } from './NewCampaignDialog';
 import { CampaignDetailSheet } from './CampaignDetailSheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -34,33 +33,14 @@ type MergedCampaign = {
 
 export function CampaignsTab() {
   const { data: localCampaigns = [], isLoading: localLoading } = useCrmCampaigns();
-  const { data: mlStatus } = useMailerLiteStatus();
-  const { data: mlCampaigns = [], isLoading: mlLoading } = useMailerLiteCampaigns();
   const isMobile = useIsMobile();
   const [showNew, setShowNew] = useState(false);
   const [selected, setSelected] = useState<CrmEmailCampaign | null>(null);
 
-  const isMailerLiteConnected = mlStatus?.connected ?? false;
-  const isLoading = localLoading || (isMailerLiteConnected && mlLoading);
+  const isLoading = localLoading;
 
-  // Merge MailerLite campaigns with local ones
   const campaigns: MergedCampaign[] = [
-    // MailerLite campaigns
-    ...mlCampaigns.map(c => ({
-      id: c.id,
-      subject: c.emails?.[0]?.subject || c.name || 'Untitled',
-      status: c.status === 'sent' ? 'sent' : c.status === 'draft' ? 'draft' : c.status,
-      recipients: c.stats?.sent || 0,
-      opens: c.stats?.opens_count || 0,
-      clicks: c.stats?.clicks_count || 0,
-      openRate: c.stats?.open_rate ? `${(c.stats.open_rate.float * 100).toFixed(1)}%` : '0%',
-      clickRate: c.stats?.click_rate ? `${(c.stats.click_rate.float * 100).toFixed(1)}%` : '0%',
-      sentAt: c.finished_at || c.scheduled_for || c.created_at,
-      bodyHtml: null,
-      source: 'mailerlite' as const,
-    })),
-    // Local-only campaigns (not synced to MailerLite)
-    ...(!isMailerLiteConnected ? localCampaigns.map(c => ({
+    ...localCampaigns.map(c => ({
       id: c.id,
       subject: c.subject,
       status: c.status ?? 'draft',
@@ -72,7 +52,7 @@ export function CampaignsTab() {
       sentAt: c.sent_at,
       bodyHtml: c.body_html,
       source: 'local' as const,
-    })) : []),
+    })),
   ].sort((a, b) => {
     if (!a.sentAt) return 1;
     if (!b.sentAt) return -1;
@@ -86,11 +66,6 @@ export function CampaignsTab() {
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-foreground">Campaigns</h2>
-          {isMailerLiteConnected && (
-            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-              via MailerLite
-            </Badge>
-          )}
         </div>
         <Button size="sm" className="gap-1.5 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white min-h-[44px] sm:min-h-0" onClick={() => setShowNew(true)}>
           <Plus className="w-4 h-4" /> New Campaign
