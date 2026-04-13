@@ -241,7 +241,7 @@ export function useAddCrmContact() {
             status: row.status,
             project: contact.project || null,
             tags: contact.tags || [],
-            notes: contact.notes || null,
+            notes: (contact as any).notes || null,
           },
         });
       } catch {
