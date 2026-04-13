@@ -103,15 +103,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Campaign</DialogTitle></DialogHeader>
 
-        {!isMailerLiteConnected && (
-          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
-            <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-            <span className="text-amber-700 dark:text-amber-400">
-              MailerLite not connected. Campaign will be saved locally only. Connect MailerLite in CRM Settings to send real emails.
-            </span>
-          </div>
-        )}
-
         <Tabs value={String(step)} onValueChange={v => setStep(Number(v))}>
           <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="0">Template</TabsTrigger>
@@ -166,29 +157,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
 
           {/* Step 2: Audience */}
           <TabsContent value="2" className="space-y-3">
-            {isMailerLiteConnected ? (
-              <>
-                <p className="text-sm text-muted-foreground">Select MailerLite groups to send to. Leave empty to send to all subscribers.</p>
-                <div className="space-y-2 max-h-[250px] overflow-y-auto">
-                  {mlGroups.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">No groups found. Sync contacts first in CRM Settings.</p>
-                  ) : (
-                    mlGroups.map(g => (
-                      <label key={g.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-muted/20 cursor-pointer transition-colors">
-                        <Checkbox
-                          checked={selectedGroupIds.includes(g.id)}
-                          onCheckedChange={() => toggleGroup(g.id)}
-                        />
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-foreground">{g.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2">{g.active_count || 0} subscribers</span>
-                        </div>
-                      </label>
-                    ))
-                  )}
-                </div>
-              </>
-            ) : (
               <>
                 <div>
                   <Label>Filter by</Label>
@@ -214,7 +182,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
                   </div>
                 )}
               </>
-            )}
 
             <div className="bg-muted/30 rounded-lg p-3">
               <p className="text-sm font-medium text-foreground">{recipientCount} recipients</p>
@@ -233,12 +200,10 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
               <p className="text-xs text-muted-foreground mt-2">Recipients</p>
               <p className="text-sm text-foreground">
                 {recipientCount} {isMailerLiteConnected ? 'subscribers' : 'leads'}
-                {isMailerLiteConnected && selectedGroupIds.length > 0 && (
-                  <span className="text-muted-foreground"> · {selectedGroupIds.length} group{selectedGroupIds.length !== 1 ? 's' : ''}</span>
-                )}
+                {recipientCount} leads
               </p>
               <p className="text-xs text-muted-foreground mt-2">Sending via</p>
-              <p className="text-sm text-foreground">{isMailerLiteConnected ? 'MailerLite' : 'Local (not sent)'}</p>
+              <p className="text-sm text-foreground">Local (saved)</p>
               <p className="text-xs text-muted-foreground mt-2">Preview</p>
               <div className="bg-card border border-border rounded-lg p-3 text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: body }} />
             </div>

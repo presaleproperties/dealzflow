@@ -66,11 +66,6 @@ export function CampaignsTab() {
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-foreground">Campaigns</h2>
-          {isMailerLiteConnected && (
-            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-              via MailerLite
-            </Badge>
-          )}
         </div>
         <Button size="sm" className="gap-1.5 bg-[hsl(39_67%_55%)] hover:bg-[hsl(39_67%_48%)] text-white min-h-[44px] sm:min-h-0" onClick={() => setShowNew(true)}>
           <Plus className="w-4 h-4" /> New Campaign
