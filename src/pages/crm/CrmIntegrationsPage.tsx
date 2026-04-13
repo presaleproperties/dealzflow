@@ -152,8 +152,8 @@ export default function CrmIntegrationsPage() {
           <h1 className="text-2xl font-bold text-foreground">Integrations Hub</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Connect and monitor all external systems feeding into DealsFlow</p>
         </div>
-        <Button onClick={handleRunAll} className="gap-2 shrink-0">
-          <RefreshCw className="w-4 h-4" /> Run All Syncs
+        <Button onClick={handleRunAll} disabled={syncing} className="gap-2 shrink-0">
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Syncing...' : 'Sync with Lofty'}
         </Button>
       </div>
 
