@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
 
     while (hasMore && page <= 50) {
       const url = `${LOFTY_API_BASE}/api/v2/leads?page=${page}&pageSize=${pageSize}`;
-      console.log(`Fetching Lofty leads page ${page}...`);
+      console.log(`Fetching Lofty leads page ${page}, key prefix=${LOFTY_API_KEY.substring(0, 8)}..., len=${LOFTY_API_KEY.length}`);
 
       // Lofty API Key auth: "token [KEY]" per official docs
       const res = await fetchWithAuthFallback(url, LOFTY_API_KEY);
