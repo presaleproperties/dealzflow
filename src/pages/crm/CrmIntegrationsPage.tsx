@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save } from 'lucide-react';
+import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save, Eye, EyeOff, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
-import { getLoftyOutboundWebhookUrl } from '@/lib/loftyWebhook';
 import { toast } from 'sonner';
 
 export type CrmContact = {
@@ -228,28 +227,6 @@ export function useAddCrmContact() {
         .select()
         .single();
       if (error) throw error;
-
-      const loftyWebhookUrl = getLoftyOutboundWebhookUrl();
-      if (loftyWebhookUrl) {
-        void fetch(loftyWebhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            first_name: contact.first_name,
-            last_name: contact.last_name,
-            email: contact.email || null,
-            phone: contact.phone || null,
-            source: contact.source || 'DealsFlow',
-            status: row.status,
-            project: contact.project || null,
-            tags: contact.tags || [],
-          }),
-        }).catch(() => {
-          // Don't block lead creation if the outbound webhook fails
-        });
-      }
 
       return data;
     },
