@@ -133,7 +133,8 @@ Deno.serve(async (req: Request) => {
       action = "updated";
     } else {
       // INSERT new
-      await supabase.from("crm_contacts").insert(cleanContact);
+      const { error: insertErr } = await supabase.from("crm_contacts").insert(cleanContact);
+      if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
       action = "inserted";
     }
 
