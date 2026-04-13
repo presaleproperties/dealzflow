@@ -14,7 +14,6 @@ import { NeedsAttention } from '@/components/command-center/NeedsAttention';
 import { TodaysFocus } from '@/components/command-center/TodaysFocus';
 import { PipelineInsights } from '@/components/command-center/PipelineInsights';
 import { CalendarWidget } from '@/components/command-center/CalendarWidget';
-import { FacebookAdsWidget } from '@/components/command-center/FacebookAdsWidget';
 
 // ─── Query keys ────────────────────────────────────────────────────────────────
 const QK = {
@@ -251,19 +250,12 @@ export default function CommandCenterPage() {
           </FadeUp>
         </div>
 
-        {/* ── ROW 4: Facebook Ads + Pipeline Insights side by side ── */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          <FadeUp delay={0.15}>
-            <div className="h-full" style={{ minHeight: '420px' }}>
-              <FacebookAdsWidget />
-            </div>
-          </FadeUp>
-          <FadeUp delay={0.18}>
-            <div className="h-full" style={{ minHeight: '380px' }}>
-              <PipelineInsights sourceData={sourceData} statusData={statusData} />
-            </div>
-          </FadeUp>
-        </div>
+        {/* ── ROW 4: Pipeline Insights ── */}
+        <FadeUp delay={0.15}>
+          <div className="h-full" style={{ minHeight: '380px' }}>
+            <PipelineInsights sourceData={sourceData} statusData={statusData} />
+          </div>
+        </FadeUp>
 
       </div>
     </AppLayout>

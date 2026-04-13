@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, RefreshCw, Database, MessageCircle, Calendar, Mail, Phone, Globe, Zap, CalendarClock, ArrowUpRight, Check, Save, Eye, EyeOff, Pencil } from 'lucide-react';
+import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save, Eye, EyeOff, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getLoftyOutboundWebhookUrl, setLoftyOutboundWebhookUrl } from '@/lib/loftyWebhook';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── helpers ─── */
@@ -22,10 +21,7 @@ function copyUrl(url: string) {
 }
 
 const typeBadge: Record<string, { label: string; cls: string }> = {
-  lofty_pull:       { label: 'Lofty Pull',       cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
-  manychat_ingest:  { label: 'ManyChat',          cls: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
   calendly_booking: { label: 'Calendly',           cls: 'bg-teal-500/15 text-teal-400 border-teal-500/30' },
-  mailerlite_event: { label: 'MailerLite',         cls: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
   nurture_run:      { label: 'Nurture Run',        cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
 };
 
@@ -51,39 +47,11 @@ interface SystemCard {
 
 const systems: SystemCard[] = [
   {
-    name: 'Lofty CRM', icon: Database,
-    badgeLabel: 'Webhook Flow', badgeVariant: 'info',
-    description: 'Lofty lead sync now runs through Zapier webhooks instead of direct API pull/push calls.',
-    webhookUrl: `${BASE}/lofty-ingest`,
-    setup: 'Use the Zapier setup guide below for inbound leads, and save your outbound Catch Hook URL below.',
-  },
-  {
-    name: 'ManyChat (TikTok + IG)', icon: MessageCircle,
-    badgeLabel: 'Webhook Ready', badgeVariant: 'success',
-    description: 'Captures leads from TikTok and Instagram DMs.',
-    webhookUrl: `${BASE}/lead-webhook?source=instagram_dm`,
-    setup: 'Add URL as External Request in ManyChat',
-    secretKey: 'MANYCHAT_API_KEY',
-    secretLabel: 'ManyChat API Key',
-  },
-  {
     name: 'Calendly', icon: Calendar,
     badgeLabel: 'Webhook Ready', badgeVariant: 'success',
     description: 'Auto-updates lead status on booking.',
     webhookUrl: `${BASE}/calendly-webhook`,
     setup: 'Add URL in Calendly Webhooks for invitee.created',
-  },
-  {
-    name: 'MailerLite', icon: Mail,
-    badgeLabel: 'Needs Webhook', badgeVariant: 'warning',
-    description: 'Tracks email opens/clicks for scoring.',
-    webhookUrl: `${BASE}/engagement-webhook`,
-    setup: 'Add in MailerLite Integrations → Webhooks',
-  },
-  {
-    name: 'WhatsApp Business', icon: Phone,
-    badgeLabel: 'Needs Templates', badgeVariant: 'warning',
-    description: 'Sends nurture messages. Templates need Meta approval.',
   },
   {
     name: 'Google Calendar', icon: CalendarClock,
@@ -99,7 +67,7 @@ const systems: SystemCard[] = [
   {
     name: 'Nurture Engine', icon: Zap,
     badgeLabel: 'Ready', badgeVariant: 'info',
-    description: '7-day WhatsApp + Email sequence.',
+    description: '7-day Email nurture sequence.',
     webhookUrl: `${BASE}/nurture-runner`,
     setup: 'Runs daily at 8AM PT',
   },
@@ -230,9 +198,6 @@ export default function CrmIntegrationsPage() {
           ))}
         </div>
       </div>
-
-      {/* SECTION 2b — Outbound: Push to Lofty */}
-      <LoftyOutboundSection />
 
       {/* SECTION 3 — Recent Bookings */}
       <Card>
@@ -401,64 +366,3 @@ function SystemCardItem({ system: s }: { system: SystemCard }) {
   );
 }
 
-function LoftyOutboundSection() {
-  const [url, setUrl] = useState('');
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    const stored = getLoftyOutboundWebhookUrl();
-    if (stored) setUrl(stored);
-  }, []);
-
-  const handleSave = () => {
-    const trimmed = setLoftyOutboundWebhookUrl(url);
-    setUrl(trimmed ?? '');
-    setSaved(true);
-    toast.success(trimmed ? 'Outbound Lofty webhook saved' : 'Outbound webhook removed');
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <ArrowUpRight className="w-5 h-5 text-foreground" />
-          <CardTitle className="text-lg">Push Leads to Lofty</CardTitle>
-        </div>
-        <CardDescription>
-          Every new lead added in DealsFlow will be automatically sent to Lofty via your Zapier webhook.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="lofty-webhook" className="text-xs font-medium text-muted-foreground">
-            Zapier Webhook URL (Catch Hook)
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id="lofty-webhook"
-              placeholder="https://hooks.zapier.com/hooks/catch/..."
-              value={url}
-              onChange={e => { setUrl(e.target.value); setSaved(false); }}
-              className="flex-1 font-mono text-xs"
-            />
-            <Button onClick={handleSave} size="sm" className="gap-1.5 shrink-0">
-              {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-              {saved ? 'Saved' : 'Save'}
-            </Button>
-          </div>
-        </div>
-        <div className="rounded-lg bg-muted/40 p-3 space-y-1.5">
-          <p className="text-xs font-medium text-foreground">Setup Instructions:</p>
-          <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal list-inside">
-            <li>In Zapier, create a new Zap with <strong>Webhooks by Zapier → Catch Hook</strong> as the trigger</li>
-            <li>Copy the webhook URL and paste it above</li>
-            <li>Add an action step: <strong>Lofty → Create Lead</strong></li>
-            <li>Map the fields: first_name, last_name, email, phone, source, status</li>
-            <li>Turn on the Zap — new leads will flow automatically!</li>
-          </ol>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
