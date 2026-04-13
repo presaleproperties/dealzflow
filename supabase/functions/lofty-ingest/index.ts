@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     first_name:
       payload.first_name || payload.firstName || payload["First Name"] || "",
     last_name:
-      payload.last_name || payload.lastName || payload["Last Name"] || "",
+      payload.last_name || payload.lastName || payload["Last Name"] || "(unknown)",
     email: payload.email || payload.Email || payload.emails || null,
     phone: normalizePhone(
       (payload.phone ||
