@@ -6,8 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { useCrmEmailTemplates, useCreateCampaign } from '@/hooks/useCrmEmail';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, PROJECTS } from '@/hooks/useCrmContacts';
@@ -29,8 +28,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
   // Local CRM filter mode
   const [filterType, setFilterType] = useState('all');
   const [filterValue, setFilterValue] = useState('');
-  // MailerLite group selection
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [scheduleType, setScheduleType] = useState<'now' | 'schedule'>('now');
   const [scheduleDate, setScheduleDate] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -51,12 +48,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
       setSubject(tpl.subject);
       setBody(tpl.body_html ?? '');
     }
-  };
-
-  const toggleGroup = (groupId: string) => {
-    setSelectedGroupIds(prev =>
-      prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
-    );
   };
 
   const handleSend = async () => {
@@ -87,7 +78,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
     setBody('');
     setFilterType('all');
     setFilterValue('');
-    setSelectedGroupIds([]);
     setScheduleType('now');
     setScheduleDate('');
     onOpenChange(false);
