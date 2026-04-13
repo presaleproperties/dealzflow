@@ -11,7 +11,6 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { useCrmEmailTemplates, useCreateCampaign } from '@/hooks/useCrmEmail';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, PROJECTS } from '@/hooks/useCrmContacts';
-import { useMailerLiteStatus, useMailerLiteGroups, useCreateMailerLiteCampaign, useSendMailerLiteCampaign } from '@/hooks/useMailerLite';
 import { toast } from 'sonner';
 
 interface Props {
@@ -22,13 +21,7 @@ interface Props {
 export function NewCampaignDialog({ open, onOpenChange }: Props) {
   const { data: templates = [] } = useCrmEmailTemplates();
   const { data: contacts = [] } = useCrmContacts();
-  const { data: mlStatus } = useMailerLiteStatus();
-  const { data: mlGroups = [] } = useMailerLiteGroups();
   const createCampaign = useCreateCampaign();
-  const createMlCampaign = useCreateMailerLiteCampaign();
-  const sendMlCampaign = useSendMailerLiteCampaign();
-
-  const isMailerLiteConnected = mlStatus?.connected ?? false;
 
   const [step, setStep] = useState(0);
   const [subject, setSubject] = useState('');
@@ -43,12 +36,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
   const [isSending, setIsSending] = useState(false);
 
   const recipientCount = (() => {
-    if (isMailerLiteConnected) {
-      if (selectedGroupIds.length === 0) return mlStatus?.subscriberCount ?? 0;
-      return mlGroups
-        .filter(g => selectedGroupIds.includes(g.id))
-        .reduce((sum, g) => sum + (g.active_count || 0), 0);
-    }
     if (filterType === 'all') return contacts.length;
     return contacts.filter(c => {
       if (filterType === 'status') return c.status === filterValue;
@@ -75,39 +62,17 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
   const handleSend = async () => {
     setIsSending(true);
     try {
-      if (isMailerLiteConnected) {
-        // Create campaign via MailerLite
-        const result = await createMlCampaign.mutateAsync({
-          name: subject,
-          subject,
-          content: body,
-          groupIds: selectedGroupIds,
-          recipientCount,
-        });
+      const segmentFilter: Record<string, string | number | boolean | null> = { type: filterType };
+      if (filterType !== 'all') segmentFilter.value = filterValue;
 
-        // Send or schedule
-        if (result.campaignId) {
-          await sendMlCampaign.mutateAsync({
-            campaignId: result.campaignId,
-            schedule: scheduleType === 'schedule' && scheduleDate
-              ? new Date(scheduleDate).toISOString()
-              : undefined,
-          });
-        }
-      } else {
-        // Fallback: local-only campaign
-        const segmentFilter: Record<string, string | number | boolean | null> = { type: filterType };
-        if (filterType !== 'all') segmentFilter.value = filterValue;
-
-        await createCampaign.mutateAsync({
-          subject,
-          body_html: body,
-          status: scheduleType === 'now' ? 'sent' : 'scheduled',
-          recipients_count: recipientCount,
-          segment_filter: segmentFilter,
-          sent_at: scheduleType === 'now' ? new Date().toISOString() : scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
-        });
-      }
+      await createCampaign.mutateAsync({
+        subject,
+        body_html: body,
+        status: scheduleType === 'now' ? 'sent' : 'scheduled',
+        recipients_count: recipientCount,
+        segment_filter: segmentFilter,
+        sent_at: scheduleType === 'now' ? new Date().toISOString() : scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
+      });
       resetAndClose();
     } catch {
       // error is handled by mutation hooks
