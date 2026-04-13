@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, RefreshCw, Database, MessageCircle, Calendar, Mail, Phone, Globe, Zap, CalendarClock, ArrowUpRight, Check, Save } from 'lucide-react';
+import { Copy, RefreshCw, Database, MessageCircle, Calendar, Mail, Phone, Globe, Zap, CalendarClock, ArrowUpRight, Check, Save, Eye, EyeOff, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -44,6 +44,8 @@ interface SystemCard {
   description: string;
   webhookUrl?: string;
   setup?: string;
+  secretKey?: string; // name of the secret to edit
+  secretLabel?: string;
 }
 
 const systems: SystemCard[] = [
@@ -52,6 +54,8 @@ const systems: SystemCard[] = [
     badgeLabel: 'API Key Connected', badgeVariant: 'success',
     description: 'Bi-directional lead sync. Auto-pulls from Lofty every 15 min + pushes new CRM leads to Lofty.',
     setup: 'API key configured — sync is automatic',
+    secretKey: 'LOFTY_API_KEY',
+    secretLabel: 'Lofty API Key',
   },
   {
     name: 'ManyChat (TikTok + IG)', icon: MessageCircle,
@@ -59,6 +63,8 @@ const systems: SystemCard[] = [
     description: 'Captures leads from TikTok and Instagram DMs.',
     webhookUrl: `${BASE}/lead-webhook?source=instagram_dm`,
     setup: 'Add URL as External Request in ManyChat',
+    secretKey: 'MANYCHAT_API_KEY',
+    secretLabel: 'ManyChat API Key',
   },
   {
     name: 'Calendly', icon: Calendar,
@@ -98,7 +104,6 @@ const systems: SystemCard[] = [
     setup: 'Runs daily at 8AM PT',
   },
 ];
-
 /* ─── Component ─── */
 export default function CrmIntegrationsPage() {
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
@@ -216,31 +221,7 @@ export default function CrmIntegrationsPage() {
         <h2 className="text-lg font-semibold text-foreground mb-4">Connected Systems</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {systems.map((s) => (
-            <Card key={s.name} className="flex flex-col">
-              <CardHeader className="pb-2 flex-row items-start gap-3 space-y-0">
-                <div className="rounded-lg bg-muted/60 p-2.5">
-                  <s.icon className="w-5 h-5 text-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-sm font-semibold leading-tight">{s.name}</CardTitle>
-                  <Badge variant={s.badgeVariant} className="mt-1.5 text-[10px]">{s.badgeLabel}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col gap-3 pt-0">
-                <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
-                {s.webhookUrl && (
-                  <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg px-2.5 py-1.5 mt-auto">
-                    <code className="text-[10px] text-muted-foreground truncate flex-1">{s.webhookUrl}</code>
-                    <button onClick={() => copyUrl(s.webhookUrl!)} className="shrink-0 p-1 rounded hover:bg-muted transition-colors" aria-label="Copy URL">
-                      <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                  </div>
-                )}
-                {s.setup && (
-                  <p className="text-[10px] text-muted-foreground/70 italic">Setup: {s.setup}</p>
-                )}
-              </CardContent>
-            </Card>
+            <SystemCardItem key={s.name} system={s} />
           ))}
         </div>
       </div>
@@ -294,6 +275,124 @@ export default function CrmIntegrationsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/* ─── System Card with editable API key ─── */
+function SystemCardItem({ system: s }: { system: SystemCard }) {
+  const [showKey, setShowKey] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [keyValue, setKeyValue] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Load stored key from localStorage
+  useEffect(() => {
+    if (s.secretKey) {
+      const stored = localStorage.getItem(`integration_key_${s.secretKey}`);
+      if (stored) setKeyValue(stored);
+    }
+  }, [s.secretKey]);
+
+  const handleSaveKey = async () => {
+    if (!s.secretKey) return;
+    setSaving(true);
+    // Store locally for display purposes
+    localStorage.setItem(`integration_key_${s.secretKey}`, keyValue.trim());
+    
+    // Copy to clipboard so user can paste into the secret update form
+    if (keyValue.trim()) {
+      navigator.clipboard.writeText(keyValue.trim());
+      toast.success(`${s.secretLabel} saved locally & copied to clipboard`);
+    } else {
+      localStorage.removeItem(`integration_key_${s.secretKey}`);
+      toast.success(`${s.secretLabel} removed`);
+    }
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const maskedValue = keyValue ? `${keyValue.substring(0, 6)}${'•'.repeat(Math.min(20, keyValue.length - 6))}` : '';
+
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="pb-2 flex-row items-start gap-3 space-y-0">
+        <div className="rounded-lg bg-muted/60 p-2.5">
+          <s.icon className="w-5 h-5 text-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <CardTitle className="text-sm font-semibold leading-tight">{s.name}</CardTitle>
+          <Badge variant={s.badgeVariant} className="mt-1.5 text-[10px]">{s.badgeLabel}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col gap-3 pt-0">
+        <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
+        
+        {/* Editable API Key */}
+        {s.secretKey && (
+          <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-medium text-muted-foreground">{s.secretLabel}</label>
+              <div className="flex items-center gap-1">
+                {keyValue && (
+                  <button
+                    onClick={() => setShowKey(!showKey)}
+                    className="p-1 rounded hover:bg-muted transition-colors"
+                    aria-label={showKey ? 'Hide key' : 'Show key'}
+                  >
+                    {showKey ? <EyeOff className="w-3 h-3 text-muted-foreground" /> : <Eye className="w-3 h-3 text-muted-foreground" />}
+                  </button>
+                )}
+                <button
+                  onClick={() => setEditing(!editing)}
+                  className="p-1 rounded hover:bg-muted transition-colors"
+                  aria-label="Edit key"
+                >
+                  <Pencil className="w-3 h-3 text-muted-foreground" />
+                </button>
+                {keyValue && (
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(keyValue); toast.success('Key copied'); }}
+                    className="p-1 rounded hover:bg-muted transition-colors"
+                    aria-label="Copy key"
+                  >
+                    <Copy className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+            </div>
+            {editing ? (
+              <div className="flex gap-1.5">
+                <Input
+                  value={keyValue}
+                  onChange={e => setKeyValue(e.target.value)}
+                  placeholder="Paste your API key..."
+                  className="flex-1 font-mono text-[10px] h-7"
+                />
+                <Button size="sm" onClick={handleSaveKey} disabled={saving} className="h-7 px-2 text-[10px]">
+                  <Save className="w-3 h-3 mr-1" /> Save
+                </Button>
+              </div>
+            ) : (
+              <p className="font-mono text-[10px] text-muted-foreground truncate">
+                {keyValue ? (showKey ? keyValue : maskedValue) : <span className="italic">No key set — click ✏️ to add</span>}
+              </p>
+            )}
+          </div>
+        )}
+        
+        {s.webhookUrl && (
+          <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg px-2.5 py-1.5 mt-auto">
+            <code className="text-[10px] text-muted-foreground truncate flex-1">{s.webhookUrl}</code>
+            <button onClick={() => copyUrl(s.webhookUrl!)} className="shrink-0 p-1 rounded hover:bg-muted transition-colors" aria-label="Copy URL">
+              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        )}
+        {s.setup && (
+          <p className="text-[10px] text-muted-foreground/70 italic">Setup: {s.setup}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
