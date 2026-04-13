@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Flame, Thermometer, Snowflake, Trash2, Save, User, DollarSign, Home, Tag, StickyNote, TrendingUp, Radio } from 'lucide-react';
+import { X, Trash2, Save } from 'lucide-react';
 import { PipelineProspect } from '@/hooks/usePipelineProspects';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/lib/haptics';
@@ -9,14 +9,9 @@ import { formatCurrency } from '@/lib/format';
 const LEAD_SOURCES = ['Instagram', 'TikTok', 'Facebook Ads', 'YouTube', 'Referral', 'Team', 'Open House', 'Cold Call', 'Website', 'Past Client', 'Other'];
 const HOME_TYPES = ['Condo', 'Townhome', 'Detached House', 'Semi-Detached', 'Duplex', 'Pre-Sale Condo', 'Pre-Sale Townhome', 'Land', 'Commercial', 'Listings'];
 
-// ── Buyer statuses ─────────────────────────────────────────────────
 const BUYER_STATUS_OPTIONS = ['active', 'in-contract', 'pending-mortgage', 'closed', 'lost'] as const;
 const BUYER_STATUS_LABELS: Record<string, string> = {
-  active: 'Active',
-  'in-contract': 'In Contract',
-  'pending-mortgage': 'Pending Mortgage',
-  closed: 'Closed',
-  lost: 'Lost',
+  active: 'Active', 'in-contract': 'In Contract', 'pending-mortgage': 'Pending Mortgage', closed: 'Closed', lost: 'Lost',
 };
 const BUYER_STATUS_COLORS: Record<string, string> = {
   active: 'bg-primary/15 text-primary border-primary/30',
@@ -26,14 +21,9 @@ const BUYER_STATUS_COLORS: Record<string, string> = {
   lost: 'bg-destructive/15 text-destructive border-destructive/30',
 };
 
-// ── Listing statuses ───────────────────────────────────────────────
 const LISTING_STATUS_OPTIONS = ['want-to-sell', 'active-listing', 'in-contract-listing', 'sold', 'listing-lost'] as const;
 const LISTING_STATUS_LABELS: Record<string, string> = {
-  'want-to-sell': 'Want to Sell',
-  'active-listing': 'Active',
-  'in-contract-listing': 'In Contract',
-  sold: 'Sold',
-  'listing-lost': 'Lost',
+  'want-to-sell': 'Want to Sell', 'active-listing': 'Active', 'in-contract-listing': 'In Contract', sold: 'Sold', 'listing-lost': 'Lost',
 };
 const LISTING_STATUS_COLORS: Record<string, string> = {
   'want-to-sell': 'bg-violet-500/15 text-violet-500 border-violet-500/30',
@@ -49,9 +39,9 @@ const ALL_STATUS_COLORS = { ...BUYER_STATUS_COLORS, ...LISTING_STATUS_COLORS };
 const DEAL_TYPE_OPTIONS = ['buyer', 'seller'] as const;
 
 const TEMP_CONFIG = {
-  hot:  { icon: Flame,       color: 'bg-rose-500/15 text-rose-500 border-rose-500/30',   label: 'Hot',  dot: 'bg-rose-500' },
-  warm: { icon: Thermometer, color: 'bg-amber-500/15 text-amber-600 border-amber-500/30', label: 'Warm', dot: 'bg-amber-500' },
-  cold: { icon: Snowflake,   color: 'bg-sky-500/15 text-sky-500 border-sky-500/30',       label: 'Cold', dot: 'bg-sky-500' },
+  hot:  { color: 'bg-rose-500/15 text-rose-500 border-rose-500/30',   label: 'Hot',  dot: 'bg-rose-500' },
+  warm: { color: 'bg-amber-500/15 text-amber-600 border-amber-500/30', label: 'Warm', dot: 'bg-amber-500' },
+  cold: { color: 'bg-sky-500/15 text-sky-500 border-sky-500/30',       label: 'Cold', dot: 'bg-sky-500' },
 };
 
 interface Props {
@@ -61,12 +51,9 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-function FieldLabel({ icon: Icon, label }: { icon: any; label: string }) {
+function FieldLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-1.5 mb-1.5">
-      <Icon className="h-3.5 w-3.5 text-muted-foreground/50" />
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">{label}</span>
-    </div>
+    <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50 mb-1.5">{label}</span>
   );
 }
 
@@ -109,26 +96,18 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
 
   const tempKey = (draft.temperature || 'warm') as keyof typeof TEMP_CONFIG;
   const tc = TEMP_CONFIG[tempKey] || TEMP_CONFIG.warm;
-  const TempIcon = tc.icon;
 
   const isListing = isListingLead(draft);
   const statusOptions = isListing ? LISTING_STATUS_OPTIONS : BUYER_STATUS_OPTIONS;
   const statusLabels = isListing ? LISTING_STATUS_LABELS : BUYER_STATUS_LABELS;
   const statusColors = isListing ? LISTING_STATUS_COLORS : BUYER_STATUS_COLORS;
 
-  // Default status when switching deal type
   const handleDealTypeChange = (dealType: string) => {
     set('deal_type', dealType as any);
     if (dealType === 'seller') {
-      // Switch to listing statuses if current status is a buyer status
-      if (!LISTING_STATUS_OPTIONS.includes(draft.status as any)) {
-        set('status', 'want-to-sell' as any);
-      }
+      if (!LISTING_STATUS_OPTIONS.includes(draft.status as any)) set('status', 'want-to-sell' as any);
     } else {
-      // Switch to buyer statuses if current is a listing status
-      if (LISTING_STATUS_OPTIONS.includes(draft.status as any)) {
-        set('status', 'active' as any);
-      }
+      if (LISTING_STATUS_OPTIONS.includes(draft.status as any)) set('status', 'active' as any);
     }
   };
 
@@ -140,7 +119,6 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
     <AnimatePresence>
       {prospect && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -151,7 +129,6 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
             onClick={onClose}
           />
 
-          {/* Sheet */}
           <motion.div
             key="sheet"
             initial={{ y: '100%' }}
@@ -173,16 +150,16 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3 border-b border-border/30">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-0.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/40 mb-1">
                     {isListing ? 'Listing Profile' : 'Lead Profile'}
                   </p>
                   <h2 className="text-lg font-bold tracking-tight truncate">{draft.client_name || 'Unnamed Lead'}</h2>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", tc.color)}>
-                      <TempIcon className="h-2.5 w-2.5" />
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold border", tc.color)}>
+                      <span className={cn("w-1.5 h-1.5 rounded-full", tc.dot)} />
                       {tc.label}
                     </span>
-                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border capitalize", statusColor)}>
+                    <span className={cn("inline-flex px-2.5 py-1 rounded-lg text-[10px] font-semibold border capitalize", statusColor)}>
                       {statusLabel}
                     </span>
                     {(draft.potential_commission || 0) > 0 && (
@@ -190,20 +167,16 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="shrink-0 p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
-                >
+                <button onClick={onClose} className="shrink-0 p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {/* Scrollable form */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
                 {/* Client name */}
                 <div>
-                  <FieldLabel icon={User} label="Client Name" />
+                  <FieldLabel label="Client Name" />
                   <input
                     value={draft.client_name || ''}
                     onChange={e => set('client_name', e.target.value)}
@@ -214,7 +187,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
 
                 {/* Commission */}
                 <div>
-                  <FieldLabel icon={DollarSign} label="Estimated Commission" />
+                  <FieldLabel label="Estimated Commission" />
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/50 font-medium">$</span>
                     <input
@@ -227,10 +200,10 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   </div>
                 </div>
 
-                {/* Home type + Deal type — side by side */}
+                {/* Home type + Deal type */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <FieldLabel icon={Home} label="Property Type" />
+                    <FieldLabel label="Property Type" />
                     <select
                       value={draft.home_type || 'Detached'}
                       onChange={e => set('home_type', e.target.value)}
@@ -240,7 +213,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                     </select>
                   </div>
                   <div>
-                    <FieldLabel icon={Tag} label="Deal Type" />
+                    <FieldLabel label="Deal Type" />
                     <select
                       value={draft.deal_type || 'buyer'}
                       onChange={e => handleDealTypeChange(e.target.value)}
@@ -253,21 +226,20 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
 
                 {/* Temperature */}
                 <div>
-                  <FieldLabel icon={TempIcon} label="Temperature" />
+                  <FieldLabel label="Temperature" />
                   <div className="flex gap-2">
                     {(Object.entries(TEMP_CONFIG) as [string, typeof TEMP_CONFIG.hot][]).map(([key, cfg]) => {
-                      const Icon = cfg.icon;
                       const isSelected = (draft.temperature || 'warm') === key;
                       return (
                         <button
                           key={key}
                           onClick={() => { set('temperature', key); triggerHaptic('light'); }}
                           className={cn(
-                            "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-all",
+                            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold border transition-all",
                             isSelected ? cfg.color : "bg-muted/20 text-muted-foreground/40 border-border/30 hover:bg-muted/40"
                           )}
                         >
-                          <Icon className="h-3.5 w-3.5" />
+                          <span className={cn("w-2 h-2 rounded-full", isSelected ? cfg.dot : "bg-muted-foreground/20")} />
                           {cfg.label}
                         </button>
                       );
@@ -275,9 +247,9 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   </div>
                 </div>
 
-                {/* Status — context-aware */}
+                {/* Status */}
                 <div>
-                  <FieldLabel icon={TrendingUp} label="Status" />
+                  <FieldLabel label="Status" />
                   <div className="grid grid-cols-3 gap-1.5">
                     {statusOptions.map(s => {
                       const isSelected = currentStatus === s;
@@ -285,10 +257,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                       return (
                         <button
                           key={s}
-                          onClick={() => {
-                            set('status', s as any);
-                            triggerHaptic('light');
-                          }}
+                          onClick={() => { set('status', s as any); triggerHaptic('light'); }}
                           className={cn(
                             "flex items-center justify-center px-2 py-2 rounded-xl text-[11px] font-semibold border transition-all",
                             isSelected ? color : "bg-muted/20 text-muted-foreground/40 border-border/30 hover:bg-muted/40"
@@ -303,7 +272,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
 
                 {/* Source */}
                 <div>
-                  <FieldLabel icon={Radio} label="Lead Source" />
+                  <FieldLabel label="Lead Source" />
                   <div className="flex flex-wrap gap-1.5">
                     {LEAD_SOURCES.map(s => {
                       const isSelected = (draft.source || '') === s;
@@ -327,7 +296,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
 
                 {/* Budget / List Price */}
                 <div>
-                  <FieldLabel icon={DollarSign} label={isListing ? 'List Price' : 'Budget'} />
+                  <FieldLabel label={isListing ? 'List Price' : 'Budget'} />
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/50 font-medium">$</span>
                     <input
@@ -342,7 +311,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
 
                 {/* Notes */}
                 <div>
-                  <FieldLabel icon={StickyNote} label="Notes" />
+                  <FieldLabel label="Notes" />
                   <textarea
                     value={draft.notes || ''}
                     onChange={e => set('notes', e.target.value)}
@@ -353,7 +322,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                 </div>
               </div>
 
-              {/* Footer actions */}
+              {/* Footer */}
               <div className="px-5 py-4 border-t border-border/30 flex items-center gap-2.5">
                 <button
                   onClick={handleDelete}
@@ -368,10 +337,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   {confirmDelete ? 'Confirm Delete' : 'Delete'}
                 </button>
                 {confirmDelete && (
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-muted/50 text-muted-foreground border border-border/30"
-                  >
+                  <button onClick={() => setConfirmDelete(false)} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-muted/50 text-muted-foreground border border-border/30">
                     Cancel
                   </button>
                 )}
@@ -380,9 +346,7 @@ export function ProspectSheet({ prospect, onClose, onSave, onDelete }: Props) {
                   disabled={!isDirty}
                   className={cn(
                     "ml-auto flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                    isDirty
-                      ? "bg-primary text-primary-foreground hover:opacity-90"
-                      : "bg-muted/40 text-muted-foreground/40 cursor-not-allowed"
+                    isDirty ? "bg-primary text-primary-foreground hover:opacity-90" : "bg-muted/40 text-muted-foreground/40 cursor-not-allowed"
                   )}
                 >
                   <Save className="h-3.5 w-3.5" />

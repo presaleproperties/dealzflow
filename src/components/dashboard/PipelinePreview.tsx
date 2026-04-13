@@ -2,13 +2,13 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePipelineProspects } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Flame, Thermometer, Snowflake, ArrowRight, TrendingUp } from 'lucide-react';
+import { ArrowRight, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TEMP_CONFIG = {
-  hot:  { icon: Flame,       label: 'Hot',  color: 'text-rose-500',  bg: 'bg-rose-500/12',  bar: 'bg-rose-500',  border: 'border-rose-500/20' },
-  warm: { icon: Thermometer, label: 'Warm', color: 'text-amber-500', bg: 'bg-amber-500/12', bar: 'bg-amber-500', border: 'border-amber-500/20' },
-  cold: { icon: Snowflake,   label: 'Cold', color: 'text-sky-500',   bg: 'bg-sky-500/12',   bar: 'bg-sky-500',   border: 'border-sky-500/20' },
+  hot:  { label: 'Hot',  color: 'text-rose-500',  bg: 'bg-rose-500/12',  bar: 'bg-rose-500',  border: 'border-rose-500/20', dot: 'bg-rose-500' },
+  warm: { label: 'Warm', color: 'text-amber-500', bg: 'bg-amber-500/12', bar: 'bg-amber-500', border: 'border-amber-500/20', dot: 'bg-amber-500' },
+  cold: { label: 'Cold', color: 'text-sky-500',   bg: 'bg-sky-500/12',   bar: 'bg-sky-500',   border: 'border-sky-500/20', dot: 'bg-sky-500' },
 } as const;
 
 type TempKey = keyof typeof TEMP_CONFIG;
@@ -71,10 +71,9 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
                 {tempStats.map(({ temp, count, gci }) => {
                   if (count === 0) return null;
                   const cfg = TEMP_CONFIG[temp];
-                  const Icon = cfg.icon;
                   return (
                     <div key={temp} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border", cfg.bg, cfg.border)}>
-                      <Icon className={cn("h-3 w-3 shrink-0", cfg.color)} />
+                      <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)} />
                       <span className={cn("text-[11px] font-bold tabular-nums", cfg.color)}>{count}</span>
                       <span className="text-[10px] text-muted-foreground/50 font-medium hidden sm:inline">{formatCurrency(gci)}</span>
                     </div>
@@ -108,16 +107,10 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
               <div className="hidden sm:grid grid-cols-3 gap-2 px-5 pb-5 border-t border-border/15 pt-3">
                 {topLeads.map((p, idx) => {
                   const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
-                  const Icon = tc.icon;
                   return (
-                    <motion.div
-                      key={p.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/15 border border-border/15"
-                    >
-                      <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
+                    <motion.div key={p.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+                      className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/15 border border-border/15">
+                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", tc.dot)} />
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px] font-semibold truncate leading-tight">{p.client_name}</p>
                         <p className="text-[10px] text-muted-foreground/50 mt-0.5">{p.home_type}</p>
@@ -135,10 +128,9 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
             <div className="sm:hidden divide-y divide-border/15 border-t border-border/15">
               {topLeads.map(p => {
                 const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
-                const Icon = tc.icon;
                 return (
                   <div key={p.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
+                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", tc.dot)} />
                     <p className="flex-1 text-[13px] font-medium truncate">{p.client_name}</p>
                     <span className="text-[12px] font-bold text-primary tabular-nums">{formatCurrency(p.potential_commission)}</span>
                   </div>
@@ -169,10 +161,9 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
           {tempStats.map(({ temp, count }) => {
             if (count === 0) return null;
             const cfg = TEMP_CONFIG[temp];
-            const Icon = cfg.icon;
             return (
               <span key={temp} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", cfg.bg, cfg.border, cfg.color)}>
-                <Icon className="h-2.5 w-2.5" /> {count}
+                <span className={cn("w-2 h-2 rounded-full", cfg.dot)} /> {count}
               </span>
             );
           })}
@@ -183,10 +174,9 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
         <div className="space-y-2">
           {topLeads.map(p => {
             const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
-            const Icon = tc.icon;
             return (
               <div key={p.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-muted/20 border border-border/15">
-                <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
+                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", tc.dot)} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{p.client_name}</p>
                   <p className="text-[11px] text-muted-foreground/50">{p.home_type}</p>
