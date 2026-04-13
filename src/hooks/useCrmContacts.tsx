@@ -230,9 +230,13 @@ export function useAddCrmContact() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       toast.success('Lead added successfully');
+      // Fire outbound webhook asynchronously
+      import('@/lib/outboundWebhook').then(({ fireOutboundWebhook }) => {
+        fireOutboundWebhook('lead.created', data);
+      });
     },
     onError: (err: Error) => {
       toast.error(`Failed to add lead: ${err.message}`);
