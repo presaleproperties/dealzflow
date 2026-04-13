@@ -78,12 +78,14 @@ Deno.serve(async (req: Request) => {
     ...(payload.notes ? { description: payload.notes } : {}),
   };
 
-  try {
+    console.log(`Lofty push: key prefix=${LOFTY_API_KEY.substring(0, 6)}..., len=${LOFTY_API_KEY.length}`);
+
+    // Try v1 leads endpoint with token auth (per Lofty docs)
     const res = await fetch(`${LOFTY_API_BASE}/v1/leads`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `token ${LOFTY_API_KEY}`,
+        "Authorization": `token ${LOFTY_API_KEY}`,
       },
       body: JSON.stringify(loftyLead),
     });
