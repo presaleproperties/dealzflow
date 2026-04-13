@@ -123,13 +123,14 @@ Deno.serve(async (req: Request) => {
         lead_type: _lt,
         ...safeUpdates
       } = cleanContact;
-      await supabase
+      const { error: updateErr } = await supabase
         .from("crm_contacts")
         .update({
           ...safeUpdates,
           lofty_updated_at: new Date().toISOString(),
         })
         .eq("id", existingId);
+      if (updateErr) throw new Error(`Update failed: ${updateErr.message}`);
       action = "updated";
     } else {
       // INSERT new
