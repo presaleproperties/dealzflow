@@ -79,11 +79,11 @@ Deno.serve(async (req: Request) => {
   };
 
   try {
-    const res = await fetch(`${LOFTY_API_BASE}/api/v1/leads`, {
+    const res = await fetch(`${LOFTY_API_BASE}/v1/leads`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LOFTY_API_KEY}`,
+        Authorization: `token ${LOFTY_API_KEY}`,
       },
       body: JSON.stringify(loftyLead),
     });
