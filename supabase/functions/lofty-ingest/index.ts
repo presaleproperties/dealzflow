@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     first_name:
       payload.first_name || payload.firstName || payload["First Name"] || "",
     last_name:
-      payload.last_name || payload.lastName || payload["Last Name"] || "",
+      payload.last_name || payload.lastName || payload["Last Name"] || "(unknown)",
     email: payload.email || payload.Email || payload.emails || null,
     phone: normalizePhone(
       (payload.phone ||
@@ -123,17 +123,19 @@ Deno.serve(async (req: Request) => {
         lead_type: _lt,
         ...safeUpdates
       } = cleanContact;
-      await supabase
+      const { error: updateErr } = await supabase
         .from("crm_contacts")
         .update({
           ...safeUpdates,
           lofty_updated_at: new Date().toISOString(),
         })
         .eq("id", existingId);
+      if (updateErr) throw new Error(`Update failed: ${updateErr.message}`);
       action = "updated";
     } else {
       // INSERT new
-      await supabase.from("crm_contacts").insert(cleanContact);
+      const { error: insertErr } = await supabase.from("crm_contacts").insert(cleanContact);
+      if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
       action = "inserted";
     }
 
