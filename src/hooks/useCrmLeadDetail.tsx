@@ -124,10 +124,15 @@ export function useUpdateCrmContact() {
         }
       }
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: (_, { id, updates }) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       queryClient.invalidateQueries({ queryKey: ['crm-notes', id] });
+      // Fire outbound webhook
+      const event = updates.status ? 'lead.status_changed' : 'lead.updated';
+      import('@/lib/outboundWebhook').then(({ fireOutboundWebhook }) => {
+        fireOutboundWebhook(event as any, { id, ...updates });
+      });
     },
     onError: (err: Error) => toast.error(err.message),
   });
