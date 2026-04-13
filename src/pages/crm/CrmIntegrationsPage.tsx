@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save, Eye, EyeOff, Pencil } from 'lucide-react';
+import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save, Eye, EyeOff, Pencil, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getOutboundWebhookUrl, setOutboundWebhookUrl } from '@/lib/outboundWebhook';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── helpers ─── */
@@ -23,6 +24,8 @@ function copyUrl(url: string) {
 const typeBadge: Record<string, { label: string; cls: string }> = {
   calendly_booking: { label: 'Calendly',           cls: 'bg-teal-500/15 text-teal-400 border-teal-500/30' },
   nurture_run:      { label: 'Nurture Run',        cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+  zapier_lofty:     { label: 'Lofty (In)',         cls: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
+  zapier_outbound:  { label: 'Lofty (Out)',        cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
 };
 
 const statusBadge: Record<string, string> = {
@@ -30,6 +33,7 @@ const statusBadge: Record<string, string> = {
   error:   'bg-red-500/15 text-red-400 border-red-500/30',
   partial: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
   running: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  failed:  'bg-red-500/15 text-red-400 border-red-500/30',
 };
 
 /* ─── Connected Systems data ─── */
@@ -41,7 +45,7 @@ interface SystemCard {
   description: string;
   webhookUrl?: string;
   setup?: string;
-  secretKey?: string; // name of the secret to edit
+  secretKey?: string;
   secretLabel?: string;
 }
 
@@ -189,7 +193,10 @@ export default function CrmIntegrationsPage() {
         </CardContent>
       </Card>
 
-      {/* SECTION 2 — Connected Systems */}
+      {/* SECTION 2 — Lofty ↔ Zapier Two-Way Sync */}
+      <LoftyZapierCard />
+
+      {/* SECTION 3 — Connected Systems */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4">Connected Systems</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -248,7 +255,93 @@ export default function CrmIntegrationsPage() {
   );
 }
 
-/* ─── System Card with editable API key ─── */
+/* ─── Lofty Zapier Two-Way Sync Card ─── */
+function LoftyZapierCard() {
+  const inboundUrl = `${BASE}/lofty-ingest`;
+  const [outboundUrl, setOutboundUrl] = useState(getOutboundWebhookUrl() || '');
+  const [editing, setEditing] = useState(false);
+
+  const handleSave = () => {
+    setOutboundWebhookUrl(outboundUrl);
+    setEditing(false);
+    toast.success(outboundUrl.trim() ? 'Outbound Zapier webhook saved' : 'Outbound webhook removed');
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-orange-500/10 p-2.5">
+            <Zap className="w-5 h-5 text-orange-400" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Lofty ↔ Zapier Sync</CardTitle>
+            <CardDescription>Two-way lead sync between Lofty CRM and DealsFlow via Zapier</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Inbound */}
+        <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+          <div className="flex items-center gap-2">
+            <ArrowDownToLine className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm font-medium text-foreground">Inbound: Lofty → DealsFlow</span>
+            <Badge variant="success" className="text-[10px] ml-auto">Ready</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">New/updated leads from Lofty arrive here via Zapier webhook.</p>
+          <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg px-2.5 py-1.5">
+            <code className="text-[10px] text-muted-foreground truncate flex-1">{inboundUrl}</code>
+            <button onClick={() => copyUrl(inboundUrl)} className="shrink-0 p-1 rounded hover:bg-muted transition-colors" aria-label="Copy URL">
+              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground/70 italic">
+            Zapier setup: Trigger = Lofty "New Lead" → Action = Webhooks POST to this URL. Add header <code>x-webhook-secret</code> with your ingest secret.
+          </p>
+        </div>
+
+        {/* Outbound */}
+        <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+          <div className="flex items-center gap-2">
+            <ArrowUpFromLine className="w-4 h-4 text-blue-400" />
+            <span className="text-sm font-medium text-foreground">Outbound: DealsFlow → Lofty</span>
+            <Badge variant={outboundUrl.trim() ? 'success' : 'warning'} className="text-[10px] ml-auto">
+              {outboundUrl.trim() ? 'Active' : 'Not Set'}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">Pushes new leads and status changes from DealsFlow back to Lofty via Zapier.</p>
+          {editing ? (
+            <div className="flex gap-1.5">
+              <Input
+                value={outboundUrl}
+                onChange={e => setOutboundUrl(e.target.value)}
+                placeholder="https://hooks.zapier.com/hooks/catch/..."
+                className="flex-1 font-mono text-[10px] h-8"
+              />
+              <Button size="sm" onClick={handleSave} className="h-8 px-3 text-xs gap-1">
+                <Save className="w-3 h-3" /> Save
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg px-2.5 py-1.5">
+              <code className="text-[10px] text-muted-foreground truncate flex-1">
+                {outboundUrl.trim() || 'No webhook URL configured'}
+              </code>
+              <button onClick={() => setEditing(true)} className="shrink-0 p-1 rounded hover:bg-muted transition-colors" aria-label="Edit">
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground/70 italic">
+            Zapier setup: Trigger = "Catch Hook" → Action = Lofty "Create/Update Contact". Paste your Zapier webhook URL above.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function SystemCardItem({ system: s }: { system: SystemCard }) {
   const [showKey, setShowKey] = useState(false);
   const [editing, setEditing] = useState(false);
