@@ -121,8 +121,27 @@ export default function CrmIntegrationsPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const handleRunAll = () => {
-    toast.success('Syncs triggered — results will appear shortly');
+  const [syncing, setSyncing] = useState(false);
+
+  const handleRunAll = async () => {
+    setSyncing(true);
+    toast.info('Syncing with Lofty...');
+    try {
+      const { data, error } = await supabase.functions.invoke('lofty-pull', {
+        body: { source: 'manual' },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Lofty sync complete: ${data.created} created, ${data.updated} updated, ${data.total_fetched} total`);
+      } else {
+        toast.error(`Sync failed: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      toast.error(`Sync error: ${err.message || 'Unknown error'}`);
+    } finally {
+      setSyncing(false);
+      fetchData();
+    }
   };
 
   return (
