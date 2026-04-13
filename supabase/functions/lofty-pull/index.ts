@@ -136,13 +136,14 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// Try "token" auth first (per Lofty docs for API keys), fall back to "Bearer"
 async function fetchWithAuthFallback(url: string, apiKey: string): Promise<Response> {
+  // Try "token" first (per Lofty docs for API keys)
   const res = await fetch(url, {
     headers: { "Authorization": `token ${apiKey}`, "Content-Type": "application/json" },
   });
   if (res.status === 401) {
-    await res.text(); // consume
+    await res.text();
+    // Fall back to Bearer (in case it's an OAuth token)
     return fetch(url, {
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
     });

@@ -49,10 +49,9 @@ interface SystemCard {
 const systems: SystemCard[] = [
   {
     name: 'Lofty CRM', icon: Database,
-    badgeLabel: 'Requires API Key', badgeVariant: 'warning',
-    description: 'Bi-directional lead sync. Pulls all Lofty leads into DealsFlow nightly.',
-    webhookUrl: `${BASE}/lofty-sync`,
-    setup: 'Set LOFTY_API_KEY as Supabase secret',
+    badgeLabel: 'API Key Connected', badgeVariant: 'success',
+    description: 'Bi-directional lead sync. Auto-pulls from Lofty every 15 min + pushes new CRM leads to Lofty.',
+    setup: 'API key configured — sync is automatic',
   },
   {
     name: 'ManyChat (TikTok + IG)', icon: MessageCircle,
@@ -122,8 +121,27 @@ export default function CrmIntegrationsPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const handleRunAll = () => {
-    toast.success('Syncs triggered — results will appear shortly');
+  const [syncing, setSyncing] = useState(false);
+
+  const handleRunAll = async () => {
+    setSyncing(true);
+    toast.info('Syncing with Lofty...');
+    try {
+      const { data, error } = await supabase.functions.invoke('lofty-pull', {
+        body: { source: 'manual' },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Lofty sync complete: ${data.created} created, ${data.updated} updated, ${data.total_fetched} total`);
+      } else {
+        toast.error(`Sync failed: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      toast.error(`Sync error: ${err.message || 'Unknown error'}`);
+    } finally {
+      setSyncing(false);
+      fetchData();
+    }
   };
 
   return (
@@ -134,8 +152,8 @@ export default function CrmIntegrationsPage() {
           <h1 className="text-2xl font-bold text-foreground">Integrations Hub</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Connect and monitor all external systems feeding into DealsFlow</p>
         </div>
-        <Button onClick={handleRunAll} className="gap-2 shrink-0">
-          <RefreshCw className="w-4 h-4" /> Run All Syncs
+        <Button onClick={handleRunAll} disabled={syncing} className="gap-2 shrink-0">
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Syncing...' : 'Sync with Lofty'}
         </Button>
       </div>
 

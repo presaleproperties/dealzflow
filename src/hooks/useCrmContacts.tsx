@@ -232,7 +232,6 @@ export function useAddCrmContact() {
       try {
         supabase.functions.invoke('lofty-push', {
           body: {
-            contact_id: data.id,
             first_name: contact.first_name,
             last_name: contact.last_name,
             email: contact.email || null,
@@ -241,7 +240,6 @@ export function useAddCrmContact() {
             status: row.status,
             project: contact.project || null,
             tags: contact.tags || [],
-            notes: (contact as any).notes || null,
           },
         });
       } catch {
