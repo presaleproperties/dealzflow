@@ -13,18 +13,15 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Allow both cron (Bearer CRON_SECRET) and authenticated user calls
   const authHeader = req.headers.get("authorization") ?? "";
   const cronSecret = Deno.env.get("CRON_SECRET");
-  const isCron =
-    cronSecret && authHeader === `Bearer ${cronSecret}`;
+  const isCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
 
   if (!isCron) {
-    // Validate user JWT
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -51,29 +48,12 @@ Deno.serve(async (req: Request) => {
     const pageSize = 100;
     let hasMore = true;
 
-    // Paginate through Lofty leads
     while (hasMore && page <= 50) {
       const url = `${LOFTY_API_BASE}/api/v2/leads?page=${page}&pageSize=${pageSize}`;
       console.log(`Fetching Lofty leads page ${page}...`);
 
-      // Lofty API Key auth uses "token [KEY]" per docs
-      let res = await fetch(url, {
-        headers: {
-          "Authorization": `token ${LOFTY_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      // If token auth fails, try Bearer (in case it's an OAuth token)
-      if (res.status === 401) {
-        await res.text();
-        res = await fetch(url, {
-          headers: {
-            "Authorization": `Bearer ${LOFTY_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-        });
-      }
+      // Lofty API Key auth: "token [KEY]" per official docs
+      const res = await fetchWithAuthFallback(url, LOFTY_API_KEY);
 
       if (!res.ok) {
         const body = await res.text();
@@ -84,26 +64,9 @@ Deno.serve(async (req: Request) => {
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-          const leads = retryData.data ?? retryData.leads ?? retryData ?? [];
-          if (Array.isArray(leads) && leads.length > 0) {
-            allLeads = allLeads.concat(leads);
-            hasMore = leads.length >= pageSize;
-            page++;
-            continue;
-          }
-          hasMore = false;
-          continue;
-        }
-
-        await logSync(supabase, "failed", 0, 0, 0, `Lofty API error: ${res.status} - ${body.substring(0, 300)}`);
-        return new Response(
-          JSON.stringify({ success: false, error: `Lofty API returned ${res.status}` }),
-          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
 
       const data = await res.json();
-      const leads = data.data ?? data.leads ?? data ?? [];
+      const leads = data.data ?? data.leads ?? (Array.isArray(data) ? data : []);
 
       if (!Array.isArray(leads) || leads.length === 0) {
         hasMore = false;
@@ -126,54 +89,30 @@ Deno.serve(async (req: Request) => {
         const contact = mapLoftyToContact(lead);
         if (!contact.first_name && !contact.last_name) continue;
 
-        // Dedup: lofty_id → email → phone
         let existingId: string | null = null;
 
         if (contact.lofty_id) {
-          const { data } = await supabase
-            .from("crm_contacts")
-            .select("id")
-            .eq("lofty_id", contact.lofty_id)
-            .maybeSingle();
+          const { data } = await supabase.from("crm_contacts").select("id").eq("lofty_id", contact.lofty_id).maybeSingle();
           if (data) existingId = data.id;
         }
-
         if (!existingId && contact.email) {
-          const { data } = await supabase
-            .from("crm_contacts")
-            .select("id")
-            .eq("email", contact.email)
-            .maybeSingle();
+          const { data } = await supabase.from("crm_contacts").select("id").eq("email", contact.email).maybeSingle();
           if (data) existingId = data.id;
         }
-
         if (!existingId && contact.phone) {
-          const { data } = await supabase
-            .from("crm_contacts")
-            .select("id")
-            .eq("phone", contact.phone)
-            .maybeSingle();
+          const { data } = await supabase.from("crm_contacts").select("id").eq("phone", contact.phone).maybeSingle();
           if (data) existingId = data.id;
         }
 
         if (existingId) {
-          // Update - preserve CRM-managed fields
           const { status: _s, assigned_to: _a, notes: _n, lead_type: _lt, tags: _t, ...safeUpdates } = contact;
-          const { error } = await supabase
-            .from("crm_contacts")
+          const { error } = await supabase.from("crm_contacts")
             .update({ ...safeUpdates, lofty_updated_at: new Date().toISOString() })
             .eq("id", existingId);
-          if (!error) updated++;
-          else errors++;
+          if (!error) updated++; else errors++;
         } else {
-          const { error } = await supabase
-            .from("crm_contacts")
-            .insert(contact);
-          if (!error) created++;
-          else {
-            console.error("Insert error:", error);
-            errors++;
-          }
+          const { error } = await supabase.from("crm_contacts").insert(contact);
+          if (!error) created++; else { console.error("Insert error:", error); errors++; }
         }
       } catch (e) {
         console.error("Lead processing error:", e);
@@ -184,13 +123,7 @@ Deno.serve(async (req: Request) => {
     await logSync(supabase, "success", allLeads.length, created, updated, errors > 0 ? `${errors} errors` : null);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        total_fetched: allLeads.length,
-        created,
-        updated,
-        errors,
-      }),
+      JSON.stringify({ success: true, total_fetched: allLeads.length, created, updated, errors }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -203,24 +136,28 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// --- MAPPING ---
+// Try "token" auth first (per Lofty docs for API keys), fall back to "Bearer"
+async function fetchWithAuthFallback(url: string, apiKey: string): Promise<Response> {
+  const res = await fetch(url, {
+    headers: { "Authorization": `token ${apiKey}`, "Content-Type": "application/json" },
+  });
+  if (res.status === 401) {
+    await res.text(); // consume
+    return fetch(url, {
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    });
+  }
+  return res;
+}
 
 function mapLoftyToContact(lead: Record<string, unknown>): Record<string, unknown> {
   const emails = lead.emails as { email?: string }[] | undefined;
   const phones = lead.phones as { phone?: string }[] | undefined;
-
-  const firstName = (lead.firstName ?? lead.first_name ?? "") as string;
-  const lastName = (lead.lastName ?? lead.last_name ?? "") as string;
-  const email = emails?.[0]?.email ?? (lead.email as string | null) ?? null;
-  const phone = normalizePhone(
-    phones?.[0]?.phone ?? (lead.phone as string | null) ?? null
-  );
-
   return {
-    first_name: firstName,
-    last_name: lastName,
-    email,
-    phone,
+    first_name: (lead.firstName ?? lead.first_name ?? "") as string,
+    last_name: (lead.lastName ?? lead.last_name ?? "") as string,
+    email: emails?.[0]?.email ?? (lead.email as string | null) ?? null,
+    phone: normalizePhone(phones?.[0]?.phone ?? (lead.phone as string | null) ?? null),
     source: mapSource((lead.source as string) || "Lofty"),
     status: mapStatus((lead.stage ?? lead.status ?? "New Lead") as string),
     tags: parseTags(lead.tags),
@@ -275,11 +212,7 @@ function parseTags(tags: unknown): string[] {
 
 async function logSync(
   supabase: ReturnType<typeof createClient>,
-  status: string,
-  processed: number,
-  created: number,
-  updated: number,
-  errorMsg: string | null
+  status: string, processed: number, created: number, updated: number, errorMsg: string | null
 ) {
   await supabase.from("crm_sync_log").insert({
     source: "lofty_pull",
