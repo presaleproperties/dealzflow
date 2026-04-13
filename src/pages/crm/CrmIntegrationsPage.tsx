@@ -193,7 +193,10 @@ export default function CrmIntegrationsPage() {
         </CardContent>
       </Card>
 
-      {/* SECTION 2 — Connected Systems */}
+      {/* SECTION 2 — Lofty ↔ Zapier Two-Way Sync */}
+      <LoftyZapierCard />
+
+      {/* SECTION 3 — Connected Systems */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4">Connected Systems</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
