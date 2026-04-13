@@ -6,9 +6,9 @@ import { ArrowRight, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TEMP_CONFIG = {
-  hot:  { label: 'Hot',  color: 'text-rose-500',  bg: 'bg-rose-500/12',  bar: 'bg-rose-500',  border: 'border-rose-500/20', dot: 'bg-rose-500' },
-  warm: { label: 'Warm', color: 'text-amber-500', bg: 'bg-amber-500/12', bar: 'bg-amber-500', border: 'border-amber-500/20', dot: 'bg-amber-500' },
-  cold: { label: 'Cold', color: 'text-sky-500',   bg: 'bg-sky-500/12',   bar: 'bg-sky-500',   border: 'border-sky-500/20', dot: 'bg-sky-500' },
+  hot:  { label: 'Hot',  color: 'text-foreground',  bg: 'bg-muted/20',  bar: 'bg-foreground/60',  border: 'border-border/30' },
+  warm: { label: 'Warm', color: 'text-foreground', bg: 'bg-muted/20', bar: 'bg-foreground/40', border: 'border-border/30' },
+  cold: { label: 'Cold', color: 'text-foreground',   bg: 'bg-muted/20',   bar: 'bg-foreground/20',   border: 'border-border/30' },
 } as const;
 
 type TempKey = keyof typeof TEMP_CONFIG;
