@@ -15,8 +15,6 @@ import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, A
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
-import { useSendGmail } from '@/hooks/useGmail';
-import { useGmailStatus } from '@/hooks/useGmail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
@@ -45,8 +43,6 @@ export function ComposeTab() {
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const { data: templates = [] } = useCrmEmailTemplates();
   const addMessage = useAddCrmMessage();
-  const sendGmail = useSendGmail();
-  const { data: gmailStatus } = useGmailStatus();
   const { data: emailSettings } = useEmailSettings();
   const isMobile = useIsMobile();
 
@@ -93,11 +89,9 @@ export function ComposeTab() {
 
   // From display
   const fromDisplay = useMemo(() => {
-    const email = gmailStatus?.gmailEmail || '';
     const name = emailSettings?.sender_name;
-    if (name && email) return `${name} <${email}>`;
-    return email || 'Not connected';
-  }, [gmailStatus, emailSettings]);
+    return name || 'Agent';
+  }, [emailSettings]);
 
   const filteredContacts = useMemo(() => {
     if (!searchTo) return contacts.slice(0, 10);
@@ -161,7 +155,7 @@ export function ComposeTab() {
   const handleSelectTemplate = (tpl: CrmEmailTemplate) => {
     setActiveTemplate(tpl);
     const agentPhone = (emailSettings as any)?.signature_builder_data?.phone || '';
-    const agentEmail = emailSettings?.reply_to || gmailStatus?.gmailEmail || '';
+    const agentEmail = emailSettings?.reply_to || '';
     const merged = replaceMergeTags(
       tpl.body_html || '',
       selectedContact,
@@ -183,27 +177,14 @@ export function ComposeTab() {
     const bodyContent = isHtmlMode ? htmlBody : body;
     if (mode === 'individual') {
       if (!selectedContact || !subject.trim() || (!bodyContent.trim())) return;
-      if (gmailStatus?.connected && selectedContact.email) {
-        await sendGmail.mutateAsync({
-          to: selectedContact.email,
-          subject,
-          bodyText: bodyContent.replace(/<[^>]*>/g, ''),
-          bodyHtml: bodyContent,
-          contactId: selectedContact.id,
-          includeSignature,
-          ...(cc.trim() ? { cc: cc.trim() } : {}),
-          ...(bcc.trim() ? { bcc: bcc.trim() } : {}),
-        } as any);
-      } else {
-        await addMessage.mutateAsync({
-          contact_id: selectedContact.id,
-          direction: 'outbound',
-          content: `Subject: ${subject}\n\n${bodyContent}`,
-          channel: 'email',
-          sent_by: 'Agent',
-          message_type: 'text',
-        });
-      }
+      await addMessage.mutateAsync({
+        contact_id: selectedContact.id,
+        direction: 'outbound',
+        content: `Subject: ${subject}\n\n${bodyContent}`,
+        channel: 'email',
+        sent_by: 'Agent',
+        message_type: 'text',
+      });
       setSelectedContact(null);
       setSearchTo('');
       setCc('');
@@ -214,7 +195,7 @@ export function ComposeTab() {
     clearTemplate();
   };
 
-  const isSending = addMessage.isPending || sendGmail.isPending;
+  const isSending = addMessage.isPending;
   const bodyContent = isHtmlMode ? htmlBody : body;
 
   const canSend = mode === 'individual'
