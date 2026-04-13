@@ -569,9 +569,6 @@ function IntegrationsSection() {
                 {statusBadge(intg.status)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">{intg.desc}</p>
-              {intg.status === 'disconnected' && (
-                <Button variant="outline" size="sm" className="mt-2 h-7 text-xs min-h-[36px] sm:min-h-0">Reconnect</Button>
-              )}
             </div>
           </div>
         ))}
