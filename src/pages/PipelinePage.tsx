@@ -191,7 +191,7 @@ function MobileProspectCard({ p, idx, handleSave, onOpen }: {
       )}
       onClick={() => { onOpen(p); triggerHaptic('light'); }}
     >
-      <TempDot temp={p.temperature || 'warm'} interactive onToggle={() => {
+      <TempLabel temp={p.temperature || 'warm'} interactive onToggle={() => {
         const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length];
         handleSave(p.id, 'temperature', next);
         triggerHaptic('light');
@@ -267,7 +267,7 @@ function DesktopProspectRow({ p, idx, isEditing, setEditingCell, handleSave, del
       </div>
 
       <div className="border-l border-border/20 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <TempDot temp={p.temperature || 'warm'} interactive onToggle={() => {
+        <TempLabel temp={p.temperature || 'warm'} interactive onToggle={() => {
           const next = TEMP_OPTIONS[(TEMP_OPTIONS.indexOf(p.temperature || 'warm') + 1) % TEMP_OPTIONS.length];
           handleSave(p.id, 'temperature', next);
           triggerHaptic('light');
@@ -437,8 +437,7 @@ function PipelineSection({ group, prospects, tempFilter, sortField, sortDir, onS
                       if (id) { handleSave(id, 'temperature', tg.temp); triggerHaptic('light'); }
                     }}>
                     <div className="flex items-center gap-2.5 px-4 py-2.5 border-t border-border/30 bg-muted/20">
-                      <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)} />
-                      <span className={cn("text-[10px] font-bold uppercase tracking-[0.1em]", cfg.text)}>{cfg.label}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50">{cfg.label}</span>
                       <div className="flex-1 h-px bg-border/30" />
                       <span className="text-[10px] font-medium text-muted-foreground/40 tabular-nums">{tg.items.length}</span>
                     </div>
@@ -497,9 +496,7 @@ function BoardCard({ prospect, onOpen, isDragOver, isBeingDragged }: {
       )}>
       <div className="flex items-start justify-between gap-2 mb-2.5">
         <p className="text-[13px] font-bold truncate leading-tight text-foreground">{prospect.client_name}</p>
-        <div className={cn("shrink-0 w-5 h-5 rounded-md flex items-center justify-center", tc.bg)}>
-          <span className={cn("w-1.5 h-1.5 rounded-full", tc.dot)} />
-        </div>
+        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50 bg-muted/20 px-1.5 py-0.5 rounded-md">{tc.label}</span>
       </div>
 
       <div className="flex items-center gap-1.5 mb-2.5">
@@ -876,10 +873,10 @@ export default function PipelinePage() {
                         className={cn(
                           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
                           isActive
-                            ? cn(cfg.text, "bg-muted/20 ring-1 ring-border/40")
+                            ? "text-foreground bg-muted/20 ring-1 ring-border/40"
                             : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/20"
                         )}>
-                        <span className={cn("w-2 h-2 rounded-full", isActive ? cfg.dot : "bg-muted-foreground/20")} />
+                        <span className="tabular-nums">{cfg.label}</span>
                         <span className="tabular-nums">{count}</span>
                       </button>
                     );
