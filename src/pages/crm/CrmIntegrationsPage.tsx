@@ -44,6 +44,8 @@ interface SystemCard {
   description: string;
   webhookUrl?: string;
   setup?: string;
+  secretKey?: string; // name of the secret to edit
+  secretLabel?: string;
 }
 
 const systems: SystemCard[] = [
@@ -52,6 +54,8 @@ const systems: SystemCard[] = [
     badgeLabel: 'API Key Connected', badgeVariant: 'success',
     description: 'Bi-directional lead sync. Auto-pulls from Lofty every 15 min + pushes new CRM leads to Lofty.',
     setup: 'API key configured — sync is automatic',
+    secretKey: 'LOFTY_API_KEY',
+    secretLabel: 'Lofty API Key',
   },
   {
     name: 'ManyChat (TikTok + IG)', icon: MessageCircle,
@@ -59,6 +63,8 @@ const systems: SystemCard[] = [
     description: 'Captures leads from TikTok and Instagram DMs.',
     webhookUrl: `${BASE}/lead-webhook?source=instagram_dm`,
     setup: 'Add URL as External Request in ManyChat',
+    secretKey: 'MANYCHAT_API_KEY',
+    secretLabel: 'ManyChat API Key',
   },
   {
     name: 'Calendly', icon: Calendar,
@@ -98,7 +104,6 @@ const systems: SystemCard[] = [
     setup: 'Runs daily at 8AM PT',
   },
 ];
-
 /* ─── Component ─── */
 export default function CrmIntegrationsPage() {
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
