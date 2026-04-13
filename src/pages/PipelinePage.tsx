@@ -155,24 +155,22 @@ function QuickAddRow({ onAdd, defaultDealType, defaultHomeType, defaultStatus }:
   );
 }
 
-// ── Temperature dot indicator ────────────────────────────────────────
-function TempDot({ temp, size = 'sm', interactive, onToggle }: {
-  temp: string; size?: 'sm' | 'md'; interactive?: boolean; onToggle?: () => void;
+// ── Temperature label ────────────────────────────────────────────────
+function TempLabel({ temp, interactive, onToggle }: {
+  temp: string; interactive?: boolean; onToggle?: () => void;
 }) {
   const cfg = TEMP_CONFIG[temp] || TEMP_CONFIG.warm;
-  const sizeClass = size === 'md' ? 'w-8 h-8' : 'w-7 h-7';
-  const dotSize = size === 'md' ? 'w-2.5 h-2.5' : 'w-2 h-2';
 
   if (interactive) {
     return (
-      <button onClick={onToggle} className={cn(sizeClass, "rounded-lg flex items-center justify-center transition-all hover:scale-110", cfg.bg)}>
-        <span className={cn(dotSize, "rounded-full", cfg.dot)} />
+      <button onClick={onToggle} className="shrink-0 px-2 py-1 rounded-lg bg-muted/20 hover:bg-muted/30 transition-all hover:scale-105">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">{cfg.label}</span>
       </button>
     );
   }
   return (
-    <div className={cn(sizeClass, "rounded-lg flex items-center justify-center shrink-0", cfg.bg)}>
-      <span className={cn(dotSize, "rounded-full", cfg.dot)} />
+    <div className="shrink-0 px-2 py-1 rounded-lg bg-muted/20">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">{cfg.label}</span>
     </div>
   );
 }
