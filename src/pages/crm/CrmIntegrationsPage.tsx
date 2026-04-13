@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, RefreshCw, Database, MessageCircle, Calendar, Mail, Phone, Globe, Zap, CalendarClock } from 'lucide-react';
+import { Copy, RefreshCw, Database, MessageCircle, Calendar, Mail, Phone, Globe, Zap, CalendarClock, ArrowUpRight, Check, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -225,6 +227,9 @@ export default function CrmIntegrationsPage() {
         </div>
       </div>
 
+      {/* SECTION 2b — Outbound: Push to Lofty */}
+      <LoftyOutboundSection />
+
       {/* SECTION 3 — Recent Bookings */}
       <Card>
         <CardHeader className="pb-3">
@@ -271,5 +276,78 @@ export default function CrmIntegrationsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/* ─── Outbound Lofty Push Section ─── */
+const LOFTY_WEBHOOK_KEY = 'lofty_outbound_webhook_url';
+
+export function getLoftyOutboundWebhookUrl(): string | null {
+  return localStorage.getItem(LOFTY_WEBHOOK_KEY);
+}
+
+function LoftyOutboundSection() {
+  const [url, setUrl] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(LOFTY_WEBHOOK_KEY);
+    if (stored) setUrl(stored);
+  }, []);
+
+  const handleSave = () => {
+    const trimmed = url.trim();
+    if (trimmed) {
+      localStorage.setItem(LOFTY_WEBHOOK_KEY, trimmed);
+    } else {
+      localStorage.removeItem(LOFTY_WEBHOOK_KEY);
+    }
+    setSaved(true);
+    toast.success(trimmed ? 'Outbound Lofty webhook saved' : 'Outbound webhook removed');
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <ArrowUpRight className="w-5 h-5 text-foreground" />
+          <CardTitle className="text-lg">Push Leads to Lofty</CardTitle>
+        </div>
+        <CardDescription>
+          Every new lead added in DealsFlow will be automatically sent to Lofty via your Zapier webhook.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="lofty-webhook" className="text-xs font-medium text-muted-foreground">
+            Zapier Webhook URL (Catch Hook)
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="lofty-webhook"
+              placeholder="https://hooks.zapier.com/hooks/catch/..."
+              value={url}
+              onChange={e => { setUrl(e.target.value); setSaved(false); }}
+              className="flex-1 font-mono text-xs"
+            />
+            <Button onClick={handleSave} size="sm" className="gap-1.5 shrink-0">
+              {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+              {saved ? 'Saved' : 'Save'}
+            </Button>
+          </div>
+        </div>
+        <div className="rounded-lg bg-muted/40 p-3 space-y-1.5">
+          <p className="text-xs font-medium text-foreground">Setup Instructions:</p>
+          <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal list-inside">
+            <li>In Zapier, create a new Zap with <strong>Webhooks by Zapier → Catch Hook</strong> as the trigger</li>
+            <li>Copy the webhook URL and paste it above</li>
+            <li>Add an action step: <strong>Lofty → Create Lead</strong></li>
+            <li>Map the fields: first_name, last_name, email, phone, source, status</li>
+            <li>Turn on the Zap — new leads will flow automatically!</li>
+          </ol>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
