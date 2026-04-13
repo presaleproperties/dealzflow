@@ -48,10 +48,10 @@ const STATUS_COLORS: Record<string, string> = {
   'listing-lost': 'bg-destructive/[0.12] text-destructive',
 };
 
-const TEMP_CONFIG: Record<string, { dot: string; text: string; label: string; bg: string; border: string }> = {
-  hot:  { dot: 'bg-rose-500', text: 'text-rose-500', label: 'Hot',  bg: 'bg-rose-500/10', border: 'border-l-rose-500/70' },
-  warm: { dot: 'bg-amber-500', text: 'text-amber-500', label: 'Warm', bg: 'bg-amber-500/10', border: 'border-l-amber-500/70' },
-  cold: { dot: 'bg-sky-500', text: 'text-sky-500', label: 'Cold', bg: 'bg-sky-500/10', border: 'border-l-sky-500/70' },
+const TEMP_CONFIG: Record<string, { label: string; text: string; border: string }> = {
+  hot:  { label: 'Hot',  text: 'text-foreground', border: 'border-l-border' },
+  warm: { label: 'Warm', text: 'text-foreground', border: 'border-l-border' },
+  cold: { label: 'Cold', text: 'text-foreground', border: 'border-l-border' },
 };
 const TEMP_OPTIONS = ['hot', 'warm', 'cold'];
 
