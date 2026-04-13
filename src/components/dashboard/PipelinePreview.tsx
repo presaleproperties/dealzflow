@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePipelineProspects } from '@/hooks/usePipelineProspects';
 import { formatCurrency } from '@/lib/format';
-import { Flame, Thermometer, Snowflake, ArrowRight, TrendingUp } from 'lucide-react';
+import { ArrowRight, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TEMP_CONFIG = {
