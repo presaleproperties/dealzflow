@@ -221,31 +221,7 @@ export default function CrmIntegrationsPage() {
         <h2 className="text-lg font-semibold text-foreground mb-4">Connected Systems</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {systems.map((s) => (
-            <Card key={s.name} className="flex flex-col">
-              <CardHeader className="pb-2 flex-row items-start gap-3 space-y-0">
-                <div className="rounded-lg bg-muted/60 p-2.5">
-                  <s.icon className="w-5 h-5 text-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-sm font-semibold leading-tight">{s.name}</CardTitle>
-                  <Badge variant={s.badgeVariant} className="mt-1.5 text-[10px]">{s.badgeLabel}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col gap-3 pt-0">
-                <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
-                {s.webhookUrl && (
-                  <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg px-2.5 py-1.5 mt-auto">
-                    <code className="text-[10px] text-muted-foreground truncate flex-1">{s.webhookUrl}</code>
-                    <button onClick={() => copyUrl(s.webhookUrl!)} className="shrink-0 p-1 rounded hover:bg-muted transition-colors" aria-label="Copy URL">
-                      <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                  </div>
-                )}
-                {s.setup && (
-                  <p className="text-[10px] text-muted-foreground/70 italic">Setup: {s.setup}</p>
-                )}
-              </CardContent>
-            </Card>
+            <SystemCardItem key={s.name} system={s} />
           ))}
         </div>
       </div>
