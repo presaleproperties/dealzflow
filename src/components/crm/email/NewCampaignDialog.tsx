@@ -199,7 +199,6 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
               <p className="text-sm font-medium text-foreground">{subject}</p>
               <p className="text-xs text-muted-foreground mt-2">Recipients</p>
               <p className="text-sm text-foreground">
-                {recipientCount} {isMailerLiteConnected ? 'subscribers' : 'leads'}
                 {recipientCount} leads
               </p>
               <p className="text-xs text-muted-foreground mt-2">Sending via</p>
