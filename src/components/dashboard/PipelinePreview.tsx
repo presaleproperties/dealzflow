@@ -161,10 +161,9 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
           {tempStats.map(({ temp, count }) => {
             if (count === 0) return null;
             const cfg = TEMP_CONFIG[temp];
-            const Icon = cfg.icon;
             return (
               <span key={temp} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", cfg.bg, cfg.border, cfg.color)}>
-                <Icon className="h-2.5 w-2.5" /> {count}
+                <span className={cn("w-2 h-2 rounded-full", cfg.dot)} /> {count}
               </span>
             );
           })}
@@ -175,10 +174,9 @@ export function PipelinePreview({ layout = 'vertical' }: { layout?: 'horizontal'
         <div className="space-y-2">
           {topLeads.map(p => {
             const tc = TEMP_CONFIG[(p.temperature || 'warm') as TempKey] || TEMP_CONFIG.warm;
-            const Icon = tc.icon;
             return (
               <div key={p.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-muted/20 border border-border/15">
-                <Icon className={cn("h-3.5 w-3.5 shrink-0", tc.color)} />
+                <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", tc.dot)} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{p.client_name}</p>
                   <p className="text-[11px] text-muted-foreground/50">{p.home_type}</p>
