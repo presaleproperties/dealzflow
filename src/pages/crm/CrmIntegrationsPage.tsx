@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save, Eye, EyeOff, Pencil } from 'lucide-react';
+import { Copy, RefreshCw, Database, Calendar, Globe, Zap, CalendarClock, Check, Save, Eye, EyeOff, Pencil, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getOutboundWebhookUrl, setOutboundWebhookUrl } from '@/lib/outboundWebhook';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── helpers ─── */
@@ -23,6 +24,8 @@ function copyUrl(url: string) {
 const typeBadge: Record<string, { label: string; cls: string }> = {
   calendly_booking: { label: 'Calendly',           cls: 'bg-teal-500/15 text-teal-400 border-teal-500/30' },
   nurture_run:      { label: 'Nurture Run',        cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+  zapier_lofty:     { label: 'Lofty (In)',         cls: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
+  zapier_outbound:  { label: 'Lofty (Out)',        cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
 };
 
 const statusBadge: Record<string, string> = {
@@ -30,6 +33,7 @@ const statusBadge: Record<string, string> = {
   error:   'bg-red-500/15 text-red-400 border-red-500/30',
   partial: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
   running: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  failed:  'bg-red-500/15 text-red-400 border-red-500/30',
 };
 
 /* ─── Connected Systems data ─── */
@@ -41,7 +45,7 @@ interface SystemCard {
   description: string;
   webhookUrl?: string;
   setup?: string;
-  secretKey?: string; // name of the secret to edit
+  secretKey?: string;
   secretLabel?: string;
 }
 

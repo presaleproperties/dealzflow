@@ -254,9 +254,17 @@ export function useBulkUpdateContacts() {
         .in('id', ids);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       toast.success('Contacts updated');
+      // Fire outbound webhook for status changes
+      if (variables.updates.status) {
+        import('@/lib/outboundWebhook').then(({ fireOutboundWebhook }) => {
+          variables.ids.forEach(id => {
+            fireOutboundWebhook('lead.status_changed', { id, ...variables.updates } as any);
+          });
+        });
+      }
     },
     onError: (err: Error) => {
       toast.error(`Update failed: ${err.message}`);
