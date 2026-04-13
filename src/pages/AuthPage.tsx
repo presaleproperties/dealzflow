@@ -279,10 +279,6 @@ export default function AuthPage() {
               <Clock className="w-3 h-3 text-amber-500" />
               <span className="text-[10.5px] font-semibold text-amber-600 dark:text-amber-400">SkySlope — Soon</span>
             </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <Clock className="w-3 h-3 text-amber-500" />
-              <span className="text-[10.5px] font-semibold text-amber-600 dark:text-amber-400">Lofty — Soon</span>
-            </div>
           </div>
         </div>
 
