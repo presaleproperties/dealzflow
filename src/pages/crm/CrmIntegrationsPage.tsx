@@ -10,10 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getLoftyOutboundWebhookUrl, setLoftyOutboundWebhookUrl } from '@/lib/loftyWebhook';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── helpers ─── */
-const BASE = 'https://svbilqvudkkdhslxebce.supabase.co/functions/v1';
+const BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
 
 function copyUrl(url: string) {
   navigator.clipboard.writeText(url);
@@ -51,11 +52,10 @@ interface SystemCard {
 const systems: SystemCard[] = [
   {
     name: 'Lofty CRM', icon: Database,
-    badgeLabel: 'API Key Connected', badgeVariant: 'success',
-    description: 'Bi-directional lead sync. Auto-pulls from Lofty every 15 min + pushes new CRM leads to Lofty.',
-    setup: 'API key configured — sync is automatic',
-    secretKey: 'LOFTY_API_KEY',
-    secretLabel: 'Lofty API Key',
+    badgeLabel: 'Webhook Flow', badgeVariant: 'info',
+    description: 'Lofty lead sync now runs through Zapier webhooks instead of direct API pull/push calls.',
+    webhookUrl: `${BASE}/lofty-ingest`,
+    setup: 'Use the Zapier setup guide below for inbound leads, and save your outbound Catch Hook URL below.',
   },
   {
     name: 'ManyChat (TikTok + IG)', icon: MessageCircle,
@@ -110,14 +110,27 @@ export default function CrmIntegrationsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    const [logRes, bookRes] = await Promise.all([
-      supabase.from('sync_log').select('*').order('started_at', { ascending: false }).limit(10),
-      supabase.from('booking_events').select('*').order('created_at', { ascending: false }).limit(10),
-    ]);
-    if (logRes.data) setSyncLogs(logRes.data);
-    if (bookRes.data) setBookings(bookRes.data);
-    setLoading(false);
+  const fetchData = useCallback(async (showErrorToast = false) => {
+    try {
+      const [logRes, bookRes] = await Promise.all([
+        supabase.from('sync_log').select('*').order('started_at', { ascending: false }).limit(10),
+        supabase.from('booking_events').select('*').order('created_at', { ascending: false }).limit(10),
+      ]);
+
+      if (logRes.error) throw logRes.error;
+      if (bookRes.error) throw bookRes.error;
+
+      setSyncLogs(logRes.data ?? []);
+      setBookings(bookRes.data ?? []);
+      return true;
+    } catch (error: any) {
+      if (showErrorToast) {
+        toast.error(`Failed to load integration activity: ${error.message || 'Unknown error'}`);
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -130,22 +143,14 @@ export default function CrmIntegrationsPage() {
 
   const handleRunAll = async () => {
     setSyncing(true);
-    toast.info('Syncing with Lofty...');
+    toast.info('Lofty now syncs via webhook — refreshing activity only.');
     try {
-      const { data, error } = await supabase.functions.invoke('lofty-pull', {
-        body: { source: 'manual' },
-      });
-      if (error) throw error;
-      if (data?.success) {
-        toast.success(`Lofty sync complete: ${data.created} created, ${data.updated} updated, ${data.total_fetched} total`);
-      } else {
-        toast.error(`Sync failed: ${data?.error || 'Unknown error'}`);
+      const refreshed = await fetchData(true);
+      if (refreshed) {
+        toast.success('Integration activity refreshed');
       }
-    } catch (err: any) {
-      toast.error(`Sync error: ${err.message || 'Unknown error'}`);
     } finally {
       setSyncing(false);
-      fetchData();
     }
   };
 
@@ -158,7 +163,7 @@ export default function CrmIntegrationsPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Connect and monitor all external systems feeding into DealsFlow</p>
         </div>
         <Button onClick={handleRunAll} disabled={syncing} className="gap-2 shrink-0">
-          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Syncing...' : 'Sync with Lofty'}
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Refreshing...' : 'Refresh Activity'}
         </Button>
       </div>
 
@@ -396,29 +401,18 @@ function SystemCardItem({ system: s }: { system: SystemCard }) {
   );
 }
 
-/* ─── Outbound Lofty Push Section ─── */
-const LOFTY_WEBHOOK_KEY = 'lofty_outbound_webhook_url';
-
-export function getLoftyOutboundWebhookUrl(): string | null {
-  return localStorage.getItem(LOFTY_WEBHOOK_KEY);
-}
-
 function LoftyOutboundSection() {
   const [url, setUrl] = useState('');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(LOFTY_WEBHOOK_KEY);
+    const stored = getLoftyOutboundWebhookUrl();
     if (stored) setUrl(stored);
   }, []);
 
   const handleSave = () => {
-    const trimmed = url.trim();
-    if (trimmed) {
-      localStorage.setItem(LOFTY_WEBHOOK_KEY, trimmed);
-    } else {
-      localStorage.removeItem(LOFTY_WEBHOOK_KEY);
-    }
+    const trimmed = setLoftyOutboundWebhookUrl(url);
+    setUrl(trimmed ?? '');
     setSaved(true);
     toast.success(trimmed ? 'Outbound Lofty webhook saved' : 'Outbound webhook removed');
     setTimeout(() => setSaved(false), 2000);
