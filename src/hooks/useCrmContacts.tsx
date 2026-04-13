@@ -227,6 +227,33 @@ export function useAddCrmContact() {
         .select()
         .single();
       if (error) throw error;
+
+      // Fire outbound Lofty webhook (fire-and-forget)
+      try {
+        const webhookUrl = localStorage.getItem('lofty_outbound_webhook_url');
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
+            body: JSON.stringify({
+              first_name: contact.first_name,
+              last_name: contact.last_name,
+              email: contact.email || null,
+              phone: contact.phone || null,
+              source: contact.source || 'DealsFlow',
+              status: row.status,
+              project: contact.project || null,
+              assigned_to: contact.assigned_to || null,
+              tags: contact.tags || [],
+              created_at: new Date().toISOString(),
+            }),
+          });
+        }
+      } catch {
+        // Don't block lead creation if webhook fails
+      }
+
       return data;
     },
     onSuccess: () => {
