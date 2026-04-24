@@ -53,7 +53,7 @@ const CREATE_OPTIONS = [
  * builder; in the CRM we Preview + Quick-Send.
  */
 export default function CrmMarketingHubPage() {
-  const { data: templates = [], isLoading } = useBridgeTemplates();
+  const { data: templates = [], isLoading, isFetching, dataUpdatedAt, refetch, isError } = useBridgeTemplates();
   const [activeTab, setActiveTab] = useState<'emails' | 'flyers' | 'social'>('emails');
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
@@ -103,21 +103,29 @@ export default function CrmMarketingHubPage() {
     <div className="flex flex-col h-full bg-background -mx-2 sm:-mx-0">
       {/* Header */}
       <div className="border-b border-border bg-card px-6 py-5 shrink-0">
-        <div className="flex items-center justify-between max-w-5xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+        <div className="flex items-center justify-between max-w-5xl mx-auto gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Megaphone className="h-[18px] w-[18px] text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg font-bold tracking-tight">Marketing Hub</h1>
-              <p className="text-xs text-muted-foreground">
-                Send Presale Properties campaigns to your CRM leads
+              <p className="text-xs text-muted-foreground truncate">
+                Native email composer · templates synced via bridge
               </p>
             </div>
           </div>
-          <Badge variant="outline" className="text-[11px] px-2.5 py-1">
-            {emailAssets.length + flyerAssets.length + socialAssets.length} saved
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <SyncPill
+              isError={isError}
+              isFetching={isFetching}
+              dataUpdatedAt={dataUpdatedAt}
+              onRefetch={() => refetch()}
+            />
+            <Badge variant="outline" className="text-[11px] px-2.5 py-1">
+              {emailAssets.length + flyerAssets.length + socialAssets.length} saved
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -130,11 +138,9 @@ export default function CrmMarketingHubPage() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {CREATE_OPTIONS.map((opt) => (
-                <a
+                <Link
                   key={opt.key}
-                  href={opt.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  to={opt.to}
                   className="group flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-accent/30 transition-all text-left"
                 >
                   <div
@@ -157,11 +163,11 @@ export default function CrmMarketingHubPage() {
                     <p className="text-[11px] text-muted-foreground leading-snug">{opt.desc}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary/60 transition-colors shrink-0" />
-                </a>
+                </Link>
               ))}
             </div>
             <p className="text-[10px] text-muted-foreground/60 mt-2">
-              Authoring opens in Presale Properties admin · changes sync back here automatically
+              Composer is built into the CRM · saved templates sync to the shared library automatically
             </p>
           </section>
 
