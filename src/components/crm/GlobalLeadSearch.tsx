@@ -67,13 +67,20 @@ export function GlobalLeadSearch() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    const matches = contacts.filter((c: any) => {
-      const name = `${c.first_name ?? ''} ${c.last_name ?? ''}`.toLowerCase();
-      const email = (c.email ?? '').toLowerCase();
-      const phone = (c.phone ?? '').toLowerCase();
-      const address = (c.property_address ?? c.address ?? '').toLowerCase();
-      return name.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
-    });
+    const matches = contacts
+      .map((c: any) => {
+        const name = `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim();
+        const email = c.email ?? '';
+        const phone = c.phone ?? '';
+        const address = c.property_address ?? c.address ?? '';
+        const matchedField = name.toLowerCase().includes(q) ? 'name'
+          : email.toLowerCase().includes(q) ? 'email'
+          : phone.toLowerCase().includes(q) ? 'phone'
+          : address.toLowerCase().includes(q) ? 'address'
+          : null;
+        return matchedField ? { c, matchedField, name, email, phone, address } : null;
+      })
+      .filter(Boolean) as Array<{ c: any; matchedField: string; name: string; email: string; phone: string; address: string }>;
     return matches.slice(0, 12);
   }, [contacts, query]);
 
