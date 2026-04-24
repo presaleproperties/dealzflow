@@ -46,6 +46,7 @@ import CrmCalendarPage from "./pages/crm/CrmCalendarPage";
 import CrmReportsPage from "./pages/crm/CrmReportsPage";
 import CrmSettingsPage from "./pages/crm/CrmSettingsPage";
 import CrmIntegrationsPage from "./pages/crm/CrmIntegrationsPage";
+import CrmBehaviorLeadsPage from "./pages/crm/CrmBehaviorLeadsPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const queryClient = new QueryClient({
