@@ -193,6 +193,15 @@ export function PresaleQuickSendDialog({
       }
     }
     setIsSending(false);
+    // Persist subject + recipients so the next quick-send for this template
+    // is prefilled. Only save when at least one send succeeded.
+    if (asset && successes > 0) {
+      saveQuickSendMemory(
+        asset.id,
+        subject,
+        recipients.map((r) => ({ id: r.id, email: r.email, name: r.name })),
+      );
+    }
     onSent?.();
     // Keep dialog open so user can review per-recipient results.
     // They close manually via the Close button.
