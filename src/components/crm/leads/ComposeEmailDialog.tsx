@@ -125,8 +125,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       setBcc('');
       setShowCcBcc(false);
       setMode('edit');
+      setSelectedSignatureId(null);
     }
   }, [open]);
+
+  /* Pick default signature when dialog opens or signatures load */
+  useEffect(() => {
+    if (!open) return;
+    if (selectedSignatureId) return;
+    if (signatures.length === 0) return;
+    const def = signatures.find((s) => s.is_default) ?? signatures[0];
+    setSelectedSignatureId(def.id);
+  }, [open, signatures, selectedSignatureId]);
+
+  /* Resolve currently-selected signature HTML, falling back to legacy single signature */
+  const activeSignatureHtml = useMemo(() => {
+    if (selectedSignatureId) {
+      const found = signatures.find((s) => s.id === selectedSignatureId);
+      if (found) return found.html;
+    }
+    return emailSettings?.signature_html ?? '';
+  }, [selectedSignatureId, signatures, emailSettings]);
 
   const senderCtx = useMemo(
     () => ({
