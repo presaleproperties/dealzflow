@@ -18,6 +18,7 @@ import {
   Mail,
   User,
   Inbox,
+  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -101,6 +102,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplCategory, setTplCategory] = useState('general');
+  const [previewTpl, setPreviewTpl] = useState<AnyTpl | null>(null);
 
   /* Load recent template IDs from local storage when dialog opens */
   useEffect(() => {
@@ -291,7 +293,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl w-[97vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+        <DialogContent className="max-w-7xl w-[98vw] h-[92vh] p-0 overflow-hidden flex flex-col">
           {/* Header */}
           <DialogHeader className="px-5 py-3 border-b border-border bg-card shrink-0">
             <DialogTitle className="flex items-center justify-between gap-2">
@@ -340,8 +342,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Two-column body */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-[260px_1fr] overflow-hidden min-h-0">
+          {/* Multi-column body */}
+          <div className={cn(
+            'flex-1 grid grid-cols-1 overflow-hidden min-h-0',
+            previewTpl ? 'md:grid-cols-[260px_1fr_360px]' : 'md:grid-cols-[260px_1fr]',
+          )}>
             {/* Sidebar */}
             <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden md:block">
               {/* Lead identity */}
@@ -393,8 +398,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     {recentTemplates.map((tpl) => (
                       <button
                         key={(tpl.__isBridge ? 'b:' : 'l:') + tpl.id}
-                        onClick={() => applyTemplate(tpl)}
-                        className="w-full text-left bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-sm transition-all relative group"
+                        onClick={() => setPreviewTpl(tpl)}
+                        className={cn(
+                          'w-full text-left bg-card border rounded-lg overflow-hidden hover:shadow-sm transition-all relative group',
+                          previewTpl?.id === tpl.id ? 'border-primary ring-1 ring-primary/30' : 'border-border hover:border-primary/50',
+                        )}
                       >
                         {tpl.__isBridge && (
                           <Badge className="absolute top-1 right-1 z-10 bg-primary/90 text-primary-foreground text-[8px] px-1 py-0 h-3.5">
@@ -669,6 +677,64 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Right-side template preview pane */}
+            {previewTpl && (
+              <aside className="border-l border-border bg-muted/10 overflow-hidden hidden md:flex flex-col min-h-0">
+                <div className="px-4 py-3 border-b border-border bg-card flex items-start justify-between gap-2 shrink-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Template Preview
+                      </p>
+                      {previewTpl.__isBridge && (
+                        <Badge className="bg-primary/90 text-primary-foreground text-[8px] px-1 py-0 h-3.5">
+                          PRESALE
+                        </Badge>
+                      )}
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground truncate">{previewTpl.name}</h4>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {previewTpl.subject || '(no subject)'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => setPreviewTpl(null)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-hidden p-3 min-h-0">
+                  <iframe
+                    title="template-preview"
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:16px;font:13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${previewTpl.body_html ?? '<p style="color:#999">No content</p>'}</body></html>`}
+                    className="w-full h-full bg-white border border-border rounded-lg"
+                    sandbox="allow-same-origin"
+                  />
+                </div>
+                <div className="px-4 py-3 border-t border-border bg-card flex items-center justify-end gap-2 shrink-0">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setPreviewTpl(null)}>
+                    Dismiss
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      applyTemplate(previewTpl);
+                      setPreviewTpl(null);
+                    }}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Apply Template
+                  </Button>
+                </div>
+              </aside>
+            )}
           </div>
         </DialogContent>
       </Dialog>
