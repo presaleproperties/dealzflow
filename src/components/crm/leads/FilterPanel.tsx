@@ -29,6 +29,8 @@ interface FilterPanelProps {
   setFilterLanguage: (v: string[]) => void;
   filterTags: string[];
   setFilterTags: (v: string[]) => void;
+  filterExcludeTags: string[];
+  setFilterExcludeTags: (v: string[]) => void;
   filterPropertyType: string[];
   setFilterPropertyType: (v: string[]) => void;
   filterCity: string[];
