@@ -20,6 +20,7 @@ import {
   Inbox,
   X,
   Search,
+  PenSquare,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -237,6 +238,41 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     });
   };
 
+  /**
+   * Insert a saved signature inline at the current location in the body.
+   *
+   * Edit (Tiptap) mode: append after the body since Tiptap can't host arbitrary HTML.
+   * HTML mode: insert at the textarea cursor position so the user controls placement.
+   * Preview mode: append at the end of the body HTML.
+   *
+   * Also disables the auto-append toggle so the signature isn't duplicated.
+   */
+  const htmlTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const insertSignature = (sigHtml: string, sigName: string) => {
+    if (!sigHtml) {
+      toast.error('That signature is empty');
+      return;
+    }
+    const block = `<br/><br/>${sigHtml}`;
+    if (mode === 'html' && htmlTextareaRef.current) {
+      const ta = htmlTextareaRef.current;
+      const start = ta.selectionStart ?? ta.value.length;
+      const end = ta.selectionEnd ?? ta.value.length;
+      const next = ta.value.slice(0, start) + block + ta.value.slice(end);
+      setBodyHtml(next);
+      // Restore caret after React updates
+      requestAnimationFrame(() => {
+        ta.focus();
+        const pos = start + block.length;
+        ta.setSelectionRange(pos, pos);
+      });
+    } else {
+      setBodyHtml((prev) => `${prev || ''}${block}`);
+    }
+    setAppendSignature(false);
+    toast.success(`Inserted "${sigName}"`);
+  };
+
   const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
   const canSend = !!contact.email && subject.trim() && bodyText;
 
@@ -428,6 +464,46 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     </div>
                   </PopoverContent>
                 </Popover>
+
+                {/* Insert signature at cursor */}
+                {signatures.length > 0 && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5">
+                        <PenSquare className="h-3.5 w-3.5" />
+                        Insert signature
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-[300px] p-0 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-border bg-muted/30">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Saved signatures
+                        </p>
+                      </div>
+                      <div className="max-h-[320px] overflow-y-auto py-1">
+                        {signatures.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => insertSignature(s.html, s.name)}
+                            className="w-full text-left px-3 py-2 hover:bg-accent/60 focus:bg-accent/60 focus:outline-none transition-colors flex items-center justify-between gap-2"
+                          >
+                            <span className="text-xs font-medium truncate">{s.name}</span>
+                            {s.is_default && (
+                              <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">
+                                Default
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="px-3 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
+                        Inserts at the cursor (HTML mode) or end of body. Auto-append turns off.
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -693,6 +769,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 {mode === 'html' && (
                   <div className="p-5">
                     <textarea
+                      ref={htmlTextareaRef}
                       value={bodyHtml}
                       onChange={(e) => setBodyHtml(e.target.value)}
                       className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
