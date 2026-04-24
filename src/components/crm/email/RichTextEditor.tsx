@@ -3,7 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Bold, Italic, List, ListOrdered, Heading2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 interface Props {
   content: string;
@@ -13,9 +13,20 @@ interface Props {
   footerSlot?: ReactNode;
   /** Optional extra controls rendered on the right side of the toolbar row. */
   toolbarSlot?: ReactNode;
+  /** Max height (px) of the scrollable editor + footer area. Defaults to 460px. */
+  maxBodyHeight?: number;
 }
 
-export function RichTextEditor({ content, onChange, placeholder = 'Write your email...', footerSlot, toolbarSlot }: Props) {
+export function RichTextEditor({
+  content,
+  onChange,
+  placeholder = 'Write your email...',
+  footerSlot,
+  toolbarSlot,
+  maxBodyHeight = 460,
+}: Props) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -35,6 +46,42 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your em
       editor.commands.setContent(content);
     }
   }, [content]);
+
+  /**
+   * Auto-scroll: keep the caret in view inside the bordered box.
+   * On every selection change or content edit, measure the caret's screen
+   * position and adjust scrollTop so the caret stays comfortably visible
+   * with the signature naturally appearing right below.
+   */
+  useEffect(() => {
+    if (!editor) return;
+    const ensureCaretVisible = () => {
+      const scroller = scrollRef.current;
+      if (!scroller) return;
+      const sel = editor.state.selection;
+      try {
+        const coords = editor.view.coordsAtPos(sel.head);
+        const sRect = scroller.getBoundingClientRect();
+        // Comfort margin: keep caret at least 60px from top, 120px from bottom
+        // so the signature peeks into view as the user types near the end.
+        const topMargin = 60;
+        const bottomMargin = 120;
+        if (coords.bottom > sRect.bottom - bottomMargin) {
+          scroller.scrollTop += coords.bottom - (sRect.bottom - bottomMargin);
+        } else if (coords.top < sRect.top + topMargin) {
+          scroller.scrollTop -= (sRect.top + topMargin) - coords.top;
+        }
+      } catch {
+        /* coordsAtPos can throw during transient state; ignore */
+      }
+    };
+    editor.on('selectionUpdate', ensureCaretVisible);
+    editor.on('update', ensureCaretVisible);
+    return () => {
+      editor.off('selectionUpdate', ensureCaretVisible);
+      editor.off('update', ensureCaretVisible);
+    };
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -65,8 +112,15 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your em
           </>
         )}
       </div>
-      <EditorContent editor={editor} />
-      {footerSlot}
+      {/* Single scrollable area: typed content + signature live in one box. */}
+      <div
+        ref={scrollRef}
+        className="overflow-y-auto"
+        style={{ maxHeight: maxBodyHeight }}
+      >
+        <EditorContent editor={editor} />
+        {footerSlot}
+      </div>
     </div>
   );
 }
