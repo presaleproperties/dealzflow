@@ -69,23 +69,25 @@ export function useSegmentCounts(
     queryFn: async () => {
       const counts: Record<string, number> = {};
 
-      for (const seg of segments) {
-        let query = supabase.from('crm_contacts').select('id', { count: 'exact', head: true });
+      // Run all segment counts in parallel instead of sequentially.
+      // With ~7k contacts and 8+ segments, sequential awaits made this take 5-10s.
+      const results = await Promise.all(
+        segments.map(async (seg) => {
+          let query = supabase.from('crm_contacts').select('id', { count: 'exact', head: true });
+          query = applyFilters(query, baseFilters);
+          query = applyFilters(query, seg.filter_config);
+          const { count, error } = await query;
+          return { id: seg.id, count: error ? 0 : (count ?? 0) };
+        }),
+      );
 
-        // Apply base filters from saved view
-        query = applyFilters(query, baseFilters);
-        // Apply segment filters on top
-        query = applyFilters(query, seg.filter_config);
-
-        const { count, error } = await query;
-        if (!error) counts[seg.id] = count ?? 0;
-      }
-
+      for (const r of results) counts[r.id] = r.count;
       return counts;
     },
     enabled: segments.length > 0,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    refetchOnWindowFocus: false,
   });
 }
 
