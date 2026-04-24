@@ -80,6 +80,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const sendBridge = useBridgeSendEmail();
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
+  const { data: signatures = [] } = useEmailSignatures();
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
   const { data: messages = [] } = useCrmContactMessages(open ? contact.id : undefined);
