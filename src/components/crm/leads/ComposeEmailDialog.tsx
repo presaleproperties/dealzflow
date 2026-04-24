@@ -729,6 +729,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 {mode === 'html' && (
                   <div className="p-5">
                     <textarea
+                      ref={htmlTextareaRef}
                       value={bodyHtml}
                       onChange={(e) => setBodyHtml(e.target.value)}
                       className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
