@@ -185,14 +185,6 @@ export default function CrmSettingsPage() {
           <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
         </div>
         <Separator />
-        <div id="settings-pipeline" className="scroll-mt-16">
-          <SectionErrorBoundary name="Pipeline Stages"><PipelineStages /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-sources" className="scroll-mt-16">
-          <SectionErrorBoundary name="Lead Sources"><LeadSourcesSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
         <div id="settings-import" className="scroll-mt-16">
           <SectionErrorBoundary name="Data Import"><DataImportSection /></SectionErrorBoundary>
         </div>
