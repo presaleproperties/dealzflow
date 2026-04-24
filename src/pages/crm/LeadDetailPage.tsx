@@ -744,7 +744,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
           </div>
         </div>
-        <p className="text-sm text-foreground/85 whitespace-pre-wrap mt-1.5 leading-relaxed">{note.content}</p>
+        <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed">{note.content}</p>
       </div>
     </div>
   );
@@ -828,15 +828,15 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         {upcomingShowings.length === 0 ? (
           <EmptyWidget icon={Calendar} message="No upcoming appointments" />
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {upcomingShowings.slice(0, 5).map((s: any) => (
-              <div key={s.id} className="flex items-start gap-2.5 p-2.5 rounded-md bg-card border border-border/50 hover:border-border transition-colors">
-                <div className="w-7 h-7 rounded-md border border-border/60 flex items-center justify-center shrink-0">
-                  <Calendar className="w-3.5 h-3.5 text-foreground/70" />
+              <div key={s.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-border transition-colors">
+                <div className="w-8 h-8 rounded-md border border-border/60 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-foreground/70" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{s.project}</p>
-                  <p className="text-[11px] text-muted-foreground">{format(new Date(s.showing_date), 'MMM d')} · {s.showing_time}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate">{s.project}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(s.showing_date), 'MMM d')} · {s.showing_time}</p>
                 </div>
               </div>
             ))}
@@ -854,18 +854,18 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         ) : !emails || emails.length === 0 ? (
           <EmptyWidget icon={Mail} message="No email activity" />
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {emails.slice(0, 5).map((email: any) => (
-              <div key={email.id} className="flex items-start gap-2.5 p-2.5 rounded-md bg-card border border-border/50 hover:border-border transition-colors">
-                <div className="w-7 h-7 rounded-md border border-border/60 flex items-center justify-center shrink-0">
+              <div key={email.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-border transition-colors">
+                <div className="w-8 h-8 rounded-md border border-border/60 flex items-center justify-center shrink-0">
                   {email.direction === 'outbound'
-                    ? <ArrowUpRight className="w-3.5 h-3.5 text-foreground/70" />
-                    : <ArrowDownLeft className="w-3.5 h-3.5 text-foreground/70" />
+                    ? <ArrowUpRight className="w-4 h-4 text-foreground/70" />
+                    : <ArrowDownLeft className="w-4 h-4 text-foreground/70" />
                   }
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-foreground truncate">{email.subject}</p>
-                  <p className="text-[11px] text-muted-foreground">{format(new Date(email.sent_at), 'MMM d · h:mm a')}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate">{email.subject}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(email.sent_at), 'MMM d · h:mm a')}</p>
                 </div>
               </div>
             ))}
@@ -890,16 +890,16 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
 function WidgetSection({ title, count, onAdd, children }: { title: string; count?: number; onAdd?: () => void; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/40">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/50">
         <div className="flex items-center gap-2">
           <SectionHeader>{title}</SectionHeader>
           {count != null && count > 0 && (
-            <span className="text-[10px] bg-muted text-foreground/70 rounded-full px-1.5 py-0.5 font-semibold tabular-nums">{count}</span>
+            <span className="text-[11px] bg-muted text-foreground/80 rounded-full px-2 py-0.5 font-semibold tabular-nums">{count}</span>
           )}
         </div>
         {onAdd && (
-          <button onClick={onAdd} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
-            <Plus className="w-3.5 h-3.5" />
+          <button onClick={onAdd} className="text-muted-foreground hover:text-foreground transition-colors p-0.5" aria-label={`Add ${title.toLowerCase()}`}>
+            <Plus className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -910,9 +910,9 @@ function WidgetSection({ title, count, onAdd, children }: { title: string; count
 
 function EmptyWidget({ icon: Icon, message }: { icon: typeof ListTodo; message: string }) {
   return (
-    <div className="flex items-center gap-2.5 py-4 justify-center">
-      <Icon className="w-3.5 h-3.5 text-muted-foreground/50" />
-      <span className="text-xs text-muted-foreground/70">{message}</span>
+    <div className="flex items-center gap-2.5 py-5 justify-center">
+      <Icon className="w-4 h-4 text-muted-foreground/60" />
+      <span className="text-[13px] text-muted-foreground">{message}</span>
     </div>
   );
 }
@@ -921,14 +921,14 @@ function TaskRow({ task }: { task: any }) {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
   return (
     <div className={cn(
-      'flex items-start gap-2.5 p-2.5 rounded-md bg-card border transition-colors',
-      isOverdue ? 'border-destructive/30' : 'border-border/50 hover:border-border'
+      'flex items-start gap-2.5 p-3 rounded-lg bg-card border transition-colors',
+      isOverdue ? 'border-destructive/30' : 'border-border/60 hover:border-border'
     )}>
-      <Checkbox className="mt-0.5 h-3.5 w-3.5" />
+      <Checkbox className="mt-0.5 h-4 w-4" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-foreground">{task.title}</p>
+        <p className="text-[13px] font-medium text-foreground leading-snug">{task.title}</p>
         {task.due_date && (
-          <p className={cn('text-[11px] mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
+          <p className={cn('text-xs mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
             {isOverdue ? 'Overdue · ' : ''}{format(new Date(task.due_date), 'MMM d, yyyy')}
           </p>
         )}
