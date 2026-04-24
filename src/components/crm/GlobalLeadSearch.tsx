@@ -155,7 +155,7 @@ export function GlobalLeadSearch() {
             ) : (
               <ul className="py-1.5">
                 {results.map((c: any, i) => {
-                  const name = formatContactName(c) || 'Unnamed lead';
+                  const name = formatContactName(c.first_name, c.last_name) || 'Unnamed lead';
                   const subtitle = c.email || c.phone || '';
                   const tag = c.status || c.lead_type;
                   return (
