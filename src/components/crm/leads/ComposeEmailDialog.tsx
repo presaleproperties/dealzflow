@@ -891,6 +891,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
                       onChange={(e) => {
                         const v = e.target.value;
+                        // Switching signatures cancels any in-progress edit to avoid losing context.
+                        if (editingSignature) {
+                          setEditingSignature(false);
+                          setSigDraft('');
+                        }
                         if (v === '__none__') {
                           setAppendSignature(false);
                         } else {
@@ -898,8 +903,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                           setSelectedSignatureId(v || null);
                         }
                       }}
-                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[200px]"
-                      title="Choose a signature for this email"
+                      disabled={editingSignature}
+                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[200px] disabled:opacity-60"
+                      title={editingSignature ? 'Finish editing to switch signatures' : 'Choose a signature for this email'}
                     >
                       <option value="__none__">None</option>
                       {signatures.map((s) => (
@@ -908,6 +914,74 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                         </option>
                       ))}
                     </select>
+                    {appendSignature && selectedSignatureId && (() => {
+                      const sig = signatures.find((s) => s.id === selectedSignatureId);
+                      if (!sig) return null;
+                      if (!editingSignature) {
+                        return (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1 text-[11px]"
+                            onClick={() => {
+                              setSigDraft(sig.html ?? '');
+                              setEditingSignature(true);
+                            }}
+                            title="Edit this signature inline"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        );
+                      }
+                      return (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 px-2 gap-1 text-[11px]"
+                            disabled={upsertSignature.isPending || sigDraft === (sig.html ?? '')}
+                            onClick={async () => {
+                              try {
+                                await upsertSignature.mutateAsync({
+                                  id: sig.id,
+                                  name: sig.name,
+                                  html: sigDraft,
+                                  is_default: sig.is_default,
+                                  sort_order: sig.sort_order,
+                                });
+                                setEditingSignature(false);
+                              } catch {
+                                /* toast handled in hook */
+                              }
+                            }}
+                            title="Save changes to this signature"
+                          >
+                            {upsertSignature.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                            Save
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1 text-[11px] text-muted-foreground"
+                            onClick={() => {
+                              setEditingSignature(false);
+                              setSigDraft('');
+                            }}
+                            title="Discard changes"
+                          >
+                            <X className="h-3 w-3" />
+                            Cancel
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </div>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
