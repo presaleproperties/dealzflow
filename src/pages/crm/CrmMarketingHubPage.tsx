@@ -56,13 +56,45 @@ export default function CrmMarketingHubPage() {
   const [activeTab, setActiveTab] = useState<'emails' | 'flyers' | 'social'>('emails');
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
+  const [activeTags, setActiveTags] = useState<Set<TemplateTag>>(new Set());
+  const [search, setSearch] = useState('');
 
   // Bridge currently surfaces only emails. Flyers/social are placeholders that
   // mirror Presale's tabbed structure so the layout reads identically.
   const emailAssets = templates;
   const flyerAssets: BridgeTemplate[] = useMemo(() => [], []);
 
-  const filteredAssets = activeTab === 'emails' ? emailAssets : flyerAssets;
+  const tagCounts = useMemo(() => countTags(emailAssets), [emailAssets]);
+
+  const baseAssets = activeTab === 'emails' ? emailAssets : flyerAssets;
+
+  const filteredAssets = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return baseAssets.filter((t) => {
+      // Tag filter (OR across selected tags)
+      if (activeTags.size > 0) {
+        const tags = inferTemplateTags(t);
+        if (!tags.some((tg) => activeTags.has(tg))) return false;
+      }
+      // Search filter
+      if (q) {
+        const hay = `${t.name ?? ''} ${t.subject ?? ''} ${t.category ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [baseAssets, activeTags, search]);
+
+  const toggleTag = (tag: TemplateTag) => {
+    setActiveTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  };
+  const clearFilters = () => { setActiveTags(new Set()); setSearch(''); };
+  const hasFilters = activeTags.size > 0 || search.trim().length > 0;
 
   return (
     <div className="flex flex-col h-full bg-background -mx-2 sm:-mx-0">
