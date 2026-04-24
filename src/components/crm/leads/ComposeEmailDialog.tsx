@@ -268,16 +268,16 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       <dd className="font-medium text-foreground">{contact.phone}</dd>
                     </div>
                   )}
-                  {contact.pipeline_stage && (
+                  {contact.status && (
                     <div className="flex gap-1.5">
                       <dt className="text-muted-foreground">Pipeline:</dt>
-                      <dd className="font-medium text-foreground">{contact.pipeline_stage}</dd>
+                      <dd className="font-medium text-foreground">{contact.status}</dd>
                     </div>
                   )}
-                  {(contact as any).source && (
+                  {contact.source && (
                     <div className="flex gap-1.5">
                       <dt className="text-muted-foreground">Source:</dt>
-                      <dd className="font-medium text-foreground">{(contact as any).source}</dd>
+                      <dd className="font-medium text-foreground">{contact.source}</dd>
                     </div>
                   )}
                 </dl>
