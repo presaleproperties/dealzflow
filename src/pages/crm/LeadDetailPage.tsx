@@ -154,11 +154,21 @@ function LeftSidebar({
 }) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
-  const [addingTag, setAddingTag] = useState(false);
-  const [newTag, setNewTag] = useState('');
+
+  // Unified library data — sourced from crm_tags / crm_projects / crm_lead_types tables.
+  // These are auto-synced from EVERY contact (lead, realtor, past_client) via triggers,
+  // so creating any of these here makes them instantly searchable everywhere in the CRM.
+  const { data: tagLib = [] } = useCrmTags();
+  const { data: projectLib = [] } = useCrmProjects();
+  const { data: leadTypeLib = [] } = useCrmLeadTypes();
+  const createTag = useCreateCrmTag();
+  const createProject = useCreateCrmProject();
+  const createLeadType = useCreateCrmLeadType();
 
   const tags = (contact.tags ?? []) as string[];
-  const projects = contact.projects?.length ? contact.projects : contact.project ? [contact.project] : [];
+  const projects = contact.projects?.length
+    ? contact.projects
+    : contact.project ? [contact.project] : [];
   const hasCoBuyer = !!(contact.co_buyer_name || contact.co_buyer_phone || contact.co_buyer_email);
 
   const save = (field: string, value: unknown) => {
@@ -170,18 +180,6 @@ function LeftSidebar({
       updates: { [field]: value, ...(field === 'status' ? { status_changed_at: new Date().toISOString() } : {}) },
       oldValues: { [field]: (contact as any)[field] },
     });
-  };
-
-  const addTag = () => {
-    const tag = newTag.trim();
-    if (!tag || tags.includes(tag)) return;
-    save('tags', [...tags, tag]);
-    setNewTag('');
-    setAddingTag(false);
-  };
-
-  const removeTag = (tag: string) => {
-    save('tags', tags.filter(t => t !== tag));
   };
 
   const showActionRow = !!(onCall || onSms || onEmail);
