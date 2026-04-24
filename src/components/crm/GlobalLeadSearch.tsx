@@ -116,9 +116,26 @@ export function GlobalLeadSearch() {
   useEffect(() => { setActiveIdx(0); }, [query]);
 
   const handleSelect = (id: string) => {
+    // Track in recents
+    setRecentIds(prev => {
+      const next = [id, ...prev.filter(x => x !== id)].slice(0, MAX_RECENTS);
+      try { localStorage.setItem(STORAGE_KEY_RECENTS, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     setOpen(false);
     navigate(`/crm/leads/${id}`);
   };
+
+  const clearRecents = () => {
+    setRecentIds([]);
+    try { localStorage.removeItem(STORAGE_KEY_RECENTS); } catch { /* ignore */ }
+  };
+
+  const recentContacts = useMemo(() => {
+    if (!recentIds.length) return [];
+    const map = new Map(contacts.map((c: any) => [c.id, c]));
+    return recentIds.map(id => map.get(id)).filter(Boolean) as any[];
+  }, [recentIds, contacts]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, Math.max(results.length - 1, 0))); }
