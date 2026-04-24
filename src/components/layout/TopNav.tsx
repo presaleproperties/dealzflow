@@ -197,7 +197,7 @@ export function TopNav() {
     <>
       <header
         className="sticky top-0 z-40 backdrop-blur-xl"
-        style={{ background: DARK_BG, borderBottom: `1px solid ${DARK_BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{ background: NAV_BG, borderBottom: `1px solid ${NAV_BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center h-[54px] px-3 sm:px-4 lg:px-6 gap-2 sm:gap-4">
           {/* Mobile hamburger removed — bottom tab bar handles primary nav on mobile/tablet */}
@@ -209,13 +209,13 @@ export function TopNav() {
               alt="Dealzflow"
               className="w-[26px] h-[26px] rounded-[7px] transition-opacity group-hover:opacity-80"
             />
-            <span className="hidden sm:inline-block font-semibold text-[15px] tracking-[-0.02em] text-white">
+            <span className="hidden sm:inline-block font-semibold text-[15px] tracking-[-0.02em] text-foreground">
               Dealz<span style={{ color: GOLD }}>flow</span>
             </span>
           </Link>
 
           {/* Divider */}
-          <div className="hidden lg:block h-6 w-px" style={{ background: 'hsl(222 20% 18%)' }} />
+          <div className="hidden lg:block h-6 w-px" style={{ background: 'hsl(var(--border))' }} />
 
           {/* Desktop top nav */}
           <nav className="hidden lg:flex items-center gap-0.5 flex-1">
@@ -257,11 +257,11 @@ export function TopNav() {
                     className="relative flex items-start gap-2.5 px-2.5 py-2 rounded-md transition-all duration-200 ease-out group will-change-transform"
                     style={{
                       background: childActive ? GOLD_BG : 'transparent',
-                      color: childActive ? GOLD : 'hsl(220 10% 80%)',
+                      color: childActive ? GOLD : FG_STRONG,
                     }}
                     onMouseEnter={(e) => {
                       if (!childActive) {
-                        e.currentTarget.style.background = 'hsl(222 20% 16%)';
+                        e.currentTarget.style.background = HOVER_BG;
                         e.currentTarget.style.transform = 'translateX(2px)';
                       }
                     }}
@@ -275,13 +275,13 @@ export function TopNav() {
                     <div
                       className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-all duration-200 ease-out group-hover:scale-105"
                       style={{
-                        background: childActive ? 'hsl(39 67% 55% / 0.18)' : 'hsl(222 20% 16%)',
+                        background: childActive ? 'hsl(var(--primary) / 0.18)' : HOVER_BG,
                       }}
                     >
                       <ChildIcon
                         className="w-3.5 h-3.5 transition-transform duration-200 ease-out"
                         strokeWidth={childActive ? 2.2 : 1.8}
-                        style={{ color: childActive ? GOLD : 'hsl(220 10% 70%)' }}
+                        style={{ color: childActive ? GOLD : FG_MUTED }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -289,7 +289,7 @@ export function TopNav() {
                         {child.label}
                       </div>
                       {child.description && (
-                        <div className="text-[11px] mt-0.5 leading-tight" style={{ color: 'hsl(220 8% 55%)' }}>
+                        <div className="text-[11px] mt-0.5 leading-tight" style={{ color: FG_MUTED }}>
                           {child.description}
                         </div>
                       )}
@@ -312,7 +312,7 @@ export function TopNav() {
                       className="relative flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] transition-colors duration-150 ease-out focus:outline-none"
                       style={{
                         color: sectionActive || isOpen ? GOLD : INACTIVE_TEXT,
-                        background: sectionActive ? GOLD_BG : isOpen ? 'hsl(222 20% 14%)' : 'transparent',
+                        background: sectionActive ? GOLD_BG : isOpen ? HOVER_BG : 'transparent',
                         fontWeight: sectionActive ? 600 : 500,
                       }}
                     >
@@ -341,8 +341,8 @@ export function TopNav() {
                       isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]',
                     )}
                     style={{
-                      background: 'hsl(222 25% 12% / 0.98)',
-                      border: `1px solid ${DARK_BORDER}`,
+                      background: SURFACE_STRONG,
+                      border: `1px solid ${NAV_BORDER}`,
                       backdropFilter: 'blur(16px)',
                       WebkitBackdropFilter: 'blur(16px)',
                       boxShadow: '0 20px 48px -12px hsl(0 0% 0% / 0.6), 0 8px 16px -8px hsl(0 0% 0% / 0.4)',
@@ -359,7 +359,7 @@ export function TopNav() {
                           <div key={group.label} className="min-w-[200px]">
                             <div
                               className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                              style={{ color: 'hsl(220 8% 50%)' }}
+                              style={{ color: FG_MUTED }}
                             >
                               {group.label}
                             </div>
@@ -426,19 +426,19 @@ export function TopNav() {
                 align="end"
                 sideOffset={8}
                 className="p-1.5 min-w-[200px] border-0"
-                style={{ background: 'hsl(222 25% 12%)', border: `1px solid ${DARK_BORDER}` }}
+                style={{ background: SURFACE_STRONG, border: `1px solid ${NAV_BORDER}` }}
               >
-                <div className="px-2.5 py-2 mb-1 border-b" style={{ borderColor: 'hsl(222 20% 16%)' }}>
-                  <div className="text-[11px]" style={{ color: 'hsl(220 8% 55%)' }}>Signed in as</div>
-                  <div className="text-[12.5px] font-medium truncate" style={{ color: 'hsl(220 10% 85%)' }}>
+                <div className="px-2.5 py-2 mb-1 border-b" style={{ borderColor: HOVER_BG }}>
+                  <div className="text-[11px]" style={{ color: FG_MUTED }}>Signed in as</div>
+                  <div className="text-[12.5px] font-medium truncate" style={{ color: FG_STRONG }}>
                     {user?.email}
                   </div>
                 </div>
                 <Link
                   to="/settings"
                   className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
-                  style={{ color: 'hsl(220 10% 80%)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(222 20% 16%)'; }}
+                  style={{ color: FG_STRONG }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = HOVER_BG; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <Settings2 className="w-4 h-4" strokeWidth={1.8} />
@@ -448,8 +448,8 @@ export function TopNav() {
                   <Link
                     to="/admin"
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
-                    style={{ color: 'hsl(38 90% 60%)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(38 90% 60% / 0.1)'; }}
+                    style={{ color: 'hsl(var(--warning))' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(var(--warning) / 0.1)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <ShieldAlert className="w-4 h-4" strokeWidth={1.8} />
@@ -459,8 +459,8 @@ export function TopNav() {
                 <button
                   onClick={requestSignOut}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
-                  style={{ color: 'hsl(0 70% 65%)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(0 70% 65% / 0.1)'; }}
+                  style={{ color: 'hsl(var(--destructive))' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(var(--destructive) / 0.1)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <LogOut className="w-4 h-4" strokeWidth={1.8} />
@@ -512,11 +512,11 @@ function MobileNavSheet({
     <div className="flex flex-col h-full">
       <div
         className="flex items-center justify-between px-5 h-[60px] border-b shrink-0"
-        style={{ borderColor: DARK_BORDER }}
+        style={{ borderColor: NAV_BORDER }}
       >
         <Link to="/dashboard" className="flex items-center gap-2.5">
           <img src={logoMark} alt="Dealzflow" className="w-[26px] h-[26px] rounded-[7px]" />
-          <span className="font-semibold text-[15px] tracking-[-0.02em] text-white">
+          <span className="font-semibold text-[15px] tracking-[-0.02em] text-foreground">
             Dealz<span style={{ color: GOLD }}>flow</span>
           </span>
         </Link>
@@ -550,7 +550,7 @@ function MobileNavSheet({
             <div key={section.label}>
               <div
                 className="px-3.5 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: 'hsl(220 8% 50%)' }}
+                style={{ color: FG_MUTED }}
               >
                 {section.label}
               </div>
@@ -579,7 +579,7 @@ function MobileNavSheet({
           );
         })}
 
-        <div className="pt-4 mt-2 border-t space-y-1" style={{ borderColor: DARK_BORDER }}>
+        <div className="pt-4 mt-2 border-t space-y-1" style={{ borderColor: NAV_BORDER }}>
           <Link
             to="/settings"
             className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
@@ -596,7 +596,7 @@ function MobileNavSheet({
             <Link
               to="/admin"
               className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-              style={{ color: 'hsl(38 90% 60%)', fontWeight: 500 }}
+              style={{ color: 'hsl(var(--warning))', fontWeight: 500 }}
             >
               <ShieldAlert className="w-[18px] h-[18px]" strokeWidth={1.8} />
               Admin
@@ -605,7 +605,7 @@ function MobileNavSheet({
           <button
             onClick={onSignOut}
             className="w-full flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-            style={{ color: 'hsl(0 70% 65%)', fontWeight: 500 }}
+            style={{ color: 'hsl(var(--destructive))', fontWeight: 500 }}
           >
             <LogOut className="w-[18px] h-[18px]" strokeWidth={1.8} />
             Sign out
