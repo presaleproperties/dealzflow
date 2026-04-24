@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Globe, Link2, Lock, ShieldAlert } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 // Matches http(s) URLs and bare www.* URLs. Trailing punctuation is trimmed.
 const URL_REGEX = /(\bhttps?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/gi;
@@ -18,9 +20,111 @@ function prettyHost(raw: string): string {
   }
 }
 
+function parseUrlMeta(raw: string) {
+  try {
+    const u = new URL(normalizeHref(raw));
+    const params = Array.from(u.searchParams.entries()).slice(0, 8);
+    return {
+      host: u.hostname.replace(/^www\./, ''),
+      path: u.pathname || '/',
+      protocol: u.protocol.replace(':', ''),
+      isSecure: u.protocol === 'https:',
+      params,
+      full: u.toString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function LinkPreview({ url, label }: { url: string; label: string }) {
+  const meta = parseUrlMeta(url);
+  const href = normalizeHref(url);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 max-w-full align-baseline text-primary hover:text-primary/80 underline decoration-primary/40 hover:decoration-primary underline-offset-2 break-all"
+          title={url}
+        >
+          <span className="truncate">{label}</span>
+          <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 p-0 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        align="start"
+      >
+        <div className="bg-muted/40 p-3 border-b">
+          <div className="flex items-start gap-2">
+            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+              <Globe className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-medium text-sm truncate">{meta?.host || url}</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                {meta?.isSecure ? (
+                  <><Lock className="h-3 w-3" /> Secure (HTTPS)</>
+                ) : (
+                  <><ShieldAlert className="h-3 w-3 text-amber-500" /> Not secure</>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="p-3 space-y-2 text-xs">
+          {meta?.path && meta.path !== '/' && (
+            <div>
+              <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5">Path</div>
+              <div className="font-mono break-all">{meta.path}</div>
+            </div>
+          )}
+          {meta && meta.params.length > 0 && (
+            <div>
+              <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5">Query</div>
+              <div className="space-y-0.5">
+                {meta.params.map(([k, v], i) => (
+                  <div key={i} className="flex gap-2 font-mono">
+                    <span className="text-muted-foreground shrink-0">{k}:</span>
+                    <span className="break-all truncate">{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
+            <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5 flex items-center gap-1">
+              <Link2 className="h-3 w-3" /> Full URL
+            </div>
+            <div className="font-mono break-all text-[11px] bg-muted/40 p-2 rounded">{href}</div>
+          </div>
+        </div>
+        <div className="p-2 border-t flex gap-2">
+          <Button size="sm" className="flex-1" asChild>
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3 w-3 mr-1" /> Open in new tab
+            </a>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigator.clipboard?.writeText(href)}
+          >
+            Copy
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /**
- * Renders text with auto-detected URLs as clickable chips.
- * Use anywhere note/body/field text is rendered.
+ * Renders text with auto-detected URLs as clickable chips that open
+ * a metadata preview popover before navigating away.
  */
 export function LinkifiedText({ text, className }: { text: string; className?: string }): JSX.Element {
   if (!text) return <span className={className} />;
@@ -39,20 +143,7 @@ export function LinkifiedText({ text, className }: { text: string; className?: s
 
     if (start > lastIndex) nodes.push(text.slice(lastIndex, start));
 
-    nodes.push(
-      <a
-        key={`lnk-${key++}`}
-        href={normalizeHref(url)}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 max-w-full align-baseline text-primary hover:text-primary/80 underline decoration-primary/40 hover:decoration-primary underline-offset-2 break-all"
-        title={url}
-      >
-        <span className="truncate">{prettyHost(url)}</span>
-        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
-      </a>
-    );
+    nodes.push(<LinkPreview key={`lnk-${key++}`} url={url} label={prettyHost(url)} />);
 
     if (trailing) nodes.push(trailing);
     lastIndex = end + trailing.length;
