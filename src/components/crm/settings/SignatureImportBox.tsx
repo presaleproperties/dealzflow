@@ -12,6 +12,7 @@ import {
   type SanitizeResult,
 } from '@/lib/sanitizeSignature';
 import { useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
+import LiveSignaturePreview from './LiveSignaturePreview';
 
 /**
  * Paste-and-validate HTML signature importer.
