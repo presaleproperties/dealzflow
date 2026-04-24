@@ -173,12 +173,10 @@ export default function EmailSettingsSection() {
                 onClick={() => setShowHtmlPreview(!showHtmlPreview)}
               >
                 <Eye className="h-3.5 w-3.5 mr-1.5" />
-                {showHtmlPreview ? 'Hide Preview' : 'Preview'}
+                {showHtmlPreview ? 'Hide preview' : 'Show preview'}
               </Button>
-              {showHtmlPreview && htmlImport && (
-                <div className="rounded-lg border border-border/40 bg-white p-4">
-                  <div dangerouslySetInnerHTML={{ __html: htmlImport }} />
-                </div>
+              {showHtmlPreview && (
+                <LiveSignaturePreview html={htmlImport} />
               )}
             </TabsContent>
 
