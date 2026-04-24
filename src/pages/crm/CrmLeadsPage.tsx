@@ -179,6 +179,7 @@ export default function CrmLeadsPage() {
       leadTypes: filterLeadType,
       languages: filterLanguage,
       tags: filterTags,
+      excludeTags: filterExcludeTags,
       propertyTypes: filterPropertyType,
       cities: filterCity,
       preApproved: filterPreApproved,
