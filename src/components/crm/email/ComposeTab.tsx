@@ -289,7 +289,7 @@ export function ComposeTab() {
     : campaignRecipients.length > 0 && subject.trim() && bodyContent.trim();
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className={`${isHtmlMode ? 'max-w-5xl' : 'max-w-2xl'} space-y-4 transition-all`}>
       <h2 className="text-base font-semibold text-foreground">Compose Email</h2>
 
       {/* Mode toggle */}
