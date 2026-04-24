@@ -1541,6 +1541,69 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_lead_sources: {
+        Row: {
+          config: Json | null
+          created_at: string
+          default_assigned_to: string | null
+          default_lead_type: string | null
+          default_status: string | null
+          default_tags: string[] | null
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_error_at: string | null
+          last_event_at: string | null
+          slug: string
+          source_type: string
+          total_leads_ingested: number
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          default_assigned_to?: string | null
+          default_lead_type?: string | null
+          default_status?: string | null
+          default_tags?: string[] | null
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_error_at?: string | null
+          last_event_at?: string | null
+          slug: string
+          source_type?: string
+          total_leads_ingested?: number
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          default_assigned_to?: string | null
+          default_lead_type?: string | null
+          default_status?: string | null
+          default_tags?: string[] | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_error_at?: string | null
+          last_event_at?: string | null
+          slug?: string
+          source_type?: string
+          total_leads_ingested?: number
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       crm_lead_types: {
         Row: {
           created_at: string
@@ -1861,6 +1924,72 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_source_events: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          error_message: string | null
+          event_type: string
+          external_id: string | null
+          id: string
+          occurred_at: string
+          phone: string | null
+          processed_at: string | null
+          raw_payload: Json
+          source_id: string | null
+          source_slug: string
+          status: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          error_message?: string | null
+          event_type?: string
+          external_id?: string | null
+          id?: string
+          occurred_at?: string
+          phone?: string | null
+          processed_at?: string | null
+          raw_payload: Json
+          source_id?: string | null
+          source_slug: string
+          status?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          error_message?: string | null
+          event_type?: string
+          external_id?: string | null
+          id?: string
+          occurred_at?: string
+          phone?: string | null
+          processed_at?: string | null
+          raw_payload?: Json
+          source_id?: string | null
+          source_slug?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_source_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_source_events_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "crm_lead_sources"
             referencedColumns: ["id"]
           },
         ]
@@ -3490,6 +3619,17 @@ export type Database = {
       is_crm_agent_or_above: { Args: { _user_id: string }; Returns: boolean }
       is_crm_member: { Args: { _user_id: string }; Returns: boolean }
       is_crm_owner: { Args: { _user_id: string }; Returns: boolean }
+      log_source_event: {
+        Args: {
+          _email: string
+          _event_type: string
+          _external_id: string
+          _payload: Json
+          _phone: string
+          _source_slug: string
+        }
+        Returns: string
+      }
       log_timeline_link_click: {
         Args: {
           _contact_id?: string
@@ -3498,6 +3638,15 @@ export type Database = {
           _url: string
         }
         Returns: string
+      }
+      mark_source_event_processed: {
+        Args: {
+          _contact_id: string
+          _error?: string
+          _event_id: string
+          _status?: string
+        }
+        Returns: undefined
       }
       normalize_crm_multi_array: {
         Args: { input: string[] }

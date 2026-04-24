@@ -74,6 +74,23 @@ Deno.serve(async (req) => {
     const email = L.email.trim().toLowerCase();
     const phone = L.phone?.replace(/\D/g, "") || null;
 
+    // Log raw event to central audit store
+    const sourceSlug = (L.source && L.source.toLowerCase().includes("presale")) ? "presale_properties" : (L.source || "presale_properties");
+    let eventId: string | null = null;
+    try {
+      const { data: evtId } = await supabase.rpc("log_source_event", {
+        _source_slug: sourceSlug,
+        _event_type: "lead_ingest",
+        _email: email,
+        _phone: phone,
+        _external_id: L.presale_user_id || null,
+        _payload: body as any,
+      });
+      eventId = evtId as string;
+    } catch (e) {
+      console.warn("[bridge-ingest-lead] log_source_event failed (non-fatal):", e);
+    }
+
     // Dedup by presale_user_id, then email or phone (merge & enrich)
     let existing: any = null;
     if (L.presale_user_id) {
@@ -191,7 +208,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ ok: true, contact_id: contactId, action: existing ? "merged" : "created" }), {
+    if (eventId) {
+      try {
+        await supabase.rpc("mark_source_event_processed", {
+          _event_id: eventId,
+          _contact_id: contactId,
+          _status: "processed",
+          _error: null,
+        });
+      } catch (e) {
+        console.warn("[bridge-ingest-lead] mark_source_event_processed failed:", e);
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true, contact_id: contactId, action: existing ? "merged" : "created", event_id: eventId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

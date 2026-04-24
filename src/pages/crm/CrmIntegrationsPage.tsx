@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LucideIcon } from 'lucide-react';
+import { LeadSourcesPanel } from '@/components/crm/integrations/LeadSourcesPanel';
 
 /* ─── helpers ─── */
 const BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
@@ -122,6 +123,9 @@ export default function CrmIntegrationsPage() {
           <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> {syncing ? 'Refreshing...' : 'Refresh Activity'}
         </Button>
       </div>
+
+      {/* SECTION 0 — Lead Sources Registry (central hub) */}
+      <LeadSourcesPanel />
 
       {/* SECTION 1 — Sync History */}
       <Card>
