@@ -1,32 +1,46 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Bell, Menu, LayoutDashboard, Users, Kanban, Mail, MessageCircle,
-  LayoutTemplate, BookUser, Zap, CalendarDays, BarChart3, Settings,
+  Bell, Menu, LayoutDashboard, Users, Send, BarChart3, Settings,
+  Kanban, Mail, MessageCircle, LayoutTemplate, BookUser, Zap, CalendarDays,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { LucideIcon } from 'lucide-react';
 
-interface CrmNavItem { label: string; path: string; icon: LucideIcon; }
+interface NavChild { label: string; path: string; icon: LucideIcon; ownerAdminOnly?: boolean; }
+interface NavSection { label: string; icon: LucideIcon; path?: string; children?: NavChild[]; }
 
-const crmNavItems: CrmNavItem[] = [
-  { label: 'CRM Dashboard',     path: '/crm/dashboard',    icon: LayoutDashboard },
-  { label: 'Leads',             path: '/crm/leads',        icon: Users },
-  { label: 'Pipeline',          path: '/crm/pipeline',     icon: Kanban },
-  { label: 'Email Center',      path: '/crm/email',        icon: Mail },
-  { label: 'WhatsApp',          path: '/crm/whatsapp',     icon: MessageCircle },
-  { label: 'Templates',         path: '/crm/templates',    icon: LayoutTemplate },
-  { label: 'Contacts',          path: '/crm/contacts',     icon: BookUser },
-  { label: 'Automations',       path: '/crm/automations',  icon: Zap },
-  { label: 'Showings Calendar', path: '/crm/calendar',     icon: CalendarDays },
-  { label: 'Reports',           path: '/crm/reports',      icon: BarChart3 },
-  { label: 'CRM Settings',      path: '/crm/settings',     icon: Settings },
+const NAV_SECTIONS: NavSection[] = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/crm/dashboard' },
+  {
+    label: 'Leads',
+    icon: Users,
+    children: [
+      { label: 'Leads & Contacts', path: '/crm/leads',     icon: Users },
+      { label: 'Pipeline',         path: '/crm/pipeline',  icon: Kanban },
+      { label: 'Contacts',         path: '/crm/contacts',  icon: BookUser },
+      { label: 'Calendar',         path: '/crm/calendar',  icon: CalendarDays },
+    ],
+  },
+  {
+    label: 'Outreach',
+    icon: Send,
+    children: [
+      { label: 'Email Center', path: '/crm/email',       icon: Mail },
+      { label: 'WhatsApp',     path: '/crm/whatsapp',    icon: MessageCircle },
+      { label: 'Templates',    path: '/crm/templates',   icon: LayoutTemplate },
+      { label: 'Automations',  path: '/crm/automations', icon: Zap, ownerAdminOnly: true },
+    ],
+  },
+  { label: 'Insights', icon: BarChart3, path: '/crm/reports' },
 ];
 
-const ownerAdminOnlyPaths = new Set(['/crm/automations', '/crm/settings']);
+const SETTINGS_ITEM: NavChild = { label: 'CRM Settings', path: '/crm/settings', icon: Settings, ownerAdminOnly: true };
 
 const GOLD = 'hsl(39 67% 55%)';
 const GOLD_BG = 'hsl(39 67% 55% / 0.12)';
@@ -54,24 +68,26 @@ export function CrmHeader() {
   const location = useLocation();
   const initials = user?.email?.slice(0, 2).toUpperCase() || 'U';
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const visibleNav = crmNavItems.filter(item =>
-    !ownerAdminOnlyPaths.has(item.path) || isOwnerOrAdmin,
-  );
+  const filterChildren = (children?: NavChild[]) =>
+    (children ?? []).filter(c => !c.ownerAdminOnly || isOwnerOrAdmin);
 
-  // Resolve a section label (e.g. "Leads & Contacts") for the current route.
-  // Pages render their own H1, so we keep this as a small breadcrumb above it.
   const sectionTitle = ROUTE_TITLES.find(r => location.pathname.startsWith(r.match))?.title;
 
-  // Close mobile sheet on route change
-  useEffect(() => { setSheetOpen(false); }, [location.pathname]);
+  useEffect(() => { setSheetOpen(false); setOpenMenu(null); }, [location.pathname]);
+
+  const isSectionActive = (section: NavSection) => {
+    if (section.path) return location.pathname.startsWith(section.path);
+    return filterChildren(section.children).some(c => location.pathname.startsWith(c.path));
+  };
 
   return (
     <header
       className="sticky top-0 z-40 border-b border-border/60 bg-card/70 backdrop-blur-xl"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      <div className="flex items-center justify-between h-12 sm:h-13 px-3 sm:px-4 lg:px-6">
+      <div className="flex items-center justify-between h-12 sm:h-13 px-3 sm:px-4 lg:px-6 gap-3">
         {/* Left: Hamburger (< lg) + breadcrumb */}
         <div className="flex items-center gap-2.5 min-w-0">
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -91,29 +107,82 @@ export function CrmHeader() {
                     CRM
                   </span>
                 </div>
-                <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-0.5">
-                  {visibleNav.map(item => {
-                    const isActive = location.pathname === item.path ||
-                      (item.path !== '/crm/dashboard' && location.pathname.startsWith(item.path));
-                    const Icon = item.icon;
+                <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-3">
+                  {NAV_SECTIONS.map(section => {
+                    const children = filterChildren(section.children);
+                    if (section.path) {
+                      const isActive = location.pathname.startsWith(section.path);
+                      const Icon = section.icon;
+                      return (
+                        <Link
+                          key={section.label}
+                          to={section.path}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors"
+                          style={{
+                            color: isActive ? GOLD : INACTIVE_TEXT,
+                            background: isActive ? GOLD_BG : undefined,
+                            fontWeight: isActive ? 600 : 500,
+                          }}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+                          {section.label}
+                        </Link>
+                      );
+                    }
+                    if (!children.length) return null;
                     return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150',
-                          isActive ? 'font-semibold' : 'hover:opacity-80',
-                        )}
-                        style={{
-                          color: isActive ? GOLD : INACTIVE_TEXT,
-                          background: isActive ? GOLD_BG : undefined,
-                        }}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
-                        {item.label}
-                      </Link>
+                      <div key={section.label}>
+                        <div
+                          className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                          style={{ color: 'hsl(220 10% 50%)' }}
+                        >
+                          {section.label}
+                        </div>
+                        <div className="space-y-0.5">
+                          {children.map(child => {
+                            const isActive = location.pathname.startsWith(child.path);
+                            const Icon = child.icon;
+                            return (
+                              <Link
+                                key={child.path}
+                                to={child.path}
+                                className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                                style={{
+                                  color: isActive ? GOLD : INACTIVE_TEXT,
+                                  background: isActive ? GOLD_BG : undefined,
+                                  fontWeight: isActive ? 600 : 500,
+                                }}
+                              >
+                                <Icon className="w-4 h-4 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+                                {child.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
+                  {isOwnerOrAdmin && (
+                    <div>
+                      <div
+                        className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                        style={{ color: 'hsl(220 10% 50%)' }}
+                      >
+                        Admin
+                      </div>
+                      <Link
+                        to={SETTINGS_ITEM.path}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors"
+                        style={{
+                          color: location.pathname.startsWith(SETTINGS_ITEM.path) ? GOLD : INACTIVE_TEXT,
+                          background: location.pathname.startsWith(SETTINGS_ITEM.path) ? GOLD_BG : undefined,
+                        }}
+                      >
+                        <Settings className="w-4 h-4 shrink-0" strokeWidth={1.8} />
+                        {SETTINGS_ITEM.label}
+                      </Link>
+                    </div>
+                  )}
                 </nav>
               </div>
             </SheetContent>
@@ -137,8 +206,100 @@ export function CrmHeader() {
           </div>
         </div>
 
-        {/* Right: Bell + Avatar */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Center: Desktop top nav (lg+) */}
+        <nav className="hidden lg:flex items-center gap-1 mx-auto">
+          {NAV_SECTIONS.map(section => {
+            const isActive = isSectionActive(section);
+            const Icon = section.icon;
+
+            if (section.path) {
+              return (
+                <Link
+                  key={section.label}
+                  to={section.path}
+                  className={cn(
+                    'flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] transition-colors',
+                  )}
+                  style={{
+                    color: isActive ? GOLD : INACTIVE_TEXT,
+                    background: isActive ? GOLD_BG : undefined,
+                    fontWeight: isActive ? 600 : 500,
+                  }}
+                >
+                  <Icon className="w-[14px] h-[14px]" strokeWidth={isActive ? 2.2 : 1.8} />
+                  {section.label}
+                </Link>
+              );
+            }
+
+            const children = filterChildren(section.children);
+            if (!children.length) return null;
+
+            return (
+              <Popover
+                key={section.label}
+                open={openMenu === section.label}
+                onOpenChange={open => setOpenMenu(open ? section.label : null)}
+              >
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] transition-colors hover:bg-muted/40"
+                    style={{
+                      color: isActive ? GOLD : INACTIVE_TEXT,
+                      background: isActive ? GOLD_BG : undefined,
+                      fontWeight: isActive ? 600 : 500,
+                    }}
+                  >
+                    <Icon className="w-[14px] h-[14px]" strokeWidth={isActive ? 2.2 : 1.8} />
+                    {section.label}
+                    <ChevronDown className="w-3 h-3 opacity-60" strokeWidth={2} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  sideOffset={6}
+                  className="p-1.5 w-56 border-border/60"
+                >
+                  {children.map(child => {
+                    const childActive = location.pathname.startsWith(child.path);
+                    const ChildIcon = child.icon;
+                    return (
+                      <Link
+                        key={child.path}
+                        to={child.path}
+                        onClick={() => setOpenMenu(null)}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors hover:bg-muted/60"
+                        style={{
+                          color: childActive ? GOLD : 'hsl(var(--foreground))',
+                          background: childActive ? GOLD_BG : undefined,
+                          fontWeight: childActive ? 600 : 500,
+                        }}
+                      >
+                        <ChildIcon className="w-4 h-4 opacity-80" strokeWidth={childActive ? 2.2 : 1.8} />
+                        {child.label}
+                      </Link>
+                    );
+                  })}
+                </PopoverContent>
+              </Popover>
+            );
+          })}
+        </nav>
+
+        {/* Right: Settings + Bell + Avatar */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {isOwnerOrAdmin && (
+            <Link
+              to={SETTINGS_ITEM.path}
+              aria-label="CRM Settings"
+              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted/50"
+              style={{
+                color: location.pathname.startsWith(SETTINGS_ITEM.path) ? GOLD : INACTIVE_TEXT,
+              }}
+            >
+              <Settings className="w-[16px] h-[16px]" strokeWidth={1.8} />
+            </Link>
+          )}
           <button
             className="relative h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             aria-label="Notifications"
