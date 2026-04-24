@@ -39,14 +39,17 @@ export function SignatureInlineFrame({ html }: { html: string }) {
       color:hsl(0 0% 4%);
       background:transparent;
     }
+    /* Flush with editor text — no extra leading/trailing whitespace.
+       The composer controls the gap between message and signature. */
+    body > *:first-child{margin-top:0 !important;padding-top:0 !important}
+    body > *:last-child{margin-bottom:0 !important;padding-bottom:0 !important}
     p{margin:1.1428571em 0}
-    p:first-child{margin-top:0}
-    p:last-child{margin-bottom:1.1428571em}
     a{color:hsl(217 91% 50%);text-decoration:underline}
     img{max-width:100%;height:auto}
     table{border-collapse:collapse}
     td,th{vertical-align:top}
   </style></head><body>${html}</body></html>`;
+
 
   useEffect(() => {
     const iframe = ref.current;
