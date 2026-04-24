@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -76,15 +76,13 @@ export function GlobalLeadSearch() {
 
   return (
     <>
-      {/* Trigger pill — premium AI-feel, no icons */}
+      {/* Trigger — minimal icon-only search */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Search leads"
-        className="group relative flex items-center h-10 w-[280px] lg:w-[440px] px-5 rounded-full bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 hover:from-muted/50 hover:via-muted/40 hover:to-muted/50 border border-border/40 hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+        className="group relative flex items-center justify-center h-10 w-10 rounded-full bg-muted/30 hover:bg-muted/60 border border-border/40 hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
       >
-        <span className="text-[13px] font-medium tracking-tight text-muted-foreground/90 group-hover:text-foreground/90 flex-1 truncate transition-colors">
-          Ask anything or search leads…
-        </span>
+        <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" strokeWidth={2} />
       </button>
 
       {/* Modal overlay + centered palette */}
