@@ -110,8 +110,15 @@ export function PresaleQuickSendDialog({
       phone: (emailSettings as any)?.signature_builder_data?.phone || '',
       signature: emailSettings?.signature_html || '',
     };
+    setIsSending(true);
+    setSendProgress(
+      Object.fromEntries(recipients.map((r) => [r.email, { status: 'pending' as SendStatus }])),
+    );
+    let successes = 0;
+    let failures = 0;
     // Send each recipient individually so per-recipient tokens render correctly.
     for (const r of recipients) {
+      setSendProgress((p) => ({ ...p, [r.email]: { status: 'sending' } }));
       const ctx = { lead: r.lead ?? { first_name: r.name }, sender };
       const personalizedHtml = renderForRecipient(html, ctx);
       const personalizedSubject = renderForRecipient(
@@ -126,13 +133,30 @@ export function PresaleQuickSendDialog({
           template_id: asset.id,
           contact_id: r.id ?? null,
         });
-      } catch (e) {
+        successes++;
+        setSendProgress((p) => ({ ...p, [r.email]: { status: 'success' } }));
+      } catch (e: any) {
+        failures++;
         console.error('send failed', e);
+        setSendProgress((p) => ({
+          ...p,
+          [r.email]: { status: 'failed', error: e?.message || 'Failed to send' },
+        }));
       }
     }
+    setIsSending(false);
     onSent?.();
-    onOpenChange(false);
+    // Keep dialog open so user can review per-recipient results.
+    // They close manually via the Close button.
   };
+
+  const completedCount = Object.values(sendProgress).filter(
+    (s) => s.status === 'success' || s.status === 'failed',
+  ).length;
+  const successCount = Object.values(sendProgress).filter((s) => s.status === 'success').length;
+  const failedCount = Object.values(sendProgress).filter((s) => s.status === 'failed').length;
+  const totalCount = Object.keys(sendProgress).length;
+  const hasProgress = totalCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
