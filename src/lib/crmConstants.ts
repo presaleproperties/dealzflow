@@ -15,4 +15,4 @@ export const FRASER_VALLEY_CITIES = [
 ] as const;
 
 /** Supported languages */
-export const CRM_LANGUAGES = ['English', 'Punjabi', 'Hindi', 'Urdu', 'Mandarin', 'Cantonese', 'Tagalog', 'Spanish', 'French', 'Farsi', 'Arabic', 'Korean', 'Vietnamese', 'Other'] as const;
+export const CRM_LANGUAGES = ['Punjabi', 'Hindi', 'Urdu', 'English', 'Korean', 'Other'] as const;
