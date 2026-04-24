@@ -1,10 +1,19 @@
 import { useMemo, useState } from 'react';
-import { StickyNote, ChevronDown } from 'lucide-react';
+import { StickyNote, ChevronDown, Phone, MessageSquare, Mail, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { parseImportedNotes } from '@/lib/cleanNotes';
+import { parseImportedNotes, groupNotesByDay, type NoteKind } from '@/lib/cleanNotes';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { cn } from '@/lib/utils';
+
+const KIND_META: Record<NoteKind, { icon: typeof Phone; label: string; tone: string }> = {
+  call:        { icon: Phone,         label: 'Call',        tone: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+  text:        { icon: MessageSquare, label: 'Text',        tone: 'text-sky-500 bg-sky-500/10 border-sky-500/20' },
+  email:       { icon: Mail,          label: 'Email',       tone: 'text-violet-500 bg-violet-500/10 border-violet-500/20' },
+  appointment: { icon: Calendar,      label: 'Appointment', tone: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+  note:        { icon: FileText,      label: 'Note',        tone: 'text-muted-foreground bg-muted/40 border-border' },
+};
 
 export function LeadNotesCard({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
@@ -13,8 +22,12 @@ export function LeadNotesCard({ contact }: { contact: CrmContact }) {
   const [showAll, setShowAll] = useState(false);
 
   const entries = useMemo(() => parseImportedNotes(contact.notes), [contact.notes]);
-  const visible = showAll ? entries : entries.slice(0, 3);
-  const hiddenCount = entries.length - visible.length;
+  const groups = useMemo(() => groupNotesByDay(entries), [entries]);
+
+  // Show first 2 day-groups by default
+  const visibleGroups = showAll ? groups : groups.slice(0, 2);
+  const hiddenGroupCount = groups.length - visibleGroups.length;
+  const hiddenEntryCount = groups.slice(visibleGroups.length).reduce((n, g) => n + g.entries.length, 0);
 
   const save = () => {
     const trimmed = draft.trim();
@@ -29,10 +42,10 @@ export function LeadNotesCard({ contact }: { contact: CrmContact }) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
           <StickyNote className="w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
-          Notes
+          Activity Notes
           {entries.length > 0 && (
             <span className="text-[10px] font-medium text-muted-foreground ml-1">
-              {entries.length}
+              {entries.length} · {groups.length} day{groups.length === 1 ? '' : 's'}
             </span>
           )}
         </h3>
@@ -43,7 +56,7 @@ export function LeadNotesCard({ contact }: { contact: CrmContact }) {
             className="h-7 text-xs"
             onClick={() => { setDraft(contact.notes ?? ''); setEditing(true); }}
           >
-            {contact.notes ? 'Edit' : 'Add Note'}
+            {contact.notes ? 'Edit Raw' : 'Add Note'}
           </Button>
         )}
       </div>
@@ -63,31 +76,73 @@ export function LeadNotesCard({ contact }: { contact: CrmContact }) {
           </div>
         </div>
       ) : entries.length > 0 ? (
-        <div className="space-y-2.5 max-h-[420px] overflow-y-auto -mr-2 pr-2">
-          {visible.map((entry, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-1.5 hover:bg-muted/30 transition-colors"
-            >
-              {entry.timestamp && (
-                <div className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">
-                  {entry.timestamp}
-                </div>
-              )}
-              <p className="text-[13px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
-                {entry.text}
-              </p>
-            </div>
+        <div className="space-y-4 max-h-[520px] overflow-y-auto -mr-2 pr-2">
+          {visibleGroups.map(group => (
+            <section key={group.key} className="space-y-2">
+              {/* Day header */}
+              <div className="sticky top-0 z-10 -mx-1 px-1 py-1 bg-card/95 backdrop-blur-sm flex items-center gap-2">
+                <div className="h-px flex-1 bg-border/60" />
+                <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-muted-foreground">
+                  {group.label}
+                </span>
+                <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+                  {group.entries.length}
+                </span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
+
+              {/* Entries for this day */}
+              <ul className="space-y-1.5">
+                {group.entries.map((entry, i) => {
+                  const meta = KIND_META[entry.kind];
+                  const Icon = meta.icon;
+                  return (
+                    <li
+                      key={`${group.key}-${i}`}
+                      className="group flex gap-2.5 rounded-lg border border-border/50 bg-muted/20 p-2.5 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className={cn(
+                        'shrink-0 w-7 h-7 rounded-md border flex items-center justify-center',
+                        meta.tone,
+                      )}>
+                        <Icon className="w-3.5 h-3.5" strokeWidth={2} />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                            {meta.label}
+                            {entry.actor && (
+                              <span className="ml-1.5 normal-case font-normal text-muted-foreground/60">
+                                · {entry.actor}
+                              </span>
+                            )}
+                          </span>
+                          {entry.timestamp && (
+                            <span className="text-[10px] text-muted-foreground/60 tabular-nums shrink-0">
+                              {entry.timestamp.split(',').slice(-1)[0].trim()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[12.5px] leading-relaxed text-foreground/90 whitespace-pre-wrap break-words">
+                          {entry.text}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           ))}
-          {hiddenCount > 0 && (
+
+          {hiddenGroupCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="w-full h-7 text-xs text-muted-foreground"
+              className="w-full h-8 text-xs text-muted-foreground"
               onClick={() => setShowAll(true)}
             >
               <ChevronDown className="w-3 h-3 mr-1" />
-              Show {hiddenCount} older note{hiddenCount > 1 ? 's' : ''}
+              Show {hiddenEntryCount} older entr{hiddenEntryCount === 1 ? 'y' : 'ies'} across {hiddenGroupCount} day{hiddenGroupCount === 1 ? '' : 's'}
             </Button>
           )}
         </div>
