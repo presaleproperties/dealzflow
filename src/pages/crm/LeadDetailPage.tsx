@@ -37,6 +37,9 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { formatNoteContent, LinkifiedText } from '@/lib/formatNoteContent';
 import { Globe, MessageSquare } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
