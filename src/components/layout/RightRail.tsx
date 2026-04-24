@@ -393,29 +393,33 @@ export function RightRail() {
       <Sheet open={panel === 'inbox'} onOpenChange={(o) => !o && setPanel(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[440px] p-0 border-0"
-          style={{ background: 'hsl(222 25% 10%)', borderLeft: `1px solid ${RAIL_BORDER}` }}
+          className="w-full sm:max-w-[440px] p-0 bg-card border-l border-border [&>button]:hidden [&~[data-radix-dialog-overlay]]:bg-transparent [&~[data-radix-dialog-overlay]]:backdrop-blur-none"
         >
-          <SheetHeader className="px-5 pt-5 pb-3 border-b" style={{ borderColor: RAIL_BORDER }}>
+          {/* Subtle gold accent strip */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+
+          <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-[15px] font-semibold text-white tracking-tight">
-                Communications
-              </SheetTitle>
+              <div>
+                <SheetTitle className="text-[15px] font-semibold text-foreground tracking-tight text-left">
+                  Communications
+                </SheetTitle>
+                <p className="text-[11.5px] text-muted-foreground mt-0.5 text-left">
+                  Latest emails & SMS conversations
+                </p>
+              </div>
               <button
                 onClick={() => setPanel(null)}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-white/5"
+                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5">
-              Latest emails & SMS conversations
-            </p>
           </SheetHeader>
 
           <Tabs defaultValue="all" className="flex flex-col h-[calc(100vh-92px)]">
-            <TabsList className="mx-5 mt-3 grid grid-cols-3 h-9 bg-[hsl(222_20%_14%)]">
+            <TabsList className="mx-5 mt-3 grid grid-cols-3 h-9 bg-muted/50">
               <TabsTrigger value="all" className="text-[11.5px]">All</TabsTrigger>
               <TabsTrigger value="email" className="text-[11.5px]">Email</TabsTrigger>
               <TabsTrigger value="sms" className="text-[11.5px]">SMS</TabsTrigger>
@@ -439,12 +443,11 @@ export function RightRail() {
               </div>
             </ScrollArea>
 
-            <div className="border-t px-5 py-3 flex items-center justify-between" style={{ borderColor: RAIL_BORDER }}>
+            <div className="border-t border-border px-5 py-3 flex items-center justify-between">
               <Link
                 to={isCrmMember ? '/crm/email' : '/dashboard'}
                 onClick={() => setPanel(null)}
-                className="text-[12px] font-medium hover:underline flex items-center gap-1.5"
-                style={{ color: GOLD }}
+                className="text-[12px] font-medium text-primary hover:underline flex items-center gap-1.5"
               >
                 Open full inbox <ExternalLink className="w-3 h-3" />
               </Link>
