@@ -194,7 +194,7 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
           </div>
         ) : (
           <>
-            <div className="flex gap-1 overflow-x-auto pb-1">
+            <div className="flex gap-1 overflow-x-auto pb-1 pr-8">
               {CATEGORY_TABS.map((tab) => (
                 <button
                   key={tab.value}
