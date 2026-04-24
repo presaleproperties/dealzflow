@@ -76,44 +76,26 @@ function LeadTopBar({
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
       {/* Left: Back + identity */}
       <div className="flex items-center gap-4 min-w-0">
-        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
-          <ArrowLeft className="w-3.5 h-3.5" /> Leads
+        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          <ArrowLeft className="w-4 h-4" /> Leads
         </Link>
         <div className="h-5 w-px bg-border shrink-0" />
         <div className="flex items-center gap-3 min-w-0">
-          <h1 className="text-base font-semibold text-foreground tracking-tight truncate">
+          <h1 className="text-[15px] font-semibold text-foreground tracking-tight truncate">
             {formatContactName(contact.first_name, contact.last_name)}
           </h1>
-          <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded px-1.5 py-0.5 shrink-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded px-1.5 py-0.5 shrink-0">
             {typeLabel}
           </span>
         </div>
       </div>
 
-      {/* Right: Actions + nav */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
-          disabled={!contact.phone}
-        >
-          <Phone className="w-3.5 h-3.5" /> Call
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={onEmail}
-        >
-          <Mail className="w-3.5 h-3.5" /> Email
-        </Button>
-        <div className="h-5 w-px bg-border mx-1" />
-        <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={onTask}>
+      {/* Right: Primary CTAs + nav (call/email live in the sidebar) */}
+      <div className="flex items-center gap-2 shrink-0">
+        <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
           <ListTodo className="w-3.5 h-3.5" /> Task
         </Button>
-        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={onShowing}>
+        <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing}>
           <Calendar className="w-3.5 h-3.5" /> Book Showing
         </Button>
 
@@ -123,7 +105,7 @@ function LeadTopBar({
             <button onClick={() => onNavigate('prev')} disabled={navInfo.index <= 0} className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-[11px] text-muted-foreground tabular-nums px-1">
+            <span className="text-xs text-muted-foreground tabular-nums px-1">
               {navInfo.index + 1} / {navInfo.total}
             </span>
             <button onClick={() => onNavigate('next')} disabled={navInfo.index >= navInfo.total - 1} className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors">
@@ -297,43 +279,40 @@ function LeftSidebar({
       </div>
 
       {/* Details */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <SectionHeader>Details</SectionHeader>
         <div className="space-y-px">
-          <DetailRow label="Phone" value={contact.phone} href={contact.phone ? `tel:${contact.phone}` : undefined} field="phone" contactId={contact.id} />
-          <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
           {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
-          <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
           <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
           <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
 
           {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
 
           {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30">
-              <span className="text-[11px] text-muted-foreground">Budget</span>
-              <span className="text-xs text-foreground font-medium">
+            <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+              <span className="text-xs text-muted-foreground">Budget</span>
+              <span className="text-[13px] text-foreground font-medium tabular-nums">
                 {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '—'}
               </span>
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30">
-            <span className="text-[11px] text-muted-foreground">Registered</span>
-            <span className="text-xs text-foreground">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+          <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+            <span className="text-xs text-muted-foreground">Registered</span>
+            <span className="text-[13px] text-foreground tabular-nums">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
           </div>
 
           {((contact as any).sync_source === 'zapier_lofty' || (contact as any).sync_source === 'lofty_api_sync') && (
             <>
               {(contact as any).lofty_id && (
-                <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30">
-                  <span className="text-[11px] text-muted-foreground">Lofty ID</span>
-                  <span className="text-[10px] font-mono text-muted-foreground/70 truncate max-w-[140px]">{(contact as any).lofty_id}</span>
+                <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+                  <span className="text-xs text-muted-foreground">Lofty ID</span>
+                  <span className="text-[11px] font-mono text-muted-foreground/80 truncate max-w-[140px]">{(contact as any).lofty_id}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between gap-3 py-1.5">
-                <span className="text-[11px] text-muted-foreground">Synced</span>
-                <span className="text-[10px] text-muted-foreground/70">
+              <div className="flex items-center justify-between gap-3 py-2">
+                <span className="text-xs text-muted-foreground">Synced</span>
+                <span className="text-[11px] text-muted-foreground/80">
                   {(contact as any).lofty_synced_at ? format(new Date((contact as any).lofty_synced_at), 'MMM d, h:mm a') : 'via Lofty'}
                 </span>
               </div>
@@ -346,7 +325,7 @@ function LeftSidebar({
       <div className="space-y-2">
         <SectionHeader>Lead Type</SectionHeader>
         <Select value={contact.lead_type ?? ''} onValueChange={(v) => saveWithLog('lead_type', v)}>
-          <SelectTrigger className="h-8 text-xs bg-card border-border">
+          <SelectTrigger className="h-9 text-sm bg-card border-border">
             <SelectValue placeholder="Select type">{LEAD_TYPE_LABELS[contact.lead_type ?? ''] || contact.lead_type || 'Not set'}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -356,24 +335,24 @@ function LeftSidebar({
       </div>
 
       {/* Tags */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <SectionHeader>Tags</SectionHeader>
           {!addingTag && (
-            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
-              <Plus className="w-3.5 h-3.5" />
+            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5" aria-label="Add tag">
+              <Plus className="w-4 h-4" />
             </button>
           )}
         </div>
         {tags.length === 0 && !addingTag ? (
-          <p className="text-[11px] text-muted-foreground/70">No tags</p>
+          <p className="text-xs text-muted-foreground/70">No tags yet</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {tags.map(tag => (
-              <Badge key={tag} variant="outline" className="text-[10px] font-medium gap-1 pr-1 py-0.5 border-border/60 bg-muted/30 text-foreground/80">
+              <Badge key={tag} variant="outline" className="text-[11px] font-medium gap-1 pr-1.5 py-0.5 border-border/70 bg-muted/40 text-foreground">
                 {tag}
-                <button onClick={() => removeTag(tag)} className="hover:text-foreground transition-colors">
-                  <X className="w-2.5 h-2.5" />
+                <button onClick={() => removeTag(tag)} className="hover:text-foreground transition-colors" aria-label={`Remove ${tag}`}>
+                  <X className="w-3 h-3" />
                 </button>
               </Badge>
             ))}
@@ -385,25 +364,25 @@ function LeftSidebar({
               value={newTag}
               onChange={e => setNewTag(e.target.value)}
               placeholder="Tag name…"
-              className="h-7 text-xs"
+              className="h-8 text-sm"
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter') addTag();
                 if (e.key === 'Escape') { setAddingTag(false); setNewTag(''); }
               }}
             />
-            <Button size="sm" className="h-7 text-xs px-2.5" onClick={addTag}>Add</Button>
+            <Button size="sm" className="h-8 text-xs px-3" onClick={addTag}>Add</Button>
           </div>
         )}
       </div>
 
       {/* Projects */}
       {projects.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <SectionHeader>Projects</SectionHeader>
           <div className="flex flex-wrap gap-1.5">
             {projects.map(p => (
-              <Badge key={p} variant="outline" className="text-[10px] font-medium border-border/60 bg-muted/30 text-foreground/80">
+              <Badge key={p} variant="outline" className="text-[11px] font-medium border-border/70 bg-muted/40 text-foreground">
                 {p}
               </Badge>
             ))}
@@ -412,10 +391,10 @@ function LeftSidebar({
       )}
 
       {/* Co-Buyer / Family Member */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
           <SectionHeader>{hasCoBuyer ? 'Co-Buyer' : 'Family Member'}</SectionHeader>
-          {coBuyerOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+          {coBuyerOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
         {coBuyerOpen && (
           <div className="space-y-px">
@@ -426,7 +405,7 @@ function LeftSidebar({
                 <DetailRow label="Email" value={contact.co_buyer_email} field="co_buyer_email" contactId={contact.id} type="email" />
               </>
             ) : (
-              <p className="text-[11px] text-muted-foreground/70">No co-buyer info</p>
+              <p className="text-xs text-muted-foreground/70">No co-buyer info</p>
             )}
           </div>
         )}
@@ -436,7 +415,7 @@ function LeftSidebar({
       <div className="space-y-2">
         <SectionHeader>Assigned To</SectionHeader>
         <Select value={contact.assigned_to ?? ''} onValueChange={(v) => saveWithLog('assigned_to', v)}>
-          <SelectTrigger className="h-8 text-xs bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
           <SelectContent>
             {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
@@ -448,15 +427,15 @@ function LeftSidebar({
 
 /* ─── Small reusable pieces ─── */
 function SectionHeader({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{children}</h3>;
+  return <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{children}</h3>;
 }
 
 function InsightCard({ value, label, sublabel, accent }: { value: React.ReactNode; label: string; sublabel?: string; accent?: string }) {
   return (
-    <div className="rounded-md border border-border/60 bg-card/50 px-2 py-2.5 text-center space-y-0.5">
-      <p className="text-base font-bold text-foreground leading-none tabular-nums">{value}</p>
-      <p className="text-[9px] text-muted-foreground leading-tight uppercase tracking-wider">{label}</p>
-      {sublabel && <p className="text-[9px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
+    <div className="rounded-lg border border-border/70 bg-card px-2.5 py-3 text-center space-y-1">
+      <p className="text-xl font-bold text-foreground leading-none tabular-nums">{value}</p>
+      <p className="text-[10px] text-muted-foreground leading-tight uppercase tracking-[0.1em] font-medium">{label}</p>
+      {sublabel && <p className="text-[10px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
     </div>
   );
 }
@@ -466,8 +445,8 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
 }) {
   const updateContact = useUpdateCrmContact();
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30 group">
-      <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
+      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
       <div className="flex-1 min-w-0 flex justify-end">
         <InlineEditField
           value={value}
@@ -475,7 +454,7 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
           href={href}
           type={type}
           options={options}
-          className="text-xs text-right truncate max-w-full"
+          className="text-[13px] text-right truncate max-w-full"
         />
       </div>
     </div>
@@ -565,13 +544,13 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
       <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
-        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-4 py-3 font-medium uppercase tracking-wider text-muted-foreground data-[state=active]:text-foreground">
+        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Activity
         </TabsTrigger>
-        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-4 py-3 font-medium uppercase tracking-wider text-muted-foreground data-[state=active]:text-foreground">
+        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Appointments
           {showings.length > 0 && (
-            <span className="ml-1.5 text-[10px] bg-muted text-foreground/70 rounded-full px-1.5 py-0.5 font-semibold normal-case tracking-normal">
+            <span className="ml-2 text-[11px] bg-muted text-foreground/80 rounded-full px-2 py-0.5 font-semibold normal-case tracking-normal tabular-nums">
               {showings.length}
             </span>
           )}
@@ -580,49 +559,49 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-6 space-y-5">
         {/* Compose */}
-        <div className="bg-card rounded-lg border border-border p-3 space-y-2.5">
-          <div className="flex items-center gap-2">
+        <div className="bg-card rounded-xl border border-border p-3.5 space-y-3">
+          <div className="flex items-center gap-3">
             <Select value={noteType} onValueChange={setNoteType}>
-              <SelectTrigger className="w-[110px] h-8 text-xs border-border/60"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[120px] h-9 text-sm border-border/60"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="manual">Note</SelectItem>
                 <SelectItem value="call_log">Call Log</SelectItem>
                 <SelectItem value="email">Email Log</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">⌘ + Enter to send</span>
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">⌘ + Enter to send</span>
           </div>
           <Textarea
             value={draft}
             onChange={e => setDraft(e.target.value)}
             placeholder="Write a note, log a call, or capture context…"
-            className="text-sm min-h-[64px] resize-none border-border/60 focus-visible:ring-1"
+            className="text-sm min-h-[72px] resize-none"
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSave(); }
             }}
           />
           <div className="flex justify-end">
-            <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
+            <Button size="sm" className="h-9 text-xs gap-1.5" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
               <Send className="w-3.5 h-3.5" /> Save
             </Button>
           </div>
         </div>
 
         {/* Filter pills */}
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {filters.map(f => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                'px-3 py-1 rounded-full text-[11px] font-medium transition-all uppercase tracking-wider',
+                'px-3 py-1.5 rounded-full text-xs font-semibold transition-all uppercase tracking-[0.08em]',
                 filter === f.key
                   ? 'bg-foreground text-background'
-                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40',
+                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
             >
               {f.label}
-              {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal">{counts[f.key]}</span>}
+              {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
             </button>
           ))}
         </div>
@@ -637,7 +616,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
             <div className="space-y-2 mb-5">
               <div className="flex items-center gap-1.5 pl-9">
                 <Pin className="w-3 h-3 text-foreground/60" />
-                <span className="text-[10px] font-semibold text-foreground/60 uppercase tracking-[0.12em]">Pinned</span>
+                <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
               </div>
               {pinnedNotes.map(note => (
                 <NoteCard
@@ -659,7 +638,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
           {groupedNotes.map(group => (
             <div key={group.label} className="space-y-2 mb-5">
               <div className="pl-9">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
               {group.notes.map(note => (
                 <NoteCard
@@ -734,8 +713,8 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
         note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
       )}>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[10px]">{meta.label}</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">{meta.label}</span>
             <span className="opacity-30">·</span>
             <span>{time}</span>
             {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60" />}
@@ -765,7 +744,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
           </div>
         </div>
-        <p className="text-sm text-foreground/85 whitespace-pre-wrap mt-1.5 leading-relaxed">{note.content}</p>
+        <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed">{note.content}</p>
       </div>
     </div>
   );
@@ -849,15 +828,15 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         {upcomingShowings.length === 0 ? (
           <EmptyWidget icon={Calendar} message="No upcoming appointments" />
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {upcomingShowings.slice(0, 5).map((s: any) => (
-              <div key={s.id} className="flex items-start gap-2.5 p-2.5 rounded-md bg-card border border-border/50 hover:border-border transition-colors">
-                <div className="w-7 h-7 rounded-md border border-border/60 flex items-center justify-center shrink-0">
-                  <Calendar className="w-3.5 h-3.5 text-foreground/70" />
+              <div key={s.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-border transition-colors">
+                <div className="w-8 h-8 rounded-md border border-border/60 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-foreground/70" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{s.project}</p>
-                  <p className="text-[11px] text-muted-foreground">{format(new Date(s.showing_date), 'MMM d')} · {s.showing_time}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate">{s.project}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(s.showing_date), 'MMM d')} · {s.showing_time}</p>
                 </div>
               </div>
             ))}
@@ -875,18 +854,18 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         ) : !emails || emails.length === 0 ? (
           <EmptyWidget icon={Mail} message="No email activity" />
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {emails.slice(0, 5).map((email: any) => (
-              <div key={email.id} className="flex items-start gap-2.5 p-2.5 rounded-md bg-card border border-border/50 hover:border-border transition-colors">
-                <div className="w-7 h-7 rounded-md border border-border/60 flex items-center justify-center shrink-0">
+              <div key={email.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-border transition-colors">
+                <div className="w-8 h-8 rounded-md border border-border/60 flex items-center justify-center shrink-0">
                   {email.direction === 'outbound'
-                    ? <ArrowUpRight className="w-3.5 h-3.5 text-foreground/70" />
-                    : <ArrowDownLeft className="w-3.5 h-3.5 text-foreground/70" />
+                    ? <ArrowUpRight className="w-4 h-4 text-foreground/70" />
+                    : <ArrowDownLeft className="w-4 h-4 text-foreground/70" />
                   }
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-foreground truncate">{email.subject}</p>
-                  <p className="text-[11px] text-muted-foreground">{format(new Date(email.sent_at), 'MMM d · h:mm a')}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate">{email.subject}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(email.sent_at), 'MMM d · h:mm a')}</p>
                 </div>
               </div>
             ))}
@@ -911,16 +890,16 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
 function WidgetSection({ title, count, onAdd, children }: { title: string; count?: number; onAdd?: () => void; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/40">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/50">
         <div className="flex items-center gap-2">
           <SectionHeader>{title}</SectionHeader>
           {count != null && count > 0 && (
-            <span className="text-[10px] bg-muted text-foreground/70 rounded-full px-1.5 py-0.5 font-semibold tabular-nums">{count}</span>
+            <span className="text-[11px] bg-muted text-foreground/80 rounded-full px-2 py-0.5 font-semibold tabular-nums">{count}</span>
           )}
         </div>
         {onAdd && (
-          <button onClick={onAdd} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
-            <Plus className="w-3.5 h-3.5" />
+          <button onClick={onAdd} className="text-muted-foreground hover:text-foreground transition-colors p-0.5" aria-label={`Add ${title.toLowerCase()}`}>
+            <Plus className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -931,9 +910,9 @@ function WidgetSection({ title, count, onAdd, children }: { title: string; count
 
 function EmptyWidget({ icon: Icon, message }: { icon: typeof ListTodo; message: string }) {
   return (
-    <div className="flex items-center gap-2.5 py-4 justify-center">
-      <Icon className="w-3.5 h-3.5 text-muted-foreground/50" />
-      <span className="text-xs text-muted-foreground/70">{message}</span>
+    <div className="flex items-center gap-2.5 py-5 justify-center">
+      <Icon className="w-4 h-4 text-muted-foreground/60" />
+      <span className="text-[13px] text-muted-foreground">{message}</span>
     </div>
   );
 }
@@ -942,14 +921,14 @@ function TaskRow({ task }: { task: any }) {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
   return (
     <div className={cn(
-      'flex items-start gap-2.5 p-2.5 rounded-md bg-card border transition-colors',
-      isOverdue ? 'border-destructive/30' : 'border-border/50 hover:border-border'
+      'flex items-start gap-2.5 p-3 rounded-lg bg-card border transition-colors',
+      isOverdue ? 'border-destructive/30' : 'border-border/60 hover:border-border'
     )}>
-      <Checkbox className="mt-0.5 h-3.5 w-3.5" />
+      <Checkbox className="mt-0.5 h-4 w-4" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-foreground">{task.title}</p>
+        <p className="text-[13px] font-medium text-foreground leading-snug">{task.title}</p>
         {task.due_date && (
-          <p className={cn('text-[11px] mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
+          <p className={cn('text-xs mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
             {isOverdue ? 'Overdue · ' : ''}{format(new Date(task.due_date), 'MMM d, yyyy')}
           </p>
         )}
@@ -1032,7 +1011,7 @@ export default function LeadDetailPage() {
           <Skeleton className="h-5 w-40" />
         </div>
         <div className="flex flex-1 min-h-0">
-          <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 p-5 space-y-5">
+          <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/30 p-5 space-y-5">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-9 w-full" />
             <div className="grid grid-cols-3 gap-1.5">
@@ -1063,7 +1042,7 @@ export default function LeadDetailPage() {
               ))}
             </div>
           </div>
-          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/20 p-5 space-y-4">
+          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 p-5 space-y-4">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-12 w-full rounded-md" />
             <Skeleton className="h-12 w-full rounded-md" />
@@ -1094,36 +1073,26 @@ export default function LeadDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Back to Leads
         </Link>
 
-        {/* Identity card */}
-        <div className="bg-card rounded-lg border border-border p-4 space-y-3">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground tracking-tight">
-              {formatContactName(c.first_name, c.last_name)}
-            </h1>
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded px-1.5 py-0.5 inline-block mt-1.5">
-              {TYPE_LABELS[c.contact_type] ?? 'LEAD'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => c.phone && (window.location.href = `tel:${c.phone}`)} disabled={!c.phone}>
-              <Phone className="w-3.5 h-3.5" /> Call
-            </Button>
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => setShowEmail(true)}>
-              <Mail className="w-3.5 h-3.5" /> Email
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => setShowTask(true)}>
-              <ListTodo className="w-3.5 h-3.5" /> Task
-            </Button>
-            <Button size="sm" className="h-9 text-xs gap-1.5" onClick={() => setShowShowing(true)}>
-              <Calendar className="w-3.5 h-3.5" /> Book Showing
-            </Button>
-          </div>
+        {/* Top action bar — Task + Book Showing (Call/Email live in LeftSidebar identity card) */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant="outline" className="h-10 text-xs gap-1.5" onClick={() => setShowTask(true)}>
+            <ListTodo className="w-4 h-4" /> Task
+          </Button>
+          <Button size="sm" className="h-10 text-xs gap-1.5" onClick={() => setShowShowing(true)}>
+            <Calendar className="w-4 h-4" /> Book Showing
+          </Button>
         </div>
 
         <div className="bg-card rounded-lg border border-border p-4">
-          <LeftSidebar contact={c} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} />
+          <LeftSidebar
+            contact={c}
+            leadScore={leadScore}
+            lastTouchLabel={lastTouchLabel}
+            daysInPipeline={daysInPipeline}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+            onEmail={() => setShowEmail(true)}
+          />
         </div>
         <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ minHeight: 400 }}>
           <CenterColumn contact={c} />
@@ -1153,7 +1122,7 @@ export default function LeadDetailPage() {
 
       <div className="flex flex-1 min-h-0">
         {/* Left sidebar — wider, inspired layout */}
-        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-5">
+        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-5">
           <LeftSidebar
             contact={c}
             leadScore={leadScore}
@@ -1171,7 +1140,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/20 overflow-y-auto p-5">
+        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
           <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
         </div>
       </div>
