@@ -2934,6 +2934,15 @@ export type Database = {
           kind: string
         }[]
       }
+      write_behavior_note: {
+        Args: {
+          _body: string
+          _contact_id: string
+          _event_at: string
+          _kind: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
