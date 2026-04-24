@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { LucideIcon } from 'lucide-react';
+import { GlobalLeadSearch } from '@/components/crm/GlobalLeadSearch';
 
 interface NavChild { label: string; path: string; icon: LucideIcon; ownerAdminOnly?: boolean; }
 interface NavSection { label: string; icon: LucideIcon; path?: string; children?: NavChild[]; }
@@ -284,8 +285,11 @@ export function CrmHeader() {
           })}
         </nav>
 
-        {/* Right: Settings + Bell + Avatar */}
+        {/* Right: Search + Settings + Bell + Avatar */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="hidden md:block">
+            <GlobalLeadSearch />
+          </div>
           {isOwnerOrAdmin && (
             <Link
               to={SETTINGS_ITEM.path}
