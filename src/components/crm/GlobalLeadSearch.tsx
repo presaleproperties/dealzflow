@@ -167,27 +167,8 @@ export function GlobalLeadSearch() {
           {/* Results */}
           <div className="relative max-h-[60vh] overflow-y-auto">
             {!query.trim() ? (
-              <div className="px-6 py-10">
-                <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase mb-4">
-                  <Sparkles className="w-3 h-3 text-primary/80" strokeWidth={2.2} />
-                  AI-powered search
-                </div>
-                <div className="text-[13.5px] text-foreground/90 font-light leading-relaxed">
-                  Search across <span className="text-foreground font-medium">{contacts.length.toLocaleString()}</span> leads by
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  {[
-                    { icon: User, label: 'Name' },
-                    { icon: Phone, label: 'Phone number' },
-                    { icon: Mail, label: 'Email address' },
-                    { icon: MapPin, label: 'Property address' },
-                  ].map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/30">
-                      <Icon className="w-3.5 h-3.5 text-primary/80" strokeWidth={2} />
-                      <span className="text-[12px] text-muted-foreground/90">{label}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="px-6 py-8 text-[13px] text-muted-foreground/70 font-light">
+                Start typing to search across <span className="text-foreground font-medium">{contacts.length.toLocaleString()}</span> leads.
               </div>
             ) : isLoading ? (
               <div className="px-6 py-10 space-y-3">
