@@ -649,7 +649,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} allTags={allTags} />
                       </td>
                     ))}
                   </tr>
