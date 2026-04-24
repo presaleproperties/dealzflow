@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X,
+  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X, RefreshCw, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ const CREATE_OPTIONS = [
     color: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     badge: 'Most Used',
-    url: 'https://presaleproperties.lovable.app/admin/email-builder?template=project-email',
+    to: '/crm/email-builder?template=project-email',
   },
   {
     key: 'exclusive-offer',
@@ -31,7 +32,7 @@ const CREATE_OPTIONS = [
     color: 'text-amber-600',
     bg: 'bg-amber-500/10',
     badge: 'Promo',
-    url: 'https://presaleproperties.lovable.app/admin/email-builder?template=exclusive-offer',
+    to: '/crm/email-builder?template=exclusive-offer',
   },
   {
     key: 'blank-email',
@@ -41,7 +42,7 @@ const CREATE_OPTIONS = [
     color: 'text-muted-foreground',
     bg: 'bg-muted/40',
     badge: null,
-    url: 'https://presaleproperties.lovable.app/admin/email-builder?template=blank',
+    to: '/crm/email-builder?template=blank',
   },
 ];
 

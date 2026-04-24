@@ -34,7 +34,7 @@ export default function CrmEmailBuilderPage() {
   const [blocks, setBlocks] = useState<Block[]>([
     { id: uid(), type: "heading", text: "Hi {{first_name}}," },
     { id: uid(), type: "paragraph", text: "I thought you might like this opportunity..." },
-    { id: uid(), type: "button", text: "View Project", url: "https://presaleproperties.com" },
+    { id: uid(), type: "button", text: "View Project", url: "https://dealzflow.ca" },
   ]);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [aiPrompt, setAiPrompt] = useState("");
