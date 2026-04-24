@@ -5,6 +5,7 @@ import {
   Calendar, Plus, ListTodo,
   StickyNote, Zap, Send, Pin, PinOff, Pencil, MoreHorizontal, Trash2,
   Download, ArrowUpRight, ArrowDownLeft, X, ChevronDown, ChevronUp,
+  Eye, MousePointerClick,
 } from 'lucide-react';
 import { formatContactName, formatCurrency } from '@/lib/format';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
@@ -976,7 +977,27 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground truncate">{email.subject}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(email.sent_at), 'MMM d · h:mm a')}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <p className="text-xs text-muted-foreground">{format(new Date(email.sent_at), 'MMM d · h:mm a')}</p>
+                    {email.direction === 'outbound' && (email.open_count ?? 0) > 0 && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-600 inline-flex items-center gap-1"
+                        title={email.last_opened_at ? `Last opened ${format(new Date(email.last_opened_at), 'MMM d, h:mm a')}` : 'Opened'}
+                      >
+                        <Eye className="w-3 h-3" />
+                        {email.open_count}
+                      </span>
+                    )}
+                    {email.direction === 'outbound' && (email.click_count ?? 0) > 0 && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-500/10 text-blue-600 inline-flex items-center gap-1"
+                        title={email.last_clicked_at ? `Last clicked ${format(new Date(email.last_clicked_at), 'MMM d, h:mm a')}` : 'Clicked'}
+                      >
+                        <MousePointerClick className="w-3 h-3" />
+                        {email.click_count}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
