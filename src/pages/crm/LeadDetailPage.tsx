@@ -196,11 +196,14 @@ function LeftSidebar({
               </p>
             )}
           </div>
-          {contact.lead_type && (
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1 shrink-0">
-              {contact.lead_type}
+          {(((contact as any).lead_types as string[] | undefined)?.length
+            ? ((contact as any).lead_types as string[])
+            : contact.lead_type ? [contact.lead_type] : []
+          ).slice(0, 3).map((t) => (
+            <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1 shrink-0">
+              {LEAD_TYPE_LABELS[t] || t}
             </span>
-          )}
+          ))}
         </div>
         <div className="space-y-1.5 pt-3 border-t border-border/60">
           {contact.phone ? (
