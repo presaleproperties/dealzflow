@@ -373,7 +373,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; allTags: string[] }) {
+function CellContent({ col, contact, updateContact, tagLibrary }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[] }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
@@ -436,7 +436,7 @@ function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef;
     case 'pipeline':
       return <InlineStatusCell contact={contact} updateContact={updateContact} />;
     case 'tags':
-      return <InlineTagsCell contact={contact} allTags={allTags} updateContact={updateContact} />;
+      return <InlineTagsCell contact={contact} tagLibrary={tagLibrary} updateContact={updateContact} />;
     case 'assigned_to':
       return <InlineAgentCell contact={contact} updateContact={updateContact} />;
     case 'last_touch_at':
