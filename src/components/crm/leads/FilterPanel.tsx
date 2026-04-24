@@ -196,15 +196,27 @@ export function FilterPanel({
   if (!mounted) return null;
 
   return (
-    <div
-      className={cn(
-        'w-[280px] shrink-0 border-l border-border/40 bg-card/80 backdrop-blur-sm flex flex-col h-full ml-3 rounded-l-xl',
-        'transform-gpu transition-[transform,opacity,filter] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
-        visible
-          ? 'translate-x-0 opacity-100 blur-0'
-          : 'translate-x-8 opacity-0 blur-[2px]',
-      )}
-    >
+    <>
+      {/* Animated backdrop — subtle dim + blur to focus attention on the panel */}
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        className={cn(
+          'fixed inset-0 z-30 bg-background/40 backdrop-blur-[2px]',
+          'transition-opacity duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
+          visible ? 'opacity-100' : 'opacity-0 pointer-events-none',
+        )}
+      />
+
+      <div
+        className={cn(
+          'relative z-40 w-[280px] shrink-0 border-l border-border/40 bg-card/80 backdrop-blur-sm flex flex-col h-full ml-3 rounded-l-xl shadow-2xl shadow-black/10',
+          'transform-gpu transition-[transform,opacity,filter] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+          visible
+            ? 'translate-x-0 opacity-100 blur-0'
+            : 'translate-x-8 opacity-0 blur-[2px]',
+        )}
+      >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
         <div className="flex items-center gap-2">
@@ -249,6 +261,7 @@ export function FilterPanel({
           <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
         </div>
       </ScrollArea>
-    </div>
+      </div>
+    </>
   );
 }
