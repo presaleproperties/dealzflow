@@ -41,6 +41,7 @@ import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
+import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
 import { EMAIL_VARIABLES, EMAIL_VARIABLE_GROUPS, renderForRecipient } from '@/lib/emailVariables';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -819,12 +820,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       toolbarSlot={composerActions}
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
-                          <iframe
-                            title="signature-inline-preview"
-                            srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0 16px 12px;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${activeSignatureHtml}</body></html>`}
-                            className="w-full bg-white border-0 block"
-                            style={{ height: 200 }}
-                          />
+                          <SignatureInlineFrame html={activeSignatureHtml} />
                         ) : null
                       }
                     />
