@@ -676,6 +676,64 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Right-side template preview pane */}
+            {previewTpl && (
+              <aside className="border-l border-border bg-muted/10 overflow-hidden hidden md:flex flex-col min-h-0">
+                <div className="px-4 py-3 border-b border-border bg-card flex items-start justify-between gap-2 shrink-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Template Preview
+                      </p>
+                      {previewTpl.__isBridge && (
+                        <Badge className="bg-primary/90 text-primary-foreground text-[8px] px-1 py-0 h-3.5">
+                          PRESALE
+                        </Badge>
+                      )}
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground truncate">{previewTpl.name}</h4>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {previewTpl.subject || '(no subject)'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => setPreviewTpl(null)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-hidden p-3 min-h-0">
+                  <iframe
+                    title="template-preview"
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:16px;font:13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${previewTpl.body_html ?? '<p style="color:#999">No content</p>'}</body></html>`}
+                    className="w-full h-full bg-white border border-border rounded-lg"
+                    sandbox="allow-same-origin"
+                  />
+                </div>
+                <div className="px-4 py-3 border-t border-border bg-card flex items-center justify-end gap-2 shrink-0">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setPreviewTpl(null)}>
+                    Dismiss
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      applyTemplate(previewTpl);
+                      setPreviewTpl(null);
+                    }}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Apply Template
+                  </Button>
+                </div>
+              </aside>
+            )}
           </div>
         </DialogContent>
       </Dialog>
