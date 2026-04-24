@@ -10,6 +10,7 @@ export type EmailSettings = {
   signature_html: string | null;
   signature_mode: string;
   signature_builder_data: Record<string, string> | null;
+  twilio_from_number: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -40,6 +41,7 @@ export function useUpsertEmailSettings() {
       signature_html?: string;
       signature_mode?: string;
       signature_builder_data?: Record<string, string> | null;
+      twilio_from_number?: string | null;
     }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
