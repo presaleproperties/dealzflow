@@ -209,6 +209,8 @@ export function FilterPanel({
   dynamicTags,
   dynamicCities,
   dynamicCampaigns,
+  tagCounts,
+  projectCounts,
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
