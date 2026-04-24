@@ -753,6 +753,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
   const [expanded, setExpanded] = useState(false);
   const visibleFields = isStructured && !expanded ? parsed.fields.slice(0, 4) : parsed.fields;
   const hasMore = isStructured && parsed.fields.length > 4;
+  const isVirtual = note.id.startsWith('email-');
 
   if (editingId === note.id) {
     return (
