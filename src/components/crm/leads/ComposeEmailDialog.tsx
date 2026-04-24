@@ -53,29 +53,23 @@ interface Props {
 type Mode = 'edit' | 'html' | 'preview';
 type AnyTpl = CrmEmailTemplate & { __isBridge?: boolean };
 
-/* ---------- Sidebar template thumbnail ---------- */
-function TemplateThumb({ html }: { html: string }) {
-  const ref = useRef<HTMLIFrameElement>(null);
-  useEffect(() => {
-    const f = ref.current;
-    if (!f) return;
-    const doc = f.contentDocument;
-    if (!doc) return;
-    doc.open();
-    doc.write(
-      `<div style="transform:scale(0.32);transform-origin:top left;width:312%;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${html || '<p style="color:#999;padding:12px">No preview</p>'}</div>`,
-    );
-    doc.close();
-  }, [html]);
-  return (
-    <iframe
-      ref={ref}
-      title="thumb"
-      className="w-full h-[88px] border-0 bg-white pointer-events-none"
-      sandbox="allow-same-origin"
-    />
-  );
-}
+/* ---------- Sidebar template thumbnail (with safe fallback) ----------
+ * We import the dedicated component module but guard against the off-chance
+ * that the file is missing, fails to load, or doesn't export the expected
+ * symbol. In any of those cases we render a lightweight placeholder so the
+ * compose dialog never crashes the build or runtime. */
+import { TemplateThumb as ImportedTemplateThumb } from '@/components/crm/email/TemplateThumb';
+
+const FallbackThumb = ({ html: _html }: { html?: string | null }) => (
+  <div className="w-full h-[88px] bg-muted/40 flex items-center justify-center text-[10px] text-muted-foreground">
+    Preview unavailable
+  </div>
+);
+
+const TemplateThumb: React.ComponentType<{ html?: string | null }> =
+  (typeof ImportedTemplateThumb === 'function' ? ImportedTemplateThumb : FallbackThumb) as React.ComponentType<{
+    html?: string | null;
+  }>;
 
 const RECENT_KEY = 'crm:compose:recent-template-ids';
 
