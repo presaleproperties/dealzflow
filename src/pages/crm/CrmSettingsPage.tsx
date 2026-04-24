@@ -67,14 +67,6 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 
 
-const PIPELINE_STAGES = [
-  'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
-  'Showing Booked', 'Offer Made', 'Closed', 'Lost / Cold',
-];
-
-const LEAD_SOURCES = [
-  'Facebook Ad', 'Instagram', 'TikTok', 'Website Form', 'presaleproperties.com', 'Calendly', 'Referral', 'Manual Entry',
-];
 
 const INTEGRATIONS = [
   { name: 'Google Calendar', icon: Calendar, status: 'connected' as const, desc: 'Sync showings and appointments' },
@@ -89,8 +81,6 @@ const NOTIFICATION_DEFAULTS = [
 
 const SETTINGS_SECTIONS = [
   { id: 'settings-team', label: 'Team', icon: Shield },
-  { id: 'settings-pipeline', label: 'Pipeline', icon: Database },
-  { id: 'settings-sources', label: 'Sources', icon: Plus },
   { id: 'settings-import', label: 'Import', icon: Database },
   { id: 'settings-data', label: 'Data Manager', icon: Database },
   { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
@@ -185,14 +175,6 @@ export default function CrmSettingsPage() {
 
         <div id="settings-team" className="scroll-mt-16">
           <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-pipeline" className="scroll-mt-16">
-          <SectionErrorBoundary name="Pipeline Stages"><PipelineStages /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-sources" className="scroll-mt-16">
-          <SectionErrorBoundary name="Lead Sources"><LeadSourcesSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-import" className="scroll-mt-16">
@@ -469,72 +451,6 @@ function TeamManagement() {
   );
 }
 
-/* ══════════════════════════════════════════
-   2. Pipeline Stages
-   ══════════════════════════════════════════ */
-function PipelineStages() {
-  return (
-    <Card className="rounded-[10px] lg:rounded-xl">
-      <CardHeader className="px-3 sm:px-6">
-        <CardTitle className="text-base sm:text-lg">Pipeline Stages</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-1 px-3 sm:px-6">
-        {PIPELINE_STAGES.map((stage, i) => (
-          <div key={stage} className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-md bg-muted/30 border border-border/40 min-h-[40px]">
-            <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab shrink-0" />
-            <span className="text-sm font-medium text-foreground truncate">{stage}</span>
-            <span className="ml-auto text-xs text-muted-foreground shrink-0">Stage {i + 1}</span>
-          </div>
-        ))}
-        <p className="text-xs text-muted-foreground pt-2">Drag-to-reorder coming soon.</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ══════════════════════════════════════════
-   3. Lead Sources
-   ══════════════════════════════════════════ */
-function LeadSourcesSection() {
-  const [sources, setSources] = useState(LEAD_SOURCES);
-  const [newSource, setNewSource] = useState('');
-
-  const addSource = () => {
-    const trimmed = newSource.trim();
-    if (trimmed && !sources.includes(trimmed)) {
-      setSources([...sources, trimmed]);
-      setNewSource('');
-      toast.success(`Added "${trimmed}"`);
-    }
-  };
-
-  return (
-    <Card className="rounded-[10px] lg:rounded-xl">
-      <CardHeader className="px-3 sm:px-6">
-        <CardTitle className="text-base sm:text-lg">Lead Sources</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 px-3 sm:px-6">
-        <div className="flex flex-wrap gap-2">
-          {sources.map(s => (
-            <Badge key={s} variant="outline" className="text-sm py-1 px-3">{s}</Badge>
-          ))}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Input
-            placeholder="New source name"
-            value={newSource}
-            onChange={(e) => setNewSource(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addSource()}
-            className="sm:max-w-xs min-h-[44px] sm:min-h-0"
-          />
-          <Button variant="outline" size="sm" onClick={addSource} disabled={!newSource.trim()} className="min-h-[44px] sm:min-h-0">
-            <Plus className="h-4 w-4 mr-1" /> Add Source
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 /* ══════════════════════════════════════════
    4. Integrations
