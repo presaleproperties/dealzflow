@@ -153,9 +153,15 @@ export default function CrmBehaviorLeadsPage() {
             Leads with records in <code>crm_lead_behavior_*</code> tables. Use this to verify URL rendering on a real lead.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={runBackfill} disabled={backfilling}>
+            <Wand2 className={`h-4 w-4 mr-2 ${backfilling ? "animate-pulse" : ""}`} />
+            {backfilling ? "Backfilling…" : "Backfill Notes"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
