@@ -376,16 +376,17 @@ export default function DataImportSection() {
 
       if (existingId) {
         // Merge tags + projects, don't overwrite other fields
-        const incomingTags = normalizeMultiValueList(rec.tags);
-        const incomingProjects = normalizeMultiValueList(rec.projects);
+        const incomingTags = normalizeCrmMultiValueList(rec.tags);
+        const incomingProjects = normalizeCrmMultiValueList(rec.projects);
+        const existingNormalizedTags = normalizeCrmMultiValueList(existingTags);
         const mergedTags = Array.from(
           new Map(
-            [...normalizeMultiValueList(existingTags), ...incomingTags].map(tag => [tag.toLowerCase(), tag])
+            [...existingNormalizedTags, ...incomingTags].map(tag => [tag.toLowerCase(), tag])
           ).values()
         );
 
         const updates: Record<string, unknown> = {};
-        if (JSON.stringify(mergedTags) !== JSON.stringify(normalizeMultiValueList(existingTags))) {
+        if (JSON.stringify(mergedTags) !== JSON.stringify(existingNormalizedTags)) {
           updates.tags = mergedTags;
         }
         if (incomingProjects.length > 0) {
@@ -394,7 +395,7 @@ export default function DataImportSection() {
             .select('projects')
             .eq('id', existingId)
             .maybeSingle();
-          const existingProjects = normalizeMultiValueList(cur?.projects);
+          const existingProjects = normalizeCrmMultiValueList(cur?.projects);
           const mergedProjects = Array.from(
             new Map([...existingProjects, ...incomingProjects].map(project => [project.toLowerCase(), project])).values()
           );
