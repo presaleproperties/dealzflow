@@ -159,19 +159,19 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         full_name: emailSettings?.sender_name ?? user?.email ?? '',
         first_name: (emailSettings?.sender_name ?? '').split(' ')[0] ?? '',
         email: emailSettings?.reply_to ?? user?.email ?? '',
-        signature: emailSettings?.signature_html ?? '',
+        signature: activeSignatureHtml,
       },
     }),
-    [contact, emailSettings, user],
+    [contact, emailSettings, user, activeSignatureHtml],
   );
 
   const finalHtml = useMemo(() => {
     const merged = renderForRecipient(bodyHtml, senderCtx);
-    if (appendSignature && emailSettings?.signature_html) {
-      return `${merged}<br/><br/>${emailSettings.signature_html}`;
+    if (appendSignature && activeSignatureHtml) {
+      return `${merged}<br/><br/>${activeSignatureHtml}`;
     }
     return merged;
-  }, [bodyHtml, senderCtx, appendSignature, emailSettings]);
+  }, [bodyHtml, senderCtx, appendSignature, activeSignatureHtml]);
 
   const renderedSubject = useMemo(
     () => renderForRecipient(subject, senderCtx),
