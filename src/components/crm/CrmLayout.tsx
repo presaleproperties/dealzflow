@@ -1,5 +1,7 @@
 import { TopNav } from '@/components/layout/TopNav';
 import { CrmRouteGuard } from './CrmRouteGuard';
+import { CrmSubNav } from './CrmSubNav';
+import { CrmSectionScope } from './CrmSectionScope';
 
 interface CrmLayoutProps {
   requireRole?: ('owner' | 'admin')[];
@@ -9,8 +11,10 @@ interface CrmLayoutProps {
 export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
   return (
     <CrmRouteGuard requireRole={requireRole}>
+      <CrmSectionScope />
       <div className="h-dvh flex flex-col bg-background overflow-hidden">
         <TopNav />
+        <CrmSubNav />
         <div className="flex-1 min-h-0 p-3 sm:p-4 lg:p-6 flex flex-col overflow-y-auto">
           {children}
         </div>
