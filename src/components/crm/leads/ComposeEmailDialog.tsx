@@ -39,6 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useEmailSignatures, useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
+import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
