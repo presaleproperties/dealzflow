@@ -144,10 +144,10 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
                 <span className="text-sm text-foreground/80 truncate">· {previewTpl.name}</span>
               </>
             ) : (
-              <>
+              <span className="pr-8">
                 Select a Template
                 {bridgeLoading && <span className="ml-2 text-xs text-muted-foreground font-normal">· loading Presale library…</span>}
-              </>
+              </span>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -155,7 +155,7 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
         {previewTpl ? (
           <div className="flex flex-col flex-1 min-h-0 gap-3">
             {/* Preview controls */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center justify-between gap-3 flex-wrap pr-8">
               <div className="flex items-center gap-2 min-w-0">
                 <p className="text-xs text-muted-foreground truncate">
                   Subject: <span className="text-foreground/80 font-medium">{previewTpl.subject || '—'}</span>
