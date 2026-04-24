@@ -341,7 +341,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
+function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; allTags: string[] }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
