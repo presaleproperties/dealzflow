@@ -1,4 +1,67 @@
 import { ReactNode } from 'react';
+import { ExternalLink } from 'lucide-react';
+
+// Matches http(s) URLs and bare www.* URLs. Trailing punctuation is trimmed.
+const URL_REGEX = /(\bhttps?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/gi;
+const TRAILING_PUNCT = /[.,;:!?)\]]+$/;
+
+function normalizeHref(raw: string): string {
+  return raw.startsWith('http') ? raw : `https://${raw}`;
+}
+
+function prettyHost(raw: string): string {
+  try {
+    const u = new URL(normalizeHref(raw));
+    return (u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '')).replace(/\/$/, '');
+  } catch {
+    return raw;
+  }
+}
+
+/**
+ * Renders text with auto-detected URLs as clickable chips.
+ * Use anywhere note/body/field text is rendered.
+ */
+export function LinkifiedText({ text, className }: { text: string; className?: string }): JSX.Element {
+  if (!text) return <span className={className} />;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  URL_REGEX.lastIndex = 0;
+  let key = 0;
+
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    let url = match[0];
+    const trailing = url.match(TRAILING_PUNCT)?.[0] ?? '';
+    if (trailing) url = url.slice(0, -trailing.length);
+    const start = match.index;
+    const end = start + url.length;
+
+    if (start > lastIndex) nodes.push(text.slice(lastIndex, start));
+
+    nodes.push(
+      <a
+        key={`lnk-${key++}`}
+        href={normalizeHref(url)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 max-w-full align-baseline text-primary hover:text-primary/80 underline decoration-primary/40 hover:decoration-primary underline-offset-2 break-all"
+        title={url}
+      >
+        <span className="truncate">{prettyHost(url)}</span>
+        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+      </a>
+    );
+
+    if (trailing) nodes.push(trailing);
+    lastIndex = end + trailing.length;
+  }
+
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+
+  return <span className={className}>{nodes}</span>;
+}
 
 /**
  * Parses messy imported notes (Zapier "WEBSITE BEHAVIOR SUMMARY",
