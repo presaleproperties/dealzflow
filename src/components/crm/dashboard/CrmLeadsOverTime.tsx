@@ -41,8 +41,8 @@ export function CrmLeadsOverTime() {
           <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
             <defs>
               <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(39 67% 55%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(39 67% 55%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -73,7 +73,7 @@ export function CrmLeadsOverTime() {
             <Area
               type="monotone"
               dataKey="leads"
-              stroke="hsl(39 67% 55%)"
+              stroke="hsl(var(--primary))"
               strokeWidth={2}
               fill="url(#goldGrad)"
             />

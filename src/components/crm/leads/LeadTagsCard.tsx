@@ -38,7 +38,7 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
           <Badge
             key={tag}
             className="border-0 text-[11px] font-semibold gap-1 pr-1.5 cursor-default"
-            style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}
+            style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
           >
             {tag}
             <X className="w-3 h-3 cursor-pointer hover:opacity-70" onClick={() => removeTag(tag)} />

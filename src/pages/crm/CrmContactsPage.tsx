@@ -351,7 +351,7 @@ export default function CrmContactsPage() {
                         {(c.projects ?? []).length > 0 || c.project ? (
                           <div className="flex flex-wrap gap-1">
                             {((c.projects ?? []).length > 0 ? c.projects! : [c.project!]).slice(0, 2).map(p => (
-                              <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+                              <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
                                 {p}
                               </Badge>
                             ))}

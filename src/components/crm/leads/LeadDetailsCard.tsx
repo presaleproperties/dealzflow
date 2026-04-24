@@ -71,7 +71,7 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
             <span className="text-xs text-muted-foreground w-16 flex-shrink-0 mt-0.5">Projects</span>
             <div className="flex flex-wrap gap-1">
               {projects.map(p => (
-                <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+                <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
                   {p}
                 </Badge>
               ))}

@@ -24,7 +24,7 @@ const CATEGORIES = [
   { value: 'all', label: 'All Categories' },
   { value: 'project_launch', label: 'Project Launch', color: 'hsl(210 80% 55%)' },
   { value: 'nurture', label: 'Nurture', color: 'hsl(142 60% 45%)' },
-  { value: 'follow_up', label: 'Follow-Up', color: 'hsl(39 67% 55%)' },
+  { value: 'follow_up', label: 'Follow-Up', color: 'hsl(var(--primary))' },
   { value: 'newsletter', label: 'Newsletter', color: 'hsl(270 60% 55%)' },
   { value: 'announcement', label: 'Announcement', color: 'hsl(0 65% 55%)' },
   { value: 're_engagement', label: 'Re-Engagement', color: 'hsl(185 65% 45%)' },
@@ -57,7 +57,7 @@ function getSourceLabel(src: string) {
 function getSourceColor(src: string) {
   switch (src) {
     case 'pp_admin': return 'hsl(210 80% 55%)';
-    case 'dealflow': return 'hsl(39 67% 55%)';
+    case 'dealflow': return 'hsl(var(--primary))';
     case 'claude': return 'hsl(270 60% 55%)';
     default: return 'hsl(0 0% 55%)';
   }

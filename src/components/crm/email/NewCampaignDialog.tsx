@@ -121,7 +121,7 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
                   <p className="text-sm font-medium text-foreground">{t.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{t.subject}</p>
                   {t.project && (
-                    <Badge variant="outline" className="border-0 text-[10px] mt-1" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+                    <Badge variant="outline" className="border-0 text-[10px] mt-1" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
                       {t.project}
                     </Badge>
                   )}

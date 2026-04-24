@@ -24,9 +24,9 @@ const STATUS_COLORS: Record<string, string> = {
   'Showing Booked': 'hsl(210 62% 46%)',
   'Offer Made': 'hsl(38 92% 50%)',
   'Hot / Engaged': 'hsl(0 84% 60%)',
-  'Nurturing': 'hsl(39 67% 55%)',
+  'Nurturing': 'hsl(var(--primary))',
   'Contacted': 'hsl(142 71% 45%)',
-  'New Lead': 'hsl(39 67% 55%)',
+  'New Lead': 'hsl(var(--primary))',
   'Closed': 'hsl(142 71% 30%)',
   'Lost / Cold': 'hsl(220 10% 50%)',
 };

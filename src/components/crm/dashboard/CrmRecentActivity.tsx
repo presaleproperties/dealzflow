@@ -94,7 +94,7 @@ export function CrmRecentActivity() {
         all.push({
           id: `contact-${c.id}`,
           icon: UserPlus,
-          color: 'hsl(39 67% 55%)',
+          color: 'hsl(var(--primary))',
           text: `New contact: ${formatContactName(c.first_name, c.last_name)}`,
           time: formatDistanceToNow(new Date(c.created_at), { addSuffix: true }),
           raw: new Date(c.created_at),

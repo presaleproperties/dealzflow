@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 
 const STAGES = [
-  { label: 'New Lead', color: 'hsl(39 67% 55%)' },
+  { label: 'New Lead', color: 'hsl(var(--primary))' },
   { label: 'Contacted', color: 'hsl(38 92% 50%)' },
   { label: 'Nurturing', color: 'hsl(210 62% 46%)' },
   { label: 'Hot / Engaged', color: 'hsl(0 84% 60%)' },
