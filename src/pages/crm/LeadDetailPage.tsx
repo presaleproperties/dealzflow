@@ -279,43 +279,40 @@ function LeftSidebar({
       </div>
 
       {/* Details */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <SectionHeader>Details</SectionHeader>
         <div className="space-y-px">
-          <DetailRow label="Phone" value={contact.phone} href={contact.phone ? `tel:${contact.phone}` : undefined} field="phone" contactId={contact.id} />
-          <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
           {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
-          <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
           <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
           <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
 
           {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
 
           {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30">
-              <span className="text-[11px] text-muted-foreground">Budget</span>
-              <span className="text-xs text-foreground font-medium">
+            <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+              <span className="text-xs text-muted-foreground">Budget</span>
+              <span className="text-[13px] text-foreground font-medium tabular-nums">
                 {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '—'}
               </span>
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30">
-            <span className="text-[11px] text-muted-foreground">Registered</span>
-            <span className="text-xs text-foreground">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
+          <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+            <span className="text-xs text-muted-foreground">Registered</span>
+            <span className="text-[13px] text-foreground tabular-nums">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
           </div>
 
           {((contact as any).sync_source === 'zapier_lofty' || (contact as any).sync_source === 'lofty_api_sync') && (
             <>
               {(contact as any).lofty_id && (
-                <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30">
-                  <span className="text-[11px] text-muted-foreground">Lofty ID</span>
-                  <span className="text-[10px] font-mono text-muted-foreground/70 truncate max-w-[140px]">{(contact as any).lofty_id}</span>
+                <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+                  <span className="text-xs text-muted-foreground">Lofty ID</span>
+                  <span className="text-[11px] font-mono text-muted-foreground/80 truncate max-w-[140px]">{(contact as any).lofty_id}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between gap-3 py-1.5">
-                <span className="text-[11px] text-muted-foreground">Synced</span>
-                <span className="text-[10px] text-muted-foreground/70">
+              <div className="flex items-center justify-between gap-3 py-2">
+                <span className="text-xs text-muted-foreground">Synced</span>
+                <span className="text-[11px] text-muted-foreground/80">
                   {(contact as any).lofty_synced_at ? format(new Date((contact as any).lofty_synced_at), 'MMM d, h:mm a') : 'via Lofty'}
                 </span>
               </div>
