@@ -14,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Sidebar />
       <main
         className={`pb-[80px] lg:pb-6 min-h-screen transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'lg:ml-[54px]' : 'lg:ml-[218px]'
+          isCollapsed ? 'lg:ml-[60px]' : 'lg:ml-[232px]'
         }`}
       >
         {children}
