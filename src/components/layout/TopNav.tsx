@@ -17,6 +17,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface NavChild { label: string; path: string; icon: LucideIcon; description?: string; ownerAdminOnly?: boolean; crmOnly?: boolean; }
 interface NavSection { label: string; path?: string; children?: NavChild[]; crmOnly?: boolean; }
@@ -87,7 +91,10 @@ export function TopNav() {
   const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin } = useCrmAccess();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
+
+  const requestSignOut = () => setSignOutOpen(true);
 
   // Close on route change
   useEffect(() => { setOpenSection(null); setMobileOpen(false); }, [location.pathname]);
