@@ -566,6 +566,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     { key: 'manual', label: 'Notes' },
     { key: 'email', label: 'Emails' },
     { key: 'call_log', label: 'Calls' },
+    { key: 'web', label: 'Web' },
     { key: 'system', label: 'System' },
   ];
 
