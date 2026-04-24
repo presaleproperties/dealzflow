@@ -89,8 +89,6 @@ const NOTIFICATION_DEFAULTS = [
 
 const SETTINGS_SECTIONS = [
   { id: 'settings-team', label: 'Team', icon: Shield },
-  { id: 'settings-pipeline', label: 'Pipeline', icon: Database },
-  { id: 'settings-sources', label: 'Sources', icon: Plus },
   { id: 'settings-import', label: 'Import', icon: Database },
   { id: 'settings-data', label: 'Data Manager', icon: Database },
   { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
