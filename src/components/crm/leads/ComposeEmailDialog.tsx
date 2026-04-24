@@ -191,6 +191,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
     setBodyHtml(tpl.body_html || '<p></p>');
+    /* Templates are full HTML emails (tables, inline styles, images) that the
+       rich text editor cannot represent without flattening to plain text.
+       Switch to Preview so the user sees the real design immediately, and
+       leave HTML mode available for source-level tweaks. */
+    setMode('preview');
     /* Track recent */
     const next = [tpl.id, ...recentIds.filter((id) => id !== tpl.id)].slice(0, 8);
     setRecentIds(next);
@@ -601,25 +606,32 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               {/* Mode tabs */}
               <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-1">
-                  {([
-                    { v: 'edit', label: 'Editor', icon: FileText },
-                    { v: 'html', label: 'HTML', icon: Code2 },
-                    { v: 'preview', label: 'Preview', icon: Eye },
-                  ] as const).map((t) => (
-                    <button
-                      key={t.v}
-                      onClick={() => setMode(t.v)}
-                      className={cn(
-                        'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
-                        mode === t.v
-                          ? 'bg-background border border-border text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <t.icon className="h-3 w-3" />
-                      {t.label}
-                    </button>
-                  ))}
+                  {(() => {
+                    /* Detect "rich" template HTML the rich text editor can't represent. */
+                    const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
+                    return ([
+                      { v: 'edit', label: 'Editor', icon: FileText, disabled: isRichHtml, hint: isRichHtml ? 'Disabled: this template uses full HTML. Use Preview to see the design or HTML to edit the source.' : undefined },
+                      { v: 'html', label: 'HTML', icon: Code2 },
+                      { v: 'preview', label: 'Preview', icon: Eye },
+                    ] as const).map((t) => (
+                      <button
+                        key={t.v}
+                        onClick={() => !(t as any).disabled && setMode(t.v)}
+                        disabled={(t as any).disabled}
+                        title={(t as any).hint}
+                        className={cn(
+                          'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
+                          mode === t.v
+                            ? 'bg-background border border-border text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground',
+                          (t as any).disabled && 'opacity-40 cursor-not-allowed',
+                        )}
+                      >
+                        <t.icon className="h-3 w-3" />
+                        {t.label}
+                      </button>
+                    ));
+                  })()}
                 </div>
                 {mode === 'preview' && (
                   <div className="flex items-center gap-1">
