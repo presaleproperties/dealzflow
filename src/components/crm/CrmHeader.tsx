@@ -16,7 +16,7 @@ interface NavChild { label: string; path: string; icon: LucideIcon; ownerAdminOn
 interface NavSection { label: string; icon: LucideIcon; path?: string; children?: NavChild[]; }
 
 const NAV_SECTIONS: NavSection[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/crm/dashboard' },
+  
   {
     label: 'Leads',
     icon: Users,
@@ -48,7 +48,7 @@ const DARK_BG = 'hsl(222 25% 9%)';
 const INACTIVE_TEXT = 'hsl(220 10% 64%)';
 
 const ROUTE_TITLES: { match: string; title: string }[] = [
-  { match: '/crm/dashboard',    title: 'Dashboard' },
+  
   { match: '/crm/leads',        title: 'Leads & Contacts' },
   { match: '/crm/pipeline',     title: 'Pipeline' },
   { match: '/crm/email',        title: 'Email Center' },
