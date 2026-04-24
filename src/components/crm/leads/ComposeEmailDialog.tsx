@@ -370,6 +370,116 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
 
+  /** Compact Templates + Insert variable controls rendered in the editor toolbar. */
+  const composerActions = (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        className="h-8 gap-1.5 px-2 text-xs"
+        onClick={() => setPickerOpen(true)}
+      >
+        <FileText className="h-3.5 w-3.5" />
+        Templates
+      </Button>
+      <Popover open={varPickerOpen} onOpenChange={(o) => { setVarPickerOpen(o); if (!o) setVarSearch(''); }}>
+        <PopoverTrigger asChild>
+          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs">
+            <Variable className="h-3.5 w-3.5" />
+            Insert variable
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-[420px] p-0 overflow-hidden">
+          <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+              Merge variables
+            </p>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                autoFocus
+                value={varSearch}
+                onChange={(e) => setVarSearch(e.target.value)}
+                placeholder="Search by name, token, or example…"
+                className="h-8 pl-7 text-xs"
+              />
+            </div>
+          </div>
+          <div className="max-h-[440px] overflow-y-auto">
+            {EMAIL_VARIABLE_GROUPS.map((group) => {
+              const q = varSearch.trim().toLowerCase();
+              const items = EMAIL_VARIABLES.filter((v) => v.group === group).filter((v) =>
+                !q ||
+                v.label.toLowerCase().includes(q) ||
+                v.token.toLowerCase().includes(q) ||
+                v.example.toLowerCase().includes(q),
+              );
+              if (!items.length) return null;
+              return (
+                <div key={group}>
+                  <div className="sticky top-0 z-10 px-3 py-1.5 bg-card/95 backdrop-blur border-b border-border/60">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {group}
+                      <span className="ml-1.5 text-muted-foreground/60 normal-case tracking-normal">
+                        · {items.length}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="py-0.5">
+                    {items.map((v) => (
+                      <button
+                        key={v.token}
+                        type="button"
+                        onClick={() => {
+                          insertVariable(v.token);
+                          toast.success(`Inserted {{${v.token}}}`);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-accent/60 focus:bg-accent/60 focus:outline-none transition-colors group"
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-medium text-foreground truncate">
+                            {v.label}
+                          </span>
+                          <code className="text-[10px] text-muted-foreground/80 shrink-0 group-hover:text-primary transition-colors">
+                            {`{{${v.token}}}`}
+                          </code>
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 shrink-0">
+                            Preview
+                          </span>
+                          <span className="text-[11px] text-muted-foreground truncate italic">
+                            {v.example}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {EMAIL_VARIABLES.filter((v) => {
+              const q = varSearch.trim().toLowerCase();
+              return !q ||
+                v.label.toLowerCase().includes(q) ||
+                v.token.toLowerCase().includes(q) ||
+                v.example.toLowerCase().includes(q);
+            }).length === 0 && (
+              <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                No variables match "{varSearch}"
+              </div>
+            )}
+          </div>
+          <div className="px-3 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
+            Click to insert into the email body. Examples shown are previews — recipients see real values.
+          </div>
+        </PopoverContent>
+      </Popover>
+    </>
+  );
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -378,114 +488,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
           <DialogHeader className="px-5 py-3 border-b border-border bg-card shrink-0">
             <DialogTitle className="flex items-center justify-between gap-2">
               <span className="text-base font-semibold">New Email</span>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-8 gap-1.5"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Templates
-                </Button>
-                <Popover open={varPickerOpen} onOpenChange={(o) => { setVarPickerOpen(o); if (!o) setVarSearch(''); }}>
-                  <PopoverTrigger asChild>
-                    <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5">
-                      <Variable className="h-3.5 w-3.5" />
-                      Insert variable
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-[420px] p-0 overflow-hidden">
-                    <div className="px-3 py-2.5 border-b border-border bg-muted/30">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                        Merge variables
-                      </p>
-                      <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                          autoFocus
-                          value={varSearch}
-                          onChange={(e) => setVarSearch(e.target.value)}
-                          placeholder="Search by name, token, or example…"
-                          className="h-8 pl-7 text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-[440px] overflow-y-auto">
-                      {EMAIL_VARIABLE_GROUPS.map((group) => {
-                        const q = varSearch.trim().toLowerCase();
-                        const items = EMAIL_VARIABLES.filter((v) => v.group === group).filter((v) =>
-                          !q ||
-                          v.label.toLowerCase().includes(q) ||
-                          v.token.toLowerCase().includes(q) ||
-                          v.example.toLowerCase().includes(q),
-                        );
-                        if (!items.length) return null;
-                        return (
-                          <div key={group}>
-                            <div className="sticky top-0 z-10 px-3 py-1.5 bg-card/95 backdrop-blur border-b border-border/60">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                {group}
-                                <span className="ml-1.5 text-muted-foreground/60 normal-case tracking-normal">
-                                  · {items.length}
-                                </span>
-                              </span>
-                            </div>
-                            <div className="py-0.5">
-                              {items.map((v) => (
-                                <button
-                                  key={v.token}
-                                  type="button"
-                                  onClick={() => {
-                                    insertVariable(v.token);
-                                    toast.success(`Inserted {{${v.token}}}`);
-                                  }}
-                                  className="w-full text-left px-3 py-2 hover:bg-accent/60 focus:bg-accent/60 focus:outline-none transition-colors group"
-                                >
-                                  <div className="flex items-baseline justify-between gap-2">
-                                    <span className="text-xs font-medium text-foreground truncate">
-                                      {v.label}
-                                    </span>
-                                    <code className="text-[10px] text-muted-foreground/80 shrink-0 group-hover:text-primary transition-colors">
-                                      {`{{${v.token}}}`}
-                                    </code>
-                                  </div>
-                                  <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
-                                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 shrink-0">
-                                      Preview
-                                    </span>
-                                    <span className="text-[11px] text-muted-foreground truncate italic">
-                                      {v.example}
-                                    </span>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {EMAIL_VARIABLES.filter((v) => {
-                        const q = varSearch.trim().toLowerCase();
-                        return !q ||
-                          v.label.toLowerCase().includes(q) ||
-                          v.token.toLowerCase().includes(q) ||
-                          v.example.toLowerCase().includes(q);
-                      }).length === 0 && (
-                        <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-                          No variables match "{varSearch}"
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-3 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
-                      Click to insert into the email body. Examples shown are previews — recipients see real values.
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Signature control lives in the footer for a single source of truth. */}
-              </div>
+              <span />
             </DialogTitle>
           </DialogHeader>
 
@@ -744,6 +747,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       content={bodyHtml}
                       onChange={setBodyHtml}
                       placeholder="Write your message... use {{lead.first_name}} for personalization."
+                      toolbarSlot={composerActions}
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
                           <div className="border-t border-border/60">
