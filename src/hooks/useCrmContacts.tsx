@@ -2,122 +2,40 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
 
 export type CrmContact = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  email_secondary: string | null;
-  phone: string | null;
-  phone_secondary: string | null;
-  address: string | null;
-  city: string | null;
-  province: string | null;
-  postal_code: string | null;
-  source: string | null;
-  status: string | null;
-  project: string | null;
-  projects: string[];
-  assigned_to: string | null;
-  tags: string[];
-  budget_min: number | null;
-  budget_max: number | null;
-  bedrooms_preferred: string | null;
-  language: string | null;
-  lead_type: string | null;
-  lead_score: number | null;
-  notes: string | null;
-  contact_type: string;
-  birthday: string | null;
-  co_buyer_name: string | null;
-  co_buyer_phone: string | null;
-  co_buyer_email: string | null;
-  co_buyer_birthday: string | null;
-  last_contact_at: string | null;
-  next_followup_date: string | null;
-  status_changed_at: string | null;
-  lofty_id: string | null;
-  last_touch_at: string | null;
-  last_touch_type: string | null;
-  stage_changed_at: string | null;
-  created_at: string;
-  updated_at: string;
+...
 };
 
 export type CrmContactInsert = {
-  first_name: string;
-  last_name: string;
-  email?: string;
-  email_secondary?: string;
-  phone?: string;
-  source?: string;
-  status?: string;
-  project?: string;
-  projects?: string[];
-  assigned_to?: string;
-  tags?: string[];
-  contact_type?: string;
-  birthday?: string;
-  co_buyer_birthday?: string;
+...
 };
 
 export const CONTACT_TYPES = ['lead', 'realtor', 'past_client'] as const;
 
 export const LEAD_STATUSES = [
-  'New Lead',
-  'Contacted',
-  'Nurturing',
-  'Hot / Engaged',
-  'Showing Booked',
-  'Offer Made',
-  'Closed',
-  'Lost / Cold',
-] as const;
+...
+];
 
 export const LEAD_SOURCES = [
-  'Facebook Ad',
-  'Instagram',
-  'TikTok',
-  'Website Form',
-  'presaleproperties.com',
-  'Calendly',
-  'WhatsApp',
-  'Referral',
-  'Manual Entry',
-] as const;
+...
+];
 
 export const AGENTS = [
-  'Uzair Muhammad',
-  'Sarb Grewal',
-  'Ravish Passy',
-] as const;
+...
+];
 
 export const PROJECTS = [
-  'Eden by Zenterra',
-  'The Rail District',
-  'Parkway 2',
-  'Reign',
-  'Belmont Residences',
-  'General',
-] as const;
+...
+];
 
 export const LEAD_TYPES = [
-  'First-Time Buyer',
-  'Investor',
-  'Both',
-  'presale',
-  'resale',
-  'commercial',
-] as const;
+...
+];
 
 export const LEAD_TYPE_LABELS: Record<string, string> = {
-  'First-Time Buyer': 'First-Time Buyer',
-  'Investor': 'Investor',
-  'Both': 'Both',
-  'presale': 'Pre-Sale',
-  'resale': 'Re-Sale',
-  'commercial': 'Commercial',
+...
 };
 
 export function useCrmContacts() {
@@ -148,9 +66,7 @@ export function useCrmContacts() {
       }
 
       return allData.map(d => ({
-        ...d,
-        tags: (d.tags as string[] | null) ?? [],
-        projects: (d.projects as string[] | null) ?? [],
+        ...normalizeCrmContactArrays(d),
         contact_type: (d as Record<string, unknown>).contact_type as string ?? 'lead',
       })) as CrmContact[];
     },
@@ -188,10 +104,10 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const allCampaigns = new Set<string>();
 
   contacts.forEach(c => {
-    (c.projects ?? []).forEach(p => { if (p) allProjects.add(p); });
+    normalizeCrmMultiValueList(c.projects).forEach(p => { if (p) allProjects.add(p); });
     if (c.project) allProjects.add(c.project);
     if (c.language) allLanguages.add(c.language);
-    (c.tags ?? []).forEach(t => { if (t) allTags.add(t); });
+    normalizeCrmMultiValueList(c.tags).forEach(t => { if (t) allTags.add(t); });
     if ((c as any).city_pref) allCities.add((c as any).city_pref);
     if ((c as any).campaign_source) allCampaigns.add((c as any).campaign_source);
   });

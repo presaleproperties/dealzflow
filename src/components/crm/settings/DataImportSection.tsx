@@ -10,142 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { normalizeCrmMultiValueList, splitCrmMultiValue } from '@/lib/crmMultiValue';
 
 const CRM_FIELDS = [
-  { value: '__skip__', label: '— Skip —' },
-  { value: 'first_name', label: 'First Name' },
-  { value: 'last_name', label: 'Last Name' },
-  { value: 'email', label: 'Email' },
-  { value: 'email_secondary', label: 'Email (Secondary / Spouse)' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'phone_secondary', label: 'Phone (Secondary)' },
-  { value: 'address', label: 'Address' },
-  { value: 'city', label: 'City' },
-  { value: 'province', label: 'Province' },
-  { value: 'postal_code', label: 'Postal Code' },
-  { value: 'source', label: 'Source' },
-  { value: 'status', label: 'Status' },
-  { value: 'project', label: 'Project (Primary)' },
-  { value: 'projects', label: 'Projects (Multiple)' },
-  { value: 'assigned_to', label: 'Assigned To' },
-  { value: 'contact_type', label: 'Contact Type' },
-  { value: 'budget_min', label: 'Budget Min' },
-  { value: 'budget_max', label: 'Budget Max' },
-  { value: 'bedrooms_preferred', label: 'Bedrooms Preferred' },
-  { value: 'language', label: 'Language' },
-  { value: 'lead_type', label: 'Lead Type' },
-  { value: 'birthday', label: 'Birthday' },
-  { value: 'notes', label: 'Notes' },
-  { value: 'co_buyer_name', label: 'Co-Buyer Name' },
-  { value: 'co_buyer_phone', label: 'Co-Buyer Phone' },
-  { value: 'co_buyer_email', label: 'Co-Buyer Email' },
-  { value: 'co_buyer_birthday', label: 'Co-Buyer Birthday' },
-  { value: 'tags', label: 'Tags' },
-  { value: 'lofty_id', label: 'Lofty ID' },
-  { value: 'created_at', label: 'Created At' },
-  { value: 'campaign_source', label: 'Campaign Source' },
-  { value: 'property_type_pref', label: 'Property Type Preference' },
-  { value: 'is_pre_approved', label: 'Pre-Approved' },
-  { value: 'referral_source', label: 'Referral Source' },
-  { value: 'city_pref', label: 'Preferred City' },
-] as const;
+...
+];
 
 const AUTO_MAP: Record<string, string> = {
-  'first name': 'first_name',
-  'firstname': 'first_name',
-  'first_name': 'first_name',
-  'last name': 'last_name',
-  'lastname': 'last_name',
-  'last_name': 'last_name',
-  'email': 'email',
-  'e-mail': 'email',
-  'email secondary': 'email_secondary',
-  'email_secondary': 'email_secondary',
-  'secondary email': 'email_secondary',
-  'spouse email': 'email_secondary',
-  'alt email': 'email_secondary',
-  'phone': 'phone',
-  'phone number': 'phone',
-  'phone_number': 'phone',
-  'mobile': 'phone',
-  'cell': 'phone',
-  'phone secondary': 'phone_secondary',
-  'phone_secondary': 'phone_secondary',
-  'secondary phone': 'phone_secondary',
-  'address': 'address',
-  'street': 'address',
-  'city': 'city',
-  'province': 'province',
-  'state': 'province',
-  'postal code': 'postal_code',
-  'postal_code': 'postal_code',
-  'zip': 'postal_code',
-  'zip code': 'postal_code',
-  'source': 'source',
-  'lead source': 'source',
-  'lead_source': 'source',
-  'status': 'status',
-  'project': 'project',
-  'projects': 'projects',
-  'assigned to': 'assigned_to',
-  'assigned_to': 'assigned_to',
-  'agent': 'assigned_to',
-  'contact type': 'contact_type',
-  'contact_type': 'contact_type',
-  'type': 'contact_type',
-  'budget min': 'budget_min',
-  'budget_min': 'budget_min',
-  'min budget': 'budget_min',
-  'budget max': 'budget_max',
-  'budget_max': 'budget_max',
-  'max budget': 'budget_max',
-  'bedrooms': 'bedrooms_preferred',
-  'bedrooms_preferred': 'bedrooms_preferred',
-  'language': 'language',
-  'lead type': 'lead_type',
-  'lead_type': 'lead_type',
-  'birthday': 'birthday',
-  'dob': 'birthday',
-  'date of birth': 'birthday',
-  'notes': 'notes',
-  'co-buyer name': 'co_buyer_name',
-  'co_buyer_name': 'co_buyer_name',
-  'co-buyer phone': 'co_buyer_phone',
-  'co_buyer_phone': 'co_buyer_phone',
-  'co-buyer email': 'co_buyer_email',
-  'co_buyer_email': 'co_buyer_email',
-  'co-buyer birthday': 'co_buyer_birthday',
-  'co_buyer_birthday': 'co_buyer_birthday',
-  'tags': 'tags',
-  'lofty_id': 'lofty_id',
-  'lofty id': 'lofty_id',
-  'created_at': 'created_at',
-  'created at': 'created_at',
-  'date added': 'created_at',
-  'date_added': 'created_at',
-  'campaign': 'campaign_source',
-  'campaign_source': 'campaign_source',
-  'campaign source': 'campaign_source',
-  'property_type': 'property_type_pref',
-  'property_preference': 'property_type_pref',
-  'property type preference': 'property_type_pref',
-  'property_type_pref': 'property_type_pref',
-  'pre_approved': 'is_pre_approved',
-  'preapproved': 'is_pre_approved',
-  'pre-approved': 'is_pre_approved',
-  'is_pre_approved': 'is_pre_approved',
-  'referral': 'referral_source',
-  'referral_source': 'referral_source',
-  'referral source': 'referral_source',
-  'city_pref': 'city_pref',
-  'preferred_city': 'city_pref',
-  'preferred city': 'city_pref',
+...
 };
 
-// Array fields that should be split from CSV multi-value cells
 const ARRAY_FIELDS = new Set(['tags', 'projects']);
 const BOOLEAN_FIELDS = new Set(['is_pre_approved']);
-const MULTI_VALUE_DELIMITER_REGEX = /[|,;\n]+/;
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
@@ -216,29 +92,6 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
 
   const [headers, ...rows] = parsedRows;
   return { headers, rows };
-}
-
-function parseMultiValueCell(value: string): string[] {
-  return Array.from(
-    new Map(
-      value
-        .split(MULTI_VALUE_DELIMITER_REGEX)
-        .map(item => item.trim().replace(/^['"]+|['"]+$/g, ''))
-        .filter(Boolean)
-        .map(item => [item.toLowerCase(), item])
-    ).values()
-  );
-}
-
-function normalizeMultiValueList(values: unknown): string[] {
-  if (!Array.isArray(values)) return [];
-  return Array.from(
-    new Map(
-      values
-        .flatMap(value => parseMultiValueCell(String(value ?? '')))
-        .map(item => [item.toLowerCase(), item])
-    ).values()
-  );
 }
 
 export default function DataImportSection() {
