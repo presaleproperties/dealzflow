@@ -194,6 +194,11 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
         <div className="flex items-center gap-2">
           {isEdit && (
             <>
+              {template && <TemplateVersionHistory templateId={template.id} onRestore={(v) => {
+                setName(v.name); setSubject(v.subject ?? ''); setPreviewText(v.preview_text ?? '');
+                setHtmlContent(v.html_content); setCategory(v.category ?? 'custom');
+                setProjectTags(v.project_tags ?? []); setAreaTags(v.area_tags ?? []);
+              }} />}
               {onSendCampaign && template && (
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onSendCampaign(template)}>
                   <Mail className="w-3.5 h-3.5" /> Use in Campaign
@@ -213,8 +218,8 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
         </div>
       </div>
 
-      {/* Split view */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
+      {/* Split view: form / preview / variables */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_280px] gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
         {/* Left — Form */}
         <div className="space-y-4 bg-card/50 border border-border/40 rounded-xl p-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
           <div>
@@ -225,7 +230,14 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Subject Line</Label>
-              <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject" className="h-9" />
+              <Input
+                ref={subjectRef}
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                onFocus={() => { lastFocused.current = 'subject'; }}
+                placeholder="Email subject — supports {{lead.first_name}}"
+                className="h-9"
+              />
             </div>
             <div>
               <Label>Category</Label>
