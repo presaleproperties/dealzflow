@@ -120,8 +120,18 @@ export function TopNav() {
   const filterChildren = (children?: NavChild[]) =>
     (children ?? []).filter(c => !c.ownerAdminOnly || isCrmAdmin);
 
+  const filterGroups = (groups?: NavGroup[]) =>
+    (groups ?? [])
+      .map(g => ({ ...g, children: filterChildren(g.children) }))
+      .filter(g => g.children.length > 0);
+
   const isSectionActive = (s: NavSection) => {
     if (s.path) return isPathActive(location.pathname, s.path);
+    if (s.groups) {
+      return filterGroups(s.groups).some(g =>
+        g.children.some(c => isPathActive(location.pathname, c.path))
+      );
+    }
     return filterChildren(s.children).some(c => isPathActive(location.pathname, c.path));
   };
 
