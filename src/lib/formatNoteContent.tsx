@@ -150,18 +150,33 @@ function useTimelineLinkBehavior(): TimelineLinkBehavior {
   return behavior;
 }
 
-function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: LinkContext }) {
-  const meta = parseUrlMeta(url);
-  const href = normalizeHref(url);
+function LinkPreview({
+  url,
+  label,
+  ctx,
+  kind = 'url',
+}: {
+  url: string;
+  label: string;
+  ctx?: LinkContext;
+  kind?: LinkKind;
+}) {
+  const href = normalizeHref(url, kind);
   const behavior = useTimelineLinkBehavior();
+  const meta = kind === 'url' ? parseUrlMeta(url) : null;
 
-  // Direct-open mode: skip the popover entirely.
-  if (behavior === 'open') {
+  const isEmail = kind === 'email';
+  // For emails we open the user's mail client in the same tab; new tab
+  // would just spawn an empty window in most browsers.
+  const linkProps = isEmail
+    ? { href }
+    : { href, target: '_blank', rel: 'noopener noreferrer' };
+
+  // Direct-open mode: skip the popover entirely (URLs and emails alike).
+  if (behavior === 'open' || isEmail) {
     return (
       <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...linkProps}
         onClick={(e) => {
           e.stopPropagation();
           trackClick(href, ctx);
@@ -170,7 +185,11 @@ function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: Li
         title={url}
       >
         <span className="truncate">{label}</span>
-        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+        {isEmail ? (
+          <Mail className="w-3 h-3 shrink-0 opacity-70" />
+        ) : (
+          <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+        )}
       </a>
     );
   }
@@ -265,8 +284,9 @@ function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: Li
 }
 
 /**
- * Renders text with auto-detected URLs as clickable chips that open
- * a metadata preview popover before navigating away.
+ * Renders text with auto-detected URLs and emails as clickable chips.
+ * URLs open a metadata preview popover (or directly, per user setting).
+ * Emails open the user's mail client.
  * Pass `context` to attribute clicks to a specific lead/note in analytics.
  */
 export function LinkifiedText({
@@ -282,22 +302,38 @@ export function LinkifiedText({
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  URL_REGEX.lastIndex = 0;
+  TOKEN_REGEX.lastIndex = 0;
   let key = 0;
 
-  while ((match = URL_REGEX.exec(text)) !== null) {
-    let url = match[0];
-    const trailing = url.match(TRAILING_PUNCT)?.[0] ?? '';
-    if (trailing) url = url.slice(0, -trailing.length);
+  while ((match = TOKEN_REGEX.exec(text)) !== null) {
+    const raw = match[0];
     const start = match.index;
-    const end = start + url.length;
+    const { value, trailing } = trimUrlBoundary(raw);
+    if (!value) {
+      // Should never happen, but guard against zero-length matches that
+      // would cause an infinite loop on global regex.
+      TOKEN_REGEX.lastIndex = start + 1;
+      continue;
+    }
+    const end = start + value.length;
+    const kind = classifyToken(value);
 
     if (start > lastIndex) nodes.push(text.slice(lastIndex, start));
 
-    nodes.push(<LinkPreview key={`lnk-${key++}`} url={url} label={prettyHost(url)} ctx={context} />);
+    nodes.push(
+      <LinkPreview
+        key={`lnk-${key++}`}
+        url={value}
+        kind={kind}
+        label={prettyHost(value, kind)}
+        ctx={context}
+      />,
+    );
 
     if (trailing) nodes.push(trailing);
     lastIndex = end + trailing.length;
+    // Keep regex cursor in sync after we trimmed off trailing chars.
+    TOKEN_REGEX.lastIndex = lastIndex;
   }
 
   if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
