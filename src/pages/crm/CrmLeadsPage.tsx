@@ -421,21 +421,9 @@ export default function CrmLeadsPage() {
             </div>
           )}
 
-          {/* Search + Quick Views + Filter toggle */}
+          {/* Quick Views + Filter toggle (global search lives in the top nav) */}
           <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={search} onChange={e => handleSearchChange(e.target.value)}
-                placeholder="Search by name, email, or phone..." className="pl-8 pr-8 h-10 sm:h-9 w-full text-sm" />
-              {search && (
-                <button
-                  onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            <div className="flex-1" />
 
             {/* Quick Views dropdown */}
             <DropdownMenu>
