@@ -344,28 +344,99 @@ export default function DataImportSection() {
       allRecords.push({ record, rowNum: rowIndex + 2 });
     });
 
-    // Insert in batches, falling back to individual inserts on batch failure
-    for (let i = 0; i < allRecords.length; i += BATCH) {
-      const batch = allRecords.slice(i, i + BATCH);
-      const batchRecords = batch.map(b => b.record);
+    // Helper: normalize phone for matching
+    const normPhone = (p: unknown) => String(p || '').replace(/[^\d]/g, '').slice(-10);
+    const normEmail = (e: unknown) => String(e || '').trim().toLowerCase();
 
-      const { error } = await supabase.from('crm_contacts').insert(batchRecords as never[]);
-      if (error) {
-        // Batch failed — try one-by-one to save as many as possible
-        for (const item of batch) {
-          const { error: singleErr } = await supabase.from('crm_contacts').insert(item.record as never);
-          if (singleErr) {
-            errors++;
-            dbErrors.push(`Row ${item.rowNum}: ${singleErr.message}`);
-          } else {
-            success++;
+    let merged = 0;
+
+    for (let i = 0; i < allRecords.length; i++) {
+      const item = allRecords[i];
+      const rec = item.record;
+
+      // Try to find an existing contact (merge mode)
+      let existingId: string | null = null;
+      let existingTags: string[] = [];
+
+      if (mergeMode) {
+        const lookups: Promise<{ data: { id: string; tags: string[] | null }[] | null }>[] = [];
+        if (rec.lofty_id) {
+          lookups.push(
+            supabase.from('crm_contacts').select('id,tags').eq('lofty_id', rec.lofty_id as string).limit(1)
+          );
+        }
+        if (rec.email) {
+          lookups.push(
+            supabase.from('crm_contacts').select('id,tags').ilike('email', normEmail(rec.email)).limit(1)
+          );
+        }
+        const phoneNorm = normPhone(rec.phone);
+        if (phoneNorm.length >= 7) {
+          lookups.push(
+            supabase.from('crm_contacts').select('id,tags').ilike('phone', `%${phoneNorm}%`).limit(1)
+          );
+        }
+        for (const p of lookups) {
+          const { data } = await p;
+          if (data && data.length > 0) {
+            existingId = data[0].id;
+            existingTags = data[0].tags ?? [];
+            break;
           }
         }
-      } else {
-        success += batch.length;
       }
 
-      setProgress(Math.min(100, Math.round(((i + batch.length) / allRecords.length) * 100)));
+      if (existingId) {
+        // Merge tags + projects, don't overwrite other fields
+        const incomingTags = (rec.tags as string[] | undefined) ?? [];
+        const incomingProjects = (rec.projects as string[] | undefined) ?? [];
+        const mergedTags = Array.from(new Set([...existingTags, ...incomingTags].map(t => t.trim()).filter(Boolean)));
+
+        const updates: Record<string, unknown> = {};
+        if (mergedTags.length > existingTags.length) updates.tags = mergedTags;
+        if (incomingProjects.length > 0) {
+          // fetch existing projects to merge
+          const { data: cur } = await supabase
+            .from('crm_contacts')
+            .select('projects')
+            .eq('id', existingId)
+            .maybeSingle();
+          const existingProjects = (cur?.projects as string[] | null) ?? [];
+          const mergedProjects = Array.from(new Set([...existingProjects, ...incomingProjects].filter(Boolean)));
+          if (mergedProjects.length > existingProjects.length) updates.projects = mergedProjects;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { error: updErr } = await supabase
+            .from('crm_contacts')
+            .update(updates)
+            .eq('id', existingId);
+          if (updErr) {
+            errors++;
+            dbErrors.push(`Row ${item.rowNum} (merge): ${updErr.message}`);
+          } else {
+            merged++;
+          }
+        } else {
+          merged++; // matched but nothing new to add
+        }
+      } else {
+        const { error: insErr } = await supabase.from('crm_contacts').insert(rec as never);
+        if (insErr) {
+          errors++;
+          dbErrors.push(`Row ${item.rowNum}: ${insErr.message}`);
+        } else {
+          success++;
+        }
+      }
+
+      if (i % 10 === 0 || i === allRecords.length - 1) {
+        setProgress(Math.min(100, Math.round(((i + 1) / allRecords.length) * 100)));
+      }
+    }
+
+    if (merged > 0) {
+      toast.success(`Merged ${merged} existing contacts (tags/projects updated)`);
     }
 
     setResult({ success, errors, skipped, dbErrors });
