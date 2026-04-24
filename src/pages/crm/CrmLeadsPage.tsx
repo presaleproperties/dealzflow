@@ -534,6 +534,8 @@ export default function CrmLeadsPage() {
           setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
           filterTags={filterTags}
           setFilterTags={v => { setFilterTags(v); setPage(1); }}
+          filterExcludeTags={filterExcludeTags}
+          setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
           filterPropertyType={filterPropertyType}
           setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
           filterCity={filterCity}
