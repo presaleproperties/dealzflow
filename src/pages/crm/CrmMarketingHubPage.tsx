@@ -215,17 +215,28 @@ export default function CrmMarketingHubPage() {
                 ))}
               </div>
             ) : filteredAssets.length === 0 ? (
-              <EmptyState
-                icon={activeTab === 'emails' ? Mail : FileText}
-                title={`No ${activeTab} synced yet`}
-                description={
-                  activeTab === 'emails'
-                    ? 'Create one in Presale Properties admin and it will appear here automatically.'
-                    : 'Flyers are managed in Presale Properties admin.'
-                }
-                ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
-                ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : 'Flyer'}`}
-              />
+              hasFilters ? (
+                <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
+                  <Search className="h-10 w-10 text-muted-foreground/20 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No templates match these filters</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1 mb-4">Try a different tag or clear the search.</p>
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1.5">
+                    <X className="h-3.5 w-3.5" /> Clear filters
+                  </Button>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={activeTab === 'emails' ? Mail : FileText}
+                  title={`No ${activeTab} synced yet`}
+                  description={
+                    activeTab === 'emails'
+                      ? 'Create one in Presale Properties admin and it will appear here automatically.'
+                      : 'Flyers are managed in Presale Properties admin.'
+                  }
+                  ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
+                  ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : 'Flyer'}`}
+                />
+              )
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredAssets.map((asset) => (
