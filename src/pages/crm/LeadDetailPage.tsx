@@ -1056,9 +1056,17 @@ export default function LeadDetailPage() {
       />
 
       <div className="flex flex-1 min-h-0">
-        {/* Left sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-5">
-          <LeftSidebar contact={c} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} />
+        {/* Left sidebar — wider, inspired layout */}
+        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-5">
+          <LeftSidebar
+            contact={c}
+            leadScore={leadScore}
+            lastTouchLabel={lastTouchLabel}
+            daysInPipeline={daysInPipeline}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+            onEmail={() => setShowEmail(true)}
+          />
         </div>
 
         {/* Center */}
