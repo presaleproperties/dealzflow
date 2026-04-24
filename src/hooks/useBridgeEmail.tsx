@@ -3,7 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { CrmEmailTemplate } from './useCrmEmail';
 
-export type BridgeTemplate = CrmEmailTemplate & { source: 'presale_properties' };
+export type BridgeAssetType = 'email' | 'flyer' | 'social';
+
+export type BridgeTemplate = CrmEmailTemplate & {
+  source: 'presale_properties';
+  asset_type: BridgeAssetType;
+  thumbnail_url: string | null;
+  tags_raw: string[];
+};
+
+/** Best-effort classification of a Presale template into email/flyer/social. */
+function classifyAsset(raw: Record<string, unknown>): BridgeAssetType {
+  const tags = (Array.isArray(raw.tags) ? (raw.tags as unknown[]) : []).map((t) =>
+    String(t).toLowerCase(),
+  );
+  if (tags.some((t) => t === 'social' || t === 'instagram' || t === 'facebook')) return 'social';
+  if (tags.some((t) => t === 'flyer' || t === 'print' || t === 'one-pager')) return 'flyer';
+  if (tags.some((t) => t === 'email' || t === 'campaign')) return 'email';
+  const cat = String(raw.category ?? '').toLowerCase();
+  if (cat.includes('flyer') || cat.includes('print')) return 'flyer';
+  if (cat.includes('social')) return 'social';
+  // Presale flyer assets typically have no body_html (they're print one-pagers).
+  const bodyHtml = String(raw.body_html ?? '');
+  const name = String(raw.name ?? '').toLowerCase();
+  if (!bodyHtml && (name.includes('flyer') || name.includes('one-pager'))) return 'flyer';
+  return 'email';
+}
 
 /**
  * Fetches the live template library from the Presale Properties project
@@ -22,26 +47,33 @@ export function useBridgeTemplates() {
         return [];
       }
       const list = (data?.templates ?? []) as Array<Record<string, unknown>>;
-      return list.map((t) => ({
-        id: String(t.id),
-        name: String(t.name ?? 'Untitled'),
-        subject: String(t.subject ?? ''),
-        body_html: (t.body_html as string) ?? '',
-        project: null,
-        category: String(t.category ?? 'general'),
-        merge_tags: null,
-        is_active: true,
-        times_used: null,
-        last_used_at: null,
-        created_at: (t.updated_at as string) ?? null,
-        updated_at: (t.updated_at as string) ?? null,
-        source: 'presale_properties',
-      }));
+      return list.map((t) => {
+        const tagsRaw = (Array.isArray(t.tags) ? (t.tags as unknown[]) : []).map((x) => String(x));
+        return {
+          id: String(t.id),
+          name: String(t.name ?? 'Untitled'),
+          subject: String(t.subject ?? ''),
+          body_html: (t.body_html as string) ?? '',
+          project: null,
+          category: String(t.category ?? 'general'),
+          merge_tags: null,
+          is_active: true,
+          times_used: null,
+          last_used_at: null,
+          created_at: (t.updated_at as string) ?? null,
+          updated_at: (t.updated_at as string) ?? null,
+          source: 'presale_properties',
+          asset_type: classifyAsset(t),
+          thumbnail_url: (t.thumbnail as string) ?? null,
+          tags_raw: tagsRaw,
+        };
+      });
     },
     staleTime: 60_000,
     retry: 1,
   });
 }
+
 
 interface SendArgs {
   to: string | string[];

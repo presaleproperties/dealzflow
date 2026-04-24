@@ -59,14 +59,16 @@ export default function CrmMarketingHubPage() {
   const [activeTags, setActiveTags] = useState<Set<TemplateTag>>(new Set());
   const [search, setSearch] = useState('');
 
-  // Bridge currently surfaces only emails. Flyers/social are placeholders that
-  // mirror Presale's tabbed structure so the layout reads identically.
-  const emailAssets = templates;
-  const flyerAssets: BridgeTemplate[] = useMemo(() => [], []);
+  // Bridge returns a unified library; we partition by asset_type so each tab
+  // shows the right slice of synced content from Presale.
+  const emailAssets = useMemo(() => templates.filter((t) => t.asset_type === 'email'), [templates]);
+  const flyerAssets = useMemo(() => templates.filter((t) => t.asset_type === 'flyer'), [templates]);
+  const socialAssets = useMemo(() => templates.filter((t) => t.asset_type === 'social'), [templates]);
 
   const tagCounts = useMemo(() => countTags(emailAssets), [emailAssets]);
 
-  const baseAssets = activeTab === 'emails' ? emailAssets : flyerAssets;
+  const baseAssets =
+    activeTab === 'emails' ? emailAssets : activeTab === 'flyers' ? flyerAssets : socialAssets;
 
   const filteredAssets = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -113,7 +115,7 @@ export default function CrmMarketingHubPage() {
             </div>
           </div>
           <Badge variant="outline" className="text-[11px] px-2.5 py-1">
-            {emailAssets.length + flyerAssets.length} saved
+            {emailAssets.length + flyerAssets.length + socialAssets.length} saved
           </Badge>
         </div>
       </div>
@@ -166,31 +168,43 @@ export default function CrmMarketingHubPage() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Email Templates
+                {activeTab === 'emails'
+                  ? 'Email Templates'
+                  : activeTab === 'flyers'
+                    ? 'Print Flyers'
+                    : 'Social Posts'}
               </p>
               <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5">
-                {(['emails', 'flyers', 'social'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={cn(
-                      'px-3 py-1 text-[11px] font-semibold rounded-md transition-all capitalize',
-                      activeTab === tab
-                        ? 'bg-card shadow-sm text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {tab === 'social' ? (
-                      <span className="flex items-center gap-1">
-                        <Share2 className="h-3 w-3" /> Social
-                      </span>
-                    ) : (
-                      <>
-                        {tab} ({tab === 'emails' ? emailAssets.length : flyerAssets.length})
-                      </>
-                    )}
-                  </button>
-                ))}
+                {(['emails', 'flyers', 'social'] as const).map((tab) => {
+                  const count =
+                    tab === 'emails'
+                      ? emailAssets.length
+                      : tab === 'flyers'
+                        ? flyerAssets.length
+                        : socialAssets.length;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        'px-3 py-1 text-[11px] font-semibold rounded-md transition-all capitalize',
+                        activeTab === tab
+                          ? 'bg-card shadow-sm text-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {tab === 'social' ? (
+                        <span className="flex items-center gap-1">
+                          <Share2 className="h-3 w-3" /> Social ({count})
+                        </span>
+                      ) : (
+                        <>
+                          {tab} ({count})
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -253,15 +267,7 @@ export default function CrmMarketingHubPage() {
               </div>
             )}
 
-            {activeTab === 'social' ? (
-              <EmptyState
-                icon={Share2}
-                title="Social posts live in Presale"
-                description="Generate ad graphics and sold posts from the Marketing Hub in Presale Properties admin."
-                ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
-                ctaLabel="Open social tools"
-              />
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="rounded-xl border border-border bg-muted/30 animate-pulse">
@@ -274,7 +280,7 @@ export default function CrmMarketingHubPage() {
                 ))}
               </div>
             ) : filteredAssets.length === 0 ? (
-              hasFilters ? (
+              hasFilters && activeTab === 'emails' ? (
                 <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
                   <Search className="h-10 w-10 text-muted-foreground/20 mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">No templates match these filters</p>
@@ -285,15 +291,23 @@ export default function CrmMarketingHubPage() {
                 </div>
               ) : (
                 <EmptyState
-                  icon={activeTab === 'emails' ? Mail : FileText}
+                  icon={activeTab === 'emails' ? Mail : activeTab === 'flyers' ? FileText : Share2}
                   title={`No ${activeTab} synced yet`}
                   description={
                     activeTab === 'emails'
                       ? 'Create one in Presale Properties admin and it will appear here automatically.'
-                      : 'Flyers are managed in Presale Properties admin.'
+                      : activeTab === 'flyers'
+                        ? 'Print flyers built in Presale Properties will appear here once saved with the "flyer" tag.'
+                        : 'Social posts saved in Presale Properties will appear here once tagged "social".'
                   }
-                  ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
-                  ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : 'Flyer'}`}
+                  ctaUrl={
+                    activeTab === 'social'
+                      ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=social'
+                      : activeTab === 'flyers'
+                        ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=flyers'
+                        : 'https://presaleproperties.lovable.app/admin/marketing-hub'
+                  }
+                  ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : activeTab === 'flyers' ? 'Flyer' : 'Social Post'}`}
                 />
               )
             ) : (
