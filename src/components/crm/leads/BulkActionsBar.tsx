@@ -94,6 +94,40 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           </SelectContent>
         </Select>
 
+        <Popover
+          open={tagsOpen}
+          onOpenChange={(o) => {
+            setTagsOpen(o);
+            if (!o && pendingTags.length > 0) {
+              bulkAddTags.mutate({ ids: selectedIds, tags: pendingTags });
+              setPendingTags([]);
+              onClearSelection();
+            } else if (!o) {
+              setPendingTags([]);
+            }
+          }}
+        >
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 hover:bg-muted">
+              <Tag className="w-3.5 h-3.5" />
+              <span>Add Tag</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="text-xs font-medium text-muted-foreground mb-2">
+              Tag {count} contact{count > 1 ? 's' : ''} (close to apply)
+            </div>
+            <InlineLibraryPicker
+              selected={pendingTags}
+              library={tagLib.map((t) => ({ label: t.name, count: t.usage_count ?? 0 }))}
+              onChange={setPendingTags}
+              onCreate={(name) => createTag.mutate(name)}
+              placeholder="Search or add tag…"
+              emptyText="Pick or create tags to apply"
+            />
+          </PopoverContent>
+        </Popover>
+
         <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setShowDelete(true)}>
           <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
         </Button>
