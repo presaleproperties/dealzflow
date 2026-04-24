@@ -2535,6 +2535,11 @@ export type Database = {
       is_crm_agent_or_above: { Args: { _user_id: string }; Returns: boolean }
       is_crm_member: { Args: { _user_id: string }; Returns: boolean }
       is_crm_owner: { Args: { _user_id: string }; Returns: boolean }
+      normalize_crm_multi_array: {
+        Args: { input: string[] }
+        Returns: string[]
+      }
+      split_crm_multi_value: { Args: { input: string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
