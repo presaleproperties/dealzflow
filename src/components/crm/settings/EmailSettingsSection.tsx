@@ -205,20 +205,14 @@ export default function EmailSettingsSection() {
           </p>
         </div>
 
-        {/* Signature Preview (for non-builder modes) */}
+        {/* Signature Preview (for non-builder modes) — true email-canvas preview */}
         {signatureMode !== 'builder' && getActiveSignatureHtml() && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Eye className="h-3.5 w-3.5" />
-              <span>Signature Preview</span>
+              <span>How it looks at the bottom of an email</span>
             </div>
-            <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-              <div className="text-xs text-muted-foreground mb-2">--</div>
-              <div
-                className="prose prose-sm dark:prose-invert max-w-none text-sm"
-                dangerouslySetInnerHTML={{ __html: getActiveSignatureHtml() }}
-              />
-            </div>
+            <LiveSignaturePreview html={getActiveSignatureHtml()} withEmailContext />
           </div>
         )}
 
