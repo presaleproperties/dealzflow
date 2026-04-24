@@ -41,10 +41,10 @@ const NAV_SECTIONS: NavSection[] = [
 
 const SETTINGS_ITEM: NavChild = { label: 'CRM Settings', path: '/crm/settings', icon: Settings, ownerAdminOnly: true };
 
-const GOLD = 'hsl(39 67% 55%)';
-const GOLD_BG = 'hsl(39 67% 55% / 0.12)';
-const DARK_BG = 'hsl(222 25% 9%)';
-const INACTIVE_TEXT = 'hsl(220 10% 64%)';
+const GOLD = 'hsl(var(--primary))';
+const GOLD_BG = 'hsl(var(--primary) / 0.12)';
+const DARK_BG = 'hsl(var(--background))';
+const INACTIVE_TEXT = 'hsl(var(--muted-foreground))';
 
 const ROUTE_TITLES: { match: string; title: string }[] = [
   

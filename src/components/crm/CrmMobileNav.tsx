@@ -44,9 +44,9 @@ const ADMIN_ITEMS: NavChild[] = [
 ];
 
 const GOLD = 'hsl(39 67% 55%)';
-const GOLD_BG = 'hsl(39 67% 55% / 0.12)';
-const MUTED_ICON = 'hsl(220 10% 50%)';
-const DARK_BG = 'hsl(222 25% 10%)';
+const GOLD_BG = 'hsl(var(--primary) / 0.12)';
+const MUTED_ICON = 'hsl(var(--muted-foreground))';
+const DARK_BG = 'hsl(var(--background))';
 
 export function CrmMobileNav() {
   const location = useLocation();

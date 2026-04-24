@@ -21,11 +21,11 @@ const TABS: Tab[] = [
   { label: 'Settings',     path: '/crm/settings',     icon: Settings, ownerAdminOnly: true },
 ];
 
-const TEAL = 'hsl(178 65% 50%)';
-const TEAL_BG = 'hsl(178 65% 50% / 0.12)';
-const NAVY_BG = 'hsl(220 35% 8%)';
-const NAVY_BORDER = 'hsl(220 30% 14% / 0.85)';
-const INACTIVE = 'hsl(220 12% 62%)';
+const TEAL = 'hsl(var(--primary))';
+const TEAL_BG = 'hsl(var(--primary) / 0.12)';
+const NAVY_BG = 'hsl(var(--background))';
+const NAVY_BORDER = 'hsl(var(--border) / 0.85)';
+const INACTIVE = 'hsl(var(--muted-foreground))';
 
 function isActive(pathname: string, path: string): boolean {
   return pathname === path || pathname.startsWith(path + '/');
