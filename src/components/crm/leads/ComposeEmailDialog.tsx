@@ -226,6 +226,34 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   const isPending = sendBridge.isPending || addMessage.isPending;
 
+  const openSaveDialog = () => {
+    if (!subject.trim() && !bodyHtml.replace(/<[^>]*>/g, '').trim()) {
+      toast.error('Add a subject or body before saving');
+      return;
+    }
+    setSaveName(subject.trim() || 'Untitled template');
+    setSaveOpen(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    const name = saveName.trim();
+    if (!name) {
+      toast.error('Template name is required');
+      return;
+    }
+    try {
+      await createTemplate.mutateAsync({
+        name,
+        subject: subject.trim() || name,
+        body_html: bodyHtml,
+        category: saveCategory || 'general',
+      });
+      setSaveOpen(false);
+    } catch {
+      /* toast handled in hook */
+    }
+  };
+
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
 
   const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(' ');
