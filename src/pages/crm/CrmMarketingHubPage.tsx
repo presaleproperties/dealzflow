@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X,
+  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X, RefreshCw, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ const CREATE_OPTIONS = [
     color: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     badge: 'Most Used',
-    url: 'https://presaleproperties.lovable.app/admin/email-builder?template=project-email',
+    to: '/crm/email-builder?template=project-email',
   },
   {
     key: 'exclusive-offer',
@@ -31,7 +32,7 @@ const CREATE_OPTIONS = [
     color: 'text-amber-600',
     bg: 'bg-amber-500/10',
     badge: 'Promo',
-    url: 'https://presaleproperties.lovable.app/admin/email-builder?template=exclusive-offer',
+    to: '/crm/email-builder?template=exclusive-offer',
   },
   {
     key: 'blank-email',
@@ -41,7 +42,7 @@ const CREATE_OPTIONS = [
     color: 'text-muted-foreground',
     bg: 'bg-muted/40',
     badge: null,
-    url: 'https://presaleproperties.lovable.app/admin/email-builder?template=blank',
+    to: '/crm/email-builder?template=blank',
   },
 ];
 
@@ -52,7 +53,7 @@ const CREATE_OPTIONS = [
  * builder; in the CRM we Preview + Quick-Send.
  */
 export default function CrmMarketingHubPage() {
-  const { data: templates = [], isLoading } = useBridgeTemplates();
+  const { data: templates = [], isLoading, isFetching, dataUpdatedAt, refetch, isError } = useBridgeTemplates();
   const [activeTab, setActiveTab] = useState<'emails' | 'flyers' | 'social'>('emails');
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
@@ -102,21 +103,29 @@ export default function CrmMarketingHubPage() {
     <div className="flex flex-col h-full bg-background -mx-2 sm:-mx-0">
       {/* Header */}
       <div className="border-b border-border bg-card px-6 py-5 shrink-0">
-        <div className="flex items-center justify-between max-w-5xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+        <div className="flex items-center justify-between max-w-5xl mx-auto gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Megaphone className="h-[18px] w-[18px] text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg font-bold tracking-tight">Marketing Hub</h1>
-              <p className="text-xs text-muted-foreground">
-                Send Presale Properties campaigns to your CRM leads
+              <p className="text-xs text-muted-foreground truncate">
+                Native email composer · templates synced via bridge
               </p>
             </div>
           </div>
-          <Badge variant="outline" className="text-[11px] px-2.5 py-1">
-            {emailAssets.length + flyerAssets.length + socialAssets.length} saved
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <SyncPill
+              isError={isError}
+              isFetching={isFetching}
+              dataUpdatedAt={dataUpdatedAt}
+              onRefetch={() => refetch()}
+            />
+            <Badge variant="outline" className="text-[11px] px-2.5 py-1">
+              {emailAssets.length + flyerAssets.length + socialAssets.length} saved
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -129,11 +138,9 @@ export default function CrmMarketingHubPage() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {CREATE_OPTIONS.map((opt) => (
-                <a
+                <Link
                   key={opt.key}
-                  href={opt.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  to={opt.to}
                   className="group flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-accent/30 transition-all text-left"
                 >
                   <div
@@ -156,11 +163,11 @@ export default function CrmMarketingHubPage() {
                     <p className="text-[11px] text-muted-foreground leading-snug">{opt.desc}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary/60 transition-colors shrink-0" />
-                </a>
+                </Link>
               ))}
             </div>
             <p className="text-[10px] text-muted-foreground/60 mt-2">
-              Authoring opens in Presale Properties admin · changes sync back here automatically
+              Composer is built into the CRM · saved templates sync to the shared library automatically
             </p>
           </section>
 
@@ -295,19 +302,15 @@ export default function CrmMarketingHubPage() {
                   title={`No ${activeTab} synced yet`}
                   description={
                     activeTab === 'emails'
-                      ? 'Create one in Presale Properties admin and it will appear here automatically.'
+                      ? 'Compose one in the native CRM email builder — it will be saved to the shared template library.'
                       : activeTab === 'flyers'
-                        ? 'Print flyers built in Presale Properties will appear here once saved with the "flyer" tag.'
-                        : 'Social posts saved in Presale Properties will appear here once tagged "social".'
+                        ? 'Print flyers tagged "flyer" in the shared library will appear here automatically.'
+                        : 'Social posts tagged "social" in the shared library will appear here automatically.'
                   }
-                  ctaUrl={
-                    activeTab === 'social'
-                      ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=social'
-                      : activeTab === 'flyers'
-                        ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=flyers'
-                        : 'https://presaleproperties.lovable.app/admin/marketing-hub'
-                  }
+                  ctaTo={activeTab === 'emails' ? '/crm/email-builder' : null}
                   ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : activeTab === 'flyers' ? 'Flyer' : 'Social Post'}`}
+                  onRefetch={() => refetch()}
+                  isFetching={isFetching}
                 />
               )
             ) : (
@@ -348,26 +351,87 @@ function EmptyState({
   icon: Icon,
   title,
   description,
-  ctaUrl,
+  ctaTo,
   ctaLabel,
+  onRefetch,
+  isFetching,
 }: {
   icon: typeof Mail;
   title: string;
   description: string;
-  ctaUrl: string;
+  ctaTo: string | null;
   ctaLabel: string;
+  onRefetch: () => void;
+  isFetching: boolean;
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
       <Icon className="h-10 w-10 text-muted-foreground/20 mb-3" />
       <p className="text-sm font-medium text-muted-foreground">{title}</p>
       <p className="text-xs text-muted-foreground/60 mt-1 mb-4 max-w-xs">{description}</p>
-      <Button variant="outline" size="sm" className="gap-1.5" asChild>
-        <a href={ctaUrl} target="_blank" rel="noopener noreferrer">
-          <Plus className="h-3.5 w-3.5" />
-          {ctaLabel}
-        </a>
-      </Button>
+      <div className="flex items-center gap-2">
+        {ctaTo && (
+          <Button variant="outline" size="sm" className="gap-1.5" asChild>
+            <Link to={ctaTo}>
+              <Plus className="h-3.5 w-3.5" />
+              {ctaLabel}
+            </Link>
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={onRefetch} disabled={isFetching}>
+          <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} />
+          Re-sync
+        </Button>
+      </div>
     </div>
   );
+}
+
+function SyncPill({
+  isError,
+  isFetching,
+  dataUpdatedAt,
+  onRefetch,
+}: {
+  isError: boolean;
+  isFetching: boolean;
+  dataUpdatedAt: number;
+  onRefetch: () => void;
+}) {
+  const label = isError
+    ? 'Bridge offline'
+    : isFetching
+      ? 'Syncing…'
+      : dataUpdatedAt
+        ? `Synced ${formatRelative(dataUpdatedAt)}`
+        : 'Idle';
+  const Icon = isError ? AlertCircle : isFetching ? RefreshCw : CheckCircle2;
+  const tone = isError
+    ? 'text-destructive border-destructive/30 bg-destructive/5'
+    : 'text-emerald-700 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5';
+  return (
+    <button
+      type="button"
+      onClick={onRefetch}
+      disabled={isFetching}
+      title="Bridge sync status — click to refresh"
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors hover:opacity-90',
+        tone,
+      )}
+    >
+      <Icon className={cn('h-3 w-3', isFetching && 'animate-spin')} />
+      {label}
+    </button>
+  );
+}
+
+function formatRelative(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  return `${h}h ago`;
 }
