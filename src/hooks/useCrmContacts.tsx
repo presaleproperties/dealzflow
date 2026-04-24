@@ -211,12 +211,22 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const sortByLabel = (a: { label: string }, b: { label: string }) =>
     a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
 
+  // Build counts maps (case-insensitive key, original-casing label) for UI display
+  const toCountMap = (map: Map<string, { label: string; count: number }>) => {
+    const out: Record<string, number> = {};
+    map.forEach(({ label, count }) => { out[label] = count; });
+    return out;
+  };
+
   return {
     projects: Array.from(projectCounts.values()).sort(sortByLabel).map(v => v.label),
     languages: Array.from(allLanguages).sort(),
     tags: Array.from(tagCounts.values()).sort(sortByLabel).map(v => v.label),
     cities: Array.from(allCities).sort(),
     campaigns: Array.from(allCampaigns).sort(),
+    // Counts keyed by label (used by filter UI to show usage frequency next to each option)
+    projectCounts: toCountMap(projectCounts),
+    tagCounts: toCountMap(tagCounts),
   };
 }
 
