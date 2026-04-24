@@ -373,8 +373,10 @@ export default function CrmLeadsPage() {
                                       )}
                                       {seg.emoji && <span>{seg.emoji}</span>}
                                       {seg.name}
-                                      {count !== undefined && (
-                                        <span className={`text-[10px] font-bold ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
+                                      {allContactsLoading ? (
+                                        <span className={`inline-block h-2.5 w-5 rounded-full animate-pulse ${isActive ? 'bg-white/40' : 'bg-muted-foreground/20'}`} />
+                                      ) : count !== undefined && (
+                                        <span className={`text-[10px] font-bold tabular-nums ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
                                           {count.toLocaleString()}
                                         </span>
                                       )}
