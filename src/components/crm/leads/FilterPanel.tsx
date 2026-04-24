@@ -42,6 +42,9 @@ interface FilterPanelProps {
   dynamicTags: string[];
   dynamicCities: string[];
   dynamicCampaigns: string[];
+  /** Optional usage counts keyed by option label */
+  tagCounts?: Record<string, number>;
+  projectCounts?: Record<string, number>;
   onClearAll: () => void;
   activeFilterCount: number;
 }
@@ -52,26 +55,41 @@ function FilterAccordion({
   selected,
   onChange,
   optionLabels,
+  optionCounts,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
   optionLabels?: Record<string, string>;
+  /** When provided, options are sorted by count desc and counts render next to each row */
+  optionCounts?: Record<string, number>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState('');
   const showSearch = options.length >= 5;
 
+  // Sort by count desc (when counts provided), then alphabetical for stability
+  const sortedOptions = useMemo(() => {
+    if (!optionCounts) return options;
+    return [...options].sort((a, b) => {
+      const diff = (optionCounts[b] ?? 0) - (optionCounts[a] ?? 0);
+      if (diff !== 0) return diff;
+      return a.localeCompare(b, undefined, { sensitivity: 'base' });
+    });
+  }, [options, optionCounts]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return options;
+    if (!search.trim()) return sortedOptions;
     const q = search.toLowerCase();
-    return options.filter(o => o.toLowerCase().includes(q));
-  }, [options, search]);
+    return sortedOptions.filter(o => o.toLowerCase().includes(q));
+  }, [sortedOptions, search]);
 
   const toggle = (val: string) => {
     onChange(selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val]);
   };
+
+  const totalUnique = options.length;
 
   return (
     <Collapsible open={expanded} onOpenChange={(o) => { setExpanded(o); if (!o) setSearch(''); }} className="border-b border-border/30">
@@ -81,10 +99,14 @@ function FilterAccordion({
         >
           <span className="flex items-center gap-2">
             {label}
-            {selected.length > 0 && (
+            {selected.length > 0 ? (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                 {selected.length}
               </Badge>
+            ) : (
+              optionCounts && totalUnique > 0 && (
+                <span className="text-[10px] text-muted-foreground tabular-nums">{totalUnique}</span>
+              )
             )}
           </span>
           <ChevronRight
@@ -108,24 +130,41 @@ function FilterAccordion({
               />
             </div>
           )}
-          <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
-            {filtered.map(opt => (
-              <button
-                key={opt}
-                onClick={() => toggle(opt)}
-                className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[13px] text-foreground hover:bg-muted/40 rounded-md transition-colors"
-              >
-                <div
+          <div className="space-y-0.5 max-h-[260px] overflow-y-auto">
+            {filtered.map(opt => {
+              const count = optionCounts?.[opt];
+              const isSelected = selected.includes(opt);
+              return (
+                <button
+                  key={opt}
+                  onClick={() => toggle(opt)}
                   className={cn(
-                    'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all duration-150',
-                    selected.includes(opt) ? 'bg-primary border-primary scale-100' : 'border-border/60 scale-95',
+                    'flex items-center gap-2.5 w-full px-2 py-1.5 text-[13px] text-foreground hover:bg-muted/40 rounded-md transition-colors',
+                    isSelected && 'bg-primary/5',
                   )}
                 >
-                  {selected.includes(opt) && <Check className="w-3 h-3 text-primary-foreground" />}
-                </div>
-                <span className="truncate">{optionLabels?.[opt] ?? opt}</span>
-              </button>
-            ))}
+                  <div
+                    className={cn(
+                      'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all duration-150',
+                      isSelected ? 'bg-primary border-primary scale-100' : 'border-border/60 scale-95',
+                    )}
+                  >
+                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  <span className="truncate flex-1 text-left">{optionLabels?.[opt] ?? opt}</span>
+                  {typeof count === 'number' && (
+                    <span className={cn(
+                      'text-[10px] tabular-nums shrink-0 px-1.5 py-0.5 rounded-md',
+                      isSelected
+                        ? 'bg-primary/15 text-primary font-semibold'
+                        : 'bg-muted/50 text-muted-foreground',
+                    )}>
+                      {count.toLocaleString()}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
             {filtered.length === 0 && (
               <p className="px-2 py-2 text-xs text-muted-foreground">
                 {search ? 'No matches' : 'No options'}
@@ -170,6 +209,8 @@ export function FilterPanel({
   dynamicTags,
   dynamicCities,
   dynamicCampaigns,
+  tagCounts,
+  projectCounts,
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
@@ -239,10 +280,10 @@ export function FilterPanel({
           <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
           <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
           <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
-          <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
+          <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} optionCounts={projectCounts} />
           <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
           <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
-          <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
+          <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} optionCounts={tagCounts} />
           <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
           <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
           <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
