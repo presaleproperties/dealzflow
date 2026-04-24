@@ -2,25 +2,26 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, X, Check, Sparkles } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, X, Check, Loader2 } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import type { CrmContact } from '@/hooks/useCrmContacts';
-import { cn } from '@/lib/utils';
 
 export function LeadTagsCard({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
-  const { data: allTags = [] } = useCrmTags();
+  const { data: allTags = [], isLoading, isFetching } = useCrmTags();
   const createTag = useCreateCrmTag();
 
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
   const popoverRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const tags = (contact.tags ?? []) as string[];
   const tagsLower = useMemo(() => new Set(tags.map(t => t.toLowerCase())), [tags]);
 
-  // Suggestions = full library minus tags this contact already has, ranked by usage
+  // Suggestions = full library minus tags this contact already has
   const suggestions = useMemo(() => {
     const list = allTags
       .filter(t => !tagsLower.has(t.name.toLowerCase()))
@@ -50,9 +51,7 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
       setQuery('');
       return;
     }
-    // Add to contact (trigger upserts into crm_tags automatically)
     updateContact.mutate({ id: contact.id, updates: { tags: [...tags, tag] } });
-    // If brand-new, also pre-create in library so it appears immediately for others
     const exists = allTags.some(t => t.name.toLowerCase() === tag.toLowerCase());
     if (!exists) createTag.mutate(tag);
     setQuery('');
@@ -68,11 +67,19 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
   );
   const showCreateOption = query.trim().length > 0 && !queryMatchesExisting && !tagsLower.has(query.trim().toLowerCase());
 
-
   return (
     <div className="bg-card rounded-xl border border-border p-5 shadow-sm relative">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-foreground">Tags</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Tags</h3>
+          {isLoading ? (
+            <Skeleton className="h-4 w-10 rounded" />
+          ) : (
+            <span className="text-[10px] font-medium text-muted-foreground tabular-nums px-1.5 py-0.5 rounded bg-muted/50">
+              {allTags.length} total
+            </span>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -114,8 +121,9 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
 
       {adding && (
         <div ref={popoverRef} className="mt-3 border border-border rounded-lg bg-popover shadow-lg overflow-hidden">
-          <div className="p-2 border-b border-border/40">
+          <div className="p-2 border-b border-border/40 flex items-center gap-2">
             <Input
+              ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search or create a tag..."
@@ -136,49 +144,75 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
                 }
               }}
             />
+            {isFetching && !isLoading && (
+              <Loader2 className="w-3.5 h-3.5 text-muted-foreground animate-spin shrink-0 mr-1" />
+            )}
           </div>
 
           <div className="max-h-64 overflow-y-auto">
-            {showCreateOption && (
-              <button
-                onClick={() => addTag(query)}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-foreground hover:bg-muted/50 transition-colors border-b border-border/30"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span>
-                  Create <span className="font-semibold">"{query.trim()}"</span>
-                </span>
-              </button>
-            )}
-
-            {suggestions.length === 0 && !showCreateOption && (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">
-                {query ? 'No matching tags' : 'No suggestions yet'}
+            {isLoading ? (
+              <div className="p-2 space-y-1.5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-1 py-1">
+                    <Skeleton className="h-3.5 rounded" style={{ width: `${40 + ((i * 13) % 45)}%` }} />
+                    <Skeleton className="h-3 w-6 rounded" />
+                  </div>
+                ))}
               </div>
-            )}
-
-            {suggestions.map(item => (
-              <button
-                key={item.label}
-                onClick={() => addTag(item.label)}
-                className={cn(
-                  'flex items-center justify-between w-full px-3 py-1.5 text-xs hover:bg-muted/40 transition-colors',
+            ) : (
+              <>
+                {showCreateOption ? (
+                  <button
+                    onClick={() => addTag(query)}
+                    className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors border-b border-border/30 bg-primary/5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>
+                      Add new tag <span className="font-semibold">"{query.trim()}"</span>
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => inputRef.current?.focus()}
+                    className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors border-b border-border/30"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add new tag…</span>
+                  </button>
                 )}
-              >
-                <span className="flex items-center gap-2 truncate">
-                  <Check className="w-3 h-3 opacity-0" />
-                  <span className="truncate text-foreground">{item.label}</span>
-                </span>
-                <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 ml-2">
-                  {item.count}
-                </span>
-              </button>
-            ))}
+
+                {suggestions.length === 0 && !showCreateOption && (
+                  <div className="px-3 py-4 text-xs text-muted-foreground text-center">
+                    {query ? 'No matching tags' : 'Type above to create your first tag'}
+                  </div>
+                )}
+
+                {suggestions.map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => addTag(item.label)}
+                    className="flex items-center justify-between w-full px-3 py-1.5 text-xs hover:bg-muted/40 transition-colors"
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      <Check className="w-3 h-3 opacity-0" />
+                      <span className="truncate text-foreground">{item.label}</span>
+                    </span>
+                    <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 ml-2">
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </>
+            )}
           </div>
 
           <div className="px-3 py-1.5 border-t border-border/40 text-[10px] text-muted-foreground bg-muted/20 flex items-center justify-between">
             <span>Enter to add · Esc to close</span>
-            <span className="tabular-nums">{suggestions.length} {query ? 'matching' : 'available'}</span>
+            <span className="tabular-nums">
+              {isLoading
+                ? 'Loading…'
+                : `${suggestions.length} ${query ? 'matching' : 'available'} · ${allTags.length} total`}
+            </span>
           </div>
         </div>
       )}

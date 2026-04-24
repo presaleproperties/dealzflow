@@ -13,8 +13,7 @@ export interface CrmTag {
 
 /**
  * Fetches the canonical CRM tag library (crm_tags table).
- * The table is auto-synced from crm_contacts.tags via a Postgres trigger,
- * so this is always the complete set.
+ * Auto-synced from crm_contacts.tags via a Postgres trigger.
  */
 export function useCrmTags() {
   const queryClient = useQueryClient();
@@ -33,7 +32,6 @@ export function useCrmTags() {
     staleTime: 60_000,
   });
 
-  // Realtime sync — refresh when the library changes
   useEffect(() => {
     const channel = supabase
       .channel('crm-tags-realtime')
@@ -49,7 +47,6 @@ export function useCrmTags() {
   return query;
 }
 
-/** Create a tag in the library (the trigger also creates them when used on a contact). */
 export function useCreateCrmTag() {
   const queryClient = useQueryClient();
   return useMutation({
