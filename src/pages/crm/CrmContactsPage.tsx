@@ -108,7 +108,12 @@ export default function CrmContactsPage() {
     if (filterProject.length > 0) list = list.filter(c =>
       filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
     );
-    if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
+    if (filterLeadType.length > 0) list = list.filter(c => {
+      const types = ((c as any).lead_types as string[] | undefined) ?? [];
+      const single = c.lead_type ? [c.lead_type] : [];
+      const all = [...types, ...single];
+      return filterLeadType.some(ft => all.includes(ft));
+    });
     if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
     if (filterTags.length > 0) list = list.filter(c =>
       filterTags.some(ft => (c.tags ?? []).includes(ft))
