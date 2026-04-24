@@ -43,6 +43,37 @@ function injectTrackingPixel(html: string, trackingId: string): string {
   return `${html}${pixelTag}`;
 }
 
+/**
+ * Rewrite every <a href="..."> in the HTML so clicks route through the
+ * tracker, which records the click and 302-redirects to the original URL.
+ *
+ * Skipped:
+ *  - mailto:, tel:, sms:, javascript:, # anchors
+ *  - URLs that already point at the tracker (idempotent)
+ *  - The tracking pixel itself (we only touch <a href>, not <img src>)
+ *
+ * Preserves the rest of the anchor tag (target, style, class, etc.) and
+ * supports both single and double-quoted hrefs.
+ */
+function rewriteLinks(html: string, trackingId: string): string {
+  const SKIP_PREFIX = /^(mailto:|tel:|sms:|javascript:|#)/i;
+
+  return html.replace(
+    /<a\b([^>]*?)\shref\s*=\s*(["'])([\s\S]*?)\2([^>]*)>/gi,
+    (match, pre, quote, href, post) => {
+      const trimmed = href.trim();
+      if (!trimmed) return match;
+      if (SKIP_PREFIX.test(trimmed)) return match;
+      if (trimmed.startsWith(TRACKER_URL)) return match;
+
+      const wrapped =
+        `${TRACKER_URL}?a=click&t=${encodeURIComponent(trackingId)}` +
+        `&u=${encodeURIComponent(trimmed)}`;
+      return `<a${pre} href=${quote}${wrapped}${quote}${post}>`;
+    },
+  );
+}
+
 interface SendBody {
   to: string | string[];
   cc?: string | string[];
