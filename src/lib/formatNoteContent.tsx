@@ -9,15 +9,97 @@ import {
   type TimelineLinkBehavior,
 } from '@/lib/timelineLinkPref';
 
-// Matches http(s) URLs and bare www.* URLs. Trailing punctuation is trimmed.
-const URL_REGEX = /(\bhttps?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/gi;
-const TRAILING_PUNCT = /[.,;:!?)\]]+$/;
+/* ──────────────────────────────────────────────────────────────────
+   URL / email detection
+   ──────────────────────────────────────────────────────────────────
+   Handles:
+   - http:// and https:// URLs
+   - Bare www.* URLs (no protocol)
+   - Bare domain URLs like "example.com/foo" — only when the TLD is in
+     a known allowlist, to avoid false positives (e.g. "node.js", "v2.0").
+   - mailto: links
+   - Plain email addresses (rendered as mailto)
+   - Trailing punctuation stripped: . , ; : ! ? ) ] } ' " > and
+     unmatched closing parens like in "(see foo.com/bar)".
+   ────────────────────────────────────────────────────────────────── */
 
-function normalizeHref(raw: string): string {
-  return raw.startsWith('http') ? raw : `https://${raw}`;
+// TLDs we'll auto-link without a protocol. Keep conservative — common ones
+// plus the most likely real-estate / business TLDs we encounter.
+const BARE_DOMAIN_TLDS = [
+  'com', 'org', 'net', 'io', 'co', 'ca', 'us', 'uk', 'eu', 'au', 'nz',
+  'app', 'dev', 'ai', 'me', 'tv', 'xyz', 'info', 'biz', 'gov', 'edu',
+  'realtor', 'realestate', 'properties', 'homes', 'house',
+];
+const TLD_GROUP = BARE_DOMAIN_TLDS.join('|');
+
+// Combined matcher. Order matters: specific protocols first, then bare URLs,
+// then emails. We use named alternatives so we can dispatch on type.
+const TOKEN_REGEX = new RegExp(
+  [
+    // mailto:user@host
+    String.raw`\bmailto:[^\s<>"'()]+`,
+    // Full http(s) URLs
+    String.raw`\bhttps?:\/\/[^\s<>"'()]+`,
+    // www.* bare URLs
+    String.raw`\bwww\.[^\s<>"'()]+`,
+    // Bare domain URLs (e.g. example.com/foo?x=1) — TLD allowlist
+    String.raw`\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:` + TLD_GROUP + String.raw`)\b(?:[\/?#][^\s<>"'()]*)?`,
+    // Plain emails
+    String.raw`\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b`,
+  ].join('|'),
+  'gi',
+);
+
+const TRAILING_PUNCT = /[.,;:!?'"`>\]}]+$/;
+
+/** Strip trailing punctuation and unmatched closing parens from a captured URL. */
+function trimUrlBoundary(raw: string): { value: string; trailing: string } {
+  let url = raw;
+  let trailing = '';
+  // 1) plain trailing punctuation
+  const m = url.match(TRAILING_PUNCT);
+  if (m) {
+    trailing = m[0] + trailing;
+    url = url.slice(0, -m[0].length);
+  }
+  // 2) unmatched closing parens (e.g. "(see foo.com/bar)")
+  while (url.endsWith(')')) {
+    const opens = (url.match(/\(/g) || []).length;
+    const closes = (url.match(/\)/g) || []).length;
+    if (closes <= opens) break;
+    trailing = ')' + trailing;
+    url = url.slice(0, -1);
+  }
+  // 3) re-check punctuation after paren stripping
+  const m2 = url.match(TRAILING_PUNCT);
+  if (m2) {
+    trailing = m2[0] + trailing;
+    url = url.slice(0, -m2[0].length);
+  }
+  return { value: url, trailing };
 }
 
-function prettyHost(raw: string): string {
+type LinkKind = 'url' | 'email';
+
+function classifyToken(raw: string): LinkKind {
+  const lower = raw.toLowerCase();
+  if (lower.startsWith('mailto:')) return 'email';
+  // Plain email: contains "@" but no "/" before it
+  if (/^[^\/\s]+@[^\/\s]+\.[a-z]{2,}$/i.test(raw)) return 'email';
+  return 'url';
+}
+
+function normalizeHref(raw: string, kind: LinkKind = 'url'): string {
+  if (kind === 'email') {
+    return raw.toLowerCase().startsWith('mailto:') ? raw : `mailto:${raw}`;
+  }
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+function prettyHost(raw: string, kind: LinkKind = 'url'): string {
+  if (kind === 'email') {
+    return raw.replace(/^mailto:/i, '');
+  }
   try {
     const u = new URL(normalizeHref(raw));
     return (u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '')).replace(/\/$/, '');
