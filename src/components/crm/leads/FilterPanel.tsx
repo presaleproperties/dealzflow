@@ -280,10 +280,10 @@ export function FilterPanel({
           <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
           <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
           <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
-          <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
+          <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} optionCounts={projectCounts} />
           <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
           <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
-          <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
+          <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} optionCounts={tagCounts} />
           <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
           <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
           <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
