@@ -195,7 +195,6 @@ export default function DashboardPage() {
         showAddDeal={false}
         action={
           <div className="flex items-center gap-1.5">
-            <NotificationCenter syncedTransactions={syncedTransactions} pipelineProspects={pipelineProspects} />
             {activeConnection && (
               <button
                 onClick={handleResync}
