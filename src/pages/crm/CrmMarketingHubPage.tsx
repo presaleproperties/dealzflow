@@ -302,19 +302,15 @@ export default function CrmMarketingHubPage() {
                   title={`No ${activeTab} synced yet`}
                   description={
                     activeTab === 'emails'
-                      ? 'Create one in Presale Properties admin and it will appear here automatically.'
+                      ? 'Compose one in the native CRM email builder — it will be saved to the shared template library.'
                       : activeTab === 'flyers'
-                        ? 'Print flyers built in Presale Properties will appear here once saved with the "flyer" tag.'
-                        : 'Social posts saved in Presale Properties will appear here once tagged "social".'
+                        ? 'Print flyers tagged "flyer" in the shared library will appear here automatically.'
+                        : 'Social posts tagged "social" in the shared library will appear here automatically.'
                   }
-                  ctaUrl={
-                    activeTab === 'social'
-                      ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=social'
-                      : activeTab === 'flyers'
-                        ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=flyers'
-                        : 'https://presaleproperties.lovable.app/admin/marketing-hub'
-                  }
+                  ctaTo={activeTab === 'emails' ? '/crm/email-builder' : null}
                   ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : activeTab === 'flyers' ? 'Flyer' : 'Social Post'}`}
+                  onRefetch={() => refetch()}
+                  isFetching={isFetching}
                 />
               )
             ) : (
@@ -355,26 +351,87 @@ function EmptyState({
   icon: Icon,
   title,
   description,
-  ctaUrl,
+  ctaTo,
   ctaLabel,
+  onRefetch,
+  isFetching,
 }: {
   icon: typeof Mail;
   title: string;
   description: string;
-  ctaUrl: string;
+  ctaTo: string | null;
   ctaLabel: string;
+  onRefetch: () => void;
+  isFetching: boolean;
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
       <Icon className="h-10 w-10 text-muted-foreground/20 mb-3" />
       <p className="text-sm font-medium text-muted-foreground">{title}</p>
       <p className="text-xs text-muted-foreground/60 mt-1 mb-4 max-w-xs">{description}</p>
-      <Button variant="outline" size="sm" className="gap-1.5" asChild>
-        <a href={ctaUrl} target="_blank" rel="noopener noreferrer">
-          <Plus className="h-3.5 w-3.5" />
-          {ctaLabel}
-        </a>
-      </Button>
+      <div className="flex items-center gap-2">
+        {ctaTo && (
+          <Button variant="outline" size="sm" className="gap-1.5" asChild>
+            <Link to={ctaTo}>
+              <Plus className="h-3.5 w-3.5" />
+              {ctaLabel}
+            </Link>
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={onRefetch} disabled={isFetching}>
+          <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} />
+          Re-sync
+        </Button>
+      </div>
     </div>
   );
+}
+
+function SyncPill({
+  isError,
+  isFetching,
+  dataUpdatedAt,
+  onRefetch,
+}: {
+  isError: boolean;
+  isFetching: boolean;
+  dataUpdatedAt: number;
+  onRefetch: () => void;
+}) {
+  const label = isError
+    ? 'Bridge offline'
+    : isFetching
+      ? 'Syncing…'
+      : dataUpdatedAt
+        ? `Synced ${formatRelative(dataUpdatedAt)}`
+        : 'Idle';
+  const Icon = isError ? AlertCircle : isFetching ? RefreshCw : CheckCircle2;
+  const tone = isError
+    ? 'text-destructive border-destructive/30 bg-destructive/5'
+    : 'text-emerald-700 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5';
+  return (
+    <button
+      type="button"
+      onClick={onRefetch}
+      disabled={isFetching}
+      title="Bridge sync status — click to refresh"
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors hover:opacity-90',
+        tone,
+      )}
+    >
+      <Icon className={cn('h-3 w-3', isFetching && 'animate-spin')} />
+      {label}
+    </button>
+  );
+}
+
+function formatRelative(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  return `${h}h ago`;
 }
