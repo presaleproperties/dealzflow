@@ -81,16 +81,16 @@ export function CrmMobileNav() {
       {/* Section sheet */}
       {(openSection || moreOpen) && (
         <div
-          className="fixed inset-0 z-[60] bg-black/50"
+          className="fixed inset-0 z-[60] bg-foreground/40 backdrop-blur-sm"
           onClick={closeAll}
         >
           <div
-            className="absolute bottom-0 inset-x-0 rounded-t-2xl animate-in slide-in-from-bottom duration-200"
+            className="absolute bottom-0 inset-x-0 rounded-t-2xl border-t border-border/60 animate-in slide-in-from-bottom duration-200"
             style={{ background: DARK_BG }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-white/20" />
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="flex items-center justify-between px-4 pb-2">
               <span className="text-sm font-bold text-foreground">
@@ -133,7 +133,7 @@ export function CrmMobileNav() {
         <div className="absolute inset-0" style={{ background: DARK_BG }} />
         <div
           className="absolute inset-x-0 top-0 h-px"
-          style={{ background: 'rgba(255,255,255,0.1)' }}
+          style={{ background: 'hsl(var(--border) / 0.7)' }}
         />
 
         <div className="relative flex items-center justify-around h-14 px-1">
