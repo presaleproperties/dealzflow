@@ -36,6 +36,7 @@ const navSections: NavSection[] = [
       { label: 'Deals',            path: '/deals',     icon: Handshake },
       { label: 'Payouts',          path: '/payouts',   icon: DollarSign },
       { label: 'Client Inventory', path: '/inventory', icon: Building2 },
+      { label: 'Network',          path: '/network',   icon: Network },
     ],
   },
   {
@@ -46,14 +47,6 @@ const navSections: NavSection[] = [
       { label: 'Expenses',  path: '/expenses',  icon: Receipt },
       { label: 'Forecast',  path: '/forecast',  icon: TrendingUp },
       { label: 'Analytics', path: '/analytics', icon: BarChart2 },
-    ],
-  },
-  {
-    id: 'network',
-    label: 'Network',
-    defaultOpen: false,
-    items: [
-      { label: 'Network', path: '/network', icon: Network },
     ],
   },
 ];
