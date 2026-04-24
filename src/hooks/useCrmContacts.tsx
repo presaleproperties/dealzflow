@@ -5,37 +5,120 @@ import { toast } from 'sonner';
 import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
 
 export type CrmContact = {
-...
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  email_secondary: string | null;
+  phone: string | null;
+  phone_secondary: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  source: string | null;
+  status: string | null;
+  project: string | null;
+  projects: string[];
+  assigned_to: string | null;
+  tags: string[];
+  budget_min: number | null;
+  budget_max: number | null;
+  bedrooms_preferred: string | null;
+  language: string | null;
+  lead_type: string | null;
+  lead_score: number | null;
+  notes: string | null;
+  contact_type: string;
+  birthday: string | null;
+  co_buyer_name: string | null;
+  co_buyer_phone: string | null;
+  co_buyer_email: string | null;
+  co_buyer_birthday: string | null;
+  last_contact_at: string | null;
+  next_followup_date: string | null;
+  status_changed_at: string | null;
+  lofty_id: string | null;
+  last_touch_at: string | null;
+  last_touch_type: string | null;
+  stage_changed_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type CrmContactInsert = {
-...
+  first_name: string;
+  last_name: string;
+  email?: string;
+  email_secondary?: string;
+  phone?: string;
+  source?: string;
+  status?: string;
+  project?: string;
+  projects?: string[];
+  assigned_to?: string;
+  tags?: string[];
+  contact_type?: string;
+  birthday?: string;
+  co_buyer_birthday?: string;
 };
 
 export const CONTACT_TYPES = ['lead', 'realtor', 'past_client'] as const;
 
 export const LEAD_STATUSES = [
-...
-];
+  'New Lead',
+  'Contacted',
+  'Nurturing',
+  'Hot / Engaged',
+  'Showing Booked',
+  'Offer Made',
+  'Closed',
+  'Lost / Cold',
+] as const;
 
 export const LEAD_SOURCES = [
-...
-];
+  'Facebook Ad',
+  'Instagram',
+  'TikTok',
+  'Website Form',
+  'presaleproperties.com',
+  'Calendly',
+  'WhatsApp',
+  'Referral',
+  'Manual Entry',
+] as const;
 
 export const AGENTS = [
-...
-];
+  'Uzair Muhammad',
+  'Sarb Grewal',
+  'Ravish Passy',
+] as const;
 
 export const PROJECTS = [
-...
-];
+  'Eden by Zenterra',
+  'The Rail District',
+  'Parkway 2',
+  'Reign',
+  'Belmont Residences',
+  'General',
+] as const;
 
 export const LEAD_TYPES = [
-...
-];
+  'First-Time Buyer',
+  'Investor',
+  'Both',
+  'presale',
+  'resale',
+  'commercial',
+] as const;
 
 export const LEAD_TYPE_LABELS: Record<string, string> = {
-...
+  'First-Time Buyer': 'First-Time Buyer',
+  'Investor': 'Investor',
+  'Both': 'Both',
+  'presale': 'Pre-Sale',
+  'resale': 'Re-Sale',
+  'commercial': 'Commercial',
 };
 
 export function useCrmContacts() {
@@ -75,7 +158,6 @@ export function useCrmContacts() {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel('crm-contacts-realtime')
@@ -95,7 +177,6 @@ export function useCrmContacts() {
   return query;
 }
 
-/** Extract unique values from all contacts for dynamic filter options */
 export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const allProjects = new Set<string>();
   const allLanguages = new Set<string>();
@@ -160,9 +241,13 @@ export function useBulkUpdateContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ids, updates }: { ids: string[]; updates: Record<string, unknown> }) => {
+      const normalizedUpdates = { ...updates };
+      if ('tags' in normalizedUpdates) normalizedUpdates.tags = normalizeCrmMultiValueList(normalizedUpdates.tags);
+      if ('projects' in normalizedUpdates) normalizedUpdates.projects = normalizeCrmMultiValueList(normalizedUpdates.projects);
+
       const { error } = await supabase
         .from('crm_contacts')
-        .update(updates)
+        .update(normalizedUpdates)
         .in('id', ids);
       if (error) throw error;
     },
