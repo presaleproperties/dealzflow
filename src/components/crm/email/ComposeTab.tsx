@@ -99,6 +99,8 @@ export function ComposeTab() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [includeSignature, setIncludeSignature] = useState(true);
+  // Optional schedule (datetime-local string); empty = send now
+  const [scheduleAt, setScheduleAt] = useState('');
 
   // Template state
   const [activeTemplate, setActiveTemplate] = useState<CrmEmailTemplate | null>(null);
