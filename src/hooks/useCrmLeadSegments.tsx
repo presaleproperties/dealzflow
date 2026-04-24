@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type LeadSegment = {
@@ -25,6 +25,37 @@ export function useCrmLeadSegments() {
     staleTime: 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+  });
+}
+
+/** Persist a new ordering of segments by updating sort_order on each row. */
+export function useReorderCrmLeadSegments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Update sequentially in steps of 10 to keep ordering predictable
+      await Promise.all(
+        orderedIds.map((id, idx) =>
+          supabase.from('crm_lead_segments').update({ sort_order: (idx + 1) * 10 }).eq('id', id),
+        ),
+      );
+    },
+    onMutate: async (orderedIds) => {
+      await qc.cancelQueries({ queryKey: ['crm-lead-segments'] });
+      const prev = qc.getQueryData<LeadSegment[]>(['crm-lead-segments']);
+      if (prev) {
+        const byId = new Map(prev.map(s => [s.id, s]));
+        const next = orderedIds.map((id, idx) => ({ ...(byId.get(id) as LeadSegment), sort_order: (idx + 1) * 10 }));
+        qc.setQueryData(['crm-lead-segments'], next);
+      }
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['crm-lead-segments'], ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead-segments'] });
+    },
   });
 }
 
