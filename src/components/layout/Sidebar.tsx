@@ -24,8 +24,7 @@ const navSections: NavSection[] = [
     label: 'Workspace',
     defaultOpen: true,
     items: [
-      { label: 'Command Center', path: '/command-center', icon: Command },
-      { label: 'Dashboard',      path: '/dashboard',      icon: LayoutDashboard },
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {

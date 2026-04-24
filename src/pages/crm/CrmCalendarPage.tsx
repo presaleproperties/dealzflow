@@ -123,7 +123,7 @@ export default function CrmCalendarPage() {
           <p className="text-sm text-muted-foreground flex-1">
             Connect Google Calendar to see all your events here.
           </p>
-          <Link to="/command-center" className="text-xs font-semibold text-primary hover:underline shrink-0">
+          <Link to="/settings" className="text-xs font-semibold text-primary hover:underline shrink-0">
             Connect
           </Link>
         </div>

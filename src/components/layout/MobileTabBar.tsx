@@ -31,7 +31,7 @@ interface MoreGroup { label: string; items: MoreItem[]; crmOnly?: boolean; }
 
 // 5 primary tabs (Lofty-style). Last tab = More (drawer).
 const PRIMARY_TABS: TabItem[] = [
-  { label: 'Home',     path: '/command-center', icon: Command },
+  { label: 'Home',     path: '/dashboard',      icon: LayoutDashboard },
   { label: 'Pipeline', path: '/pipeline',       icon: GitBranch },
   { label: 'Deals',    path: '/deals',          icon: Handshake },
   { label: 'Leads',    path: '/crm/leads',      icon: Users },
@@ -41,8 +41,7 @@ const MORE_GROUPS: MoreGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { label: 'Command Center', path: '/command-center', icon: Command },
-      { label: 'Dashboard',      path: '/dashboard',      icon: LayoutDashboard },
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {

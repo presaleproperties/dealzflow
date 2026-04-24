@@ -14,7 +14,6 @@ import type { LucideIcon } from 'lucide-react';
 interface NavItem { label: string; path: string; icon: LucideIcon; }
 
 const mainItems: NavItem[] = [
-  { label: 'HQ',       path: '/command-center', icon: Command },
   { label: 'Home',     path: '/dashboard',      icon: LayoutDashboard },
   { label: 'Pipeline', path: '/pipeline',       icon: GitBranch },
   { label: 'Deals',    path: '/deals',          icon: Handshake },

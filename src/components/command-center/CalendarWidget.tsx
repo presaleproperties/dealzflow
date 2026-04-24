@@ -612,7 +612,7 @@ export function CalendarWidget() {
       const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
         body: {
           action: 'get_auth_url',
-          redirectUrl: window.location.origin + '/command-center',
+          redirectUrl: window.location.origin + '/dashboard',
         },
       });
       if (error) throw error;

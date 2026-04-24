@@ -28,11 +28,8 @@ interface NavSection { label: string; path?: string; children?: NavChild[]; grou
 
 const SECTIONS: NavSection[] = [
   {
-    label: 'Workspace',
-    children: [
-      { label: 'Command Center', path: '/command-center', icon: Command,         description: 'Daily HQ & focus' },
-      { label: 'Dashboard',      path: '/dashboard',      icon: LayoutDashboard, description: 'KPIs & overview' },
-    ],
+    label: 'Dashboard',
+    path: '/dashboard',
   },
   {
     label: 'Production',

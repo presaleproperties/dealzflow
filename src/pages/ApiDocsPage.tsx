@@ -93,7 +93,7 @@ export default function ApiDocsPage() {
 
   if (loading || isCheckingAdmin) return <div className="min-h-screen flex items-center justify-center"><PageLoader /></div>;
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/command-center" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   const maskedKey = apiKey ? `${'•'.repeat(apiKey.length - 6)}${apiKey.slice(-6)}` : '—';
 
