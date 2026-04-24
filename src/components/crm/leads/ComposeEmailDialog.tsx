@@ -292,7 +292,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl w-[97vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+        <DialogContent className="max-w-7xl w-[98vw] h-[92vh] p-0 overflow-hidden flex flex-col">
           {/* Header */}
           <DialogHeader className="px-5 py-3 border-b border-border bg-card shrink-0">
             <DialogTitle className="flex items-center justify-between gap-2">
