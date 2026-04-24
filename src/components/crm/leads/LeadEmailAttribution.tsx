@@ -119,11 +119,11 @@ export function LeadEmailAttribution({ contactId }: Props) {
 
 function Stat({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-border/50 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-        {icon} {label}
+    <div className="rounded-md border border-border/50 p-2 min-w-0">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 truncate">
+        {icon} <span className="truncate">{label}</span>
       </div>
-      <div className="text-sm font-semibold mt-0.5">{value}</div>
+      <div className="text-sm font-semibold mt-0.5 tabular-nums">{value}</div>
     </div>
   );
 }
