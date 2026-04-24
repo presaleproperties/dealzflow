@@ -2604,6 +2604,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      crm_recipients_for_contact: {
+        Args: { _assigned_to: string }
+        Returns: string[]
+      }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }
         Returns: string
@@ -2628,6 +2632,17 @@ export type Database = {
         Args: { input: string[] }
         Returns: string[]
       }
+      notify_crm: {
+        Args: {
+          _body: string
+          _link_to: string
+          _title: string
+          _type: string
+          _user_ids: string[]
+        }
+        Returns: undefined
+      }
+      notify_overdue_followups: { Args: never; Returns: number }
       parse_note_event_ts: {
         Args: { _date: string; _time: string }
         Returns: string
