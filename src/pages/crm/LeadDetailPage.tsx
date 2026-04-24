@@ -25,6 +25,7 @@ import { useLeadNotes, useAddNote, useUpdateNote, useDeleteNote, type CrmNote } 
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
+import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
