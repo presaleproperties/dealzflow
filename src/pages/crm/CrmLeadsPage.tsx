@@ -204,6 +204,7 @@ export default function CrmLeadsPage() {
     filterLeadType.length > 0 ? 1 : 0,
     filterLanguage.length > 0 ? 1 : 0,
     filterTags.length > 0 ? 1 : 0,
+    filterExcludeTags.length > 0 ? 1 : 0,
     filterPropertyType.length > 0 ? 1 : 0,
     filterCity.length > 0 ? 1 : 0,
     filterPreApproved.length > 0 ? 1 : 0,
