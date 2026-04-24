@@ -147,7 +147,7 @@ export function TopNav() {
 
   function scheduleClose() {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 120);
+    closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 220);
   }
 
   return (
@@ -211,26 +211,32 @@ export function TopNav() {
                     key={child.path}
                     to={child.path}
                     onClick={() => setOpenSection(null)}
-                    className="flex items-start gap-2.5 px-2.5 py-2 rounded-md transition-colors group"
+                    className="relative flex items-start gap-2.5 px-2.5 py-2 rounded-md transition-all duration-200 ease-out group will-change-transform"
                     style={{
                       background: childActive ? GOLD_BG : 'transparent',
                       color: childActive ? GOLD : 'hsl(220 10% 80%)',
                     }}
                     onMouseEnter={(e) => {
-                      if (!childActive) e.currentTarget.style.background = 'hsl(222 20% 16%)';
+                      if (!childActive) {
+                        e.currentTarget.style.background = 'hsl(222 20% 16%)';
+                        e.currentTarget.style.transform = 'translateX(2px)';
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      if (!childActive) e.currentTarget.style.background = 'transparent';
+                      if (!childActive) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'translateX(0)';
+                      }
                     }}
                   >
                     <div
-                      className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
+                      className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-all duration-200 ease-out group-hover:scale-105"
                       style={{
                         background: childActive ? 'hsl(39 67% 55% / 0.18)' : 'hsl(222 20% 16%)',
                       }}
                     >
                       <ChildIcon
-                        className="w-3.5 h-3.5"
+                        className="w-3.5 h-3.5 transition-transform duration-200 ease-out"
                         strokeWidth={childActive ? 2.2 : 1.8}
                         style={{ color: childActive ? GOLD : 'hsl(220 10% 70%)' }}
                       />
@@ -259,28 +265,44 @@ export function TopNav() {
                     <button
                       onMouseEnter={() => openWithDelay(section.label)}
                       onMouseLeave={scheduleClose}
-                      className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] transition-colors hover:bg-white/5 focus:outline-none"
+                      className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] transition-all duration-200 ease-out hover:bg-white/5 focus:outline-none"
                       style={{
-                        color: sectionActive ? GOLD : INACTIVE_TEXT,
-                        background: sectionActive ? GOLD_BG : 'transparent',
+                        color: sectionActive || isOpen ? GOLD : INACTIVE_TEXT,
+                        background: sectionActive ? GOLD_BG : isOpen ? 'hsl(222 20% 14%)' : 'transparent',
                         fontWeight: sectionActive ? 600 : 500,
                       }}
                     >
                       {section.label}
                       <ChevronDown
-                        className={cn('w-3 h-3 transition-transform duration-200 opacity-70', isOpen && 'rotate-180')}
+                        className={cn('w-3 h-3 transition-transform duration-300 ease-out opacity-70', isOpen && 'rotate-180')}
                         strokeWidth={2.2}
                       />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    sideOffset={8}
+                    sideOffset={6}
                     onMouseEnter={() => openWithDelay(section.label)}
                     onMouseLeave={scheduleClose}
-                    className={cn('border-0 shadow-2xl', isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]')}
-                    style={{ background: 'hsl(222 25% 12%)', border: `1px solid ${DARK_BORDER}` }}
+                    className={cn(
+                      'border-0 shadow-2xl origin-top',
+                      'data-[state=open]:animate-in data-[state=closed]:animate-out',
+                      'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+                      'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
+                      'data-[state=open]:slide-in-from-top-2 data-[state=closed]:slide-out-to-top-1',
+                      'data-[state=open]:duration-200 data-[state=closed]:duration-150',
+                      isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]',
+                    )}
+                    style={{
+                      background: 'hsl(222 25% 12% / 0.98)',
+                      border: `1px solid ${DARK_BORDER}`,
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      boxShadow: '0 20px 48px -12px hsl(0 0% 0% / 0.6), 0 8px 16px -8px hsl(0 0% 0% / 0.4)',
+                    }}
                   >
+                    {/* Invisible hover bridge to prevent flicker between trigger and menu */}
+                    <div className="absolute -top-2 left-0 right-0 h-2" />
                     {isMega ? (
                       <div
                         className="grid gap-x-3 gap-y-1"
