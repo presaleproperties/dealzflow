@@ -421,41 +421,9 @@ export default function CrmLeadsPage() {
             </div>
           )}
 
-          {/* Quick Views + Filter toggle (global search lives in the top nav) */}
+          {/* Filter toggle (global search lives in the top nav) */}
           <div className="flex items-center gap-2">
             <div className="flex-1" />
-
-            {/* Quick Views dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={isDefaultView ? 'outline' : 'default'}
-                  size="sm"
-                  className={`h-9 gap-1.5 shrink-0 ${!isDefaultView ? 'bg-primary text-primary-foreground' : ''}`}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">
-                    {isDefaultView ? 'Quick Views' : activeQuickView?.label}
-                  </span>
-                  {!isDefaultView && <span className="sm:hidden">View</span>}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {QUICK_VIEWS.map(view => (
-                  <DropdownMenuItem
-                    key={view.id}
-                    onClick={() => handleViewChange(view.id)}
-                    className={`gap-2 ${activeViewId === view.id ? 'bg-primary/10 text-primary font-semibold' : ''}`}
-                  >
-                    <span>{view.emoji}</span>
-                    <span className="flex-1">{view.label}</span>
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
-                      {allContactsLoading ? '…' : (viewCounts[view.id] ?? 0).toLocaleString()}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
 
             <Button
               variant={filtersExpanded ? 'default' : 'outline'}
