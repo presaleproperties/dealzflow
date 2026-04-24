@@ -404,7 +404,7 @@ function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef;
     case 'pipeline':
       return <InlineStatusCell contact={contact} updateContact={updateContact} />;
     case 'tags':
-      return <TagsList tags={contact.tags} />;
+      return <InlineTagsCell contact={contact} allTags={allTags} updateContact={updateContact} />;
     case 'assigned_to':
       return <InlineAgentCell contact={contact} updateContact={updateContact} />;
     case 'last_touch_at':
