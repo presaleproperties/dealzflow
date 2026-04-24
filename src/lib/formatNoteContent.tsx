@@ -1,8 +1,13 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { ExternalLink, Globe, Link2, Lock, ShieldAlert } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  getTimelineLinkBehavior,
+  subscribeTimelineLinkBehavior,
+  type TimelineLinkBehavior,
+} from '@/lib/timelineLinkPref';
 
 // Matches http(s) URLs and bare www.* URLs. Trailing punctuation is trimmed.
 const URL_REGEX = /(\bhttps?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/gi;
