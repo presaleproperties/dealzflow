@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, X, Check, Sparkles } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { useCrmContacts, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { cn } from '@/lib/utils';
 
 export function LeadTagsCard({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
-  const { data: allContacts = [] } = useCrmContacts();
-  const dynamicOpts = useDynamicFilterOptions(allContacts);
+  const { data: allTags = [] } = useCrmTags();
+  const createTag = useCreateCrmTag();
 
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
@@ -20,23 +20,15 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
   const tags = (contact.tags ?? []) as string[];
   const tagsLower = useMemo(() => new Set(tags.map(t => t.toLowerCase())), [tags]);
 
-  // Build usage-ranked suggestion list (excluding tags this contact already has)
+  // Suggestions = full library minus tags this contact already has, ranked by usage
   const suggestions = useMemo(() => {
-    const counts = new Map<string, { label: string; count: number }>();
-    allContacts.forEach(c => {
-      (c.tags ?? []).forEach(t => {
-        const key = t.toLowerCase();
-        if (!counts.has(key)) counts.set(key, { label: t, count: 0 });
-        counts.get(key)!.count++;
-      });
-    });
-    const list = Array.from(counts.values())
-      .filter(item => !tagsLower.has(item.label.toLowerCase()))
-      .sort((a, b) => b.count - a.count);
+    const list = allTags
+      .filter(t => !tagsLower.has(t.name.toLowerCase()))
+      .map(t => ({ label: t.name, count: t.usage_count }));
     if (!query.trim()) return list;
     const q = query.toLowerCase();
     return list.filter(item => item.label.toLowerCase().includes(q));
-  }, [allContacts, tagsLower, query, dynamicOpts.tags.length]);
+  }, [allTags, tagsLower, query]);
 
   // Close on outside click
   useEffect(() => {
@@ -58,7 +50,11 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
       setQuery('');
       return;
     }
+    // Add to contact (trigger upserts into crm_tags automatically)
     updateContact.mutate({ id: contact.id, updates: { tags: [...tags, tag] } });
+    // If brand-new, also pre-create in library so it appears immediately for others
+    const exists = allTags.some(t => t.name.toLowerCase() === tag.toLowerCase());
+    if (!exists) createTag.mutate(tag);
     setQuery('');
   };
 
@@ -67,10 +63,11 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
   };
 
   const queryMatchesExisting = useMemo(
-    () => suggestions.some(s => s.label.toLowerCase() === query.trim().toLowerCase()),
-    [suggestions, query],
+    () => allTags.some(t => t.name.toLowerCase() === query.trim().toLowerCase()),
+    [allTags, query],
   );
   const showCreateOption = query.trim().length > 0 && !queryMatchesExisting && !tagsLower.has(query.trim().toLowerCase());
+
 
   return (
     <div className="bg-card rounded-xl border border-border p-5 shadow-sm relative">
