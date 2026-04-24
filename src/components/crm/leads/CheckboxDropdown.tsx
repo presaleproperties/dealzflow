@@ -170,7 +170,7 @@ export function CheckboxDropdown({
               <div className="px-3 py-2 text-xs text-muted-foreground">No matches</div>
             )}
             {filtered.map(opt => {
-              const isSelected = selected.includes(opt);
+              const checked = isSelected(opt);
               const isCustom = !options.includes(opt as any);
               return (
                 <button
