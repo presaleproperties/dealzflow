@@ -612,6 +612,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-muted-foreground hover:text-foreground"
+                    onClick={openSaveDialog}
+                    disabled={isPending}
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    Save as template
+                  </Button>
+                  <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setMode(mode === 'preview' ? 'edit' : 'preview')}
