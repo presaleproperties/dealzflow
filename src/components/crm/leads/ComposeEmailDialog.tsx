@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Send,
   FileText,
@@ -12,10 +14,10 @@ import {
   Monitor,
   Smartphone,
   ChevronDown,
-  X,
-  Plus,
+  Save,
   Mail,
-  Clock,
+  User,
+  Inbox,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -25,15 +27,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useAuth } from '@/hooks/useAuth';
-import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
+import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
-import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
-import { Dialog as InnerDialog, DialogContent as InnerDialogContent, DialogHeader as InnerDialogHeader, DialogTitle as InnerDialogTitle, DialogFooter as InnerDialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Save } from 'lucide-react';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { EMAIL_VARIABLES, renderForRecipient } from '@/lib/emailVariables';
@@ -49,89 +48,82 @@ interface Props {
 }
 
 type Mode = 'edit' | 'html' | 'preview';
+type AnyTpl = CrmEmailTemplate & { __isBridge?: boolean };
 
-const RECENT_KEY = 'crm:email:recent-templates';
-
-function readRecentIds(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-  } catch {
-    return [];
-  }
+/* ---------- Sidebar template thumbnail ---------- */
+function TemplateThumb({ html }: { html: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const f = ref.current;
+    if (!f) return;
+    const doc = f.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(
+      `<div style="transform:scale(0.32);transform-origin:top left;width:312%;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${html || '<p style="color:#999;padding:12px">No preview</p>'}</div>`,
+    );
+    doc.close();
+  }, [html]);
+  return (
+    <iframe
+      ref={ref}
+      title="thumb"
+      className="w-full h-[88px] border-0 bg-white pointer-events-none"
+      sandbox="allow-same-origin"
+    />
+  );
 }
 
-function pushRecentId(id: string) {
-  try {
-    const cur = readRecentIds().filter((x) => x !== id);
-    cur.unshift(id);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 8)));
-  } catch {
-    /* noop */
-  }
-}
+const RECENT_KEY = 'crm:compose:recent-template-ids';
 
 export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
+  const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
-  const { data: messages = [] } = useCrmContactMessages(contact.id);
+  const { data: messages = [] } = useCrmContactMessages(open ? contact.id : undefined);
 
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('<p></p>');
   const [cc, setCc] = useState('');
   const [bcc, setBcc] = useState('');
-  const [showCc, setShowCc] = useState(false);
-  const [showBcc, setShowBcc] = useState(false);
+  const [showCcBcc, setShowCcBcc] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('edit');
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [appendSignature, setAppendSignature] = useState(true);
   const [logOnly, setLogOnly] = useState(false);
-  const [recentIds, setRecentIds] = useState<string[]>([]);
-  const [activeTplId, setActiveTplId] = useState<string | null>(null);
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [saveName, setSaveName] = useState('');
-  const [saveCategory, setSaveCategory] = useState('general');
-  const createTemplate = useCreateTemplate();
 
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [tplName, setTplName] = useState('');
+  const [tplCategory, setTplCategory] = useState('general');
+
+  /* Load recent template IDs from local storage when dialog opens */
   useEffect(() => {
-    if (open) setRecentIds(readRecentIds());
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(RECENT_KEY);
+      setRecentIds(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setRecentIds([]);
+    }
   }, [open]);
 
+  /* Reset on close */
   useEffect(() => {
     if (!open) {
       setSubject('');
       setBodyHtml('<p></p>');
       setCc('');
       setBcc('');
-      setShowCc(false);
-      setShowBcc(false);
+      setShowCcBcc(false);
       setMode('edit');
-      setActiveTplId(null);
     }
   }, [open]);
-
-  const allTemplates = useMemo(() => {
-    return [
-      ...bridgeTemplates.map((t) => ({ ...t, __source: 'presale' as const })),
-      ...localTemplates.map((t) => ({ ...t, __source: 'local' as const })),
-    ];
-  }, [localTemplates, bridgeTemplates]);
-
-  const sidebarTemplates = useMemo(() => {
-    const byId = new Map(allTemplates.map((t) => [t.id, t]));
-    const recent = recentIds.map((id) => byId.get(id)).filter(Boolean) as typeof allTemplates;
-    if (recent.length >= 6) return recent.slice(0, 8);
-    // Pad with most recently created
-    const fillers = allTemplates
-      .filter((t) => !recentIds.includes(t.id))
-      .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
-      .slice(0, 8 - recent.length);
-    return [...recent, ...fillers];
-  }, [allTemplates, recentIds]);
 
   const senderCtx = useMemo(
     () => ({
@@ -164,12 +156,49 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     [subject, senderCtx],
   );
 
-  const applyTemplate = (tpl: CrmEmailTemplate) => {
+  /* Combined template list with bridge marker */
+  const allTemplates: AnyTpl[] = useMemo(
+    () => [
+      ...bridgeTemplates.map((t) => ({ ...t, __isBridge: true } as AnyTpl)),
+      ...localTemplates.map((t) => ({ ...t, __isBridge: false } as AnyTpl)),
+    ],
+    [bridgeTemplates, localTemplates],
+  );
+
+  /* Resolve recent templates (preserve order, fall back to most recently used) */
+  const recentTemplates: AnyTpl[] = useMemo(() => {
+    const byId = new Map(allTemplates.map((t) => [t.id, t]));
+    const fromRecent = recentIds.map((id) => byId.get(id)).filter(Boolean) as AnyTpl[];
+    if (fromRecent.length >= 4) return fromRecent.slice(0, 6);
+    // Top up with first templates available
+    const seen = new Set(fromRecent.map((t) => t.id));
+    for (const t of allTemplates) {
+      if (seen.has(t.id)) continue;
+      fromRecent.push(t);
+      if (fromRecent.length >= 6) break;
+    }
+    return fromRecent;
+  }, [allTemplates, recentIds]);
+
+  const recentEmails = useMemo(
+    () =>
+      messages
+        .filter((m: any) => m.channel === 'email')
+        .slice(0, 4),
+    [messages],
+  );
+
+  const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
     setBodyHtml(tpl.body_html || '<p></p>');
-    setActiveTplId(tpl.id);
-    pushRecentId(tpl.id);
-    setRecentIds(readRecentIds());
+    /* Track recent */
+    const next = [tpl.id, ...recentIds.filter((id) => id !== tpl.id)].slice(0, 8);
+    setRecentIds(next);
+    try {
+      localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
     toast.success(`Loaded "${tpl.name}"`);
   };
 
@@ -181,13 +210,43 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     });
   };
 
-  const canSend = !!contact.email && subject.trim() && bodyHtml.replace(/<[^>]*>/g, '').trim();
+  const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
+  const canSend = !!contact.email && subject.trim() && bodyText;
+
+  const openSaveDialog = () => {
+    if (!bodyText) {
+      toast.error('Write some content before saving as template');
+      return;
+    }
+    setTplName(subject.trim() || 'Untitled template');
+    setSaveOpen(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!tplName.trim()) {
+      toast.error('Template name is required');
+      return;
+    }
+    try {
+      await createTemplate.mutateAsync({
+        name: tplName.trim(),
+        subject: subject.trim() || tplName.trim(),
+        body_html: bodyHtml,
+        category: tplCategory,
+      });
+      setSaveOpen(false);
+      setTplName('');
+    } catch {
+      /* toast handled in hook */
+    }
+  };
 
   const handleSend = async () => {
     if (!canSend) {
       toast.error('Subject, body and a recipient email are required');
       return;
     }
+
     if (logOnly) {
       await addMessage.mutateAsync({
         contact_id: contact.id,
@@ -201,6 +260,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       onOpenChange(false);
       return;
     }
+
     try {
       await sendBridge.mutateAsync({
         to: contact.email!,
@@ -226,148 +286,130 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   const isPending = sendBridge.isPending || addMessage.isPending;
 
-  const openSaveDialog = () => {
-    if (!subject.trim() && !bodyHtml.replace(/<[^>]*>/g, '').trim()) {
-      toast.error('Add a subject or body before saving');
-      return;
-    }
-    setSaveName(subject.trim() || 'Untitled template');
-    setSaveOpen(true);
-  };
-
-  const handleSaveTemplate = async () => {
-    const name = saveName.trim();
-    if (!name) {
-      toast.error('Template name is required');
-      return;
-    }
-    try {
-      await createTemplate.mutateAsync({
-        name,
-        subject: subject.trim() || name,
-        body_html: bodyHtml,
-        category: saveCategory || 'general',
-      });
-      setSaveOpen(false);
-    } catch {
-      /* toast handled in hook */
-    }
-  };
-
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
-
-  const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(' ');
-  const recentEmailMessages = messages
-    .filter((m: any) => m.channel === 'email')
-    .slice(0, 4);
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          className="max-w-[1200px] w-[97vw] h-[92vh] p-0 overflow-hidden flex flex-col gap-0"
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          {/* Top bar */}
-          <div className="h-12 px-5 flex items-center justify-between border-b border-border bg-card shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold tracking-[0.14em] text-foreground">NEW EMAIL</span>
-            </div>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+        <DialogContent className="max-w-6xl w-[97vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+          {/* Header */}
+          <DialogHeader className="px-5 py-3 border-b border-border bg-card shrink-0">
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span className="text-base font-semibold">New Email</span>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Templates
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5">
+                      <Variable className="h-3.5 w-3.5" />
+                      Insert variable
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-[420px] overflow-y-auto w-64">
+                    {['Lead', 'Sender', 'Co-Buyer', 'Links', 'System'].map((group) => (
+                      <div key={group}>
+                        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {group}
+                        </DropdownMenuLabel>
+                        {EMAIL_VARIABLES.filter((v) => v.group === group).map((v) => (
+                          <DropdownMenuItem
+                            key={v.token}
+                            onClick={() => insertVariable(v.token)}
+                            className="text-xs flex flex-col items-start gap-0.5"
+                          >
+                            <span className="font-medium">{v.label}</span>
+                            <code className="text-[10px] text-muted-foreground">{`{{${v.token}}}`}</code>
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                      </div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
 
-          <div className="flex-1 flex min-h-0">
-            {/* LEFT SIDEBAR */}
-            <aside className="w-[300px] shrink-0 border-r border-border bg-muted/20 overflow-y-auto">
-              {/* Contact identity */}
-              <div className="p-5 border-b border-border">
-                <h2 className="text-[17px] font-bold text-foreground leading-tight uppercase tracking-tight">
-                  {fullName || 'Unnamed Lead'}
-                </h2>
-                <dl className="mt-4 space-y-2 text-[13px]">
-                  {contact.lead_type && (
-                    <div className="flex gap-1.5">
-                      <dt className="text-muted-foreground">Type:</dt>
-                      <dd className="font-medium text-foreground">{contact.lead_type}</dd>
-                    </div>
-                  )}
-                  {contact.phone && (
-                    <div className="flex gap-1.5">
-                      <dt className="text-muted-foreground">Phone:</dt>
-                      <dd className="font-medium text-foreground">{contact.phone}</dd>
-                    </div>
-                  )}
+          {/* Two-column body */}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-[260px_1fr] overflow-hidden min-h-0">
+            {/* Sidebar */}
+            <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden md:block">
+              {/* Lead identity */}
+              <div className="p-4 border-b border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-semibold">
+                    {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {[contact.first_name, contact.last_name].filter(Boolean).join(' ') ||
+                        contact.email ||
+                        'Unknown'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">{contact.email ?? 'No email'}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
                   {contact.status && (
-                    <div className="flex gap-1.5">
-                      <dt className="text-muted-foreground">Pipeline:</dt>
-                      <dd className="font-medium text-foreground">{contact.status}</dd>
-                    </div>
+                    <Badge variant="secondary" className="text-[10px] h-5">
+                      {contact.status}
+                    </Badge>
                   )}
                   {contact.source && (
-                    <div className="flex gap-1.5">
-                      <dt className="text-muted-foreground">Source:</dt>
-                      <dd className="font-medium text-foreground">{contact.source}</dd>
-                    </div>
+                    <Badge variant="outline" className="text-[10px] h-5">
+                      {contact.source}
+                    </Badge>
                   )}
-                </dl>
+                </div>
               </div>
 
               {/* Recent templates */}
               <div className="p-4 border-b border-border">
-                <div className="flex items-center justify-between mb-2.5">
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" />
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Recent Templates
-                  </h3>
+                  </h4>
                   <button
                     onClick={() => setPickerOpen(true)}
-                    className="text-[11px] font-medium text-primary hover:underline"
+                    className="text-[11px] text-primary hover:underline"
                   >
-                    Browse all
+                    All
                   </button>
                 </div>
-                {sidebarTemplates.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-3 text-center">
-                    No templates yet.
-                  </p>
+                {recentTemplates.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground py-2">No templates yet</p>
                 ) : (
                   <div className="space-y-2">
-                    {sidebarTemplates.map((tpl) => (
+                    {recentTemplates.map((tpl) => (
                       <button
-                        key={tpl.id}
+                        key={(tpl.__isBridge ? 'b:' : 'l:') + tpl.id}
                         onClick={() => applyTemplate(tpl)}
-                        className={cn(
-                          'w-full text-left rounded-lg border overflow-hidden transition-all group bg-card',
-                          activeTplId === tpl.id
-                            ? 'border-primary ring-2 ring-primary/20'
-                            : 'border-border hover:border-primary/40 hover:shadow-sm',
-                        )}
+                        className="w-full text-left bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-sm transition-all relative group"
                       >
-                        <div className="relative h-[110px] bg-white border-b border-border/60 overflow-hidden">
-                          <TemplateThumb html={tpl.body_html || ''} />
-                          <span
-                            className={cn(
-                              'absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider',
-                              tpl.__source === 'presale'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground',
-                            )}
-                          >
-                            {tpl.__source === 'presale' ? 'Presale' : 'Local'}
-                          </span>
+                        {tpl.__isBridge && (
+                          <Badge className="absolute top-1 right-1 z-10 bg-primary/90 text-primary-foreground text-[8px] px-1 py-0 h-3.5">
+                            PRESALE
+                          </Badge>
+                        )}
+                        <div className="border-b border-border/40 overflow-hidden">
+                          <TemplateThumb html={tpl.body_html ?? ''} />
                         </div>
-                        <div className="px-2.5 py-2">
-                          <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">
+                        <div className="p-2">
+                          <p className="text-[11px] font-semibold text-foreground truncate leading-tight">
                             {tpl.name}
                           </p>
-                          <p className="text-[10.5px] text-muted-foreground truncate mt-0.5">
-                            {tpl.subject || 'No subject'}
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {tpl.subject}
                           </p>
                         </div>
                       </button>
@@ -376,138 +418,117 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Recent communications */}
-              {recentEmailMessages.length > 0 && (
-                <div className="p-4">
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2.5">
-                    Recent Communications ({recentEmailMessages.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {recentEmailMessages.map((m: any) => {
-                      const subj = (m.content || '').match(/Subject:\s*(.+)/)?.[1]?.split('\n')[0] || 'Email';
-                      const when = m.created_at
-                        ? new Date(m.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '';
-                      return (
-                        <div key={m.id} className="text-[12px] py-1.5 border-l-2 border-border pl-2.5">
-                          <p className="font-semibold text-foreground truncate leading-tight">{subj}</p>
-                          <p className="text-[10.5px] text-muted-foreground mt-0.5">
-                            {m.sent_by || 'Agent'} · {when}
-                          </p>
-                        </div>
-                      );
-                    })}
+              {/* Recent emails */}
+              <div className="p-4">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Recent Conversation
+                </h4>
+                {recentEmails.length === 0 ? (
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground py-2">
+                    <Inbox className="h-3.5 w-3.5" />
+                    No prior emails
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="space-y-2">
+                    {recentEmails.map((m: any) => (
+                      <div
+                        key={m.id}
+                        className="text-[11px] bg-card border border-border rounded-md p-2"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          {m.direction === 'outbound' ? (
+                            <Send className="h-2.5 w-2.5 text-primary" />
+                          ) : (
+                            <Mail className="h-2.5 w-2.5 text-muted-foreground" />
+                          )}
+                          <span className="text-[10px] text-muted-foreground">
+                            {m.created_at
+                              ? new Date(m.created_at).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })
+                              : ''}
+                          </span>
+                        </div>
+                        <p className="line-clamp-2 text-foreground/80">
+                          {(m.content ?? '').slice(0, 120)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </aside>
 
-            {/* MAIN COMPOSER */}
-            <main className="flex-1 flex flex-col min-w-0 bg-background">
-              {/* Header rows: From / To / Cc / Bcc */}
-              <div className="px-6 pt-4 pb-2 space-y-1.5 border-b border-border">
-                <Row label="From">
-                  <span className="text-[14px] text-foreground font-medium">
-                    {emailSettings?.reply_to || user?.email || '—'}
-                  </span>
-                  <div className="ml-auto flex items-center gap-3 text-[13px]">
-                    {!showCc && (
-                      <button
-                        onClick={() => setShowCc(true)}
-                        className="text-primary font-medium hover:underline"
-                      >
-                        Add CC
-                      </button>
-                    )}
-                    {!showBcc && (
-                      <button
-                        onClick={() => setShowBcc(true)}
-                        className="text-primary font-medium hover:underline"
-                      >
-                        Add BCC
-                      </button>
-                    )}
-                  </div>
-                </Row>
-
-                <Row label="To">
-                  <div className="flex flex-wrap gap-1.5 items-center flex-1">
-                    {contact.email ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[13px] font-medium">
-                        {contact.email}
-                      </span>
-                    ) : (
-                      <span className="text-[13px] text-destructive">No email on file</span>
-                    )}
-                  </div>
-                </Row>
-
-                {showCc && (
-                  <Row label="Cc">
-                    <Input
-                      value={cc}
-                      onChange={(e) => setCc(e.target.value)}
-                      placeholder="cc@example.com"
-                      className="h-8 border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-[13px]"
-                    />
-                    <button
-                      onClick={() => { setShowCc(false); setCc(''); }}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </Row>
+            {/* Main composer column */}
+            <div className="flex flex-col overflow-hidden min-h-0">
+              {/* Recipient rows */}
+              <div className="px-5 py-3 border-b border-border space-y-2 bg-card shrink-0">
+                <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">From</Label>
+                  <Input
+                    value={emailSettings?.sender_name ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>` : (user?.email ?? '')}
+                    disabled
+                    className="h-9 bg-muted/40 text-xs"
+                  />
+                  <span className="w-[68px]" />
+                </div>
+                <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">To</Label>
+                  <Input
+                    value={contact.email ?? ''}
+                    disabled
+                    className="h-9 bg-muted/40"
+                    placeholder={contact.email ? '' : 'No email on file'}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs text-muted-foreground"
+                    onClick={() => setShowCcBcc((v) => !v)}
+                  >
+                    {showCcBcc ? 'Hide' : 'Cc / Bcc'}
+                  </Button>
+                </div>
+                {showCcBcc && (
+                  <>
+                    <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Cc</Label>
+                      <Input
+                        value={cc}
+                        onChange={(e) => setCc(e.target.value)}
+                        placeholder="cc@example.com"
+                        className="h-9"
+                      />
+                      <span className="w-[68px]" />
+                    </div>
+                    <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Bcc</Label>
+                      <Input
+                        value={bcc}
+                        onChange={(e) => setBcc(e.target.value)}
+                        placeholder="bcc@example.com"
+                        className="h-9"
+                      />
+                      <span className="w-[68px]" />
+                    </div>
+                  </>
                 )}
-                {showBcc && (
-                  <Row label="Bcc">
-                    <Input
-                      value={bcc}
-                      onChange={(e) => setBcc(e.target.value)}
-                      placeholder="bcc@example.com"
-                      className="h-8 border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-[13px]"
-                    />
-                    <button
-                      onClick={() => { setShowBcc(false); setBcc(''); }}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </Row>
-                )}
+                <div className="grid grid-cols-[60px_1fr] items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Subject</Label>
+                  <Input
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Subject line — supports {{lead.first_name}}"
+                    className="h-9 font-medium"
+                    maxLength={200}
+                  />
+                </div>
               </div>
 
-              {/* Subject + template/variable controls */}
-              <div className="px-6 py-2 border-b border-border flex items-center gap-3">
-                <span className="text-[13px] font-semibold text-foreground shrink-0">Subject:</span>
-                <Input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Subject — supports {{lead.first_name}}"
-                  className="h-9 border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-[14px] font-medium flex-1"
-                  maxLength={200}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-[12px] gap-1 text-muted-foreground hover:text-foreground"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  <FileText className="h-3 w-3" />
-                  Template
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-                <span className="text-border">|</span>
-                <VariableMenu onInsert={insertVariable} />
-              </div>
-
-              {/* Mode toolbar */}
-              <div className="px-6 py-1.5 border-b border-border bg-muted/20 flex items-center justify-between">
+              {/* Mode tabs */}
+              <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-1">
                   {([
                     { v: 'edit', label: 'Editor', icon: FileText },
@@ -518,7 +539,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       key={t.v}
                       onClick={() => setMode(t.v)}
                       className={cn(
-                        'h-7 px-2.5 text-[12px] rounded-md font-medium transition-colors flex items-center gap-1.5',
+                        'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
                         mode === t.v
                           ? 'bg-background border border-border text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground',
@@ -553,8 +574,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto bg-muted/5 min-h-0">
+              {/* Body area */}
+              <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
                 {mode === 'edit' && (
                   <div className="p-5">
                     <RichTextEditor
@@ -569,7 +590,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     <textarea
                       value={bodyHtml}
                       onChange={(e) => setBodyHtml(e.target.value)}
-                      className="w-full h-[420px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       spellCheck={false}
                     />
                   </div>
@@ -581,7 +602,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       srcDoc={previewDoc}
                       className={cn(
                         'bg-white border border-border rounded-xl shadow-sm transition-all',
-                        device === 'desktop' ? 'w-full max-w-[680px] h-[540px]' : 'w-[375px] h-[540px]',
+                        device === 'desktop' ? 'w-full max-w-[680px] h-[520px]' : 'w-[375px] h-[520px]',
                       )}
                     />
                   </div>
@@ -589,8 +610,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
-                <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
+              <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -615,9 +636,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="gap-1.5 text-muted-foreground hover:text-foreground"
                     onClick={openSaveDialog}
                     disabled={isPending}
+                    className="gap-1.5"
                   >
                     <Save className="h-3.5 w-3.5" />
                     Save as template
@@ -626,10 +647,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setMode(mode === 'preview' ? 'edit' : 'preview')}
+                    onClick={() => onOpenChange(false)}
                     disabled={isPending}
                   >
-                    {mode === 'preview' ? 'Back to edit' : 'Preview'}
+                    Cancel
                   </Button>
                   <Button
                     type="button"
@@ -643,145 +664,70 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     ) : (
                       <Send className="h-3.5 w-3.5" />
                     )}
-                    {isPending ? 'Sending...' : logOnly ? 'Log Email' : 'Send'}
+                    {isPending ? 'Sending...' : logOnly ? 'Log Email' : 'Send Email'}
                   </Button>
                 </div>
               </div>
-            </main>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
       <TemplatePicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={applyTemplate} />
 
-      <InnerDialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <InnerDialogContent className="max-w-md">
-          <InnerDialogHeader>
-            <InnerDialogTitle>Save as template</InnerDialogTitle>
-          </InnerDialogHeader>
-          <div className="space-y-4 pt-2">
+      {/* Save as template sub-dialog */}
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save as Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="tpl-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Template name</Label>
+              <Label htmlFor="tpl-name" className="text-xs">Template name</Label>
               <Input
                 id="tpl-name"
-                value={saveName}
-                onChange={(e) => setSaveName(e.target.value)}
-                placeholder="e.g. Presale follow-up — week 1"
-                autoFocus
-                maxLength={120}
+                value={tplName}
+                onChange={(e) => setTplName(e.target.value)}
+                placeholder="Welcome email"
+                className="h-9"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="tpl-subject" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subject</Label>
+              <Label className="text-xs">Subject</Label>
               <Input
-                id="tpl-subject"
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Email subject (saved with template)"
-                maxLength={200}
+                disabled
+                className="h-9 bg-muted/40 text-xs"
+                placeholder="(uses current subject)"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="tpl-cat" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
-              <select
-                id="tpl-cat"
-                value={saveCategory}
-                onChange={(e) => setSaveCategory(e.target.value)}
-                className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm"
-              >
-                <option value="general">General</option>
-                <option value="follow-up">Follow-up</option>
-                <option value="nurture">Nurture</option>
-                <option value="welcome">Welcome</option>
-                <option value="project-launch">Project launch</option>
-              </select>
+              <Label className="text-xs">Category</Label>
+              <Select value={tplCategory} onValueChange={setTplCategory}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="welcome">Welcome</SelectItem>
+                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                  <SelectItem value="nurture">Nurture</SelectItem>
+                  <SelectItem value="project-launch">Project launch</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Saved to your shared CRM template library. Merge tags like <code className="px-1 rounded bg-muted">{'{{lead.first_name}}'}</code> are preserved.
-            </p>
           </div>
-          <InnerDialogFooter className="pt-2">
+          <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setSaveOpen(false)} disabled={createTemplate.isPending}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim() || createTemplate.isPending} className="gap-1.5 min-w-[120px]">
+            <Button size="sm" onClick={handleSaveTemplate} disabled={createTemplate.isPending} className="gap-1.5">
               {createTemplate.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               Save template
             </Button>
-          </InnerDialogFooter>
-        </InnerDialogContent>
-      </InnerDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 min-h-[32px]">
-      <span className="text-[13px] font-semibold text-muted-foreground w-12 shrink-0">{label}:</span>
-      <div className="flex-1 flex items-center gap-2 min-w-0">{children}</div>
-    </div>
-  );
-}
-
-function VariableMenu({ onInsert }: { onInsert: (token: string) => void }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-7 text-[12px] gap-1 text-muted-foreground hover:text-foreground"
-        >
-          <Variable className="h-3 w-3" />
-          Variable
-          <ChevronDown className="h-3 w-3" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-[420px] overflow-y-auto w-64">
-        {['Lead', 'Sender', 'Co-Buyer', 'Links', 'System'].map((group) => (
-          <div key={group}>
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {group}
-            </DropdownMenuLabel>
-            {EMAIL_VARIABLES.filter((v) => v.group === group).map((v) => (
-              <DropdownMenuItem
-                key={v.token}
-                onClick={() => onInsert(v.token)}
-                className="text-xs flex flex-col items-start gap-0.5"
-              >
-                <span className="font-medium">{v.label}</span>
-                <code className="text-[10px] text-muted-foreground">{`{{${v.token}}}`}</code>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-          </div>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function TemplateThumb({ html }: { html: string }) {
-  const ref = useRef<HTMLIFrameElement>(null);
-  useEffect(() => {
-    if (!ref.current) return;
-    const doc = ref.current.contentDocument;
-    if (!doc) return;
-    const safe = html && html.trim().length > 0
-      ? html
-      : '<div style="padding:24px;color:#94a3b8;font:13px sans-serif;text-align:center">No preview</div>';
-    doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a}img{max-width:100%;height:auto}a{color:inherit;pointer-events:none}</style></head><body><div style="transform:scale(0.32);transform-origin:top left;width:312.5%;pointer-events:none">${safe}</div></body></html>`);
-    doc.close();
-  }, [html]);
-  return (
-    <iframe
-      ref={ref}
-      title="template-thumb"
-      className="w-full h-full border-0 bg-white pointer-events-none"
-      sandbox="allow-same-origin"
-    />
   );
 }
