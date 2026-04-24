@@ -161,28 +161,33 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     [subject, senderCtx],
   );
 
-  /* Combined template list with bridge marker */
-  const allTemplates: AnyTpl[] = useMemo(
-    () => [
+  /* Combined template list with bridge marker — local templates sorted by team usage */
+  const allTemplates: AnyTpl[] = useMemo(() => {
+    const sortedLocal = [...localTemplates].sort((a, b) => {
+      const u = (b.times_used ?? 0) - (a.times_used ?? 0);
+      if (u !== 0) return u;
+      const ta = a.last_used_at ? new Date(a.last_used_at).getTime() : 0;
+      const tb = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
+      return tb - ta;
+    });
+    return [
+      ...sortedLocal.map((t) => ({ ...t, __isBridge: false } as AnyTpl)),
       ...bridgeTemplates.map((t) => ({ ...t, __isBridge: true } as AnyTpl)),
-      ...localTemplates.map((t) => ({ ...t, __isBridge: false } as AnyTpl)),
-    ],
-    [bridgeTemplates, localTemplates],
-  );
+    ];
+  }, [bridgeTemplates, localTemplates]);
 
-  /* Resolve recent templates (preserve order, fall back to most recently used) */
+  /* Resolve recent/most-used templates: prefer this user's recents, then top up with team most-used */
   const recentTemplates: AnyTpl[] = useMemo(() => {
     const byId = new Map(allTemplates.map((t) => [t.id, t]));
     const fromRecent = recentIds.map((id) => byId.get(id)).filter(Boolean) as AnyTpl[];
-    if (fromRecent.length >= 4) return fromRecent.slice(0, 6);
-    // Top up with first templates available
     const seen = new Set(fromRecent.map((t) => t.id));
+    /* allTemplates is already sorted most-used-first for local templates */
     for (const t of allTemplates) {
       if (seen.has(t.id)) continue;
       fromRecent.push(t);
       if (fromRecent.length >= 6) break;
     }
-    return fromRecent;
+    return fromRecent.slice(0, 6);
   }, [allTemplates, recentIds]);
 
   /* Search & filter the sidebar list */
