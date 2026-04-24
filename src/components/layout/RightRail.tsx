@@ -327,7 +327,7 @@ export function RightRail() {
 
         {/* Primary actions */}
         <div className="flex flex-col items-center gap-1 mt-1">
-          <RailButton icon={Search} label="Search" onClick={() => { /* placeholder for future cmd palette */ }} />
+          
           <RailButton icon={Sparkles} label="AI Assistant" to="/dashboard" />
           <RailButton
             icon={Inbox}
