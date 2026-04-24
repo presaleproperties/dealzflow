@@ -131,27 +131,7 @@ export function TopNav() {
         style={{ background: DARK_BG, borderBottom: `1px solid ${DARK_BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center h-[54px] px-3 sm:px-4 lg:px-6 gap-2 sm:gap-4">
-          {/* Mobile hamburger */}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <button
-                className="lg:hidden h-9 w-9 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-                style={{ color: INACTIVE_TEXT }}
-                aria-label="Open menu"
-              >
-                <Menu className="w-5 h-5" strokeWidth={2} />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[88vw] max-w-[320px] sm:w-[300px] border-r-0" style={{ background: DARK_BG }}>
-              <MobileNavSheet
-                sections={visibleSections}
-                filterChildren={filterChildren}
-                isAdmin={!!isAdmin}
-                onSignOut={requestSignOut}
-                pathname={location.pathname}
-              />
-            </SheetContent>
-          </Sheet>
+          {/* Mobile hamburger removed — bottom tab bar handles primary nav on mobile/tablet */}
 
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center gap-2 group shrink-0">
