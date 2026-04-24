@@ -136,12 +136,13 @@ export function TopNav() {
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
-    setOpenSection(label);
+    // Instant swap when moving between triggers — no flicker
+    setOpenSection(prev => (prev === label ? prev : label));
   }
 
   function scheduleClose() {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 220);
+    closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 180);
   }
 
   return (
@@ -259,7 +260,8 @@ export function TopNav() {
                     <button
                       onMouseEnter={() => openWithDelay(section.label)}
                       onMouseLeave={scheduleClose}
-                      className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] transition-all duration-200 ease-out hover:bg-white/5 focus:outline-none"
+                      onFocus={() => openWithDelay(section.label)}
+                      className="relative flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] transition-colors duration-150 ease-out focus:outline-none"
                       style={{
                         color: sectionActive || isOpen ? GOLD : INACTIVE_TEXT,
                         background: sectionActive ? GOLD_BG : isOpen ? 'hsl(222 20% 14%)' : 'transparent',
@@ -271,20 +273,23 @@ export function TopNav() {
                         className={cn('w-3 h-3 transition-transform duration-300 ease-out opacity-70', isOpen && 'rotate-180')}
                         strokeWidth={2.2}
                       />
+                      {/* Bridge under trigger to keep hover continuous into menu */}
+                      {isOpen && <span className="absolute left-0 right-0 -bottom-2 h-2" aria-hidden />}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    sideOffset={6}
+                    sideOffset={2}
                     onMouseEnter={() => openWithDelay(section.label)}
                     onMouseLeave={scheduleClose}
+                    onCloseAutoFocus={(e) => e.preventDefault()}
                     className={cn(
                       'border-0 shadow-2xl origin-top',
                       'data-[state=open]:animate-in data-[state=closed]:animate-out',
                       'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
                       'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
-                      'data-[state=open]:slide-in-from-top-2 data-[state=closed]:slide-out-to-top-1',
-                      'data-[state=open]:duration-200 data-[state=closed]:duration-150',
+                      'data-[state=open]:slide-in-from-top-1 data-[state=closed]:slide-out-to-top-1',
+                      'data-[state=open]:duration-150 data-[state=closed]:duration-100',
                       isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]',
                     )}
                     style={{
@@ -296,7 +301,7 @@ export function TopNav() {
                     }}
                   >
                     {/* Invisible hover bridge to prevent flicker between trigger and menu */}
-                    <div className="absolute -top-2 left-0 right-0 h-2" />
+                    <div className="absolute -top-3 left-0 right-0 h-3" aria-hidden />
                     {isMega ? (
                       <div
                         className="grid gap-x-3 gap-y-1"
