@@ -239,10 +239,7 @@ export default function CrmLeadsPage() {
     setActiveViewId(viewId);
     setPage(1);
     setActiveSegmentId(null);
-    if (viewId === '__directory') {
-      setSortKey('name'); setSortDir('asc');
-    }
-    if (viewId !== '__directory') setLetterFilter('');
+    setLetterFilter('');
   };
 
   const handleSegmentClick = (seg: LeadSegment) => {
