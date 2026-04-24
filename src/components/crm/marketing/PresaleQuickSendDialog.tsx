@@ -225,7 +225,11 @@ export function PresaleQuickSendDialog({
                 Preview
               </p>
               <iframe
-                srcDoc={asset.body_html}
+                srcDoc={
+                  recipients[0]?.lead
+                    ? renderForRecipient(asset.body_html, { lead: recipients[0].lead })
+                    : renderWithSampleData(asset.body_html)
+                }
                 className="w-full border border-border rounded-lg bg-white"
                 style={{ height: '240px' }}
                 sandbox="allow-same-origin"
