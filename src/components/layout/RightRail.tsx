@@ -1,19 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTheme } from 'next-themes';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Sparkles, Phone, Inbox, Bell, HelpCircle, Settings as Cog,
-  Mail, MessageSquare, X, ExternalLink,
+  Mail, MessageSquare, X, ExternalLink, Sun, Moon, Monitor, Search,
+  LogOut, ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 // Themed tokens — adapt to light/dark via index.css
