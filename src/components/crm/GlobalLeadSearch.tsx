@@ -27,13 +27,36 @@ function Highlight({ text, query }: { text: string; query: string }) {
  * - Click (or ⌘K / Ctrl+K) opens a centered modal palette with smooth transition.
  * - Searches name, email, phone. Click result -> /crm/leads/:id
  */
+const STORAGE_KEY_QUERY = 'crm.globalSearch.lastQuery';
+const STORAGE_KEY_RECENTS = 'crm.globalSearch.recentIds';
+const MAX_RECENTS = 6;
+
+function loadString(key: string): string {
+  try { return localStorage.getItem(key) ?? ''; } catch { return ''; }
+}
+function loadIds(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string') : [];
+  } catch { return []; }
+}
+
 export function GlobalLeadSearch() {
   const navigate = useNavigate();
   const { data: contacts = [], isLoading } = useCrmContacts();
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  // Hydrate persisted query so reopening keeps user's context
+  const [query, setQuery] = useState(() => loadString(STORAGE_KEY_QUERY));
+  const [recentIds, setRecentIds] = useState<string[]>(() => loadIds(STORAGE_KEY_RECENTS));
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Persist query as user types
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_QUERY, query); } catch { /* ignore */ }
+  }, [query]);
 
   // ⌘K / Ctrl+K to toggle, Esc handled inside the panel
   useEffect(() => {
@@ -47,10 +70,13 @@ export function GlobalLeadSearch() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // Lock body scroll while open + autofocus
+  // Lock body scroll while open + autofocus. Preserve query across opens.
   useEffect(() => {
     if (open) {
-      const t = setTimeout(() => inputRef.current?.focus(), 50);
+      const t = setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 50);
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
@@ -58,8 +84,7 @@ export function GlobalLeadSearch() {
         document.body.style.overflow = prev;
       };
     } else {
-      // reset on close
-      setQuery('');
+      // Keep query persisted across opens — only reset cursor position
       setActiveIdx(0);
     }
   }, [open]);
@@ -91,9 +116,26 @@ export function GlobalLeadSearch() {
   useEffect(() => { setActiveIdx(0); }, [query]);
 
   const handleSelect = (id: string) => {
+    // Track in recents
+    setRecentIds(prev => {
+      const next = [id, ...prev.filter(x => x !== id)].slice(0, MAX_RECENTS);
+      try { localStorage.setItem(STORAGE_KEY_RECENTS, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     setOpen(false);
     navigate(`/crm/leads/${id}`);
   };
+
+  const clearRecents = () => {
+    setRecentIds([]);
+    try { localStorage.removeItem(STORAGE_KEY_RECENTS); } catch { /* ignore */ }
+  };
+
+  const recentContacts = useMemo(() => {
+    if (!recentIds.length) return [];
+    const map = new Map(contacts.map((c: any) => [c.id, c]));
+    return recentIds.map(id => map.get(id)).filter(Boolean) as any[];
+  }, [recentIds, contacts]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, Math.max(results.length - 1, 0))); }
@@ -192,6 +234,44 @@ export function GlobalLeadSearch() {
                     </div>
                   ))}
                 </div>
+
+                {recentContacts.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase">
+                        Recent
+                      </div>
+                      <button
+                        onClick={clearRecents}
+                        className="text-[10px] font-medium text-muted-foreground/60 hover:text-foreground/90 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <ul className="-mx-6">
+                      {recentContacts.map((c: any) => {
+                        const name = formatContactName(c.first_name, c.last_name) || 'Unnamed lead';
+                        const sub = c.property_address ?? c.address ?? c.email ?? c.phone ?? '';
+                        return (
+                          <li key={c.id}>
+                            <button
+                              onClick={() => handleSelect(c.id)}
+                              className="w-full text-left px-6 py-2.5 flex items-center gap-3 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-[10px] font-semibold flex-shrink-0 border border-primary/10">
+                                {(c.first_name?.[0] ?? '').toUpperCase()}{(c.last_name?.[0] ?? '').toUpperCase() || '·'}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[13px] font-medium text-foreground truncate">{name}</div>
+                                {sub && <div className="text-[11px] text-muted-foreground/70 truncate">{sub}</div>}
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : isLoading ? (
               <div className="px-6 py-10 space-y-3">
