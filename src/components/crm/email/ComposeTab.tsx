@@ -321,23 +321,41 @@ export function ComposeTab() {
 
           {filtersExpanded && (
             <div className="space-y-3">
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
-                <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
-              </div>
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
-                <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
-              </div>
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
-                <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
-              </div>
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
-                <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
-              </div>
-
+              {lockedIds ? (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <Lock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground">
+                      Recipients locked from Leads selection
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {campaignRecipients.length} contact{campaignRecipients.length === 1 ? '' : 's'} with email · use the exclude box below to drop any individuals
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={clearLockedIds}>
+                    Use filters instead
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
+                    <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
+                  </div>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
+                    <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
+                  </div>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
+                    <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
+                  </div>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
+                    <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
+                  </div>
+                </>
+              )}
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="include-alt" checked={includeAltEmails} onCheckedChange={(v) => setIncludeAltEmails(!!v)} />
                 <label htmlFor="include-alt" className="text-xs text-foreground cursor-pointer">Include spouse/alt emails</label>
