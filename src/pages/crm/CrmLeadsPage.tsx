@@ -406,7 +406,7 @@ export default function CrmLeadsPage() {
                 <Button
                   onClick={() => setShowAdd(true)}
                   size="sm"
-                  className="h-9 px-6 bg-primary text-primary-foreground gap-2 font-semibold shadow-sm"
+                  className="h-9 px-10 min-w-[160px] bg-primary text-primary-foreground gap-2 font-semibold shadow-sm"
                 >
                   <Plus className="w-4 h-4" /> Add Lead
                 </Button>
