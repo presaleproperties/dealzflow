@@ -18,6 +18,8 @@ import {
   Mail,
   User,
   Inbox,
+  Search,
+  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -101,6 +103,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplCategory, setTplCategory] = useState('general');
+  const [tplSearch, setTplSearch] = useState('');
+  const [tplFilter, setTplFilter] = useState<'all' | 'recent' | 'presale' | 'local'>('all');
 
   /* Load recent template IDs from local storage when dialog opens */
   useEffect(() => {
@@ -179,6 +183,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
     return fromRecent;
   }, [allTemplates, recentIds]);
+
+  /* Search & filter the sidebar list */
+  const sidebarTemplates: AnyTpl[] = useMemo(() => {
+    const q = tplSearch.trim().toLowerCase();
+    const hasSearch = q.length > 0;
+    let base: AnyTpl[];
+    if (tplFilter === 'recent' && !hasSearch) base = recentTemplates;
+    else if (tplFilter === 'presale') base = allTemplates.filter((t) => t.__isBridge);
+    else if (tplFilter === 'local') base = allTemplates.filter((t) => !t.__isBridge);
+    else if (tplFilter === 'recent') base = allTemplates;
+    else base = hasSearch ? allTemplates : recentTemplates;
+
+    if (hasSearch) {
+      base = base.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          (t.subject ?? '').toLowerCase().includes(q),
+      );
+    }
+    return base.slice(0, 12);
+  }, [allTemplates, recentTemplates, tplSearch, tplFilter]);
 
   const recentEmails = useMemo(
     () =>
@@ -373,24 +398,70 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 </div>
               </div>
 
-              {/* Recent templates */}
+              {/* Templates: search + filter + list */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Recent Templates
+                    Templates
                   </h4>
                   <button
                     onClick={() => setPickerOpen(true)}
                     className="text-[11px] text-primary hover:underline"
                   >
-                    All
+                    Browse all
                   </button>
                 </div>
-                {recentTemplates.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground py-2">No templates yet</p>
+
+                {/* Search */}
+                <div className="relative mb-2">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={tplSearch}
+                    onChange={(e) => setTplSearch(e.target.value)}
+                    placeholder="Search by name or subject"
+                    className="h-8 pl-8 pr-7 text-xs"
+                  />
+                  {tplSearch && (
+                    <button
+                      onClick={() => setTplSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter chips */}
+                <div className="flex gap-1 mb-2 flex-wrap">
+                  {([
+                    { v: 'all', label: 'All' },
+                    { v: 'recent', label: 'Recent' },
+                    { v: 'presale', label: 'Presale' },
+                    { v: 'local', label: 'Mine' },
+                  ] as const).map((f) => (
+                    <button
+                      key={f.v}
+                      onClick={() => setTplFilter(f.v)}
+                      className={cn(
+                        'h-6 px-2 rounded-full text-[10px] font-medium transition-colors',
+                        tplFilter === f.v
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted',
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {sidebarTemplates.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground py-2 text-center">
+                    {tplSearch ? 'No templates match' : 'No templates yet'}
+                  </p>
                 ) : (
                   <div className="space-y-2">
-                    {recentTemplates.map((tpl) => (
+                    {sidebarTemplates.map((tpl) => (
                       <button
                         key={(tpl.__isBridge ? 'b:' : 'l:') + tpl.id}
                         onClick={() => applyTemplate(tpl)}
