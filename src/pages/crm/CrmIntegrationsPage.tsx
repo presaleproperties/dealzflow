@@ -50,29 +50,14 @@ interface SystemCard {
 
 const systems: SystemCard[] = [
   {
-    name: 'Calendly', icon: Calendar,
-    badgeLabel: 'Webhook Ready', badgeVariant: 'success',
-    description: 'Auto-updates lead status on booking.',
-    webhookUrl: `${BASE}/calendly-webhook`,
-    setup: 'Add URL in Calendly Webhooks for invitee.created',
-  },
-  {
     name: 'Google Calendar', icon: CalendarClock,
     badgeLabel: 'Connected', badgeVariant: 'success',
     description: 'Syncs showings with Google Calendar.',
   },
   {
     name: 'presaleproperties.com', icon: Globe,
-    badgeLabel: 'Partial', badgeVariant: 'warning',
-    description: 'Website forms + Zara widget feed leads.',
-    webhookUrl: `${BASE}/lead-webhook?source=website`,
-  },
-  {
-    name: 'Nurture Engine', icon: Zap,
-    badgeLabel: 'Ready', badgeVariant: 'info',
-    description: '7-day Email nurture sequence.',
-    webhookUrl: `${BASE}/nurture-runner`,
-    setup: 'Runs daily at 8AM PT',
+    badgeLabel: 'Connected', badgeVariant: 'success',
+    description: 'Website forms + Zara widget feed leads via Lofty.',
   },
 ];
 /* ─── Component ─── */
