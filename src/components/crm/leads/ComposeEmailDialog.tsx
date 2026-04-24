@@ -394,8 +394,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     {recentTemplates.map((tpl) => (
                       <button
                         key={(tpl.__isBridge ? 'b:' : 'l:') + tpl.id}
-                        onClick={() => applyTemplate(tpl)}
-                        className="w-full text-left bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-sm transition-all relative group"
+                        onClick={() => setPreviewTpl(tpl)}
+                        className={cn(
+                          'w-full text-left bg-card border rounded-lg overflow-hidden hover:shadow-sm transition-all relative group',
+                          previewTpl?.id === tpl.id ? 'border-primary ring-1 ring-primary/30' : 'border-border hover:border-primary/50',
+                        )}
                       >
                         {tpl.__isBridge && (
                           <Badge className="absolute top-1 right-1 z-10 bg-primary/90 text-primary-foreground text-[8px] px-1 py-0 h-3.5">
