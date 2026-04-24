@@ -21,6 +21,8 @@ import {
   X,
   Search,
   Paperclip,
+  Pencil,
+  Check,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -34,7 +36,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
-import { useEmailSignatures } from '@/hooks/useEmailSignatures';
+import { useEmailSignatures, useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
@@ -88,6 +90,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
   const { data: signatures = [] } = useEmailSignatures();
+  const upsertSignature = useUpsertEmailSignature();
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
   const { data: messages = [] } = useCrmContactMessages(open ? contact.id : undefined);
@@ -103,6 +106,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [appendSignature, setAppendSignature] = useState(true);
   const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
   const [logOnly, setLogOnly] = useState(false);
+  // Inline signature editor state
+  const [editingSignature, setEditingSignature] = useState(false);
+  const [sigDraft, setSigDraft] = useState('');
 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -135,6 +141,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       setMode('edit');
       setAppendSignature(true);
       setSelectedSignatureId(null);
+      setEditingSignature(false);
+      setSigDraft('');
       autoSignaturePreviewedRef.current = false;
     }
   }, [open]);
@@ -820,7 +828,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       toolbarSlot={composerActions}
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
-                          <SignatureInlineFrame html={activeSignatureHtml} />
+                          editingSignature ? (
+                            <div className="border-t border-border/60 bg-muted/5">
+                              <textarea
+                                value={sigDraft}
+                                onChange={(e) => setSigDraft(e.target.value)}
+                                className="w-full font-mono text-[12px] leading-relaxed px-4 py-3 bg-transparent border-0 resize-y focus-visible:outline-none focus-visible:ring-0 text-foreground"
+                                style={{ minHeight: 160 }}
+                                spellCheck={false}
+                                placeholder="Edit signature HTML…"
+                              />
+                            </div>
+                          ) : (
+                            <SignatureInlineFrame html={activeSignatureHtml} />
+                          )
                         ) : null
                       }
                     />
@@ -870,6 +891,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
                       onChange={(e) => {
                         const v = e.target.value;
+                        // Switching signatures cancels any in-progress edit to avoid losing context.
+                        if (editingSignature) {
+                          setEditingSignature(false);
+                          setSigDraft('');
+                        }
                         if (v === '__none__') {
                           setAppendSignature(false);
                         } else {
@@ -877,8 +903,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                           setSelectedSignatureId(v || null);
                         }
                       }}
-                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[200px]"
-                      title="Choose a signature for this email"
+                      disabled={editingSignature}
+                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[200px] disabled:opacity-60"
+                      title={editingSignature ? 'Finish editing to switch signatures' : 'Choose a signature for this email'}
                     >
                       <option value="__none__">None</option>
                       {signatures.map((s) => (
@@ -887,6 +914,74 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                         </option>
                       ))}
                     </select>
+                    {appendSignature && selectedSignatureId && (() => {
+                      const sig = signatures.find((s) => s.id === selectedSignatureId);
+                      if (!sig) return null;
+                      if (!editingSignature) {
+                        return (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1 text-[11px]"
+                            onClick={() => {
+                              setSigDraft(sig.html ?? '');
+                              setEditingSignature(true);
+                            }}
+                            title="Edit this signature inline"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                        );
+                      }
+                      return (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 px-2 gap-1 text-[11px]"
+                            disabled={upsertSignature.isPending || sigDraft === (sig.html ?? '')}
+                            onClick={async () => {
+                              try {
+                                await upsertSignature.mutateAsync({
+                                  id: sig.id,
+                                  name: sig.name,
+                                  html: sigDraft,
+                                  is_default: sig.is_default,
+                                  sort_order: sig.sort_order,
+                                });
+                                setEditingSignature(false);
+                              } catch {
+                                /* toast handled in hook */
+                              }
+                            }}
+                            title="Save changes to this signature"
+                          >
+                            {upsertSignature.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                            Save
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1 text-[11px] text-muted-foreground"
+                            onClick={() => {
+                              setEditingSignature(false);
+                              setSigDraft('');
+                            }}
+                            title="Discard changes"
+                          >
+                            <X className="h-3 w-3" />
+                            Cancel
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </div>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
