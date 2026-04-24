@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Activity, FileText, Eye, MousePointerClick, RefreshCw, Mail } from "lucide-react";
+import { ExternalLink, Activity, FileText, Eye, MousePointerClick, RefreshCw, Mail, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
 type Row = {
   contact_id: string | null;
