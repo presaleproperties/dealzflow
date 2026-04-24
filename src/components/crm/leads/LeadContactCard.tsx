@@ -37,7 +37,7 @@ type Row = {
   format?: (v: string) => string | null;
   show?: boolean;
   inputType?: 'text' | 'email';
-  multiSelect?: { options: readonly string[] };
+  multiSelect?: { options: readonly string[]; allowCustom?: boolean };
 };
 
 export function LeadContactCard({ contact }: { contact: CrmContact }) {
@@ -52,8 +52,8 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
     { icon: Mail, field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary, inputType: 'email' },
     { icon: Phone, field: 'phone', href: (v) => `tel:${v}` },
     { icon: Phone, field: 'phone_secondary', href: (v) => `tel:${v}`, show: !!contact.phone_secondary },
-    { icon: MapPin, field: 'city', multiSelect: { options: FRASER_VALLEY_CITIES } },
-    { icon: Languages, field: 'language', multiSelect: { options: CRM_LANGUAGES } },
+    { icon: MapPin, field: 'city', multiSelect: { options: FRASER_VALLEY_CITIES, allowCustom: true } },
+    { icon: Languages, field: 'language', multiSelect: { options: CRM_LANGUAGES, allowCustom: true } },
     { icon: Cake, field: 'birthday', format: (v) => tryFormatDate(v) ?? v, show: !!contact.birthday },
   ];
 
@@ -67,14 +67,17 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
           const val = contact[row.field] as string | null;
 
           if (row.multiSelect) {
-            const selected = val ? val.split(', ').filter(Boolean) : [];
+            const selected = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const Icon = row.icon;
             return (
-              <div key={row.field} className="group flex items-center gap-2 py-1">
+              <div key={row.field} className="group flex items-start gap-2 py-1">
+                <Icon className="w-4 h-4 text-muted-foreground shrink-0 mt-3" strokeWidth={1.8} />
                 <CheckboxDropdown
                   options={row.multiSelect.options}
                   selected={selected}
                   onChange={(v) => save(row.field, v.join(', '))}
-                  placeholder={`Select ${row.field}`}
+                  placeholder={row.field === 'city' ? 'Select or add city' : `Select ${row.field}`}
+                  allowCustom={row.multiSelect.allowCustom}
                   className="flex-1"
                 />
               </div>
