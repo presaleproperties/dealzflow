@@ -10,6 +10,8 @@ import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
+import { isRichHtml } from '@/lib/htmlDetect';
+import { toast } from 'sonner';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
 
@@ -150,6 +152,15 @@ export default function EmailSettingsSection() {
               <Textarea
                 value={htmlImport}
                 onChange={e => setHtmlImport(e.target.value)}
+                onPaste={(e) => {
+                  // Prefer text/html clipboard payload — keeps tables, styles, MSO intact
+                  const html = e.clipboardData?.getData('text/html');
+                  if (html && isRichHtml(html)) {
+                    e.preventDefault();
+                    setHtmlImport(html);
+                    setShowHtmlPreview(true);
+                  }
+                }}
                 placeholder="<table>...</table>"
                 className="min-h-[200px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40"
               />
@@ -170,7 +181,23 @@ export default function EmailSettingsSection() {
             </TabsContent>
 
             <TabsContent value="simple" className="mt-4 space-y-2">
-              <RichTextEditor content={simpleHtml} onChange={setSimpleHtml} />
+              {/* Capture-phase paste listener: if rich HTML is on the clipboard,
+                  re-route to HTML Import tab BEFORE Tiptap can strip it. */}
+              <div
+                onPasteCapture={(e) => {
+                  const html = e.clipboardData?.getData('text/html');
+                  if (html && isRichHtml(html)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setHtmlImport(html);
+                    setSignatureMode('html');
+                    setShowHtmlPreview(true);
+                    toast.info('Detected rich HTML signature — switched to HTML Import to preserve formatting');
+                  }
+                }}
+              >
+                <RichTextEditor content={simpleHtml} onChange={setSimpleHtml} />
+              </div>
             </TabsContent>
           </Tabs>
           <p className="text-xs text-muted-foreground">
