@@ -720,6 +720,68 @@ export type Database = {
           },
         ]
       }
+      crm_email_schedule: {
+        Row: {
+          bcc: string | null
+          body_html: string
+          cc: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          id: string
+          send_at: string
+          sent_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          to_emails: string[]
+          updated_at: string
+        }
+        Insert: {
+          bcc?: string | null
+          body_html: string
+          cc?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          id?: string
+          send_at: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          to_emails: string[]
+          updated_at?: string
+        }
+        Update: {
+          bcc?: string | null
+          body_html?: string
+          cc?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          id?: string
+          send_at?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          to_emails?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_schedule_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_email_settings: {
         Row: {
           created_at: string
