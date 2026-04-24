@@ -429,7 +429,17 @@ export function PipelineKanban() {
                                 Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
                               </button>
                             )}
-                            {segContacts.length === 0 && (
+                            {contactsLoading && segContacts.length === 0 && (
+                              <div className="space-y-2">
+                                {Array.from({ length: 2 }).map((_, j) => (
+                                  <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-3 w-1/2" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {!contactsLoading && segContacts.length === 0 && (
                               <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
                             )}
                           </div>
