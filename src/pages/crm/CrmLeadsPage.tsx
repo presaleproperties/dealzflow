@@ -466,7 +466,7 @@ export default function CrmLeadsPage() {
                     <span>{view.emoji}</span>
                     <span className="flex-1">{view.label}</span>
                     <span className="text-[11px] text-muted-foreground tabular-nums">
-                      {(viewCounts[view.id] ?? 0).toLocaleString()}
+                      {allContactsLoading ? '…' : (viewCounts[view.id] ?? 0).toLocaleString()}
                     </span>
                   </DropdownMenuItem>
                 ))}
