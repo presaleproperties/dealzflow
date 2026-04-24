@@ -101,6 +101,8 @@ Deno.serve(async (req) => {
     let presaleResp: Response | null = null;
     let presaleBody: any = null;
 
+    const trackedHtml = body.html ? injectTracking(body.html, trackingId) : undefined;
+
     if (PRESALE_SEND_URL && PRESALE_BRIDGE_SECRET) {
       try {
         presaleResp = await fetch(PRESALE_SEND_URL, {
@@ -113,7 +115,7 @@ Deno.serve(async (req) => {
             to: body.to,
             to_name: body.to_name,
             subject: body.subject,
-            html: body.html,
+            html: trackedHtml,
             text: body.text,
             tracking_id: trackingId,
             origin: "crm",
