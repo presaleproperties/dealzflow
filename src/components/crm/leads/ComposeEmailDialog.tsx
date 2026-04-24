@@ -75,6 +75,10 @@ const TemplateThumb: ComponentType<{ html?: string | null }> =
 
 const RECENT_KEY = 'crm:compose:recent-template-ids';
 
+const isRichSignatureHtml = (html: string) =>
+  /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
+  || /<[a-z][^>]*\sstyle\s*=/i.test(html);
+
 export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
@@ -105,6 +109,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [previewTpl, setPreviewTpl] = useState<AnyTpl | null>(null);
   const [varPickerOpen, setVarPickerOpen] = useState(false);
   const [varSearch, setVarSearch] = useState('');
+  const autoSignaturePreviewedRef = useRef(false);
 
   /* Load recent template IDs from local storage when dialog opens */
   useEffect(() => {
@@ -126,7 +131,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       setBcc('');
       setShowCcBcc(false);
       setMode('edit');
+      setAppendSignature(true);
       setSelectedSignatureId(null);
+      autoSignaturePreviewedRef.current = false;
     }
   }, [open]);
 
@@ -147,6 +154,14 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
     return emailSettings?.signature_html ?? '';
   }, [selectedSignatureId, signatures, emailSettings]);
+
+  /* Automatically show rich default signatures rendered when a new email opens. */
+  useEffect(() => {
+    if (!open || autoSignaturePreviewedRef.current) return;
+    if (!appendSignature || !activeSignatureHtml || !isRichSignatureHtml(activeSignatureHtml)) return;
+    setMode('preview');
+    autoSignaturePreviewedRef.current = true;
+  }, [open, appendSignature, activeSignatureHtml]);
 
   const senderCtx = useMemo(
     () => ({
