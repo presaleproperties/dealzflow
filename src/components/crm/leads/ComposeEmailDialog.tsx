@@ -337,37 +337,38 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     No templates yet.
                   </p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {sidebarTemplates.map((tpl) => (
                       <button
                         key={tpl.id}
                         onClick={() => applyTemplate(tpl)}
                         className={cn(
-                          'w-full text-left p-2.5 rounded-lg border transition-all group',
+                          'w-full text-left rounded-lg border overflow-hidden transition-all group bg-card',
                           activeTplId === tpl.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-transparent hover:border-border hover:bg-card',
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : 'border-border hover:border-primary/40 hover:shadow-sm',
                         )}
                       >
-                        <div className="flex items-start gap-2">
-                          <div
+                        <div className="relative h-[110px] bg-white border-b border-border/60 overflow-hidden">
+                          <TemplateThumb html={tpl.body_html || ''} />
+                          <span
                             className={cn(
-                              'h-7 w-7 rounded-md flex items-center justify-center shrink-0 mt-0.5',
+                              'absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider',
                               tpl.__source === 'presale'
-                                ? 'bg-primary/10 text-primary'
+                                ? 'bg-primary text-primary-foreground'
                                 : 'bg-muted text-muted-foreground',
                             )}
                           >
-                            <Mail className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
-                              {tpl.name}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                              {tpl.subject || 'No subject'}
-                            </p>
-                          </div>
+                            {tpl.__source === 'presale' ? 'Presale' : 'Local'}
+                          </span>
+                        </div>
+                        <div className="px-2.5 py-2">
+                          <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">
+                            {tpl.name}
+                          </p>
+                          <p className="text-[10.5px] text-muted-foreground truncate mt-0.5">
+                            {tpl.subject || 'No subject'}
+                          </p>
                         </div>
                       </button>
                     ))}
