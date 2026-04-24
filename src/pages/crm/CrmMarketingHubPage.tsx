@@ -59,14 +59,16 @@ export default function CrmMarketingHubPage() {
   const [activeTags, setActiveTags] = useState<Set<TemplateTag>>(new Set());
   const [search, setSearch] = useState('');
 
-  // Bridge currently surfaces only emails. Flyers/social are placeholders that
-  // mirror Presale's tabbed structure so the layout reads identically.
-  const emailAssets = templates;
-  const flyerAssets: BridgeTemplate[] = useMemo(() => [], []);
+  // Bridge returns a unified library; we partition by asset_type so each tab
+  // shows the right slice of synced content from Presale.
+  const emailAssets = useMemo(() => templates.filter((t) => t.asset_type === 'email'), [templates]);
+  const flyerAssets = useMemo(() => templates.filter((t) => t.asset_type === 'flyer'), [templates]);
+  const socialAssets = useMemo(() => templates.filter((t) => t.asset_type === 'social'), [templates]);
 
   const tagCounts = useMemo(() => countTags(emailAssets), [emailAssets]);
 
-  const baseAssets = activeTab === 'emails' ? emailAssets : flyerAssets;
+  const baseAssets =
+    activeTab === 'emails' ? emailAssets : activeTab === 'flyers' ? flyerAssets : socialAssets;
 
   const filteredAssets = useMemo(() => {
     const q = search.trim().toLowerCase();
