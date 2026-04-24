@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
 import {
-  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2,
+  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useBridgeTemplates, type BridgeTemplate } from '@/hooks/useBridgeEmail';
 import { PresaleTemplateCard } from '@/components/crm/marketing/PresaleTemplateCard';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
+import { inferTemplateTags, countTags, TEMPLATE_TAG_ORDER, type TemplateTag } from '@/lib/templateTags';
 
 const CREATE_OPTIONS = [
   {
