@@ -551,6 +551,12 @@ export function LeadsTable({
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    contacts.forEach(c => (c.tags ?? []).forEach(t => { if (t) set.add(t); }));
+    return Array.from(set).sort();
+  }, [contacts]);
+
   const allPageIds = contacts.map(c => c.id);
   const allSelected = contacts.length > 0 && contacts.every(c => selectedIds.includes(c.id));
 
