@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   StickyNote, Zap, Mail, Phone, Download, Pin, PinOff,
-  Pencil, MoreHorizontal, Trash2, Send, Plus,
+  Pencil, MoreHorizontal, Trash2, Send, Plus, MessageSquare,
 } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,13 @@ type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'system';
 
 const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string }> = {
   manual: { icon: StickyNote, label: 'Note' },
+  note: { icon: StickyNote, label: 'Note' },
   system: { icon: Zap, label: 'System' },
   email: { icon: Mail, label: 'Email' },
+  text: { icon: MessageSquare, label: 'Text' },
+  call: { icon: Phone, label: 'Call' },
   call_log: { icon: Phone, label: 'Call' },
-  import: { icon: Download, label: 'Imported Note' },
+  import: { icon: Download, label: 'Imported' },
   zapier: { icon: Zap, label: 'Zapier' },
 };
 
