@@ -261,6 +261,7 @@ export function FilterPanel({
           <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
         </div>
       </ScrollArea>
-    </div>
+      </div>
+    </>
   );
 }
