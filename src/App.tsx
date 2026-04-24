@@ -38,7 +38,7 @@ import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import CrmPipelinePage from "./pages/crm/CrmPipelinePage";
 import CrmEmailPage from "./pages/crm/CrmEmailPage";
 
-import CrmTemplatesPage from "./pages/crm/CrmTemplatesPage";
+import CrmMarketingHubPage from "./pages/crm/CrmMarketingHubPage";
 // CrmContactsPage removed — merged into CrmLeadsPage
 import CrmAutomationsPage from "./pages/crm/CrmAutomationsPage";
 import CrmCalendarPage from "./pages/crm/CrmCalendarPage";
