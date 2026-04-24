@@ -1282,6 +1282,7 @@ export type Database = {
           link_url: string | null
           metadata: Json | null
           occurred_at: string
+          presale_user_id: string | null
           template_id: string | null
           template_name: string | null
         }
@@ -1297,6 +1298,7 @@ export type Database = {
           link_url?: string | null
           metadata?: Json | null
           occurred_at?: string
+          presale_user_id?: string | null
           template_id?: string | null
           template_name?: string | null
         }
@@ -1312,6 +1314,7 @@ export type Database = {
           link_url?: string | null
           metadata?: Json | null
           occurred_at?: string
+          presale_user_id?: string | null
           template_id?: string | null
           template_name?: string | null
         }
@@ -1337,8 +1340,10 @@ export type Database = {
           funnel_total_steps: number | null
           id: string
           payload: Json | null
+          presale_user_id: string | null
           property_id: string | null
           property_name: string | null
+          status: string | null
           submitted_at: string
         }
         Insert: {
@@ -1352,8 +1357,10 @@ export type Database = {
           funnel_total_steps?: number | null
           id?: string
           payload?: Json | null
+          presale_user_id?: string | null
           property_id?: string | null
           property_name?: string | null
+          status?: string | null
           submitted_at?: string
         }
         Update: {
@@ -1367,8 +1374,10 @@ export type Database = {
           funnel_total_steps?: number | null
           id?: string
           payload?: Json | null
+          presale_user_id?: string | null
           property_id?: string | null
           property_name?: string | null
+          status?: string | null
           submitted_at?: string
         }
         Relationships: [
@@ -1394,6 +1403,7 @@ export type Database = {
           id: string
           landing_page: string | null
           pages_viewed: number | null
+          presale_user_id: string | null
           referrer: string | null
           session_id: string | null
           started_at: string
@@ -1413,6 +1423,7 @@ export type Database = {
           id?: string
           landing_page?: string | null
           pages_viewed?: number | null
+          presale_user_id?: string | null
           referrer?: string | null
           session_id?: string | null
           started_at?: string
@@ -1432,6 +1443,7 @@ export type Database = {
           id?: string
           landing_page?: string | null
           pages_viewed?: number | null
+          presale_user_id?: string | null
           referrer?: string | null
           session_id?: string | null
           started_at?: string
