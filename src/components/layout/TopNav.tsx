@@ -38,6 +38,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Deals',            path: '/deals',     icon: Handshake,  description: 'All transactions' },
       { label: 'Payouts',          path: '/payouts',   icon: DollarSign, description: 'Commission tracking' },
       { label: 'Client Inventory', path: '/inventory', icon: Building2,  description: 'Client portfolio' },
+      { label: 'Network',          path: '/network',   icon: Network,    description: 'Agent network & revshare' },
     ],
   },
   {
@@ -47,10 +48,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Forecast',  path: '/forecast',  icon: TrendingUp, description: 'Revenue projections' },
       { label: 'Analytics', path: '/analytics', icon: BarChart2, description: 'Business insights' },
     ],
-  },
-  {
-    label: 'Network',
-    path: '/network',
   },
   {
     label: 'CRM',
