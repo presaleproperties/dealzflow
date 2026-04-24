@@ -8,9 +8,9 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X, AlertTriangle } from 'lucide-react';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
-
-const TAG_OPTIONS = ['Investor', 'First-Time Buyer', 'Punjabi Speaker', 'Hindi Speaker', 'VIP', 'Pre-Approved', 'Cash Buyer'];
+import { InlineLibraryPicker } from './InlineLibraryPicker';
 
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { CheckboxDropdown } from './CheckboxDropdown';
@@ -46,6 +46,8 @@ function EmailWarning({ validation, onFix }: { validation: EmailValidation; onFi
 
 export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const addContact = useAddCrmContact();
+  const { data: tagLib = [] } = useCrmTags();
+  const createTag = useCreateCrmTag();
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -272,18 +274,15 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           </div>
           <div>
             <Label>Tags</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {TAG_OPTIONS.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={form.tags.includes(tag) ? 'default' : 'outline'}
-                  className="cursor-pointer select-none transition-all"
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                  {form.tags.includes(tag) && <X className="w-3 h-3 ml-1" />}
-                </Badge>
-              ))}
+            <div className="mt-1.5">
+              <InlineLibraryPicker
+                selected={form.tags}
+                library={tagLib.map(t => ({ label: t.name, count: t.usage_count ?? 0 }))}
+                onChange={(next) => setForm({ ...form, tags: next })}
+                onCreate={(name) => createTag.mutate(name)}
+                placeholder="Search or add tag…"
+                emptyText="No tags yet"
+              />
             </div>
           </div>
 

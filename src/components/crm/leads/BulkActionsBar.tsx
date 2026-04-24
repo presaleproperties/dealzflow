@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail } from 'lucide-react';
-import { useBulkUpdateContacts, useBulkDeleteContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useBulkUpdateContacts, useBulkDeleteContacts, useBulkAddTagsToContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
+import { InlineLibraryPicker } from './InlineLibraryPicker';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -18,7 +21,12 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const navigate = useNavigate();
   const bulkUpdate = useBulkUpdateContacts();
   const bulkDelete = useBulkDeleteContacts();
+  const bulkAddTags = useBulkAddTagsToContacts();
+  const { data: tagLib = [] } = useCrmTags();
+  const createTag = useCreateCrmTag();
   const [showDelete, setShowDelete] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [pendingTags, setPendingTags] = useState<string[]>([]);
 
   const count = selectedIds.length;
   if (count === 0) return null;
@@ -85,6 +93,40 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
             {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        <Popover
+          open={tagsOpen}
+          onOpenChange={(o) => {
+            setTagsOpen(o);
+            if (!o && pendingTags.length > 0) {
+              bulkAddTags.mutate({ ids: selectedIds, tags: pendingTags });
+              setPendingTags([]);
+              onClearSelection();
+            } else if (!o) {
+              setPendingTags([]);
+            }
+          }}
+        >
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 hover:bg-muted">
+              <Tag className="w-3.5 h-3.5" />
+              <span>Add Tag</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="text-xs font-medium text-muted-foreground mb-2">
+              Tag {count} contact{count > 1 ? 's' : ''} (close to apply)
+            </div>
+            <InlineLibraryPicker
+              selected={pendingTags}
+              library={tagLib.map((t) => ({ label: t.name, count: t.usage_count ?? 0 }))}
+              onChange={setPendingTags}
+              onCreate={(name) => createTag.mutate(name)}
+              placeholder="Search or add tag…"
+              emptyText="Pick or create tags to apply"
+            />
+          </PopoverContent>
+        </Popover>
 
         <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setShowDelete(true)}>
           <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete

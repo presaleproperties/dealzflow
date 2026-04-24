@@ -6,6 +6,7 @@ import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName, formatPhone, formatEmail } from '@/lib/format';
 import { LEAD_TYPE_LABELS, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
+import { useCrmTags } from '@/hooks/useCrmTags';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -93,13 +94,15 @@ const TAG_COLORS = [
 ];
 
 
+interface TagLibItem { label: string; count: number }
+
 function InlineTagsCell({
   contact,
-  allTags,
+  tagLibrary,
   updateContact,
 }: {
   contact: CrmContact;
-  allTags: string[];
+  tagLibrary: TagLibItem[];
   updateContact: ReturnType<typeof useUpdateCrmContact>;
 }) {
   const [open, setOpen] = useState(false);
@@ -109,12 +112,35 @@ function InlineTagsCell({
   const extra = tags.length - 2;
 
   const toggleTag = (tag: string) => {
-    const next = tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag];
+    const value = tag.trim();
+    if (!value) return;
+    const exists = tags.some(t => t.toLowerCase() === value.toLowerCase());
+    const next = exists
+      ? tags.filter(t => t.toLowerCase() !== value.toLowerCase())
+      : [...tags, value];
+    // The crm_contacts trg_sync_crm_tags trigger will auto-upsert this into the
+    // canonical crm_tags library, making it instantly reusable everywhere.
     updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
   };
 
   const trimmed = search.trim();
-  const canCreate = trimmed.length > 0 && !allTags.some(t => t.toLowerCase() === trimmed.toLowerCase()) && !tags.some(t => t.toLowerCase() === trimmed.toLowerCase());
+  const tagsLower = useMemo(() => new Set(tags.map(t => t.toLowerCase())), [tags]);
+  const libraryLower = useMemo(
+    () => new Set(tagLibrary.map(t => t.label.toLowerCase())),
+    [tagLibrary],
+  );
+  const canCreate =
+    trimmed.length > 0 &&
+    !libraryLower.has(trimmed.toLowerCase()) &&
+    !tagsLower.has(trimmed.toLowerCase());
+
+  // Library entries not currently applied to this contact, filtered by search.
+  const availableSorted = useMemo(() => {
+    const q = trimmed.toLowerCase();
+    return tagLibrary
+      .filter(t => !tagsLower.has(t.label.toLowerCase()))
+      .filter(t => (q ? t.label.toLowerCase().includes(q) : true));
+  }, [tagLibrary, tagsLower, trimmed]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -144,18 +170,18 @@ function InlineTagsCell({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-64 p-0"
+        className="w-72 p-0"
         align="start"
         onClick={e => e.stopPropagation()}
       >
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Search or create tag..."
+            placeholder="Search or create tag…"
             value={search}
             onValueChange={setSearch}
             className="text-sm"
           />
-          <CommandList className="max-h-56">
+          <CommandList className="max-h-72">
             <CommandEmpty>
               {canCreate ? (
                 <button
@@ -172,30 +198,36 @@ function InlineTagsCell({
             {tags.length > 0 && (
               <CommandGroup heading="Applied">
                 {tags.map(tag => (
-                  <CommandItem key={`applied-${tag}`} value={tag} onSelect={() => toggleTag(tag)} className="text-sm">
+                  <CommandItem key={`applied-${tag}`} value={`applied-${tag}`} onSelect={() => toggleTag(tag)} className="text-sm">
                     <Check className="w-3.5 h-3.5 mr-2 text-primary" />
-                    {tag}
+                    <span className="flex-1 truncate">{tag}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
             )}
-            <CommandGroup heading="All tags">
-              {allTags.filter(t => !tags.includes(t)).map(tag => (
-                <CommandItem key={tag} value={tag} onSelect={() => toggleTag(tag)} className="text-sm">
-                  <span className="w-3.5 h-3.5 mr-2" />
-                  {tag}
-                </CommandItem>
-              ))}
+            <CommandGroup heading={`All tags · ${tagLibrary.length}`}>
               {canCreate && (
                 <CommandItem
                   value={`__create__${trimmed}`}
                   onSelect={() => { toggleTag(trimmed); setSearch(''); }}
                   className="text-sm"
                 >
-                  <Plus className="w-3.5 h-3.5 mr-2" />
-                  Create "{trimmed}"
+                  <Plus className="w-3.5 h-3.5 mr-2 text-primary" />
+                  <span className="flex-1">Create "<span className="font-semibold">{trimmed}</span>"</span>
                 </CommandItem>
               )}
+              {availableSorted.slice(0, 200).map(item => (
+                <CommandItem
+                  key={item.label}
+                  value={item.label}
+                  onSelect={() => toggleTag(item.label)}
+                  className="text-sm"
+                >
+                  <span className="w-3.5 h-3.5 mr-2" />
+                  <span className="flex-1 truncate">{item.label}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums ml-2">{item.count}</span>
+                </CommandItem>
+              ))}
             </CommandGroup>
           </CommandList>
         </Command>
@@ -341,7 +373,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; allTags: string[] }) {
+function CellContent({ col, contact, updateContact, tagLibrary }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[] }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
@@ -404,7 +436,7 @@ function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef;
     case 'pipeline':
       return <InlineStatusCell contact={contact} updateContact={updateContact} />;
     case 'tags':
-      return <InlineTagsCell contact={contact} allTags={allTags} updateContact={updateContact} />;
+      return <InlineTagsCell contact={contact} tagLibrary={tagLibrary} updateContact={updateContact} />;
     case 'assigned_to':
       return <InlineAgentCell contact={contact} updateContact={updateContact} />;
     case 'last_touch_at':
@@ -551,11 +583,16 @@ export function LeadsTable({
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    contacts.forEach(c => (c.tags ?? []).forEach(t => { if (t) set.add(t); }));
-    return Array.from(set).sort();
-  }, [contacts]);
+  // Pull from the canonical crm_tags library so this row picker shows EVERY tag
+  // in the CRM (not just tags from the 50 contacts on the current page).
+  const { data: tagLibRaw = [] } = useCrmTags();
+  const tagLibrary = useMemo<TagLibItem[]>(
+    () =>
+      tagLibRaw
+        .map(t => ({ label: t.name, count: t.usage_count ?? 0 }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    [tagLibRaw],
+  );
 
   const allPageIds = contacts.map(c => c.id);
   const allSelected = contacts.length > 0 && contacts.every(c => selectedIds.includes(c.id));
@@ -653,7 +690,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} allTags={allTags} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} />
                       </td>
                     ))}
                   </tr>
