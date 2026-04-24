@@ -34,6 +34,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { formatNoteContent } from '@/lib/formatNoteContent';
+import { Globe } from 'lucide-react';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
