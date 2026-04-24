@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isRichHtml } from '@/lib/htmlDetect';
 import { Plus, Trash2, Star, Pencil, Check, X, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
