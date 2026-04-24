@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Phone, MessageCircle, Mail, ChevronLeft, ChevronRight,
+  ArrowLeft, Phone, Mail, ChevronLeft, ChevronRight,
   Calendar, Plus, ListTodo,
   StickyNote, Zap, Send, Pin, PinOff, Pencil, MoreHorizontal, Trash2,
   Download, ArrowUpRight, ArrowDownLeft, X, ChevronDown, ChevronUp,
@@ -1008,12 +1008,9 @@ export default function LeadDetailPage() {
               {TYPE_LABELS[c.contact_type] ?? 'LEAD'}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => c.phone && (window.location.href = `tel:${c.phone}`)} disabled={!c.phone}>
               <Phone className="w-3.5 h-3.5" /> Call
-            </Button>
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => c.phone && window.open(`https://wa.me/${c.phone.replace(/\D/g, '')}`, '_blank')} disabled={!c.phone}>
-              <MessageCircle className="w-3.5 h-3.5" /> Chat
             </Button>
             <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => setShowEmail(true)}>
               <Mail className="w-3.5 h-3.5" /> Email
