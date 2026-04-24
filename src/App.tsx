@@ -21,7 +21,7 @@ import PayoutsPage from "./pages/PayoutsPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import ForecastPage from "./pages/ForecastPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
-import SettingsPage from "./pages/SettingsPage";
+import UnifiedSettingsPage from "./pages/UnifiedSettingsPage";
 import AdminPage from "./pages/AdminPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
@@ -151,7 +151,7 @@ const App = () => (
                   <Route path="/command-center" element={<Navigate to="/dashboard" replace />} />
                   
                   <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><UnifiedSettingsPage /></ProtectedRoute>} />
                   <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                   <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
 
@@ -167,7 +167,7 @@ const App = () => (
                   <Route path="/crm/automations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmAutomationsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/settings" element={<Navigate to="/settings?view=crm" replace />} />
                   <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
 
                   <Route path="*" element={<NotFound />} />
