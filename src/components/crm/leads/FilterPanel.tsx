@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { X, Eraser, ChevronDown, ChevronRight, Search, Check } from 'lucide-react';
+import { Eraser, ChevronDown, ChevronRight, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
@@ -73,7 +74,7 @@ function FilterAccordion({
   };
 
   return (
-    <div className="border-b border-r border-border/30 last:border-r-0">
+    <div className="border-b border-border/30">
       <button
         onClick={() => { setExpanded(!expanded); if (expanded) setSearch(''); }}
         className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
@@ -105,7 +106,7 @@ function FilterAccordion({
               />
             </div>
           )}
-          <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
+          <div className="space-y-0.5 max-h-[220px] overflow-y-auto">
             {filtered.map(opt => (
               <button
                 key={opt}
@@ -171,63 +172,60 @@ export function FilterPanel({
   activeFilterCount,
 }: FilterPanelProps) {
   return (
-    <div
-      className={cn(
-        'grid transition-all duration-300 ease-out',
-        open
-          ? 'grid-rows-[1fr] opacity-100 mt-1'
-          : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none',
-      )}
-    >
-      <div className="overflow-hidden">
-        <div className="border border-border/50 bg-card/90 backdrop-blur-sm rounded-xl shadow-sm overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 bg-muted/20">
+    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md p-0 flex flex-col gap-0 bg-card/95 backdrop-blur-xl border-l border-border/60"
+      >
+        <SheetHeader className="px-5 py-4 border-b border-border/40 space-y-0">
+          <div className="flex items-center justify-between gap-2 pr-6">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+              <SheetTitle className="text-base font-semibold">Filters</SheetTitle>
               {activeFilterCount > 0 && (
                 <Badge variant="secondary" className="text-[10px] px-1.5">
                   {activeFilterCount} active
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-1">
-              {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={onClearAll}>
-                  <Eraser className="w-3 h-3" />
-                  Clear
-                </Button>
-              )}
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
-                <X className="w-4 h-4" />
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={onClearAll}>
+                <Eraser className="w-3 h-3" />
+                Clear all
               </Button>
-            </div>
+            )}
           </div>
+        </SheetHeader>
 
-          {/* Contact Type row */}
-          <div className="px-4 py-2.5 border-b border-border/30">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">Contact Type</p>
-            <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
-          </div>
-
-          {/* Filter accordions in a responsive grid */}
-          <ScrollArea className="max-h-[55vh]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
-              <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
-              <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
-              <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
-              <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
-              <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
-              <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
-              <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
-              <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
-              <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
-              <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
-            </div>
-          </ScrollArea>
+        {/* Contact Type */}
+        <div className="px-5 py-3 border-b border-border/30">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Contact Type</p>
+          <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
         </div>
-      </div>
-    </div>
+
+        {/* Filter accordions */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div>
+            <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
+            <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
+            <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
+            <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
+            <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
+            <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
+            <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
+            <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
+            <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
+            <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
+            <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
+          </div>
+        </ScrollArea>
+
+        {/* Footer */}
+        <div className="border-t border-border/40 px-5 py-3 flex items-center justify-end gap-2 bg-muted/20">
+          <Button variant="outline" size="sm" className="h-8" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
