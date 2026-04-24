@@ -1,12 +1,16 @@
+import { Navigate, useSearchParams } from 'react-router-dom';
 import SettingsPage from './SettingsPage';
 
 /**
  * Settings page entry. Production settings only.
  *
- * CRM settings live at their own route (/crm/settings) inside CrmLayout
- * to avoid double-wrapping layouts (which caused overlapping headers and
- * a broken sticky scroll container).
+ * Legacy `/settings?view=crm` deep links are redirected to the canonical
+ * `/crm/settings` route so the CRM layout mounts cleanly (no double chrome).
  */
 export default function UnifiedSettingsPage() {
+  const [searchParams] = useSearchParams();
+  if (searchParams.get('view') === 'crm') {
+    return <Navigate to="/crm/settings" replace />;
+  }
   return <SettingsPage />;
 }
