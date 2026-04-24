@@ -33,6 +33,11 @@ export function PresaleQuickSendDialog({
   const [manualEmail, setManualEmail] = useState('');
   const [searching, setSearching] = useState(false);
   const [subject, setSubject] = useState('');
+  type SendStatus = 'pending' | 'sending' | 'success' | 'failed';
+  const [sendProgress, setSendProgress] = useState<
+    Record<string, { status: SendStatus; error?: string }>
+  >({});
+  const [isSending, setIsSending] = useState(false);
   const send = useBridgeSendEmail();
   const { data: emailSettings } = useEmailSettings();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -43,6 +48,8 @@ export function PresaleQuickSendDialog({
       setResults([]);
       setRecipients([]);
       setManualEmail('');
+      setSendProgress({});
+      setIsSending(false);
     }
     if (open && asset) setSubject(asset.subject || asset.name || '');
   }, [open, asset]);
