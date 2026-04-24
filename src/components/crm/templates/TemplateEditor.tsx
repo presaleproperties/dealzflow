@@ -57,11 +57,16 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
   const [areaTags, setAreaTags] = useState<string[]>([]);
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const [fullPreview, setFullPreview] = useState(false);
+  const [withSampleData, setWithSampleData] = useState(true);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
+  const htmlRef = useRef<HTMLTextAreaElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const lastFocused = useRef<'html' | 'subject'>('html');
 
-  const mergeTags = useMemo(() => detectMergeTags(htmlContent), [htmlContent]);
+  const mergeTags = useMemo(() => detectMergeTags(htmlContent + ' ' + subject), [htmlContent, subject]);
+  const unknownTokens = useMemo(() => findUnknownTokens(htmlContent + ' ' + subject), [htmlContent, subject]);
 
   useEffect(() => {
     if (template) {
