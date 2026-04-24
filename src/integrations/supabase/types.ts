@@ -457,7 +457,9 @@ export type Database = {
           email: string | null
           email_secondary: string | null
           first_name: string
+          home_type_pref: string | null
           id: string
+          intent: string | null
           is_pre_approved: boolean | null
           language: string | null
           last_contact_at: string | null
@@ -469,22 +471,28 @@ export type Database = {
           lofty_id: string | null
           lofty_synced_at: string | null
           lofty_updated_at: string | null
+          looking_to_buy_in: string[] | null
+          marketing_consent: boolean | null
           next_followup_date: string | null
           notes: string | null
           phone: string | null
           phone_secondary: string | null
           postal_code: string | null
+          presale_metadata: Json | null
+          presale_user_id: string | null
           project: string | null
           projects: string[]
           property_type_pref: string | null
           province: string | null
           referral_source: string | null
+          signup_completed_at: string | null
           source: string | null
           stage_changed_at: string | null
           status: string | null
           status_changed_at: string | null
           sync_source: string | null
           tags: string[] | null
+          timeframe: string | null
           updated_at: string | null
         }
         Insert: {
@@ -506,7 +514,9 @@ export type Database = {
           email?: string | null
           email_secondary?: string | null
           first_name: string
+          home_type_pref?: string | null
           id?: string
+          intent?: string | null
           is_pre_approved?: boolean | null
           language?: string | null
           last_contact_at?: string | null
@@ -518,22 +528,28 @@ export type Database = {
           lofty_id?: string | null
           lofty_synced_at?: string | null
           lofty_updated_at?: string | null
+          looking_to_buy_in?: string[] | null
+          marketing_consent?: boolean | null
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
           phone_secondary?: string | null
           postal_code?: string | null
+          presale_metadata?: Json | null
+          presale_user_id?: string | null
           project?: string | null
           projects?: string[]
           property_type_pref?: string | null
           province?: string | null
           referral_source?: string | null
+          signup_completed_at?: string | null
           source?: string | null
           stage_changed_at?: string | null
           status?: string | null
           status_changed_at?: string | null
           sync_source?: string | null
           tags?: string[] | null
+          timeframe?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -555,7 +571,9 @@ export type Database = {
           email?: string | null
           email_secondary?: string | null
           first_name?: string
+          home_type_pref?: string | null
           id?: string
+          intent?: string | null
           is_pre_approved?: boolean | null
           language?: string | null
           last_contact_at?: string | null
@@ -567,22 +585,28 @@ export type Database = {
           lofty_id?: string | null
           lofty_synced_at?: string | null
           lofty_updated_at?: string | null
+          looking_to_buy_in?: string[] | null
+          marketing_consent?: boolean | null
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
           phone_secondary?: string | null
           postal_code?: string | null
+          presale_metadata?: Json | null
+          presale_user_id?: string | null
           project?: string | null
           projects?: string[]
           property_type_pref?: string | null
           province?: string | null
           referral_source?: string | null
+          signup_completed_at?: string | null
           source?: string | null
           stage_changed_at?: string | null
           status?: string | null
           status_changed_at?: string | null
           sync_source?: string | null
           tags?: string[] | null
+          timeframe?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -890,6 +914,8 @@ export type Database = {
           link_url: string | null
           metadata: Json | null
           occurred_at: string
+          template_id: string | null
+          template_name: string | null
         }
         Insert: {
           campaign_id?: string | null
@@ -902,6 +928,8 @@ export type Database = {
           link_url?: string | null
           metadata?: Json | null
           occurred_at?: string
+          template_id?: string | null
+          template_name?: string | null
         }
         Update: {
           campaign_id?: string | null
@@ -914,6 +942,8 @@ export type Database = {
           link_url?: string | null
           metadata?: Json | null
           occurred_at?: string
+          template_id?: string | null
+          template_name?: string | null
         }
         Relationships: [
           {
@@ -932,6 +962,8 @@ export type Database = {
           email: string | null
           form_name: string | null
           form_type: string
+          funnel_step: number | null
+          funnel_total_steps: number | null
           id: string
           payload: Json | null
           property_id: string | null
@@ -944,6 +976,8 @@ export type Database = {
           email?: string | null
           form_name?: string | null
           form_type: string
+          funnel_step?: number | null
+          funnel_total_steps?: number | null
           id?: string
           payload?: Json | null
           property_id?: string | null
@@ -956,6 +990,8 @@ export type Database = {
           email?: string | null
           form_name?: string | null
           form_type?: string
+          funnel_step?: number | null
+          funnel_total_steps?: number | null
           id?: string
           payload?: Json | null
           property_id?: string | null
@@ -980,7 +1016,9 @@ export type Database = {
           duration_seconds: number | null
           email: string | null
           ended_at: string | null
+          exit_page: string | null
           id: string
+          landing_page: string | null
           pages_viewed: number | null
           referrer: string | null
           session_id: string | null
@@ -996,7 +1034,9 @@ export type Database = {
           duration_seconds?: number | null
           email?: string | null
           ended_at?: string | null
+          exit_page?: string | null
           id?: string
+          landing_page?: string | null
           pages_viewed?: number | null
           referrer?: string | null
           session_id?: string | null
@@ -1012,7 +1052,9 @@ export type Database = {
           duration_seconds?: number | null
           email?: string | null
           ended_at?: string | null
+          exit_page?: string | null
           id?: string
+          landing_page?: string | null
           pages_viewed?: number | null
           referrer?: string | null
           session_id?: string | null
@@ -1036,6 +1078,7 @@ export type Database = {
           action: string
           contact_id: string | null
           created_at: string
+          duration_seconds: number | null
           email: string | null
           id: string
           metadata: Json | null
@@ -1049,6 +1092,7 @@ export type Database = {
           action?: string
           contact_id?: string | null
           created_at?: string
+          duration_seconds?: number | null
           email?: string | null
           id?: string
           metadata?: Json | null
@@ -1062,6 +1106,7 @@ export type Database = {
           action?: string
           contact_id?: string | null
           created_at?: string
+          duration_seconds?: number | null
           email?: string | null
           id?: string
           metadata?: Json | null
