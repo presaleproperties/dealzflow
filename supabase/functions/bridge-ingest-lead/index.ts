@@ -185,26 +185,46 @@ Deno.serve(async (req) => {
       contactId = created.id;
     }
 
-    // Insert behavior data
+    // Stitch any prior anonymous behavior rows by presale_user_id → this contact
+    if (L.presale_user_id) {
+      for (const t of [
+        "crm_lead_behavior_views",
+        "crm_lead_behavior_sessions",
+        "crm_lead_behavior_forms",
+        "crm_lead_behavior_engagement",
+      ]) {
+        await supabase.from(t)
+          .update({ contact_id: contactId, email })
+          .eq("presale_user_id", L.presale_user_id)
+          .is("contact_id", null);
+      }
+    }
+
+    // Insert behavior data bundled with the signup
     const b = body.behavior || {};
+    const psu = L.presale_user_id || null;
     if (b.views?.length) {
-      await supabase.from("crm_lead_behavior_views").insert(
-        b.views.map(v => ({ contact_id: contactId, email, presale_user_id: body.lead.presale_user_id, ...v, action: v.action || "view" }))
+      await supabase.from("crm_lead_behavior_views").upsert(
+        b.views.map((v: any) => ({ contact_id: contactId, email, presale_user_id: psu, ...v, action: v.action || "view" })),
+        { onConflict: "event_id", ignoreDuplicates: true },
       );
     }
     if (b.engagement?.length) {
-      await supabase.from("crm_lead_behavior_engagement").insert(
-        b.engagement.map(e => ({ contact_id: contactId, email, ...e }))
+      await supabase.from("crm_lead_behavior_engagement").upsert(
+        b.engagement.map((e: any) => ({ contact_id: contactId, email, presale_user_id: psu, ...e })),
+        { onConflict: "event_id", ignoreDuplicates: true },
       );
     }
     if (b.forms?.length) {
-      await supabase.from("crm_lead_behavior_forms").insert(
-        b.forms.map(f => ({ contact_id: contactId, email, ...f }))
+      await supabase.from("crm_lead_behavior_forms").upsert(
+        b.forms.map((f: any) => ({ contact_id: contactId, email, presale_user_id: psu, ...f })),
+        { onConflict: "event_id", ignoreDuplicates: true },
       );
     }
     if (b.sessions?.length) {
-      await supabase.from("crm_lead_behavior_sessions").insert(
-        b.sessions.map(s => ({ contact_id: contactId, email, ...s }))
+      await supabase.from("crm_lead_behavior_sessions").upsert(
+        b.sessions.map((s: any) => ({ contact_id: contactId, email, presale_user_id: psu, ...s })),
+        { onConflict: "event_id", ignoreDuplicates: true },
       );
     }
 
