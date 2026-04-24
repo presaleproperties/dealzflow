@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Sparkles, Phone, Inbox, Bell, HelpCircle, Settings as Cog,
-  Mail, MessageCircle, MessageSquare, X, ExternalLink,
+  Mail, MessageSquare, X, ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
@@ -34,15 +34,6 @@ interface EmailRow {
   contact?: { first_name: string; last_name: string; email: string | null } | null;
 }
 
-interface WaConvRow {
-  id: string;
-  phone_number: string;
-  last_message_preview: string | null;
-  last_message_at: string | null;
-  unread_count: number;
-  contact?: { first_name: string; last_name: string } | null;
-}
-
 interface MessageRow {
   id: string;
   body: string;
@@ -68,13 +59,11 @@ function useUnreadInboxCount(enabled: boolean) {
     enabled,
     refetchInterval: 60_000,
     queryFn: async () => {
-      const [wa, msgs] = await Promise.all([
-        supabase.from('crm_whatsapp_conversations').select('unread_count'),
-        supabase.from('messages').select('id', { count: 'exact', head: true }).eq('direction', 'inbound'),
-      ]);
-      const waCount = (wa.data ?? []).reduce((s, r) => s + (r.unread_count ?? 0), 0);
-      const msgCount = msgs.count ?? 0;
-      return waCount + msgCount;
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('direction', 'inbound');
+      return count ?? 0;
     },
   });
 }
@@ -100,16 +89,11 @@ function useInboxFeed(open: boolean) {
     enabled: open,
     staleTime: 30_000,
     queryFn: async () => {
-      const [emailRes, waRes, msgRes] = await Promise.all([
+      const [emailRes, msgRes] = await Promise.all([
         supabase
           .from('crm_email_log')
           .select('id, subject, body, direction, sent_at, contact_id, contact:crm_contacts(first_name, last_name, email)')
           .order('sent_at', { ascending: false })
-          .limit(20),
-        supabase
-          .from('crm_whatsapp_conversations')
-          .select('id, phone_number, last_message_preview, last_message_at, unread_count, contact:crm_contacts(first_name, last_name)')
-          .order('last_message_at', { ascending: false, nullsFirst: false })
           .limit(20),
         supabase
           .from('messages')
@@ -119,7 +103,6 @@ function useInboxFeed(open: boolean) {
       ]);
       return {
         emails: (emailRes.data ?? []) as EmailRow[],
-        whatsapp: (waRes.data ?? []) as WaConvRow[],
         messages: (msgRes.data ?? []) as MessageRow[],
       };
     },
