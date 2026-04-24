@@ -21,6 +21,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { GlobalLeadSearch } from '@/components/crm/GlobalLeadSearch';
 
 interface NavChild { label: string; path: string; icon: LucideIcon; description?: string; ownerAdminOnly?: boolean; crmOnly?: boolean; }
 interface NavGroup { label: string; children: NavChild[]; }
@@ -337,8 +338,16 @@ export function TopNav() {
             })}
           </nav>
 
-          {/* Spacer fills remaining width — utilities now live in the right rail */}
-          <div className="flex-1" />
+          {/* Center/right: Global CRM search (Lofty-style) */}
+          <div className="flex-1 flex justify-end lg:justify-center">
+            {isCrmMember && (
+              <div className="hidden md:block">
+                <GlobalLeadSearch />
+              </div>
+            )}
+          </div>
+          {/* Right-side utilities live in the right rail */}
+          <div className="hidden lg:block w-2" />
         </div>
       </header>
 
