@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
 import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
+import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiagnostics';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
@@ -985,6 +986,15 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
       {/* Presale Properties Activity */}
       <WidgetSection title="Presale Activity">
         <PresaleActivityWidget contactId={contact?.id} />
+      </WidgetSection>
+
+      {/* Activity Diagnostics — why URLs may be missing */}
+      <WidgetSection title="Activity Diagnostics">
+        <LeadActivityDiagnostics
+          contactId={contact?.id}
+          contactEmail={contact?.email}
+          presaleUserId={(contact as any)?.presale_user_id}
+        />
       </WidgetSection>
     </div>
   );
