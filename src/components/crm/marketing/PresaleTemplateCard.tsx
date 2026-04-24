@@ -88,7 +88,22 @@ export function PresaleTemplateCard({ asset, onSend, onPreview }: Props) {
           <span className="text-muted-foreground/30">·</span>
           <span className="truncate">{projectName}</span>
         </div>
-        <p className="text-xs text-muted-foreground truncate mb-3">{asset.subject}</p>
+        <p className="text-xs text-muted-foreground truncate mb-2">{asset.subject}</p>
+
+        {/* Inferred filter tags */}
+        <div className="flex flex-wrap gap-1 mb-3 min-h-[18px]">
+          {inferTemplateTags(asset).map((tag) => (
+            <span
+              key={tag}
+              className={cn(
+                'inline-flex items-center text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border',
+                TAG_STYLE[tag],
+              )}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
         <div className="flex items-center gap-1.5 pt-3 border-t border-border">
           <Button size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => onSend(asset)}>
