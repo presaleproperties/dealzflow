@@ -238,6 +238,41 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     });
   };
 
+  /**
+   * Insert a saved signature inline at the current location in the body.
+   *
+   * Edit (Tiptap) mode: append after the body since Tiptap can't host arbitrary HTML.
+   * HTML mode: insert at the textarea cursor position so the user controls placement.
+   * Preview mode: append at the end of the body HTML.
+   *
+   * Also disables the auto-append toggle so the signature isn't duplicated.
+   */
+  const htmlTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const insertSignature = (sigHtml: string, sigName: string) => {
+    if (!sigHtml) {
+      toast.error('That signature is empty');
+      return;
+    }
+    const block = `<br/><br/>${sigHtml}`;
+    if (mode === 'html' && htmlTextareaRef.current) {
+      const ta = htmlTextareaRef.current;
+      const start = ta.selectionStart ?? ta.value.length;
+      const end = ta.selectionEnd ?? ta.value.length;
+      const next = ta.value.slice(0, start) + block + ta.value.slice(end);
+      setBodyHtml(next);
+      // Restore caret after React updates
+      requestAnimationFrame(() => {
+        ta.focus();
+        const pos = start + block.length;
+        ta.setSelectionRange(pos, pos);
+      });
+    } else {
+      setBodyHtml((prev) => `${prev || ''}${block}`);
+    }
+    setAppendSignature(false);
+    toast.success(`Inserted "${sigName}"`);
+  };
+
   const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
   const canSend = !!contact.email && subject.trim() && bodyText;
 
