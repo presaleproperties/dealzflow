@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { ExternalLink, Globe, Link2, Lock, Mail, ShieldAlert } from 'lucide-react';
+import { ExternalLink, Globe, Link2, Loader2, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
