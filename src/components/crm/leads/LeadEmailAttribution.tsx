@@ -31,16 +31,16 @@ export function LeadEmailAttribution({ contactId }: Props) {
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 shadow-sm space-y-3">
-      <div className="flex items-center gap-2">
-        <Mail className="w-4 h-4 text-primary" />
-        <h3 className="text-sm font-semibold">Email attribution</h3>
-        <span className="text-xs text-muted-foreground ml-auto">
-          {totalSent} sent · {totalOpens} opens · {totalClicks} clicks
-        </span>
+    <div className="bg-card rounded-xl border border-border p-4 shadow-sm space-y-3 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <Mail className="w-4 h-4 text-primary shrink-0" />
+        <h3 className="text-sm font-semibold truncate">Email attribution</h3>
       </div>
+      <p className="text-[11px] text-muted-foreground -mt-1">
+        {totalSent} sent · {totalOpens} opens · {totalClicks} clicks
+      </p>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         <Stat label="Sent" value={String(totalSent)} icon={<Send className="w-3 h-3" />} />
         <Stat label="Opens" value={String(totalOpens)} icon={<Eye className="w-3 h-3" />} />
         <Stat label="Open rate" value={`${openRate}%`} icon={<CheckCircle2 className="w-3 h-3" />} />
