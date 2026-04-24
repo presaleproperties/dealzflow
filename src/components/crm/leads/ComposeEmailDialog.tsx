@@ -94,6 +94,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [mode, setMode] = useState<Mode>('edit');
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [appendSignature, setAppendSignature] = useState(true);
+  const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
   const [logOnly, setLogOnly] = useState(false);
 
   const [recentIds, setRecentIds] = useState<string[]>([]);
