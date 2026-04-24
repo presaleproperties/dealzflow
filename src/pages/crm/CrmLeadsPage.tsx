@@ -54,7 +54,7 @@ const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Rec
 ];
 
 export default function CrmLeadsPage() {
-  const { data: allContacts = [] } = useCrmContacts();
+  const { data: allContacts = [], isLoading: allContactsLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
 
