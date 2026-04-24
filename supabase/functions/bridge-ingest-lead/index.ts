@@ -17,15 +17,40 @@ interface BehaviorPayload {
 
 interface IngestRequest {
   lead: {
+    // Identity
     email: string;
     first_name?: string;
     last_name?: string;
     phone?: string;
-    source?: string;
-    project?: string;
     presale_user_id?: string;
+
+    // Source & campaign
+    source?: string;
+    campaign_source?: string;
+    referral_source?: string;
+
+    // Project interest
+    project?: string;
+    projects?: string[];
+
+    // Shared signup fields (mirror Presale Properties signup form)
+    intent?: 'buy' | 'invest' | 'browse' | 'sell';
+    timeframe?: '0-3m' | '3-6m' | '6-12m' | '12m+';
+    home_type_pref?: 'condo' | 'townhome' | 'detached' | 'any';
+    looking_to_buy_in?: string[];     // cities / neighbourhoods
+    budget_min?: number;
+    budget_max?: number;
+    bedrooms_preferred?: string;
+    is_pre_approved?: boolean;
+    language?: string;
+    city?: string;
+    province?: string;
+    postal_code?: string;
+    marketing_consent?: boolean;
+    signup_completed_at?: string;     // ISO timestamp
+
     tags?: string[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, any>;   // any extra fields → stored in presale_metadata
   };
   behavior?: BehaviorPayload;
 }
@@ -45,31 +70,59 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const email = body.lead.email.trim().toLowerCase();
-    const phone = body.lead.phone?.replace(/\D/g, "") || null;
+    const L = body.lead;
+    const email = L.email.trim().toLowerCase();
+    const phone = L.phone?.replace(/\D/g, "") || null;
 
-    // Dedup by email or phone (merge & enrich)
-    let { data: existing } = await supabase
-      .from("crm_contacts")
-      .select("id, first_name, last_name, tags, projects, source, notes")
-      .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
-      .limit(1)
-      .maybeSingle();
+    // Dedup by presale_user_id, then email or phone (merge & enrich)
+    let existing: any = null;
+    if (L.presale_user_id) {
+      const { data } = await supabase.from("crm_contacts")
+        .select("id, first_name, last_name, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+        .eq("presale_user_id", L.presale_user_id).limit(1).maybeSingle();
+      existing = data;
+    }
+    if (!existing) {
+      const { data } = await supabase.from("crm_contacts")
+        .select("id, first_name, last_name, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+        .limit(1).maybeSingle();
+      existing = data;
+    }
 
     let contactId: string;
+    const incomingProjects = L.projects?.length ? L.projects : (L.project ? [L.project] : []);
 
     if (existing) {
-      // Merge: only fill blanks, append tags, add project, never overwrite manual edits
-      const newTags = Array.from(new Set([...(existing.tags || []), ...(body.lead.tags || []), "presale-website"]));
-      const newProjects = body.lead.project && !(existing.projects || []).includes(body.lead.project)
-        ? [...(existing.projects || []), body.lead.project]
-        : existing.projects;
+      // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
+      const newTags = Array.from(new Set([...(existing.tags || []), ...(L.tags || []), "presale-website"]));
+      const newProjects = Array.from(new Set([...(existing.projects || []), ...incomingProjects]));
+      const newCities = Array.from(new Set([...(existing.looking_to_buy_in || []), ...(L.looking_to_buy_in || [])]));
+      const mergedMeta = { ...(existing.presale_metadata || {}), ...(L.metadata || {}) };
 
       await supabase.from("crm_contacts").update({
-        first_name: existing.first_name || body.lead.first_name || "Lead",
-        last_name: existing.last_name || body.lead.last_name || "",
+        first_name: existing.first_name || L.first_name || "Lead",
+        last_name: existing.last_name || L.last_name || "",
+        presale_user_id: L.presale_user_id ?? undefined,
         tags: newTags,
         projects: newProjects,
+        looking_to_buy_in: newCities,
+        intent: L.intent ?? undefined,
+        timeframe: L.timeframe ?? undefined,
+        home_type_pref: L.home_type_pref ?? undefined,
+        budget_min: L.budget_min ?? undefined,
+        budget_max: L.budget_max ?? undefined,
+        bedrooms_preferred: L.bedrooms_preferred ?? undefined,
+        is_pre_approved: L.is_pre_approved ?? undefined,
+        language: L.language ?? undefined,
+        city: L.city ?? undefined,
+        province: L.province ?? undefined,
+        postal_code: L.postal_code ?? undefined,
+        marketing_consent: L.marketing_consent ?? undefined,
+        signup_completed_at: L.signup_completed_at ?? undefined,
+        campaign_source: L.campaign_source ?? undefined,
+        referral_source: L.referral_source ?? undefined,
+        presale_metadata: mergedMeta,
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
         last_touch_at: new Date().toISOString(),
@@ -79,19 +132,36 @@ Deno.serve(async (req) => {
       contactId = existing.id;
     } else {
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
-        first_name: body.lead.first_name || "New",
-        last_name: body.lead.last_name || "Lead",
+        first_name: L.first_name || "New",
+        last_name: L.last_name || "Lead",
         email,
-        phone: body.lead.phone || null,
-        source: body.lead.source || "presale-website",
-        project: body.lead.project || null,
-        projects: body.lead.project ? [body.lead.project] : [],
-        tags: Array.from(new Set([...(body.lead.tags || []), "presale-website"])),
+        phone: L.phone || null,
+        presale_user_id: L.presale_user_id || null,
+        source: L.source || "presale-website",
+        campaign_source: L.campaign_source || null,
+        referral_source: L.referral_source || null,
+        project: incomingProjects[0] || null,
+        projects: incomingProjects,
+        looking_to_buy_in: L.looking_to_buy_in || [],
+        intent: L.intent || null,
+        timeframe: L.timeframe || null,
+        home_type_pref: L.home_type_pref || null,
+        budget_min: L.budget_min ?? null,
+        budget_max: L.budget_max ?? null,
+        bedrooms_preferred: L.bedrooms_preferred || null,
+        is_pre_approved: L.is_pre_approved ?? false,
+        language: L.language || null,
+        city: L.city || null,
+        province: L.province || 'BC',
+        postal_code: L.postal_code || null,
+        marketing_consent: L.marketing_consent ?? false,
+        signup_completed_at: L.signup_completed_at || null,
+        presale_metadata: L.metadata || {},
+        tags: Array.from(new Set([...(L.tags || []), "presale-website"])),
         status: "New Lead",
         lead_type: "Pre-Sale",
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
-        notes: body.lead.metadata ? `Signed up via Presale: ${JSON.stringify(body.lead.metadata)}` : null,
       }).select("id").single();
 
       if (insErr) throw insErr;
