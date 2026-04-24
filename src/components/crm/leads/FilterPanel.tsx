@@ -193,6 +193,16 @@ export function FilterPanel({
     }
   }, [open]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!mounted) return null;
 
   return (
