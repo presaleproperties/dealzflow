@@ -150,31 +150,34 @@ const ALL_COLUMNS: ColumnDef[] = [
 
 /* ── Inline Status Editor ── */
 function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
-  const sc = STATUS_COLORS[contact.status ?? 'New Lead'] ?? STATUS_COLORS['New Lead'];
+  // Normalize legacy "New Lead" → "New Leads" for display matching
+  const rawStatus = contact.status ?? 'New Leads';
+  const displayStatus = rawStatus === 'New Lead' ? 'New Leads' : rawStatus;
+  const sc = STATUS_COLORS[displayStatus] ?? STATUS_COLORS[rawStatus] ?? STATUS_COLORS['New Leads'] ?? { bg: 'transparent', color: 'hsl(var(--muted-foreground))' };
   return (
     <div onClick={e => e.stopPropagation()}>
       <Select
-        value={contact.status ?? 'New Lead'}
+        value={displayStatus}
         onValueChange={v => {
           updateContact.mutate({ id: contact.id, updates: { status: v, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
           toast.success(`Status → ${v}`);
         }}
       >
         <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] font-semibold shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 gap-1" style={{ color: sc.color }}>
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
-            <SelectValue />
+            <span>{displayStatus}</span>
           </span>
         </SelectTrigger>
         <SelectContent>
           {PIPELINE_OPTIONS.map(s => {
-            const c = STATUS_COLORS[s] ?? STATUS_COLORS['New Lead'];
+            const c = STATUS_COLORS[s] ?? STATUS_COLORS['New Leads'];
             return (
               <SelectItem key={s} value={s} className="text-xs">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
                   {s}
-                  {s === contact.status && <Check className="w-3 h-3 text-primary ml-1" />}
+                  {s === displayStatus && <Check className="w-3 h-3 text-primary ml-1" />}
                 </span>
               </SelectItem>
             );
