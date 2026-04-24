@@ -1070,15 +1070,34 @@ function TaskRow({ task }: { task: any }) {
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
   const completeTask = useMutation({
     mutationFn: async () => {
+      const prev = { status: task.status, completed_at: task.completed_at ?? null };
       const { error } = await supabase
         .from('crm_tasks')
         .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', task.id);
       if (error) throw error;
+      return prev;
     },
-    onSuccess: () => {
+    onSuccess: (prev) => {
       qc.invalidateQueries({ queryKey: ['crm-contact-tasks', task.contact_id] });
-      toast.success('Task completed');
+      toast.success('Task completed', {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            const { error } = await supabase
+              .from('crm_tasks')
+              .update({ status: prev?.status ?? 'pending', completed_at: prev?.completed_at ?? null })
+              .eq('id', task.id);
+            if (error) {
+              toast.error(`Couldn't undo: ${error.message}`);
+              return;
+            }
+            qc.invalidateQueries({ queryKey: ['crm-contact-tasks', task.contact_id] });
+            toast.success('Task restored');
+          },
+        },
+        duration: 6000,
+      });
     },
     onError: (e: Error) => toast.error(e.message),
   });
