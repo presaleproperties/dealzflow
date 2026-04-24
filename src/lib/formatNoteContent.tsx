@@ -219,6 +219,9 @@ function LinkPreview({
   const href = normalizeHref(url, kind);
   const behavior = useTimelineLinkBehavior();
   const meta = kind === 'url' ? parseUrlMeta(url) : null;
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  // Lazily fetch real page metadata only when the popover actually opens.
+  const { data: pageMeta, loading: metaLoading } = useLinkMetadata(href, popoverOpen && kind === 'url');
 
   const isEmail = kind === 'email';
   // For emails we open the user's mail client in the same tab; new tab
