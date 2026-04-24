@@ -171,7 +171,7 @@ export function CheckboxDropdown({
             )}
             {filtered.map(opt => {
               const checked = isSelected(opt);
-              const isCustom = !options.includes(opt as any);
+              const isCustom = !options.some(o => o.toLowerCase() === opt.toLowerCase());
               return (
                 <button
                   key={opt}
