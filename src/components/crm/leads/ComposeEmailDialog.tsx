@@ -747,6 +747,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       content={bodyHtml}
                       onChange={setBodyHtml}
                       placeholder="Write your message... use {{lead.first_name}} for personalization."
+                      toolbarSlot={composerActions}
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
                           <div className="border-t border-border/60">
