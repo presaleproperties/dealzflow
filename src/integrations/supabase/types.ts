@@ -855,39 +855,60 @@ export type Database = {
           bcc: string | null
           body: string | null
           cc: string | null
+          click_count: number
+          clicked_at: string | null
           contact_id: string
           created_at: string
           direction: string
           gmail_message_id: string | null
           id: string
+          last_clicked_at: string | null
+          last_opened_at: string | null
+          open_count: number
+          opened_at: string | null
           sent_at: string
           subject: string
+          tracking_id: string | null
           user_id: string
         }
         Insert: {
           bcc?: string | null
           body?: string | null
           cc?: string | null
+          click_count?: number
+          clicked_at?: string | null
           contact_id: string
           created_at?: string
           direction?: string
           gmail_message_id?: string | null
           id?: string
+          last_clicked_at?: string | null
+          last_opened_at?: string | null
+          open_count?: number
+          opened_at?: string | null
           sent_at?: string
           subject: string
+          tracking_id?: string | null
           user_id: string
         }
         Update: {
           bcc?: string | null
           body?: string | null
           cc?: string | null
+          click_count?: number
+          clicked_at?: string | null
           contact_id?: string
           created_at?: string
           direction?: string
           gmail_message_id?: string | null
           id?: string
+          last_clicked_at?: string | null
+          last_opened_at?: string | null
+          open_count?: number
+          opened_at?: string | null
           sent_at?: string
           subject?: string
+          tracking_id?: string | null
           user_id?: string
         }
         Relationships: [
