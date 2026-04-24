@@ -14,6 +14,7 @@ import { TemplatePicker } from './TemplatePicker';
 import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
+import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
