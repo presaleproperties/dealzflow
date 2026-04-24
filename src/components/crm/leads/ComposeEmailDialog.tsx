@@ -750,22 +750,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       toolbarSlot={composerActions}
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
-                          <div className="border-t border-border/60">
-                            <div className="px-4 py-1 bg-muted/20 flex items-center justify-between">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                Signature
-                              </span>
-                              <span className="text-[10px] text-muted-foreground/70">
-                                Auto-appended on send
-                              </span>
-                            </div>
-                            <iframe
-                              title="signature-inline-preview"
-                              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:12px 16px;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${activeSignatureHtml}</body></html>`}
-                              className="w-full bg-white border-0 block"
-                              style={{ height: 200 }}
-                            />
-                          </div>
+                          <iframe
+                            title="signature-inline-preview"
+                            srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0 16px 12px;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${activeSignatureHtml}</body></html>`}
+                            className="w-full bg-white border-0 block"
+                            style={{ height: 200 }}
+                          />
                         ) : null
                       }
                     />
