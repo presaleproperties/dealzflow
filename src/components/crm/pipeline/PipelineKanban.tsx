@@ -71,7 +71,9 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   const budget = formatBudget(contact.budget_min, contact.budget_max);
   const score = contact.lead_score ?? 0;
   const isHot = score >= 70;
-  const cityPref = contact.city_pref || contact.city;
+  const cAny = contact as any;
+  const cityPref = cAny.city_pref || contact.city;
+  const isPreApproved = !!cAny.is_pre_approved;
 
   return (
     <Draggable draggableId={contact.id} index={index}>
