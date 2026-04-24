@@ -44,9 +44,12 @@ interface FilterPanelProps {
   dynamicTags: string[];
   dynamicCities: string[];
   dynamicCampaigns: string[];
+  /** Unified lead-type library labels (from crm_lead_types). */
+  dynamicLeadTypes?: string[];
   /** Optional usage counts keyed by option label */
   tagCounts?: Record<string, number>;
   projectCounts?: Record<string, number>;
+  leadTypeCounts?: Record<string, number>;
   onClearAll: () => void;
   activeFilterCount: number;
 }
@@ -245,8 +248,10 @@ export function FilterPanel({
   dynamicTags,
   dynamicCities,
   dynamicCampaigns,
+  dynamicLeadTypes,
   tagCounts,
   projectCounts,
+  leadTypeCounts,
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
@@ -317,7 +322,27 @@ export function FilterPanel({
           <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
           <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
           <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} optionCounts={projectCounts} />
-          <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
+          {(() => {
+            // Merge canonical LEAD_TYPES with library entries from crm_lead_types
+            // (case-insensitively) so every lead-type that exists anywhere in
+            // the CRM is filterable — not just the hardcoded slugs.
+            const seen = new Set<string>();
+            const merged: string[] = [];
+            [...LEAD_TYPES].forEach(t => { seen.add(t.toLowerCase()); merged.push(t); });
+            (dynamicLeadTypes ?? []).forEach(t => {
+              if (!seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); merged.push(t); }
+            });
+            return (
+              <FilterAccordion
+                label="Lead Type"
+                options={merged}
+                selected={filterLeadType}
+                onChange={setFilterLeadType}
+                optionLabels={LEAD_TYPE_LABELS}
+                optionCounts={leadTypeCounts}
+              />
+            );
+          })()}
           <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
           <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} optionCounts={tagCounts} />
           <FilterAccordion label="Exclude Tags" options={dynamicTags} selected={filterExcludeTags} onChange={setFilterExcludeTags} optionCounts={tagCounts} tone="exclude" />
