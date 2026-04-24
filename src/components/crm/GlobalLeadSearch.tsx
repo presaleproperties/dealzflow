@@ -76,19 +76,15 @@ export function GlobalLeadSearch() {
 
   return (
     <>
-      {/* Trigger pill — lives at the right of the top nav */}
+      {/* Trigger pill — premium AI-feel, no icons */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Search leads"
-        className="group flex items-center gap-2.5 h-10 w-[280px] lg:w-[420px] px-4 rounded-full border border-border/60 bg-muted/40 hover:bg-muted/60 hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors text-left shadow-sm"
+        className="group relative flex items-center h-10 w-[280px] lg:w-[440px] px-5 rounded-full bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 hover:from-muted/50 hover:via-muted/40 hover:to-muted/50 border border-border/40 hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
       >
-        <Search className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
-        <span className="text-[13px] text-muted-foreground/80 flex-1 truncate">
-          Search leads by name, phone, email…
+        <span className="text-[13px] font-medium tracking-tight text-muted-foreground/90 group-hover:text-foreground/90 flex-1 truncate transition-colors">
+          Ask anything or search leads…
         </span>
-        <kbd className="hidden sm:flex items-center px-2 h-5 rounded text-[10px] font-semibold text-muted-foreground/80 bg-background/80 border border-border/60">
-          ⌘K
-        </kbd>
       </button>
 
       {/* Modal overlay + centered palette */}
@@ -115,26 +111,22 @@ export function GlobalLeadSearch() {
           role="dialog"
           aria-label="Search leads"
         >
-          {/* Search input row */}
-          <div className="flex items-center gap-2 px-4 h-14 border-b border-border/50">
-            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={2} />
+          {/* Search input row — clean, no icons */}
+          <div className="flex items-center gap-3 px-5 h-14 border-b border-border/50">
             <input
               ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Name, Phone, Email, Property, Note"
-              className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+              placeholder="Ask anything or search by name, phone, email…"
+              className="flex-1 bg-transparent text-[15px] tracking-tight text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
             />
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 h-6 rounded-full bg-primary/15 text-primary text-[10.5px] font-semibold">
-              <Sparkles className="w-3 h-3" /> AI Mode
-            </span>
             <button
               onClick={() => setOpen(false)}
               aria-label="Close search"
-              className="ml-1 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              className="text-[11px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors px-2 py-0.5 rounded"
             >
-              <X className="w-4 h-4" />
+              esc
             </button>
           </div>
 
