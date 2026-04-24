@@ -253,7 +253,7 @@ function LinkPreview({
   }
 
   return (
-    <Popover>
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -270,24 +270,64 @@ function LinkPreview({
         onClick={(e) => e.stopPropagation()}
         align="start"
       >
+        {/* Server-fetched page preview (title / description / image) */}
+        {pageMeta?.image && (
+          <div className="aspect-[1.91/1] w-full bg-muted overflow-hidden border-b">
+            <img
+              src={pageMeta.image}
+              alt=""
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        )}
+
         <div className="bg-muted/40 p-3 border-b">
           <div className="flex items-start gap-2">
-            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-              <Globe className="h-4 w-4 text-primary" />
+            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+              {pageMeta?.favicon ? (
+                <img
+                  src={pageMeta.favicon}
+                  alt=""
+                  className="h-4 w-4 object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <Globe className="h-4 w-4 text-primary" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-sm truncate">{meta?.host || url}</div>
+              <div className="font-medium text-sm truncate">
+                {pageMeta?.title || pageMeta?.siteName || meta?.host || url}
+              </div>
               <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                 {meta?.isSecure ? (
-                  <><Lock className="h-3 w-3" /> Secure (HTTPS)</>
+                  <><Lock className="h-3 w-3" /> {meta.host}</>
                 ) : (
-                  <><ShieldAlert className="h-3 w-3 text-amber-500" /> Not secure</>
+                  <><ShieldAlert className="h-3 w-3 text-amber-500" /> {meta?.host || 'Not secure'}</>
                 )}
               </div>
             </div>
           </div>
         </div>
+
         <div className="p-3 space-y-2 text-xs">
+          {metaLoading && !pageMeta && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Fetching page details…</span>
+            </div>
+          )}
+          {pageMeta?.description && (
+            <div>
+              <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5">Description</div>
+              <p className="text-[12px] text-foreground/90 leading-snug line-clamp-3">{pageMeta.description}</p>
+            </div>
+          )}
+          {!metaLoading && pageMeta?.error && !pageMeta?.title && !pageMeta?.description && (
+            <div className="text-[11px] text-muted-foreground italic">Couldn't load page preview.</div>
+          )}
           {meta?.path && meta.path !== '/' && (
             <div>
               <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5">Path</div>
