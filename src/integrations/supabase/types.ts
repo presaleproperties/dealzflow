@@ -3314,6 +3314,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_crm_email_template_usage: {
+        Args: { _template_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_crm_admin: { Args: { _user_id: string }; Returns: boolean }
       is_crm_agent_or_above: { Args: { _user_id: string }; Returns: boolean }
