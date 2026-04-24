@@ -95,10 +95,21 @@ export function PresaleQuickSendDialog({
   const handleSend = async () => {
     if (!asset || recipients.length === 0) return;
     const html = asset.body_html || '';
-    // Send each recipient individually so first-name personalization works.
+    const sender = {
+      first_name: (emailSettings?.sender_name || '').split(' ')[0] || '',
+      full_name: emailSettings?.sender_name || '',
+      email: emailSettings?.reply_to || '',
+      phone: (emailSettings as any)?.signature_builder_data?.phone || '',
+      signature: emailSettings?.signature_html || '',
+    };
+    // Send each recipient individually so per-recipient tokens render correctly.
     for (const r of recipients) {
-      const personalizedHtml = renderWithSampleData(html); // sample fallback for tokens
-      const personalizedSubject = subject || asset.name || 'Presale Properties';
+      const ctx = { lead: r.lead ?? { first_name: r.name }, sender };
+      const personalizedHtml = renderForRecipient(html, ctx);
+      const personalizedSubject = renderForRecipient(
+        subject || asset.name || 'Presale Properties',
+        ctx,
+      );
       try {
         await send.mutateAsync({
           to: r.email,
