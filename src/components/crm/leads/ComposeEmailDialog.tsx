@@ -29,8 +29,11 @@ import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
-import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
+import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
+import { Dialog as InnerDialog, DialogContent as InnerDialogContent, DialogHeader as InnerDialogHeader, DialogTitle as InnerDialogTitle, DialogFooter as InnerDialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Save } from 'lucide-react';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { EMAIL_VARIABLES, renderForRecipient } from '@/lib/emailVariables';
@@ -89,6 +92,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [logOnly, setLogOnly] = useState(false);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [activeTplId, setActiveTplId] = useState<string | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saveCategory, setSaveCategory] = useState('general');
+  const createTemplate = useCreateTemplate();
 
   useEffect(() => {
     if (open) setRecentIds(readRecentIds());
@@ -218,6 +225,34 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   };
 
   const isPending = sendBridge.isPending || addMessage.isPending;
+
+  const openSaveDialog = () => {
+    if (!subject.trim() && !bodyHtml.replace(/<[^>]*>/g, '').trim()) {
+      toast.error('Add a subject or body before saving');
+      return;
+    }
+    setSaveName(subject.trim() || 'Untitled template');
+    setSaveOpen(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    const name = saveName.trim();
+    if (!name) {
+      toast.error('Template name is required');
+      return;
+    }
+    try {
+      await createTemplate.mutateAsync({
+        name,
+        subject: subject.trim() || name,
+        body_html: bodyHtml,
+        category: saveCategory || 'general',
+      });
+      setSaveOpen(false);
+    } catch {
+      /* toast handled in hook */
+    }
+  };
 
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
 
@@ -577,6 +612,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-muted-foreground hover:text-foreground"
+                    onClick={openSaveDialog}
+                    disabled={isPending}
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    Save as template
+                  </Button>
+                  <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setMode(mode === 'preview' ? 'edit' : 'preview')}
@@ -606,6 +652,64 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       </Dialog>
 
       <TemplatePicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={applyTemplate} />
+
+      <InnerDialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <InnerDialogContent className="max-w-md">
+          <InnerDialogHeader>
+            <InnerDialogTitle>Save as template</InnerDialogTitle>
+          </InnerDialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="tpl-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Template name</Label>
+              <Input
+                id="tpl-name"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="e.g. Presale follow-up — week 1"
+                autoFocus
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tpl-subject" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subject</Label>
+              <Input
+                id="tpl-subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Email subject (saved with template)"
+                maxLength={200}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tpl-cat" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</Label>
+              <select
+                id="tpl-cat"
+                value={saveCategory}
+                onChange={(e) => setSaveCategory(e.target.value)}
+                className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm"
+              >
+                <option value="general">General</option>
+                <option value="follow-up">Follow-up</option>
+                <option value="nurture">Nurture</option>
+                <option value="welcome">Welcome</option>
+                <option value="project-launch">Project launch</option>
+              </select>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Saved to your shared CRM template library. Merge tags like <code className="px-1 rounded bg-muted">{'{{lead.first_name}}'}</code> are preserved.
+            </p>
+          </div>
+          <InnerDialogFooter className="pt-2">
+            <Button variant="outline" size="sm" onClick={() => setSaveOpen(false)} disabled={createTemplate.isPending}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim() || createTemplate.isPending} className="gap-1.5 min-w-[120px]">
+              {createTemplate.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save template
+            </Button>
+          </InnerDialogFooter>
+        </InnerDialogContent>
+      </InnerDialog>
     </>
   );
 }
