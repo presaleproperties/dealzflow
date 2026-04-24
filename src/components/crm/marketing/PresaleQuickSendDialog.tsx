@@ -9,6 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBridgeSendEmail, type BridgeTemplate } from '@/hooks/useBridgeEmail';
 import { renderForRecipient, renderWithSampleData, type RecipientLead } from '@/lib/emailVariables';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
+import {
+  loadQuickSendMemory,
+  saveQuickSendMemory,
+} from '@/lib/quickSendMemory';
 
 type Recipient = { id?: string; email: string; name: string; lead?: RecipientLead };
 
@@ -42,6 +46,8 @@ export function PresaleQuickSendDialog({
   const { data: emailSettings } = useEmailSettings();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
 
+  const [prefilledFromMemory, setPrefilledFromMemory] = useState(false);
+
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -50,8 +56,50 @@ export function PresaleQuickSendDialog({
       setManualEmail('');
       setSendProgress({});
       setIsSending(false);
+      setPrefilledFromMemory(false);
+      return;
     }
-    if (open && asset) setSubject(asset.subject || asset.name || '');
+    if (!asset) return;
+
+    // Try to hydrate from saved memory for this template; otherwise fall back
+    // to the template's default subject and an empty recipient list.
+    const memory = loadQuickSendMemory(asset.id);
+    setSubject(memory?.subject || asset.subject || asset.name || '');
+
+    if (!memory || memory.recipients.length === 0) {
+      setPrefilledFromMemory(false);
+      return;
+    }
+
+    // Seed recipients immediately with what we have; refetch full lead
+    // records in the background so per-recipient personalization tokens
+    // resolve correctly on send/preview.
+    setRecipients(
+      memory.recipients.map((r) => ({ id: r.id, email: r.email, name: r.name })),
+    );
+    setPrefilledFromMemory(true);
+
+    const ids = memory.recipients.map((r) => r.id).filter((x): x is string => !!x);
+    if (ids.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('crm_contacts')
+        .select(
+          'id, first_name, last_name, email, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email',
+        )
+        .in('id', ids);
+      if (cancelled || !data) return;
+      const byId = new Map(data.map((c) => [c.id, c as RecipientLead]));
+      setRecipients((prev) =>
+        prev.map((r) => (r.id && byId.has(r.id) ? { ...r, lead: byId.get(r.id) } : r)),
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, asset]);
 
   useEffect(() => {
@@ -145,6 +193,15 @@ export function PresaleQuickSendDialog({
       }
     }
     setIsSending(false);
+    // Persist subject + recipients so the next quick-send for this template
+    // is prefilled. Only save when at least one send succeeded.
+    if (asset && successes > 0) {
+      saveQuickSendMemory(
+        asset.id,
+        subject,
+        recipients.map((r) => ({ id: r.id, email: r.email, name: r.name })),
+      );
+    }
     onSent?.();
     // Keep dialog open so user can review per-recipient results.
     // They close manually via the Close button.
@@ -181,9 +238,24 @@ export function PresaleQuickSendDialog({
 
           {/* Recipients */}
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
-              Recipients ({recipients.length})
-            </p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Recipients ({recipients.length})
+              </p>
+              {prefilledFromMemory && recipients.length > 0 && !hasProgress && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecipients([]);
+                    setPrefilledFromMemory(false);
+                  }}
+                  className="text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                  title="Clear prefilled recipients"
+                >
+                  Prefilled · Clear
+                </button>
+              )}
+            </div>
             {recipients.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {recipients.map((r) => (
