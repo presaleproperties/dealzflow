@@ -544,13 +544,13 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
       <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
-        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-4 py-3 font-medium uppercase tracking-wider text-muted-foreground data-[state=active]:text-foreground">
+        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Activity
         </TabsTrigger>
-        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-4 py-3 font-medium uppercase tracking-wider text-muted-foreground data-[state=active]:text-foreground">
+        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Appointments
           {showings.length > 0 && (
-            <span className="ml-1.5 text-[10px] bg-muted text-foreground/70 rounded-full px-1.5 py-0.5 font-semibold normal-case tracking-normal">
+            <span className="ml-2 text-[11px] bg-muted text-foreground/80 rounded-full px-2 py-0.5 font-semibold normal-case tracking-normal tabular-nums">
               {showings.length}
             </span>
           )}
@@ -559,49 +559,49 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-6 space-y-5">
         {/* Compose */}
-        <div className="bg-card rounded-lg border border-border p-3 space-y-2.5">
-          <div className="flex items-center gap-2">
+        <div className="bg-card rounded-xl border border-border p-3.5 space-y-3">
+          <div className="flex items-center gap-3">
             <Select value={noteType} onValueChange={setNoteType}>
-              <SelectTrigger className="w-[110px] h-8 text-xs border-border/60"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[120px] h-9 text-sm border-border/60"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="manual">Note</SelectItem>
                 <SelectItem value="call_log">Call Log</SelectItem>
                 <SelectItem value="email">Email Log</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">⌘ + Enter to send</span>
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">⌘ + Enter to send</span>
           </div>
           <Textarea
             value={draft}
             onChange={e => setDraft(e.target.value)}
             placeholder="Write a note, log a call, or capture context…"
-            className="text-sm min-h-[64px] resize-none border-border/60 focus-visible:ring-1"
+            className="text-sm min-h-[72px] resize-none"
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSave(); }
             }}
           />
           <div className="flex justify-end">
-            <Button size="sm" className="h-8 text-xs gap-1.5" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
+            <Button size="sm" className="h-9 text-xs gap-1.5" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
               <Send className="w-3.5 h-3.5" /> Save
             </Button>
           </div>
         </div>
 
         {/* Filter pills */}
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {filters.map(f => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                'px-3 py-1 rounded-full text-[11px] font-medium transition-all uppercase tracking-wider',
+                'px-3 py-1.5 rounded-full text-xs font-semibold transition-all uppercase tracking-[0.08em]',
                 filter === f.key
                   ? 'bg-foreground text-background'
-                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40',
+                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
             >
               {f.label}
-              {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal">{counts[f.key]}</span>}
+              {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
             </button>
           ))}
         </div>
