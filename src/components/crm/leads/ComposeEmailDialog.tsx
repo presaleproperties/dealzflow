@@ -762,3 +762,26 @@ function VariableMenu({ onInsert }: { onInsert: (token: string) => void }) {
     </DropdownMenu>
   );
 }
+
+function TemplateThumb({ html }: { html: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const doc = ref.current.contentDocument;
+    if (!doc) return;
+    const safe = html && html.trim().length > 0
+      ? html
+      : '<div style="padding:24px;color:#94a3b8;font:13px sans-serif;text-align:center">No preview</div>';
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a}img{max-width:100%;height:auto}a{color:inherit;pointer-events:none}</style></head><body><div style="transform:scale(0.32);transform-origin:top left;width:312.5%;pointer-events:none">${safe}</div></body></html>`);
+    doc.close();
+  }, [html]);
+  return (
+    <iframe
+      ref={ref}
+      title="template-thumb"
+      className="w-full h-full border-0 bg-white pointer-events-none"
+      sandbox="allow-same-origin"
+    />
+  );
+}
