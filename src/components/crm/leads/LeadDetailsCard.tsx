@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
 import { formatCurrency } from '@/lib/format';
-import type { CrmContact } from '@/hooks/useCrmContacts';
+import { LEAD_TYPE_LABELS, type CrmContact } from '@/hooks/useCrmContacts';
 
 const TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
@@ -40,7 +40,13 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
           <div className="flex items-center gap-3">
             <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
             <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Lead Type</span>
-            <InlineEditField value={contact.lead_type} onSave={(v) => save('lead_type', v || null)} />
+            <Badge
+              variant="outline"
+              className="border-0 text-[10px] font-semibold"
+              style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+            >
+              {LEAD_TYPE_LABELS[contact.lead_type] ?? contact.lead_type}
+            </Badge>
           </div>
         )}
 
