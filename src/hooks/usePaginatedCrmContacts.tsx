@@ -51,6 +51,10 @@ interface PaginatedFilters {
   leadTypes: string[];
   languages: string[];
   tags: string[];
+  propertyTypes?: string[];
+  cities?: string[];
+  preApproved?: string[];
+  campaigns?: string[];
   letterFilter: string;
   pipelineView: 'all' | 'active' | 'directory';
   segmentFilters?: Record<string, unknown>;
@@ -119,6 +123,22 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
       }
       if (filters.tags.length > 0) {
         query = query.overlaps('tags', filters.tags);
+      }
+      if (filters.propertyTypes && filters.propertyTypes.length > 0) {
+        query = query.in('property_type_pref', filters.propertyTypes);
+      }
+      if (filters.cities && filters.cities.length > 0) {
+        query = query.in('city_pref', filters.cities);
+      }
+      if (filters.preApproved && filters.preApproved.length > 0) {
+        // values arrive as 'yes' / 'no'
+        if (filters.preApproved.length === 1) {
+          query = query.eq('is_pre_approved', filters.preApproved[0] === 'yes');
+        }
+        // when both selected, no filter (matches all)
+      }
+      if (filters.campaigns && filters.campaigns.length > 0) {
+        query = query.in('campaign_source', filters.campaigns);
       }
 
       // A-Z letter filter

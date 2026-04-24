@@ -104,6 +104,26 @@ export function getExtendedMonthRange(projectionMonths: number = 24): string[] {
   return months;
 }
 
+/** Format a phone number to a friendly North-American style: (604) 555-1234 or +1 (604) 555-1234 */
+export function formatPhone(phone?: string | null): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  // Fallback: return original (handles intl numbers, extensions, etc.)
+  return phone.trim();
+}
+
+/** Lowercase + trim an email for consistent display */
+export function formatEmail(email?: string | null): string {
+  if (!email) return '';
+  return email.trim().toLowerCase();
+}
+
 /** Format a contact name, hiding empty/placeholder last names */
 export function formatContactName(firstName?: string | null, lastName?: string | null): string {
   const f = (firstName ?? '').trim();
