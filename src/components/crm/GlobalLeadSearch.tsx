@@ -55,7 +55,8 @@ export function GlobalLeadSearch() {
       const name = `${c.first_name ?? ''} ${c.last_name ?? ''}`.toLowerCase();
       const email = (c.email ?? '').toLowerCase();
       const phone = (c.phone ?? '').toLowerCase();
-      return name.includes(q) || email.includes(q) || phone.includes(q);
+      const address = (c.property_address ?? c.address ?? '').toLowerCase();
+      return name.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
     });
     return matches.slice(0, 12);
   }, [contacts, query]);
@@ -121,7 +122,7 @@ export function GlobalLeadSearch() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything or search by name, phone, email…"
+              placeholder="Search by name, phone, email, or property address…"
               className="flex-1 bg-transparent text-[16px] tracking-tight text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-light"
             />
             <button
