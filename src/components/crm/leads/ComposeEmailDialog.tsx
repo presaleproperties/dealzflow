@@ -679,13 +679,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   </div>
                 )}
                 {mode === 'preview' && (
-                  <div className="p-5 flex justify-center">
+                  <div
+                    className={cn(
+                      'h-full w-full flex justify-center',
+                      device === 'desktop' ? 'bg-background' : 'bg-muted/20 p-5',
+                    )}
+                  >
                     <iframe
                       title="email-preview"
                       srcDoc={previewDoc}
                       className={cn(
-                        'bg-white border border-border rounded-xl shadow-sm transition-all',
-                        device === 'desktop' ? 'w-full max-w-[680px] h-[520px]' : 'w-[375px] h-[520px]',
+                        'bg-white transition-all block',
+                        device === 'desktop'
+                          ? 'w-full h-full border-0'
+                          : 'w-[375px] h-full max-h-[640px] border border-border rounded-xl shadow-sm',
                       )}
                     />
                   </div>
