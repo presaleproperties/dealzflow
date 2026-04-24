@@ -95,17 +95,28 @@ function FilterAccordion({
   };
 
   const totalUnique = options.length;
+  const isExclude = tone === 'exclude';
 
   return (
     <Collapsible open={expanded} onOpenChange={(o) => { setExpanded(o); if (!o) setSearch(''); }} className="border-b border-border/30">
       <CollapsibleTrigger asChild>
         <button
-          className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
+          className={cn(
+            'flex items-center justify-between w-full px-4 py-3 text-sm font-medium transition-colors',
+            isExclude ? 'text-foreground hover:bg-destructive/5' : 'text-foreground hover:bg-muted/30',
+          )}
         >
           <span className="flex items-center gap-2">
+            {isExclude && <span className="text-destructive font-bold leading-none">−</span>}
             {label}
             {selected.length > 0 ? (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'text-[10px] px-1.5 py-0 h-4',
+                  isExclude && 'bg-destructive/15 text-destructive border-0',
+                )}
+              >
                 {selected.length}
               </Badge>
             ) : (
@@ -124,6 +135,11 @@ function FilterAccordion({
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
         <div className="px-2 pb-2">
+          {isExclude && (
+            <p className="px-2 pb-1.5 pt-0.5 text-[10px] text-muted-foreground">
+              Hide leads with any of these tags
+            </p>
+          )}
           {showSearch && (
             <div className="relative mb-1.5 px-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -144,24 +160,37 @@ function FilterAccordion({
                   key={opt}
                   onClick={() => toggle(opt)}
                   className={cn(
-                    'flex items-center gap-2.5 w-full px-2 py-1.5 text-[13px] text-foreground hover:bg-muted/40 rounded-md transition-colors',
-                    isSelected && 'bg-primary/5',
+                    'flex items-center gap-2.5 w-full px-2 py-1.5 text-[13px] text-foreground rounded-md transition-colors',
+                    isExclude ? 'hover:bg-destructive/5' : 'hover:bg-muted/40',
+                    isSelected && (isExclude ? 'bg-destructive/10' : 'bg-primary/5'),
                   )}
                 >
                   <div
                     className={cn(
                       'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all duration-150',
-                      isSelected ? 'bg-primary border-primary scale-100' : 'border-border/60 scale-95',
+                      isSelected
+                        ? isExclude
+                          ? 'bg-destructive border-destructive scale-100'
+                          : 'bg-primary border-primary scale-100'
+                        : 'border-border/60 scale-95',
                     )}
                   >
-                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                    {isSelected && (
+                      isExclude
+                        ? <X className="w-3 h-3 text-destructive-foreground" />
+                        : <Check className="w-3 h-3 text-primary-foreground" />
+                    )}
                   </div>
-                  <span className="truncate flex-1 text-left">{optionLabels?.[opt] ?? opt}</span>
+                  <span className={cn('truncate flex-1 text-left', isSelected && isExclude && 'line-through opacity-70')}>
+                    {optionLabels?.[opt] ?? opt}
+                  </span>
                   {typeof count === 'number' && (
                     <span className={cn(
                       'text-[10px] tabular-nums shrink-0 px-1.5 py-0.5 rounded-md',
                       isSelected
-                        ? 'bg-primary/15 text-primary font-semibold'
+                        ? isExclude
+                          ? 'bg-destructive/15 text-destructive font-semibold'
+                          : 'bg-primary/15 text-primary font-semibold'
                         : 'bg-muted/50 text-muted-foreground',
                     )}>
                       {count.toLocaleString()}
