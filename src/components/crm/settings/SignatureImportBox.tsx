@@ -12,6 +12,7 @@ import {
   type SanitizeResult,
 } from '@/lib/sanitizeSignature';
 import { useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
+import LiveSignaturePreview from './LiveSignaturePreview';
 
 /**
  * Paste-and-validate HTML signature importer.
@@ -157,9 +158,7 @@ export default function SignatureImportBox() {
           </div>
 
           {showPreview && result.html && (
-            <div className="rounded-md border border-border/40 bg-white p-3 max-h-[260px] overflow-auto">
-              <div dangerouslySetInnerHTML={{ __html: result.html }} />
-            </div>
+            <LiveSignaturePreview html={result.html} withEmailContext={false} />
           )}
         </div>
       )}

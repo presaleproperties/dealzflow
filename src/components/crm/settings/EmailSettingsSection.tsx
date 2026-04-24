@@ -11,6 +11,7 @@ import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettin
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
+import LiveSignaturePreview from './LiveSignaturePreview';
 import { isRichHtml } from '@/lib/htmlDetect';
 import { toast } from 'sonner';
 
@@ -28,7 +29,7 @@ export default function EmailSettingsSection() {
   const [htmlImport, setHtmlImport] = useState('');
   const [simpleHtml, setSimpleHtml] = useState('');
   const [builderData, setBuilderData] = useState<SignatureBuilderData | null>(null);
-  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+  const [showHtmlPreview, setShowHtmlPreview] = useState(true);
 
   useEffect(() => {
     if (settings) {
@@ -172,12 +173,10 @@ export default function EmailSettingsSection() {
                 onClick={() => setShowHtmlPreview(!showHtmlPreview)}
               >
                 <Eye className="h-3.5 w-3.5 mr-1.5" />
-                {showHtmlPreview ? 'Hide Preview' : 'Preview'}
+                {showHtmlPreview ? 'Hide preview' : 'Show preview'}
               </Button>
-              {showHtmlPreview && htmlImport && (
-                <div className="rounded-lg border border-border/40 bg-white p-4">
-                  <div dangerouslySetInnerHTML={{ __html: htmlImport }} />
-                </div>
+              {showHtmlPreview && (
+                <LiveSignaturePreview html={htmlImport} />
               )}
             </TabsContent>
 
@@ -206,20 +205,14 @@ export default function EmailSettingsSection() {
           </p>
         </div>
 
-        {/* Signature Preview (for non-builder modes) */}
+        {/* Signature Preview (for non-builder modes) — true email-canvas preview */}
         {signatureMode !== 'builder' && getActiveSignatureHtml() && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Eye className="h-3.5 w-3.5" />
-              <span>Signature Preview</span>
+              <span>How it looks at the bottom of an email</span>
             </div>
-            <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-              <div className="text-xs text-muted-foreground mb-2">--</div>
-              <div
-                className="prose prose-sm dark:prose-invert max-w-none text-sm"
-                dangerouslySetInnerHTML={{ __html: getActiveSignatureHtml() }}
-              />
-            </div>
+            <LiveSignaturePreview html={getActiveSignatureHtml()} withEmailContext />
           </div>
         )}
 
