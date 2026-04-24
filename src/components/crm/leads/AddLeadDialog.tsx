@@ -46,6 +46,8 @@ function EmailWarning({ validation, onFix }: { validation: EmailValidation; onFi
 
 export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const addContact = useAddCrmContact();
+  const { data: tagLib = [] } = useCrmTags();
+  const createTag = useCreateCrmTag();
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
