@@ -76,17 +76,17 @@ export function GlobalLeadSearch() {
 
   return (
     <>
-      {/* Trigger pill — slim, lives in nav bar */}
+      {/* Trigger pill — lives at the right of the top nav */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Search leads"
-        className="group flex items-center gap-2 h-8 w-[220px] lg:w-[300px] px-3 rounded-full border border-border/60 bg-muted/30 hover:bg-muted/50 hover:border-border transition-colors text-left"
+        className="group flex items-center gap-2.5 h-10 w-[280px] lg:w-[420px] px-4 rounded-full border border-border/60 bg-muted/40 hover:bg-muted/60 hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors text-left shadow-sm"
       >
-        <Search className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
-        <span className="text-[12.5px] text-muted-foreground/80 flex-1 truncate">
-          Name, Phone, Email, Property…
+        <Search className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+        <span className="text-[13px] text-muted-foreground/80 flex-1 truncate">
+          Search leads by name, phone, email…
         </span>
-        <kbd className="hidden sm:flex items-center px-1.5 h-4 rounded text-[9.5px] font-semibold text-muted-foreground/70 bg-background/70 border border-border/50">
+        <kbd className="hidden sm:flex items-center px-2 h-5 rounded text-[10px] font-semibold text-muted-foreground/80 bg-background/80 border border-border/60">
           ⌘K
         </kbd>
       </button>
