@@ -195,6 +195,15 @@ export default function EmailSettingsSection() {
           </div>
         )}
 
+        {/* Multi-signature library */}
+        <div className="space-y-3 pt-4 border-t border-border/50">
+          <div className="flex items-center gap-2">
+            <Library className="h-4 w-4 text-primary" />
+            <Label className="text-sm">Signature Library</Label>
+          </div>
+          <SignaturesManager />
+        </div>
+
         {/* Save button */}
         <div className="flex justify-end">
           <Button
