@@ -142,7 +142,7 @@ export function TopNav() {
                 <Menu className="w-5 h-5" strokeWidth={2} />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[280px] border-r-0" style={{ background: DARK_BG }}>
+            <SheetContent side="left" className="p-0 w-[88vw] max-w-[320px] sm:w-[300px] border-r-0" style={{ background: DARK_BG }}>
               <MobileNavSheet
                 sections={visibleSections}
                 filterChildren={filterChildren}
@@ -410,18 +410,21 @@ function MobileNavSheet({
   return (
     <div className="flex flex-col h-full">
       <div
-        className="flex items-center justify-between px-4 h-[56px] border-b"
+        className="flex items-center justify-between px-5 h-[60px] border-b shrink-0"
         style={{ borderColor: DARK_BORDER }}
       >
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <img src={logoMark} alt="Dealzflow" className="w-[24px] h-[24px] rounded-[6px]" />
-          <span className="font-semibold text-[14px] tracking-[-0.02em] text-white">
+        <Link to="/dashboard" className="flex items-center gap-2.5">
+          <img src={logoMark} alt="Dealzflow" className="w-[26px] h-[26px] rounded-[7px]" />
+          <span className="font-semibold text-[15px] tracking-[-0.02em] text-white">
             Dealz<span style={{ color: GOLD }}>flow</span>
           </span>
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-3">
+      <nav
+        className="flex-1 overflow-y-auto px-3 py-5 space-y-6"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+      >
         {sections.map(section => {
           if (section.path) {
             const active = isPathActive(pathname, section.path);
@@ -429,7 +432,7 @@ function MobileNavSheet({
               <Link
                 key={section.label}
                 to={section.path}
-                className="flex items-center px-3 py-2.5 rounded-lg text-[13px]"
+                className="flex items-center min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
                 style={{
                   color: active ? GOLD : INACTIVE_TEXT,
                   background: active ? GOLD_BG : 'transparent',
@@ -445,12 +448,12 @@ function MobileNavSheet({
           return (
             <div key={section.label}>
               <div
-                className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                className="px-3.5 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: 'hsl(220 8% 50%)' }}
               >
                 {section.label}
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {children.map(child => {
                   const active = isPathActive(pathname, child.path);
                   const Icon = child.icon;
@@ -458,14 +461,14 @@ function MobileNavSheet({
                     <Link
                       key={child.path}
                       to={child.path}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px]"
+                      className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
                       style={{
                         color: active ? GOLD : INACTIVE_TEXT,
                         background: active ? GOLD_BG : 'transparent',
                         fontWeight: active ? 600 : 500,
                       }}
                     >
-                      <Icon className="w-4 h-4 shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                      <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={active ? 2.2 : 1.8} />
                       {child.label}
                     </Link>
                   );
@@ -475,34 +478,35 @@ function MobileNavSheet({
           );
         })}
 
-        <div className="pt-2 mt-2 border-t space-y-0.5" style={{ borderColor: DARK_BORDER }}>
+        <div className="pt-4 mt-2 border-t space-y-1" style={{ borderColor: DARK_BORDER }}>
           <Link
             to="/settings"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px]"
+            className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
             style={{
               color: isPathActive(pathname, '/settings') ? GOLD : INACTIVE_TEXT,
               background: isPathActive(pathname, '/settings') ? GOLD_BG : 'transparent',
+              fontWeight: isPathActive(pathname, '/settings') ? 600 : 500,
             }}
           >
-            <Settings2 className="w-4 h-4" strokeWidth={1.8} />
+            <Settings2 className="w-[18px] h-[18px]" strokeWidth={1.8} />
             Settings
           </Link>
           {isAdmin && (
             <Link
               to="/admin"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px]"
-              style={{ color: 'hsl(38 90% 60%)' }}
+              className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
+              style={{ color: 'hsl(38 90% 60%)', fontWeight: 500 }}
             >
-              <ShieldAlert className="w-4 h-4" strokeWidth={1.8} />
+              <ShieldAlert className="w-[18px] h-[18px]" strokeWidth={1.8} />
               Admin
             </Link>
           )}
           <button
             onClick={onSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px]"
-            style={{ color: 'hsl(0 70% 65%)' }}
+            className="w-full flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
+            style={{ color: 'hsl(0 70% 65%)', fontWeight: 500 }}
           >
-            <LogOut className="w-4 h-4" strokeWidth={1.8} />
+            <LogOut className="w-[18px] h-[18px]" strokeWidth={1.8} />
             Sign out
           </button>
         </div>
