@@ -269,23 +269,83 @@ export function PresaleQuickSendDialog({
               />
             </div>
           )}
+
+          {/* Send progress panel */}
+          {hasProgress && (
+            <div className="border border-border rounded-lg p-3 bg-muted/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {isSending ? 'Sending…' : 'Send results'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {completedCount}/{totalCount}
+                  {!isSending && (
+                    <>
+                      {' · '}
+                      <span className="text-emerald-600 dark:text-emerald-400">{successCount} sent</span>
+                      {failedCount > 0 && (
+                        <>
+                          {' · '}
+                          <span className="text-destructive">{failedCount} failed</span>
+                        </>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+              <Progress value={totalCount ? (completedCount / totalCount) * 100 : 0} className="h-1.5" />
+              <div className="max-h-40 overflow-y-auto space-y-1 mt-2">
+                {recipients.map((r) => {
+                  const s = sendProgress[r.email];
+                  if (!s) return null;
+                  return (
+                    <div
+                      key={r.email}
+                      className="flex items-center gap-2 text-xs px-2 py-1 rounded bg-background/60"
+                    >
+                      {s.status === 'pending' && (
+                        <span className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
+                      )}
+                      {s.status === 'sending' && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
+                      )}
+                      {s.status === 'success' && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      )}
+                      {s.status === 'failed' && (
+                        <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      )}
+                      <span className="flex-1 truncate">{r.name}</span>
+                      <span className="text-muted-foreground truncate max-w-[180px]">
+                        {s.status === 'failed' && s.error ? s.error : r.email}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-3 border-t border-border">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSending}>
+            {hasProgress && !isSending ? 'Close' : 'Cancel'}
           </Button>
           <Button
             onClick={handleSend}
-            disabled={recipients.length === 0 || !subject || send.isPending}
+            disabled={recipients.length === 0 || !subject || isSending}
             className="gap-1.5"
           >
-            {send.isPending ? (
+            {isSending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Send className="h-3.5 w-3.5" />
             )}
-            Send to {recipients.length || 0}
+            {isSending
+              ? `Sending ${completedCount}/${totalCount}…`
+              : hasProgress && failedCount > 0
+                ? `Retry ${failedCount} failed`
+                : `Send to ${recipients.length || 0}`}
           </Button>
         </div>
       </DialogContent>
