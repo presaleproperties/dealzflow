@@ -91,6 +91,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
   { id: 'settings-email', label: 'Email', icon: Mail },
   { id: 'settings-notifications', label: 'Notifications', icon: Bell },
+  { id: 'settings-timeline', label: 'Timeline', icon: Link2 },
 ] as const;
 
 export default function CrmSettingsPage() {
