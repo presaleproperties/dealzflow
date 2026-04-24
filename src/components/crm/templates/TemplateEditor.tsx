@@ -353,6 +353,15 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
                   <Smartphone className="w-3.5 h-3.5" />
                 </button>
               </div>
+              <Button
+                variant={withSampleData ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 gap-1 text-[10px]"
+                onClick={() => setWithSampleData(v => !v)}
+                title="Replace variables with example data"
+              >
+                <EyeIcon className="w-3 h-3" /> {withSampleData ? 'Sample data' : 'Raw'}
+              </Button>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setFullPreview(true)}>
                 <Maximize2 className="w-3.5 h-3.5" />
               </Button>
@@ -362,7 +371,7 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           {/* Subject + preview text bar */}
           {(subject || previewText) && (
             <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5 space-y-0.5">
-              {subject && <p className="text-xs font-semibold text-foreground truncate">Subject: {subject}</p>}
+              {subject && <p className="text-xs font-semibold text-foreground truncate">Subject: {withSampleData ? renderWithSampleData(subject).replace(/<[^>]+>/g, '') : subject}</p>}
               {previewText && <p className="text-[11px] text-muted-foreground truncate">Preview: {previewText}</p>}
             </div>
           )}
@@ -381,6 +390,11 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Far right — Variable picker */}
+        <div className="space-y-2 lg:sticky lg:top-4 self-start">
+          <VariablePicker onInsert={insertSnippet} />
         </div>
       </div>
 
