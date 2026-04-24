@@ -202,6 +202,10 @@ export default function CrmSettingsPage() {
         <div id="settings-notifications" className="scroll-mt-16">
           <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
         </div>
+        <Separator />
+        <div id="settings-timeline" className="scroll-mt-16">
+          <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>
+        </div>
       </div>
     </div>
   );
