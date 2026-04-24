@@ -328,7 +328,7 @@ export default function DataImportSection() {
           const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
           if (!isNaN(num)) record[field] = num;
         } else if (ARRAY_FIELDS.has(field)) {
-          record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
+          record[field] = parseMultiValueCell(val);
         } else if (field === 'contact_type') {
           const normalized = val.toLowerCase().trim();
           if (['lead', 'realtor', 'past_client'].includes(normalized)) {
