@@ -288,8 +288,8 @@ export function HotLeadsColumn() {
     <div className="bg-card rounded-xl border border-border shadow-sm flex flex-col">
       {/* Header with segment tabs + settings */}
       <div className="flex items-center gap-2 p-3 sm:p-4 border-b border-border">
-        <Flame className="w-4 h-4 text-[hsl(0_84%_60%)] flex-shrink-0" />
-        <h3 className="text-sm font-semibold text-foreground whitespace-nowrap">Hot Leads</h3>
+        <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <h3 className="text-sm font-semibold text-foreground whitespace-nowrap">Leads</h3>
 
         {/* Segment toggle tabs */}
         <div className="flex items-center gap-1 ml-2 overflow-x-auto flex-1 min-w-0">
@@ -299,7 +299,7 @@ export function HotLeadsColumn() {
               onClick={() => setActiveTab(seg.id)}
               className={`text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                 activeTab === seg.id
-                  ? 'bg-primary/15 text-primary'
+                  ? 'bg-foreground text-background'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
               }`}
             >
