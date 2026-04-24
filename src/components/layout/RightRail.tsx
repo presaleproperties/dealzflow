@@ -599,17 +599,14 @@ function CommunicationList({
       <Link
         key={item.id}
         to={item.href}
-        className="flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-white/5"
+        className="flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-muted/60"
       >
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-          style={{ background: 'hsl(222 20% 14%)' }}
-        >
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-muted/60">
           <Icon className="w-3.5 h-3.5" style={{ color: colorFor(item.type) }} strokeWidth={1.9} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[12.5px] font-semibold text-white truncate">
+            <div className="text-[12.5px] font-semibold text-foreground truncate">
               {item.name}
             </div>
             <div className="text-[10.5px] text-muted-foreground/70 shrink-0">
@@ -621,7 +618,7 @@ function CommunicationList({
           </div>
         </div>
         {item.unread && (
-          <span className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ background: GOLD }} />
+          <span className="w-2 h-2 rounded-full mt-2 shrink-0 bg-primary" />
         )}
       </Link>
     );
