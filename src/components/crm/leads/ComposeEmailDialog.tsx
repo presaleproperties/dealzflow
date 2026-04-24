@@ -23,6 +23,7 @@ import {
   Paperclip,
   Pencil,
   Check,
+  MousePointerClick,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -38,6 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useEmailSignatures, useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
+import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
@@ -94,6 +96,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
   const { data: messages = [] } = useCrmContactMessages(open ? contact.id : undefined);
+  const { data: emailLog = [] } = useCrmEmailLog(open ? contact.id : undefined);
 
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('<p></p>');
@@ -223,13 +226,46 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     return fromRecent;
   }, [allTemplates, recentIds]);
 
-  const recentEmails = useMemo(
-    () =>
-      messages
-        .filter((m: any) => m.channel === 'email')
-        .slice(0, 4),
-    [messages],
-  );
+  /**
+   * Recent emails: merge real sent emails from `crm_email_log` (which carry
+   * subject + open/click tracking) with conversation messages from
+   * `crm_messages` (legacy/inbound). De-dupe on id and order by newest.
+   */
+  const recentEmails = useMemo(() => {
+    const fromLog = (emailLog ?? []).map((e: any) => ({
+      id: e.id,
+      direction: e.direction,
+      subject: e.subject,
+      content: e.body ?? '',
+      created_at: e.sent_at ?? e.created_at,
+      open_count: e.open_count ?? 0,
+      click_count: e.click_count ?? 0,
+      last_opened_at: e.last_opened_at ?? null,
+      last_clicked_at: e.last_clicked_at ?? null,
+      __source: 'log' as const,
+    }));
+    const fromMessages = (messages ?? [])
+      .filter((m: any) => m.channel === 'email')
+      .map((m: any) => ({
+        id: m.id,
+        direction: m.direction,
+        subject: m.subject ?? null,
+        content: m.content ?? '',
+        created_at: m.created_at,
+        open_count: 0,
+        click_count: 0,
+        last_opened_at: null,
+        last_clicked_at: null,
+        __source: 'msg' as const,
+      }));
+    const merged = [...fromLog, ...fromMessages];
+    merged.sort(
+      (a, b) =>
+        new Date(b.created_at ?? 0).getTime() -
+        new Date(a.created_at ?? 0).getTime(),
+    );
+    return merged.slice(0, 4);
+  }, [emailLog, messages]);
 
   const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
@@ -672,10 +708,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   <div className="space-y-2">
                     {recentEmails.map((m: any) => (
                       <div
-                        key={m.id}
+                        key={`${m.__source}:${m.id}`}
                         className="text-[11px] bg-card border border-border rounded-md p-2"
                       >
-                        <div className="flex items-center gap-1.5 mb-1">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                           {m.direction === 'outbound' ? (
                             <Send className="h-2.5 w-2.5 text-primary" />
                           ) : (
@@ -689,10 +725,41 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                                 })
                               : ''}
                           </span>
+                          {m.direction === 'outbound' && m.open_count > 0 && (
+                            <span
+                              className="ml-auto inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600"
+                              title={
+                                m.last_opened_at
+                                  ? `Last opened ${new Date(m.last_opened_at).toLocaleString()}`
+                                  : 'Opened'
+                              }
+                            >
+                              <Eye className="h-2.5 w-2.5" />
+                              {m.open_count}
+                            </span>
+                          )}
+                          {m.direction === 'outbound' && m.click_count > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600"
+                              title={
+                                m.last_clicked_at
+                                  ? `Last clicked ${new Date(m.last_clicked_at).toLocaleString()}`
+                                  : 'Clicked'
+                              }
+                            >
+                              <MousePointerClick className="h-2.5 w-2.5" />
+                              {m.click_count}
+                            </span>
+                          )}
                         </div>
-                        <p className="line-clamp-2 text-foreground/80">
-                          {(m.content ?? '').slice(0, 120)}
-                        </p>
+                        {m.subject && (
+                          <p className="font-medium text-foreground truncate">{m.subject}</p>
+                        )}
+                        {m.content && (
+                          <p className="line-clamp-2 text-foreground/70 mt-0.5">
+                            {String(m.content).replace(/<[^>]+>/g, ' ').slice(0, 120)}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
