@@ -392,72 +392,108 @@ export function RightRail() {
       </AlertDialog>
 
       {/* Slide-over: Inbox / Communications */}
-      <Sheet open={panel === 'inbox'} onOpenChange={(o) => !o && setPanel(null)}>
+      <Sheet
+        open={panel === 'inbox'}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPanel(null);
+            setInboxSearch('');
+            setInboxFilter('all');
+          }
+        }}
+      >
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[440px] p-0 bg-card border-l border-border [&>button]:hidden [&~[data-radix-dialog-overlay]]:bg-transparent [&~[data-radix-dialog-overlay]]:backdrop-blur-none"
+          className="w-full sm:max-w-[440px] p-0 bg-card border-l border-border [&>button]:hidden"
         >
-          {/* Subtle gold accent strip */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-
-          <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
+          {/* Header */}
+          <SheetHeader className="px-5 pt-5 pb-4 border-b border-border">
             <div className="flex items-center justify-between">
-              <div>
-                <SheetTitle className="text-[15px] font-semibold text-foreground tracking-tight text-left">
-                  Communications
+              <div className="flex items-center gap-2.5">
+                <SheetTitle className="text-[17px] font-semibold text-foreground tracking-tight text-left">
+                  Messages
                 </SheetTitle>
-                <p className="text-[11.5px] text-muted-foreground mt-0.5 text-left">
-                  Latest emails & SMS conversations
-                </p>
+                {inboxUnread > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[28px] h-[20px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10.5px] font-semibold">
+                    {inboxUnread > 99 ? '99+' : inboxUnread}
+                  </span>
+                )}
               </div>
-              <button
-                onClick={() => setPanel(null)}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <Link
+                  to={isCrmMember ? '/crm/email' : '/dashboard'}
+                  onClick={() => setPanel(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                  aria-label="Open full inbox"
+                  title="Open full inbox"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </Link>
+                <button
+                  onClick={() => setPanel(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </SheetHeader>
 
-          <Tabs defaultValue="all" className="flex flex-col h-[calc(100vh-92px)]">
-            <TabsList className="mx-5 mt-3 grid grid-cols-3 h-9 bg-muted/50">
-              <TabsTrigger value="all" className="text-[11.5px]">All</TabsTrigger>
-              <TabsTrigger value="email" className="text-[11.5px]">Email</TabsTrigger>
-              <TabsTrigger value="sms" className="text-[11.5px]">SMS</TabsTrigger>
-            </TabsList>
-
-            <ScrollArea className="flex-1 mt-3">
-              <div className="px-3 pb-6">
-                {feedLoading && (
-                  <div className="text-center text-xs text-muted-foreground py-8">Loading…</div>
-                )}
-
-                <TabsContent value="all" className="m-0 space-y-1">
-                  <CommunicationList feed={feed} kind="all" />
-                </TabsContent>
-                <TabsContent value="email" className="m-0 space-y-1">
-                  <CommunicationList feed={feed} kind="email" />
-                </TabsContent>
-                <TabsContent value="sms" className="m-0 space-y-1">
-                  <CommunicationList feed={feed} kind="sms" />
-                </TabsContent>
-              </div>
-            </ScrollArea>
-
-            <div className="border-t border-border px-5 py-3 flex items-center justify-between">
-              <Link
-                to={isCrmMember ? '/crm/email' : '/dashboard'}
-                onClick={() => setPanel(null)}
-                className="text-[12px] font-medium text-primary hover:underline flex items-center gap-1.5"
-              >
-                Open full inbox <ExternalLink className="w-3 h-3" />
-              </Link>
-              <span className="text-[11px] text-muted-foreground">
-                {inboxUnread > 0 ? `${inboxUnread} unread` : 'All caught up'}
-              </span>
+          {/* Search bar */}
+          <div className="px-5 pt-4 pb-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" strokeWidth={2} />
+              <input
+                value={inboxSearch}
+                onChange={(e) => setInboxSearch(e.target.value)}
+                placeholder="Search History"
+                className="w-full h-9 pl-9 pr-3 rounded-lg border border-border bg-background/60 text-[12.5px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+              />
             </div>
-          </Tabs>
+          </div>
+
+          {/* Quick filter chips row */}
+          <div className="px-5 pb-3">
+            <div className="flex items-center gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+              <FilterChip
+                icon={Sparkles}
+                label="All"
+                active={inboxFilter === 'all'}
+                onClick={() => setInboxFilter('all')}
+                tone="primary"
+              />
+              <FilterChip
+                icon={Mail}
+                label="Email"
+                active={inboxFilter === 'email'}
+                onClick={() => setInboxFilter('email')}
+                tone="blue"
+                badge={feed?.emails.filter(e => e.direction === 'inbound').length}
+              />
+              <FilterChip
+                icon={MessageSquare}
+                label="SMS"
+                active={inboxFilter === 'sms'}
+                onClick={() => setInboxFilter('sms')}
+                tone="purple"
+                badge={feed?.messages.filter(m => m.direction === 'inbound').length}
+              />
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* List */}
+          <ScrollArea className="h-[calc(100vh-260px)]">
+            <div className="py-1">
+              {feedLoading ? (
+                <div className="text-center text-xs text-muted-foreground py-10">Loading…</div>
+              ) : (
+                <CommunicationList feed={feed} kind={inboxFilter} search={inboxSearch} />
+              )}
+            </div>
+          </ScrollArea>
         </SheetContent>
       </Sheet>
 
