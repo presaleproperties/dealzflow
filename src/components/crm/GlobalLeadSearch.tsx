@@ -122,7 +122,7 @@ export function GlobalLeadSearch() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything or search by name, phone, email…"
+              placeholder="Search by name, phone, email, or property address…"
               className="flex-1 bg-transparent text-[16px] tracking-tight text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-light"
             />
             <button
