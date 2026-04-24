@@ -106,6 +106,12 @@ Deno.serve(async (req) => {
     }
 
     // ── Immediate send via Presale bridge ──
+    // Generate a tracking_id up-front, inject the open-tracking pixel into
+    // the HTML, and persist the same id on crm_email_log so crm-email-track
+    // can correlate inbox opens back to this send.
+    const trackingId = crypto.randomUUID();
+    const trackedHtml = injectTrackingPixel(body.html, trackingId);
+
     const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
       method: "POST",
       headers: {
@@ -117,7 +123,7 @@ Deno.serve(async (req) => {
         cc: body.cc,
         bcc: body.bcc,
         subject: body.subject,
-        html: body.html,
+        html: trackedHtml,
         template_id: body.template_id ?? null,
         source: "dealzflow_crm",
       }),
@@ -143,17 +149,19 @@ Deno.serve(async (req) => {
           user_id: userId,
           direction: "outbound",
           subject: body.subject,
-          body: body.html,
+          body: trackedHtml,
           cc: ccStr,
           bcc: bccStr,
           sent_at: new Date().toISOString(),
+          tracking_id: trackingId,
         });
       } catch (e) {
         console.warn("crm_email_log insert failed", e);
       }
     }
 
-    return json({ success: true, ...upstreamJson }, 200);
+    return json({ success: true, tracking_id: trackingId, ...upstreamJson }, 200);
+
   } catch (e) {
     console.error("bridge-send-email error", e);
     return json({ error: e instanceof Error ? e.message : "Internal error" }, 500);
