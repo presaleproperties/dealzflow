@@ -94,46 +94,7 @@ const SURFACE_STRONG = 'hsl(var(--popover))';
 const FG_STRONG = 'hsl(var(--foreground))';
 const FG_MUTED = 'hsl(var(--muted-foreground))';
 
-const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-
-function ThemeToggleButton() {
-  const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
-  const { data: settings } = useSettings();
-  const updateSettings = useUpdateSettings({ silent: true });
-
-  // On mount: restore theme from DB if user is logged in
-  useEffect(() => {
-    if (settings?.theme && settings.theme !== theme) {
-      setTheme(settings.theme);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings?.theme]);
-
-  function handleCycle() {
-    const current = (theme as 'light' | 'dark' | 'system') ?? 'system';
-    const idx = THEME_CYCLE.indexOf(current);
-    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
-    setTheme(next);
-    if (user) updateSettings.mutate({ theme: next });
-  }
-
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
-
-  return (
-    <button
-      onClick={handleCycle}
-      aria-label={`Theme: ${label}. Click to cycle.`}
-      title={`Theme: ${label}. Click to cycle.`}
-      className="h-9 inline-flex items-center gap-1.5 px-2 sm:px-2.5 rounded-lg transition-colors hover:bg-foreground/5"
-      style={{ color: INACTIVE_TEXT }}
-    >
-      <Icon className="w-[15px] h-[15px]" strokeWidth={1.8} />
-      <span className="hidden sm:inline text-[12px] font-medium leading-none">{label}</span>
-    </button>
-  );
-}
+// Theme toggle and other utility buttons live in the right rail (RightRail.tsx).
 
 function isPathActive(pathname: string, path: string): boolean {
   if (path === '/dashboard') return pathname === '/dashboard';
