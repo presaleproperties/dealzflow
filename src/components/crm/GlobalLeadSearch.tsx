@@ -100,14 +100,20 @@ export function GlobalLeadSearch() {
 
   return (
     <>
-      {/* Trigger — icon-only search button (top-right) */}
+      {/* Trigger — search pill (top-right) */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Search leads"
         title="Search (⌘K)"
-        className="group relative flex items-center justify-center h-10 w-10 rounded-full bg-muted/40 hover:bg-muted/70 border border-border/50 hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+        className="group flex items-center gap-2.5 h-10 w-[280px] px-3.5 rounded-full bg-muted/40 hover:bg-muted/70 border border-border/50 hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-left"
       >
-        <Search className="w-[18px] h-[18px] text-foreground/80 group-hover:text-foreground transition-colors" strokeWidth={2.2} />
+        <Search className="w-[16px] h-[16px] text-muted-foreground/80 group-hover:text-foreground flex-shrink-0 transition-colors" strokeWidth={2.2} />
+        <span className="flex-1 text-[13px] font-light text-muted-foreground/70 group-hover:text-foreground/80 truncate transition-colors">
+          Search leads…
+        </span>
+        <span className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground/60 px-1.5 py-0.5 rounded border border-border/40 flex-shrink-0">
+          ⌘K
+        </span>
       </button>
 
       {/* Modal overlay + centered palette */}
