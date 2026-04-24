@@ -287,7 +287,7 @@ export function CrmHeader() {
 
         {/* Right: Search + icon cluster + Avatar */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden md:block w-[260px] lg:w-[320px]">
+          <div className="w-[200px] sm:w-[260px] lg:w-[320px]">
             <GlobalLeadSearch />
           </div>
 
