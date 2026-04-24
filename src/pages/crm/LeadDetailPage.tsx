@@ -499,10 +499,38 @@ function metaForNote(note: CrmNote) {
 function CenterColumn({ contact }: { contact: CrmContact }) {
   const { session } = useAuth();
   const currentUserId = session?.user?.id;
-  const { data: notes = [] } = useLeadNotes(contact.id);
+  const { data: rawNotes = [] } = useLeadNotes(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
+  const { data: emailLog = [] } = useCrmEmailLog(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
+
+  // Merge real notes with virtual entries synthesized from the email log so
+  // every sent / received email shows up in the central timeline alongside notes.
+  const notes = useMemo<CrmNote[]>(() => {
+    const emailNotes: CrmNote[] = (emailLog ?? []).map((e: any) => {
+      const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
+      const subject = e.subject || '(no subject)';
+      const preview = (e.body_text || e.body_html || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      return {
+        id: `email-${e.id}`,
+        contact_id: contact.id,
+        user_id: e.sent_by || '',
+        content: `Subject: ${subject}\nDirection: ${direction}${e.from_email ? `\nFrom: ${e.from_email}` : ''}${e.to_email ? `\nTo: ${e.to_email}` : ''}${preview ? `\n\n${preview}` : ''}`,
+        note_type: 'email',
+        is_pinned: false,
+        created_at: e.sent_at || e.created_at || new Date().toISOString(),
+        updated_at: e.sent_at || e.created_at || new Date().toISOString(),
+        event_at: e.sent_at || e.created_at || null,
+      };
+    });
+    const merged = [...rawNotes, ...emailNotes];
+    const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
+    return merged.sort((a, b) => {
+      if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+      return ts(b) - ts(a);
+    });
+  }, [rawNotes, emailLog, contact.id]);
 
   const [draft, setDraft] = useState('');
   const [noteType, setNoteType] = useState('manual');
@@ -725,6 +753,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
   const [expanded, setExpanded] = useState(false);
   const visibleFields = isStructured && !expanded ? parsed.fields.slice(0, 4) : parsed.fields;
   const hasMore = isStructured && parsed.fields.length > 4;
+  const isVirtual = note.id.startsWith('email-');
 
   if (editingId === note.id) {
     return (
@@ -763,24 +792,28 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60 shrink-0" />}
           </div>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            <button onClick={() => updateNote.mutate({ id: note.id, contactId, updates: { is_pinned: !note.is_pinned } })} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors" aria-label={note.is_pinned ? 'Unpin' : 'Pin'}>
-              {note.is_pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
-            </button>
-            <button onClick={() => onSetEditing(note.id, note.content)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors" aria-label="Edit">
-              <Pencil className="w-3 h-3" />
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                  <MoreHorizontal className="w-3.5 h-3.5" />
+            {!isVirtual && (
+              <>
+                <button onClick={() => updateNote.mutate({ id: note.id, contactId, updates: { is_pinned: !note.is_pinned } })} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors" aria-label={note.is_pinned ? 'Unpin' : 'Pin'}>
+                  {note.is_pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
-                <DropdownMenuItem onClick={() => deleteNote.mutate({ id: note.id, contactId })} className="text-destructive focus:text-destructive gap-2">
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <button onClick={() => onSetEditing(note.id, note.content)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors" aria-label="Edit">
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                      <MoreHorizontal className="w-3.5 h-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-32">
+                    <DropdownMenuItem onClick={() => deleteNote.mutate({ id: note.id, contactId })} className="text-destructive focus:text-destructive gap-2">
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
           </div>
         </div>
 
