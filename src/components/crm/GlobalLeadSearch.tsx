@@ -234,6 +234,44 @@ export function GlobalLeadSearch() {
                     </div>
                   ))}
                 </div>
+
+                {recentContacts.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase">
+                        Recent
+                      </div>
+                      <button
+                        onClick={clearRecents}
+                        className="text-[10px] font-medium text-muted-foreground/60 hover:text-foreground/90 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <ul className="-mx-6">
+                      {recentContacts.map((c: any) => {
+                        const name = formatContactName(c.first_name, c.last_name) || 'Unnamed lead';
+                        const sub = c.property_address ?? c.address ?? c.email ?? c.phone ?? '';
+                        return (
+                          <li key={c.id}>
+                            <button
+                              onClick={() => handleSelect(c.id)}
+                              className="w-full text-left px-6 py-2.5 flex items-center gap-3 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-[10px] font-semibold flex-shrink-0 border border-primary/10">
+                                {(c.first_name?.[0] ?? '').toUpperCase()}{(c.last_name?.[0] ?? '').toUpperCase() || '·'}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[13px] font-medium text-foreground truncate">{name}</div>
+                                {sub && <div className="text-[11px] text-muted-foreground/70 truncate">{sub}</div>}
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : isLoading ? (
               <div className="px-6 py-10 space-y-3">
