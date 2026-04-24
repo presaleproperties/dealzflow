@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail, Check } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
-import { formatContactName } from '@/lib/format';
+import { formatContactName, formatPhone, formatEmail } from '@/lib/format';
 import { LEAD_TYPE_LABELS, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -73,7 +73,7 @@ const TAG_COLORS = [
 
 
 function TagsList({ tags }: { tags: string[] }) {
-  if (!tags || tags.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  if (!tags || tags.length === 0) return <span className="text-muted-foreground text-sm">—</span>;
   const shown = tags.slice(0, 2);
   const extra = tags.length - 2;
   return (
@@ -81,29 +81,29 @@ function TagsList({ tags }: { tags: string[] }) {
       {shown.map((tag, i) => {
         const c = TAG_COLORS[i % TAG_COLORS.length];
         return (
-          <Badge key={tag} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5" style={{ background: c.bg, color: c.color }}>
+          <Badge key={tag} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: c.bg, color: c.color }}>
             {tag}
           </Badge>
         );
       })}
-      {extra > 0 && <span className="text-[10px] text-muted-foreground">+{extra}</span>}
+      {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
     </div>
   );
 }
 
 function ProjectsList({ projects, project }: { projects?: string[]; project?: string | null }) {
   const all = projects && projects.length > 0 ? projects : project ? [project] : [];
-  if (all.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  if (all.length === 0) return <span className="text-muted-foreground text-sm">—</span>;
   const shown = all.slice(0, 2);
   const extra = all.length - 2;
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {shown.map(p => (
-        <Badge key={p} variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+        <Badge key={p} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
           {p}
         </Badge>
       ))}
-      {extra > 0 && <span className="text-[10px] text-muted-foreground">+{extra} more</span>}
+      {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
     </div>
   );
 }
@@ -142,8 +142,8 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
           toast.success(`Status → ${v}`);
         }}
       >
-        <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-[11px] font-semibold shadow-none hover:bg-muted/40 rounded-md px-1.5 w-auto min-w-0 gap-1" style={{ color: sc.color }}>
-          <span className="inline-flex items-center gap-1">
+        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] font-semibold shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 gap-1" style={{ color: sc.color }}>
+          <span className="inline-flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
             <SelectValue />
           </span>
@@ -178,7 +178,7 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
           toast.success(`Assigned → ${v}`);
         }}
       >
-        <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-xs shadow-none hover:bg-muted/40 rounded-md px-1.5 w-auto min-w-0 text-muted-foreground">
+        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 text-muted-foreground">
           <SelectValue placeholder="Unassigned" />
         </SelectTrigger>
         <SelectContent>
@@ -196,8 +196,8 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
   if (!contact.last_touch_at) {
     return (
       <div className="flex flex-col">
-        <span className="text-muted-foreground italic text-[11px]">No activity</span>
-        <span className="text-[10px] text-destructive font-medium">Needs attention</span>
+        <span className="text-muted-foreground italic text-[12px]">No activity</span>
+        <span className="text-[11px] text-destructive font-medium">Needs attention</span>
       </div>
     );
   }
@@ -209,10 +209,10 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex flex-col">
-            <span className="text-[11px] font-medium" style={{ color }}>
+            <span className="text-[12px] font-medium" style={{ color }}>
               {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
             </span>
-            {days >= 14 && <span className="text-[10px] text-destructive font-medium">Needs attention</span>}
+            {days >= 14 && <span className="text-[11px] text-destructive font-medium">Needs attention</span>}
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
@@ -232,7 +232,7 @@ function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact:
       const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
       return (
         <div className="flex flex-col min-w-0">
-          <span className="font-semibold text-[13px] text-foreground truncate inline-flex items-center gap-1.5">
+          <span className="font-semibold text-[14px] text-foreground truncate inline-flex items-center gap-1.5">
             {formatContactName(contact.first_name, contact.last_name)}
             {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
               <TooltipProvider delayDuration={200}>
@@ -247,7 +247,7 @@ function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact:
               </TooltipProvider>
             )}
           </span>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground font-medium">
             {leadType ? (LEAD_TYPE_LABELS[leadType] ?? leadType) : typeStyle.label}
           </span>
         </div>
@@ -255,32 +255,32 @@ function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact:
     }
     case 'contactInfo':
       return (
-        <div className="flex flex-col text-[11px] text-muted-foreground gap-0.5">
-          <span className="truncate max-w-[180px]">{contact.email ?? '—'}</span>
-          <span>{contact.phone ?? '—'}</span>
+        <div className="flex flex-col text-[12px] text-muted-foreground gap-0.5">
+          <span className="truncate max-w-[220px] text-foreground/80">{formatEmail(contact.email) || '—'}</span>
+          <span className="tabular-nums">{formatPhone(contact.phone) || '—'}</span>
         </div>
       );
     case 'reg':
       return (
-        <div className="flex flex-col text-[11px] gap-0.5">
-          <span className="text-muted-foreground">{formatDistanceToNow(new Date(contact.created_at), { addSuffix: true })}</span>
-          <span className="text-[10px] text-muted-foreground/70">{contact.source ?? '—'}</span>
+        <div className="flex flex-col text-[12px] gap-0.5">
+          <span className="text-foreground/80">{formatDistanceToNow(new Date(contact.created_at), { addSuffix: true })}</span>
+          <span className="text-[11px] text-muted-foreground">{contact.source ?? '—'}</span>
         </div>
       );
     case 'phone':
-      return <span className="text-muted-foreground whitespace-nowrap text-[11px]">{contact.phone ?? '—'}</span>;
+      return <span className="text-foreground/80 whitespace-nowrap text-[13px] tabular-nums">{formatPhone(contact.phone) || '—'}</span>;
     case 'email':
-      return <span className="text-muted-foreground whitespace-nowrap max-w-[180px] truncate block text-[11px]">{contact.email ?? '—'}</span>;
+      return <span className="text-foreground/80 whitespace-nowrap max-w-[220px] truncate block text-[13px]">{formatEmail(contact.email) || '—'}</span>;
     case 'project':
       return <ProjectsList projects={contact.projects} project={contact.project} />;
     case 'source': {
       const syncSource = (contact as any).sync_source as string | null;
       const isLofty = syncSource === 'zapier_lofty' || syncSource === 'lofty_api_sync';
       return (
-        <span className="text-muted-foreground whitespace-nowrap text-[11px] inline-flex items-center gap-1">
+        <span className="text-foreground/80 whitespace-nowrap text-[12px] inline-flex items-center gap-1.5">
           {contact.source ?? '—'}
           {isLofty && (
-            <span className="text-[9px] px-1 py-0 rounded bg-primary/10 text-primary font-medium">Lofty</span>
+            <span className="text-[10px] px-1.5 py-0 rounded bg-primary/10 text-primary font-semibold">Lofty</span>
           )}
         </span>
       );
@@ -294,40 +294,40 @@ function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact:
     case 'last_touch_at':
       return <LastTouchCell contact={contact} />;
     case 'created_at':
-      return <span className="text-muted-foreground whitespace-nowrap text-[11px]">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>;
+      return <span className="text-foreground/80 whitespace-nowrap text-[12px]">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>;
     case 'campaign_source':
-      return <span className="text-muted-foreground whitespace-nowrap text-[11px] truncate max-w-[140px] block">{(contact as any).campaign_source ?? '—'}</span>;
+      return <span className="text-foreground/80 whitespace-nowrap text-[12px] truncate max-w-[160px] block">{(contact as any).campaign_source ?? '—'}</span>;
     case 'city_pref':
       return (contact as any).city_pref
-        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
-        : <span className="text-muted-foreground text-xs">—</span>;
+        ? <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+        : <span className="text-muted-foreground text-sm">—</span>;
     case 'property_type_pref':
-      return <span className="text-muted-foreground whitespace-nowrap text-[11px] capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
+      return <span className="text-foreground/80 whitespace-nowrap text-[12px] capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
     case 'is_pre_approved':
       return (contact as any).is_pre_approved
-        ? <Badge variant="outline" className="border-0 text-[10px] font-semibold px-1.5 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
-        : <span className="text-muted-foreground text-xs">No</span>;
+        ? <Badge variant="outline" className="border-0 text-[11px] font-semibold px-2 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
+        : <span className="text-muted-foreground text-sm">No</span>;
     case 'quick_actions':
       return (
-        <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
           {contact.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
-                  <Phone className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors">
+                  <Phone className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                 </a>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">Call</TooltipContent>
+              <TooltipContent side="top" className="text-xs">Call {formatPhone(contact.phone)}</TooltipContent>
             </Tooltip>
           )}
           {contact.email && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`/crm/email?to=${encodeURIComponent(contact.email)}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/60 transition-colors">
-                  <Mail className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                <a href={`/crm/email?to=${encodeURIComponent(contact.email)}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors">
+                  <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                 </a>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">Email</TooltipContent>
+              <TooltipContent side="top" className="text-xs">Email {formatEmail(contact.email)}</TooltipContent>
             </Tooltip>
           )}
         </div>
@@ -356,7 +356,7 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
             </p>
             <LeadStatusBadge status={contact.status} />
           </div>
-          {contact.phone && <p className="text-[13px] text-muted-foreground mt-0.5">{contact.phone}</p>}
+          {contact.phone && <p className="text-[13px] text-muted-foreground mt-0.5 tabular-nums">{formatPhone(contact.phone)}</p>}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {contact.source && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{contact.source}</Badge>}
             {contact.assigned_to && <span className="text-[11px] text-muted-foreground">{contact.assigned_to}</span>}
@@ -500,12 +500,12 @@ export function LeadsTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/20">
-                <th className="w-10 px-3 py-3"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
+                <th className="w-10 px-3 py-3.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
                 {columns.map(col => (
                   <th key={col.key}
-                    className="px-3 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
+                    className="px-3 py-3.5 text-left text-[12px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
                     onClick={() => col.sortKey && onSort(col.sortKey)}>
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1.5">
                       {col.label}
                       {col.sortKey && <SortIcon col={col.sortKey} />}
                     </span>
@@ -520,11 +520,11 @@ export function LeadsTable({
                   <tr key={contact.id}
                     className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
-                    <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
                     </td>
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-3">
+                      <td key={col.key} className="px-3 py-3.5">
                         <CellContent col={col} contact={contact} updateContact={updateContact} />
                       </td>
                     ))}
