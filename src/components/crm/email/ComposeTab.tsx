@@ -503,12 +503,24 @@ export function ComposeTab() {
             </div>
           </div>
 
-          {/* HTML Preview */}
+          {/* HTML Preview — full template render (no signature appended; templates already include footer/signature) */}
           <div className="flex justify-center">
-            <div className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all" style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}>
-              <iframe ref={iframeRef} title="Email Preview" className="w-full border-0" style={{ height: '400px' }} sandbox="allow-same-origin" />
+            <div
+              className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all shadow-sm"
+              style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}
+            >
+              <iframe
+                ref={iframeRef}
+                title="Email Preview"
+                className="w-full border-0 block"
+                style={{ height: previewWidth === 'desktop' ? '720px' : '640px' }}
+                sandbox="allow-same-origin"
+              />
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground text-center">
+            This is exactly what the recipient will see — the template's built-in signature/footer is preserved, so no extra signature is added.
+          </p>
 
           {/* Raw HTML editor */}
           {showHtmlEditor && (
