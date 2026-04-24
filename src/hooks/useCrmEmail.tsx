@@ -132,3 +132,21 @@ export function useDeleteTemplate() {
     onError: (err: Error) => toast.error(err.message),
   });
 }
+
+export function useIncrementTemplateUsage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      const { error } = await supabase.rpc('increment_crm_email_template_usage' as never, {
+        _template_id: templateId,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-email-templates'] });
+    },
+    /* silent failure — usage tracking should never block the user */
+    onError: () => undefined,
+  });
+}
+
