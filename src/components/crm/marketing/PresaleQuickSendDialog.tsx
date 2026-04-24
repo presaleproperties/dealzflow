@@ -217,7 +217,7 @@ export function PresaleQuickSendDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-background">
         <DialogHeader>
           <DialogTitle>Send {asset?.name ?? 'Template'}</DialogTitle>
         </DialogHeader>
