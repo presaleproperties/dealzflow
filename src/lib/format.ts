@@ -129,8 +129,10 @@ export function formatContactName(firstName?: string | null, lastName?: string |
   const f = (firstName ?? '').trim();
   const l = (lastName ?? '').trim();
   const isEmptyLast = !l || l === '—' || l === '-' || l.toLowerCase() === 'unknown';
-  if (!f && isEmptyLast) return 'Unknown';
+  const isEmptyFirst = !f || f.toLowerCase() === 'unknown';
+  if (isEmptyFirst && isEmptyLast) return '';
   if (isEmptyLast) return f;
+  if (isEmptyFirst) return l;
   return `${f} ${l}`;
 }
 
