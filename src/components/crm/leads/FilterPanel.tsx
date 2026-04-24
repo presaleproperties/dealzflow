@@ -42,6 +42,9 @@ interface FilterPanelProps {
   dynamicTags: string[];
   dynamicCities: string[];
   dynamicCampaigns: string[];
+  /** Optional usage counts keyed by option label */
+  tagCounts?: Record<string, number>;
+  projectCounts?: Record<string, number>;
   onClearAll: () => void;
   activeFilterCount: number;
 }
