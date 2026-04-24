@@ -174,6 +174,8 @@ export default function CrmBehaviorLeadsPage() {
         ))}
       </div>
 
+      <TopClickedLinks />
+
       <div className="flex flex-wrap gap-2 items-center">
         <Input
           placeholder="Search name or email…"
