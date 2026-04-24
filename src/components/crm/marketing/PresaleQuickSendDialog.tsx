@@ -238,9 +238,24 @@ export function PresaleQuickSendDialog({
 
           {/* Recipients */}
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
-              Recipients ({recipients.length})
-            </p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Recipients ({recipients.length})
+              </p>
+              {prefilledFromMemory && recipients.length > 0 && !hasProgress && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecipients([]);
+                    setPrefilledFromMemory(false);
+                  }}
+                  className="text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                  title="Clear prefilled recipients"
+                >
+                  Prefilled · Clear
+                </button>
+              )}
+            </div>
             {recipients.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {recipients.map((r) => (
