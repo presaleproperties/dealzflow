@@ -14,6 +14,35 @@ const corsHeaders = {
 const PRESALE_FUNCTIONS_URL =
   "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1";
 
+// Public tracker endpoint on this CRM project. Recipients hit this from their
+// inbox so it must NOT require auth (crm-email-track is deployed with
+// verify_jwt = false).
+const TRACKER_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/crm-email-track`;
+
+/**
+ * Inject a 1×1 transparent tracking pixel right before </body> (or appended
+ * to the end if no </body> tag exists). Idempotent — if a pixel for this
+ * tracking_id is already present we skip re-injecting.
+ *
+ * Note: open tracking is inherently lossy. Gmail proxies images through its
+ * cache (1 open per recipient + occasional phantom prefetches), and Apple
+ * Mail Privacy Protection pre-fetches images so an "open" can fire without
+ * the user actually reading it. Treat counts as directional, not exact.
+ */
+function injectTrackingPixel(html: string, trackingId: string): string {
+  const pixelUrl = `${TRACKER_URL}?a=open&t=${encodeURIComponent(trackingId)}`;
+  const pixelTag =
+    `<img src="${pixelUrl}" width="1" height="1" alt="" ` +
+    `style="display:none!important;width:1px;height:1px;border:0;outline:none;" />`;
+
+  if (html.includes(pixelUrl)) return html; // already injected
+
+  if (/<\/body\s*>/i.test(html)) {
+    return html.replace(/<\/body\s*>/i, `${pixelTag}</body>`);
+  }
+  return `${html}${pixelTag}`;
+}
+
 interface SendBody {
   to: string | string[];
   cc?: string | string[];
