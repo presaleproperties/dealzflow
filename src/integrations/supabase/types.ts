@@ -2576,6 +2576,7 @@ export type Database = {
         Args: { _date: string; _time: string }
         Returns: string
       }
+      recalc_lead_score: { Args: { _contact_id: string }; Returns: undefined }
       split_crm_multi_value: { Args: { input: string }; Returns: string[] }
       split_imported_note: {
         Args: { _fallback_ts: string; _raw: string }
