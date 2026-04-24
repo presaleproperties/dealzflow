@@ -76,6 +76,44 @@ export function LeadEmailHistory({ contactId }: { contactId: string }) {
                   <Clock className="w-3 h-3" />
                   {format(new Date(email.sent_at), 'MMM d, yyyy · h:mm a')}
                 </div>
+                {email.direction === 'outbound' && (email.opened_at || email.last_opened_at) && (
+                  <div className="mt-1 text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+                    <Eye className="w-3 h-3 text-emerald-600" />
+                    <span>
+                      First opened {email.opened_at ? format(new Date(email.opened_at), 'MMM d, h:mm a') : '—'}
+                      {email.last_opened_at && email.last_opened_at !== email.opened_at && (
+                        <> · last {format(new Date(email.last_opened_at), 'MMM d, h:mm a')}</>
+                      )}
+                    </span>
+                  </div>
+                )}
+                {email.direction === 'outbound' && email.tracking_id && (clicksByTracking[email.tracking_id]?.length ?? 0) > 0 && (
+                  <div className="mt-1.5 space-y-1">
+                    {(() => {
+                      // Deduplicate URLs while preserving the latest click time per URL
+                      const seen = new Map<string, string>();
+                      for (const c of clicksByTracking[email.tracking_id] ?? []) {
+                        if (c.link_url) seen.set(c.link_url, c.occurred_at);
+                      }
+                      return Array.from(seen.entries()).map(([url, when]) => (
+                        <div key={url} className="flex items-start gap-1.5 text-[11px]">
+                          <MousePointerClick className="w-3 h-3 text-blue-600 shrink-0 mt-0.5" />
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline truncate inline-flex items-center gap-1 min-w-0"
+                            title={url}
+                          >
+                            <span className="truncate">{url}</span>
+                            <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                          </a>
+                          <span className="text-muted-foreground shrink-0">· {format(new Date(when), 'MMM d, h:mm a')}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
           ))}
