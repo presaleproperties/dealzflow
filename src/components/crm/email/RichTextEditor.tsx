@@ -11,9 +11,11 @@ interface Props {
   placeholder?: string;
   /** Optional content rendered inside the same bordered container, beneath the editor body. */
   footerSlot?: ReactNode;
+  /** Optional extra controls rendered on the right side of the toolbar row. */
+  toolbarSlot?: ReactNode;
 }
 
-export function RichTextEditor({ content, onChange, placeholder = 'Write your email...', footerSlot }: Props) {
+export function RichTextEditor({ content, onChange, placeholder = 'Write your email...', footerSlot, toolbarSlot }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit,
