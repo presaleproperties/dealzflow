@@ -987,6 +987,15 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
       <WidgetSection title="Presale Activity">
         <PresaleActivityWidget contactId={contact?.id} />
       </WidgetSection>
+
+      {/* Activity Diagnostics — why URLs may be missing */}
+      <WidgetSection title="Activity Diagnostics">
+        <LeadActivityDiagnostics
+          contactId={contact?.id}
+          contactEmail={contact?.email}
+          presaleUserId={(contact as any)?.presale_user_id}
+        />
+      </WidgetSection>
     </div>
   );
 }
