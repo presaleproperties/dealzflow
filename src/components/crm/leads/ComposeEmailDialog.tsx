@@ -32,6 +32,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { useEmailSignatures } from '@/hooks/useEmailSignatures';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
@@ -79,6 +80,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const sendBridge = useBridgeSendEmail();
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
+  const { data: signatures = [] } = useEmailSignatures();
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
   const { data: messages = [] } = useCrmContactMessages(open ? contact.id : undefined);
@@ -92,6 +94,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [mode, setMode] = useState<Mode>('edit');
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [appendSignature, setAppendSignature] = useState(true);
+  const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
   const [logOnly, setLogOnly] = useState(false);
 
   const [recentIds, setRecentIds] = useState<string[]>([]);
@@ -122,8 +125,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       setBcc('');
       setShowCcBcc(false);
       setMode('edit');
+      setSelectedSignatureId(null);
     }
   }, [open]);
+
+  /* Pick default signature when dialog opens or signatures load */
+  useEffect(() => {
+    if (!open) return;
+    if (selectedSignatureId) return;
+    if (signatures.length === 0) return;
+    const def = signatures.find((s) => s.is_default) ?? signatures[0];
+    setSelectedSignatureId(def.id);
+  }, [open, signatures, selectedSignatureId]);
+
+  /* Resolve currently-selected signature HTML, falling back to legacy single signature */
+  const activeSignatureHtml = useMemo(() => {
+    if (selectedSignatureId) {
+      const found = signatures.find((s) => s.id === selectedSignatureId);
+      if (found) return found.html;
+    }
+    return emailSettings?.signature_html ?? '';
+  }, [selectedSignatureId, signatures, emailSettings]);
 
   const senderCtx = useMemo(
     () => ({
@@ -137,19 +159,19 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         full_name: emailSettings?.sender_name ?? user?.email ?? '',
         first_name: (emailSettings?.sender_name ?? '').split(' ')[0] ?? '',
         email: emailSettings?.reply_to ?? user?.email ?? '',
-        signature: emailSettings?.signature_html ?? '',
+        signature: activeSignatureHtml,
       },
     }),
-    [contact, emailSettings, user],
+    [contact, emailSettings, user, activeSignatureHtml],
   );
 
   const finalHtml = useMemo(() => {
     const merged = renderForRecipient(bodyHtml, senderCtx);
-    if (appendSignature && emailSettings?.signature_html) {
-      return `${merged}<br/><br/>${emailSettings.signature_html}`;
+    if (appendSignature && activeSignatureHtml) {
+      return `${merged}<br/><br/>${activeSignatureHtml}`;
     }
     return merged;
-  }, [bodyHtml, senderCtx, appendSignature, emailSettings]);
+  }, [bodyHtml, senderCtx, appendSignature, activeSignatureHtml]);
 
   const renderedSubject = useMemo(
     () => renderForRecipient(subject, senderCtx),
@@ -701,7 +723,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
               {/* Footer */}
               <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -711,6 +733,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     />
                     Append signature
                   </label>
+                  {appendSignature && signatures.length > 0 && (
+                    <select
+                      value={selectedSignatureId ?? ''}
+                      onChange={(e) => setSelectedSignatureId(e.target.value || null)}
+                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[180px]"
+                      title="Choose which signature to append"
+                    >
+                      {signatures.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}{s.is_default ? ' (default)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
