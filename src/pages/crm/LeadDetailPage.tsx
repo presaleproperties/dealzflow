@@ -1283,7 +1283,6 @@ export default function LeadDetailPage() {
         contact={c}
         navInfo={navInfo}
         onNavigate={handleNavigate}
-        onEmail={() => setShowEmail(true)}
         onTask={() => setShowTask(true)}
         onShowing={() => setShowShowing(true)}
       />
