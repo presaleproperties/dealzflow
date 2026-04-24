@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import {
   Bell, Search, Settings2, ShieldAlert, LogOut, ChevronDown, Menu, X,
   Command, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
-  Receipt, TrendingUp, BarChart2, Network,
+  Receipt, TrendingUp, BarChart2, Network, Sun, Moon, Monitor,
   Users, Kanban, Mail, MessageCircle, LayoutTemplate, BookUser, Zap,
   CalendarDays, BarChart3, Settings, Plug,
 } from 'lucide-react';
@@ -83,11 +85,57 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
-const GOLD = 'hsl(39 67% 55%)';
-const GOLD_BG = 'hsl(39 67% 55% / 0.12)';
-const DARK_BG = 'hsl(222 25% 9%)';
-const DARK_BORDER = 'hsl(222 20% 14% / 0.8)';
-const INACTIVE_TEXT = 'hsl(220 8% 65%)';
+// Themed tokens — driven by index.css (light/dark switch automatically)
+const GOLD = 'hsl(var(--primary))';
+const GOLD_BG = 'hsl(var(--primary) / 0.12)';
+const NAV_BG = 'hsl(var(--background) / 0.92)';
+const NAV_BORDER = 'hsl(var(--border) / 0.8)';
+const INACTIVE_TEXT = 'hsl(var(--muted-foreground))';
+const HOVER_BG = 'hsl(var(--muted) / 0.6)';
+const SURFACE_BG = 'hsl(var(--card))';
+const SURFACE_STRONG = 'hsl(var(--popover))';
+const FG_STRONG = 'hsl(var(--foreground))';
+const FG_MUTED = 'hsl(var(--muted-foreground))';
+
+const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+
+function ThemeToggleButton() {
+  const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings({ silent: true });
+
+  // On mount: restore theme from DB if user is logged in
+  useEffect(() => {
+    if (settings?.theme && settings.theme !== theme) {
+      setTheme(settings.theme);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings?.theme]);
+
+  function handleCycle() {
+    const current = (theme as 'light' | 'dark' | 'system') ?? 'system';
+    const idx = THEME_CYCLE.indexOf(current);
+    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
+    setTheme(next);
+    if (user) updateSettings.mutate({ theme: next });
+  }
+
+  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
+
+  return (
+    <button
+      onClick={handleCycle}
+      aria-label={`Theme: ${label}. Click to cycle.`}
+      title={`Theme: ${label}`}
+      className="h-9 w-9 flex items-center justify-center rounded-lg transition-colors hover:bg-foreground/5"
+      style={{ color: INACTIVE_TEXT }}
+    >
+      <Icon className="w-[15px] h-[15px]" strokeWidth={1.8} />
+    </button>
+  );
+}
 
 function isPathActive(pathname: string, path: string): boolean {
   if (path === '/dashboard') return pathname === '/dashboard';
