@@ -147,7 +147,7 @@ export function TopNav() {
                 sections={visibleSections}
                 filterChildren={filterChildren}
                 isAdmin={!!isAdmin}
-                onSignOut={signOut}
+                onSignOut={requestSignOut}
                 pathname={location.pathname}
               />
             </SheetContent>
@@ -356,7 +356,7 @@ export function TopNav() {
                   </Link>
                 )}
                 <button
-                  onClick={signOut}
+                  onClick={requestSignOut}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
                   style={{ color: 'hsl(0 70% 65%)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(0 70% 65% / 0.1)'; }}
