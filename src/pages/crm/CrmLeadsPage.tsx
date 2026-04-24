@@ -406,7 +406,7 @@ export default function CrmLeadsPage() {
           )}
 
           {/* A-Z letter filter */}
-          {(pipelineView === 'directory' || letterFilter) && (
+          {pipelineView === 'directory' && (
             <div className="flex items-center gap-0.5 flex-wrap">
               <button
                 onClick={() => { setLetterFilter(''); setPage(1); }}
