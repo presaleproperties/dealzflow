@@ -139,21 +139,33 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
           </div>
 
           <div className="max-h-64 overflow-y-auto">
-            {showCreateOption && (
+            {showCreateOption ? (
               <button
                 onClick={() => addTag(query)}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-foreground hover:bg-muted/50 transition-colors border-b border-border/30"
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors border-b border-border/30 bg-primary/5"
               >
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>
-                  Create <span className="font-semibold">"{query.trim()}"</span>
+                  Add new tag <span className="font-semibold">"{query.trim()}"</span>
                 </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  // Focus search so user can type a new tag name
+                  const input = popoverRef.current?.querySelector('input');
+                  input?.focus();
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors border-b border-border/30"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add new tag…</span>
               </button>
             )}
 
             {suggestions.length === 0 && !showCreateOption && (
               <div className="px-3 py-4 text-xs text-muted-foreground text-center">
-                {query ? 'No matching tags' : 'No suggestions yet'}
+                {query ? 'No matching tags' : 'Type above to create your first tag'}
               </div>
             )}
 
