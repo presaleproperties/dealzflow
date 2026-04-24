@@ -20,7 +20,9 @@ import {
   Inbox,
   X,
   Search,
+  Paperclip,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
