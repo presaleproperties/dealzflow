@@ -8,6 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const CRM_FIELDS = [
   { value: '__skip__', label: '— Skip —' },
@@ -225,6 +227,7 @@ export default function DataImportSection() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [mergeMode, setMergeMode] = useState(true);
 
   const handleFile = useCallback((file: File) => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -341,28 +344,87 @@ export default function DataImportSection() {
       allRecords.push({ record, rowNum: rowIndex + 2 });
     });
 
-    // Insert in batches, falling back to individual inserts on batch failure
-    for (let i = 0; i < allRecords.length; i += BATCH) {
-      const batch = allRecords.slice(i, i + BATCH);
-      const batchRecords = batch.map(b => b.record);
+    // Helper: normalize phone for matching
+    const normPhone = (p: unknown) => String(p || '').replace(/[^\d]/g, '').slice(-10);
+    const normEmail = (e: unknown) => String(e || '').trim().toLowerCase();
 
-      const { error } = await supabase.from('crm_contacts').insert(batchRecords as never[]);
-      if (error) {
-        // Batch failed — try one-by-one to save as many as possible
-        for (const item of batch) {
-          const { error: singleErr } = await supabase.from('crm_contacts').insert(item.record as never);
-          if (singleErr) {
-            errors++;
-            dbErrors.push(`Row ${item.rowNum}: ${singleErr.message}`);
-          } else {
-            success++;
-          }
+    let merged = 0;
+
+    for (let i = 0; i < allRecords.length; i++) {
+      const item = allRecords[i];
+      const rec = item.record;
+
+      // Try to find an existing contact (merge mode)
+      let existingId: string | null = null;
+      let existingTags: string[] = [];
+
+      if (mergeMode) {
+        if (rec.lofty_id) {
+          const { data } = await supabase.from('crm_contacts').select('id,tags').eq('lofty_id', rec.lofty_id as string).limit(1);
+          if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
         }
-      } else {
-        success += batch.length;
+        if (!existingId && rec.email) {
+          const { data } = await supabase.from('crm_contacts').select('id,tags').ilike('email', normEmail(rec.email)).limit(1);
+          if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
+        }
+        const phoneNorm = normPhone(rec.phone);
+        if (!existingId && phoneNorm.length >= 7) {
+          const { data } = await supabase.from('crm_contacts').select('id,tags').ilike('phone', `%${phoneNorm}%`).limit(1);
+          if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
+        }
       }
 
-      setProgress(Math.min(100, Math.round(((i + batch.length) / allRecords.length) * 100)));
+      if (existingId) {
+        // Merge tags + projects, don't overwrite other fields
+        const incomingTags = (rec.tags as string[] | undefined) ?? [];
+        const incomingProjects = (rec.projects as string[] | undefined) ?? [];
+        const mergedTags = Array.from(new Set([...existingTags, ...incomingTags].map(t => t.trim()).filter(Boolean)));
+
+        const updates: Record<string, unknown> = {};
+        if (mergedTags.length > existingTags.length) updates.tags = mergedTags;
+        if (incomingProjects.length > 0) {
+          // fetch existing projects to merge
+          const { data: cur } = await supabase
+            .from('crm_contacts')
+            .select('projects')
+            .eq('id', existingId)
+            .maybeSingle();
+          const existingProjects = (cur?.projects as string[] | null) ?? [];
+          const mergedProjects = Array.from(new Set([...existingProjects, ...incomingProjects].filter(Boolean)));
+          if (mergedProjects.length > existingProjects.length) updates.projects = mergedProjects;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { error: updErr } = await supabase
+            .from('crm_contacts')
+            .update(updates)
+            .eq('id', existingId);
+          if (updErr) {
+            errors++;
+            dbErrors.push(`Row ${item.rowNum} (merge): ${updErr.message}`);
+          } else {
+            merged++;
+          }
+        } else {
+          merged++; // matched but nothing new to add
+        }
+      } else {
+        const { error: insErr } = await supabase.from('crm_contacts').insert(rec as never);
+        if (insErr) {
+          errors++;
+          dbErrors.push(`Row ${item.rowNum}: ${insErr.message}`);
+        } else {
+          success++;
+        }
+      }
+
+      if (i % 10 === 0 || i === allRecords.length - 1) {
+        setProgress(Math.min(100, Math.round(((i + 1) / allRecords.length) * 100)));
+      }
+    }
+
+    if (merged > 0) {
+      toast.success(`Merged ${merged} existing contacts (tags/projects updated)`);
     }
 
     setResult({ success, errors, skipped, dbErrors });
@@ -427,6 +489,16 @@ export default function DataImportSection() {
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={reset}>Change File</Button>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-4 py-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="merge-mode" className="text-sm font-medium">Merge with existing contacts</Label>
+                <p className="text-xs text-muted-foreground">
+                  Match by email, phone, or Lofty ID. Tags and projects will be merged into the existing lead — no duplicates created.
+                </p>
+              </div>
+              <Switch id="merge-mode" checked={mergeMode} onCheckedChange={setMergeMode} />
             </div>
 
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
