@@ -267,15 +267,7 @@ export default function CrmMarketingHubPage() {
               </div>
             )}
 
-            {activeTab === 'social' ? (
-              <EmptyState
-                icon={Share2}
-                title="Social posts live in Presale"
-                description="Generate ad graphics and sold posts from the Marketing Hub in Presale Properties admin."
-                ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
-                ctaLabel="Open social tools"
-              />
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="rounded-xl border border-border bg-muted/30 animate-pulse">
@@ -288,7 +280,7 @@ export default function CrmMarketingHubPage() {
                 ))}
               </div>
             ) : filteredAssets.length === 0 ? (
-              hasFilters ? (
+              hasFilters && activeTab === 'emails' ? (
                 <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
                   <Search className="h-10 w-10 text-muted-foreground/20 mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">No templates match these filters</p>
@@ -299,15 +291,23 @@ export default function CrmMarketingHubPage() {
                 </div>
               ) : (
                 <EmptyState
-                  icon={activeTab === 'emails' ? Mail : FileText}
+                  icon={activeTab === 'emails' ? Mail : activeTab === 'flyers' ? FileText : Share2}
                   title={`No ${activeTab} synced yet`}
                   description={
                     activeTab === 'emails'
                       ? 'Create one in Presale Properties admin and it will appear here automatically.'
-                      : 'Flyers are managed in Presale Properties admin.'
+                      : activeTab === 'flyers'
+                        ? 'Print flyers built in Presale Properties will appear here once saved with the "flyer" tag.'
+                        : 'Social posts saved in Presale Properties will appear here once tagged "social".'
                   }
-                  ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
-                  ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : 'Flyer'}`}
+                  ctaUrl={
+                    activeTab === 'social'
+                      ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=social'
+                      : activeTab === 'flyers'
+                        ? 'https://presaleproperties.lovable.app/admin/marketing-hub?tab=flyers'
+                        : 'https://presaleproperties.lovable.app/admin/marketing-hub'
+                  }
+                  ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : activeTab === 'flyers' ? 'Flyer' : 'Social Post'}`}
                 />
               )
             ) : (
