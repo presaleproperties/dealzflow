@@ -229,6 +229,7 @@ export default function EmailSettingsSection() {
             <Library className="h-4 w-4 text-primary" />
             <Label className="text-sm">Signature Library</Label>
           </div>
+          <SignatureImportBox />
           <SignaturesManager />
         </div>
 
