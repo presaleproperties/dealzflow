@@ -20,7 +20,9 @@ import {
   Inbox,
   X,
   Search,
+  Paperclip,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -370,9 +372,76 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
 
+  /** Upload one or more files to storage and embed them inline in the email body.
+   *  Images are inserted as <img>; other files become a link to the public URL. */
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    if (!user?.id) {
+      toast.error('You must be signed in to attach files');
+      return;
+    }
+    setUploading(true);
+    try {
+      const inserts: string[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 20 * 1024 * 1024) {
+          toast.error(`"${file.name}" is larger than 20MB`);
+          continue;
+        }
+        const safeName = file.name.replace(/[^\w.\-]+/g, '_');
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+        const { error } = await supabase.storage
+          .from('email-attachments')
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) {
+          toast.error(`Upload failed: ${file.name}`);
+          continue;
+        }
+        const { data: pub } = supabase.storage.from('email-attachments').getPublicUrl(path);
+        const url = pub.publicUrl;
+        if (file.type.startsWith('image/')) {
+          inserts.push(`<p><img src="${url}" alt="${safeName}" style="max-width:100%;height:auto;border-radius:6px;" /></p>`);
+        } else {
+          const sizeKb = Math.max(1, Math.round(file.size / 1024));
+          inserts.push(
+            `<p><a href="${url}" target="_blank" rel="noopener" style="display:inline-block;padding:8px 12px;border:1px solid #ddd;border-radius:8px;text-decoration:none;color:#0a0a0a;background:#f8f8f8;">📎 ${safeName} <span style="color:#888;font-size:12px;">(${sizeKb} KB)</span></a></p>`,
+          );
+        }
+      }
+      if (inserts.length) {
+        setBodyHtml((prev) => `${prev || ''}${inserts.join('')}`);
+        toast.success(`Attached ${inserts.length} file${inserts.length > 1 ? 's' : ''}`);
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   /** Compact Templates + Insert variable controls rendered in the editor toolbar. */
   const composerActions = (
     <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => handleAttachFiles(e.target.files)}
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        className="h-8 gap-1.5 px-2 text-xs"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        title="Attach files or images"
+      >
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+        Attach
+      </Button>
       <Button
         type="button"
         size="sm"
