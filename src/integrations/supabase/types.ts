@@ -2124,6 +2124,65 @@ export type Database = {
         }
         Relationships: []
       }
+      email_template_versions: {
+        Row: {
+          area_tags: string[] | null
+          category: string | null
+          change_note: string | null
+          created_at: string
+          created_by: string | null
+          detected_variables: string[] | null
+          html_content: string
+          id: string
+          name: string
+          preview_text: string | null
+          project_tags: string[] | null
+          subject: string | null
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          area_tags?: string[] | null
+          category?: string | null
+          change_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          detected_variables?: string[] | null
+          html_content?: string
+          id?: string
+          name: string
+          preview_text?: string | null
+          project_tags?: string[] | null
+          subject?: string | null
+          template_id: string
+          version_number: number
+        }
+        Update: {
+          area_tags?: string[] | null
+          category?: string | null
+          change_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          detected_variables?: string[] | null
+          html_content?: string
+          id?: string
+          name?: string
+          preview_text?: string | null
+          project_tags?: string[] | null
+          subject?: string | null
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           area_tags: string[]
