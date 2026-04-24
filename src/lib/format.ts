@@ -124,24 +124,34 @@ export function formatEmail(email?: string | null): string {
   return email.trim().toLowerCase();
 }
 
-/** Format a contact name, hiding empty/placeholder last names */
-export function formatContactName(firstName?: string | null, lastName?: string | null): string {
-  const f = (firstName ?? '').trim();
-  const l = (lastName ?? '').trim();
+/** Coerce any value to a safe trimmed string (handles numbers, null, undefined, objects). */
+function toSafeString(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value).trim();
+  // Avoid "[object Object]" — unknown shapes return empty
+  return '';
+}
+
+/** Format a contact name, hiding empty/placeholder last names. Safe against non-string inputs. */
+export function formatContactName(firstName?: unknown, lastName?: unknown): string {
+  const f = toSafeString(firstName);
+  const l = toSafeString(lastName);
   const isEmptyLast = !l || l === '—' || l === '-' || l.toLowerCase() === 'unknown';
   const isEmptyFirst = !f || f.toLowerCase() === 'unknown';
-  if (isEmptyFirst && isEmptyLast) return '';
+  if (isEmptyFirst && isEmptyLast) return 'Unnamed';
   if (isEmptyLast) return f;
   if (isEmptyFirst) return l;
   return `${f} ${l}`;
 }
 
-/** Get initials for avatar, handling empty last names */
-export function getContactInitials(firstName?: string | null, lastName?: string | null): string {
-  const f = (firstName ?? '').trim();
-  const l = (lastName ?? '').trim();
+/** Get initials for avatar, handling empty last names. Safe against non-string inputs. */
+export function getContactInitials(firstName?: unknown, lastName?: unknown): string {
+  const f = toSafeString(firstName);
+  const l = toSafeString(lastName);
   const isEmptyLast = !l || l === '—' || l === '-' || l.toLowerCase() === 'unknown';
   if (!f && isEmptyLast) return '?';
   if (isEmptyLast) return f.charAt(0).toUpperCase();
   return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase();
 }
+
