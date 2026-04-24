@@ -629,8 +629,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       >
                         <t.icon className="h-3 w-3" />
                         {t.label}
-                    </button>
-                  ))}
+                      </button>
+                    ));
+                  })()}
                 </div>
                 {mode === 'preview' && (
                   <div className="flex items-center gap-1">
