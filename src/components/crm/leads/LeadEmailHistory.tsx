@@ -1,4 +1,4 @@
-import { Mail, Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Mail, Clock, ArrowUpRight, ArrowDownLeft, Eye, MousePointerClick } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { Skeleton } from '@/components/ui/skeleton';
