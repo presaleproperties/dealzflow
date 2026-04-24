@@ -351,15 +351,17 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-[15px] font-semibold text-foreground leading-snug truncate">
+            <p className="text-[15px] font-semibold text-foreground leading-snug truncate min-w-0 flex-1">
               {formatContactName(contact.first_name, contact.last_name)}
             </p>
-            <LeadStatusBadge status={contact.status} />
+            <div className="shrink-0">
+              <LeadStatusBadge status={contact.status} />
+            </div>
           </div>
-          {contact.phone && <p className="text-[13px] text-muted-foreground mt-0.5 tabular-nums">{formatPhone(contact.phone)}</p>}
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {contact.source && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{contact.source}</Badge>}
-            {contact.assigned_to && <span className="text-[11px] text-muted-foreground">{contact.assigned_to}</span>}
+          {contact.phone && <p className="text-[13px] text-muted-foreground mt-1 tabular-nums">{formatPhone(contact.phone)}</p>}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap min-w-0">
+            {contact.source && <Badge variant="secondary" className="text-[11px] px-2 py-0.5 max-w-[180px] truncate">{contact.source}</Badge>}
+            {contact.assigned_to && <span className="text-[12px] text-muted-foreground truncate">{contact.assigned_to}</span>}
           </div>
         </div>
       </div>
