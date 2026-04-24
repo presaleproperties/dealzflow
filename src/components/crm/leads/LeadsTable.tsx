@@ -48,14 +48,32 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   'New Lead':        { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' },
-  'Contacted':       { bg: 'hsl(210 62% 46% / 0.10)', color: 'hsl(210 62% 56%)' },
-  'Nurturing':       { bg: 'hsl(var(--primary) / 0.12)',  color: 'hsl(var(--primary))' },
-  'Hot / Engaged':   { bg: 'hsl(0 84% 60% / 0.12)',   color: 'hsl(0 84% 60%)' },
+  'New Leads':       { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' },
+  'Pre-Sale':        { bg: 'hsl(25 95% 53% / 0.12)',  color: 'hsl(25 95% 53%)' },
+  'Re-Sale':         { bg: 'hsl(15 85% 55% / 0.12)',  color: 'hsl(15 85% 55%)' },
+  'Commercial':      { bg: 'hsl(220 50% 50% / 0.12)', color: 'hsl(220 50% 50%)' },
   'Showing Booked':  { bg: 'hsl(142 71% 45% / 0.12)', color: 'hsl(142 71% 45%)' },
   'Offer Made':      { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)' },
+  'Nurturing':       { bg: 'hsl(var(--primary) / 0.12)',  color: 'hsl(var(--primary))' },
   'Closed':          { bg: 'hsl(142 71% 35% / 0.12)', color: 'hsl(142 71% 35%)' },
   'Lost / Cold':     { bg: 'hsl(0 60% 55% / 0.10)',   color: 'hsl(0 60% 55%)' },
+  // legacy values still rendered if a contact has them
+  'Contacted':       { bg: 'hsl(210 62% 46% / 0.10)', color: 'hsl(210 62% 56%)' },
+  'Hot / Engaged':   { bg: 'hsl(0 84% 60% / 0.12)',   color: 'hsl(0 84% 60%)' },
 };
+
+// Pipeline dropdown options — matches the segment chip bar above
+const PIPELINE_OPTIONS = [
+  'New Leads',
+  'Pre-Sale',
+  'Re-Sale',
+  'Commercial',
+  'Showing Booked',
+  'Offer Made',
+  'Nurturing',
+  'Closed',
+  'Lost / Cold',
+] as const;
 
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
@@ -149,7 +167,7 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
           </span>
         </SelectTrigger>
         <SelectContent>
-          {LEAD_STATUSES.map(s => {
+          {PIPELINE_OPTIONS.map(s => {
             const c = STATUS_COLORS[s] ?? STATUS_COLORS['New Lead'];
             return (
               <SelectItem key={s} value={s} className="text-xs">
