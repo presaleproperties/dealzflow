@@ -708,10 +708,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   <div className="space-y-2">
                     {recentEmails.map((m: any) => (
                       <div
-                        key={m.id}
+                        key={`${m.__source}:${m.id}`}
                         className="text-[11px] bg-card border border-border rounded-md p-2"
                       >
-                        <div className="flex items-center gap-1.5 mb-1">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                           {m.direction === 'outbound' ? (
                             <Send className="h-2.5 w-2.5 text-primary" />
                           ) : (
@@ -725,10 +725,41 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                                 })
                               : ''}
                           </span>
+                          {m.direction === 'outbound' && m.open_count > 0 && (
+                            <span
+                              className="ml-auto inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600"
+                              title={
+                                m.last_opened_at
+                                  ? `Last opened ${new Date(m.last_opened_at).toLocaleString()}`
+                                  : 'Opened'
+                              }
+                            >
+                              <Eye className="h-2.5 w-2.5" />
+                              {m.open_count}
+                            </span>
+                          )}
+                          {m.direction === 'outbound' && m.click_count > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600"
+                              title={
+                                m.last_clicked_at
+                                  ? `Last clicked ${new Date(m.last_clicked_at).toLocaleString()}`
+                                  : 'Clicked'
+                              }
+                            >
+                              <MousePointerClick className="h-2.5 w-2.5" />
+                              {m.click_count}
+                            </span>
+                          )}
                         </div>
-                        <p className="line-clamp-2 text-foreground/80">
-                          {(m.content ?? '').slice(0, 120)}
-                        </p>
+                        {m.subject && (
+                          <p className="font-medium text-foreground truncate">{m.subject}</p>
+                        )}
+                        {m.content && (
+                          <p className="line-clamp-2 text-foreground/70 mt-0.5">
+                            {String(m.content).replace(/<[^>]+>/g, ' ').slice(0, 120)}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
