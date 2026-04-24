@@ -15,12 +15,20 @@ interface BulkActionsBarProps {
 }
 
 export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBarProps) {
+  const navigate = useNavigate();
   const bulkUpdate = useBulkUpdateContacts();
   const bulkDelete = useBulkDeleteContacts();
   const [showDelete, setShowDelete] = useState(false);
 
   const count = selectedIds.length;
   if (count === 0) return null;
+
+  const handleSendEmail = () => {
+    // Hand off the filtered/selected lead IDs to the Email Center compose tab.
+    // ComposeTab reads ?contactIds=... and treats them as a fixed campaign recipient list.
+    const ids = selectedIds.join(',');
+    navigate(`/crm/email?tab=compose&contactIds=${encodeURIComponent(ids)}`);
+  };
 
   const handleAssign = (agent: string) => {
     bulkUpdate.mutate({ ids: selectedIds, updates: { assigned_to: agent } });
