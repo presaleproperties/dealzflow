@@ -1073,36 +1073,26 @@ export default function LeadDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Back to Leads
         </Link>
 
-        {/* Identity card */}
-        <div className="bg-card rounded-lg border border-border p-4 space-y-3">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground tracking-tight">
-              {formatContactName(c.first_name, c.last_name)}
-            </h1>
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded px-1.5 py-0.5 inline-block mt-1.5">
-              {TYPE_LABELS[c.contact_type] ?? 'LEAD'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => c.phone && (window.location.href = `tel:${c.phone}`)} disabled={!c.phone}>
-              <Phone className="w-3.5 h-3.5" /> Call
-            </Button>
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => setShowEmail(true)}>
-              <Mail className="w-3.5 h-3.5" /> Email
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={() => setShowTask(true)}>
-              <ListTodo className="w-3.5 h-3.5" /> Task
-            </Button>
-            <Button size="sm" className="h-9 text-xs gap-1.5" onClick={() => setShowShowing(true)}>
-              <Calendar className="w-3.5 h-3.5" /> Book Showing
-            </Button>
-          </div>
+        {/* Top action bar — Task + Book Showing (Call/Email live in LeftSidebar identity card) */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant="outline" className="h-10 text-xs gap-1.5" onClick={() => setShowTask(true)}>
+            <ListTodo className="w-4 h-4" /> Task
+          </Button>
+          <Button size="sm" className="h-10 text-xs gap-1.5" onClick={() => setShowShowing(true)}>
+            <Calendar className="w-4 h-4" /> Book Showing
+          </Button>
         </div>
 
         <div className="bg-card rounded-lg border border-border p-4">
-          <LeftSidebar contact={c} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} />
+          <LeftSidebar
+            contact={c}
+            leadScore={leadScore}
+            lastTouchLabel={lastTouchLabel}
+            daysInPipeline={daysInPipeline}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+            onEmail={() => setShowEmail(true)}
+          />
         </div>
         <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ minHeight: 400 }}>
           <CenterColumn contact={c} />
