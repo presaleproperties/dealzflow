@@ -142,9 +142,10 @@ const AUTO_MAP: Record<string, string> = {
   'preferred city': 'city_pref',
 };
 
-// Array fields that should be split from CSV comma-separated values
+// Array fields that should be split from CSV multi-value cells
 const ARRAY_FIELDS = new Set(['tags', 'projects']);
 const BOOLEAN_FIELDS = new Set(['is_pre_approved']);
+const MULTI_VALUE_DELIMITER_REGEX = /[|,;\n]+/;
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
@@ -215,6 +216,29 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
 
   const [headers, ...rows] = parsedRows;
   return { headers, rows };
+}
+
+function parseMultiValueCell(value: string): string[] {
+  return Array.from(
+    new Map(
+      value
+        .split(MULTI_VALUE_DELIMITER_REGEX)
+        .map(item => item.trim().replace(/^['"]+|['"]+$/g, ''))
+        .filter(Boolean)
+        .map(item => [item.toLowerCase(), item])
+    ).values()
+  );
+}
+
+function normalizeMultiValueList(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  return Array.from(
+    new Map(
+      values
+        .flatMap(value => parseMultiValueCell(String(value ?? '')))
+        .map(item => [item.toLowerCase(), item])
+    ).values()
+  );
 }
 
 export default function DataImportSection() {
@@ -304,7 +328,7 @@ export default function DataImportSection() {
           const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
           if (!isNaN(num)) record[field] = num;
         } else if (ARRAY_FIELDS.has(field)) {
-          record[field] = val.split(',').map(t => t.trim()).filter(Boolean);
+          record[field] = parseMultiValueCell(val);
         } else if (field === 'contact_type') {
           const normalized = val.toLowerCase().trim();
           if (['lead', 'realtor', 'past_client'].includes(normalized)) {
@@ -376,24 +400,32 @@ export default function DataImportSection() {
 
       if (existingId) {
         // Merge tags + projects, don't overwrite other fields
-        const incomingTags = (rec.tags as string[] | undefined) ?? [];
-        const incomingProjects = (rec.projects as string[] | undefined) ?? [];
-        const mergedTags = Array.from(new Set([...existingTags, ...incomingTags].map(t => t.trim()).filter(Boolean)));
+        const incomingTags = normalizeMultiValueList(rec.tags);
+        const incomingProjects = normalizeMultiValueList(rec.projects);
+        const mergedTags = Array.from(
+          new Map(
+            [...normalizeMultiValueList(existingTags), ...incomingTags].map(tag => [tag.toLowerCase(), tag])
+          ).values()
+        );
 
         const updates: Record<string, unknown> = {};
-        if (mergedTags.length > existingTags.length) updates.tags = mergedTags;
+        if (JSON.stringify(mergedTags) !== JSON.stringify(normalizeMultiValueList(existingTags))) {
+          updates.tags = mergedTags;
+        }
         if (incomingProjects.length > 0) {
-          // fetch existing projects to merge
           const { data: cur } = await supabase
             .from('crm_contacts')
             .select('projects')
             .eq('id', existingId)
             .maybeSingle();
-          const existingProjects = (cur?.projects as string[] | null) ?? [];
-          const mergedProjects = Array.from(new Set([...existingProjects, ...incomingProjects].filter(Boolean)));
-          if (mergedProjects.length > existingProjects.length) updates.projects = mergedProjects;
+          const existingProjects = normalizeMultiValueList(cur?.projects);
+          const mergedProjects = Array.from(
+            new Map([...existingProjects, ...incomingProjects].map(project => [project.toLowerCase(), project])).values()
+          );
+          if (JSON.stringify(mergedProjects) !== JSON.stringify(existingProjects)) {
+            updates.projects = mergedProjects;
+          }
         }
-
         if (Object.keys(updates).length > 0) {
           const { error: updErr } = await supabase
             .from('crm_contacts')
