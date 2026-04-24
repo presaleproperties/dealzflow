@@ -489,9 +489,16 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                           <p className="text-[11px] font-semibold text-foreground truncate leading-tight">
                             {tpl.name}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {tpl.subject}
-                          </p>
+                          <div className="flex items-center justify-between gap-1 mt-0.5">
+                            <p className="text-[10px] text-muted-foreground truncate flex-1">
+                              {tpl.subject}
+                            </p>
+                            {!tpl.__isBridge && (tpl.times_used ?? 0) > 0 && (
+                              <span className="text-[9px] font-medium text-muted-foreground/80 shrink-0 tabular-nums">
+                                {tpl.times_used}×
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </button>
                     ))}
