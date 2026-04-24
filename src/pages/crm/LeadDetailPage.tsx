@@ -1065,15 +1065,35 @@ function EmptyWidget({ icon: Icon, message }: { icon: typeof ListTodo; message: 
 }
 
 function TaskRow({ task }: { task: any }) {
+  const qc = useQueryClient();
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+  const completeTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('crm_tasks')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', task.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-contact-tasks', task.contact_id] });
+      toast.success('Task completed');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   return (
     <div className={cn(
       'flex items-start gap-2.5 p-3 rounded-lg bg-card border transition-colors',
       isOverdue ? 'border-destructive/30' : 'border-border/60 hover:border-border'
     )}>
-      <Checkbox className="mt-0.5 h-4 w-4" />
+      <Checkbox
+        className="mt-0.5 h-4 w-4"
+        checked={task.status === 'completed'}
+        disabled={completeTask.isPending || task.status === 'completed'}
+        onCheckedChange={(checked) => { if (checked) completeTask.mutate(); }}
+      />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-foreground leading-snug">{task.title}</p>
+        <p className={cn('text-[13px] font-medium leading-snug', task.status === 'completed' ? 'text-muted-foreground line-through' : 'text-foreground')}>{task.title}</p>
         {task.due_date && (
           <p className={cn('text-xs mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
             {isOverdue ? 'Overdue · ' : ''}{format(new Date(task.due_date), 'MMM d, yyyy')}
