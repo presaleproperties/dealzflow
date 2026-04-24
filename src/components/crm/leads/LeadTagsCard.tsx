@@ -33,9 +33,9 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
     const list = Array.from(counts.values())
       .filter(item => !tagsLower.has(item.label.toLowerCase()))
       .sort((a, b) => b.count - a.count);
-    if (!query.trim()) return list.slice(0, 30);
+    if (!query.trim()) return list;
     const q = query.toLowerCase();
-    return list.filter(item => item.label.toLowerCase().includes(q)).slice(0, 30);
+    return list.filter(item => item.label.toLowerCase().includes(q));
   }, [allContacts, tagsLower, query, dynamicOpts.tags.length]);
 
   // Close on outside click
@@ -179,8 +179,9 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
             ))}
           </div>
 
-          <div className="px-3 py-1.5 border-t border-border/40 text-[10px] text-muted-foreground bg-muted/20">
-            Enter to add · Esc to close
+          <div className="px-3 py-1.5 border-t border-border/40 text-[10px] text-muted-foreground bg-muted/20 flex items-center justify-between">
+            <span>Enter to add · Esc to close</span>
+            <span className="tabular-nums">{suggestions.length} {query ? 'matching' : 'available'}</span>
           </div>
         </div>
       )}
