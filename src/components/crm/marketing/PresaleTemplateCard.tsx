@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Mail, Send, Eye, Clock } from 'lucide-react';
+import { FileText, Image as ImageIcon, Mail, Send, Eye, Clock, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
