@@ -500,12 +500,12 @@ export function LeadsTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/20">
-                <th className="w-10 px-3 py-3"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
+                <th className="w-10 px-3 py-3.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
                 {columns.map(col => (
                   <th key={col.key}
-                    className="px-3 py-3 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
+                    className="px-3 py-3.5 text-left text-[12px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
                     onClick={() => col.sortKey && onSort(col.sortKey)}>
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1.5">
                       {col.label}
                       {col.sortKey && <SortIcon col={col.sortKey} />}
                     </span>
@@ -520,11 +520,11 @@ export function LeadsTable({
                   <tr key={contact.id}
                     className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
-                    <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
                     </td>
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-3">
+                      <td key={col.key} className="px-3 py-3.5">
                         <CellContent col={col} contact={contact} updateContact={updateContact} />
                       </td>
                     ))}
