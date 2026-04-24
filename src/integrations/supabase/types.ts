@@ -733,10 +733,12 @@ export type Database = {
           id: string
           opens: number | null
           recipients_count: number | null
+          scheduled_for: string | null
           segment_filter: Json | null
           sent_at: string | null
           status: string | null
           subject: string
+          template_id: string | null
         }
         Insert: {
           body_html?: string | null
@@ -746,10 +748,12 @@ export type Database = {
           id?: string
           opens?: number | null
           recipients_count?: number | null
+          scheduled_for?: string | null
           segment_filter?: Json | null
           sent_at?: string | null
           status?: string | null
           subject: string
+          template_id?: string | null
         }
         Update: {
           body_html?: string | null
@@ -759,12 +763,22 @@ export type Database = {
           id?: string
           opens?: number | null
           recipients_count?: number | null
+          scheduled_for?: string | null
           segment_filter?: Json | null
           sent_at?: string | null
           status?: string | null
           subject?: string
+          template_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_email_jobs: {
         Row: {
