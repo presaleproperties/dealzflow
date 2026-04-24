@@ -359,30 +359,22 @@ export default function DataImportSection() {
       let existingTags: string[] = [];
 
       if (mergeMode) {
-        const lookups: Promise<{ data: { id: string; tags: string[] | null }[] | null }>[] = [];
+        const tryMatch = async (q: ReturnType<typeof supabase.from>) => {
+          const { data } = await (q as never as { select: (s: string) => { limit: (n: number) => Promise<{ data: { id: string; tags: string[] | null }[] | null }> } });
+          return data;
+        };
         if (rec.lofty_id) {
-          lookups.push(
-            supabase.from('crm_contacts').select('id,tags').eq('lofty_id', rec.lofty_id as string).limit(1)
-          );
+          const { data } = await supabase.from('crm_contacts').select('id,tags').eq('lofty_id', rec.lofty_id as string).limit(1);
+          if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
         }
-        if (rec.email) {
-          lookups.push(
-            supabase.from('crm_contacts').select('id,tags').ilike('email', normEmail(rec.email)).limit(1)
-          );
+        if (!existingId && rec.email) {
+          const { data } = await supabase.from('crm_contacts').select('id,tags').ilike('email', normEmail(rec.email)).limit(1);
+          if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
         }
         const phoneNorm = normPhone(rec.phone);
-        if (phoneNorm.length >= 7) {
-          lookups.push(
-            supabase.from('crm_contacts').select('id,tags').ilike('phone', `%${phoneNorm}%`).limit(1)
-          );
-        }
-        for (const p of lookups) {
-          const { data } = await p;
-          if (data && data.length > 0) {
-            existingId = data[0].id;
-            existingTags = data[0].tags ?? [];
-            break;
-          }
+        if (!existingId && phoneNorm.length >= 7) {
+          const { data } = await supabase.from('crm_contacts').select('id,tags').ilike('phone', `%${phoneNorm}%`).limit(1);
+          if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
         }
       }
 
