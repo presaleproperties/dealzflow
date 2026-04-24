@@ -499,10 +499,38 @@ function metaForNote(note: CrmNote) {
 function CenterColumn({ contact }: { contact: CrmContact }) {
   const { session } = useAuth();
   const currentUserId = session?.user?.id;
-  const { data: notes = [] } = useLeadNotes(contact.id);
+  const { data: rawNotes = [] } = useLeadNotes(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
+  const { data: emailLog = [] } = useCrmEmailLog(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
+
+  // Merge real notes with virtual entries synthesized from the email log so
+  // every sent / received email shows up in the central timeline alongside notes.
+  const notes = useMemo<CrmNote[]>(() => {
+    const emailNotes: CrmNote[] = (emailLog ?? []).map((e: any) => {
+      const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
+      const subject = e.subject || '(no subject)';
+      const preview = (e.body_text || e.body_html || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      return {
+        id: `email-${e.id}`,
+        contact_id: contact.id,
+        user_id: e.sent_by || '',
+        content: `Subject: ${subject}\nDirection: ${direction}${e.from_email ? `\nFrom: ${e.from_email}` : ''}${e.to_email ? `\nTo: ${e.to_email}` : ''}${preview ? `\n\n${preview}` : ''}`,
+        note_type: 'email',
+        is_pinned: false,
+        created_at: e.sent_at || e.created_at || new Date().toISOString(),
+        updated_at: e.sent_at || e.created_at || new Date().toISOString(),
+        event_at: e.sent_at || e.created_at || null,
+      };
+    });
+    const merged = [...rawNotes, ...emailNotes];
+    const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
+    return merged.sort((a, b) => {
+      if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+      return ts(b) - ts(a);
+    });
+  }, [rawNotes, emailLog, contact.id]);
 
   const [draft, setDraft] = useState('');
   const [noteType, setNoteType] = useState('manual');
