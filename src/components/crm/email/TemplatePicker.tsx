@@ -1,75 +1,102 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Monitor, Smartphone, ArrowLeft, Check } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, Monitor, Smartphone, Check, X, Mail, Sparkles, FileText, Layers } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
 
 const CATEGORY_TABS = [
-  { value: 'all', label: 'All' },
-  { value: 'presale', label: 'Presale Properties' },
-  { value: 'project-launch', label: 'Project Launch' },
-  { value: 'follow-up', label: 'Follow-Up' },
-  { value: 'nurture', label: 'Nurture' },
-  { value: 'welcome', label: 'Welcome' },
-  { value: 'general', label: 'General' },
+  { value: 'all', label: 'All', icon: Layers },
+  { value: 'presale', label: 'Presale', icon: Sparkles },
+  { value: 'project-launch', label: 'Project Launch', icon: FileText },
+  { value: 'follow-up', label: 'Follow-Up', icon: Mail },
+  { value: 'nurture', label: 'Nurture', icon: Mail },
+  { value: 'welcome', label: 'Welcome', icon: Mail },
+  { value: 'general', label: 'General', icon: Mail },
 ];
 
-function MiniPreview({ html }: { html: string }) {
+/**
+ * High-fidelity thumbnail: renders the actual email HTML at desktop width
+ * inside a sandbox, then visually scales it down so users see a faithful
+ * miniature — not a cropped sliver.
+ */
+function ThumbPreview({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
+  // Render at 600px wide (typical email width), then scale to fit thumbnail.
+  const RENDER_WIDTH = 600;
+  const RENDER_HEIGHT = 800;
+  const SCALE = 0.34; // → 204 × 272 visible
+
   useEffect(() => {
-    if (ref.current) {
-      const doc = ref.current.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(`<!doctype html><html><head><style>
-          html,body{margin:0;padding:0;overflow:hidden;background:#fff;}
-          body{width:333.33%;transform:scale(0.3);transform-origin:top left;pointer-events:none;}
-          img,table{max-width:100%;height:auto;}
-        </style></head><body>${html || ''}</body></html>`);
-        doc.close();
-      }
-    }
+    const iframe = ref.current;
+    if (!iframe) return;
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
+      html,body{margin:0;padding:0;background:#fff;}
+      body{font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0a0a0a;}
+      img,table{max-width:100%;height:auto;}
+      *{box-sizing:border-box;}
+    </style></head><body>${html || '<div style="padding:40px;color:#999;text-align:center;">No content</div>'}</body></html>`);
+    doc.close();
   }, [html]);
+
   return (
-    <div className="w-full h-[140px] overflow-hidden bg-white relative">
+    <div
+      className="relative overflow-hidden bg-white"
+      style={{ width: RENDER_WIDTH * SCALE, height: RENDER_HEIGHT * SCALE }}
+    >
       <iframe
         ref={ref}
-        title="tpl"
+        title="thumb"
         scrolling="no"
-        className="w-full h-full border-0 block pointer-events-none"
+        className="border-0 block pointer-events-none bg-white"
+        style={{
+          width: RENDER_WIDTH,
+          height: RENDER_HEIGHT,
+          transform: `scale(${SCALE})`,
+          transformOrigin: 'top left',
+        }}
         sandbox="allow-same-origin"
       />
+      {/* Soft fade at the bottom to hint at scrollable content */}
+      <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent pointer-events-none" />
     </div>
   );
 }
 
-/** Full-fidelity preview that renders the template HTML exactly as recipients will see it. */
+/** Full-fidelity preview pane — fills its parent and scrolls long emails. */
 function FullPreview({ html, width }: { html: string; width: 'desktop' | 'mobile' }) {
   const ref = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
-    if (ref.current) {
-      const doc = ref.current.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(html || '<p style="color:#888;font-family:sans-serif;padding:20px;">No content</p>');
-        doc.close();
-      }
-    }
+    const iframe = ref.current;
+    if (!iframe) return;
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(
+      html
+        ? `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#fff;}body{font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0a0a0a;}img,table{max-width:100%;height:auto;}</style></head><body>${html}</body></html>`
+        : '<p style="color:#888;font-family:sans-serif;padding:24px;">No content</p>',
+    );
+    doc.close();
   }, [html, width]);
+
   return (
-    <div className="flex justify-center bg-muted/20 rounded-lg p-3 h-full">
+    <div className="h-full w-full flex justify-center bg-muted/20 p-3 overflow-hidden">
       <div
-        className="rounded-md border border-border/40 bg-white overflow-hidden shadow-sm transition-all"
-        style={{ width: width === 'desktop' ? '100%' : '375px', maxWidth: '100%', height: '100%' }}
+        className="rounded-xl border border-border/60 bg-white overflow-hidden shadow-sm transition-all h-full"
+        style={{ width: width === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}
       >
         <iframe
           ref={ref}
           title="Template full preview"
-          className="w-full h-full border-0 block"
+          className="w-full h-full border-0 block bg-white"
           sandbox="allow-same-origin"
         />
       </div>
@@ -90,13 +117,14 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
   const { data: bridgeTemplates = [], isLoading: bridgeLoading } = useBridgeTemplates();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
-  const [previewTpl, setPreviewTpl] = useState<Merged | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
 
-  // Reset preview state when the dialog re-opens
   useEffect(() => {
     if (!open) {
-      setPreviewTpl(null);
+      setSelectedId(null);
+      setSearch('');
+      setCatFilter('all');
       setPreviewWidth('desktop');
     }
   }, [open]);
@@ -116,160 +144,227 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
     }
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((t) => t.name.toLowerCase().includes(q) || t.subject.toLowerCase().includes(q));
+      list = list.filter(
+        (t) => t.name.toLowerCase().includes(q) || (t.subject || '').toLowerCase().includes(q),
+      );
     }
     return list;
   }, [merged, catFilter, search]);
 
-  const applyPreview = () => {
-    if (previewTpl) {
-      onSelect(previewTpl);
-      onOpenChange(false);
+  const selected = useMemo(
+    () => filtered.find((t) => t.id === selectedId) ?? filtered[0] ?? null,
+    [filtered, selectedId],
+  );
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = { all: merged.length, presale: 0 };
+    for (const t of merged) {
+      if (t.__isBridge) map.presale += 1;
+      const cat = (t as any).category;
+      if (cat) map[cat] = (map[cat] ?? 0) + 1;
     }
+    return map;
+  }, [merged]);
+
+  const useTemplate = (tpl: Merged) => {
+    onSelect(tpl);
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {previewTpl ? (
-              <>
-                <button
-                  onClick={() => setPreviewTpl(null)}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Back to templates
-                </button>
-                <span className="text-sm text-foreground/80 truncate">· {previewTpl.name}</span>
-              </>
-            ) : (
-              <span className="pr-8">
-                Select a Template
-                {bridgeLoading && <span className="ml-2 text-xs text-muted-foreground font-normal">· loading Presale library…</span>}
-              </span>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-
-        {previewTpl ? (
-          <div className="flex flex-col flex-1 min-h-0 gap-3">
-            {/* Preview controls */}
-            <div className="flex items-center justify-between gap-3 flex-wrap pr-8">
-              <div className="flex items-center gap-2 min-w-0">
-                <p className="text-xs text-muted-foreground truncate">
-                  Subject: <span className="text-foreground/80 font-medium">{previewTpl.subject || '—'}</span>
-                </p>
-                {previewTpl.__isBridge && (
-                  <Badge className="bg-primary/90 text-primary-foreground text-[9px] px-1.5 py-0">PRESALE</Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5">
-                  <button
-                    onClick={() => setPreviewWidth('desktop')}
-                    className={`px-2 py-1 rounded transition-colors inline-flex items-center gap-1 text-[11px] font-medium ${previewWidth === 'desktop' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                    title="Desktop view"
-                  >
-                    <Monitor className="w-3.5 h-3.5" /> Desktop
-                  </button>
-                  <button
-                    onClick={() => setPreviewWidth('mobile')}
-                    className={`px-2 py-1 rounded transition-colors inline-flex items-center gap-1 text-[11px] font-medium ${previewWidth === 'mobile' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                    title="Mobile view"
-                  >
-                    <Smartphone className="w-3.5 h-3.5" /> Mobile
-                  </button>
-                </div>
-                <Button size="sm" className="h-8 gap-1.5" onClick={applyPreview}>
-                  <Check className="w-3.5 h-3.5" /> Use this template
-                </Button>
-              </div>
-            </div>
-
-            {/* Full preview pane */}
-            <div className="flex-1 min-h-0">
-              <FullPreview html={previewTpl.body_html || ''} width={previewWidth} />
-            </div>
+      <DialogContent className="max-w-7xl w-[96vw] h-[88vh] p-0 overflow-hidden flex flex-col gap-0">
+        {/* Header */}
+        <div className="px-5 py-3 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <h2 className="text-base font-semibold text-foreground truncate">Select a Template</h2>
+            <span className="text-[11px] text-muted-foreground">
+              {filtered.length} of {merged.length}
+              {bridgeLoading && ' · loading Presale library…'}
+            </span>
           </div>
-        ) : (
-          <>
-            <div className="flex gap-1 overflow-x-auto pb-1 pr-8">
-              {CATEGORY_TABS.map((tab) => (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Filters row */}
+        <div className="px-5 py-2.5 border-b border-border bg-muted/10 flex items-center gap-3 shrink-0 flex-wrap">
+          <div className="relative flex-1 min-w-[220px] max-w-[360px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or subject…"
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {CATEGORY_TABS.map((tab) => {
+              const active = catFilter === tab.value;
+              const count = counts[tab.value] ?? 0;
+              return (
                 <button
                   key={tab.value}
                   onClick={() => setCatFilter(tab.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    catFilter === tab.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted/40 text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={cn(
+                    'h-7 px-2.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors flex items-center gap-1.5',
+                    active
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40',
+                  )}
                 >
                   {tab.label}
+                  <span
+                    className={cn(
+                      'text-[10px] px-1 py-0 rounded',
+                      active ? 'bg-primary-foreground/20' : 'bg-muted/60 text-muted-foreground',
+                    )}
+                  >
+                    {count}
+                  </span>
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+        </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search templates..." className="pl-9 h-9" />
-            </div>
+        {/* Master / detail body */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[420px_1fr] overflow-hidden min-h-0">
+          {/* Template list */}
+          <aside className="border-r border-border overflow-y-auto bg-background">
+            {filtered.length === 0 ? (
+              <div className="p-10 text-center text-sm text-muted-foreground">
+                No templates match your filters
+              </div>
+            ) : (
+              <ul className="divide-y divide-border/60">
+                {filtered.map((tpl) => {
+                  const isActive = selected?.id === tpl.id;
+                  return (
+                    <li key={(tpl.__isBridge ? 'b:' : 'l:') + tpl.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(tpl.id)}
+                        onDoubleClick={() => useTemplate(tpl)}
+                        className={cn(
+                          'w-full text-left px-3 py-3 flex gap-3 items-start transition-colors group',
+                          isActive
+                            ? 'bg-primary/5 ring-1 ring-inset ring-primary/30'
+                            : 'hover:bg-muted/40',
+                        )}
+                      >
+                        {/* Thumbnail */}
+                        <div className="shrink-0 rounded-lg border border-border overflow-hidden bg-white">
+                          <ThumbPreview html={tpl.body_html || ''} />
+                        </div>
+                        {/* Meta */}
+                        <div className="flex-1 min-w-0 py-0.5">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4
+                              className={cn(
+                                'text-sm font-semibold truncate',
+                                isActive ? 'text-foreground' : 'text-foreground',
+                              )}
+                            >
+                              {tpl.name}
+                            </h4>
+                            {tpl.__isBridge && (
+                              <Badge className="bg-primary/90 text-primary-foreground text-[9px] px-1.5 py-0 h-4 shrink-0">
+                                PRESALE
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 leading-snug">
+                            {tpl.subject || <span className="italic">(no subject)</span>}
+                          </p>
+                          {(tpl as any).category && (
+                            <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                              {(tpl as any).category}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </aside>
 
-            <div className="flex-1 overflow-y-auto">
-              {filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-10">No templates found</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-2">
-                  {filtered.map((tpl) => (
-                    <div
-                      key={(tpl.__isBridge ? 'bridge:' : 'local:') + tpl.id}
-                      className="text-left bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-md transition-all relative group flex flex-col"
-                    >
-                      {tpl.__isBridge && (
-                        <Badge className="absolute top-2 right-2 z-10 bg-primary/90 text-primary-foreground text-[9px] px-1.5 py-0">
+          {/* Preview pane */}
+          <section className="flex flex-col overflow-hidden min-h-0 bg-muted/10">
+            {selected ? (
+              <>
+                <div className="px-5 py-3 border-b border-border bg-card flex items-start justify-between gap-3 shrink-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Subject
+                      </p>
+                      {selected.__isBridge && (
+                        <Badge className="bg-primary/90 text-primary-foreground text-[9px] px-1.5 py-0 h-4">
                           PRESALE
                         </Badge>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setPreviewTpl(tpl)}
-                        className="block text-left"
-                        aria-label={`Preview ${tpl.name}`}
-                      >
-                        <div className="overflow-hidden border-b border-border/40">
-                          {tpl.body_html ? <MiniPreview html={tpl.body_html} /> : (
-                            <div className="h-[140px] bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">No preview</div>
-                          )}
-                        </div>
-                        <div className="p-3 space-y-1">
-                          <h4 className="text-sm font-semibold text-foreground truncate">{tpl.name}</h4>
-                          <p className="text-xs text-muted-foreground truncate">{tpl.subject}</p>
-                        </div>
-                      </button>
-                      <div className="px-3 pb-3 flex items-center gap-2 mt-auto">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-[11px] flex-1"
-                          onClick={() => setPreviewTpl(tpl)}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-7 text-[11px] flex-1"
-                          onClick={() => { onSelect(tpl); onOpenChange(false); }}
-                        >
-                          Use
-                        </Button>
-                      </div>
                     </div>
-                  ))}
+                    <h3 className="text-sm font-semibold text-foreground truncate">
+                      {selected.subject || selected.name}
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {selected.name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background p-0.5">
+                      <button
+                        onClick={() => setPreviewWidth('desktop')}
+                        className={cn(
+                          'h-7 px-2 rounded-md text-[11px] font-medium inline-flex items-center gap-1 transition-colors',
+                          previewWidth === 'desktop'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Monitor className="h-3.5 w-3.5" />
+                        Desktop
+                      </button>
+                      <button
+                        onClick={() => setPreviewWidth('mobile')}
+                        className={cn(
+                          'h-7 px-2 rounded-md text-[11px] font-medium inline-flex items-center gap-1 transition-colors',
+                          previewWidth === 'mobile'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Smartphone className="h-3.5 w-3.5" />
+                        Mobile
+                      </button>
+                    </div>
+                    <Button size="sm" className="h-8 gap-1.5" onClick={() => useTemplate(selected)}>
+                      <Check className="h-3.5 w-3.5" />
+                      Use this template
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
-          </>
-        )}
+                <div className="flex-1 min-h-0">
+                  <FullPreview html={selected.body_html || ''} width={previewWidth} />
+                </div>
+              </>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground">
+                Select a template on the left to preview it here.
+              </div>
+            )}
+          </section>
+        </div>
       </DialogContent>
     </Dialog>
   );
