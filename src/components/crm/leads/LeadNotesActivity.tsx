@@ -51,7 +51,7 @@ function NoteCard({
 }) {
   const meta = NOTE_TYPE_META[note.note_type] || NOTE_TYPE_META.manual;
   const Icon = meta.icon;
-  const time = format(parseISO(note.created_at), 'h:mm a');
+  const time = format(parseISO(note.event_at || note.created_at), 'h:mm a');
 
   return (
     <div className="group relative flex gap-3">
@@ -136,19 +136,21 @@ export function LeadNotesActivity({ contactId }: { contactId: string }) {
   // Filter
   const filteredNotes = useMemo(() => {
     if (filter === 'all') return notes;
-    if (filter === 'manual') return notes.filter(n => n.note_type === 'manual' || n.note_type === 'import');
+    if (filter === 'manual') return notes.filter(n => n.note_type === 'manual' || n.note_type === 'import' || n.note_type === 'note');
+    if (filter === 'call_log') return notes.filter(n => n.note_type === 'call_log' || n.note_type === 'call');
+    if (filter === 'email') return notes.filter(n => n.note_type === 'email' || n.note_type === 'text');
     return notes.filter(n => n.note_type === filter);
   }, [notes, filter]);
 
   const pinnedNotes = useMemo(() => filteredNotes.filter(n => n.is_pinned), [filteredNotes]);
   const unpinnedNotes = useMemo(() => filteredNotes.filter(n => !n.is_pinned), [filteredNotes]);
 
-  // Group by date
+  // Group by event date (true event time, not import time)
   const groupedNotes = useMemo(() => {
     const groups: { label: string; notes: CrmNote[] }[] = [];
     let currentLabel = '';
     unpinnedNotes.forEach(note => {
-      const label = getDateGroup(note.created_at);
+      const label = getDateGroup(note.event_at || note.created_at);
       if (label !== currentLabel) {
         groups.push({ label, notes: [note] });
         currentLabel = label;
@@ -162,9 +164,9 @@ export function LeadNotesActivity({ contactId }: { contactId: string }) {
   // Filter counts
   const counts = useMemo(() => ({
     all: notes.length,
-    manual: notes.filter(n => n.note_type === 'manual' || n.note_type === 'import').length,
-    email: notes.filter(n => n.note_type === 'email').length,
-    call_log: notes.filter(n => n.note_type === 'call_log').length,
+    manual: notes.filter(n => n.note_type === 'manual' || n.note_type === 'import' || n.note_type === 'note').length,
+    email: notes.filter(n => n.note_type === 'email' || n.note_type === 'text').length,
+    call_log: notes.filter(n => n.note_type === 'call_log' || n.note_type === 'call').length,
     system: notes.filter(n => n.note_type === 'system').length,
   }), [notes]);
 
