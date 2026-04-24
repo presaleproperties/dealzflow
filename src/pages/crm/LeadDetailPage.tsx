@@ -325,7 +325,7 @@ function LeftSidebar({
       <div className="space-y-2">
         <SectionHeader>Lead Type</SectionHeader>
         <Select value={contact.lead_type ?? ''} onValueChange={(v) => saveWithLog('lead_type', v)}>
-          <SelectTrigger className="h-8 text-xs bg-card border-border">
+          <SelectTrigger className="h-9 text-sm bg-card border-border">
             <SelectValue placeholder="Select type">{LEAD_TYPE_LABELS[contact.lead_type ?? ''] || contact.lead_type || 'Not set'}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -335,24 +335,24 @@ function LeftSidebar({
       </div>
 
       {/* Tags */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <SectionHeader>Tags</SectionHeader>
           {!addingTag && (
-            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
-              <Plus className="w-3.5 h-3.5" />
+            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5" aria-label="Add tag">
+              <Plus className="w-4 h-4" />
             </button>
           )}
         </div>
         {tags.length === 0 && !addingTag ? (
-          <p className="text-[11px] text-muted-foreground/70">No tags</p>
+          <p className="text-xs text-muted-foreground/70">No tags yet</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {tags.map(tag => (
-              <Badge key={tag} variant="outline" className="text-[10px] font-medium gap-1 pr-1 py-0.5 border-border/60 bg-muted/30 text-foreground/80">
+              <Badge key={tag} variant="outline" className="text-[11px] font-medium gap-1 pr-1.5 py-0.5 border-border/70 bg-muted/40 text-foreground">
                 {tag}
-                <button onClick={() => removeTag(tag)} className="hover:text-foreground transition-colors">
-                  <X className="w-2.5 h-2.5" />
+                <button onClick={() => removeTag(tag)} className="hover:text-foreground transition-colors" aria-label={`Remove ${tag}`}>
+                  <X className="w-3 h-3" />
                 </button>
               </Badge>
             ))}
@@ -364,25 +364,25 @@ function LeftSidebar({
               value={newTag}
               onChange={e => setNewTag(e.target.value)}
               placeholder="Tag name…"
-              className="h-7 text-xs"
+              className="h-8 text-sm"
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter') addTag();
                 if (e.key === 'Escape') { setAddingTag(false); setNewTag(''); }
               }}
             />
-            <Button size="sm" className="h-7 text-xs px-2.5" onClick={addTag}>Add</Button>
+            <Button size="sm" className="h-8 text-xs px-3" onClick={addTag}>Add</Button>
           </div>
         )}
       </div>
 
       {/* Projects */}
       {projects.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <SectionHeader>Projects</SectionHeader>
           <div className="flex flex-wrap gap-1.5">
             {projects.map(p => (
-              <Badge key={p} variant="outline" className="text-[10px] font-medium border-border/60 bg-muted/30 text-foreground/80">
+              <Badge key={p} variant="outline" className="text-[11px] font-medium border-border/70 bg-muted/40 text-foreground">
                 {p}
               </Badge>
             ))}
@@ -391,10 +391,10 @@ function LeftSidebar({
       )}
 
       {/* Co-Buyer / Family Member */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
           <SectionHeader>{hasCoBuyer ? 'Co-Buyer' : 'Family Member'}</SectionHeader>
-          {coBuyerOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+          {coBuyerOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
         {coBuyerOpen && (
           <div className="space-y-px">
@@ -405,7 +405,7 @@ function LeftSidebar({
                 <DetailRow label="Email" value={contact.co_buyer_email} field="co_buyer_email" contactId={contact.id} type="email" />
               </>
             ) : (
-              <p className="text-[11px] text-muted-foreground/70">No co-buyer info</p>
+              <p className="text-xs text-muted-foreground/70">No co-buyer info</p>
             )}
           </div>
         )}
@@ -415,7 +415,7 @@ function LeftSidebar({
       <div className="space-y-2">
         <SectionHeader>Assigned To</SectionHeader>
         <Select value={contact.assigned_to ?? ''} onValueChange={(v) => saveWithLog('assigned_to', v)}>
-          <SelectTrigger className="h-8 text-xs bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
           <SelectContent>
             {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
@@ -427,15 +427,15 @@ function LeftSidebar({
 
 /* ─── Small reusable pieces ─── */
 function SectionHeader({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{children}</h3>;
+  return <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{children}</h3>;
 }
 
 function InsightCard({ value, label, sublabel, accent }: { value: React.ReactNode; label: string; sublabel?: string; accent?: string }) {
   return (
-    <div className="rounded-md border border-border/60 bg-card/50 px-2 py-2.5 text-center space-y-0.5">
-      <p className="text-base font-bold text-foreground leading-none tabular-nums">{value}</p>
-      <p className="text-[9px] text-muted-foreground leading-tight uppercase tracking-wider">{label}</p>
-      {sublabel && <p className="text-[9px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
+    <div className="rounded-lg border border-border/70 bg-card px-2.5 py-3 text-center space-y-1">
+      <p className="text-xl font-bold text-foreground leading-none tabular-nums">{value}</p>
+      <p className="text-[10px] text-muted-foreground leading-tight uppercase tracking-[0.1em] font-medium">{label}</p>
+      {sublabel && <p className="text-[10px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
     </div>
   );
 }
@@ -445,8 +445,8 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
 }) {
   const updateContact = useUpdateCrmContact();
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/30 group">
-      <span className="text-[11px] text-muted-foreground shrink-0">{label}</span>
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
+      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
       <div className="flex-1 min-w-0 flex justify-end">
         <InlineEditField
           value={value}
@@ -454,7 +454,7 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
           href={href}
           type={type}
           options={options}
-          className="text-xs text-right truncate max-w-full"
+          className="text-[13px] text-right truncate max-w-full"
         />
       </div>
     </div>
