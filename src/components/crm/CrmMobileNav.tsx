@@ -32,7 +32,6 @@ const PRIMARY: PrimaryItem[] = [
     sectionKey: 'outreach',
     children: [
       { label: 'Email Center', path: '/crm/email',       icon: Mail },
-      { label: 'WhatsApp',     path: '/crm/whatsapp',    icon: MessageCircle },
       { label: 'Templates',    path: '/crm/templates',   icon: LayoutTemplate },
       { label: 'Automations',  path: '/crm/automations', icon: Zap, ownerAdminOnly: true },
     ],
