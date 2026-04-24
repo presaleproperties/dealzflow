@@ -539,8 +539,10 @@ export function ComposeTab() {
         </div>
       )}
 
-      {/* Signature preview */}
-      {emailSettings?.signature_html && (
+      {/* Signature preview — only shown when composing a non-template email.
+          Templates already contain their own footer/signature, so adding the
+          system signature would duplicate it. */}
+      {!isHtmlMode && emailSettings?.signature_html && (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Checkbox id="include-sig" checked={includeSignature} onCheckedChange={(v) => setIncludeSignature(!!v)} />
