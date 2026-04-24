@@ -40,6 +40,10 @@ import { Globe, MessageSquare } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
+import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
+import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
+import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
