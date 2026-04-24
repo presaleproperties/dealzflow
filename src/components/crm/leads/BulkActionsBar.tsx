@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail } from 'lucide-react';
-import { useBulkUpdateContacts, useBulkDeleteContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useBulkUpdateContacts, useBulkDeleteContacts, useBulkAddTagsToContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
+import { InlineLibraryPicker } from './InlineLibraryPicker';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -18,7 +21,12 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const navigate = useNavigate();
   const bulkUpdate = useBulkUpdateContacts();
   const bulkDelete = useBulkDeleteContacts();
+  const bulkAddTags = useBulkAddTagsToContacts();
+  const { data: tagLib = [] } = useCrmTags();
+  const createTag = useCreateCrmTag();
   const [showDelete, setShowDelete] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [pendingTags, setPendingTags] = useState<string[]>([]);
 
   const count = selectedIds.length;
   if (count === 0) return null;
