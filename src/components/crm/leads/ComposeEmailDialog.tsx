@@ -739,12 +739,30 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               {/* Body area */}
               <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
                 {mode === 'edit' && (
-                  <div className="p-5">
+                  <div className="p-5 space-y-3">
                     <RichTextEditor
                       content={bodyHtml}
                       onChange={setBodyHtml}
                       placeholder="Write your message... use {{lead.first_name}} for personalization."
                     />
+                    {appendSignature && activeSignatureHtml && (
+                      <div className="rounded-xl border border-dashed border-border bg-background overflow-hidden">
+                        <div className="px-3 py-1.5 border-b border-border/60 bg-muted/30 flex items-center justify-between">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Signature preview
+                          </span>
+                          <span className="text-[10px] text-muted-foreground/80">
+                            Auto-appended when you send
+                          </span>
+                        </div>
+                        <iframe
+                          title="signature-inline-preview"
+                          srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:12px 16px;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${activeSignatureHtml}</body></html>`}
+                          className="w-full bg-white border-0 block"
+                          style={{ height: 200 }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
                 {mode === 'html' && (
