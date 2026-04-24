@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, UserCheck, Tag, ArrowRightLeft, X } from 'lucide-react';
+import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail } from 'lucide-react';
 import { useBulkUpdateContacts, useBulkDeleteContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
