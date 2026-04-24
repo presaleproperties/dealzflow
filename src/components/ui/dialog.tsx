@@ -16,15 +16,10 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50",
+      "fixed inset-0 z-50 bg-black/70",
       "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
-    style={{
-      background: 'hsl(222 20% 4% / 0.55)',
-      backdropFilter: 'blur(8px) saturate(150%)',
-      WebkitBackdropFilter: 'blur(8px) saturate(150%)',
-    }}
     {...props}
   />
 ));
@@ -40,23 +35,20 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 flex flex-col w-full max-w-lg translate-x-[-50%] translate-y-[-50%]",
-        "gap-5 p-6 sm:rounded-[20px] max-h-[88dvh] overflow-y-auto",
-        "border border-border/50 bg-card/97 backdrop-blur-2xl",
-        "shadow-[0_4px_20px_-4px_hsl(222_20%_4%/0.18),0_24px_64px_-8px_hsl(222_20%_4%/0.28),0_0_0_1px_hsl(0_0%_100%/0.06)]",
-        "dark:shadow-[0_4px_24px_-4px_hsl(0_0%_0%/0.4),0_32px_80px_-8px_hsl(0_0%_0%/0.55),0_0_0_1px_hsl(0_0%_100%/0.06)]",
-        "duration-300",
+        "gap-5 p-6 sm:rounded-2xl max-h-[88dvh] overflow-y-auto",
+        "border border-border bg-card text-foreground",
+        "shadow-[0_24px_64px_-8px_hsl(0_0%_0%/0.45)]",
+        "duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-        "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
-        "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-[9px] p-1.5 opacity-50 ring-offset-background transition-all duration-200 hover:opacity-100 hover:bg-muted/70 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 disabled:pointer-events-none">
-        <X className="h-3.5 w-3.5" />
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1.5 opacity-60 ring-offset-background transition-all duration-200 hover:opacity-100 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring/40 focus:ring-offset-2 disabled:pointer-events-none">
+        <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
