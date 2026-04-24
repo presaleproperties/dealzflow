@@ -14,7 +14,7 @@ interface NavChild { label: string; path: string; icon: LucideIcon; ownerAdminOn
 interface PrimaryItem { label: string; icon: LucideIcon; path?: string; sectionKey?: string; children?: NavChild[]; }
 
 const PRIMARY: PrimaryItem[] = [
-  { label: 'Home',     icon: LayoutDashboard, path: '/crm/dashboard' },
+  { label: 'Leads',    icon: Users, path: '/crm/leads' },
   {
     label: 'Leads',
     icon: Users,
@@ -60,8 +60,7 @@ export function CrmMobileNav() {
 
   const isPrimaryActive = (item: PrimaryItem) => {
     if (item.path) {
-      return location.pathname === item.path ||
-        (item.path !== '/crm/dashboard' && location.pathname.startsWith(item.path));
+      return location.pathname === item.path || location.pathname.startsWith(item.path + '/');
     }
     return filterChildren(item.children).some(c => location.pathname.startsWith(c.path));
   };

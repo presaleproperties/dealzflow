@@ -9,7 +9,7 @@ import { useCrmAccess } from '@/contexts/CrmAccessContext';
 interface Tab { label: string; path: string; icon: LucideIcon; ownerAdminOnly?: boolean; }
 
 const TABS: Tab[] = [
-  { label: 'Dashboard',    path: '/crm/dashboard',    icon: LayoutDashboard },
+  
   { label: 'Leads',        path: '/crm/leads',        icon: Users },
   { label: 'Pipeline',     path: '/crm/pipeline',     icon: Kanban },
   { label: 'Email',        path: '/crm/email',        icon: Mail },
