@@ -39,9 +39,20 @@ interface Props {
  * Presale's Marketing Hub. We only expose Send + Preview here.
  */
 export function PresaleTemplateCard({ asset, onSend, onPreview }: Props) {
-  const isEmail = true; // bridge currently only ships email templates
+  const type = asset.asset_type ?? 'email';
+  const isEmail = type === 'email';
+  const isFlyer = type === 'flyer';
+  const isSocial = type === 'social';
   const projectName =
     (asset as unknown as { project?: string | null }).project || asset.category || 'Presale Properties';
+
+  const typeBadge = isEmail
+    ? { label: 'Email', cls: 'bg-emerald-500/90 text-white hover:bg-emerald-500/90' }
+    : isFlyer
+      ? { label: 'Flyer', cls: 'bg-violet-500/90 text-white hover:bg-violet-500/90' }
+      : { label: 'Social', cls: 'bg-pink-500/90 text-white hover:bg-pink-500/90' };
+
+  const FallbackIcon = isFlyer ? FileText : isSocial ? Share2 : Mail;
 
   return (
     <div className="group relative rounded-xl border border-border bg-card overflow-hidden hover:border-primary/30 hover:shadow-md transition-all">
@@ -49,23 +60,23 @@ export function PresaleTemplateCard({ asset, onSend, onPreview }: Props) {
         className="h-44 bg-muted/30 relative cursor-pointer overflow-hidden"
         onClick={() => onPreview(asset)}
       >
-        {asset.body_html ? (
+        {asset.thumbnail_url ? (
+          <img
+            src={asset.thumbnail_url}
+            alt={asset.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : isEmail && asset.body_html ? (
           <MiniThumbnail html={asset.body_html} />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Mail className="h-10 w-10 text-muted-foreground/15" />
+            <FallbackIcon className="h-10 w-10 text-muted-foreground/15" />
           </div>
         )}
         <div className="absolute top-2 left-2">
-          <Badge
-            className={cn(
-              'text-[9px] px-1.5 py-0.5 shadow-sm',
-              isEmail
-                ? 'bg-emerald-500/90 text-white hover:bg-emerald-500/90'
-                : 'bg-violet-500/90 text-white hover:bg-violet-500/90',
-            )}
-          >
-            {isEmail ? 'Email' : 'Flyer'}
+          <Badge className={cn('text-[9px] px-1.5 py-0.5 shadow-sm', typeBadge.cls)}>
+            {typeBadge.label}
           </Badge>
         </div>
         <div className="absolute top-2 right-2">
