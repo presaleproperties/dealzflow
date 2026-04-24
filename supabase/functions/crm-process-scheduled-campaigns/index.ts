@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     const seg = (c.segment_filter ?? {}) as { tag?: string; status?: string };
     let q = supabase
       .from("crm_contacts")
-      .select("email, first_name")
+      .select("id, email, first_name, last_name, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email")
       .not("email", "is", null)
       .eq("marketing_consent", true)
       .limit(2000);
@@ -91,25 +91,28 @@ Deno.serve(async (req) => {
     if (seg.status && seg.status !== "__all__") q = q.eq("status", seg.status);
 
     const { data: recipients } = await q;
-    const list = (recipients ?? []).filter((r) => r.email);
+    const list = ((recipients ?? []) as Record<string, unknown>[]).filter((r) => r.email);
 
     let sent = 0, failed = 0;
     for (let i = 0; i < list.length; i += 25) {
       const chunk = list.slice(i, i + 25);
       const res = await Promise.all(
-        chunk.map((r) =>
-          supabase.functions.invoke("crm-send-via-presale", {
+        chunk.map((r) => {
+          const personalSubject = renderForRecipient(c.subject ?? "", r);
+          const personalHtml = renderForRecipient(c.body_html ?? "", r);
+          return supabase.functions.invoke("crm-send-via-presale", {
             body: {
               to: r.email,
               to_name: r.first_name,
-              subject: c.subject,
-              html: c.body_html,
+              subject: personalSubject,
+              html: personalHtml,
               template_id: c.template_id ?? undefined,
               template_type: "campaign",
               campaign_id: c.id,
+              contact_id: r.id,
             },
-          }).then((x) => (x.error ? false : true)).catch(() => false),
-        ),
+          }).then((x) => (x.error ? false : true)).catch(() => false);
+        }),
       );
       sent += res.filter(Boolean).length;
       failed += res.filter((b) => !b).length;
