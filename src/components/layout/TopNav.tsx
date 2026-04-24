@@ -383,6 +383,7 @@ export function TopNav() {
 
           {/* Right utility cluster */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <ThemeToggleButton />
             <button
               className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
               style={{ color: INACTIVE_TEXT }}
