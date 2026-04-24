@@ -73,7 +73,7 @@ function FilterAccordion({
   };
 
   return (
-    <div className="border-b border-border/30">
+    <div className="border-b border-r border-border/30 last:border-r-0">
       <button
         onClick={() => { setExpanded(!expanded); if (expanded) setSearch(''); }}
         className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
