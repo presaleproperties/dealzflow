@@ -62,9 +62,36 @@ async function trackClick(url: string, ctx?: LinkContext) {
   }
 }
 
+function useTimelineLinkBehavior(): TimelineLinkBehavior {
+  const [behavior, setBehavior] = useState<TimelineLinkBehavior>(() => getTimelineLinkBehavior());
+  useEffect(() => subscribeTimelineLinkBehavior(setBehavior), []);
+  return behavior;
+}
+
 function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: LinkContext }) {
   const meta = parseUrlMeta(url);
   const href = normalizeHref(url);
+  const behavior = useTimelineLinkBehavior();
+
+  // Direct-open mode: skip the popover entirely.
+  if (behavior === 'open') {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => {
+          e.stopPropagation();
+          trackClick(href, ctx);
+        }}
+        className="inline-flex items-center gap-1 max-w-full align-baseline text-primary hover:text-primary/80 underline decoration-primary/40 hover:decoration-primary underline-offset-2 break-all"
+        title={url}
+      >
+        <span className="truncate">{label}</span>
+        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+      </a>
+    );
+  }
 
   return (
     <Popover>
