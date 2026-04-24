@@ -37,6 +37,9 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { formatNoteContent, LinkifiedText } from '@/lib/formatNoteContent';
 import { Globe, MessageSquare } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
@@ -66,14 +69,12 @@ function LeadTopBar({
   contact,
   navInfo,
   onNavigate,
-  onEmail,
   onTask,
   onShowing,
 }: {
   contact: CrmContact;
   navInfo: { index: number; total: number } | null;
   onNavigate: (dir: 'prev' | 'next') => void;
-  onEmail: () => void;
   onTask: () => void;
   onShowing: () => void;
 }) {
@@ -342,8 +343,12 @@ function LeftSidebar({
             : contact.lead_type ? [contact.lead_type] : [];
           const toggle = (t: string) => {
             const next = selected.includes(t) ? selected.filter(x => x !== t) : [...selected, t];
-            saveWithLog('lead_types', next);
-            saveWithLog('lead_type', next[0] ?? null);
+            // Single mutation to avoid double-refetch flicker
+            updateContact.mutate({
+              id: contact.id,
+              updates: { lead_types: next, lead_type: next[0] ?? null },
+              oldValues: { lead_types: selected, lead_type: contact.lead_type },
+            });
           };
           return (
             <div className="flex flex-wrap gap-1.5">
@@ -452,7 +457,7 @@ function LeftSidebar({
       {/* Assigned To */}
       <div className="space-y-2">
         <SectionHeader>Assigned To</SectionHeader>
-        <Select value={contact.assigned_to ?? ''} onValueChange={(v) => saveWithLog('assigned_to', v)}>
+        <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
           <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
           <SelectContent>
             {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
@@ -1061,15 +1066,35 @@ function EmptyWidget({ icon: Icon, message }: { icon: typeof ListTodo; message: 
 }
 
 function TaskRow({ task }: { task: any }) {
+  const qc = useQueryClient();
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+  const completeTask = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('crm_tasks')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', task.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-contact-tasks', task.contact_id] });
+      toast.success('Task completed');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   return (
     <div className={cn(
       'flex items-start gap-2.5 p-3 rounded-lg bg-card border transition-colors',
       isOverdue ? 'border-destructive/30' : 'border-border/60 hover:border-border'
     )}>
-      <Checkbox className="mt-0.5 h-4 w-4" />
+      <Checkbox
+        className="mt-0.5 h-4 w-4"
+        checked={task.status === 'completed'}
+        disabled={completeTask.isPending || task.status === 'completed'}
+        onCheckedChange={(checked) => { if (checked) completeTask.mutate(); }}
+      />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-foreground leading-snug">{task.title}</p>
+        <p className={cn('text-[13px] font-medium leading-snug', task.status === 'completed' ? 'text-muted-foreground line-through' : 'text-foreground')}>{task.title}</p>
         {task.due_date && (
           <p className={cn('text-xs mt-0.5', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
             {isOverdue ? 'Overdue · ' : ''}{format(new Date(task.due_date), 'MMM d, yyyy')}
@@ -1258,7 +1283,6 @@ export default function LeadDetailPage() {
         contact={c}
         navInfo={navInfo}
         onNavigate={handleNavigate}
-        onEmail={() => setShowEmail(true)}
         onTask={() => setShowTask(true)}
         onShowing={() => setShowShowing(true)}
       />
