@@ -11,6 +11,7 @@ import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettin
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
+import LiveSignaturePreview from './LiveSignaturePreview';
 import { isRichHtml } from '@/lib/htmlDetect';
 import { toast } from 'sonner';
 
