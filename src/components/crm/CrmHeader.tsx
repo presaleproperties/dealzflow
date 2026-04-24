@@ -284,8 +284,11 @@ export function CrmHeader() {
           })}
         </nav>
 
-        {/* Right: Settings + Bell + Avatar */}
+        {/* Right: Search + Settings + Bell + Avatar */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="hidden md:block">
+            <GlobalLeadSearch />
+          </div>
           {isOwnerOrAdmin && (
             <Link
               to={SETTINGS_ITEM.path}
