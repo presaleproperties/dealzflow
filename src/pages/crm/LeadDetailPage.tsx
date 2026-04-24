@@ -31,6 +31,7 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
@@ -228,8 +229,9 @@ function LeftSidebar({
           <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
           {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
           <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
-          <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} />
-          <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} />
+          <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
+          <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
+
           {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
 
           {(contact.budget_min != null || contact.budget_max != null) && (
@@ -384,8 +386,8 @@ function InsightCard({ value, label, sublabel, accent }: { value: React.ReactNod
   );
 }
 
-function DetailRow({ label, value, href, field, contactId, type }: {
-  label: string; value: string | null | undefined; href?: string; field: string; contactId: string; type?: 'text' | 'email';
+function DetailRow({ label, value, href, field, contactId, type, options }: {
+  label: string; value: string | null | undefined; href?: string; field: string; contactId: string; type?: 'text' | 'email' | 'select'; options?: readonly string[];
 }) {
   const updateContact = useUpdateCrmContact();
   return (
@@ -397,6 +399,7 @@ function DetailRow({ label, value, href, field, contactId, type }: {
           onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
           href={href}
           type={type}
+          options={options}
           className="text-xs text-right truncate max-w-full"
         />
       </div>

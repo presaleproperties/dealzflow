@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Pencil, AlertTriangle } from 'lucide-react';
 import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface InlineEditFieldProps {
   value: string | null | undefined;
@@ -8,10 +9,11 @@ interface InlineEditFieldProps {
   placeholder?: string;
   href?: string;
   className?: string;
-  type?: 'text' | 'email';
+  type?: 'text' | 'email' | 'select';
+  options?: readonly string[];
 }
 
-export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text' }: InlineEditFieldProps) {
+export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text', options }: InlineEditFieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
   const [emailWarning, setEmailWarning] = useState<EmailValidation>({ isValid: true, suggestion: null, correctedEmail: null });
@@ -21,9 +23,9 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
     if (editing) {
       setDraft(value ?? '');
       setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
-      setTimeout(() => inputRef.current?.focus(), 0);
+      if (type !== 'select') setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [editing, value]);
+  }, [editing, value, type]);
 
   const handleChange = (val: string) => {
     setDraft(val);
@@ -49,6 +51,43 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
       setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
     }
   };
+
+  // ── Select (dropdown) mode ─────────────────────────────────────
+  if (type === 'select' && options) {
+    if (editing) {
+      return (
+        <Select
+          open
+          value={value ?? ''}
+          onValueChange={(v) => {
+            if (v !== (value ?? '')) onSave(v);
+            setEditing(false);
+          }}
+          onOpenChange={(open) => { if (!open) setEditing(false); }}
+        >
+          <SelectTrigger className="h-7 text-xs w-auto min-w-[120px] border-primary/40">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className="max-h-[260px]">
+            {options.map((opt) => (
+              <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    const display = value || placeholder;
+    const isMuted = !value;
+    return (
+      <span
+        className={`group inline-flex items-center gap-1 cursor-pointer hover:text-primary transition-colors min-w-0 ${isMuted ? 'text-muted-foreground' : ''} ${className}`}
+        onClick={() => setEditing(true)}
+      >
+        <span className={`text-sm truncate min-w-0 ${isMuted ? 'text-muted-foreground' : 'text-foreground'}`} title={value || undefined}>{display}</span>
+        <Pencil className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
+      </span>
+    );
+  }
 
   if (editing) {
     return (
