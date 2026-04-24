@@ -32,6 +32,22 @@ export default function CrmBehaviorLeadsPage() {
   const [filter, setFilter] = useState<"all" | "linked" | "orphan">("all");
   const [search, setSearch] = useState("");
   const [totals, setTotals] = useState<Record<string, number>>({});
+  const [backfilling, setBackfilling] = useState(false);
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    const { data, error } = await supabase.rpc("backfill_behavior_notes" as any);
+    setBackfilling(false);
+    if (error) {
+      toast.error(`Backfill failed: ${error.message}`);
+      return;
+    }
+    const d = data as any;
+    toast.success(
+      `Backfilled — views:${d?.views ?? 0} sessions:${d?.sessions ?? 0} forms:${d?.forms ?? 0} engagement:${d?.engagement ?? 0}`
+    );
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
