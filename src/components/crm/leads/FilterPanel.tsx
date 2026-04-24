@@ -198,6 +198,8 @@ export function FilterPanel({
   setFilterLanguage,
   filterTags,
   setFilterTags,
+  filterExcludeTags,
+  setFilterExcludeTags,
   filterPropertyType,
   setFilterPropertyType,
   filterCity,
