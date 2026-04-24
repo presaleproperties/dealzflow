@@ -154,13 +154,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     return emailSettings?.signature_html ?? '';
   }, [selectedSignatureId, signatures, emailSettings]);
 
-  /* Automatically show rich default signatures rendered when a new email opens. */
-  useEffect(() => {
-    if (!open || autoSignaturePreviewedRef.current) return;
-    if (!appendSignature || !activeSignatureHtml || !isRichSignatureHtml(activeSignatureHtml)) return;
-    setMode('preview');
-    autoSignaturePreviewedRef.current = true;
-  }, [open, appendSignature, activeSignatureHtml]);
+  /* Note: signatures render in a live block beneath the editor (edit mode) and
+     in the iframe preview (preview mode), so we no longer auto-switch modes. */
 
   const senderCtx = useMemo(
     () => ({
