@@ -22,7 +22,7 @@ import {
   Loader2, Megaphone, Send, Eye, MousePointerClick, Users, RefreshCw, Plus,
   Mail, Target, Clock, FileCheck2, ArrowLeft, ArrowRight, CalendarClock,
 } from "lucide-react";
-import { renderWithSampleData } from "@/lib/emailVariables";
+import { renderWithSampleData, renderForRecipient, type RecipientLead } from "@/lib/emailVariables";
 
 interface Campaign {
   id: string;
@@ -73,7 +73,7 @@ export default function CrmEmailCampaignsPage() {
   const [bodyHtml, setBodyHtml] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("__all__");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
-  const [recipientPreview, setRecipientPreview] = useState<{ email: string; first_name: string | null }[]>([]);
+  const [recipientPreview, setRecipientPreview] = useState<(RecipientLead & { id?: string; email: string; first_name: string | null })[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [sendMode, setSendMode] = useState<SendMode>("now");
   const [scheduleDate, setScheduleDate] = useState<string>("");
@@ -111,7 +111,7 @@ export default function CrmEmailCampaignsPage() {
     setPreviewLoading(true);
     let q = supabase
       .from("crm_contacts")
-      .select("email, first_name")
+      .select("id, email, first_name, last_name, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email")
       .not("email", "is", null)
       .eq("marketing_consent", true)
       .limit(2000);
@@ -119,7 +119,7 @@ export default function CrmEmailCampaignsPage() {
     if (statusFilter !== "__all__") q = q.eq("status", statusFilter);
     const { data, error } = await q;
     if (error) { toast.error(error.message); setPreviewLoading(false); return; }
-    setRecipientPreview((data ?? []).filter((r) => r.email));
+    setRecipientPreview(((data ?? []) as any[]).filter((r) => r.email));
     setPreviewLoading(false);
   };
 
@@ -178,23 +178,27 @@ export default function CrmEmailCampaignsPage() {
         return;
       }
 
-      // Immediate send
+      // Immediate send — render per recipient so each gets their own personalized subject + body.
       let sent = 0, failed = 0;
       for (let i = 0; i < recipientPreview.length; i += 25) {
         const chunk = recipientPreview.slice(i, i + 25);
-        const results = await Promise.all(chunk.map((r) =>
-          supabase.functions.invoke("crm-send-via-presale", {
+        const results = await Promise.all(chunk.map((r) => {
+          const ctx = { lead: r as RecipientLead };
+          const personalSubject = renderForRecipient(subject, ctx);
+          const personalHtml = renderForRecipient(bodyHtml, ctx);
+          return supabase.functions.invoke("crm-send-via-presale", {
             body: {
               to: r.email,
               to_name: r.first_name,
-              subject,
-              html: bodyHtml,
+              subject: personalSubject,
+              html: personalHtml,
               template_id: templateId || undefined,
               template_type: "campaign",
               campaign_id: campaign.id,
+              contact_id: r.id,
             },
-          }).then((res) => (res.error ? false : true)).catch(() => false),
-        ));
+          }).then((res) => (res.error ? false : true)).catch(() => false);
+        }));
         sent += results.filter(Boolean).length;
         failed += results.filter((r) => !r).length;
       }

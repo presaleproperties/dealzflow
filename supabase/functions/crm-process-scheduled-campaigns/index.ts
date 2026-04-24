@@ -6,6 +6,51 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Per-recipient token rendering — mirrors src/lib/emailVariables.ts.
+// Replaces {{lead.*}}, legacy {{first_name}} etc. with the recipient's data.
+function renderForRecipient(input: string, lead: Record<string, unknown>): string {
+  if (!input) return input;
+  const get = (k: string) => {
+    const v = lead[k];
+    return v === null || v === undefined ? "" : String(v);
+  };
+  const first = get("first_name").trim();
+  const last = get("last_name").trim();
+  const full = [first, last].filter(Boolean).join(" ");
+  const budget = (() => {
+    const v = lead["budget_max"];
+    if (v === null || v === undefined || v === "") return "";
+    const n = typeof v === "string" ? Number(v.replace(/[^\d.-]/g, "")) : (v as number);
+    return Number.isFinite(n)
+      ? n.toLocaleString("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 })
+      : String(v);
+  })();
+  const values: Record<string, string> = {
+    "lead.first_name": first,
+    "lead.last_name": last,
+    "lead.full_name": full,
+    "lead.email": get("email"),
+    "lead.phone": get("phone"),
+    "lead.city": get("city"),
+    "lead.intent": get("intent"),
+    "lead.budget_max": budget,
+    "lead.timeframe": get("timeframe"),
+    "lead.home_type": get("home_type") || get("property_type_pref"),
+    "cobuyer.full_name": get("co_buyer_name"),
+    "cobuyer.email": get("co_buyer_email"),
+    first_name: first,
+    last_name: last,
+    lead_name: full,
+  };
+  return input.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, raw) => {
+    const tok = String(raw);
+    if (tok in values) return values[tok];
+    const lower = tok.toLowerCase();
+    if (lower in values) return values[lower];
+    return "";
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -38,7 +83,7 @@ Deno.serve(async (req) => {
     const seg = (c.segment_filter ?? {}) as { tag?: string; status?: string };
     let q = supabase
       .from("crm_contacts")
-      .select("email, first_name")
+      .select("id, email, first_name, last_name, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email")
       .not("email", "is", null)
       .eq("marketing_consent", true)
       .limit(2000);
@@ -46,25 +91,28 @@ Deno.serve(async (req) => {
     if (seg.status && seg.status !== "__all__") q = q.eq("status", seg.status);
 
     const { data: recipients } = await q;
-    const list = (recipients ?? []).filter((r) => r.email);
+    const list = ((recipients ?? []) as Record<string, unknown>[]).filter((r) => r.email);
 
     let sent = 0, failed = 0;
     for (let i = 0; i < list.length; i += 25) {
       const chunk = list.slice(i, i + 25);
       const res = await Promise.all(
-        chunk.map((r) =>
-          supabase.functions.invoke("crm-send-via-presale", {
+        chunk.map((r) => {
+          const personalSubject = renderForRecipient(c.subject ?? "", r);
+          const personalHtml = renderForRecipient(c.body_html ?? "", r);
+          return supabase.functions.invoke("crm-send-via-presale", {
             body: {
               to: r.email,
               to_name: r.first_name,
-              subject: c.subject,
-              html: c.body_html,
+              subject: personalSubject,
+              html: personalHtml,
               template_id: c.template_id ?? undefined,
               template_type: "campaign",
               campaign_id: c.id,
+              contact_id: r.id,
             },
-          }).then((x) => (x.error ? false : true)).catch(() => false),
-        ),
+          }).then((x) => (x.error ? false : true)).catch(() => false);
+        }),
       );
       sent += res.filter(Boolean).length;
       failed += res.filter((b) => !b).length;

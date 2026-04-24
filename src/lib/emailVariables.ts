@@ -84,6 +84,144 @@ export function renderWithSampleData(input: string): string {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Per-recipient rendering
+// ---------------------------------------------------------------------------
+
+export interface RecipientLead {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  intent?: string | null;
+  budget_max?: number | string | null;
+  timeframe?: string | null;
+  home_type?: string | null;
+  property_type_pref?: string | null;
+  co_buyer_name?: string | null;
+  co_buyer_email?: string | null;
+  [key: string]: unknown;
+}
+
+export interface RecipientSender {
+  first_name?: string | null;
+  full_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  signature?: string | null;
+}
+
+export interface RenderContext {
+  lead?: RecipientLead | null;
+  sender?: RecipientSender | null;
+  links?: Partial<Record<'book_call' | 'unsubscribe' | 'preferences' | 'lead_portal', string>>;
+  /** Free-form extras, e.g. deal/project fields when known. Keys use dot.notation. */
+  extras?: Record<string, string | null | undefined>;
+}
+
+const fmtCurrency = (v: number | string | null | undefined): string => {
+  if (v === null || v === undefined || v === '') return '';
+  const n = typeof v === 'string' ? Number(v.replace(/[^\d.-]/g, '')) : v;
+  if (!Number.isFinite(n)) return String(v);
+  return n.toLocaleString('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });
+};
+
+const todayValues = () => {
+  const d = new Date();
+  return {
+    'today.date': d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    'today.year': String(d.getFullYear()),
+  };
+};
+
+/**
+ * Build the token → value map for a single recipient. Unknown / empty values
+ * fall back to an empty string so the recipient never sees a raw `{{token}}`.
+ */
+export function buildRecipientValues(ctx: RenderContext): Record<string, string> {
+  const lead = ctx.lead ?? {};
+  const sender = ctx.sender ?? {};
+  const links = ctx.links ?? {};
+  const firstName = (lead.first_name ?? '').toString().trim();
+  const lastName = (lead.last_name ?? '').toString().trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  const senderFull = (sender.full_name ?? '').toString().trim();
+  const senderFirst = (sender.first_name ?? senderFull.split(' ')[0] ?? '').toString().trim();
+
+  const map: Record<string, string> = {
+    'lead.first_name': firstName,
+    'lead.last_name': lastName,
+    'lead.full_name': fullName,
+    'lead.email': (lead.email ?? '').toString(),
+    'lead.phone': (lead.phone ?? '').toString(),
+    'lead.city': (lead.city ?? '').toString(),
+    'lead.intent': (lead.intent ?? '').toString(),
+    'lead.budget_max': fmtCurrency(lead.budget_max ?? null),
+    'lead.timeframe': (lead.timeframe ?? '').toString(),
+    'lead.home_type': (lead.home_type ?? lead.property_type_pref ?? '').toString(),
+
+    'cobuyer.full_name': (lead.co_buyer_name ?? '').toString(),
+    'cobuyer.email': (lead.co_buyer_email ?? '').toString(),
+
+    'sender.first_name': senderFirst,
+    'sender.full_name': senderFull,
+    'sender.email': (sender.email ?? '').toString(),
+    'sender.phone': (sender.phone ?? '').toString(),
+    'sender.signature': (sender.signature ?? '').toString(),
+
+    'link.book_call': links.book_call ?? '',
+    'link.unsubscribe': links.unsubscribe ?? '',
+    'link.preferences': links.preferences ?? '',
+    'link.lead_portal': links.lead_portal ?? '',
+
+    ...todayValues(),
+  };
+
+  if (ctx.extras) {
+    for (const [k, v] of Object.entries(ctx.extras)) {
+      if (v !== undefined && v !== null) map[k] = String(v);
+    }
+  }
+  return map;
+}
+
+/**
+ * Replace every `{{token}}` (canonical or legacy alias) with the recipient's
+ * actual value. Unknown / empty tokens render as an empty string — the
+ * recipient never sees raw merge syntax.
+ *
+ * Legacy aliases supported (for older Presale templates):
+ *   {{first_name}}    → lead.first_name
+ *   {{last_name}}     → lead.last_name
+ *   {{lead_name}}     → lead.full_name
+ *   {{agent_name}}    → sender.full_name
+ *   {{agent_email}}   → sender.email
+ *   {{agent_phone}}   → sender.phone
+ *   {{company_name}}  → "The Presale Properties Group"
+ */
+export function renderForRecipient(input: string, ctx: RenderContext): string {
+  if (!input) return input;
+  const values = buildRecipientValues(ctx);
+  const legacy: Record<string, string> = {
+    first_name: values['lead.first_name'] ?? '',
+    last_name: values['lead.last_name'] ?? '',
+    lead_name: values['lead.full_name'] ?? '',
+    agent_name: values['sender.full_name'] ?? '',
+    agent_email: values['sender.email'] ?? '',
+    agent_phone: values['sender.phone'] ?? '',
+    company_name: 'The Presale Properties Group',
+  };
+  return input.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, raw) => {
+    const tok = String(raw);
+    if (tok in values) return values[tok];
+    const lower = tok.toLowerCase();
+    if (lower in legacy) return legacy[lower];
+    // Unknown token → strip rather than expose raw syntax to the recipient.
+    return '';
+  });
+}
+
 /** Find all merge tokens used in a string (deduped). */
 export function extractTokens(input: string): string[] {
   if (!input) return [];

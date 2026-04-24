@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useBridgeSendEmail, type BridgeTemplate } from '@/hooks/useBridgeEmail';
-import { renderWithSampleData } from '@/lib/emailVariables';
+import { renderForRecipient, renderWithSampleData, type RecipientLead } from '@/lib/emailVariables';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 
-type Recipient = { id?: string; email: string; name: string };
+type Recipient = { id?: string; email: string; name: string; lead?: RecipientLead };
 
 /**
  * Mirror of Presale's TemplateQuickSendDialog. Lets the user search CRM
@@ -32,6 +33,7 @@ export function PresaleQuickSendDialog({
   const [searching, setSearching] = useState(false);
   const [subject, setSubject] = useState('');
   const send = useBridgeSendEmail();
+  const { data: emailSettings } = useEmailSettings();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function PresaleQuickSendDialog({
       const term = `%${query}%`;
       const { data } = await supabase
         .from('crm_contacts')
-        .select('id, first_name, last_name, email')
+        .select('id, first_name, last_name, email, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email')
         .or(`first_name.ilike.${term},last_name.ilike.${term},email.ilike.${term}`)
         .not('email', 'is', null)
         .limit(10);
@@ -65,6 +67,7 @@ export function PresaleQuickSendDialog({
           id: c.id,
           email: c.email!,
           name: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email!,
+          lead: c as RecipientLead,
         }));
       setResults(mapped);
       setSearching(false);
@@ -92,10 +95,21 @@ export function PresaleQuickSendDialog({
   const handleSend = async () => {
     if (!asset || recipients.length === 0) return;
     const html = asset.body_html || '';
-    // Send each recipient individually so first-name personalization works.
+    const sender = {
+      first_name: (emailSettings?.sender_name || '').split(' ')[0] || '',
+      full_name: emailSettings?.sender_name || '',
+      email: emailSettings?.reply_to || '',
+      phone: (emailSettings as any)?.signature_builder_data?.phone || '',
+      signature: emailSettings?.signature_html || '',
+    };
+    // Send each recipient individually so per-recipient tokens render correctly.
     for (const r of recipients) {
-      const personalizedHtml = renderWithSampleData(html); // sample fallback for tokens
-      const personalizedSubject = subject || asset.name || 'Presale Properties';
+      const ctx = { lead: r.lead ?? { first_name: r.name }, sender };
+      const personalizedHtml = renderForRecipient(html, ctx);
+      const personalizedSubject = renderForRecipient(
+        subject || asset.name || 'Presale Properties',
+        ctx,
+      );
       try {
         await send.mutateAsync({
           to: r.email,
@@ -211,7 +225,11 @@ export function PresaleQuickSendDialog({
                 Preview
               </p>
               <iframe
-                srcDoc={asset.body_html}
+                srcDoc={
+                  recipients[0]?.lead
+                    ? renderForRecipient(asset.body_html, { lead: recipients[0].lead })
+                    : renderWithSampleData(asset.body_html)
+                }
                 className="w-full border border-border rounded-lg bg-white"
                 style={{ height: '240px' }}
                 sandbox="allow-same-origin"

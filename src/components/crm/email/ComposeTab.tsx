@@ -15,6 +15,7 @@ import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, A
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
+import { renderForRecipient, type RecipientLead } from '@/lib/emailVariables';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
@@ -26,17 +27,18 @@ import { useIsMobile } from '@/hooks/use-mobile';
 type SendMode = 'individual' | 'campaign';
 
 function replaceMergeTags(html: string, contact: CrmContact | null, senderName?: string, agentEmail?: string, agentPhone?: string): string {
-  let result = html;
-  if (contact) {
-    result = result.replace(/\{\{lead_name\}\}/gi, `${contact.first_name} ${contact.last_name}`);
-    result = result.replace(/\{\{first_name\}\}/gi, contact.first_name || '');
-    result = result.replace(/\{\{last_name\}\}/gi, contact.last_name || '');
-  }
-  result = result.replace(/\{\{agent_name\}\}/gi, senderName || 'Agent');
-  result = result.replace(/\{\{agent_email\}\}/gi, agentEmail || '');
-  result = result.replace(/\{\{agent_phone\}\}/gi, agentPhone || '');
-  result = result.replace(/\{\{company_name\}\}/gi, 'The Presale Properties Group');
-  return result;
+  // Delegates to the canonical per-recipient renderer so both legacy
+  // ({{first_name}}) and dot-notation ({{lead.first_name}}) tokens resolve.
+  return renderForRecipient(html, {
+    lead: (contact as unknown as RecipientLead) ?? null,
+    sender: {
+      first_name: (senderName || '').split(' ')[0] || '',
+      full_name: senderName || '',
+      email: agentEmail || '',
+      phone: agentPhone || '',
+    },
+    extras: { 'company.name': 'The Presale Properties Group' },
+  });
 }
 
 export function ComposeTab() {
