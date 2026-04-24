@@ -94,13 +94,15 @@ const TAG_COLORS = [
 ];
 
 
+interface TagLibItem { label: string; count: number }
+
 function InlineTagsCell({
   contact,
-  allTags,
+  tagLibrary,
   updateContact,
 }: {
   contact: CrmContact;
-  allTags: string[];
+  tagLibrary: TagLibItem[];
   updateContact: ReturnType<typeof useUpdateCrmContact>;
 }) {
   const [open, setOpen] = useState(false);
@@ -110,12 +112,35 @@ function InlineTagsCell({
   const extra = tags.length - 2;
 
   const toggleTag = (tag: string) => {
-    const next = tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag];
+    const value = tag.trim();
+    if (!value) return;
+    const exists = tags.some(t => t.toLowerCase() === value.toLowerCase());
+    const next = exists
+      ? tags.filter(t => t.toLowerCase() !== value.toLowerCase())
+      : [...tags, value];
+    // The crm_contacts trg_sync_crm_tags trigger will auto-upsert this into the
+    // canonical crm_tags library, making it instantly reusable everywhere.
     updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
   };
 
   const trimmed = search.trim();
-  const canCreate = trimmed.length > 0 && !allTags.some(t => t.toLowerCase() === trimmed.toLowerCase()) && !tags.some(t => t.toLowerCase() === trimmed.toLowerCase());
+  const tagsLower = useMemo(() => new Set(tags.map(t => t.toLowerCase())), [tags]);
+  const libraryLower = useMemo(
+    () => new Set(tagLibrary.map(t => t.label.toLowerCase())),
+    [tagLibrary],
+  );
+  const canCreate =
+    trimmed.length > 0 &&
+    !libraryLower.has(trimmed.toLowerCase()) &&
+    !tagsLower.has(trimmed.toLowerCase());
+
+  // Library entries not currently applied to this contact, filtered by search.
+  const availableSorted = useMemo(() => {
+    const q = trimmed.toLowerCase();
+    return tagLibrary
+      .filter(t => !tagsLower.has(t.label.toLowerCase()))
+      .filter(t => (q ? t.label.toLowerCase().includes(q) : true));
+  }, [tagLibrary, tagsLower, trimmed]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -145,18 +170,18 @@ function InlineTagsCell({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-64 p-0"
+        className="w-72 p-0"
         align="start"
         onClick={e => e.stopPropagation()}
       >
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Search or create tag..."
+            placeholder="Search or create tag…"
             value={search}
             onValueChange={setSearch}
             className="text-sm"
           />
-          <CommandList className="max-h-56">
+          <CommandList className="max-h-72">
             <CommandEmpty>
               {canCreate ? (
                 <button
@@ -173,30 +198,36 @@ function InlineTagsCell({
             {tags.length > 0 && (
               <CommandGroup heading="Applied">
                 {tags.map(tag => (
-                  <CommandItem key={`applied-${tag}`} value={tag} onSelect={() => toggleTag(tag)} className="text-sm">
+                  <CommandItem key={`applied-${tag}`} value={`applied-${tag}`} onSelect={() => toggleTag(tag)} className="text-sm">
                     <Check className="w-3.5 h-3.5 mr-2 text-primary" />
-                    {tag}
+                    <span className="flex-1 truncate">{tag}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
             )}
-            <CommandGroup heading="All tags">
-              {allTags.filter(t => !tags.includes(t)).map(tag => (
-                <CommandItem key={tag} value={tag} onSelect={() => toggleTag(tag)} className="text-sm">
-                  <span className="w-3.5 h-3.5 mr-2" />
-                  {tag}
-                </CommandItem>
-              ))}
+            <CommandGroup heading={`All tags · ${tagLibrary.length}`}>
               {canCreate && (
                 <CommandItem
                   value={`__create__${trimmed}`}
                   onSelect={() => { toggleTag(trimmed); setSearch(''); }}
                   className="text-sm"
                 >
-                  <Plus className="w-3.5 h-3.5 mr-2" />
-                  Create "{trimmed}"
+                  <Plus className="w-3.5 h-3.5 mr-2 text-primary" />
+                  <span className="flex-1">Create "<span className="font-semibold">{trimmed}</span>"</span>
                 </CommandItem>
               )}
+              {availableSorted.slice(0, 200).map(item => (
+                <CommandItem
+                  key={item.label}
+                  value={item.label}
+                  onSelect={() => toggleTag(item.label)}
+                  className="text-sm"
+                >
+                  <span className="w-3.5 h-3.5 mr-2" />
+                  <span className="flex-1 truncate">{item.label}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums ml-2">{item.count}</span>
+                </CommandItem>
+              ))}
             </CommandGroup>
           </CommandList>
         </Command>
