@@ -10,6 +10,7 @@ import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
+import SignatureImportBox from './SignatureImportBox';
 import { isRichHtml } from '@/lib/htmlDetect';
 import { toast } from 'sonner';
 
@@ -228,6 +229,7 @@ export default function EmailSettingsSection() {
             <Library className="h-4 w-4 text-primary" />
             <Label className="text-sm">Signature Library</Label>
           </div>
+          <SignatureImportBox />
           <SignaturesManager />
         </div>
 
