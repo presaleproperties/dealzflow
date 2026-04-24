@@ -44,9 +44,12 @@ interface FilterPanelProps {
   dynamicTags: string[];
   dynamicCities: string[];
   dynamicCampaigns: string[];
+  /** Unified lead-type library labels (from crm_lead_types). */
+  dynamicLeadTypes?: string[];
   /** Optional usage counts keyed by option label */
   tagCounts?: Record<string, number>;
   projectCounts?: Record<string, number>;
+  leadTypeCounts?: Record<string, number>;
   onClearAll: () => void;
   activeFilterCount: number;
 }
@@ -245,8 +248,10 @@ export function FilterPanel({
   dynamicTags,
   dynamicCities,
   dynamicCampaigns,
+  dynamicLeadTypes,
   tagCounts,
   projectCounts,
+  leadTypeCounts,
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
