@@ -776,8 +776,14 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
 
   return (
     <div className="group relative flex gap-3">
-      <div className={cn("relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 border border-border bg-background", meta.color)}>
-        <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+      <div
+        className="relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 border bg-background"
+        style={{
+          borderColor: `hsl(${meta.tint} / 0.45)`,
+          background: `hsl(${meta.tint} / 0.10)`,
+        }}
+      >
+        <Icon className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${meta.tint})` }} />
       </div>
       <div className={cn(
         'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all hover:border-border',
