@@ -9,6 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBridgeSendEmail, type BridgeTemplate } from '@/hooks/useBridgeEmail';
 import { renderForRecipient, renderWithSampleData, type RecipientLead } from '@/lib/emailVariables';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
+import {
+  loadQuickSendMemory,
+  saveQuickSendMemory,
+} from '@/lib/quickSendMemory';
 
 type Recipient = { id?: string; email: string; name: string; lead?: RecipientLead };
 
