@@ -32,7 +32,6 @@ const NAV_SECTIONS: NavSection[] = [
     icon: Send,
     children: [
       { label: 'Email Center', path: '/crm/email',       icon: Mail },
-      { label: 'WhatsApp',     path: '/crm/whatsapp',    icon: MessageCircle },
       { label: 'Templates',    path: '/crm/templates',   icon: LayoutTemplate },
       { label: 'Automations',  path: '/crm/automations', icon: Zap, ownerAdminOnly: true },
     ],
@@ -52,7 +51,6 @@ const ROUTE_TITLES: { match: string; title: string }[] = [
   { match: '/crm/leads',        title: 'Leads & Contacts' },
   { match: '/crm/pipeline',     title: 'Pipeline' },
   { match: '/crm/email',        title: 'Email Center' },
-  { match: '/crm/whatsapp',     title: 'WhatsApp' },
   { match: '/crm/templates',    title: 'Templates' },
   { match: '/crm/contacts',     title: 'Contacts' },
   { match: '/crm/automations',  title: 'Automations' },
