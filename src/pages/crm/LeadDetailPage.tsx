@@ -1100,7 +1100,7 @@ export default function LeadDetailPage() {
               ))}
             </div>
           </div>
-          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 p-5 space-y-4">
+          <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 p-5 space-y-4">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-12 w-full rounded-md" />
             <Skeleton className="h-12 w-full rounded-md" />
@@ -1198,7 +1198,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
+        <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
           <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
         </div>
       </div>
