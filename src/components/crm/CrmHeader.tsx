@@ -285,32 +285,36 @@ export function CrmHeader() {
           })}
         </nav>
 
-        {/* Right: Search + Settings + Bell + Avatar */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div className="hidden md:block">
+        {/* Right: Search + icon cluster + Avatar */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="hidden md:block w-[260px] lg:w-[320px]">
             <GlobalLeadSearch />
           </div>
-          {isOwnerOrAdmin && (
-            <Link
-              to={SETTINGS_ITEM.path}
-              aria-label="CRM Settings"
-              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted/50"
-              style={{
-                color: location.pathname.startsWith(SETTINGS_ITEM.path) ? GOLD : INACTIVE_TEXT,
-              }}
+
+          <div className="flex items-center gap-0.5 rounded-lg border border-border/50 bg-muted/30 px-0.5 py-0.5">
+            {isOwnerOrAdmin && (
+              <Link
+                to={SETTINGS_ITEM.path}
+                aria-label="CRM Settings"
+                className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-background/80"
+                style={{
+                  color: location.pathname.startsWith(SETTINGS_ITEM.path) ? GOLD : INACTIVE_TEXT,
+                }}
+              >
+                <Settings className="w-[15px] h-[15px]" strokeWidth={1.8} />
+              </Link>
+            )}
+            <button
+              className="relative h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-background/80 transition-colors"
+              aria-label="Notifications"
             >
-              <Settings className="w-[16px] h-[16px]" strokeWidth={1.8} />
-            </Link>
-          )}
-          <button
-            className="relative h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell className="w-[16px] h-[16px]" strokeWidth={1.8} />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
-          </button>
+              <Bell className="w-[15px] h-[15px]" strokeWidth={1.8} />
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-background" />
+            </button>
+          </div>
+
           <div
-            className="w-7 h-7 sm:w-[30px] sm:h-[30px] rounded-full flex items-center justify-center text-[10.5px] font-bold text-white shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-2 ring-background shadow-sm"
             style={{ background: GOLD }}
           >
             {initials}
