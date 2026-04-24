@@ -530,3 +530,53 @@
 .calendar-wrapper .fc td, .calendar-wrapper .fc th {
   border-color: hsl(var(--border) / 0.3);
 }
+
+/* ============================================================
+   CRM SECTION SCOPE — distinct mood from main app
+   Main app:  slate (#0F1116-ish) + GOLD accent
+   CRM area:  navy/indigo surfaces + TEAL accent
+   ============================================================ */
+body[data-section="crm"] {
+  --background: 220 35% 7%;
+  --foreground: 210 18% 94%;
+
+  --card: 220 30% 11%;
+  --card-foreground: 210 18% 94%;
+
+  --popover: 220 30% 11%;
+  --popover-foreground: 210 18% 94%;
+
+  /* Teal/cyan accent replaces gold inside CRM */
+  --primary: 178 65% 50%;
+  --primary-foreground: 220 35% 8%;
+  --primary-glow: 178 70% 58%;
+  --primary-subtle: 178 60% 14%;
+
+  --secondary: 220 25% 16%;
+  --secondary-foreground: 210 18% 92%;
+
+  --muted: 220 25% 14%;
+  --muted-foreground: 215 12% 65%;
+
+  --accent: 178 65% 50%;
+  --accent-foreground: 220 35% 8%;
+
+  --border: 220 25% 18%;
+  --border-subtle: 220 25% 15%;
+  --input: 220 25% 16%;
+  --ring: 178 65% 50%;
+
+  --sidebar-background: 220 35% 8%;
+  --sidebar-primary: 178 65% 50%;
+  --sidebar-primary-foreground: 220 35% 8%;
+  --sidebar-accent: 178 65% 50%;
+  --sidebar-accent-foreground: 220 35% 8%;
+  --sidebar-border: 220 25% 16%;
+  --sidebar-ring: 178 65% 50%;
+
+  --chart-1: 178 65% 50%;
+  --chart-2: 200 70% 55%;
+  --chart-3: 250 60% 65%;
+  --chart-4: 142 60% 50%;
+  --chart-5: 25 85% 60%;
+}
