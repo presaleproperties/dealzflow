@@ -20,7 +20,6 @@ import {
   Inbox,
   X,
   Search,
-  PenSquare,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -155,13 +154,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     return emailSettings?.signature_html ?? '';
   }, [selectedSignatureId, signatures, emailSettings]);
 
-  /* Automatically show rich default signatures rendered when a new email opens. */
-  useEffect(() => {
-    if (!open || autoSignaturePreviewedRef.current) return;
-    if (!appendSignature || !activeSignatureHtml || !isRichSignatureHtml(activeSignatureHtml)) return;
-    setMode('preview');
-    autoSignaturePreviewedRef.current = true;
-  }, [open, appendSignature, activeSignatureHtml]);
+  /* Note: signatures render in a live block beneath the editor (edit mode) and
+     in the iframe preview (preview mode), so we no longer auto-switch modes. */
 
   const senderCtx = useMemo(
     () => ({
@@ -490,45 +484,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   </PopoverContent>
                 </Popover>
 
-                {/* Insert signature at cursor */}
-                {signatures.length > 0 && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5">
-                        <PenSquare className="h-3.5 w-3.5" />
-                        Insert signature
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="end" className="w-[300px] p-0 overflow-hidden">
-                      <div className="px-3 py-2 border-b border-border bg-muted/30">
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Saved signatures
-                        </p>
-                      </div>
-                      <div className="max-h-[320px] overflow-y-auto py-1">
-                        {signatures.map((s) => (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => insertSignature(s.html, s.name)}
-                            className="w-full text-left px-3 py-2 hover:bg-accent/60 focus:bg-accent/60 focus:outline-none transition-colors flex items-center justify-between gap-2"
-                          >
-                            <span className="text-xs font-medium truncate">{s.name}</span>
-                            {s.is_default && (
-                              <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">
-                                Default
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="px-3 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
-                        Inserts at the cursor (HTML mode) or end of body. Auto-append turns off.
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
+                {/* Signature control lives in the footer for a single source of truth. */}
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -783,12 +739,30 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               {/* Body area */}
               <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
                 {mode === 'edit' && (
-                  <div className="p-5">
+                  <div className="p-5 space-y-3">
                     <RichTextEditor
                       content={bodyHtml}
                       onChange={setBodyHtml}
                       placeholder="Write your message... use {{lead.first_name}} for personalization."
                     />
+                    {appendSignature && activeSignatureHtml && (
+                      <div className="rounded-xl border border-dashed border-border bg-background overflow-hidden">
+                        <div className="px-3 py-1.5 border-b border-border/60 bg-muted/30 flex items-center justify-between">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Signature preview
+                          </span>
+                          <span className="text-[10px] text-muted-foreground/80">
+                            Auto-appended when you send
+                          </span>
+                        </div>
+                        <iframe
+                          title="signature-inline-preview"
+                          srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:12px 16px;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${activeSignatureHtml}</body></html>`}
+                          className="w-full bg-white border-0 block"
+                          style={{ height: 200 }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
                 {mode === 'html' && (
@@ -826,29 +800,33 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               {/* Footer */}
               <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={appendSignature}
-                      onChange={(e) => setAppendSignature(e.target.checked)}
-                      className="rounded border-border"
-                    />
-                    Append signature
-                  </label>
-                  {appendSignature && signatures.length > 0 && (
+                  {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
+                      Signature
+                    </span>
                     <select
-                      value={selectedSignatureId ?? ''}
-                      onChange={(e) => setSelectedSignatureId(e.target.value || null)}
-                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[180px]"
-                      title="Choose which signature to append"
+                      value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '__none__') {
+                          setAppendSignature(false);
+                        } else {
+                          setAppendSignature(true);
+                          setSelectedSignatureId(v || null);
+                        }
+                      }}
+                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[200px]"
+                      title="Choose a signature for this email"
                     >
+                      <option value="__none__">None</option>
                       {signatures.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}{s.is_default ? ' (default)' : ''}
                         </option>
                       ))}
                     </select>
-                  )}
+                  </div>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
