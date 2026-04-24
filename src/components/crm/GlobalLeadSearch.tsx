@@ -100,10 +100,10 @@ export function GlobalLeadSearch() {
         {/* Backdrop */}
         <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
 
-        {/* Panel */}
+        {/* Panel — premium AI feel */}
         <div
           className={cn(
-            'relative w-full max-w-[640px] rounded-2xl border border-border/60 bg-popover shadow-2xl overflow-hidden',
+            'relative w-full max-w-[640px] rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl shadow-[0_20px_70px_-20px_rgba(0,0,0,0.5)] overflow-hidden',
             'transition-all duration-200 ease-out',
             open ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-[0.98]'
           )}
@@ -111,41 +111,53 @@ export function GlobalLeadSearch() {
           role="dialog"
           aria-label="Search leads"
         >
-          {/* Search input row — clean, no icons */}
-          <div className="flex items-center gap-3 px-5 h-14 border-b border-border/50">
+          {/* Subtle AI gradient accent */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+          <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-[80%] rounded-full bg-primary/10 blur-3xl" />
+
+          {/* Search input row */}
+          <div className="relative flex items-center gap-3 px-6 h-16">
             <input
               ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything or search by name, phone, email…"
-              className="flex-1 bg-transparent text-[15px] tracking-tight text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+              className="flex-1 bg-transparent text-[16px] tracking-tight text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-light"
             />
             <button
               onClick={() => setOpen(false)}
               aria-label="Close search"
-              className="text-[11px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors px-2 py-0.5 rounded"
+              className="text-[10.5px] font-medium text-muted-foreground/60 hover:text-foreground/90 transition-colors px-2.5 py-1 rounded-md border border-border/40 hover:border-border/80"
             >
               esc
             </button>
           </div>
 
+          {/* Divider with gradient fade */}
+          <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
           {/* Results */}
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="relative max-h-[60vh] overflow-y-auto">
             {!query.trim() ? (
-              <div className="px-4 py-10 text-center text-[12.5px] text-muted-foreground">
-                Start typing to search across {contacts.length.toLocaleString()} leads.
+              <div className="px-6 py-12 text-center">
+                <div className="text-[12px] font-light tracking-wide text-muted-foreground/70 uppercase">
+                  {contacts.length.toLocaleString()} leads ready
+                </div>
+                <div className="mt-2 text-[13px] text-muted-foreground/90">
+                  Start typing to begin your search
+                </div>
               </div>
             ) : isLoading ? (
-              <div className="flex items-center gap-2 px-4 py-6 text-[12.5px] text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading leads…
+              <div className="flex items-center justify-center gap-2 px-4 py-10 text-[12.5px] text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Searching…
               </div>
             ) : results.length === 0 ? (
-              <div className="px-4 py-10 text-center text-[12.5px] text-muted-foreground">
-                No leads match “{query}”.
+              <div className="px-4 py-12 text-center text-[13px] text-muted-foreground/80">
+                No leads match <span className="text-foreground/90">"{query}"</span>
               </div>
             ) : (
-              <ul className="py-1.5">
+              <ul className="py-2">
                 {results.map((c: any, i) => {
                   const name = formatContactName(c.first_name, c.last_name) || 'Unnamed lead';
                   const subtitle = c.email || c.phone || '';
@@ -156,21 +168,21 @@ export function GlobalLeadSearch() {
                         onMouseEnter={() => setActiveIdx(i)}
                         onClick={() => handleSelect(c.id)}
                         className={cn(
-                          'w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors',
-                          i === activeIdx ? 'bg-muted/70' : 'hover:bg-muted/40'
+                          'w-full text-left px-6 py-3 flex items-center gap-3.5 transition-colors',
+                          i === activeIdx ? 'bg-muted/60' : 'hover:bg-muted/30'
                         )}
                       >
-                        <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-[11px] font-semibold flex-shrink-0 border border-primary/10">
                           {(c.first_name?.[0] ?? '').toUpperCase()}{(c.last_name?.[0] ?? '').toUpperCase() || '·'}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-[13.5px] font-medium text-foreground truncate">{name}</div>
+                          <div className="text-[14px] font-medium tracking-tight text-foreground truncate">{name}</div>
                           {subtitle && (
-                            <div className="text-[11.5px] text-muted-foreground truncate">{subtitle}</div>
+                            <div className="text-[11.5px] text-muted-foreground/80 truncate mt-0.5">{subtitle}</div>
                           )}
                         </div>
                         {tag && (
-                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide flex-shrink-0">
+                          <span className="text-[9.5px] font-medium text-muted-foreground/70 uppercase tracking-[0.08em] flex-shrink-0">
                             {tag}
                           </span>
                         )}
@@ -180,16 +192,6 @@ export function GlobalLeadSearch() {
                 })}
               </ul>
             )}
-          </div>
-
-          {/* Footer hints */}
-          <div className="flex items-center justify-between px-4 h-9 border-t border-border/50 text-[10.5px] text-muted-foreground">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1"><kbd className="px-1.5 h-4 rounded bg-muted/60 border border-border/50">↑↓</kbd> navigate</span>
-              <span className="flex items-center gap-1"><kbd className="px-1.5 h-4 rounded bg-muted/60 border border-border/50">↵</kbd> open</span>
-              <span className="flex items-center gap-1"><kbd className="px-1.5 h-4 rounded bg-muted/60 border border-border/50">esc</kbd> close</span>
-            </div>
-            <span>{results.length > 0 ? `${results.length} result${results.length === 1 ? '' : 's'}` : ''}</span>
           </div>
         </div>
       </div>
