@@ -35,20 +35,31 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
           </Badge>
         </div>
 
-        {/* Lead Type */}
-        {contact.lead_type && (
-          <div className="flex items-center gap-3">
-            <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
-            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Lead Type</span>
-            <Badge
-              variant="outline"
-              className="border-0 text-[10px] font-semibold"
-              style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
-            >
-              {LEAD_TYPE_LABELS[contact.lead_type] ?? contact.lead_type}
-            </Badge>
-          </div>
-        )}
+        {/* Lead Type(s) */}
+        {(() => {
+          const types: string[] = ((contact as any).lead_types as string[] | undefined)?.length
+            ? ((contact as any).lead_types as string[])
+            : contact.lead_type ? [contact.lead_type] : [];
+          if (types.length === 0) return null;
+          return (
+            <div className="flex items-center gap-3 flex-wrap">
+              <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
+              <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Lead Type</span>
+              <div className="flex flex-wrap gap-1">
+                {types.map((t) => (
+                  <Badge
+                    key={t}
+                    variant="outline"
+                    className="border-0 text-[10px] font-semibold"
+                    style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+                  >
+                    {LEAD_TYPE_LABELS[t] ?? t}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Budget */}
         {hasBudget && (
