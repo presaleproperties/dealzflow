@@ -19,6 +19,7 @@ import {
   User,
   Inbox,
   X,
+  Search,
 } from 'lucide-react';
 import {
   DropdownMenu,
