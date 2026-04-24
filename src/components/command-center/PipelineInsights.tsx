@@ -149,12 +149,14 @@ function SourcesView({ data }: { data: SourceEntry[] }) {
             </Pie>
             <Tooltip
               contentStyle={{
-                background: 'hsl(var(--card))',
+                background: 'hsl(var(--popover))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '10px',
                 fontSize: '11px',
+                color: 'hsl(var(--popover-foreground))',
               }}
-              itemStyle={{ color: 'hsl(var(--foreground))' }}
+              labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+              itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
             />
           </PieChart>
         </ResponsiveContainer>

@@ -365,7 +365,10 @@ export function BusinessAnalytics({ deals, payouts, syncedPayouts = [], syncedTr
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '12px',
                     fontSize: '12px',
+                    color: 'hsl(var(--popover-foreground))',
                   }}
+                  labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                  itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -500,7 +503,10 @@ export function BusinessAnalytics({ deals, payouts, syncedPayouts = [], syncedTr
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '12px',
                   fontSize: '12px',
+                  color: 'hsl(var(--popover-foreground))',
                 }}
+                labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
                 formatter={(value: number, name: string) => [
                   name === 'revenue' ? formatCurrency(value) : value,
                   name === 'revenue' ? 'Revenue' : 'Deals'
@@ -593,7 +599,10 @@ export function BusinessAnalytics({ deals, payouts, syncedPayouts = [], syncedTr
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '12px',
                     fontSize: '12px',
+                    color: 'hsl(var(--popover-foreground))',
                   }}
+                  labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                  itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
                   formatter={(value: number) => [formatCurrency(value), 'Revenue']}
                 />
                 <Bar 

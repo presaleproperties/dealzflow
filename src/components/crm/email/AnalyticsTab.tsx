@@ -93,7 +93,7 @@ export function AnalyticsTab() {
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" interval="preserveStartEnd" />
             <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" allowDecimals={false} />
-            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} />
+            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }} labelStyle={{ color: 'hsl(var(--popover-foreground))' }} itemStyle={{ color: 'hsl(var(--popover-foreground))' }} />
             <Area type="monotone" dataKey="opens" stroke="hsl(var(--primary))" fill="url(#emailOpenGrad)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
@@ -128,7 +128,7 @@ export function AnalyticsTab() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis type="number" tick={{ fontSize: 11 }} className="text-muted-foreground" />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} className="text-muted-foreground" />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }} labelStyle={{ color: 'hsl(var(--popover-foreground))' }} itemStyle={{ color: 'hsl(var(--popover-foreground))' }} />
                 <Bar dataKey="opens" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Opens" />
                 <Bar dataKey="clicks" fill="hsl(210 62% 46%)" radius={[0, 4, 4, 0]} name="Clicks" />
               </BarChart>
