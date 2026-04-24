@@ -29,7 +29,7 @@ export default function EmailSettingsSection() {
   const [htmlImport, setHtmlImport] = useState('');
   const [simpleHtml, setSimpleHtml] = useState('');
   const [builderData, setBuilderData] = useState<SignatureBuilderData | null>(null);
-  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+  const [showHtmlPreview, setShowHtmlPreview] = useState(true);
 
   useEffect(() => {
     if (settings) {
