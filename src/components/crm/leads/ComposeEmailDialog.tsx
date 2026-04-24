@@ -226,13 +226,46 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     return fromRecent;
   }, [allTemplates, recentIds]);
 
-  const recentEmails = useMemo(
-    () =>
-      messages
-        .filter((m: any) => m.channel === 'email')
-        .slice(0, 4),
-    [messages],
-  );
+  /**
+   * Recent emails: merge real sent emails from `crm_email_log` (which carry
+   * subject + open/click tracking) with conversation messages from
+   * `crm_messages` (legacy/inbound). De-dupe on id and order by newest.
+   */
+  const recentEmails = useMemo(() => {
+    const fromLog = (emailLog ?? []).map((e: any) => ({
+      id: e.id,
+      direction: e.direction,
+      subject: e.subject,
+      content: e.body ?? '',
+      created_at: e.sent_at ?? e.created_at,
+      open_count: e.open_count ?? 0,
+      click_count: e.click_count ?? 0,
+      last_opened_at: e.last_opened_at ?? null,
+      last_clicked_at: e.last_clicked_at ?? null,
+      __source: 'log' as const,
+    }));
+    const fromMessages = (messages ?? [])
+      .filter((m: any) => m.channel === 'email')
+      .map((m: any) => ({
+        id: m.id,
+        direction: m.direction,
+        subject: m.subject ?? null,
+        content: m.content ?? '',
+        created_at: m.created_at,
+        open_count: 0,
+        click_count: 0,
+        last_opened_at: null,
+        last_clicked_at: null,
+        __source: 'msg' as const,
+      }));
+    const merged = [...fromLog, ...fromMessages];
+    merged.sort(
+      (a, b) =>
+        new Date(b.created_at ?? 0).getTime() -
+        new Date(a.created_at ?? 0).getTime(),
+    );
+    return merged.slice(0, 4);
+  }, [emailLog, messages]);
 
   const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
