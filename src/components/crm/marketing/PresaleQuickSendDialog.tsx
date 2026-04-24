@@ -33,6 +33,7 @@ export function PresaleQuickSendDialog({
   const [searching, setSearching] = useState(false);
   const [subject, setSubject] = useState('');
   const send = useBridgeSendEmail();
+  const { data: emailSettings } = useEmailSettings();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
