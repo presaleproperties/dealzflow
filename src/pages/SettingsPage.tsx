@@ -610,7 +610,7 @@ export default function SettingsPage() {
             <SettingsCard
               icon={Bell}
               title="Pipeline Follow-Up Reminders"
-              description="Get SMS or WhatsApp reminders via Zapier when it's time to follow up"
+              description="Get SMS reminders via Zapier when it's time to follow up"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
             >
@@ -621,7 +621,7 @@ export default function SettingsPage() {
                   <ul className="space-y-1.5 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2"><span className="text-primary mt-0.5">🔥</span><span><strong className="text-foreground">Hot clients</strong> — Daily reminder at 9 AM</span></li>
                     <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5">☀️</span><span><strong className="text-foreground">Warm clients</strong> — Weekly reminder every Monday at 9 AM</span></li>
-                    <li className="flex items-start gap-2"><span className="text-muted-foreground mt-0.5">📲</span><span>Your Zapier Zap receives client data and sends you a text or WhatsApp message</span></li>
+                    <li className="flex items-start gap-2"><span className="text-muted-foreground mt-0.5">📲</span><span>Your Zapier Zap receives client data and sends you a text message</span></li>
                   </ul>
                 </div>
 
@@ -635,7 +635,7 @@ export default function SettingsPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                      <span>Add an action: <strong className="text-foreground">SMS by Zapier</strong> or <strong className="text-foreground">WhatsApp</strong> — map the <code className="bg-muted px-1 rounded text-xs">message</code> and <code className="bg-muted px-1 rounded text-xs">phone</code> fields</span>
+                      <span>Add an action: <strong className="text-foreground">SMS by Zapier</strong> — map the <code className="bg-muted px-1 rounded text-xs">message</code> and <code className="bg-muted px-1 rounded text-xs">phone</code> fields</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
