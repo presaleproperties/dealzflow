@@ -3295,6 +3295,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      backfill_behavior_notes: { Args: never; Returns: Json }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
