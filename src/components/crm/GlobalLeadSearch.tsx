@@ -76,13 +76,14 @@ export function GlobalLeadSearch() {
 
   return (
     <>
-      {/* Trigger — minimal icon-only search */}
+      {/* Trigger — icon-only search button (top-right) */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Search leads"
-        className="group relative flex items-center justify-center h-10 w-10 rounded-full bg-muted/30 hover:bg-muted/60 border border-border/40 hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+        title="Search (⌘K)"
+        className="group relative flex items-center justify-center h-10 w-10 rounded-full bg-muted/40 hover:bg-muted/70 border border-border/50 hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
       >
-        <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" strokeWidth={2} />
+        <Search className="w-[18px] h-[18px] text-foreground/80 group-hover:text-foreground transition-colors" strokeWidth={2.2} />
       </button>
 
       {/* Modal overlay + centered palette */}
