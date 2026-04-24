@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Loader2 } from 'lucide-react';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
-import { formatContactName } from '@/lib/contactUtils';
+import { formatContactName } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 export function GlobalLeadSearch() {
