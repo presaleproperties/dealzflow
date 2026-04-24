@@ -52,6 +52,10 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
+    label: 'Network',
+    path: '/network',
+  },
+  {
     label: 'CRM',
     crmOnly: true,
     groups: [
@@ -82,10 +86,6 @@ const SECTIONS: NavSection[] = [
         ],
       },
     ],
-  },
-  {
-    label: 'Network',
-    path: '/network',
   },
 ];
 
