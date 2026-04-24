@@ -52,11 +52,23 @@ export function CheckboxDropdown({
     onChange(selected.filter(s => s !== val));
   };
 
-  // Combined options: known options + any selected custom values not in options
+  // Combined options: known options + any selected custom values not in options.
+  // Dedupe case-insensitively (preferring canonical option casing) so dirty
+  // legacy values like "surrey" or "Surrey " never appear twice next to "Surrey".
   const allOptions = useMemo(() => {
-    const set = new Set<string>(options);
-    selected.forEach(s => set.add(s));
-    return Array.from(set);
+    const map = new Map<string, string>();
+    options.forEach(o => {
+      const key = o.trim().toLowerCase();
+      if (key) map.set(key, o);
+    });
+    selected.forEach(s => {
+      const trimmed = s.trim();
+      const key = trimmed.toLowerCase();
+      if (key && !map.has(key)) map.set(key, trimmed);
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' }),
+    );
   }, [options, selected]);
 
   const filtered = useMemo(() => {
