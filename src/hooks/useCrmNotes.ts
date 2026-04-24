@@ -11,6 +11,7 @@ export interface CrmNote {
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
+  event_at?: string | null;
 }
 
 export function useLeadNotes(contactId: string | undefined) {
@@ -21,7 +22,9 @@ export function useLeadNotes(contactId: string | undefined) {
       const { data, error } = await (supabase.from('crm_notes' as any) as any)
         .select('*')
         .eq('contact_id', contactId)
+        .neq('note_type', 'import_archive')
         .order('is_pinned', { ascending: false })
+        .order('event_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as CrmNote[];

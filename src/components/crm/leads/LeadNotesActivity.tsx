@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   StickyNote, Zap, Mail, Phone, Download, Pin, PinOff,
-  Pencil, MoreHorizontal, Trash2, Send, Plus,
+  Pencil, MoreHorizontal, Trash2, Send, Plus, MessageSquare,
 } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,13 @@ type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'system';
 
 const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string }> = {
   manual: { icon: StickyNote, label: 'Note' },
+  note: { icon: StickyNote, label: 'Note' },
   system: { icon: Zap, label: 'System' },
   email: { icon: Mail, label: 'Email' },
+  text: { icon: MessageSquare, label: 'Text' },
+  call: { icon: Phone, label: 'Call' },
   call_log: { icon: Phone, label: 'Call' },
-  import: { icon: Download, label: 'Imported Note' },
+  import: { icon: Download, label: 'Imported' },
   zapier: { icon: Zap, label: 'Zapier' },
 };
 
@@ -51,7 +54,7 @@ function NoteCard({
 }) {
   const meta = NOTE_TYPE_META[note.note_type] || NOTE_TYPE_META.manual;
   const Icon = meta.icon;
-  const time = format(parseISO(note.created_at), 'h:mm a');
+  const time = format(parseISO(note.event_at || note.created_at), 'h:mm a');
 
   return (
     <div className="group relative flex gap-3">
@@ -136,19 +139,21 @@ export function LeadNotesActivity({ contactId }: { contactId: string }) {
   // Filter
   const filteredNotes = useMemo(() => {
     if (filter === 'all') return notes;
-    if (filter === 'manual') return notes.filter(n => n.note_type === 'manual' || n.note_type === 'import');
+    if (filter === 'manual') return notes.filter(n => n.note_type === 'manual' || n.note_type === 'import' || n.note_type === 'note');
+    if (filter === 'call_log') return notes.filter(n => n.note_type === 'call_log' || n.note_type === 'call');
+    if (filter === 'email') return notes.filter(n => n.note_type === 'email' || n.note_type === 'text');
     return notes.filter(n => n.note_type === filter);
   }, [notes, filter]);
 
   const pinnedNotes = useMemo(() => filteredNotes.filter(n => n.is_pinned), [filteredNotes]);
   const unpinnedNotes = useMemo(() => filteredNotes.filter(n => !n.is_pinned), [filteredNotes]);
 
-  // Group by date
+  // Group by event date (true event time, not import time)
   const groupedNotes = useMemo(() => {
     const groups: { label: string; notes: CrmNote[] }[] = [];
     let currentLabel = '';
     unpinnedNotes.forEach(note => {
-      const label = getDateGroup(note.created_at);
+      const label = getDateGroup(note.event_at || note.created_at);
       if (label !== currentLabel) {
         groups.push({ label, notes: [note] });
         currentLabel = label;
@@ -162,9 +167,9 @@ export function LeadNotesActivity({ contactId }: { contactId: string }) {
   // Filter counts
   const counts = useMemo(() => ({
     all: notes.length,
-    manual: notes.filter(n => n.note_type === 'manual' || n.note_type === 'import').length,
-    email: notes.filter(n => n.note_type === 'email').length,
-    call_log: notes.filter(n => n.note_type === 'call_log').length,
+    manual: notes.filter(n => n.note_type === 'manual' || n.note_type === 'import' || n.note_type === 'note').length,
+    email: notes.filter(n => n.note_type === 'email' || n.note_type === 'text').length,
+    call_log: notes.filter(n => n.note_type === 'call_log' || n.note_type === 'call').length,
     system: notes.filter(n => n.note_type === 'system').length,
   }), [notes]);
 
