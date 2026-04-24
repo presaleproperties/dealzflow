@@ -194,6 +194,65 @@ export default function CrmMarketingHubPage() {
               </div>
             </div>
 
+            {/* Search + tag filter row (emails tab only) */}
+            {activeTab === 'emails' && emailAssets.length > 0 && (
+              <div className="mb-4 space-y-2.5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search templates by name, subject, or category…"
+                    className="pl-9 h-9 text-sm"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {TEMPLATE_TAG_ORDER.filter((tag) => tagCounts[tag] > 0).map((tag) => {
+                    const active = activeTags.has(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all',
+                          active
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground',
+                        )}
+                      >
+                        {tag}
+                        <span className={cn(
+                          'text-[10px] px-1 rounded',
+                          active ? 'bg-primary-foreground/20' : 'bg-muted',
+                        )}>{tagCounts[tag]}</span>
+                      </button>
+                    );
+                  })}
+                  {hasFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" /> Clear
+                    </button>
+                  )}
+                  <span className="ml-auto text-[11px] text-muted-foreground">
+                    {filteredAssets.length} of {emailAssets.length}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'social' ? (
               <EmptyState
                 icon={Share2}
