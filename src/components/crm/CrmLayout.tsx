@@ -1,7 +1,4 @@
-import { Sidebar, useSidebarCollapsed } from '@/components/layout/Sidebar';
-import { MobileNav } from '@/components/layout/MobileNav';
-import { CrmHeader } from './CrmHeader';
-import { CrmMobileNav } from './CrmMobileNav';
+import { TopNav } from '@/components/layout/TopNav';
 import { CrmRouteGuard } from './CrmRouteGuard';
 
 interface CrmLayoutProps {
@@ -10,25 +7,13 @@ interface CrmLayoutProps {
 }
 
 export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
-  const isCollapsed = useSidebarCollapsed();
-
   return (
     <CrmRouteGuard requireRole={requireRole}>
       <div className="h-dvh flex flex-col bg-background overflow-hidden">
-        <Sidebar />
-        <div
-          className={`flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'lg:ml-[60px]' : 'lg:ml-[232px]'
-          }`}
-        >
-          <CrmHeader />
-          {/* Mobile: 12px padding, tablet: 16px, desktop: 24px. Bottom padding for mobile nav */}
-          <div className="flex-1 min-h-0 p-3 sm:p-4 lg:p-6 pb-20 sm:pb-4 lg:pb-6 flex flex-col overflow-y-auto">
-            {children}
-          </div>
+        <TopNav />
+        <div className="flex-1 min-h-0 p-3 sm:p-4 lg:p-6 flex flex-col overflow-y-auto">
+          {children}
         </div>
-        <CrmMobileNav />
-        <MobileNav />
       </div>
     </CrmRouteGuard>
   );
