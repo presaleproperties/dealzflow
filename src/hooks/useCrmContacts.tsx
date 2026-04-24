@@ -178,25 +178,43 @@ export function useCrmContacts() {
 }
 
 export function useDynamicFilterOptions(contacts: CrmContact[]) {
-  const allProjects = new Set<string>();
+  // Case-insensitive de-duplication: same tag in different casings (e.g. "Presale" vs "presale")
+  // collapses to a single option using the most-used casing.
+  const projectCounts = new Map<string, { label: string; count: number }>();
+  const tagCounts = new Map<string, { label: string; count: number }>();
   const allLanguages = new Set<string>();
-  const allTags = new Set<string>();
   const allCities = new Set<string>();
   const allCampaigns = new Set<string>();
 
+  const bumpCount = (map: Map<string, { label: string; count: number }>, value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    const key = trimmed.toLowerCase();
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, { label: trimmed, count: 1 });
+    } else {
+      existing.count++;
+      // No casing swap — first-seen wins for stability across renders
+    }
+  };
+
   contacts.forEach(c => {
-    normalizeCrmMultiValueList(c.projects).forEach(p => { if (p) allProjects.add(p); });
-    if (c.project) allProjects.add(c.project);
+    normalizeCrmMultiValueList(c.projects).forEach(p => bumpCount(projectCounts, p));
+    if (c.project) bumpCount(projectCounts, c.project);
     if (c.language) allLanguages.add(c.language);
-    normalizeCrmMultiValueList(c.tags).forEach(t => { if (t) allTags.add(t); });
+    normalizeCrmMultiValueList(c.tags).forEach(t => bumpCount(tagCounts, t));
     if ((c as any).city_pref) allCities.add((c as any).city_pref);
     if ((c as any).campaign_source) allCampaigns.add((c as any).campaign_source);
   });
 
+  const sortByLabel = (a: { label: string }, b: { label: string }) =>
+    a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+
   return {
-    projects: Array.from(allProjects).sort(),
+    projects: Array.from(projectCounts.values()).sort(sortByLabel).map(v => v.label),
     languages: Array.from(allLanguages).sort(),
-    tags: Array.from(allTags).sort(),
+    tags: Array.from(tagCounts.values()).sort(sortByLabel).map(v => v.label),
     cities: Array.from(allCities).sort(),
     campaigns: Array.from(allCampaigns).sort(),
   };
