@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,9 @@ import {
   useSoftDeleteEmailTemplate,
   type EmailTemplate,
 } from '@/hooks/useEmailTemplates';
+import { VariablePicker } from './VariablePicker';
+import { TemplateVersionHistory } from './TemplateVersionHistory';
+import { renderWithSampleData, findUnknownTokens } from '@/lib/emailVariables';
 
 const CATEGORIES = [
   { value: 'project_launch', label: 'Project Launch' },
@@ -54,11 +57,16 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
   const [areaTags, setAreaTags] = useState<string[]>([]);
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const [fullPreview, setFullPreview] = useState(false);
+  const [withSampleData, setWithSampleData] = useState(true);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
+  const htmlRef = useRef<HTMLTextAreaElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const lastFocused = useRef<'html' | 'subject'>('html');
 
-  const mergeTags = useMemo(() => detectMergeTags(htmlContent), [htmlContent]);
+  const mergeTags = useMemo(() => detectMergeTags(htmlContent + ' ' + subject), [htmlContent, subject]);
+  const unknownTokens = useMemo(() => findUnknownTokens(htmlContent + ' ' + subject), [htmlContent, subject]);
 
   useEffect(() => {
     if (template) {
@@ -83,8 +91,41 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
     }
   }, []);
 
-  useEffect(() => { updateIframe(iframeRef, htmlContent); }, [htmlContent, previewWidth, updateIframe]);
-  useEffect(() => { if (fullPreview) updateIframe(fullIframeRef, htmlContent); }, [htmlContent, fullPreview, updateIframe]);
+  const renderedHtml = useMemo(
+    () => (withSampleData ? renderWithSampleData(htmlContent) : htmlContent),
+    [htmlContent, withSampleData],
+  );
+
+  useEffect(() => { updateIframe(iframeRef, renderedHtml); }, [renderedHtml, previewWidth, updateIframe]);
+  useEffect(() => { if (fullPreview) updateIframe(fullIframeRef, renderedHtml); }, [renderedHtml, fullPreview, updateIframe]);
+
+  /** Insert a snippet at the caret of whichever input was last focused. */
+  const insertSnippet = useCallback((snippet: string) => {
+    if (lastFocused.current === 'subject') {
+      const el = subjectRef.current;
+      if (!el) { setSubject(s => s + snippet); return; }
+      const start = el.selectionStart ?? subject.length;
+      const end = el.selectionEnd ?? subject.length;
+      const next = subject.slice(0, start) + snippet + subject.slice(end);
+      setSubject(next);
+      requestAnimationFrame(() => {
+        el.focus();
+        el.selectionStart = el.selectionEnd = start + snippet.length;
+      });
+      return;
+    }
+    const el = htmlRef.current;
+    if (!el) { setHtmlContent(h => h + snippet); return; }
+    const start = el.selectionStart ?? htmlContent.length;
+    const end = el.selectionEnd ?? htmlContent.length;
+    const next = htmlContent.slice(0, start) + snippet + htmlContent.slice(end);
+    setHtmlContent(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.selectionStart = el.selectionEnd = start + snippet.length;
+    });
+  }, [htmlContent, subject]);
+
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Name is required'); return; }
@@ -153,6 +194,11 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
         <div className="flex items-center gap-2">
           {isEdit && (
             <>
+              {template && <TemplateVersionHistory templateId={template.id} onRestore={(v) => {
+                setName(v.name); setSubject(v.subject ?? ''); setPreviewText(v.preview_text ?? '');
+                setHtmlContent(v.html_content); setCategory(v.category ?? 'custom');
+                setProjectTags(v.project_tags ?? []); setAreaTags(v.area_tags ?? []);
+              }} />}
               {onSendCampaign && template && (
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onSendCampaign(template)}>
                   <Mail className="w-3.5 h-3.5" /> Use in Campaign
@@ -172,8 +218,8 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
         </div>
       </div>
 
-      {/* Split view */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
+      {/* Split view: form / preview / variables */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_280px] gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
         {/* Left — Form */}
         <div className="space-y-4 bg-card/50 border border-border/40 rounded-xl p-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
           <div>
@@ -184,7 +230,14 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Subject Line</Label>
-              <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject" className="h-9" />
+              <Input
+                ref={subjectRef}
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                onFocus={() => { lastFocused.current = 'subject'; }}
+                placeholder="Email subject — supports {{lead.first_name}}"
+                className="h-9"
+              />
             </div>
             <div>
               <Label>Category</Label>
@@ -245,8 +298,10 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
               </Button>
             </div>
             <Textarea
+              ref={htmlRef}
               value={htmlContent}
               onChange={e => setHtmlContent(e.target.value)}
+              onFocus={() => { lastFocused.current = 'html'; }}
               placeholder="Paste your HTML email code here..."
               className="min-h-[300px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40 leading-relaxed"
               spellCheck={false}
@@ -256,10 +311,23 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           {/* Merge tags */}
           {mergeTags.length > 0 && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Merge Tags Detected</Label>
+              <Label className="text-xs text-muted-foreground">Variables in use</Label>
               <div className="flex flex-wrap gap-1.5">
                 {mergeTags.map(tag => (
                   <Badge key={tag} variant="secondary" className="text-[10px] font-mono">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {unknownTokens.length > 0 && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5 space-y-1">
+              <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3" /> Unknown variables — these won’t be replaced when sent:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {unknownTokens.map(t => (
+                  <Badge key={t} variant="outline" className="text-[10px] font-mono border-amber-500/40">{`{{${t}}}`}</Badge>
                 ))}
               </div>
             </div>
@@ -285,6 +353,15 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
                   <Smartphone className="w-3.5 h-3.5" />
                 </button>
               </div>
+              <Button
+                variant={withSampleData ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 gap-1 text-[10px]"
+                onClick={() => setWithSampleData(v => !v)}
+                title="Replace variables with example data"
+              >
+                <EyeIcon className="w-3 h-3" /> {withSampleData ? 'Sample data' : 'Raw'}
+              </Button>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setFullPreview(true)}>
                 <Maximize2 className="w-3.5 h-3.5" />
               </Button>
@@ -294,7 +371,7 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           {/* Subject + preview text bar */}
           {(subject || previewText) && (
             <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5 space-y-0.5">
-              {subject && <p className="text-xs font-semibold text-foreground truncate">Subject: {subject}</p>}
+              {subject && <p className="text-xs font-semibold text-foreground truncate">Subject: {withSampleData ? renderWithSampleData(subject).replace(/<[^>]+>/g, '') : subject}</p>}
               {previewText && <p className="text-[11px] text-muted-foreground truncate">Preview: {previewText}</p>}
             </div>
           )}
@@ -313,6 +390,11 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Far right — Variable picker */}
+        <div className="space-y-2 lg:sticky lg:top-4 self-start">
+          <VariablePicker onInsert={insertSnippet} />
         </div>
       </div>
 
