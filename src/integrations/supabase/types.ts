@@ -729,6 +729,7 @@ export type Database = {
           signature_builder_data: Json | null
           signature_html: string | null
           signature_mode: string
+          twilio_from_number: string | null
           updated_at: string
           user_id: string
         }
@@ -740,6 +741,7 @@ export type Database = {
           signature_builder_data?: Json | null
           signature_html?: string | null
           signature_mode?: string
+          twilio_from_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -751,6 +753,7 @@ export type Database = {
           signature_builder_data?: Json | null
           signature_html?: string | null
           signature_mode?: string
+          twilio_from_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1041,6 +1044,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "crm_showings_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_sms_log: {
+        Row: {
+          body: string
+          contact_id: string
+          created_at: string
+          direction: string
+          error_message: string | null
+          from_number: string | null
+          id: string
+          sent_at: string
+          status: string
+          to_number: string
+          twilio_message_sid: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          contact_id: string
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          from_number?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          to_number: string
+          twilio_message_sid?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          contact_id?: string
+          created_at?: string
+          direction?: string
+          error_message?: string | null
+          from_number?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          to_number?: string
+          twilio_message_sid?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sms_log_contact_id_fkey"
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "crm_contacts"
