@@ -67,7 +67,32 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
           const val = contact[row.field] as string | null;
 
           if (row.multiSelect) {
-            const selected = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+            // Parse stored multi-value string into individual cities/languages.
+            // Use the pipe / newline / semicolon separator only — splitting on commas
+            // would break canonical entries like "Langley, BC" or "Surrey, BC" into
+            // two ghost values ("Langley" + "BC"), which caused the duplicate
+            // "Surrey" entries seen in the dropdown.
+            const rawParts = val
+              ? val.split(/[|;\n\r]+/).map(s => s.trim()).filter(Boolean)
+              : [];
+            // Normalize: strip trailing ", BC" / "British Columbia" province suffixes
+            // (legacy import data) and de-duplicate case-insensitively, preferring
+            // the canonical option spelling whenever it exists.
+            const canonicalByLower = new Map<string, string>(
+              row.multiSelect.options.map(o => [o.toLowerCase(), o]),
+            );
+            const seen = new Map<string, string>();
+            for (const part of rawParts) {
+              const cleaned = part
+                .replace(/,\s*(bc|british columbia|b\.c\.?)\s*$/i, '')
+                .replace(/,+\s*$/, '')
+                .trim();
+              if (!cleaned) continue;
+              const key = cleaned.toLowerCase();
+              if (seen.has(key)) continue;
+              seen.set(key, canonicalByLower.get(key) ?? cleaned);
+            }
+            const selected = Array.from(seen.values());
             const Icon = row.icon;
             return (
               <div key={row.field} className="group flex items-start gap-2 py-1">
@@ -75,7 +100,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
                 <CheckboxDropdown
                   options={row.multiSelect.options}
                   selected={selected}
-                  onChange={(v) => save(row.field, v.join(', '))}
+                  onChange={(v) => save(row.field, v.join(' | '))}
                   placeholder={row.field === 'city' ? 'Select or add city' : `Select ${row.field}`}
                   allowCustom={row.multiSelect.allowCustom}
                   className="flex-1"
