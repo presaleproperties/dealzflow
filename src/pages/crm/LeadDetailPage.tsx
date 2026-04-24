@@ -333,17 +333,43 @@ function LeftSidebar({
         </div>
       </div>
 
-      {/* Lead Type */}
+      {/* Lead Type — multi-select */}
       <div className="space-y-2">
         <SectionHeader>Lead Type</SectionHeader>
-        <Select value={contact.lead_type ?? ''} onValueChange={(v) => saveWithLog('lead_type', v)}>
-          <SelectTrigger className="h-9 text-sm bg-card border-border">
-            <SelectValue placeholder="Select type">{LEAD_TYPE_LABELS[contact.lead_type ?? ''] || contact.lead_type || 'Not set'}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {LEAD_TYPES.map(t => <SelectItem key={t} value={t}>{LEAD_TYPE_LABELS[t] || t}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {(() => {
+          const selected: string[] = ((contact as any).lead_types as string[] | undefined)?.length
+            ? ((contact as any).lead_types as string[])
+            : contact.lead_type ? [contact.lead_type] : [];
+          const toggle = (t: string) => {
+            const next = selected.includes(t) ? selected.filter(x => x !== t) : [...selected, t];
+            saveWithLog('lead_types', next);
+            saveWithLog('lead_type', next[0] ?? null);
+          };
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {LEAD_TYPES.map((t) => {
+                const active = selected.includes(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => toggle(t)}
+                    className={`text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-md border transition-colors ${
+                      active
+                        ? 'bg-primary/15 border-primary/40 text-primary'
+                        : 'bg-card border-border text-muted-foreground hover:text-foreground hover:border-border/80'
+                    }`}
+                  >
+                    {LEAD_TYPE_LABELS[t] || t}
+                  </button>
+                );
+              })}
+              {selected.length === 0 && (
+                <span className="text-xs text-muted-foreground/70 self-center ml-1">Select one or more</span>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Tags */}
