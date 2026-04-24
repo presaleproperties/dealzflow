@@ -10,6 +10,8 @@ import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
+import { isRichHtml } from '@/lib/htmlDetect';
+import { toast } from 'sonner';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
 
