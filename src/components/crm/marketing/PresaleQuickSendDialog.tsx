@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useBridgeSendEmail, type BridgeTemplate } from '@/hooks/useBridgeEmail';
-import { renderWithSampleData } from '@/lib/emailVariables';
+import { renderForRecipient, renderWithSampleData, type RecipientLead } from '@/lib/emailVariables';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 
-type Recipient = { id?: string; email: string; name: string };
+type Recipient = { id?: string; email: string; name: string; lead?: RecipientLead };
 
 /**
  * Mirror of Presale's TemplateQuickSendDialog. Lets the user search CRM
