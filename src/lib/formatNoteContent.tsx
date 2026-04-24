@@ -150,6 +150,61 @@ function useTimelineLinkBehavior(): TimelineLinkBehavior {
   return behavior;
 }
 
+/* ──────────────────────────────────────────────────────────────────
+   Server-side metadata fetch (page title / description / og:image)
+   ────────────────────────────────────────────────────────────────── */
+interface LinkMetadata {
+  url: string;
+  finalUrl?: string;
+  title?: string | null;
+  description?: string | null;
+  siteName?: string | null;
+  image?: string | null;
+  favicon?: string | null;
+  error?: string;
+}
+
+// Cache results in-memory for the session so reopening the same popover
+// is instant and we don't hammer the edge function.
+const META_CACHE = new Map<string, Promise<LinkMetadata | null>>();
+
+async function fetchLinkMetadata(url: string): Promise<LinkMetadata | null> {
+  const existing = META_CACHE.get(url);
+  if (existing) return existing;
+  const promise = (async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-link-metadata', {
+        body: { url },
+      });
+      if (error) return null;
+      return (data ?? null) as LinkMetadata | null;
+    } catch {
+      return null;
+    }
+  })();
+  META_CACHE.set(url, promise);
+  return promise;
+}
+
+function useLinkMetadata(url: string, enabled: boolean) {
+  const [data, setData] = useState<LinkMetadata | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchLinkMetadata(url).then((result) => {
+      if (cancelled) return;
+      setData(result);
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [url, enabled]);
+
+  return { data, loading };
+}
+
 function LinkPreview({
   url,
   label,
