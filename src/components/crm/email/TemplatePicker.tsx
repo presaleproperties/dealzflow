@@ -1,14 +1,15 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
+import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
 
 const CATEGORY_TABS = [
   { value: 'all', label: 'All' },
+  { value: 'presale', label: 'Presale Properties' },
   { value: 'project-launch', label: 'Project Launch' },
   { value: 'follow-up', label: 'Follow-Up' },
   { value: 'nurture', label: 'Nurture' },
@@ -37,31 +38,46 @@ interface Props {
   onSelect: (template: CrmEmailTemplate) => void;
 }
 
+type Merged = CrmEmailTemplate & { __isBridge?: boolean };
+
 export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
-  const { data: templates = [] } = useCrmEmailTemplates();
+  const { data: localTemplates = [] } = useCrmEmailTemplates();
+  const { data: bridgeTemplates = [], isLoading: bridgeLoading } = useBridgeTemplates();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
 
+  const merged: Merged[] = useMemo(() => {
+    const local = localTemplates.map((t) => ({ ...t, __isBridge: false }));
+    const bridge = bridgeTemplates.map((t) => ({ ...t, __isBridge: true }));
+    return [...bridge, ...local];
+  }, [localTemplates, bridgeTemplates]);
+
   const filtered = useMemo(() => {
-    let list = templates;
-    if (catFilter !== 'all') list = list.filter(t => (t as any).category === catFilter);
+    let list = merged;
+    if (catFilter === 'presale') {
+      list = list.filter((t) => t.__isBridge);
+    } else if (catFilter !== 'all') {
+      list = list.filter((t) => (t as any).category === catFilter);
+    }
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(t => t.name.toLowerCase().includes(q));
+      list = list.filter((t) => t.name.toLowerCase().includes(q) || t.subject.toLowerCase().includes(q));
     }
     return list;
-  }, [templates, catFilter, search]);
+  }, [merged, catFilter, search]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Select a Template</DialogTitle>
+          <DialogTitle>
+            Select a Template
+            {bridgeLoading && <span className="ml-2 text-xs text-muted-foreground font-normal">· loading Presale library…</span>}
+          </DialogTitle>
         </DialogHeader>
 
-        {/* Category tabs */}
         <div className="flex gap-1 overflow-x-auto pb-1">
-          {CATEGORY_TABS.map(tab => (
+          {CATEGORY_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setCatFilter(tab.value)}
@@ -76,24 +92,27 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search templates..." className="pl-9 h-9" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search templates..." className="pl-9 h-9" />
         </div>
 
-        {/* Grid */}
         <div className="flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">No templates found</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-2">
-              {filtered.map(tpl => (
+              {filtered.map((tpl) => (
                 <button
-                  key={tpl.id}
+                  key={(tpl.__isBridge ? 'bridge:' : 'local:') + tpl.id}
                   onClick={() => { onSelect(tpl); onOpenChange(false); }}
-                  className="text-left bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-md transition-all"
+                  className="text-left bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-md transition-all relative"
                 >
+                  {tpl.__isBridge && (
+                    <Badge className="absolute top-2 right-2 z-10 bg-primary/90 text-primary-foreground text-[9px] px-1.5 py-0">
+                      PRESALE
+                    </Badge>
+                  )}
                   <div className="overflow-hidden border-b border-border/40">
                     {tpl.body_html ? <MiniPreview html={tpl.body_html} /> : (
                       <div className="h-[140px] bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">No preview</div>

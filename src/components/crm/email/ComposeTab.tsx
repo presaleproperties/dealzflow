@@ -14,6 +14,7 @@ import { TemplatePicker } from './TemplatePicker';
 import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
+import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
@@ -43,6 +44,7 @@ export function ComposeTab() {
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const { data: templates = [] } = useCrmEmailTemplates();
   const addMessage = useAddCrmMessage();
+  const bridgeSend = useBridgeSendEmail();
   const { data: emailSettings } = useEmailSettings();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -97,6 +99,8 @@ export function ComposeTab() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [includeSignature, setIncludeSignature] = useState(true);
+  // Optional schedule (datetime-local string); empty = send now
+  const [scheduleAt, setScheduleAt] = useState('');
 
   // Template state
   const [activeTemplate, setActiveTemplate] = useState<CrmEmailTemplate | null>(null);
@@ -199,29 +203,83 @@ export function ComposeTab() {
     setHtmlBody('');
   };
 
+  const buildHtml = (recipientContact: CrmContact | null) => {
+    const baseBody = isHtmlMode ? htmlBody : body;
+    const agentPhone = (emailSettings as any)?.signature_builder_data?.phone || '';
+    const agentEmail = emailSettings?.reply_to || '';
+    const merged = replaceMergeTags(
+      baseBody,
+      recipientContact,
+      emailSettings?.sender_name || undefined,
+      agentEmail,
+      agentPhone,
+    );
+    const sig = includeSignature && emailSettings?.signature_html
+      ? `<br/><br/>--<br/>${emailSettings.signature_html}`
+      : '';
+    return isHtmlMode ? merged : `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6;">${merged}${sig}</div>`;
+  };
+
+  const sendAtIso = scheduleAt ? new Date(scheduleAt).toISOString() : null;
+
   const handleSend = async () => {
     const bodyContent = isHtmlMode ? htmlBody : body;
+
     if (mode === 'individual') {
-      if (!selectedContact || !subject.trim() || (!bodyContent.trim())) return;
-      await addMessage.mutateAsync({
+      if (!selectedContact || !selectedContact.email || !subject.trim() || !bodyContent.trim()) return;
+      const html = buildHtml(selectedContact);
+      await bridgeSend.mutateAsync({
+        to: selectedContact.email,
+        cc: cc || undefined,
+        bcc: bcc || undefined,
+        subject: replaceMergeTags(subject, selectedContact),
+        html,
+        template_id: activeTemplate?.id ?? null,
         contact_id: selectedContact.id,
-        direction: 'outbound',
-        content: `Subject: ${subject}\n\n${bodyContent}`,
-        channel: 'email',
-        sent_by: 'Agent',
-        message_type: 'text',
+        send_at: sendAtIso,
       });
       setSelectedContact(null);
       setSearchTo('');
       setCc('');
       setBcc('');
+    } else {
+      // Campaign mode — fan out one send per recipient (so merge tags personalize correctly)
+      const recipients = campaignRecipients;
+      let ok = 0;
+      let fail = 0;
+      for (const c of recipients) {
+        const addrs: string[] = [];
+        if (c.email) addrs.push(c.email);
+        if (includeAltEmails) {
+          if (c.email_secondary) addrs.push(c.email_secondary);
+          if ((c as any).co_buyer_email) addrs.push((c as any).co_buyer_email);
+        }
+        if (addrs.length === 0) continue;
+        try {
+          await bridgeSend.mutateAsync({
+            to: addrs,
+            subject: replaceMergeTags(subject, c),
+            html: buildHtml(c),
+            template_id: activeTemplate?.id ?? null,
+            contact_id: c.id,
+            send_at: sendAtIso,
+          });
+          ok++;
+        } catch {
+          fail++;
+        }
+      }
+      // Summary toast handled by mutation; nothing else to do.
+      console.info(`[bridge] campaign done: ${ok} ok, ${fail} failed`);
     }
+
     setSubject('');
     setBody('');
+    setScheduleAt('');
     clearTemplate();
   };
 
-  const isSending = addMessage.isPending;
+  const isSending = bridgeSend.isPending || addMessage.isPending;
   const bodyContent = isHtmlMode ? htmlBody : body;
 
   const canSend = mode === 'individual'
@@ -486,17 +544,26 @@ export function ComposeTab() {
         </div>
       )}
 
-      {/* Send button */}
-      <div className="flex justify-end sm:static sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
+      {/* Schedule + Send */}
+      <div className="space-y-2 sm:flex sm:items-end sm:justify-between sm:space-y-0 sm:gap-3 sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
+        <div className="flex-1 max-w-xs">
+          <Label className="text-xs text-muted-foreground">Schedule (optional)</Label>
+          <Input
+            type="datetime-local"
+            value={scheduleAt}
+            onChange={(e) => setScheduleAt(e.target.value)}
+            className="h-9 text-xs"
+          />
+        </div>
         <Button
           className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto min-h-[44px]"
           disabled={!canSend || isSending}
           onClick={handleSend}
         >
           <Send className="w-4 h-4" />
-          {mode === 'campaign'
-            ? `Send to ${campaignRecipients.length} contacts`
-            : isSending ? 'Sending...' : 'Send Email'}
+          {isSending ? 'Sending…'
+            : scheduleAt ? (mode === 'campaign' ? `Schedule for ${campaignRecipients.length} contacts` : 'Schedule Email')
+            : mode === 'campaign' ? `Send to ${campaignRecipients.length} contacts` : 'Send Email'}
         </Button>
       </div>
 
