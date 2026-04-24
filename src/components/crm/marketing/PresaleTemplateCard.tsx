@@ -117,9 +117,21 @@ export function PresaleTemplateCard({ asset, onSend, onPreview }: Props) {
         </div>
 
         <div className="flex items-center gap-1.5 pt-3 border-t border-border">
-          <Button size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => onSend(asset)}>
-            <Send className="h-3.5 w-3.5" /> Send
-          </Button>
+          {isEmail ? (
+            <Button size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => onSend(asset)}>
+              <Send className="h-3.5 w-3.5" /> Send
+            </Button>
+          ) : asset.thumbnail_url ? (
+            <Button size="sm" className="flex-1 h-8 text-xs gap-1.5" asChild>
+              <a href={asset.thumbnail_url} target="_blank" rel="noopener noreferrer" download>
+                <ImageIcon className="h-3.5 w-3.5" /> Download
+              </a>
+            </Button>
+          ) : (
+            <Button size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => onPreview(asset)}>
+              <Eye className="h-3.5 w-3.5" /> Open
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
