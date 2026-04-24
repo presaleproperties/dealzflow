@@ -73,7 +73,7 @@ export default function CrmEmailCampaignsPage() {
   const [bodyHtml, setBodyHtml] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("__all__");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
-  const [recipientPreview, setRecipientPreview] = useState<{ email: string; first_name: string | null }[]>([]);
+  const [recipientPreview, setRecipientPreview] = useState<(RecipientLead & { id?: string; email: string; first_name: string | null })[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [sendMode, setSendMode] = useState<SendMode>("now");
   const [scheduleDate, setScheduleDate] = useState<string>("");
