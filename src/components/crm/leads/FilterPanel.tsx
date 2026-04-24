@@ -58,6 +58,7 @@ function FilterAccordion({
   onChange,
   optionLabels,
   optionCounts,
+  tone = 'default',
 }: {
   label: string;
   options: string[];
@@ -66,6 +67,8 @@ function FilterAccordion({
   optionLabels?: Record<string, string>;
   /** When provided, options are sorted by count desc and counts render next to each row */
   optionCounts?: Record<string, number>;
+  /** Visual tone — 'exclude' shows a destructive accent for excluded selections */
+  tone?: 'default' | 'exclude';
 }) {
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState('');
