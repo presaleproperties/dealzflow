@@ -239,6 +239,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
        Switch to Preview so the user sees the real design immediately, and
        leave HTML mode available for source-level tweaks. */
     setMode('preview');
+    /* Templates ship with their own built-in signature, so disable the
+       auto-appended default signature to prevent duplicates. */
+    setAppendSignature(false);
+    setEditingSignature(false);
     /* Track recent */
     const next = [tpl.id, ...recentIds.filter((id) => id !== tpl.id)].slice(0, 8);
     setRecentIds(next);
