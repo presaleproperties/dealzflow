@@ -1,12 +1,9 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
-import { useTheme } from 'next-themes';
-import { ChevronLeft, Menu, Sun, Moon, Monitor } from 'lucide-react';
-import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
-import { useAuth } from '@/hooks/useAuth';
+import { ChevronLeft, Menu } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -15,48 +12,6 @@ interface HeaderProps {
   showAddDeal?: boolean;
   showBackButton?: boolean;
   backPath?: string;
-}
-
-const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
-  const { data: settings } = useSettings();
-  const updateSettings = useUpdateSettings({ silent: true });
-
-  // On mount: restore theme from DB if user is logged in
-  useEffect(() => {
-    if (settings?.theme && settings.theme !== theme) {
-      setTheme(settings.theme);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings?.theme]);
-
-  function handleCycle() {
-    const current = (theme as 'light' | 'dark' | 'system') ?? 'system';
-    const idx = THEME_CYCLE.indexOf(current);
-    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
-    setTheme(next);
-    if (user) {
-      updateSettings.mutate({ theme: next });
-    }
-  }
-
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
-
-  return (
-    <button
-      className="h-8 shrink-0 inline-flex items-center gap-1.5 px-2 rounded-[10px] text-muted-foreground/70 hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all duration-200"
-      onClick={handleCycle}
-      aria-label={`Theme: ${label}. Click to cycle.`}
-      title={`Theme: ${label}. Click to cycle.`}
-    >
-      <Icon className="h-[14px] w-[14px] transition-all duration-200" />
-      <span className="hidden sm:inline text-[12px] font-medium leading-none">{label}</span>
-    </button>
-  );
 }
 
 export function Header({
@@ -121,9 +76,8 @@ export function Header({
           </div>
         </div>
 
-        {/* Right */}
+        {/* Right — page-specific actions only. Theme/Search/Bell/Avatar live in the right rail. */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <ThemeToggle />
           {action}
           {showAddDeal && (
             <Link to="/deals/new">
@@ -137,3 +91,4 @@ export function Header({
     </header>
   );
 }
+
