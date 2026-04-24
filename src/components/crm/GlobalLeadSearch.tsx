@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Search, Sparkles, User, Mail, Phone, MapPin, ArrowRight, Building2 } from 'lucide-react';
+import { Loader2, Search, Sparkles, User, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -27,36 +27,13 @@ function Highlight({ text, query }: { text: string; query: string }) {
  * - Click (or ⌘K / Ctrl+K) opens a centered modal palette with smooth transition.
  * - Searches name, email, phone. Click result -> /crm/leads/:id
  */
-const STORAGE_KEY_QUERY = 'crm.globalSearch.lastQuery';
-const STORAGE_KEY_RECENTS = 'crm.globalSearch.recentIds';
-const MAX_RECENTS = 6;
-
-function loadString(key: string): string {
-  try { return localStorage.getItem(key) ?? ''; } catch { return ''; }
-}
-function loadIds(key: string): string[] {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string') : [];
-  } catch { return []; }
-}
-
 export function GlobalLeadSearch() {
   const navigate = useNavigate();
   const { data: contacts = [], isLoading } = useCrmContacts();
   const [open, setOpen] = useState(false);
-  // Hydrate persisted query so reopening keeps user's context
-  const [query, setQuery] = useState(() => loadString(STORAGE_KEY_QUERY));
-  const [recentIds, setRecentIds] = useState<string[]>(() => loadIds(STORAGE_KEY_RECENTS));
+  const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Persist query as user types
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_QUERY, query); } catch { /* ignore */ }
-  }, [query]);
 
   // ⌘K / Ctrl+K to toggle, Esc handled inside the panel
   useEffect(() => {
@@ -70,13 +47,10 @@ export function GlobalLeadSearch() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // Lock body scroll while open + autofocus. Preserve query across opens.
+  // Lock body scroll while open + autofocus
   useEffect(() => {
     if (open) {
-      const t = setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
+      const t = setTimeout(() => inputRef.current?.focus(), 50);
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
@@ -84,7 +58,8 @@ export function GlobalLeadSearch() {
         document.body.style.overflow = prev;
       };
     } else {
-      // Keep query persisted across opens — only reset cursor position
+      // reset on close
+      setQuery('');
       setActiveIdx(0);
     }
   }, [open]);
@@ -98,44 +73,23 @@ export function GlobalLeadSearch() {
         const email = c.email ?? '';
         const phone = c.phone ?? '';
         const address = c.property_address ?? c.address ?? '';
-        const city = c.city ?? '';
-        const project = c.project ?? (Array.isArray(c.projects) ? c.projects[0] : '') ?? '';
         const matchedField = name.toLowerCase().includes(q) ? 'name'
           : email.toLowerCase().includes(q) ? 'email'
           : phone.toLowerCase().includes(q) ? 'phone'
           : address.toLowerCase().includes(q) ? 'address'
-          : project.toLowerCase().includes(q) ? 'project'
-          : city.toLowerCase().includes(q) ? 'city'
           : null;
-        return matchedField ? { c, matchedField, name, email, phone, address, city, project } : null;
+        return matchedField ? { c, matchedField, name, email, phone, address } : null;
       })
-      .filter(Boolean) as Array<{ c: any; matchedField: string; name: string; email: string; phone: string; address: string; city: string; project: string }>;
+      .filter(Boolean) as Array<{ c: any; matchedField: string; name: string; email: string; phone: string; address: string }>;
     return matches.slice(0, 12);
   }, [contacts, query]);
 
   useEffect(() => { setActiveIdx(0); }, [query]);
 
   const handleSelect = (id: string) => {
-    // Track in recents
-    setRecentIds(prev => {
-      const next = [id, ...prev.filter(x => x !== id)].slice(0, MAX_RECENTS);
-      try { localStorage.setItem(STORAGE_KEY_RECENTS, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
     setOpen(false);
     navigate(`/crm/leads/${id}`);
   };
-
-  const clearRecents = () => {
-    setRecentIds([]);
-    try { localStorage.removeItem(STORAGE_KEY_RECENTS); } catch { /* ignore */ }
-  };
-
-  const recentContacts = useMemo(() => {
-    if (!recentIds.length) return [];
-    const map = new Map(contacts.map((c: any) => [c.id, c]));
-    return recentIds.map(id => map.get(id)).filter(Boolean) as any[];
-  }, [recentIds, contacts]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, Math.max(results.length - 1, 0))); }
@@ -213,65 +167,8 @@ export function GlobalLeadSearch() {
           {/* Results */}
           <div className="relative max-h-[60vh] overflow-y-auto">
             {!query.trim() ? (
-              <div className="px-6 py-10">
-                <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase mb-4">
-                  <Sparkles className="w-3 h-3 text-primary/80" strokeWidth={2.2} />
-                  AI-powered search
-                </div>
-                <div className="text-[13.5px] text-foreground/90 font-light leading-relaxed">
-                  Search across <span className="text-foreground font-medium">{contacts.length.toLocaleString()}</span> leads by
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  {[
-                    { icon: User, label: 'Name' },
-                    { icon: Phone, label: 'Phone number' },
-                    { icon: Mail, label: 'Email address' },
-                    { icon: MapPin, label: 'Property address' },
-                  ].map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/30">
-                      <Icon className="w-3.5 h-3.5 text-primary/80" strokeWidth={2} />
-                      <span className="text-[12px] text-muted-foreground/90">{label}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {recentContacts.length > 0 && (
-                  <div className="mt-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase">
-                        Recent
-                      </div>
-                      <button
-                        onClick={clearRecents}
-                        className="text-[10px] font-medium text-muted-foreground/60 hover:text-foreground/90 transition-colors"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    <ul className="-mx-6">
-                      {recentContacts.map((c: any) => {
-                        const name = formatContactName(c.first_name, c.last_name) || 'Unnamed lead';
-                        const sub = c.property_address ?? c.address ?? c.email ?? c.phone ?? '';
-                        return (
-                          <li key={c.id}>
-                            <button
-                              onClick={() => handleSelect(c.id)}
-                              className="w-full text-left px-6 py-2.5 flex items-center gap-3 hover:bg-muted/40 transition-colors"
-                            >
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-[10px] font-semibold flex-shrink-0 border border-primary/10">
-                                {(c.first_name?.[0] ?? '').toUpperCase()}{(c.last_name?.[0] ?? '').toUpperCase() || '·'}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="text-[13px] font-medium text-foreground truncate">{name}</div>
-                                {sub && <div className="text-[11px] text-muted-foreground/70 truncate">{sub}</div>}
-                              </div>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
+              <div className="px-6 py-8 text-[13px] text-muted-foreground/70 font-light">
+                Start typing to search across <span className="text-foreground font-medium">{contacts.length.toLocaleString()}</span> leads.
               </div>
             ) : isLoading ? (
               <div className="px-6 py-10 space-y-3">
@@ -305,108 +202,60 @@ export function GlobalLeadSearch() {
                 </div>
                 <ul className="pb-2">
                   {results.map((r, i) => {
-                    const { c, matchedField, name: rawName, email, phone, address, city, project } = r;
+                    const { c, matchedField, name: rawName, email, phone, address } = r;
                     const name = formatContactName(c.first_name, c.last_name) || 'Unnamed lead';
                     const tag = c.status || c.lead_type;
+                    const FieldIcon = matchedField === 'email' ? Mail
+                      : matchedField === 'phone' ? Phone
+                      : matchedField === 'address' ? MapPin
+                      : User;
+                    const subtitleValue = matchedField === 'email' ? email
+                      : matchedField === 'phone' ? phone
+                      : matchedField === 'address' ? address
+                      : (email || phone || '');
                     const isActive = i === activeIdx;
-
-                    // Build location/context secondary line
-                    const locationParts = [address, project, city].filter(Boolean);
-                    const locationText = locationParts.join(' · ');
-
-                    // Contact context (always useful)
-                    const contactText = email || phone || '';
-
-                    const fieldMeta: Record<string, { icon: typeof Mail; label: string }> = {
-                      name:    { icon: User,      label: 'Name' },
-                      email:   { icon: Mail,      label: 'Email' },
-                      phone:   { icon: Phone,     label: 'Phone' },
-                      address: { icon: MapPin,    label: 'Address' },
-                      project: { icon: Building2, label: 'Project' },
-                      city:    { icon: MapPin,    label: 'City' },
-                    };
-                    const Meta = fieldMeta[matchedField] ?? fieldMeta.name;
-                    const MatchIcon = Meta.icon;
-
                     return (
                       <li key={c.id}>
                         <button
                           onMouseEnter={() => setActiveIdx(i)}
                           onClick={() => handleSelect(c.id)}
                           className={cn(
-                            'group w-full text-left px-6 py-3 flex items-start gap-3.5 transition-all',
+                            'group w-full text-left px-6 py-3 flex items-center gap-3.5 transition-all',
                             isActive ? 'bg-muted/60' : 'hover:bg-muted/30'
                           )}
                         >
                           <div className={cn(
-                            'mt-0.5 w-9 h-9 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 text-primary flex items-center justify-center text-[11px] font-semibold flex-shrink-0 border transition-colors',
+                            'w-9 h-9 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 text-primary flex items-center justify-center text-[11px] font-semibold flex-shrink-0 border transition-colors',
                             isActive ? 'border-primary/40' : 'border-primary/10'
                           )}>
                             {(c.first_name?.[0] ?? '').toUpperCase()}{(c.last_name?.[0] ?? '').toUpperCase() || '·'}
                           </div>
-
-                          <div className="min-w-0 flex-1 space-y-1">
-                            {/* Primary: client name */}
-                            <div className="flex items-center gap-2">
-                              <div className="text-[14px] font-semibold tracking-tight text-foreground truncate">
-                                {matchedField === 'name'
-                                  ? <Highlight text={rawName || name} query={query} />
-                                  : name}
-                              </div>
-                              {tag && (
-                                <span className="text-[9.5px] font-medium text-muted-foreground/70 uppercase tracking-[0.08em] flex-shrink-0 px-1.5 py-0.5 rounded bg-muted/50">
-                                  {tag}
-                                </span>
-                              )}
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[14px] font-medium tracking-tight text-foreground truncate">
+                              {matchedField === 'name'
+                                ? <Highlight text={rawName || name} query={query} />
+                                : name}
                             </div>
-
-                            {/* Secondary: address / project / city */}
-                            {locationText && (
-                              <div className="text-[12px] text-muted-foreground/85 truncate flex items-center gap-1.5">
-                                <MapPin className="w-3 h-3 flex-shrink-0 text-muted-foreground/55" strokeWidth={2} />
+                            {subtitleValue && (
+                              <div className="text-[11.5px] text-muted-foreground/80 truncate mt-0.5 flex items-center gap-1.5">
+                                <FieldIcon className="w-3 h-3 flex-shrink-0 text-muted-foreground/60" strokeWidth={2} />
                                 <span className="truncate">
-                                  {(matchedField === 'address' || matchedField === 'project' || matchedField === 'city')
-                                    ? <Highlight text={locationText} query={query} />
-                                    : locationText}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Tertiary: contact info, with highlight if matched */}
-                            {contactText && (
-                              <div className="text-[11.5px] text-muted-foreground/70 truncate flex items-center gap-1.5">
-                                {matchedField === 'email' || (!matchedField && email) ? (
-                                  <Mail className="w-3 h-3 flex-shrink-0 text-muted-foreground/55" strokeWidth={2} />
-                                ) : (
-                                  <Phone className="w-3 h-3 flex-shrink-0 text-muted-foreground/55" strokeWidth={2} />
-                                )}
-                                <span className="truncate">
-                                  {matchedField === 'email'
-                                    ? <Highlight text={email} query={query} />
-                                    : matchedField === 'phone'
-                                      ? <Highlight text={phone} query={query} />
-                                      : contactText}
+                                  {matchedField !== 'name'
+                                    ? <Highlight text={subtitleValue} query={query} />
+                                    : subtitleValue}
                                 </span>
                               </div>
                             )}
                           </div>
-
-                          {/* Match field chip + arrow */}
-                          <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-                            <span className={cn(
-                              'inline-flex items-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] px-1.5 py-0.5 rounded border transition-colors',
-                              isActive
-                                ? 'border-primary/30 bg-primary/10 text-primary'
-                                : 'border-border/50 bg-muted/30 text-muted-foreground/80'
-                            )}>
-                              <MatchIcon className="w-3 h-3" strokeWidth={2.2} />
-                              {Meta.label}
+                          {tag && (
+                            <span className="text-[9.5px] font-medium text-muted-foreground/70 uppercase tracking-[0.08em] flex-shrink-0">
+                              {tag}
                             </span>
-                            <ArrowRight className={cn(
-                              'w-3.5 h-3.5 text-muted-foreground/50 transition-all',
-                              isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1'
-                            )} strokeWidth={2} />
-                          </div>
+                          )}
+                          <ArrowRight className={cn(
+                            'w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-all',
+                            isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1'
+                          )} strokeWidth={2} />
                         </button>
                       </li>
                     );
