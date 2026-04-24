@@ -215,7 +215,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left side - premium branding panel */}
-      <div className="hidden lg:flex lg:w-[48%] bg-card border-r border-border p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[48%] bg-card border-r border-border px-12 py-10 flex-col relative overflow-hidden">
         {/* Subtle background texture */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 pointer-events-none" />
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
