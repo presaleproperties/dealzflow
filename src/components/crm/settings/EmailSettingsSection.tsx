@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Eye, Code, Type, Paintbrush } from 'lucide-react';
+import { Mail, Eye, Code, Type, Paintbrush, Library } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
+import SignaturesManager from './SignaturesManager';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
 
