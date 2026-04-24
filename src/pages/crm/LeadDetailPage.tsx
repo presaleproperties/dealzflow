@@ -40,6 +40,10 @@ import { Globe, MessageSquare } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
+import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
+import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
+import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
@@ -150,11 +154,21 @@ function LeftSidebar({
 }) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
-  const [addingTag, setAddingTag] = useState(false);
-  const [newTag, setNewTag] = useState('');
+
+  // Unified library data — sourced from crm_tags / crm_projects / crm_lead_types tables.
+  // These are auto-synced from EVERY contact (lead, realtor, past_client) via triggers,
+  // so creating any of these here makes them instantly searchable everywhere in the CRM.
+  const { data: tagLib = [] } = useCrmTags();
+  const { data: projectLib = [] } = useCrmProjects();
+  const { data: leadTypeLib = [] } = useCrmLeadTypes();
+  const createTag = useCreateCrmTag();
+  const createProject = useCreateCrmProject();
+  const createLeadType = useCreateCrmLeadType();
 
   const tags = (contact.tags ?? []) as string[];
-  const projects = contact.projects?.length ? contact.projects : contact.project ? [contact.project] : [];
+  const projects = contact.projects?.length
+    ? contact.projects
+    : contact.project ? [contact.project] : [];
   const hasCoBuyer = !!(contact.co_buyer_name || contact.co_buyer_phone || contact.co_buyer_email);
 
   const save = (field: string, value: unknown) => {
@@ -166,18 +180,6 @@ function LeftSidebar({
       updates: { [field]: value, ...(field === 'status' ? { status_changed_at: new Date().toISOString() } : {}) },
       oldValues: { [field]: (contact as any)[field] },
     });
-  };
-
-  const addTag = () => {
-    const tag = newTag.trim();
-    if (!tag || tags.includes(tag)) return;
-    save('tags', [...tags, tag]);
-    setNewTag('');
-    setAddingTag(false);
-  };
-
-  const removeTag = (tag: string) => {
-    save('tags', tags.filter(t => t !== tag));
   };
 
   const showActionRow = !!(onCall || onSms || onEmail);
@@ -334,104 +336,74 @@ function LeftSidebar({
         </div>
       </div>
 
-      {/* Lead Type — multi-select */}
+      {/* Lead Type — multi-select, backed by unified library */}
       <div className="space-y-2">
         <SectionHeader>Lead Type</SectionHeader>
         {(() => {
           const selected: string[] = ((contact as any).lead_types as string[] | undefined)?.length
             ? ((contact as any).lead_types as string[])
             : contact.lead_type ? [contact.lead_type] : [];
-          const toggle = (t: string) => {
-            const next = selected.includes(t) ? selected.filter(x => x !== t) : [...selected, t];
-            // Single mutation to avoid double-refetch flicker
-            updateContact.mutate({
-              id: contact.id,
-              updates: { lead_types: next, lead_type: next[0] ?? null },
-              oldValues: { lead_types: selected, lead_type: contact.lead_type },
-            });
-          };
+          // Merge canonical defaults with the live library so we always show every option,
+          // even if a value isn't yet in the library table.
+          const libMap = new Map<string, { label: string; count: number }>();
+          leadTypeLib.forEach(l => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
+          LEAD_TYPES.forEach(t => {
+            if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { label: t, count: 0 });
+          });
+          const merged = Array.from(libMap.values()).sort((a, b) => b.count - a.count);
           return (
-            <div className="flex flex-wrap gap-1.5">
-              {LEAD_TYPES.map((t) => {
-                const active = selected.includes(t);
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => toggle(t)}
-                    className={`text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-md border transition-colors ${
-                      active
-                        ? 'bg-primary/15 border-primary/40 text-primary'
-                        : 'bg-card border-border text-muted-foreground hover:text-foreground hover:border-border/80'
-                    }`}
-                  >
-                    {LEAD_TYPE_LABELS[t] || t}
-                  </button>
-                );
-              })}
-              {selected.length === 0 && (
-                <span className="text-xs text-muted-foreground/70 self-center ml-1">Select one or more</span>
-              )}
-            </div>
+            <InlineLibraryPicker
+              selected={selected}
+              library={merged}
+              onChange={(next) => {
+                updateContact.mutate({
+                  id: contact.id,
+                  updates: { lead_types: next, lead_type: next[0] ?? null },
+                  oldValues: { lead_types: selected, lead_type: contact.lead_type },
+                });
+              }}
+              onCreate={(name) => createLeadType.mutate(name)}
+              renderLabel={(v) => LEAD_TYPE_LABELS[v] ?? v}
+              variant="primary"
+              placeholder="Search or add lead type…"
+              emptyText="No lead types yet"
+            />
           );
         })()}
       </div>
 
-      {/* Tags */}
+      {/* Tags — unified library across all contacts (leads, realtors, past clients) */}
       <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <SectionHeader>Tags</SectionHeader>
-          {!addingTag && (
-            <button onClick={() => setAddingTag(true)} className="text-muted-foreground hover:text-foreground transition-colors p-0.5" aria-label="Add tag">
-              <Plus className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        {tags.length === 0 && !addingTag ? (
-          <p className="text-xs text-muted-foreground/70">No tags yet</p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map(tag => (
-              <Badge key={tag} variant="outline" className="text-[11px] font-medium gap-1 pr-1.5 py-0.5 border-border/70 bg-muted/40 text-foreground">
-                {tag}
-                <button onClick={() => removeTag(tag)} className="hover:text-foreground transition-colors" aria-label={`Remove ${tag}`}>
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
-        {addingTag && (
-          <div className="flex gap-1.5">
-            <Input
-              value={newTag}
-              onChange={e => setNewTag(e.target.value)}
-              placeholder="Tag name…"
-              className="h-8 text-sm"
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === 'Enter') addTag();
-                if (e.key === 'Escape') { setAddingTag(false); setNewTag(''); }
-              }}
-            />
-            <Button size="sm" className="h-8 text-xs px-3" onClick={addTag}>Add</Button>
-          </div>
-        )}
+        <SectionHeader>Tags</SectionHeader>
+        <InlineLibraryPicker
+          selected={tags}
+          library={tagLib.map(t => ({ label: t.name, count: t.usage_count }))}
+          onChange={(next) => save('tags', next)}
+          onCreate={(name) => createTag.mutate(name)}
+          placeholder="Search or add tag…"
+          emptyText="No tags yet"
+        />
       </div>
 
-      {/* Projects */}
-      {projects.length > 0 && (
-        <div className="space-y-2.5">
-          <SectionHeader>Projects</SectionHeader>
-          <div className="flex flex-wrap gap-1.5">
-            {projects.map(p => (
-              <Badge key={p} variant="outline" className="text-[11px] font-medium border-border/70 bg-muted/40 text-foreground">
-                {p}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Projects — unified library, multi-select */}
+      <div className="space-y-2.5">
+        <SectionHeader>Projects</SectionHeader>
+        <InlineLibraryPicker
+          selected={projects}
+          library={projectLib.map(p => ({ label: p.name, count: p.usage_count }))}
+          onChange={(next) => {
+            // Mirror to legacy single `project` field for back-compat with older code paths.
+            updateContact.mutate({
+              id: contact.id,
+              updates: { projects: next, project: next[0] ?? null },
+              oldValues: { projects: contact.projects ?? [], project: contact.project },
+            });
+          }}
+          onCreate={(name) => createProject.mutate(name)}
+          placeholder="Search or add project…"
+          emptyText="No projects yet"
+        />
+      </div>
 
       {/* Co-Buyer / Family Member */}
       <div className="space-y-2.5">

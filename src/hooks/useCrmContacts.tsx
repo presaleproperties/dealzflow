@@ -180,13 +180,72 @@ export function useCrmContacts() {
 }
 
 export function useDynamicFilterOptions(contacts: CrmContact[]) {
-  // Case-insensitive de-duplication: same tag in different casings (e.g. "Presale" vs "presale")
-  // collapses to a single option using the most-used casing.
+  // Pull canonical library data so the filter dropdowns always include EVERY tag,
+  // project, and lead-type that exists across the entire CRM — not just the
+  // values that happen to appear on the currently loaded/paginated contacts.
+  const { data: tagLibRaw = [] } = useQuery({
+    queryKey: ['crm-tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_tags')
+        .select('name,usage_count')
+        .order('usage_count', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Array<{ name: string; usage_count: number }>;
+    },
+    staleTime: 60_000,
+  });
+  const { data: projectLibRaw = [] } = useQuery({
+    queryKey: ['crm-projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_projects' as any)
+        .select('name,usage_count')
+        .order('usage_count', { ascending: false });
+      if (error) throw error;
+      return (((data ?? []) as unknown) as Array<{ name: string; usage_count: number }>);
+    },
+    staleTime: 60_000,
+  });
+  const { data: leadTypeLibRaw = [] } = useQuery({
+    queryKey: ['crm-lead-types'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('crm_lead_types' as any)
+        .select('name,usage_count')
+        .order('usage_count', { ascending: false });
+      if (error) throw error;
+      return (((data ?? []) as unknown) as Array<{ name: string; usage_count: number }>);
+    },
+    staleTime: 60_000,
+  });
+
+  // Case-insensitive de-duplication
   const projectCounts = new Map<string, { label: string; count: number }>();
   const tagCounts = new Map<string, { label: string; count: number }>();
+  const leadTypeCounts = new Map<string, { label: string; count: number }>();
   const allLanguages = new Set<string>();
   const allCities = new Set<string>();
   const allCampaigns = new Set<string>();
+
+  const seedFromLibrary = (
+    map: Map<string, { label: string; count: number }>,
+    rows: Array<{ name: string; usage_count: number }>,
+  ) => {
+    rows.forEach(r => {
+      const trimmed = (r.name ?? '').trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, { label: trimmed, count: r.usage_count ?? 0 });
+      }
+    });
+  };
+  // Seed from libraries first so every canonical value is present even if no loaded
+  // contact happens to use it on this page.
+  seedFromLibrary(projectCounts, projectLibRaw);
+  seedFromLibrary(tagCounts, tagLibRaw);
+  seedFromLibrary(leadTypeCounts, leadTypeLibRaw);
 
   const bumpCount = (map: Map<string, { label: string; count: number }>, value: string) => {
     const trimmed = value.trim();
@@ -195,10 +254,8 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
     const existing = map.get(key);
     if (!existing) {
       map.set(key, { label: trimmed, count: 1 });
-    } else {
-      existing.count++;
-      // No casing swap — first-seen wins for stability across renders
     }
+    // If already present (from library seed), trust the library count — don't double-count.
   };
 
   contacts.forEach(c => {
@@ -206,6 +263,8 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
     if (c.project) bumpCount(projectCounts, c.project);
     if (c.language) allLanguages.add(c.language);
     normalizeCrmMultiValueList(c.tags).forEach(t => bumpCount(tagCounts, t));
+    normalizeCrmMultiValueList((c as any).lead_types).forEach(t => bumpCount(leadTypeCounts, t));
+    if (c.lead_type) bumpCount(leadTypeCounts, c.lead_type);
     if ((c as any).city_pref) allCities.add((c as any).city_pref);
     if ((c as any).campaign_source) allCampaigns.add((c as any).campaign_source);
   });
@@ -213,7 +272,6 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const sortByLabel = (a: { label: string }, b: { label: string }) =>
     a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
 
-  // Build counts maps (case-insensitive key, original-casing label) for UI display
   const toCountMap = (map: Map<string, { label: string; count: number }>) => {
     const out: Record<string, number> = {};
     map.forEach(({ label, count }) => { out[label] = count; });
@@ -224,11 +282,12 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
     projects: Array.from(projectCounts.values()).sort(sortByLabel).map(v => v.label),
     languages: Array.from(allLanguages).sort(),
     tags: Array.from(tagCounts.values()).sort(sortByLabel).map(v => v.label),
+    leadTypes: Array.from(leadTypeCounts.values()).sort(sortByLabel).map(v => v.label),
     cities: Array.from(allCities).sort(),
     campaigns: Array.from(allCampaigns).sort(),
-    // Counts keyed by label (used by filter UI to show usage frequency next to each option)
     projectCounts: toCountMap(projectCounts),
     tagCounts: toCountMap(tagCounts),
+    leadTypeCounts: toCountMap(leadTypeCounts),
   };
 }
 

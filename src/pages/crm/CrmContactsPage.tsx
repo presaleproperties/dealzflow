@@ -108,7 +108,12 @@ export default function CrmContactsPage() {
     if (filterProject.length > 0) list = list.filter(c =>
       filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
     );
-    if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
+    if (filterLeadType.length > 0) list = list.filter(c => {
+      const types = ((c as any).lead_types as string[] | undefined) ?? [];
+      const single = c.lead_type ? [c.lead_type] : [];
+      const all = [...types, ...single];
+      return filterLeadType.some(ft => all.includes(ft));
+    });
     if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
     if (filterTags.length > 0) list = list.filter(c =>
       filterTags.some(ft => (c.tags ?? []).includes(ft))
@@ -150,7 +155,7 @@ export default function CrmContactsPage() {
       </div>
       <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
         <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
-        <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
+        <MultiSelectFilter label="Lead Type" options={dynamicOpts.leadTypes?.length ? dynamicOpts.leadTypes : [...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
         <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
         <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
       </div>
