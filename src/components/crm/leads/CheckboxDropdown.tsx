@@ -181,9 +181,9 @@ export function CheckboxDropdown({
                 >
                   <div className={cn(
                     'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-                    isSelected ? 'bg-primary border-primary' : 'border-border'
+                    checked ? 'bg-primary border-primary' : 'border-border'
                   )}>
-                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                    {checked && <Check className="w-3 h-3 text-primary-foreground" />}
                   </div>
                   <span className="text-foreground flex-1">{opt}</span>
                   {isCustom && (
