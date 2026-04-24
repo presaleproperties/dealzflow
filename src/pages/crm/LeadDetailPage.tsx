@@ -52,6 +52,12 @@ function getDateGroup(dateStr: string): string {
   return format(d, 'MMMM d, yyyy');
 }
 
+/** Effective timestamp for a note: prefer event_at (real activity time)
+ *  and fall back to created_at (import time). */
+function noteTime(n: CrmNote): string {
+  return n.event_at || n.created_at;
+}
+
 /* ═══════════════════════════════════════════════════
    TOP BAR — Lead identity + global actions + nav
    ═══════════════════════════════════════════════════ */
