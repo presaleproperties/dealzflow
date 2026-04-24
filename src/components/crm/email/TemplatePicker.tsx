@@ -25,12 +25,26 @@ function MiniPreview({ html }: { html: string }) {
       const doc = ref.current.contentDocument;
       if (doc) {
         doc.open();
-        doc.write(`<div style="transform:scale(0.3);transform-origin:top left;width:333%;pointer-events:none;">${html}</div>`);
+        doc.write(`<!doctype html><html><head><style>
+          html,body{margin:0;padding:0;overflow:hidden;background:#fff;}
+          body{width:333.33%;transform:scale(0.3);transform-origin:top left;pointer-events:none;}
+          img,table{max-width:100%;height:auto;}
+        </style></head><body>${html || ''}</body></html>`);
         doc.close();
       }
     }
   }, [html]);
-  return <iframe ref={ref} title="tpl" className="w-full h-[140px] border-0 rounded bg-white" sandbox="allow-same-origin" />;
+  return (
+    <div className="w-full h-[140px] overflow-hidden bg-white relative">
+      <iframe
+        ref={ref}
+        title="tpl"
+        scrolling="no"
+        className="w-full h-full border-0 block pointer-events-none"
+        sandbox="allow-same-origin"
+      />
+    </div>
+  );
 }
 
 /** Full-fidelity preview that renders the template HTML exactly as recipients will see it. */
