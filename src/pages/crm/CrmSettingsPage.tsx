@@ -48,8 +48,13 @@ class SectionErrorBoundary extends Component<
 }
 import {
   Shield, Lock, UserPlus, GripVertical, Plus, Bell,
-  MessageSquare, Mail, Calendar, Megaphone, Database,
+  MessageSquare, Mail, Calendar, Megaphone, Database, Link2,
 } from 'lucide-react';
+import {
+  getTimelineLinkBehavior,
+  setTimelineLinkBehavior,
+  type TimelineLinkBehavior,
+} from '@/lib/timelineLinkPref';
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
