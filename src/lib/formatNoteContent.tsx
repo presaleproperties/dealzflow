@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { ExternalLink, Globe, Link2, Lock, ShieldAlert } from 'lucide-react';
+import { ExternalLink, Globe, Link2, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,15 +9,97 @@ import {
   type TimelineLinkBehavior,
 } from '@/lib/timelineLinkPref';
 
-// Matches http(s) URLs and bare www.* URLs. Trailing punctuation is trimmed.
-const URL_REGEX = /(\bhttps?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/gi;
-const TRAILING_PUNCT = /[.,;:!?)\]]+$/;
+/* ──────────────────────────────────────────────────────────────────
+   URL / email detection
+   ──────────────────────────────────────────────────────────────────
+   Handles:
+   - http:// and https:// URLs
+   - Bare www.* URLs (no protocol)
+   - Bare domain URLs like "example.com/foo" — only when the TLD is in
+     a known allowlist, to avoid false positives (e.g. "node.js", "v2.0").
+   - mailto: links
+   - Plain email addresses (rendered as mailto)
+   - Trailing punctuation stripped: . , ; : ! ? ) ] } ' " > and
+     unmatched closing parens like in "(see foo.com/bar)".
+   ────────────────────────────────────────────────────────────────── */
 
-function normalizeHref(raw: string): string {
-  return raw.startsWith('http') ? raw : `https://${raw}`;
+// TLDs we'll auto-link without a protocol. Keep conservative — common ones
+// plus the most likely real-estate / business TLDs we encounter.
+const BARE_DOMAIN_TLDS = [
+  'com', 'org', 'net', 'io', 'co', 'ca', 'us', 'uk', 'eu', 'au', 'nz',
+  'app', 'dev', 'ai', 'me', 'tv', 'xyz', 'info', 'biz', 'gov', 'edu',
+  'realtor', 'realestate', 'properties', 'homes', 'house',
+];
+const TLD_GROUP = BARE_DOMAIN_TLDS.join('|');
+
+// Combined matcher. Order matters: specific protocols first, then bare URLs,
+// then emails. We use named alternatives so we can dispatch on type.
+const TOKEN_REGEX = new RegExp(
+  [
+    // mailto:user@host
+    String.raw`\bmailto:[^\s<>"'()]+`,
+    // Full http(s) URLs
+    String.raw`\bhttps?:\/\/[^\s<>"'()]+`,
+    // www.* bare URLs
+    String.raw`\bwww\.[^\s<>"'()]+`,
+    // Bare domain URLs (e.g. example.com/foo?x=1) — TLD allowlist
+    String.raw`\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:` + TLD_GROUP + String.raw`)\b(?:[\/?#][^\s<>"'()]*)?`,
+    // Plain emails
+    String.raw`\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b`,
+  ].join('|'),
+  'gi',
+);
+
+const TRAILING_PUNCT = /[.,;:!?'"`>\]}]+$/;
+
+/** Strip trailing punctuation and unmatched closing parens from a captured URL. */
+function trimUrlBoundary(raw: string): { value: string; trailing: string } {
+  let url = raw;
+  let trailing = '';
+  // 1) plain trailing punctuation
+  const m = url.match(TRAILING_PUNCT);
+  if (m) {
+    trailing = m[0] + trailing;
+    url = url.slice(0, -m[0].length);
+  }
+  // 2) unmatched closing parens (e.g. "(see foo.com/bar)")
+  while (url.endsWith(')')) {
+    const opens = (url.match(/\(/g) || []).length;
+    const closes = (url.match(/\)/g) || []).length;
+    if (closes <= opens) break;
+    trailing = ')' + trailing;
+    url = url.slice(0, -1);
+  }
+  // 3) re-check punctuation after paren stripping
+  const m2 = url.match(TRAILING_PUNCT);
+  if (m2) {
+    trailing = m2[0] + trailing;
+    url = url.slice(0, -m2[0].length);
+  }
+  return { value: url, trailing };
 }
 
-function prettyHost(raw: string): string {
+type LinkKind = 'url' | 'email';
+
+function classifyToken(raw: string): LinkKind {
+  const lower = raw.toLowerCase();
+  if (lower.startsWith('mailto:')) return 'email';
+  // Plain email: contains "@" but no "/" before it
+  if (/^[^\/\s]+@[^\/\s]+\.[a-z]{2,}$/i.test(raw)) return 'email';
+  return 'url';
+}
+
+function normalizeHref(raw: string, kind: LinkKind = 'url'): string {
+  if (kind === 'email') {
+    return raw.toLowerCase().startsWith('mailto:') ? raw : `mailto:${raw}`;
+  }
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+function prettyHost(raw: string, kind: LinkKind = 'url'): string {
+  if (kind === 'email') {
+    return raw.replace(/^mailto:/i, '');
+  }
   try {
     const u = new URL(normalizeHref(raw));
     return (u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '')).replace(/\/$/, '');
@@ -68,18 +150,33 @@ function useTimelineLinkBehavior(): TimelineLinkBehavior {
   return behavior;
 }
 
-function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: LinkContext }) {
-  const meta = parseUrlMeta(url);
-  const href = normalizeHref(url);
+function LinkPreview({
+  url,
+  label,
+  ctx,
+  kind = 'url',
+}: {
+  url: string;
+  label: string;
+  ctx?: LinkContext;
+  kind?: LinkKind;
+}) {
+  const href = normalizeHref(url, kind);
   const behavior = useTimelineLinkBehavior();
+  const meta = kind === 'url' ? parseUrlMeta(url) : null;
 
-  // Direct-open mode: skip the popover entirely.
-  if (behavior === 'open') {
+  const isEmail = kind === 'email';
+  // For emails we open the user's mail client in the same tab; new tab
+  // would just spawn an empty window in most browsers.
+  const linkProps = isEmail
+    ? { href }
+    : { href, target: '_blank', rel: 'noopener noreferrer' };
+
+  // Direct-open mode: skip the popover entirely (URLs and emails alike).
+  if (behavior === 'open' || isEmail) {
     return (
       <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...linkProps}
         onClick={(e) => {
           e.stopPropagation();
           trackClick(href, ctx);
@@ -88,7 +185,11 @@ function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: Li
         title={url}
       >
         <span className="truncate">{label}</span>
-        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+        {isEmail ? (
+          <Mail className="w-3 h-3 shrink-0 opacity-70" />
+        ) : (
+          <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+        )}
       </a>
     );
   }
@@ -183,8 +284,9 @@ function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: Li
 }
 
 /**
- * Renders text with auto-detected URLs as clickable chips that open
- * a metadata preview popover before navigating away.
+ * Renders text with auto-detected URLs and emails as clickable chips.
+ * URLs open a metadata preview popover (or directly, per user setting).
+ * Emails open the user's mail client.
  * Pass `context` to attribute clicks to a specific lead/note in analytics.
  */
 export function LinkifiedText({
@@ -200,22 +302,38 @@ export function LinkifiedText({
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  URL_REGEX.lastIndex = 0;
+  TOKEN_REGEX.lastIndex = 0;
   let key = 0;
 
-  while ((match = URL_REGEX.exec(text)) !== null) {
-    let url = match[0];
-    const trailing = url.match(TRAILING_PUNCT)?.[0] ?? '';
-    if (trailing) url = url.slice(0, -trailing.length);
+  while ((match = TOKEN_REGEX.exec(text)) !== null) {
+    const raw = match[0];
     const start = match.index;
-    const end = start + url.length;
+    const { value, trailing } = trimUrlBoundary(raw);
+    if (!value) {
+      // Should never happen, but guard against zero-length matches that
+      // would cause an infinite loop on global regex.
+      TOKEN_REGEX.lastIndex = start + 1;
+      continue;
+    }
+    const end = start + value.length;
+    const kind = classifyToken(value);
 
     if (start > lastIndex) nodes.push(text.slice(lastIndex, start));
 
-    nodes.push(<LinkPreview key={`lnk-${key++}`} url={url} label={prettyHost(url)} ctx={context} />);
+    nodes.push(
+      <LinkPreview
+        key={`lnk-${key++}`}
+        url={value}
+        kind={kind}
+        label={prettyHost(value, kind)}
+        ctx={context}
+      />,
+    );
 
     if (trailing) nodes.push(trailing);
     lastIndex = end + trailing.length;
+    // Keep regex cursor in sync after we trimmed off trailing chars.
+    TOKEN_REGEX.lastIndex = lastIndex;
   }
 
   if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
