@@ -848,7 +848,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
           </div>
         ) : (
-          <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed"><LinkifiedText text={parsed.body || note.content} /></p>
+          <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed"><LinkifiedText text={parsed.body || note.content} context={{ contactId, noteId: note.id, source: `note:${note.note_type || 'manual'}` }} /></p>
         )}
       </div>
     </div>
