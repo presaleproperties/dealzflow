@@ -400,24 +400,32 @@ export default function DataImportSection() {
 
       if (existingId) {
         // Merge tags + projects, don't overwrite other fields
-        const incomingTags = (rec.tags as string[] | undefined) ?? [];
-        const incomingProjects = (rec.projects as string[] | undefined) ?? [];
-        const mergedTags = Array.from(new Set([...existingTags, ...incomingTags].map(t => t.trim()).filter(Boolean)));
+        const incomingTags = normalizeMultiValueList(rec.tags);
+        const incomingProjects = normalizeMultiValueList(rec.projects);
+        const mergedTags = Array.from(
+          new Map(
+            [...normalizeMultiValueList(existingTags), ...incomingTags].map(tag => [tag.toLowerCase(), tag])
+          ).values()
+        );
 
         const updates: Record<string, unknown> = {};
-        if (mergedTags.length > existingTags.length) updates.tags = mergedTags;
+        if (JSON.stringify(mergedTags) !== JSON.stringify(normalizeMultiValueList(existingTags))) {
+          updates.tags = mergedTags;
+        }
         if (incomingProjects.length > 0) {
-          // fetch existing projects to merge
           const { data: cur } = await supabase
             .from('crm_contacts')
             .select('projects')
             .eq('id', existingId)
             .maybeSingle();
-          const existingProjects = (cur?.projects as string[] | null) ?? [];
-          const mergedProjects = Array.from(new Set([...existingProjects, ...incomingProjects].filter(Boolean)));
-          if (mergedProjects.length > existingProjects.length) updates.projects = mergedProjects;
+          const existingProjects = normalizeMultiValueList(cur?.projects);
+          const mergedProjects = Array.from(
+            new Map([...existingProjects, ...incomingProjects].map(project => [project.toLowerCase(), project])).values()
+          );
+          if (JSON.stringify(mergedProjects) !== JSON.stringify(existingProjects)) {
+            updates.projects = mergedProjects;
+          }
         }
-
         if (Object.keys(updates).length > 0) {
           const { error: updErr } = await supabase
             .from('crm_contacts')
