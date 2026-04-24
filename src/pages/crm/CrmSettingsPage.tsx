@@ -48,8 +48,13 @@ class SectionErrorBoundary extends Component<
 }
 import {
   Shield, Lock, UserPlus, GripVertical, Plus, Bell,
-  MessageSquare, Mail, Calendar, Megaphone, Database,
+  MessageSquare, Mail, Calendar, Megaphone, Database, Link2,
 } from 'lucide-react';
+import {
+  getTimelineLinkBehavior,
+  setTimelineLinkBehavior,
+  type TimelineLinkBehavior,
+} from '@/lib/timelineLinkPref';
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
@@ -86,6 +91,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
   { id: 'settings-email', label: 'Email', icon: Mail },
   { id: 'settings-notifications', label: 'Notifications', icon: Bell },
+  { id: 'settings-timeline', label: 'Timeline', icon: Link2 },
 ] as const;
 
 export default function CrmSettingsPage() {
@@ -195,6 +201,10 @@ export default function CrmSettingsPage() {
         <Separator />
         <div id="settings-notifications" className="scroll-mt-16">
           <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-timeline" className="scroll-mt-16">
+          <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>
         </div>
       </div>
     </div>
@@ -529,6 +539,79 @@ function NotificationsSection() {
             />
           </div>
         ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ══════════════════════════════════════════
+   6. Timeline preferences (link click behavior)
+   ══════════════════════════════════════════ */
+function TimelinePreferencesSection() {
+  const [behavior, setBehaviorState] = useState<TimelineLinkBehavior>(() => getTimelineLinkBehavior());
+
+  const handleChange = (value: TimelineLinkBehavior) => {
+    setBehaviorState(value);
+    setTimelineLinkBehavior(value);
+  };
+
+  const options: { value: TimelineLinkBehavior; title: string; desc: string }[] = [
+    {
+      value: 'preview',
+      title: 'Show preview first',
+      desc: 'Click a link to see its host, path and query params before opening.',
+    },
+    {
+      value: 'open',
+      title: 'Open immediately in a new tab',
+      desc: 'Skip the preview popover and go straight to the destination.',
+    },
+  ];
+
+  return (
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
+        <Link2 className="h-5 w-5 text-primary" />
+        <CardTitle className="text-base sm:text-lg">Timeline Links</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 px-3 sm:px-6">
+        <p className="text-xs text-muted-foreground">
+          Choose what happens when you click a URL inside a lead's activity timeline.
+        </p>
+        <div className="space-y-2">
+          {options.map((opt) => {
+            const active = behavior === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleChange(opt.value)}
+                className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                  active
+                    ? 'border-primary/50 bg-primary/5'
+                    : 'border-border hover:border-border/80 hover:bg-muted/40'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className={`mt-0.5 h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      active ? 'border-primary' : 'border-muted-foreground/40'
+                    }`}
+                  >
+                    {active && <span className="h-2 w-2 rounded-full bg-primary" />}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{opt.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground/80">
+          Saved on this device. Click tracking still records every link you open.
+        </p>
       </CardContent>
     </Card>
   );
