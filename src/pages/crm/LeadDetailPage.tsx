@@ -69,14 +69,12 @@ function LeadTopBar({
   contact,
   navInfo,
   onNavigate,
-  onEmail,
   onTask,
   onShowing,
 }: {
   contact: CrmContact;
   navInfo: { index: number; total: number } | null;
   onNavigate: (dir: 'prev' | 'next') => void;
-  onEmail: () => void;
   onTask: () => void;
   onShowing: () => void;
 }) {
