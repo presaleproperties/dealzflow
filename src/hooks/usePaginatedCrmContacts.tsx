@@ -114,7 +114,16 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = query.overlaps('projects', filters.projects);
       }
       if (filters.leadTypes.length > 0) {
-        query = query.in('lead_type', filters.leadTypes);
+        // Match either the legacy single `lead_type` column OR the unified
+        // `lead_types[]` array, so filtering works regardless of which schema
+        // a contact uses. Build PostgREST .or() with both predicates.
+        const inList = filters.leadTypes
+          .map(t => `"${t.replace(/"/g, '\\"')}"`)
+          .join(',');
+        const arrLiteral = `{${inList}}`;
+        query = query.or(
+          `lead_type.in.(${filters.leadTypes.map(t => `"${t}"`).join(',')}),lead_types.ov.${arrLiteral}`,
+        );
       }
       if (filters.languages.length > 0) {
         query = query.in('language', filters.languages);
