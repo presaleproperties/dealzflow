@@ -295,8 +295,7 @@ export default function CrmLeadsPage() {
           {/* Header */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground">Leads & Contacts</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Manage your leads, contacts, and pipeline from one place</p>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">CARM</h1>
             </div>
             <div className="flex items-center gap-2">
               <Popover>
