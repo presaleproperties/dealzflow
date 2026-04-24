@@ -341,8 +341,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Two-column body */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-[260px_1fr] overflow-hidden min-h-0">
+          {/* Multi-column body */}
+          <div className={cn(
+            'flex-1 grid grid-cols-1 overflow-hidden min-h-0',
+            previewTpl ? 'md:grid-cols-[260px_1fr_360px]' : 'md:grid-cols-[260px_1fr]',
+          )}>
             {/* Sidebar */}
             <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden md:block">
               {/* Lead identity */}
