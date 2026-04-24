@@ -27,7 +27,14 @@ export function useLeadNotes(contactId: string | undefined) {
         .order('event_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as CrmNote[];
+      // Sort client-side using effective timestamp (event_at falls back to created_at)
+      // so imported notes (whose created_at is the import date) appear in true chronological order.
+      const list = (data ?? []) as CrmNote[];
+      const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
+      return [...list].sort((a, b) => {
+        if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+        return ts(b) - ts(a);
+      });
     },
     enabled: !!contactId,
   });

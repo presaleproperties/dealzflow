@@ -34,6 +34,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { formatNoteContent } from '@/lib/formatNoteContent';
+import { Globe } from 'lucide-react';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
@@ -48,6 +50,12 @@ function getDateGroup(dateStr: string): string {
   if (isToday(d)) return 'Today';
   if (isYesterday(d)) return 'Yesterday';
   return format(d, 'MMMM d, yyyy');
+}
+
+/** Effective timestamp for a note: prefer event_at (real activity time)
+ *  and fall back to created_at (import time). */
+function noteTime(n: CrmNote): string {
+  return n.event_at || n.created_at;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -464,16 +472,29 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
 /* ═══════════════════════════════════════════════════
    CENTER COLUMN — Activity Timeline
    ═══════════════════════════════════════════════════ */
-type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'system';
+type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'web' | 'system';
 
 const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string; color: string }> = {
   manual: { icon: StickyNote, label: 'Note', color: 'text-foreground/70' },
+  note: { icon: StickyNote, label: 'Note', color: 'text-foreground/70' },
   system: { icon: Zap, label: 'System', color: 'text-muted-foreground' },
   email: { icon: Mail, label: 'Email', color: 'text-foreground/70' },
   call_log: { icon: Phone, label: 'Call', color: 'text-foreground/70' },
   import: { icon: Download, label: 'Imported', color: 'text-muted-foreground' },
-  zapier: { icon: Zap, label: 'Zapier', color: 'text-muted-foreground' },
+  zapier: { icon: Globe, label: 'Web activity', color: 'text-muted-foreground' },
 };
+
+/** Refine the note's display meta based on parsed content (e.g. detect website behavior). */
+function metaForNote(note: CrmNote) {
+  const base = NOTE_TYPE_META[note.note_type] || NOTE_TYPE_META.manual;
+  if (/website behavior summary/i.test(note.content)) {
+    return { icon: Globe, label: 'Web activity', color: 'text-muted-foreground' };
+  }
+  if (/inquired on|system auto-updated/i.test(note.content) && note.note_type === 'note') {
+    return { icon: Download, label: 'Inquiry', color: 'text-muted-foreground' };
+  }
+  return base;
+}
 
 function CenterColumn({ contact }: { contact: CrmContact }) {
   const { session } = useAuth();
@@ -489,9 +510,15 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
+  const isWebActivity = (n: CrmNote) =>
+    /website behavior summary/i.test(n.content) || n.note_type === 'zapier';
+  const isManualLike = (n: CrmNote) =>
+    (n.note_type === 'manual' || n.note_type === 'note' || n.note_type === 'import') && !isWebActivity(n);
+
   const filteredNotes = useMemo(() => {
     if (filter === 'all') return notes;
-    if (filter === 'manual') return notes.filter(n => n.note_type === 'manual' || n.note_type === 'import');
+    if (filter === 'manual') return notes.filter(isManualLike);
+    if (filter === 'web') return notes.filter(isWebActivity);
     return notes.filter(n => n.note_type === filter);
   }, [notes, filter]);
 
@@ -502,7 +529,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     const groups: { label: string; notes: CrmNote[] }[] = [];
     let currentLabel = '';
     unpinnedNotes.forEach(note => {
-      const label = getDateGroup(note.created_at);
+      const label = getDateGroup(noteTime(note));
       if (label !== currentLabel) {
         groups.push({ label, notes: [note] });
         currentLabel = label;
@@ -515,9 +542,10 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
   const counts = useMemo(() => ({
     all: notes.length,
-    manual: notes.filter(n => n.note_type === 'manual' || n.note_type === 'import').length,
+    manual: notes.filter(isManualLike).length,
     email: notes.filter(n => n.note_type === 'email').length,
     call_log: notes.filter(n => n.note_type === 'call_log').length,
+    web: notes.filter(isWebActivity).length,
     system: notes.filter(n => n.note_type === 'system').length,
   }), [notes]);
 
@@ -538,6 +566,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     { key: 'manual', label: 'Notes' },
     { key: 'email', label: 'Emails' },
     { key: 'call_log', label: 'Calls' },
+    { key: 'web', label: 'Web' },
     { key: 'system', label: 'System' },
   ];
 
@@ -687,9 +716,15 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
 }) {
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
-  const meta = NOTE_TYPE_META[note.note_type] || NOTE_TYPE_META.manual;
+  const meta = metaForNote(note);
   const Icon = meta.icon;
-  const time = format(parseISO(note.created_at), 'h:mm a');
+  const ts = noteTime(note);
+  const time = format(parseISO(ts), 'h:mm a');
+  const dateLabel = format(parseISO(ts), 'MMM d, yyyy');
+  const { parsed, isStructured } = formatNoteContent(note.content);
+  const [expanded, setExpanded] = useState(false);
+  const visibleFields = isStructured && !expanded ? parsed.fields.slice(0, 4) : parsed.fields;
+  const hasMore = isStructured && parsed.fields.length > 4;
 
   if (editingId === note.id) {
     return (
@@ -713,38 +748,61 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
         note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
       )}>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">{meta.label}</span>
-            <span className="opacity-30">·</span>
-            <span>{time}</span>
-            {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60" />}
-          </div>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => updateNote.mutate({ id: note.id, contactId, updates: { is_pinned: !note.is_pinned } })} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-              {note.is_pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
-            </button>
-            {isOwn && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">
+              {isStructured && parsed.title ? parsed.title : meta.label}
+            </span>
+            {parsed.source && (
               <>
-                <button onClick={() => onSetEditing(note.id, note.content)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                      <MoreHorizontal className="w-3.5 h-3.5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem onClick={() => deleteNote.mutate({ id: note.id, contactId })} className="text-destructive focus:text-destructive gap-2">
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <span className="opacity-30">·</span>
+                <span className="truncate">{parsed.source}</span>
               </>
             )}
+            <span className="opacity-30">·</span>
+            <span className="shrink-0">{dateLabel} · {time}</span>
+            {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60 shrink-0" />}
+          </div>
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            <button onClick={() => updateNote.mutate({ id: note.id, contactId, updates: { is_pinned: !note.is_pinned } })} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors" aria-label={note.is_pinned ? 'Unpin' : 'Pin'}>
+              {note.is_pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+            </button>
+            <button onClick={() => onSetEditing(note.id, note.content)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors" aria-label="Edit">
+              <Pencil className="w-3 h-3" />
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={() => deleteNote.mutate({ id: note.id, contactId })} className="text-destructive focus:text-destructive gap-2">
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-        <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed">{note.content}</p>
+
+        {isStructured ? (
+          <div className="mt-2.5 space-y-1">
+            <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1 text-[13px]">
+              {visibleFields.map((f, i) => (
+                <div key={`${f.label}-${i}`} className="contents">
+                  <dt className="text-[11px] uppercase tracking-wider text-muted-foreground/80 truncate pt-0.5">{f.label}</dt>
+                  <dd className="text-foreground/90 break-words">{f.value || '—'}</dd>
+                </div>
+              ))}
+            </dl>
+            {hasMore && (
+              <button onClick={() => setExpanded(e => !e)} className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground hover:text-foreground transition-colors mt-1">
+                {expanded ? 'Show less' : `Show ${parsed.fields.length - 4} more`}
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed">{parsed.body || note.content}</p>
+        )}
       </div>
     </div>
   );
@@ -1042,7 +1100,7 @@ export default function LeadDetailPage() {
               ))}
             </div>
           </div>
-          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 p-5 space-y-4">
+          <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 p-5 space-y-4">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-12 w-full rounded-md" />
             <Skeleton className="h-12 w-full rounded-md" />
@@ -1140,7 +1198,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
+        <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
           <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
         </div>
       </div>
