@@ -478,7 +478,12 @@ export default function CrmLeadsPage() {
           open={filtersExpanded}
           onClose={() => setFiltersExpanded(false)}
           filterContactType={filterContactType}
-          setFilterContactType={v => { setFilterContactType(v); setPage(1); }}
+          setFilterContactType={v => {
+            setFilterContactType(v);
+            // Segments are pipeline stages for leads — clear segment when filtering to realtors/clients
+            if (v && v !== 'lead') setActiveSegmentId(null);
+            setPage(1);
+          }}
           filterStatus={filterStatus}
           setFilterStatus={v => { setFilterStatus(v); setPage(1); }}
           filterSource={filterSource}
