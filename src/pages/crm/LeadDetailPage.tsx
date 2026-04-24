@@ -384,8 +384,8 @@ function InsightCard({ value, label, sublabel, accent }: { value: React.ReactNod
   );
 }
 
-function DetailRow({ label, value, href, field, contactId, type }: {
-  label: string; value: string | null | undefined; href?: string; field: string; contactId: string; type?: 'text' | 'email';
+function DetailRow({ label, value, href, field, contactId, type, options }: {
+  label: string; value: string | null | undefined; href?: string; field: string; contactId: string; type?: 'text' | 'email' | 'select'; options?: readonly string[];
 }) {
   const updateContact = useUpdateCrmContact();
   return (
@@ -397,6 +397,7 @@ function DetailRow({ label, value, href, field, contactId, type }: {
           onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
           href={href}
           type={type}
+          options={options}
           className="text-xs text-right truncate max-w-full"
         />
       </div>
