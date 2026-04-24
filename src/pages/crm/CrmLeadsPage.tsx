@@ -506,8 +506,10 @@ export default function CrmLeadsPage() {
           dynamicTags={dynamicOpts.tags}
           dynamicCities={dynamicOpts.cities}
           dynamicCampaigns={dynamicOpts.campaigns}
+          dynamicLeadTypes={dynamicOpts.leadTypes}
           tagCounts={dynamicOpts.tagCounts}
           projectCounts={dynamicOpts.projectCounts}
+          leadTypeCounts={dynamicOpts.leadTypeCounts}
           onClearAll={clearAllFilters}
           activeFilterCount={activeFilterCount}
         />
