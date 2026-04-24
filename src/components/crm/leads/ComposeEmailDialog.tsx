@@ -20,6 +20,7 @@ import {
   Inbox,
   X,
   Search,
+  PenSquare,
 } from 'lucide-react';
 import {
   DropdownMenu,
