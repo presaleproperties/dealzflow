@@ -142,12 +142,13 @@ export function TopNav() {
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
-    setOpenSection(label);
+    // Instant swap when moving between triggers — no flicker
+    setOpenSection(prev => (prev === label ? prev : label));
   }
 
   function scheduleClose() {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 220);
+    closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 180);
   }
 
   return (
