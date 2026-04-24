@@ -1885,6 +1885,42 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_timeline_link_clicks: {
+        Row: {
+          clicked_at: string
+          clicked_by: string | null
+          contact_id: string | null
+          host: string | null
+          id: string
+          note_id: string | null
+          path: string | null
+          source: string | null
+          url: string
+        }
+        Insert: {
+          clicked_at?: string
+          clicked_by?: string | null
+          contact_id?: string | null
+          host?: string | null
+          id?: string
+          note_id?: string | null
+          path?: string | null
+          source?: string | null
+          url: string
+        }
+        Update: {
+          clicked_at?: string
+          clicked_by?: string | null
+          contact_id?: string | null
+          host?: string | null
+          id?: string
+          note_id?: string | null
+          path?: string | null
+          source?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       crm_whatsapp_conversations: {
         Row: {
           contact_id: string
@@ -3325,6 +3361,15 @@ export type Database = {
       is_crm_agent_or_above: { Args: { _user_id: string }; Returns: boolean }
       is_crm_member: { Args: { _user_id: string }; Returns: boolean }
       is_crm_owner: { Args: { _user_id: string }; Returns: boolean }
+      log_timeline_link_click: {
+        Args: {
+          _contact_id?: string
+          _note_id?: string
+          _source?: string
+          _url: string
+        }
+        Returns: string
+      }
       normalize_crm_multi_array: {
         Args: { input: string[] }
         Returns: string[]

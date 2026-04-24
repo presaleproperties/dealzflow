@@ -174,6 +174,8 @@ export default function CrmBehaviorLeadsPage() {
         ))}
       </div>
 
+      <TopClickedLinks />
+
       <div className="flex flex-wrap gap-2 items-center">
         <Input
           placeholder="Search name or email…"
@@ -249,5 +251,76 @@ export default function CrmBehaviorLeadsPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+type ClickRow = { url: string; host: string | null; path: string | null; clicked_at: string; contact_id: string | null };
+
+function TopClickedLinks() {
+  const [rows, setRows] = useState<ClickRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("crm_timeline_link_clicks" as any)
+        .select("url, host, path, clicked_at, contact_id")
+        .order("clicked_at", { ascending: false })
+        .limit(500);
+      setRows((data as any) || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const grouped = rows.reduce<Record<string, { url: string; host: string | null; clicks: number; leads: Set<string>; last: string }>>((acc, r) => {
+    const key = r.url;
+    if (!acc[key]) acc[key] = { url: r.url, host: r.host, clicks: 0, leads: new Set(), last: r.clicked_at };
+    acc[key].clicks += 1;
+    if (r.contact_id) acc[key].leads.add(r.contact_id);
+    if (r.clicked_at > acc[key].last) acc[key].last = r.clicked_at;
+    return acc;
+  }, {});
+  const top = Object.values(grouped).sort((a, b) => b.clicks - a.clicks).slice(0, 10);
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="font-semibold text-sm">Top Clicked Timeline Links</h2>
+          <p className="text-xs text-muted-foreground">Engagement on URLs opened from lead timelines</p>
+        </div>
+        <Badge variant="outline">{rows.length} clicks tracked</Badge>
+      </div>
+      {loading ? (
+        <div className="text-sm text-muted-foreground py-4 text-center">Loading…</div>
+      ) : top.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-4 text-center">No clicks yet — open a URL from any lead timeline to record one.</div>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="text-left p-2">Link</th>
+              <th className="text-right p-2">Clicks</th>
+              <th className="text-right p-2">Unique Leads</th>
+              <th className="text-right p-2">Last</th>
+            </tr>
+          </thead>
+          <tbody>
+            {top.map((r) => (
+              <tr key={r.url} className="border-t">
+                <td className="p-2 truncate max-w-md">
+                  <a href={r.url.startsWith("http") ? r.url : `https://${r.url}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate inline-block max-w-full align-middle" title={r.url}>
+                    {r.host || r.url}
+                  </a>
+                </td>
+                <td className="text-right p-2 font-medium">{r.clicks}</td>
+                <td className="text-right p-2">{r.leads.size}</td>
+                <td className="text-right p-2 text-xs text-muted-foreground">{new Date(r.last).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
   );
 }

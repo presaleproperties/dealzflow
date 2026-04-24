@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { ExternalLink, Globe, Link2, Lock, ShieldAlert } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 // Matches http(s) URLs and bare www.* URLs. Trailing punctuation is trimmed.
 const URL_REGEX = /(\bhttps?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/gi;
@@ -37,7 +38,26 @@ function parseUrlMeta(raw: string) {
   }
 }
 
-function LinkPreview({ url, label }: { url: string; label: string }) {
+export interface LinkContext {
+  contactId?: string | null;
+  noteId?: string | null;
+  source?: string | null;
+}
+
+async function trackClick(url: string, ctx?: LinkContext) {
+  try {
+    await supabase.rpc('log_timeline_link_click' as any, {
+      _url: url,
+      _contact_id: ctx?.contactId ?? null,
+      _note_id: ctx?.noteId ?? null,
+      _source: ctx?.source ?? null,
+    });
+  } catch {
+    // best-effort, never block navigation
+  }
+}
+
+function LinkPreview({ url, label, ctx }: { url: string; label: string; ctx?: LinkContext }) {
   const meta = parseUrlMeta(url);
   const href = normalizeHref(url);
 
@@ -105,14 +125,22 @@ function LinkPreview({ url, label }: { url: string; label: string }) {
         </div>
         <div className="p-2 border-t flex gap-2">
           <Button size="sm" className="flex-1" asChild>
-            <a href={href} target="_blank" rel="noopener noreferrer">
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => { trackClick(href, ctx); }}
+            >
               <ExternalLink className="h-3 w-3 mr-1" /> Open in new tab
             </a>
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => navigator.clipboard?.writeText(href)}
+            onClick={() => {
+              navigator.clipboard?.writeText(href);
+              trackClick(href, { ...ctx, source: (ctx?.source ?? '') + ':copy' });
+            }}
           >
             Copy
           </Button>
@@ -125,8 +153,17 @@ function LinkPreview({ url, label }: { url: string; label: string }) {
 /**
  * Renders text with auto-detected URLs as clickable chips that open
  * a metadata preview popover before navigating away.
+ * Pass `context` to attribute clicks to a specific lead/note in analytics.
  */
-export function LinkifiedText({ text, className }: { text: string; className?: string }): JSX.Element {
+export function LinkifiedText({
+  text,
+  className,
+  context,
+}: {
+  text: string;
+  className?: string;
+  context?: LinkContext;
+}): JSX.Element {
   if (!text) return <span className={className} />;
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
@@ -143,7 +180,7 @@ export function LinkifiedText({ text, className }: { text: string; className?: s
 
     if (start > lastIndex) nodes.push(text.slice(lastIndex, start));
 
-    nodes.push(<LinkPreview key={`lnk-${key++}`} url={url} label={prettyHost(url)} />);
+    nodes.push(<LinkPreview key={`lnk-${key++}`} url={url} label={prettyHost(url)} ctx={context} />);
 
     if (trailing) nodes.push(trailing);
     lastIndex = end + trailing.length;

@@ -837,7 +837,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
               {visibleFields.map((f, i) => (
                 <div key={`${f.label}-${i}`} className="contents">
                   <dt className="text-[11px] uppercase tracking-wider text-muted-foreground/80 truncate pt-0.5">{f.label}</dt>
-                  <dd className="text-foreground/90 break-words"><LinkifiedText text={f.value || '—'} /></dd>
+                  <dd className="text-foreground/90 break-words"><LinkifiedText text={f.value || '—'} context={{ contactId, noteId: note.id, source: `note_field:${f.label}` }} /></dd>
                 </div>
               ))}
             </dl>
@@ -848,7 +848,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
           </div>
         ) : (
-          <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed"><LinkifiedText text={parsed.body || note.content} /></p>
+          <p className="text-[14px] text-foreground/90 whitespace-pre-wrap mt-2 leading-relaxed"><LinkifiedText text={parsed.body || note.content} context={{ contactId, noteId: note.id, source: `note:${note.note_type || 'manual'}` }} /></p>
         )}
       </div>
     </div>
