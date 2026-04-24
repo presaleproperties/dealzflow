@@ -616,7 +616,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
             <div className="space-y-2 mb-5">
               <div className="flex items-center gap-1.5 pl-9">
                 <Pin className="w-3 h-3 text-foreground/60" />
-                <span className="text-[10px] font-semibold text-foreground/60 uppercase tracking-[0.12em]">Pinned</span>
+                <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
               </div>
               {pinnedNotes.map(note => (
                 <NoteCard
@@ -638,7 +638,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
           {groupedNotes.map(group => (
             <div key={group.label} className="space-y-2 mb-5">
               <div className="pl-9">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
               {group.notes.map(note => (
                 <NoteCard
@@ -713,8 +713,8 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
         note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
       )}>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[10px]">{meta.label}</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">{meta.label}</span>
             <span className="opacity-30">·</span>
             <span>{time}</span>
             {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60" />}
