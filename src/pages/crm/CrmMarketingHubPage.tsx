@@ -115,7 +115,7 @@ export default function CrmMarketingHubPage() {
             </div>
           </div>
           <Badge variant="outline" className="text-[11px] px-2.5 py-1">
-            {emailAssets.length + flyerAssets.length} saved
+            {emailAssets.length + flyerAssets.length + socialAssets.length} saved
           </Badge>
         </div>
       </div>
