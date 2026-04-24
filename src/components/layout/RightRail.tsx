@@ -575,12 +575,85 @@ export function RightRail() {
   );
 }
 
+/** Avatar gradient picker — deterministic per name */
+const AVATAR_PALETTE = [
+  ['hsl(210 80% 60%)', 'hsl(210 80% 50%)'],
+  ['hsl(28 90% 60%)',  'hsl(28 90% 50%)'],
+  ['hsl(160 55% 50%)', 'hsl(160 55% 40%)'],
+  ['hsl(280 60% 65%)', 'hsl(280 60% 55%)'],
+  ['hsl(340 75% 62%)', 'hsl(340 75% 52%)'],
+  ['hsl(190 75% 55%)', 'hsl(190 75% 45%)'],
+];
+function avatarGradient(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const [a, b] = AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+  return `linear-gradient(135deg, ${a}, ${b})`;
+}
+function initialsOf(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '·';
+  return ((parts[0][0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function FilterChip({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+  tone,
+  badge,
+}: {
+  icon: any;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  tone: 'primary' | 'blue' | 'purple';
+  badge?: number;
+}) {
+  const toneBg =
+    tone === 'primary' ? 'bg-primary/15 text-primary'
+    : tone === 'blue'  ? 'bg-[hsl(210_80%_60%/0.15)] text-[hsl(210_80%_55%)]'
+                       : 'bg-[hsl(280_60%_65%/0.15)] text-[hsl(280_60%_60%)]';
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1.5 shrink-0 group"
+    >
+      <div className="relative">
+        <div
+          className={cn(
+            'w-12 h-12 rounded-full flex items-center justify-center transition-all',
+            toneBg,
+            active ? 'ring-2 ring-primary ring-offset-2 ring-offset-card' : 'group-hover:scale-105'
+          )}
+        >
+          <Icon className="w-5 h-5" strokeWidth={2} />
+        </div>
+        {badge && badge > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[9.5px] font-semibold flex items-center justify-center border-2 border-card">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </div>
+      <span className={cn(
+        'text-[10.5px] font-medium tracking-tight',
+        active ? 'text-foreground' : 'text-muted-foreground'
+      )}>
+        {label}
+      </span>
+    </button>
+  );
+}
+
 function CommunicationList({
   feed,
   kind,
+  search = '',
 }: {
   feed: { emails: EmailRow[]; messages: MessageRow[] } | undefined;
   kind: 'all' | 'email' | 'sms';
+  search?: string;
 }) {
   if (!feed) return null;
 
@@ -603,6 +676,7 @@ function CommunicationList({
       name: fullName(e.contact) || e.contact?.email || 'Unknown',
       preview: e.subject || (e.body ?? '').slice(0, 80) || '(no subject)',
       time: e.sent_at,
+      unread: e.direction === 'inbound',
       href: `/crm/leads/${e.contact_id}`,
     }));
   }
@@ -613,6 +687,7 @@ function CommunicationList({
       name: m.conversation?.lead_name ?? 'Unknown',
       preview: m.body,
       time: m.created_at,
+      unread: m.direction === 'inbound',
       href: `/crm/leads`,
     }));
   }
@@ -620,45 +695,74 @@ function CommunicationList({
   // sort by time desc
   items.sort((a, b) => (new Date(b.time).getTime() || 0) - (new Date(a.time).getTime() || 0));
 
-  if (items.length === 0) {
+  // search filter
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? items.filter(i => i.name.toLowerCase().includes(q) || i.preview.toLowerCase().includes(q))
+    : items;
+
+  if (filtered.length === 0) {
     return (
       <div className="text-center text-xs text-muted-foreground py-12">
-        No conversations yet
+        {q ? `No conversations match "${search}"` : 'No conversations yet'}
       </div>
     );
   }
 
-  const iconFor = (t: Item['type']) => t === 'email' ? Mail : MessageSquare;
-  const colorFor = (t: Item['type']) => t === 'email' ? 'hsl(210 80% 60%)' : 'hsl(280 60% 65%)';
+  const TypeIcon = (t: Item['type']) => t === 'email' ? Mail : MessageSquare;
+  const typeColor = (t: Item['type']) => t === 'email' ? 'hsl(28 90% 55%)' : 'hsl(280 60% 60%)';
 
-  return items.slice(0, 30).map(item => {
-    const Icon = iconFor(item.type);
-    return (
-      <Link
-        key={item.id}
-        to={item.href}
-        className="flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-muted/60"
-      >
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-muted/60">
-          <Icon className="w-3.5 h-3.5" style={{ color: colorFor(item.type) }} strokeWidth={1.9} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-[12.5px] font-semibold text-foreground truncate">
-              {item.name}
-            </div>
-            <div className="text-[10.5px] text-muted-foreground/70 shrink-0">
-              {fmtTime(item.time)}
-            </div>
-          </div>
-          <div className="text-[11.5px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
-            {item.preview}
-          </div>
-        </div>
-        {item.unread && (
-          <span className="w-2 h-2 rounded-full mt-2 shrink-0 bg-primary" />
-        )}
-      </Link>
-    );
-  });
+  return (
+    <ul>
+      {filtered.slice(0, 50).map(item => {
+        const Icon = TypeIcon(item.type);
+        const initials = initialsOf(item.name);
+        return (
+          <li key={item.id} className="relative">
+            {item.unread && (
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-destructive" />
+            )}
+            <Link
+              to={item.href}
+              className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-muted/50 border-b border-border/40"
+            >
+              {/* Avatar with type badge */}
+              <div className="relative shrink-0">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[12px] font-semibold tracking-tight"
+                  style={{ background: avatarGradient(item.name) }}
+                >
+                  {initials}
+                </div>
+                <div
+                  className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-card"
+                  style={{ background: typeColor(item.type) }}
+                >
+                  <Icon className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className={cn(
+                    'text-[13px] truncate tracking-tight',
+                    item.unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90'
+                  )}>
+                    {item.name}
+                  </div>
+                  <div className="text-[10.5px] text-muted-foreground/70 shrink-0 tabular-nums">
+                    {fmtTime(item.time)}
+                  </div>
+                </div>
+                <div className="text-[12px] text-muted-foreground line-clamp-1 mt-0.5 leading-snug">
+                  {item.preview}
+                </div>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
