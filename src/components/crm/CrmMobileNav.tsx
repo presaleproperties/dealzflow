@@ -44,9 +44,9 @@ const ADMIN_ITEMS: NavChild[] = [
 ];
 
 const GOLD = 'hsl(39 67% 55%)';
-const GOLD_BG = 'hsl(39 67% 55% / 0.12)';
-const MUTED_ICON = 'hsl(220 10% 50%)';
-const DARK_BG = 'hsl(222 25% 10%)';
+const GOLD_BG = 'hsl(var(--primary) / 0.12)';
+const MUTED_ICON = 'hsl(var(--muted-foreground))';
+const DARK_BG = 'hsl(var(--background))';
 
 export function CrmMobileNav() {
   const location = useLocation();
@@ -93,7 +93,7 @@ export function CrmMobileNav() {
               <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
             <div className="flex items-center justify-between px-4 pb-2">
-              <span className="text-sm font-bold text-white/90">
+              <span className="text-sm font-bold text-foreground">
                 {moreOpen ? 'More' : activeSection?.label}
               </span>
               <button onClick={closeAll} className="p-1">
@@ -111,7 +111,7 @@ export function CrmMobileNav() {
                     onClick={() => { closeAll(); triggerHaptic('light'); }}
                     className="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors"
                     style={{
-                      color: isActive ? GOLD : 'hsl(220 10% 70%)',
+                      color: isActive ? GOLD : 'hsl(var(--muted-foreground))',
                       background: isActive ? GOLD_BG : undefined,
                     }}
                   >

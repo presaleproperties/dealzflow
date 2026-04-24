@@ -42,7 +42,7 @@ export function CrmLeadsBySource() {
             />
             <Tooltip
               contentStyle={{
-                background: 'hsl(222 25% 10%)',
+                background: 'hsl(var(--popover))',
                 border: 'none',
                 borderRadius: 8,
                 color: '#fff',
