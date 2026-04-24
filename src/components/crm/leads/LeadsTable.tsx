@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
@@ -90,22 +93,114 @@ const TAG_COLORS = [
 ];
 
 
-function TagsList({ tags }: { tags: string[] }) {
-  if (!tags || tags.length === 0) return <span className="text-muted-foreground text-sm">—</span>;
+function InlineTagsCell({
+  contact,
+  allTags,
+  updateContact,
+}: {
+  contact: CrmContact;
+  allTags: string[];
+  updateContact: ReturnType<typeof useUpdateCrmContact>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const tags = contact.tags ?? [];
   const shown = tags.slice(0, 2);
   const extra = tags.length - 2;
+
+  const toggleTag = (tag: string) => {
+    const next = tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag];
+    updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
+  };
+
+  const trimmed = search.trim();
+  const canCreate = trimmed.length > 0 && !allTags.some(t => t.toLowerCase() === trimmed.toLowerCase()) && !tags.some(t => t.toLowerCase() === trimmed.toLowerCase());
+
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      {shown.map((tag, i) => {
-        const c = TAG_COLORS[i % TAG_COLORS.length];
-        return (
-          <Badge key={tag} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: c.bg, color: c.color }}>
-            {tag}
-          </Badge>
-        );
-      })}
-      {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={e => e.stopPropagation()}
+          className="flex items-center gap-1 flex-wrap min-h-[28px] px-1.5 py-1 -mx-1.5 rounded-md hover:bg-muted/40 transition-colors w-full text-left"
+        >
+          {tags.length === 0 ? (
+            <span className="text-muted-foreground text-[12px] inline-flex items-center gap-1">
+              <Plus className="w-3 h-3" /> Add tag
+            </span>
+          ) : (
+            <>
+              {shown.map((tag, i) => {
+                const c = TAG_COLORS[i % TAG_COLORS.length];
+                return (
+                  <Badge key={tag} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: c.bg, color: c.color }}>
+                    {tag}
+                  </Badge>
+                );
+              })}
+              {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
+            </>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-64 p-0"
+        align="start"
+        onClick={e => e.stopPropagation()}
+      >
+        <Command>
+          <CommandInput
+            placeholder="Search or create tag..."
+            value={search}
+            onValueChange={setSearch}
+            className="text-sm"
+          />
+          <CommandList className="max-h-56">
+            <CommandEmpty>
+              {canCreate ? (
+                <button
+                  type="button"
+                  onClick={() => { toggleTag(trimmed); setSearch(''); }}
+                  className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted/50 rounded-sm flex items-center gap-2"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Create "{trimmed}"
+                </button>
+              ) : (
+                <span className="text-xs text-muted-foreground">No tags found.</span>
+              )}
+            </CommandEmpty>
+            {tags.length > 0 && (
+              <CommandGroup heading="Applied">
+                {tags.map(tag => (
+                  <CommandItem key={`applied-${tag}`} value={tag} onSelect={() => toggleTag(tag)} className="text-sm">
+                    <Check className="w-3.5 h-3.5 mr-2 text-primary" />
+                    {tag}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            <CommandGroup heading="All tags">
+              {allTags.filter(t => !tags.includes(t)).map(tag => (
+                <CommandItem key={tag} value={tag} onSelect={() => toggleTag(tag)} className="text-sm">
+                  <span className="w-3.5 h-3.5 mr-2" />
+                  {tag}
+                </CommandItem>
+              ))}
+              {canCreate && (
+                <CommandItem
+                  value={`__create__${trimmed}`}
+                  onSelect={() => { toggleTag(trimmed); setSearch(''); }}
+                  className="text-sm"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-2" />
+                  Create "{trimmed}"
+                </CommandItem>
+              )}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -246,7 +341,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
+function CellContent({ col, contact, updateContact, allTags }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; allTags: string[] }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
@@ -309,7 +404,7 @@ function CellContent({ col, contact, updateContact }: { col: ColumnDef; contact:
     case 'pipeline':
       return <InlineStatusCell contact={contact} updateContact={updateContact} />;
     case 'tags':
-      return <TagsList tags={contact.tags} />;
+      return <InlineTagsCell contact={contact} allTags={allTags} updateContact={updateContact} />;
     case 'assigned_to':
       return <InlineAgentCell contact={contact} updateContact={updateContact} />;
     case 'last_touch_at':
@@ -456,6 +551,12 @@ export function LeadsTable({
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    contacts.forEach(c => (c.tags ?? []).forEach(t => { if (t) set.add(t); }));
+    return Array.from(set).sort();
+  }, [contacts]);
+
   const allPageIds = contacts.map(c => c.id);
   const allSelected = contacts.length > 0 && contacts.every(c => selectedIds.includes(c.id));
 
@@ -548,7 +649,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} allTags={allTags} />
                       </td>
                     ))}
                   </tr>
