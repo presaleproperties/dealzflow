@@ -225,7 +225,7 @@ export function PresaleQuickSendDialog({
         <div className="space-y-3 overflow-y-auto pr-1">
           {/* Subject */}
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70 mb-1.5">
               Subject
             </p>
             <Input
@@ -239,7 +239,7 @@ export function PresaleQuickSendDialog({
           {/* Recipients */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
                 Recipients ({recipients.length})
               </p>
               {prefilledFromMemory && recipients.length > 0 && !hasProgress && (
@@ -325,7 +325,7 @@ export function PresaleQuickSendDialog({
           {/* Preview snippet */}
           {asset?.body_html && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70 mb-1.5">
                 Preview
               </p>
               <iframe
@@ -346,7 +346,7 @@ export function PresaleQuickSendDialog({
           {hasProgress && (
             <div className="border border-border rounded-lg p-3 bg-muted/30 space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/70">
                   {isSending ? 'Sending…' : 'Send results'}
                 </p>
                 <p className="text-xs text-muted-foreground">
