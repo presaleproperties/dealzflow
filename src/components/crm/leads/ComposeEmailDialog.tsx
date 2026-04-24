@@ -92,6 +92,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [logOnly, setLogOnly] = useState(false);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [activeTplId, setActiveTplId] = useState<string | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saveCategory, setSaveCategory] = useState('general');
+  const createTemplate = useCreateTemplate();
 
   useEffect(() => {
     if (open) setRecentIds(readRecentIds());
