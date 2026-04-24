@@ -289,7 +289,7 @@ export function ComposeTab() {
     : campaignRecipients.length > 0 && subject.trim() && bodyContent.trim();
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className={`${isHtmlMode ? 'max-w-5xl' : 'max-w-2xl'} space-y-4 transition-all`}>
       <h2 className="text-base font-semibold text-foreground">Compose Email</h2>
 
       {/* Mode toggle */}
@@ -503,12 +503,24 @@ export function ComposeTab() {
             </div>
           </div>
 
-          {/* HTML Preview */}
+          {/* HTML Preview — full template render (no signature appended; templates already include footer/signature) */}
           <div className="flex justify-center">
-            <div className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all" style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}>
-              <iframe ref={iframeRef} title="Email Preview" className="w-full border-0" style={{ height: '400px' }} sandbox="allow-same-origin" />
+            <div
+              className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all shadow-sm"
+              style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}
+            >
+              <iframe
+                ref={iframeRef}
+                title="Email Preview"
+                className="w-full border-0 block"
+                style={{ height: previewWidth === 'desktop' ? '720px' : '640px' }}
+                sandbox="allow-same-origin"
+              />
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground text-center">
+            This is exactly what the recipient will see — the template's built-in signature/footer is preserved, so no extra signature is added.
+          </p>
 
           {/* Raw HTML editor */}
           {showHtmlEditor && (
@@ -527,8 +539,10 @@ export function ComposeTab() {
         </div>
       )}
 
-      {/* Signature preview */}
-      {emailSettings?.signature_html && (
+      {/* Signature preview — only shown when composing a non-template email.
+          Templates already contain their own footer/signature, so adding the
+          system signature would duplicate it. */}
+      {!isHtmlMode && emailSettings?.signature_html && (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Checkbox id="include-sig" checked={includeSignature} onCheckedChange={(v) => setIncludeSignature(!!v)} />
