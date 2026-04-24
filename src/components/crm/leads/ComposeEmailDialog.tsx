@@ -34,7 +34,7 @@ import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
-import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
+import { useCrmEmailTemplates, useCreateTemplate, useIncrementTemplateUsage } from '@/hooks/useCrmEmail';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { EMAIL_VARIABLES, renderForRecipient } from '@/lib/emailVariables';
