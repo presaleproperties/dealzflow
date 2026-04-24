@@ -463,25 +463,28 @@ export function RightRail() {
       <Sheet open={panel === 'notifications'} onOpenChange={(o) => !o && setPanel(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[400px] p-0 border-0"
-          style={{ background: 'hsl(222 25% 10%)', borderLeft: `1px solid ${RAIL_BORDER}` }}
+          className="w-full sm:max-w-[400px] p-0 bg-card border-l border-border [&>button]:hidden"
         >
-          <SheetHeader className="px-5 pt-5 pb-3 border-b" style={{ borderColor: RAIL_BORDER }}>
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+
+          <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-[15px] font-semibold text-white tracking-tight">
-                Notifications
-              </SheetTitle>
+              <div>
+                <SheetTitle className="text-[15px] font-semibold text-foreground tracking-tight text-left">
+                  Notifications
+                </SheetTitle>
+                <p className="text-[11.5px] text-muted-foreground mt-0.5 text-left">
+                  Alerts, follow-ups, and system updates
+                </p>
+              </div>
               <button
                 onClick={() => setPanel(null)}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-white/5"
+                className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-[11.5px] text-muted-foreground mt-0.5">
-              Alerts, follow-ups, and system updates
-            </p>
           </SheetHeader>
 
           <ScrollArea className="h-[calc(100vh-92px)]">
@@ -499,18 +502,19 @@ export function RightRail() {
                   key={n.id}
                   to={n.link_to ?? '#'}
                   onClick={() => setPanel(null)}
-                  className="block px-3 py-2.5 rounded-lg transition-colors hover:bg-white/5 group"
-                  style={{
-                    background: n.is_read ? 'transparent' : 'hsl(39 67% 55% / 0.06)',
-                    border: `1px solid ${n.is_read ? 'transparent' : 'hsl(39 67% 55% / 0.18)'}`,
-                  }}
+                  className={cn(
+                    "block px-3 py-2.5 rounded-lg transition-colors group border",
+                    n.is_read
+                      ? "border-transparent hover:bg-muted/50"
+                      : "border-primary/20 bg-primary/5 hover:bg-primary/10"
+                  )}
                 >
                   <div className="flex items-start gap-2">
                     {!n.is_read && (
-                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: GOLD }} />
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-primary" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12.5px] font-semibold text-white leading-tight truncate">
+                      <div className="text-[12.5px] font-semibold text-foreground leading-tight truncate">
                         {n.title}
                       </div>
                       {n.body && (
