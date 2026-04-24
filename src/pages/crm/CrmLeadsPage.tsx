@@ -54,7 +54,7 @@ const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Rec
 ];
 
 export default function CrmLeadsPage() {
-  const { data: allContacts = [] } = useCrmContacts();
+  const { data: allContacts = [], isLoading: allContactsLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
 
@@ -373,8 +373,10 @@ export default function CrmLeadsPage() {
                                       )}
                                       {seg.emoji && <span>{seg.emoji}</span>}
                                       {seg.name}
-                                      {count !== undefined && (
-                                        <span className={`text-[10px] font-bold ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
+                                      {allContactsLoading ? (
+                                        <span className={`inline-block h-2.5 w-5 rounded-full animate-pulse ${isActive ? 'bg-white/40' : 'bg-muted-foreground/20'}`} />
+                                      ) : count !== undefined && (
+                                        <span className={`text-[10px] font-bold tabular-nums ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
                                           {count.toLocaleString()}
                                         </span>
                                       )}
@@ -464,7 +466,7 @@ export default function CrmLeadsPage() {
                     <span>{view.emoji}</span>
                     <span className="flex-1">{view.label}</span>
                     <span className="text-[11px] text-muted-foreground tabular-nums">
-                      {(viewCounts[view.id] ?? 0).toLocaleString()}
+                      {allContactsLoading ? '…' : (viewCounts[view.id] ?? 0).toLocaleString()}
                     </span>
                   </DropdownMenuItem>
                 ))}
