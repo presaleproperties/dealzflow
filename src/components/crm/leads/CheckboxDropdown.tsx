@@ -43,20 +43,41 @@ export function CheckboxDropdown({
     }
   }, [open, searchable, allowCustom]);
 
+  // Case-insensitive helpers — needed because legacy data may have selected
+  // values with different casing/whitespace than the canonical option list.
+  const isSelected = (val: string) =>
+    selected.some(s => s.trim().toLowerCase() === val.trim().toLowerCase());
+
   const toggle = (val: string) => {
-    onChange(selected.includes(val) ? selected.filter(s => s !== val) : [...selected, val]);
+    if (isSelected(val)) {
+      onChange(selected.filter(s => s.trim().toLowerCase() !== val.trim().toLowerCase()));
+    } else {
+      onChange([...selected, val]);
+    }
   };
 
   const remove = (val: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange(selected.filter(s => s !== val));
+    onChange(selected.filter(s => s.trim().toLowerCase() !== val.trim().toLowerCase()));
   };
 
-  // Combined options: known options + any selected custom values not in options
+  // Combined options: known options + any selected custom values not in options.
+  // Dedupe case-insensitively (preferring canonical option casing) so dirty
+  // legacy values like "surrey" or "Surrey " never appear twice next to "Surrey".
   const allOptions = useMemo(() => {
-    const set = new Set<string>(options);
-    selected.forEach(s => set.add(s));
-    return Array.from(set);
+    const map = new Map<string, string>();
+    options.forEach(o => {
+      const key = o.trim().toLowerCase();
+      if (key) map.set(key, o);
+    });
+    selected.forEach(s => {
+      const trimmed = s.trim();
+      const key = trimmed.toLowerCase();
+      if (key && !map.has(key)) map.set(key, trimmed);
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' }),
+    );
   }, [options, selected]);
 
   const filtered = useMemo(() => {
@@ -75,7 +96,7 @@ export function CheckboxDropdown({
   const handleCreate = () => {
     const val = query.trim();
     if (!val) return;
-    if (!selected.includes(val)) onChange([...selected, val]);
+    if (!isSelected(val)) onChange([...selected, val]);
     setQuery('');
   };
 
@@ -149,8 +170,8 @@ export function CheckboxDropdown({
               <div className="px-3 py-2 text-xs text-muted-foreground">No matches</div>
             )}
             {filtered.map(opt => {
-              const isSelected = selected.includes(opt);
-              const isCustom = !options.includes(opt as any);
+              const checked = isSelected(opt);
+              const isCustom = !options.some(o => o.toLowerCase() === opt.toLowerCase());
               return (
                 <button
                   key={opt}
@@ -160,9 +181,9 @@ export function CheckboxDropdown({
                 >
                   <div className={cn(
                     'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-                    isSelected ? 'bg-primary border-primary' : 'border-border'
+                    checked ? 'bg-primary border-primary' : 'border-border'
                   )}>
-                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                    {checked && <Check className="w-3 h-3 text-primary-foreground" />}
                   </div>
                   <span className="text-foreground flex-1">{opt}</span>
                   {isCustom && (
