@@ -269,10 +269,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       return;
     }
     const block = `<br/><br/>${sigHtml}`;
-    // Detect rich HTML (tables/inline styles/images) — Tiptap StarterKit
-    // would flatten these to plain text in edit mode, so route to HTML/Preview.
-    const isRich = /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(sigHtml)
-      || /<[a-z][^>]*\sstyle\s*=/i.test(sigHtml);
+    // Tiptap StarterKit would flatten rich signature markup, so route it to Preview.
+    const isRich = isRichSignatureHtml(sigHtml);
 
     if (mode === 'html' && htmlTextareaRef.current) {
       const ta = htmlTextareaRef.current;
