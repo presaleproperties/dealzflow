@@ -60,24 +60,23 @@ export function assignContactsToSegments(
 }
 
 /**
- * Compute first-match-wins counts for each segment.
- * Consistent with Pipeline Kanban placement.
+ * Compute segment counts using DIRECT matching (not first-match-wins).
+ * Each contact is counted in EVERY segment it matches — this mirrors what
+ * the user sees when clicking a pill (the DB query filters by that segment alone).
+ * Prevents the bug where a presale lead with status="New Lead" was only counted
+ * under "New Leads" and made the "Pre-Sale 🔥" pill show 0.
  */
 export function computeSegmentCounts(
   contacts: CrmContact[],
   segments: LeadSegment[],
 ): Record<string, number> {
-  const assignments = assignContactsToSegments(contacts, segments);
   const counts: Record<string, number> = {};
-
-  // "All Leads" segment (empty filter_config) gets total count
   segments.forEach(s => {
     if (!s.filter_config || Object.keys(s.filter_config).length === 0) {
       counts[s.id] = contacts.length;
     } else {
-      counts[s.id] = assignments[s.id]?.length ?? 0;
+      counts[s.id] = contacts.filter(c => contactMatchesSegment(c, s.filter_config)).length;
     }
   });
-
   return counts;
 }
