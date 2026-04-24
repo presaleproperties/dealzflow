@@ -125,22 +125,27 @@ export function ComposeTab() {
   // Campaign recipients
   const campaignRecipients = useMemo(() => {
     let list = contacts;
-    if (filterContactType) list = list.filter(c => c.contact_type === filterContactType);
-    if (filterStatus.length > 0) list = list.filter(c => c.status && filterStatus.includes(c.status));
-    if (filterSource.length > 0) list = list.filter(c => c.source && filterSource.includes(c.source));
-    if (filterAgent.length > 0) list = list.filter(c => c.assigned_to && filterAgent.includes(c.assigned_to));
-    if (filterProject.length > 0) list = list.filter(c =>
-      filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
-    );
-    if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
-    if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
-    if (filterTags.length > 0) list = list.filter(c =>
-      filterTags.some(ft => (c.tags ?? []).includes(ft))
-    );
+    // Locked-list mode: ignore the filter UI and only use the IDs handed off from Leads.
+    if (lockedIds) {
+      list = list.filter(c => lockedIds.has(c.id));
+    } else {
+      if (filterContactType) list = list.filter(c => c.contact_type === filterContactType);
+      if (filterStatus.length > 0) list = list.filter(c => c.status && filterStatus.includes(c.status));
+      if (filterSource.length > 0) list = list.filter(c => c.source && filterSource.includes(c.source));
+      if (filterAgent.length > 0) list = list.filter(c => c.assigned_to && filterAgent.includes(c.assigned_to));
+      if (filterProject.length > 0) list = list.filter(c =>
+        filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
+      );
+      if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
+      if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
+      if (filterTags.length > 0) list = list.filter(c =>
+        filterTags.some(ft => (c.tags ?? []).includes(ft))
+      );
+    }
     list = list.filter(c => c.email);
     list = list.filter(c => !excludedIds.has(c.id));
     return list;
-  }, [contacts, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags, excludedIds]);
+  }, [contacts, lockedIds, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags, excludedIds]);
 
   const totalEmailAddresses = useMemo(() => {
     let count = campaignRecipients.length;
