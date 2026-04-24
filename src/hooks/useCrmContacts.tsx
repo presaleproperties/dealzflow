@@ -110,6 +110,7 @@ export const LEAD_TYPES = [
   'presale',
   'resale',
   'commercial',
+  'realtor',
 ] as const;
 
 export const LEAD_TYPE_LABELS: Record<string, string> = {
@@ -119,6 +120,7 @@ export const LEAD_TYPE_LABELS: Record<string, string> = {
   'presale': 'Pre-Sale',
   'resale': 'Re-Sale',
   'commercial': 'Commercial',
+  'realtor': 'Realtor',
 };
 
 export function useCrmContacts() {
