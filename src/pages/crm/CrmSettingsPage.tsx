@@ -67,14 +67,6 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 
 
-const PIPELINE_STAGES = [
-  'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
-  'Showing Booked', 'Offer Made', 'Closed', 'Lost / Cold',
-];
-
-const LEAD_SOURCES = [
-  'Facebook Ad', 'Instagram', 'TikTok', 'Website Form', 'presaleproperties.com', 'Calendly', 'Referral', 'Manual Entry',
-];
 
 const INTEGRATIONS = [
   { name: 'Google Calendar', icon: Calendar, status: 'connected' as const, desc: 'Sync showings and appointments' },
