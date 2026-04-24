@@ -10,6 +10,29 @@ const corsHeaders = {
 
 const PRESALE_SEND_URL = Deno.env.get("PRESALE_SEND_URL") ?? "";
 const PRESALE_BRIDGE_SECRET = Deno.env.get("BRIDGE_SECRET") ?? "";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const TRACK_BASE = `${SUPABASE_URL}/functions/v1/crm-email-track`;
+
+function injectTracking(html: string, trackingId: string): string {
+  if (!html) return html;
+  // Rewrite <a href="..."> to go through our click tracker (skip mailto:, tel:, anchors, and already-tracked links)
+  let out = html.replace(
+    /<a\b([^>]*?)href=(["'])(https?:\/\/[^"']+)\2/gi,
+    (_m, attrs, q, href) => {
+      if (href.includes("/crm-email-track")) return `<a${attrs}href=${q}${href}${q}`;
+      const tracked = `${TRACK_BASE}?a=click&t=${encodeURIComponent(trackingId)}&u=${encodeURIComponent(href)}`;
+      return `<a${attrs}href=${q}${tracked}${q}`;
+    },
+  );
+  // Append a 1×1 open pixel just before </body> if present, else at the end.
+  const pixel = `<img src="${TRACK_BASE}?a=open&t=${encodeURIComponent(trackingId)}" width="1" height="1" alt="" style="display:block;border:0;outline:none;width:1px;height:1px" />`;
+  if (/<\/body>/i.test(out)) {
+    out = out.replace(/<\/body>/i, `${pixel}</body>`);
+  } else {
+    out = `${out}${pixel}`;
+  }
+  return out;
+}
 
 interface SendPayload {
   to: string;
@@ -78,6 +101,8 @@ Deno.serve(async (req) => {
     let presaleResp: Response | null = null;
     let presaleBody: any = null;
 
+    const trackedHtml = body.html ? injectTracking(body.html, trackingId) : undefined;
+
     if (PRESALE_SEND_URL && PRESALE_BRIDGE_SECRET) {
       try {
         presaleResp = await fetch(PRESALE_SEND_URL, {
@@ -90,7 +115,7 @@ Deno.serve(async (req) => {
             to: body.to,
             to_name: body.to_name,
             subject: body.subject,
-            html: body.html,
+            html: trackedHtml,
             text: body.text,
             tracking_id: trackingId,
             origin: "crm",

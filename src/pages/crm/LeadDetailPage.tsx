@@ -26,6 +26,7 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
+import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
@@ -848,6 +849,11 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
             ))}
           </div>
         )}
+      </WidgetSection>
+
+      {/* Email Attribution (opens / clicks per send) */}
+      <WidgetSection title="Email Attribution">
+        <LeadEmailAttribution contactId={contact?.id} />
       </WidgetSection>
 
       {/* Presale Properties Activity */}

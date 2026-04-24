@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.mailerlite-api]
 verify_jwt = false
+
+[functions.crm-email-track]
+verify_jwt = false
