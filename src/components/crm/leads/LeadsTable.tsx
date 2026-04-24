@@ -583,11 +583,16 @@ export function LeadsTable({
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    contacts.forEach(c => (c.tags ?? []).forEach(t => { if (t) set.add(t); }));
-    return Array.from(set).sort();
-  }, [contacts]);
+  // Pull from the canonical crm_tags library so this row picker shows EVERY tag
+  // in the CRM (not just tags from the 50 contacts on the current page).
+  const { data: tagLibRaw = [] } = useCrmTags();
+  const tagLibrary = useMemo<TagLibItem[]>(
+    () =>
+      tagLibRaw
+        .map(t => ({ label: t.name, count: t.usage_count ?? 0 }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    [tagLibRaw],
+  );
 
   const allPageIds = contacts.map(c => c.id);
   const allSelected = contacts.length > 0 && contacts.every(c => selectedIds.includes(c.id));
@@ -685,7 +690,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} allTags={allTags} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} />
                       </td>
                     ))}
                   </tr>
