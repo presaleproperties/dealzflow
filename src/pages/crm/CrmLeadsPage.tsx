@@ -371,6 +371,18 @@ export default function CrmLeadsPage() {
                 {reorderMode ? 'Done' : 'Reorder'}
               </Button>
               <div className="hidden sm:flex items-center gap-2 flex-shrink-0 ml-1">
+                <Button
+                  variant={filtersExpanded ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-9 gap-1.5"
+                  onClick={() => setFiltersExpanded(!filtersExpanded)}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">{activeFilterCount}</Badge>
+                  )}
+                </Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9 gap-1.5">
@@ -420,24 +432,6 @@ export default function CrmLeadsPage() {
               ))}
             </div>
           )}
-
-          {/* Filter toggle (global search lives in the top nav) */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1" />
-
-            <Button
-              variant={filtersExpanded ? 'default' : 'outline'}
-              size="sm"
-              className="h-9 gap-1.5 shrink-0"
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              Filters
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">{activeFilterCount}</Badge>
-              )}
-            </Button>
-          </div>
 
           {/* Mobile: FAB Add Lead */}
           <button
