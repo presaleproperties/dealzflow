@@ -141,6 +141,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       setMode('edit');
       setAppendSignature(true);
       setSelectedSignatureId(null);
+      setEditingSignature(false);
+      setSigDraft('');
       autoSignaturePreviewedRef.current = false;
     }
   }, [open]);
