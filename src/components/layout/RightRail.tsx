@@ -304,15 +304,14 @@ export function RightRail() {
               </button>
             </div>
             <p className="text-[11.5px] text-muted-foreground mt-0.5">
-              Latest emails, WhatsApp & SMS conversations
+              Latest emails & SMS conversations
             </p>
           </SheetHeader>
 
           <Tabs defaultValue="all" className="flex flex-col h-[calc(100vh-92px)]">
-            <TabsList className="mx-5 mt-3 grid grid-cols-4 h-9 bg-[hsl(222_20%_14%)]">
+            <TabsList className="mx-5 mt-3 grid grid-cols-3 h-9 bg-[hsl(222_20%_14%)]">
               <TabsTrigger value="all" className="text-[11.5px]">All</TabsTrigger>
               <TabsTrigger value="email" className="text-[11.5px]">Email</TabsTrigger>
-              <TabsTrigger value="wa" className="text-[11.5px]">WhatsApp</TabsTrigger>
               <TabsTrigger value="sms" className="text-[11.5px]">SMS</TabsTrigger>
             </TabsList>
 
@@ -327,9 +326,6 @@ export function RightRail() {
                 </TabsContent>
                 <TabsContent value="email" className="m-0 space-y-1">
                   <CommunicationList feed={feed} kind="email" />
-                </TabsContent>
-                <TabsContent value="wa" className="m-0 space-y-1">
-                  <CommunicationList feed={feed} kind="wa" />
                 </TabsContent>
                 <TabsContent value="sms" className="m-0 space-y-1">
                   <CommunicationList feed={feed} kind="sms" />
@@ -432,14 +428,14 @@ function CommunicationList({
   feed,
   kind,
 }: {
-  feed: { emails: EmailRow[]; whatsapp: WaConvRow[]; messages: MessageRow[] } | undefined;
-  kind: 'all' | 'email' | 'wa' | 'sms';
+  feed: { emails: EmailRow[]; messages: MessageRow[] } | undefined;
+  kind: 'all' | 'email' | 'sms';
 }) {
   if (!feed) return null;
 
   type Item = {
     id: string;
-    type: 'email' | 'wa' | 'sms';
+    type: 'email' | 'sms';
     name: string;
     preview: string;
     time: string;
@@ -457,17 +453,6 @@ function CommunicationList({
       preview: e.subject || (e.body ?? '').slice(0, 80) || '(no subject)',
       time: e.sent_at,
       href: `/crm/leads/${e.contact_id}`,
-    }));
-  }
-  if (kind === 'all' || kind === 'wa') {
-    feed.whatsapp.forEach(w => items.push({
-      id: `w-${w.id}`,
-      type: 'wa',
-      name: fullName(w.contact) || w.phone_number,
-      preview: w.last_message_preview ?? '(no messages yet)',
-      time: w.last_message_at ?? '',
-      unread: (w.unread_count ?? 0) > 0,
-      href: `/crm/leads`,
     }));
   }
   if (kind === 'all' || kind === 'sms') {
@@ -492,8 +477,8 @@ function CommunicationList({
     );
   }
 
-  const iconFor = (t: Item['type']) => t === 'email' ? Mail : t === 'wa' ? MessageCircle : MessageSquare;
-  const colorFor = (t: Item['type']) => t === 'email' ? 'hsl(210 80% 60%)' : t === 'wa' ? 'hsl(140 60% 50%)' : 'hsl(280 60% 65%)';
+  const iconFor = (t: Item['type']) => t === 'email' ? Mail : MessageSquare;
+  const colorFor = (t: Item['type']) => t === 'email' ? 'hsl(210 80% 60%)' : 'hsl(280 60% 65%)';
 
   return items.slice(0, 30).map(item => {
     const Icon = iconFor(item.type);

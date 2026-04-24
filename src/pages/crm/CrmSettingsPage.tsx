@@ -581,7 +581,6 @@ function NotificationsSection() {
     showing_reminder: true,
     task_due: true,
     email_opened: false,
-    whatsapp_reply: true,
   };
 
   const [toggles, setToggles] = useState<Record<string, boolean>>(() => {

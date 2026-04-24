@@ -68,9 +68,7 @@ function LeadTopBar({
 }) {
   const typeLabel = TYPE_LABELS[contact.contact_type] ?? 'LEAD';
 
-  const openWhatsApp = () => {
-    if (contact.phone) window.open(`https://wa.me/${contact.phone.replace(/\D/g, '')}`, '_blank');
-  };
+
 
   return (
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
@@ -100,15 +98,6 @@ function LeadTopBar({
           disabled={!contact.phone}
         >
           <Phone className="w-3.5 h-3.5" /> Call
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={openWhatsApp}
-          disabled={!contact.phone}
-        >
-          <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
         </Button>
         <Button
           size="sm"

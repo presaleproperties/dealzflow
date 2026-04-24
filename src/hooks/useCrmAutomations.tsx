@@ -47,7 +47,6 @@ export const TRIGGER_TYPES = [
 
 export const ACTION_TYPES = [
   { value: 'send_email', label: 'Send Email', icon: 'Mail' },
-  { value: 'send_whatsapp', label: 'Send WhatsApp', icon: 'MessageCircle' },
   { value: 'wait', label: 'Wait', icon: 'Clock' },
   { value: 'assign_agent', label: 'Assign Agent', icon: 'UserPlus' },
   { value: 'update_status', label: 'Update Status', icon: 'RefreshCw' },
