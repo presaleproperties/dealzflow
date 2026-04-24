@@ -27,6 +27,7 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
+import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
 import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
 import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiagnostics';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
@@ -1016,8 +1017,13 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         <LeadEmailAttribution contactId={contact?.id} />
       </WidgetSection>
 
+      {/* Presale Properties — Signup Source */}
+      <WidgetSection title="Signup Source">
+        <PresaleSignupSourceCard contact={contact} />
+      </WidgetSection>
+
       {/* Presale Properties Activity */}
-      <WidgetSection title="Presale Activity">
+      <WidgetSection title="Web Behavior">
         <PresaleActivityWidget contactId={contact?.id} />
       </WidgetSection>
 
