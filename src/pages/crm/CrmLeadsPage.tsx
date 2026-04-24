@@ -120,6 +120,7 @@ export default function CrmLeadsPage() {
   const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
   const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
   const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [filterExcludeTags, setFilterExcludeTags] = useState<string[]>([]);
   const [filterPropertyType, setFilterPropertyType] = useState<string[]>([]);
   const [filterCity, setFilterCity] = useState<string[]>([]);
   const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
@@ -178,6 +179,7 @@ export default function CrmLeadsPage() {
       leadTypes: filterLeadType,
       languages: filterLanguage,
       tags: filterTags,
+      excludeTags: filterExcludeTags,
       propertyTypes: filterPropertyType,
       cities: filterCity,
       preApproved: filterPreApproved,
@@ -202,6 +204,7 @@ export default function CrmLeadsPage() {
     filterLeadType.length > 0 ? 1 : 0,
     filterLanguage.length > 0 ? 1 : 0,
     filterTags.length > 0 ? 1 : 0,
+    filterExcludeTags.length > 0 ? 1 : 0,
     filterPropertyType.length > 0 ? 1 : 0,
     filterCity.length > 0 ? 1 : 0,
     filterPreApproved.length > 0 ? 1 : 0,
@@ -211,6 +214,7 @@ export default function CrmLeadsPage() {
   const clearAllFilters = () => {
     setFilterContactType(''); setFilterStatus([]); setFilterSource([]); setFilterAgent([]);
     setFilterProject([]); setFilterLeadType([]); setFilterLanguage([]); setFilterTags([]);
+    setFilterExcludeTags([]);
     setFilterPropertyType([]); setFilterCity([]); setFilterPreApproved([]); setFilterCampaign([]);
     setLetterFilter(''); setPage(1);
   };
@@ -221,6 +225,7 @@ export default function CrmLeadsPage() {
       source: () => setFilterSource([]), agent: () => setFilterAgent([]),
       project: () => setFilterProject([]), leadType: () => setFilterLeadType([]),
       language: () => setFilterLanguage([]), tags: () => setFilterTags([]),
+      excludeTags: () => setFilterExcludeTags([]),
       propertyType: () => setFilterPropertyType([]), city: () => setFilterCity([]),
       preApproved: () => setFilterPreApproved([]), campaign: () => setFilterCampaign([]),
     };
@@ -270,6 +275,7 @@ export default function CrmLeadsPage() {
     { key: 'leadType', label: 'Lead Type', values: filterLeadType },
     { key: 'language', label: 'Language', values: filterLanguage },
     { key: 'tags', label: 'Tags', values: filterTags },
+    { key: 'excludeTags', label: 'Excluded Tags', values: filterExcludeTags },
     { key: 'propertyType', label: 'Prop Type', values: filterPropertyType },
     { key: 'city', label: 'City', values: filterCity },
     { key: 'preApproved', label: 'Pre-Approved', values: filterPreApproved },
@@ -528,6 +534,8 @@ export default function CrmLeadsPage() {
           setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
           filterTags={filterTags}
           setFilterTags={v => { setFilterTags(v); setPage(1); }}
+          filterExcludeTags={filterExcludeTags}
+          setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
           filterPropertyType={filterPropertyType}
           setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
           filterCity={filterCity}

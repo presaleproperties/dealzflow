@@ -51,6 +51,7 @@ interface PaginatedFilters {
   leadTypes: string[];
   languages: string[];
   tags: string[];
+  excludeTags?: string[];
   propertyTypes?: string[];
   cities?: string[];
   preApproved?: string[];
@@ -120,6 +121,12 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
       }
       if (filters.tags.length > 0) {
         query = query.overlaps('tags', filters.tags);
+      }
+      if (filters.excludeTags && filters.excludeTags.length > 0) {
+        // Exclude any contact whose tags array overlaps with the excluded set.
+        // PostgREST: not('tags', 'ov', '{a,b}')
+        const escaped = filters.excludeTags.map(t => `"${t.replace(/"/g, '\\"')}"`).join(',');
+        query = query.not('tags', 'ov', `{${escaped}}`);
       }
       if (filters.propertyTypes && filters.propertyTypes.length > 0) {
         query = query.in('property_type_pref', filters.propertyTypes);

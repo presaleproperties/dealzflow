@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, UserCheck, Tag, ArrowRightLeft, X } from 'lucide-react';
+import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail } from 'lucide-react';
 import { useBulkUpdateContacts, useBulkDeleteContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -14,12 +15,20 @@ interface BulkActionsBarProps {
 }
 
 export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBarProps) {
+  const navigate = useNavigate();
   const bulkUpdate = useBulkUpdateContacts();
   const bulkDelete = useBulkDeleteContacts();
   const [showDelete, setShowDelete] = useState(false);
 
   const count = selectedIds.length;
   if (count === 0) return null;
+
+  const handleSendEmail = () => {
+    // Hand off the filtered/selected lead IDs to the Email Center compose tab.
+    // ComposeTab reads ?contactIds=... and treats them as a fixed campaign recipient list.
+    const ids = selectedIds.join(',');
+    navigate(`/crm/email?tab=compose&contactIds=${encodeURIComponent(ids)}`);
+  };
 
   const handleAssign = (agent: string) => {
     bulkUpdate.mutate({ ids: selectedIds, updates: { assigned_to: agent } });
@@ -46,6 +55,16 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         </Button>
 
         <div className="h-4 w-px bg-border mx-1" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSendEmail}
+          className="h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+        >
+          <Mail className="w-3.5 h-3.5" />
+          Send Email
+        </Button>
 
         <Select onValueChange={handleAssign}>
           <SelectTrigger className="h-8 w-auto gap-1 text-xs border-0 bg-transparent hover:bg-muted">

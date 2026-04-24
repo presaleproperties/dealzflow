@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code, Lock } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,8 +45,29 @@ export function ComposeTab() {
   const addMessage = useAddCrmMessage();
   const { data: emailSettings } = useEmailSettings();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [mode, setMode] = useState<SendMode>('individual');
+  // Locked recipient list — populated when navigated from Leads bulk bar with ?contactIds=...
+  // While locked, the filter UI is replaced by a banner showing the fixed recipient count.
+  const lockedIds = useMemo(() => {
+    const raw = searchParams.get('contactIds');
+    if (!raw) return null;
+    const ids = raw.split(',').map(s => s.trim()).filter(Boolean);
+    return ids.length > 0 ? new Set(ids) : null;
+  }, [searchParams]);
+
+  const [mode, setMode] = useState<SendMode>(lockedIds ? 'campaign' : 'individual');
+
+  // If a locked list arrives mid-session, force campaign mode.
+  useEffect(() => {
+    if (lockedIds && mode !== 'campaign') setMode('campaign');
+  }, [lockedIds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const clearLockedIds = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('contactIds');
+    setSearchParams(next, { replace: true });
+  };
 
   // Individual mode
   const [searchTo, setSearchTo] = useState('');
@@ -104,22 +125,27 @@ export function ComposeTab() {
   // Campaign recipients
   const campaignRecipients = useMemo(() => {
     let list = contacts;
-    if (filterContactType) list = list.filter(c => c.contact_type === filterContactType);
-    if (filterStatus.length > 0) list = list.filter(c => c.status && filterStatus.includes(c.status));
-    if (filterSource.length > 0) list = list.filter(c => c.source && filterSource.includes(c.source));
-    if (filterAgent.length > 0) list = list.filter(c => c.assigned_to && filterAgent.includes(c.assigned_to));
-    if (filterProject.length > 0) list = list.filter(c =>
-      filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
-    );
-    if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
-    if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
-    if (filterTags.length > 0) list = list.filter(c =>
-      filterTags.some(ft => (c.tags ?? []).includes(ft))
-    );
+    // Locked-list mode: ignore the filter UI and only use the IDs handed off from Leads.
+    if (lockedIds) {
+      list = list.filter(c => lockedIds.has(c.id));
+    } else {
+      if (filterContactType) list = list.filter(c => c.contact_type === filterContactType);
+      if (filterStatus.length > 0) list = list.filter(c => c.status && filterStatus.includes(c.status));
+      if (filterSource.length > 0) list = list.filter(c => c.source && filterSource.includes(c.source));
+      if (filterAgent.length > 0) list = list.filter(c => c.assigned_to && filterAgent.includes(c.assigned_to));
+      if (filterProject.length > 0) list = list.filter(c =>
+        filterProject.some(fp => (c.projects ?? []).includes(fp) || c.project === fp)
+      );
+      if (filterLeadType.length > 0) list = list.filter(c => c.lead_type && filterLeadType.includes(c.lead_type));
+      if (filterLanguage.length > 0) list = list.filter(c => c.language && filterLanguage.includes(c.language));
+      if (filterTags.length > 0) list = list.filter(c =>
+        filterTags.some(ft => (c.tags ?? []).includes(ft))
+      );
+    }
     list = list.filter(c => c.email);
     list = list.filter(c => !excludedIds.has(c.id));
     return list;
-  }, [contacts, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags, excludedIds]);
+  }, [contacts, lockedIds, filterContactType, filterStatus, filterSource, filterAgent, filterProject, filterLeadType, filterLanguage, filterTags, excludedIds]);
 
   const totalEmailAddresses = useMemo(() => {
     let count = campaignRecipients.length;
@@ -295,23 +321,41 @@ export function ComposeTab() {
 
           {filtersExpanded && (
             <div className="space-y-3">
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
-                <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
-              </div>
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
-                <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
-              </div>
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
-                <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
-              </div>
-              <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
-                <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
-              </div>
-
+              {lockedIds ? (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <Lock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground">
+                      Recipients locked from Leads selection
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {campaignRecipients.length} contact{campaignRecipients.length === 1 ? '' : 's'} with email · use the exclude box below to drop any individuals
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={clearLockedIds}>
+                    Use filters instead
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
+                    <MultiSelectFilter label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
+                  </div>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <MultiSelectFilter label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
+                    <MultiSelectFilter label="Assigned To" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
+                  </div>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
+                    <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
+                  </div>
+                  <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
+                    <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
+                  </div>
+                </>
+              )}
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="include-alt" checked={includeAltEmails} onCheckedChange={(v) => setIncludeAltEmails(!!v)} />
                 <label htmlFor="include-alt" className="text-xs text-foreground cursor-pointer">Include spouse/alt emails</label>
