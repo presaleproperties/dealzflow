@@ -91,8 +91,41 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
     }
   }, []);
 
-  useEffect(() => { updateIframe(iframeRef, htmlContent); }, [htmlContent, previewWidth, updateIframe]);
-  useEffect(() => { if (fullPreview) updateIframe(fullIframeRef, htmlContent); }, [htmlContent, fullPreview, updateIframe]);
+  const renderedHtml = useMemo(
+    () => (withSampleData ? renderWithSampleData(htmlContent) : htmlContent),
+    [htmlContent, withSampleData],
+  );
+
+  useEffect(() => { updateIframe(iframeRef, renderedHtml); }, [renderedHtml, previewWidth, updateIframe]);
+  useEffect(() => { if (fullPreview) updateIframe(fullIframeRef, renderedHtml); }, [renderedHtml, fullPreview, updateIframe]);
+
+  /** Insert a snippet at the caret of whichever input was last focused. */
+  const insertSnippet = useCallback((snippet: string) => {
+    if (lastFocused.current === 'subject') {
+      const el = subjectRef.current;
+      if (!el) { setSubject(s => s + snippet); return; }
+      const start = el.selectionStart ?? subject.length;
+      const end = el.selectionEnd ?? subject.length;
+      const next = subject.slice(0, start) + snippet + subject.slice(end);
+      setSubject(next);
+      requestAnimationFrame(() => {
+        el.focus();
+        el.selectionStart = el.selectionEnd = start + snippet.length;
+      });
+      return;
+    }
+    const el = htmlRef.current;
+    if (!el) { setHtmlContent(h => h + snippet); return; }
+    const start = el.selectionStart ?? htmlContent.length;
+    const end = el.selectionEnd ?? htmlContent.length;
+    const next = htmlContent.slice(0, start) + snippet + htmlContent.slice(end);
+    setHtmlContent(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.selectionStart = el.selectionEnd = start + snippet.length;
+    });
+  }, [htmlContent, subject]);
+
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Name is required'); return; }
