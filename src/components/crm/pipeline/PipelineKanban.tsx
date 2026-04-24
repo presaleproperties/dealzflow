@@ -121,7 +121,7 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
           )}
 
           {/* Tags row: project + city + pre-approved */}
-          {(contact.project || cityPref || contact.is_pre_approved) && (
+          {(contact.project || cityPref || isPreApproved) && (
             <div className="flex flex-wrap items-center gap-1 mb-2">
               {contact.project && (
                 <Badge
@@ -138,7 +138,7 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
                   {cityPref}
                 </span>
               )}
-              {contact.is_pre_approved && (
+              {isPreApproved && (
                 <Badge
                   variant="outline"
                   className="border-0 text-[10px] font-semibold h-4 px-1.5"
