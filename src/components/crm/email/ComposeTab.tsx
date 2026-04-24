@@ -544,17 +544,26 @@ export function ComposeTab() {
         </div>
       )}
 
-      {/* Send button */}
-      <div className="flex justify-end sm:static sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
+      {/* Schedule + Send */}
+      <div className="space-y-2 sm:flex sm:items-end sm:justify-between sm:space-y-0 sm:gap-3 sticky bottom-0 pb-3 sm:pb-0 pt-2 bg-background sm:bg-transparent">
+        <div className="flex-1 max-w-xs">
+          <Label className="text-xs text-muted-foreground">Schedule (optional)</Label>
+          <Input
+            type="datetime-local"
+            value={scheduleAt}
+            onChange={(e) => setScheduleAt(e.target.value)}
+            className="h-9 text-xs"
+          />
+        </div>
         <Button
           className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto min-h-[44px]"
           disabled={!canSend || isSending}
           onClick={handleSend}
         >
           <Send className="w-4 h-4" />
-          {mode === 'campaign'
-            ? `Send to ${campaignRecipients.length} contacts`
-            : isSending ? 'Sending...' : 'Send Email'}
+          {isSending ? 'Sending…'
+            : scheduleAt ? (mode === 'campaign' ? `Schedule for ${campaignRecipients.length} contacts` : 'Schedule Email')
+            : mode === 'campaign' ? `Send to ${campaignRecipients.length} contacts` : 'Send Email'}
         </Button>
       </div>
 
