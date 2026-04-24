@@ -254,18 +254,30 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       return;
     }
     const block = `<br/><br/>${sigHtml}`;
+    // Detect rich HTML (tables/inline styles/images) — Tiptap StarterKit
+    // would flatten these to plain text in edit mode, so route to HTML/Preview.
+    const isRich = /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(sigHtml)
+      || /<[a-z][^>]*\sstyle\s*=/i.test(sigHtml);
+
     if (mode === 'html' && htmlTextareaRef.current) {
       const ta = htmlTextareaRef.current;
       const start = ta.selectionStart ?? ta.value.length;
       const end = ta.selectionEnd ?? ta.value.length;
       const next = ta.value.slice(0, start) + block + ta.value.slice(end);
       setBodyHtml(next);
-      // Restore caret after React updates
       requestAnimationFrame(() => {
         ta.focus();
         const pos = start + block.length;
         ta.setSelectionRange(pos, pos);
       });
+    } else if (mode === 'edit' && isRich) {
+      // Append, then switch to Preview so the rich signature renders intact
+      // instead of being stripped to plain text by the rich text editor.
+      setBodyHtml((prev) => `${prev || ''}${block}`);
+      setMode('preview');
+      toast.success(`Inserted "${sigName}" — switched to Preview to keep formatting`);
+      setAppendSignature(false);
+      return;
     } else {
       setBodyHtml((prev) => `${prev || ''}${block}`);
     }
