@@ -315,6 +315,39 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_ad_spend: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          spend_date: string
+          utm_campaign: string | null
+          utm_source: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          spend_date: string
+          utm_campaign?: string | null
+          utm_source: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          spend_date?: string
+          utm_campaign?: string | null
+          utm_source?: string
+        }
+        Relationships: []
+      }
       crm_automation_logs: {
         Row: {
           action_result: string
@@ -652,6 +685,45 @@ export type Database = {
           },
         ]
       }
+      crm_email_audit_runs: {
+        Row: {
+          duration_ms: number | null
+          errors: Json | null
+          id: string
+          projects_sampled: number
+          ran_at: string
+          status: string
+          template_key: string
+          total_errors: number
+          total_links: number
+          trigger_source: string | null
+        }
+        Insert: {
+          duration_ms?: number | null
+          errors?: Json | null
+          id?: string
+          projects_sampled?: number
+          ran_at?: string
+          status: string
+          template_key: string
+          total_errors?: number
+          total_links?: number
+          trigger_source?: string | null
+        }
+        Update: {
+          duration_ms?: number | null
+          errors?: Json | null
+          id?: string
+          projects_sampled?: number
+          ran_at?: string
+          status?: string
+          template_key?: string
+          total_errors?: number
+          total_links?: number
+          trigger_source?: string | null
+        }
+        Relationships: []
+      }
       crm_email_campaigns: {
         Row: {
           body_html: string | null
@@ -693,6 +765,73 @@ export type Database = {
           subject?: string
         }
         Relationships: []
+      }
+      crm_email_jobs: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          step_id: string | null
+          template_id: string | null
+          to_email: string
+          to_name: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          step_id?: string | null
+          template_id?: string | null
+          to_email: string
+          to_name?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          step_id?: string | null
+          template_id?: string | null
+          to_email?: string
+          to_name?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_jobs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_email_jobs_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_workflow_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_email_jobs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_email_log: {
         Row: {
@@ -806,6 +945,89 @@ export type Database = {
           },
         ]
       }
+      crm_email_send_log: {
+        Row: {
+          campaign_id: string | null
+          click_count: number
+          clicked_at: string | null
+          clicked_url: string | null
+          contact_id: string | null
+          created_at: string
+          email_to: string
+          error_message: string | null
+          id: string
+          last_clicked_at: string | null
+          last_opened_at: string | null
+          metadata: Json | null
+          open_count: number
+          opened_at: string | null
+          presale_message_id: string | null
+          recipient_name: string | null
+          sent_at: string
+          status: string
+          subject: string
+          template_id: string | null
+          template_type: string | null
+          tracking_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          click_count?: number
+          clicked_at?: string | null
+          clicked_url?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email_to: string
+          error_message?: string | null
+          id?: string
+          last_clicked_at?: string | null
+          last_opened_at?: string | null
+          metadata?: Json | null
+          open_count?: number
+          opened_at?: string | null
+          presale_message_id?: string | null
+          recipient_name?: string | null
+          sent_at?: string
+          status?: string
+          subject: string
+          template_id?: string | null
+          template_type?: string | null
+          tracking_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          click_count?: number
+          clicked_at?: string | null
+          clicked_url?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email_to?: string
+          error_message?: string | null
+          id?: string
+          last_clicked_at?: string | null
+          last_opened_at?: string | null
+          metadata?: Json | null
+          open_count?: number
+          opened_at?: string | null
+          presale_message_id?: string | null
+          recipient_name?: string | null
+          sent_at?: string
+          status?: string
+          subject?: string
+          template_id?: string | null
+          template_type?: string | null
+          tracking_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_send_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_email_settings: {
         Row: {
           created_at: string
@@ -899,6 +1121,80 @@ export type Database = {
           sync_hash?: string | null
           times_used?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      crm_email_workflow_steps: {
+        Row: {
+          created_at: string
+          delay_minutes: number
+          id: string
+          is_active: boolean
+          step_order: number
+          template_id: string | null
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          is_active?: boolean
+          step_order: number
+          template_id?: string | null
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          is_active?: boolean
+          step_order?: number
+          template_id?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_workflow_steps_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_email_workflows: {
+        Row: {
+          audience_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          trigger_event: string
+          updated_at: string
+          workflow_key: string
+        }
+        Insert: {
+          audience_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          trigger_event: string
+          updated_at?: string
+          workflow_key: string
+        }
+        Update: {
+          audience_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          trigger_event?: string
+          updated_at?: string
+          workflow_key?: string
         }
         Relationships: []
       }
