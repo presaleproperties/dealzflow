@@ -48,6 +48,24 @@ export function LeadEmailHistory({ contactId }: { contactId: string }) {
                   }`}>
                     {email.direction === 'outbound' ? 'Sent' : 'Received'}
                   </span>
+                  {email.direction === 'outbound' && (email.open_count ?? 0) > 0 && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-600 inline-flex items-center gap-1"
+                      title={email.last_opened_at ? `Last opened ${format(new Date(email.last_opened_at), 'MMM d, h:mm a')}` : 'Opened'}
+                    >
+                      <Eye className="w-3 h-3" />
+                      {email.open_count} open{email.open_count === 1 ? '' : 's'}
+                    </span>
+                  )}
+                  {email.direction === 'outbound' && (email.click_count ?? 0) > 0 && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-blue-500/10 text-blue-600 inline-flex items-center gap-1"
+                      title={email.last_clicked_at ? `Last clicked ${format(new Date(email.last_clicked_at), 'MMM d, h:mm a')}` : 'Clicked'}
+                    >
+                      <MousePointerClick className="w-3 h-3" />
+                      {email.click_count} click{email.click_count === 1 ? '' : 's'}
+                    </span>
+                  )}
                 </div>
                 {email.body && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{email.body}</p>
