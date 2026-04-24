@@ -194,7 +194,7 @@ export default function CrmTemplatesPage() {
         <div className="flex items-center gap-2">
           <Globe className="w-4 h-4 text-primary" />
           <span className="text-xs font-medium text-foreground">Unified Template Library</span>
-          <span className="text-xs text-muted-foreground hidden sm:inline">— synced with presaleproperties.com admin</span>
+          <span className="text-xs text-muted-foreground hidden sm:inline">— shared library, kept in sync via the bridge</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span>{total} templates</span>
