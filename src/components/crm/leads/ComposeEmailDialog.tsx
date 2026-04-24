@@ -464,6 +464,46 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     </div>
                   </PopoverContent>
                 </Popover>
+
+                {/* Insert signature at cursor */}
+                {signatures.length > 0 && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5">
+                        <PenSquare className="h-3.5 w-3.5" />
+                        Insert signature
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-[300px] p-0 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-border bg-muted/30">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Saved signatures
+                        </p>
+                      </div>
+                      <div className="max-h-[320px] overflow-y-auto py-1">
+                        {signatures.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => insertSignature(s.html, s.name)}
+                            className="w-full text-left px-3 py-2 hover:bg-accent/60 focus:bg-accent/60 focus:outline-none transition-colors flex items-center justify-between gap-2"
+                          >
+                            <span className="text-xs font-medium truncate">{s.name}</span>
+                            {s.is_default && (
+                              <span className="text-[9px] uppercase tracking-wider text-muted-foreground shrink-0">
+                                Default
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="px-3 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
+                        Inserts at the cursor (HTML mode) or end of body. Auto-append turns off.
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
             </DialogTitle>
           </DialogHeader>
