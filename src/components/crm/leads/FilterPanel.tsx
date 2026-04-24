@@ -180,12 +180,15 @@ export function FilterPanel({
   useEffect(() => {
     if (open) {
       setMounted(true);
-      // next tick so transition picks up the change
-      const id = requestAnimationFrame(() => setVisible(true));
-      return () => cancelAnimationFrame(id);
+      // double rAF guarantees the initial (hidden) styles paint before transitioning
+      const id1 = requestAnimationFrame(() => {
+        const id2 = requestAnimationFrame(() => setVisible(true));
+        (setVisible as any)._id2 = id2;
+      });
+      return () => cancelAnimationFrame(id1);
     } else {
       setVisible(false);
-      const t = setTimeout(() => setMounted(false), 280);
+      const t = setTimeout(() => setMounted(false), 360);
       return () => clearTimeout(t);
     }
   }, [open]);
@@ -196,8 +199,10 @@ export function FilterPanel({
     <div
       className={cn(
         'w-[280px] shrink-0 border-l border-border/40 bg-card/80 backdrop-blur-sm flex flex-col h-full ml-3 rounded-l-xl',
-        'transform-gpu transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform',
-        visible ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0',
+        'transform-gpu transition-[transform,opacity,filter] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+        visible
+          ? 'translate-x-0 opacity-100 blur-0'
+          : 'translate-x-8 opacity-0 blur-[2px]',
       )}
     >
       {/* Header */}
