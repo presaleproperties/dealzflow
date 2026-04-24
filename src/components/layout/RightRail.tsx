@@ -209,11 +209,34 @@ function RailButton({
   );
 }
 
+const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+
 export function RightRail() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const { isMember: isCrmMember } = useCrmAccess();
   const [panel, setPanel] = useState<CommsPanel>(null);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+
+  const { theme, setTheme } = useTheme();
+  const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings({ silent: true });
+
+  // Restore theme from DB
+  useEffect(() => {
+    if (settings?.theme && settings.theme !== theme) setTheme(settings.theme);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings?.theme]);
+
+  function cycleTheme() {
+    const current = (theme as 'light' | 'dark' | 'system') ?? 'system';
+    const idx = THEME_CYCLE.indexOf(current);
+    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
+    setTheme(next);
+    if (user) updateSettings.mutate({ theme: next });
+  }
+  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+  const themeLabel = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
 
   const { data: inboxUnread = 0 } = useUnreadInboxCount(!!user);
   const { data: notifUnread = 0 } = useUnreadNotificationsCount(!!user);
@@ -242,32 +265,68 @@ export function RightRail() {
         style={{
           background: RAIL_BG,
           borderLeft: `1px solid ${RAIL_BORDER}`,
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 60px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
         }}
       >
-        {/* Profile avatar */}
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <Link to="/settings" className="mb-2" aria-label="Account">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white border transition-transform hover:scale-105"
-                style={{
-                  background: GOLD,
-                  borderColor: 'hsl(222 20% 18%)',
-                }}
-              >
-                {initials}
-              </div>
+        {/* Account dropdown */}
+        <DropdownMenu>
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <button className="mb-2 focus:outline-none" aria-label="Account">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white border transition-transform hover:scale-105"
+                    style={{ background: GOLD, borderColor: 'hsl(var(--border))' }}
+                  >
+                    {initials}
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs font-medium">{user.email}</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent
+            side="left"
+            align="start"
+            sideOffset={8}
+            className="p-1.5 min-w-[220px]"
+          >
+            <div className="px-2.5 py-2 mb-1 border-b border-border">
+              <div className="text-[11px] text-muted-foreground">Signed in as</div>
+              <div className="text-[12.5px] font-medium truncate text-foreground">{user.email}</div>
+            </div>
+            <Link
+              to="/settings"
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-foreground hover:bg-muted transition-colors"
+            >
+              <Cog className="w-4 h-4" strokeWidth={1.8} />
+              Settings
             </Link>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="text-xs font-medium">{user.email}</TooltipContent>
-        </Tooltip>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-warning hover:bg-warning/10 transition-colors"
+              >
+                <ShieldAlert className="w-4 h-4" strokeWidth={1.8} />
+                Admin
+              </Link>
+            )}
+            <button
+              onClick={() => setSignOutOpen(true)}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4" strokeWidth={1.8} />
+              Sign out
+            </button>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <div className="w-7 h-px my-1.5" style={{ background: 'hsl(222 20% 16%)' }} />
+        <div className="w-7 h-px my-1.5" style={{ background: RAIL_BORDER }} />
 
+        {/* Primary actions */}
         <div className="flex flex-col items-center gap-1 mt-1">
+          <RailButton icon={Search} label="Search" onClick={() => { /* placeholder for future cmd palette */ }} />
           <RailButton icon={Sparkles} label="AI Assistant" to="/dashboard" />
-          <RailButton icon={Phone} label="Calls" to={isCrmMember ? '/crm/leads' : '/dashboard'} />
           <RailButton
             icon={Inbox}
             label="Inbox & Conversations"
@@ -284,16 +343,51 @@ export function RightRail() {
             active={panel === 'notifications'}
             accent="red"
           />
+          <RailButton icon={Phone} label="Calls" to={isCrmMember ? '/crm/leads' : '/dashboard'} />
         </div>
 
         <div className="flex-1" />
 
+        {/* Utility footer */}
         <div className="flex flex-col items-center gap-1 mb-3">
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={cycleTheme}
+                aria-label={`Theme: ${themeLabel}. Click to cycle.`}
+                className="w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-200 group hover:bg-muted/60"
+                style={{ color: ICON_INACTIVE }}
+              >
+                <ThemeIcon className="w-[17px] h-[17px] transition-transform duration-200 group-hover:scale-110" strokeWidth={1.7} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs font-medium">Theme: {themeLabel}</TooltipContent>
+          </Tooltip>
           <RailButton icon={HelpCircle} label="Help & Support" to="/settings" />
-          <RailButton icon={Cog} label="Settings" to="/settings" />
-          {isAdmin && <RailButton icon={Cog} label="Admin" to="/admin" active={false} />}
+          <RailButton icon={Cog} label="Settings" to="/settings" active={false} />
         </div>
       </aside>
+
+      {/* Sign out confirmation */}
+      <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll need to sign back in to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setSignOutOpen(false); signOut(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Slide-over: Inbox / Communications */}
       <Sheet open={panel === 'inbox'} onOpenChange={(o) => !o && setPanel(null)}>
