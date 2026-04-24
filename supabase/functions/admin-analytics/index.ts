@@ -60,7 +60,10 @@ serve(async (req) => {
       action: "view_users",
       details: null,
       ip_address: req.headers.get("x-forwarded-for") ?? req.headers.get("cf-connecting-ip") ?? null,
-    }).then(() => {}).catch((e: unknown) => console.warn("[audit] Failed to write log:", e));
+    }).then(
+      () => {},
+      (e: unknown) => console.warn("[audit] Failed to write log:", e)
+    );
 
     // Fetch all profiles (including ban state)
     const { data: profiles, error: allProfilesError } = await supabaseAdmin
