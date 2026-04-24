@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import type { CrmContact } from './useCrmContacts';
+import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
 
 export function useCrmContact(id: string | undefined) {
   const queryClient = useQueryClient();
@@ -17,7 +18,7 @@ export function useCrmContact(id: string | undefined) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as CrmContact;
+      return normalizeCrmContactArrays(data) as CrmContact;
     },
     enabled: !!id,
   });
@@ -91,8 +92,10 @@ export function useUpdateCrmContact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, updates, oldValues }: { id: string; updates: Record<string, unknown>; oldValues?: Record<string, unknown> }) => {
-      // Auto-set status to Closed when contact_type is changed to past_client
       const finalUpdates = { ...updates };
+      if ('tags' in finalUpdates) finalUpdates.tags = normalizeCrmMultiValueList(finalUpdates.tags);
+      if ('projects' in finalUpdates) finalUpdates.projects = normalizeCrmMultiValueList(finalUpdates.projects);
+
       if (finalUpdates.contact_type === 'past_client') {
         finalUpdates.status = 'Closed';
         if (!finalUpdates.status_changed_at) {

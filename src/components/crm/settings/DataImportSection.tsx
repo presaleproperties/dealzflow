@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { normalizeCrmMultiValueList, splitCrmMultiValue } from '@/lib/crmMultiValue';
 
 const CRM_FIELDS = [
   { value: '__skip__', label: '— Skip —' },
@@ -142,10 +143,8 @@ const AUTO_MAP: Record<string, string> = {
   'preferred city': 'city_pref',
 };
 
-// Array fields that should be split from CSV multi-value cells
 const ARRAY_FIELDS = new Set(['tags', 'projects']);
 const BOOLEAN_FIELDS = new Set(['is_pre_approved']);
-const MULTI_VALUE_DELIMITER_REGEX = /[|,;\n]+/;
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
@@ -216,29 +215,6 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
 
   const [headers, ...rows] = parsedRows;
   return { headers, rows };
-}
-
-function parseMultiValueCell(value: string): string[] {
-  return Array.from(
-    new Map(
-      value
-        .split(MULTI_VALUE_DELIMITER_REGEX)
-        .map(item => item.trim().replace(/^['"]+|['"]+$/g, ''))
-        .filter(Boolean)
-        .map(item => [item.toLowerCase(), item])
-    ).values()
-  );
-}
-
-function normalizeMultiValueList(values: unknown): string[] {
-  if (!Array.isArray(values)) return [];
-  return Array.from(
-    new Map(
-      values
-        .flatMap(value => parseMultiValueCell(String(value ?? '')))
-        .map(item => [item.toLowerCase(), item])
-    ).values()
-  );
 }
 
 export default function DataImportSection() {
@@ -328,7 +304,7 @@ export default function DataImportSection() {
           const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
           if (!isNaN(num)) record[field] = num;
         } else if (ARRAY_FIELDS.has(field)) {
-          record[field] = parseMultiValueCell(val);
+          record[field] = splitCrmMultiValue(val);
         } else if (field === 'contact_type') {
           const normalized = val.toLowerCase().trim();
           if (['lead', 'realtor', 'past_client'].includes(normalized)) {
@@ -400,16 +376,17 @@ export default function DataImportSection() {
 
       if (existingId) {
         // Merge tags + projects, don't overwrite other fields
-        const incomingTags = normalizeMultiValueList(rec.tags);
-        const incomingProjects = normalizeMultiValueList(rec.projects);
+        const incomingTags = normalizeCrmMultiValueList(rec.tags);
+        const incomingProjects = normalizeCrmMultiValueList(rec.projects);
+        const existingNormalizedTags = normalizeCrmMultiValueList(existingTags);
         const mergedTags = Array.from(
           new Map(
-            [...normalizeMultiValueList(existingTags), ...incomingTags].map(tag => [tag.toLowerCase(), tag])
+            [...existingNormalizedTags, ...incomingTags].map(tag => [tag.toLowerCase(), tag])
           ).values()
         );
 
         const updates: Record<string, unknown> = {};
-        if (JSON.stringify(mergedTags) !== JSON.stringify(normalizeMultiValueList(existingTags))) {
+        if (JSON.stringify(mergedTags) !== JSON.stringify(existingNormalizedTags)) {
           updates.tags = mergedTags;
         }
         if (incomingProjects.length > 0) {
@@ -418,7 +395,7 @@ export default function DataImportSection() {
             .select('projects')
             .eq('id', existingId)
             .maybeSingle();
-          const existingProjects = normalizeMultiValueList(cur?.projects);
+          const existingProjects = normalizeCrmMultiValueList(cur?.projects);
           const mergedProjects = Array.from(
             new Map([...existingProjects, ...incomingProjects].map(project => [project.toLowerCase(), project])).values()
           );

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CrmContact } from './useCrmContacts';
+import { normalizeCrmContactArrays } from '@/lib/crmMultiValue';
 
 function applyJsonFilters(query: any, filters: Record<string, unknown>) {
   if (!filters || Object.keys(filters).length === 0) return query;
@@ -28,7 +29,6 @@ function applyJsonFilters(query: any, filters: Record<string, unknown>) {
 export type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'last_touch_at' | 'created_at';
 export type SortDir = 'asc' | 'desc';
 
-// Map frontend sort keys to actual DB columns
 const SORT_COLUMN_MAP: Record<SortKey, string> = {
   name: 'first_name',
   phone: 'phone',
@@ -92,13 +92,11 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         .from('crm_contacts')
         .select('*', { count: 'exact' });
 
-      // Search across name, email, phone
       if (filters.search) {
         const q = `%${filters.search}%`;
         query = query.or(`first_name.ilike.${q},last_name.ilike.${q},email.ilike.${q},phone.ilike.${q}`);
       }
 
-      // Filters
       if (filters.contactType) {
         query = query.eq('contact_type', filters.contactType);
       }
@@ -112,7 +110,6 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = query.in('assigned_to', filters.agents);
       }
       if (filters.projects.length > 0) {
-        // Match contacts whose projects array overlaps with filter
         query = query.overlaps('projects', filters.projects);
       }
       if (filters.leadTypes.length > 0) {
@@ -131,86 +128,62 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         query = query.in('city_pref', filters.cities);
       }
       if (filters.preApproved && filters.preApproved.length > 0) {
-        // values arrive as 'yes' / 'no'
         if (filters.preApproved.length === 1) {
           query = query.eq('is_pre_approved', filters.preApproved[0] === 'yes');
         }
-        // when both selected, no filter (matches all)
       }
       if (filters.campaigns && filters.campaigns.length > 0) {
         query = query.in('campaign_source', filters.campaigns);
       }
-
-      // A-Z letter filter
       if (filters.letterFilter) {
         query = query.ilike('last_name', `${filters.letterFilter}%`);
       }
-
-      // Pipeline view filter
       if (filters.pipelineView === 'active') {
         query = query.not('status', 'in', '("Closed","Lost / Cold")');
       }
-
-      // Saved view filters
       if (filters.savedViewFilters) {
         query = applyJsonFilters(query, filters.savedViewFilters);
       }
-
-      // Uncontacted 7+ days special filter
       if (filters.uncontacted7) {
         const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
         query = query.or(`last_touch_at.is.null,last_touch_at.lt.${sevenDaysAgo}`);
       }
-
-      // Stale 30+ days
       if (filters.stale30) {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
         query = query.or(`last_touch_at.is.null,last_touch_at.lt.${thirtyDaysAgo}`);
       }
-
-      // High score leads
       if (filters.highScore) {
         query = query.gte('lead_score', 70);
       }
-
-      // Birthday this month
       if (filters.birthdayMonth) {
         const month = new Date().getMonth() + 1;
         const monthStr = String(month).padStart(2, '0');
         query = query.not('birthday', 'is', null).ilike('birthday', `%-${monthStr}-%`);
       }
-
-      // Segment filters
       if (filters.segmentFilters) {
         query = applyJsonFilters(query, filters.segmentFilters);
       }
 
-      // Sort
       const dbColumn = SORT_COLUMN_MAP[sortKey] || 'created_at';
       query = query.order(dbColumn, { ascending: sortDir === 'asc', nullsFirst: false });
-
-      // If sorting by first_name, also sort by last_name as secondary
       if (sortKey === 'name') {
         query = query.order('last_name', { ascending: sortDir === 'asc', nullsFirst: false });
       }
 
-      // Pagination
       query = query.range(from, to);
 
       const { data: rows, error, count } = await query;
       if (error) throw error;
 
       const contacts = (rows ?? []).map(d => ({
-        ...d,
-        tags: (d.tags as string[] | null) ?? [],
-        projects: (d.projects as string[] | null) ?? [],
+        ...normalizeCrmContactArrays(d),
         contact_type: d.contact_type ?? 'lead',
       })) as CrmContact[];
 
       return { contacts, totalCount: count ?? 0 };
     },
     staleTime: 15_000,
-    placeholderData: (prev) => prev, // keep previous data while loading new page
+    placeholderData: (prev) => prev,
   });
 
   return {
@@ -220,3 +193,4 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
     isFetching,
   };
 }
+

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
 
 export type CrmContact = {
   id: string;
@@ -148,9 +149,7 @@ export function useCrmContacts() {
       }
 
       return allData.map(d => ({
-        ...d,
-        tags: (d.tags as string[] | null) ?? [],
-        projects: (d.projects as string[] | null) ?? [],
+        ...normalizeCrmContactArrays(d),
         contact_type: (d as Record<string, unknown>).contact_type as string ?? 'lead',
       })) as CrmContact[];
     },
@@ -159,7 +158,6 @@ export function useCrmContacts() {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel('crm-contacts-realtime')
@@ -179,7 +177,6 @@ export function useCrmContacts() {
   return query;
 }
 
-/** Extract unique values from all contacts for dynamic filter options */
 export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const allProjects = new Set<string>();
   const allLanguages = new Set<string>();
@@ -188,10 +185,10 @@ export function useDynamicFilterOptions(contacts: CrmContact[]) {
   const allCampaigns = new Set<string>();
 
   contacts.forEach(c => {
-    (c.projects ?? []).forEach(p => { if (p) allProjects.add(p); });
+    normalizeCrmMultiValueList(c.projects).forEach(p => { if (p) allProjects.add(p); });
     if (c.project) allProjects.add(c.project);
     if (c.language) allLanguages.add(c.language);
-    (c.tags ?? []).forEach(t => { if (t) allTags.add(t); });
+    normalizeCrmMultiValueList(c.tags).forEach(t => { if (t) allTags.add(t); });
     if ((c as any).city_pref) allCities.add((c as any).city_pref);
     if ((c as any).campaign_source) allCampaigns.add((c as any).campaign_source);
   });
@@ -244,9 +241,13 @@ export function useBulkUpdateContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ids, updates }: { ids: string[]; updates: Record<string, unknown> }) => {
+      const normalizedUpdates = { ...updates };
+      if ('tags' in normalizedUpdates) normalizedUpdates.tags = normalizeCrmMultiValueList(normalizedUpdates.tags);
+      if ('projects' in normalizedUpdates) normalizedUpdates.projects = normalizeCrmMultiValueList(normalizedUpdates.projects);
+
       const { error } = await supabase
         .from('crm_contacts')
-        .update(updates)
+        .update(normalizedUpdates)
         .in('id', ids);
       if (error) throw error;
     },
