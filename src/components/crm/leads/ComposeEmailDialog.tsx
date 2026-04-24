@@ -96,6 +96,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
   const { data: messages = [] } = useCrmContactMessages(open ? contact.id : undefined);
+  const { data: emailLog = [] } = useCrmEmailLog(open ? contact.id : undefined);
 
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('<p></p>');
