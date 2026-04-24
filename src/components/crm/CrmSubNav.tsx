@@ -65,7 +65,7 @@ export function CrmSubNav() {
                 fontWeight: active ? 600 : 500,
               }}
               onMouseEnter={(e) => {
-                if (!active) e.currentTarget.style.background = 'hsl(220 30% 14%)';
+                if (!active) e.currentTarget.style.background = 'hsl(var(--muted) / 0.6)';
               }}
               onMouseLeave={(e) => {
                 if (!active) e.currentTarget.style.background = 'transparent';
