@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, Eraser, ChevronDown, ChevronRight, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
@@ -73,26 +74,28 @@ function FilterAccordion({
   };
 
   return (
-    <div className="border-b border-border/30">
-      <button
-        onClick={() => { setExpanded(!expanded); if (expanded) setSearch(''); }}
-        className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
-      >
-        <span className="flex items-center gap-2">
-          {label}
-          {selected.length > 0 && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-              {selected.length}
-            </Badge>
-          )}
-        </span>
-        {expanded ? (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        )}
-      </button>
-      {expanded && (
+    <Collapsible open={expanded} onOpenChange={(o) => { setExpanded(o); if (!o) setSearch(''); }} className="border-b border-border/30">
+      <CollapsibleTrigger asChild>
+        <button
+          className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            {label}
+            {selected.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                {selected.length}
+              </Badge>
+            )}
+          </span>
+          <ChevronRight
+            className={cn(
+              'w-4 h-4 text-muted-foreground transition-transform duration-200',
+              expanded && 'rotate-90',
+            )}
+          />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
         <div className="px-2 pb-2">
           {showSearch && (
             <div className="relative mb-1.5 px-1">
@@ -114,8 +117,8 @@ function FilterAccordion({
               >
                 <div
                   className={cn(
-                    'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-                    selected.includes(opt) ? 'bg-primary border-primary' : 'border-border/60'
+                    'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all duration-150',
+                    selected.includes(opt) ? 'bg-primary border-primary scale-100' : 'border-border/60 scale-95',
                   )}
                 >
                   {selected.includes(opt) && <Check className="w-3 h-3 text-primary-foreground" />}
@@ -130,8 +133,8 @@ function FilterAccordion({
             )}
           </div>
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
