@@ -292,41 +292,9 @@ export default function CrmLeadsPage() {
       <div className="flex flex-1 min-h-0 h-full">
         {/* Main content */}
         <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto pr-1">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col gap-0.5">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground">CARM</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 gap-1.5 hidden sm:flex">
-                    <Settings2 className="w-3.5 h-3.5" /> Columns
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-48 p-2">
-                  <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
-                  {ALL_COLUMN_KEYS.map(col => (
-                    <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
-                      <Checkbox
-                        checked={visibleColumns.has(col.key)}
-                        onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
-                        disabled={'locked' in col && col.locked}
-                      />
-                      {col.label}
-                    </label>
-                  ))}
-                </PopoverContent>
-              </Popover>
-              <Button onClick={() => setShowAdd(true)} size="sm" className="h-9 bg-primary text-primary-foreground gap-1.5 hidden sm:flex">
-                <Plus className="w-4 h-4" /> Add Lead
-              </Button>
-            </div>
-          </div>
-
-          {/* Pipeline Segment Pills */}
+          {/* Pipeline Segment Pills + Actions */}
           {segments.length > 0 && (
-            <div className="flex items-start gap-2">
+            <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <ScrollArea className="w-full">
                   <DragDropContext
@@ -396,12 +364,41 @@ export default function CrmLeadsPage() {
               <Button
                 size="sm"
                 variant={reorderMode ? 'default' : 'ghost'}
-                className="h-7 px-2 text-[11px] flex-shrink-0"
+                className="h-8 px-2 text-[11px] flex-shrink-0"
                 onClick={() => setReorderMode(v => !v)}
                 title="Reorder pipeline pills"
               >
                 {reorderMode ? 'Done' : 'Reorder'}
               </Button>
+              <div className="hidden sm:flex items-center gap-2 flex-shrink-0 ml-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                      <Settings2 className="w-3.5 h-3.5" /> Columns
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-48 p-2">
+                    <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
+                    {ALL_COLUMN_KEYS.map(col => (
+                      <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={visibleColumns.has(col.key)}
+                          onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
+                          disabled={'locked' in col && col.locked}
+                        />
+                        {col.label}
+                      </label>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  onClick={() => setShowAdd(true)}
+                  size="sm"
+                  className="h-9 px-6 bg-primary text-primary-foreground gap-2 font-semibold shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add Lead
+                </Button>
+              </div>
             </div>
           )}
 
