@@ -850,6 +850,11 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         )}
       </WidgetSection>
 
+      {/* Email Attribution (opens / clicks per send) */}
+      <WidgetSection title="Email Attribution">
+        <LeadEmailAttribution contactId={contact?.id} />
+      </WidgetSection>
+
       {/* Presale Properties Activity */}
       <WidgetSection title="Presale Activity">
         <PresaleActivityWidget contactId={contact?.id} />
