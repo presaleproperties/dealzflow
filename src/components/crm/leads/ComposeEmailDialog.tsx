@@ -182,6 +182,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     return fromRecent;
   }, [allTemplates, recentIds]);
 
+  /* Search & filter the sidebar list */
+  const sidebarTemplates: AnyTpl[] = useMemo(() => {
+    const q = tplSearch.trim().toLowerCase();
+    const hasSearch = q.length > 0;
+    let base: AnyTpl[];
+    if (tplFilter === 'recent' && !hasSearch) base = recentTemplates;
+    else if (tplFilter === 'presale') base = allTemplates.filter((t) => t.__isBridge);
+    else if (tplFilter === 'local') base = allTemplates.filter((t) => !t.__isBridge);
+    else if (tplFilter === 'recent') base = allTemplates;
+    else base = hasSearch ? allTemplates : recentTemplates;
+
+    if (hasSearch) {
+      base = base.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          (t.subject ?? '').toLowerCase().includes(q),
+      );
+    }
+    return base.slice(0, 12);
+  }, [allTemplates, recentTemplates, tplSearch, tplFilter]);
+
   const recentEmails = useMemo(
     () =>
       messages
