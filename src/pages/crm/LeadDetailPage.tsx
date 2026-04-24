@@ -474,24 +474,31 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
    ═══════════════════════════════════════════════════ */
 type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'web' | 'system';
 
-const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string; color: string }> = {
-  manual: { icon: StickyNote, label: 'Note', color: 'text-foreground/70' },
-  note: { icon: StickyNote, label: 'Note', color: 'text-foreground/70' },
-  system: { icon: Zap, label: 'System', color: 'text-muted-foreground' },
-  email: { icon: Mail, label: 'Email', color: 'text-foreground/70' },
-  call_log: { icon: Phone, label: 'Call', color: 'text-foreground/70' },
-  import: { icon: Download, label: 'Imported', color: 'text-muted-foreground' },
-  zapier: { icon: Globe, label: 'Web activity', color: 'text-muted-foreground' },
+type NoteMeta = { icon: typeof StickyNote; label: string; tint: string };
+
+// Distinct accent colors per channel — HSL strings applied to the icon + ring.
+const NOTE_TYPE_META: Record<string, NoteMeta> = {
+  manual:   { icon: StickyNote,    label: 'Note',         tint: '45 90% 55%'  }, // gold (brand)
+  note:     { icon: StickyNote,    label: 'Note',         tint: '45 90% 55%'  },
+  email:    { icon: Mail,          label: 'Email',        tint: '210 85% 58%' }, // blue
+  call_log: { icon: Phone,         label: 'Call',         tint: '142 70% 45%' }, // green
+  sms:      { icon: MessageSquare, label: 'Text',         tint: '270 70% 60%' }, // purple
+  text:     { icon: MessageSquare, label: 'Text',         tint: '270 70% 60%' },
+  system:   { icon: Zap,           label: 'System',       tint: '220 10% 55%' }, // neutral
+  import:   { icon: Download,      label: 'Imported',     tint: '220 10% 55%' },
+  zapier:   { icon: Globe,         label: 'Web activity', tint: '180 60% 45%' }, // teal
 };
 
+const FALLBACK_META: NoteMeta = { icon: StickyNote, label: 'Note', tint: '45 90% 55%' };
+
 /** Refine the note's display meta based on parsed content (e.g. detect website behavior). */
-function metaForNote(note: CrmNote) {
-  const base = NOTE_TYPE_META[note.note_type] || NOTE_TYPE_META.manual;
+function metaForNote(note: CrmNote): NoteMeta {
+  const base = NOTE_TYPE_META[note.note_type] || FALLBACK_META;
   if (/website behavior summary/i.test(note.content)) {
-    return { icon: Globe, label: 'Web activity', color: 'text-muted-foreground' };
+    return { icon: Globe, label: 'Web activity', tint: '180 60% 45%' };
   }
   if (/inquired on|system auto-updated/i.test(note.content) && note.note_type === 'note') {
-    return { icon: Download, label: 'Inquiry', color: 'text-muted-foreground' };
+    return { icon: Download, label: 'Inquiry', tint: '220 10% 55%' };
   }
   return base;
 }
