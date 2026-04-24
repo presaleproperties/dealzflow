@@ -828,7 +828,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       toolbarSlot={composerActions}
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
-                          <SignatureInlineFrame html={activeSignatureHtml} />
+                          editingSignature ? (
+                            <div className="border-t border-border/60 bg-muted/5">
+                              <textarea
+                                value={sigDraft}
+                                onChange={(e) => setSigDraft(e.target.value)}
+                                className="w-full font-mono text-[12px] leading-relaxed px-4 py-3 bg-transparent border-0 resize-y focus-visible:outline-none focus-visible:ring-0 text-foreground"
+                                style={{ minHeight: 160 }}
+                                spellCheck={false}
+                                placeholder="Edit signature HTML…"
+                              />
+                            </div>
+                          ) : (
+                            <SignatureInlineFrame html={activeSignatureHtml} />
+                          )
                         ) : null
                       }
                     />
