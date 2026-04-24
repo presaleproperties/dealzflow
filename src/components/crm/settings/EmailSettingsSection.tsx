@@ -18,6 +18,7 @@ export default function EmailSettingsSection() {
 
   const [senderName, setSenderName] = useState('');
   const [replyTo, setReplyTo] = useState('');
+  const [twilioFrom, setTwilioFrom] = useState('');
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('builder');
   const [signatureHtml, setSignatureHtml] = useState('');
   const [htmlImport, setHtmlImport] = useState('');
@@ -29,6 +30,7 @@ export default function EmailSettingsSection() {
     if (settings) {
       setSenderName(settings.sender_name || '');
       setReplyTo(settings.reply_to || '');
+      setTwilioFrom((settings as any).twilio_from_number || '');
       const mode = ((settings as any).signature_mode as SignatureMode) || 'builder';
       setSignatureMode(mode);
       setBuilderData((settings as any).signature_builder_data || null);
@@ -56,6 +58,7 @@ export default function EmailSettingsSection() {
     upsert.mutate({
       sender_name: senderName || undefined,
       reply_to: replyTo || undefined,
+      twilio_from_number: twilioFrom.trim() || null,
       signature_html: getActiveSignatureHtml() || undefined,
       signature_mode: signatureMode,
       signature_builder_data: signatureMode === 'builder' ? builderData : undefined,
@@ -97,6 +100,21 @@ export default function EmailSettingsSection() {
           />
           <p className="text-xs text-muted-foreground">
             Optional — if blank, replies go to your connected Gmail address
+          </p>
+        </div>
+
+        {/* Twilio SMS sender number */}
+        <div className="space-y-1.5">
+          <Label>SMS Sender Number (Twilio)</Label>
+          <Input
+            type="tel"
+            value={twilioFrom}
+            onChange={e => setTwilioFrom(e.target.value)}
+            placeholder="+15551234567"
+            className="min-h-[44px] sm:min-h-0"
+          />
+          <p className="text-xs text-muted-foreground">
+            E.164 format. Outbound SMS sent from lead pages will use this number.
           </p>
         </div>
 
