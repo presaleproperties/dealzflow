@@ -62,7 +62,7 @@ const SECTIONS: NavSection[] = [
       {
         label: 'Engage',
         children: [
-          { label: 'CRM Dashboard', path: '/crm/dashboard', icon: LayoutDashboard, description: 'CRM overview' },
+          
           { label: 'Leads',         path: '/crm/leads',     icon: Users,           description: 'All leads & contacts' },
           { label: 'Pipeline',      path: '/crm/pipeline',  icon: Kanban,          description: 'Lead pipeline' },
           { label: 'Calendar',      path: '/crm/calendar',  icon: CalendarDays,    description: 'Showings & events' },

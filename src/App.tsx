@@ -33,7 +33,7 @@ import NotFound from "./pages/NotFound";
 import ApiDocsPage from "./pages/ApiDocsPage";
 
 // CRM pages
-import CrmDashboardPage from "./pages/crm/CrmDashboardPage";
+
 import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import CrmPipelinePage from "./pages/crm/CrmPipelinePage";
 import CrmEmailPage from "./pages/crm/CrmEmailPage";
@@ -156,12 +156,12 @@ const App = () => (
                   <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
 
                   {/* CRM Routes — guarded by CrmRouteGuard inside CrmLayout */}
-                  <Route path="/crm/dashboard" element={<ProtectedRoute><CrmLayout><CrmDashboardPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/dashboard" element={<Navigate to="/crm/leads" replace />} />
                   <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/whatsapp" element={<Navigate to="/crm/dashboard" replace />} />
+                  <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                   <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/contacts" element={<Navigate to="/crm/leads" replace />} />
                   <Route path="/crm/automations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmAutomationsPage /></CrmLayout></ProtectedRoute>} />

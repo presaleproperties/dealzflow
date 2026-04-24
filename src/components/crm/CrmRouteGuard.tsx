@@ -34,7 +34,7 @@ export function CrmRouteGuard({ children, requireRole }: CrmRouteGuardProps) {
   }
 
   if (requireRole && role && !requireRole.includes(role as any)) {
-    return <Navigate to="/crm/dashboard" replace />;
+    return <Navigate to="/crm/leads" replace />;
   }
 
   return <>{children}</>;
