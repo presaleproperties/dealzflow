@@ -68,7 +68,7 @@ export function AnalyticsTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {kpis.map(k => (
           <div key={k.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ background: k.color + ' / 0.12)'.replace(')', '') }}>
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: k.color.replace('hsl(', 'hsla(').replace(')', ' / 0.12)') }}>
               <k.icon className="w-5 h-5" style={{ color: k.color }} />
             </div>
             <div>
