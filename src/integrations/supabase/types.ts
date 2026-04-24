@@ -1475,6 +1475,36 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_lead_types: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          name: string
+          name_lower: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          name: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          name?: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       crm_messages: {
         Row: {
           channel: string | null
@@ -1606,6 +1636,36 @@ export type Database = {
           title?: string
           type?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_projects: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          name_lower: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
         }
         Relationships: []
       }
