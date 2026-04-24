@@ -191,6 +191,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
     setBodyHtml(tpl.body_html || '<p></p>');
+    /* Templates are full HTML emails (tables, inline styles, images) that the
+       rich text editor cannot represent without flattening to plain text.
+       Switch to Preview so the user sees the real design immediately, and
+       leave HTML mode available for source-level tweaks. */
+    setMode('preview');
     /* Track recent */
     const next = [tpl.id, ...recentIds.filter((id) => id !== tpl.id)].slice(0, 8);
     setRecentIds(next);
