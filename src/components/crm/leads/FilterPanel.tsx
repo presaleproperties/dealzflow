@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Eraser, ChevronDown, ChevronRight, Search, Check } from 'lucide-react';
+import { X, Eraser, ChevronDown, ChevronRight, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
@@ -106,7 +105,7 @@ function FilterAccordion({
               />
             </div>
           )}
-          <div className="space-y-0.5 max-h-[220px] overflow-y-auto">
+          <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
             {filtered.map(opt => (
               <button
                 key={opt}
@@ -171,61 +170,54 @@ export function FilterPanel({
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
+  if (!open) return null;
+
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-md p-0 flex flex-col gap-0 bg-card/95 backdrop-blur-xl border-l border-border/60"
-      >
-        <SheetHeader className="px-5 py-4 border-b border-border/40 space-y-0">
-          <div className="flex items-center justify-between gap-2 pr-6">
-            <div className="flex items-center gap-2">
-              <SheetTitle className="text-base font-semibold">Filters</SheetTitle>
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5">
-                  {activeFilterCount} active
-                </Badge>
-              )}
-            </div>
-            {activeFilterCount > 0 && (
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={onClearAll}>
-                <Eraser className="w-3 h-3" />
-                Clear all
-              </Button>
-            )}
-          </div>
-        </SheetHeader>
-
-        {/* Contact Type */}
-        <div className="px-5 py-3 border-b border-border/30">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Contact Type</p>
-          <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
+    <div className="w-[280px] shrink-0 border-l border-border/40 bg-card/80 backdrop-blur-sm flex flex-col h-full ml-3 rounded-l-xl">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground">All Filters</h3>
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="text-[10px] px-1.5">
+              {activeFilterCount} active
+            </Badge>
+          )}
         </div>
-
-        {/* Filter accordions */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div>
-            <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
-            <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
-            <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
-            <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
-            <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
-            <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
-            <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
-            <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
-            <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
-            <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
-            <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
-          </div>
-        </ScrollArea>
-
-        {/* Footer */}
-        <div className="border-t border-border/40 px-5 py-3 flex items-center justify-end gap-2 bg-muted/20">
-          <Button variant="outline" size="sm" className="h-8" onClick={onClose}>
-            Close
+        <div className="flex items-center gap-1">
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClearAll} title="Clear filters">
+              <Eraser className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+            <X className="w-4 h-4" />
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+
+      {/* Contact Type */}
+      <div className="px-4 py-3 border-b border-border/30">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Contact Type</p>
+        <ContactTypeFilter value={filterContactType} onChange={setFilterContactType} />
+      </div>
+
+      {/* Scrollable filter list */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div>
+          <FilterAccordion label="Status" options={[...LEAD_STATUSES]} selected={filterStatus} onChange={setFilterStatus} />
+          <FilterAccordion label="Source" options={[...LEAD_SOURCES]} selected={filterSource} onChange={setFilterSource} />
+          <FilterAccordion label="Agent" options={[...AGENTS]} selected={filterAgent} onChange={setFilterAgent} />
+          <FilterAccordion label="Project" options={dynamicProjects} selected={filterProject} onChange={setFilterProject} />
+          <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
+          <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
+          <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} />
+          <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
+          <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
+          <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
+          <FilterAccordion label="Campaign" options={dynamicCampaigns} selected={filterCampaign} onChange={setFilterCampaign} />
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
