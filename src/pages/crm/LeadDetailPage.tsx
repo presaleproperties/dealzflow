@@ -193,62 +193,49 @@ function LeftSidebar({
   return (
     <div className="space-y-6">
       {/* Identity card — name + key contact info above the pipeline stage */}
-      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
-        <div className="flex items-start justify-between gap-2">
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold text-foreground leading-tight truncate">
+            <h2 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight truncate">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
-            </p>
+            </h2>
             {contact.source && (
-              <p className="text-[10px] uppercase tracking-[0.12em] font-semibold text-muted-foreground mt-0.5 truncate">
+              <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mt-1.5 truncate">
                 {contact.source}
               </p>
             )}
           </div>
           {contact.lead_type && (
-            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded px-1.5 py-0.5 shrink-0">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1 shrink-0">
               {contact.lead_type}
             </span>
           )}
         </div>
-        <div className="space-y-1 pt-0.5 border-t border-border/60">
+        <div className="space-y-1.5 pt-3 border-t border-border/60">
           {contact.phone ? (
-            <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors group">
-              <Phone className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" />
+            <a href={`tel:${contact.phone}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group">
+              <Phone className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
               <span className="truncate">{contact.phone}</span>
             </a>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-              <Phone className="w-3 h-3 shrink-0" /> <span>No phone</span>
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
+              <Phone className="w-3.5 h-3.5 shrink-0" /> <span>No phone</span>
             </div>
           )}
           {contact.email ? (
-            <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors group">
-              <Mail className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" />
+            <a href={`mailto:${contact.email}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group">
+              <Mail className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
               <span className="truncate">{contact.email}</span>
             </a>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-              <Mail className="w-3 h-3 shrink-0" /> <span>No email</span>
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
+              <Mail className="w-3.5 h-3.5 shrink-0" /> <span>No email</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Pipeline Stage */}
-      <div className="space-y-2">
-        <SectionHeader>Pipeline Stage</SectionHeader>
-        <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
-          <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Quick action row — Call / Text / Email */}
+      {/* Quick action row — Call / Text / Email (above pipeline stage) */}
       {showActionRow && (
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -280,6 +267,19 @@ function LeftSidebar({
           </button>
         </div>
       )}
+
+      {/* Pipeline Stage */}
+      <div className="space-y-2">
+        <SectionHeader>Pipeline Stage</SectionHeader>
+        <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
+          <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Insight */}
       <div className="space-y-2.5">
