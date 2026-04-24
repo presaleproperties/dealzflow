@@ -18,7 +18,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 
 /* ─── Segment-based colors ─── */
 const SEGMENT_COLORS: Record<string, { bg: string; border: string; dot: string }> = {
-  'New Leads':      { bg: 'hsl(39 67% 55% / 0.06)',  border: 'hsl(39 67% 55% / 0.3)',  dot: 'hsl(39 67% 55%)' },
+  'New Leads':      { bg: 'hsl(var(--primary) / 0.06)',  border: 'hsl(var(--primary) / 0.3)',  dot: 'hsl(var(--primary))' },
   'Presale':        { bg: 'hsl(210 62% 46% / 0.06)', border: 'hsl(210 62% 46% / 0.3)', dot: 'hsl(210 62% 46%)' },
   'Pre-Sale 🔥':    { bg: 'hsl(0 84% 60% / 0.06)',   border: 'hsl(0 84% 60% / 0.3)',   dot: 'hsl(0 84% 60%)' },
   'Re-Sale 🔥':     { bg: 'hsl(25 90% 55% / 0.06)',  border: 'hsl(25 90% 55% / 0.3)',  dot: 'hsl(25 90% 55%)' },
@@ -127,7 +127,7 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
                 <Badge
                   variant="outline"
                   className="border-0 text-[10px] font-semibold h-4 px-1.5"
-                  style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}
+                  style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
                 >
                   {contact.project}
                 </Badge>

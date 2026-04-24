@@ -483,7 +483,7 @@ export default function CrmLeadsPage() {
           <button
             onClick={() => setShowAdd(true)}
             className="sm:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-            style={{ boxShadow: '0 4px 14px hsl(39 67% 55% / 0.4)' }}
+            style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.4)' }}
           >
             <Plus className="w-6 h-6" />
           </button>

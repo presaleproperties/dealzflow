@@ -49,7 +49,7 @@ export function CrmLeadsBySource() {
                 fontSize: 12,
               }}
             />
-            <Bar dataKey="count" fill="hsl(39 67% 55%)" radius={[0, 4, 4, 0]} barSize={18} />
+            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       )}

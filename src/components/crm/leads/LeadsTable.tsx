@@ -49,7 +49,7 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   'New Lead':        { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' },
   'Contacted':       { bg: 'hsl(210 62% 46% / 0.10)', color: 'hsl(210 62% 56%)' },
-  'Nurturing':       { bg: 'hsl(39 67% 55% / 0.12)',  color: 'hsl(39 67% 55%)' },
+  'Nurturing':       { bg: 'hsl(var(--primary) / 0.12)',  color: 'hsl(var(--primary))' },
   'Hot / Engaged':   { bg: 'hsl(0 84% 60% / 0.12)',   color: 'hsl(0 84% 60%)' },
   'Showing Booked':  { bg: 'hsl(142 71% 45% / 0.12)', color: 'hsl(142 71% 45%)' },
   'Offer Made':      { bg: 'hsl(270 60% 55% / 0.12)', color: 'hsl(270 60% 55%)' },
@@ -99,7 +99,7 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {shown.map(p => (
-        <Badge key={p} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}>
+        <Badge key={p} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
           {p}
         </Badge>
       ))}

@@ -43,7 +43,7 @@ const ADMIN_ITEMS: NavChild[] = [
   { label: 'CRM Settings', path: '/crm/settings', icon: Settings, ownerAdminOnly: true },
 ];
 
-const GOLD = 'hsl(39 67% 55%)';
+const GOLD = 'hsl(var(--primary))';
 const GOLD_BG = 'hsl(var(--primary) / 0.12)';
 const MUTED_ICON = 'hsl(var(--muted-foreground))';
 const DARK_BG = 'hsl(var(--background))';

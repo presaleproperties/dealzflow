@@ -82,8 +82,8 @@ export function CrmKpiCards() {
       label: 'Active Leads',
       value: activeLeads,
       icon: Users,
-      color: 'hsl(39 67% 55%)',
-      bg: 'hsl(39 67% 55% / 0.12)',
+      color: 'hsl(var(--primary))',
+      bg: 'hsl(var(--primary) / 0.12)',
     },
     {
       label: 'Showings This Week',
@@ -108,8 +108,8 @@ export function CrmKpiCards() {
       subtitle: `${closed.toLocaleString()} of ${total.toLocaleString()} leads`,
       tooltip: 'Percentage of all leads that reached Closed status. Formula: (Closed ÷ Total Leads) × 100',
       icon: TrendingUp,
-      color: 'hsl(39 67% 55%)',
-      bg: 'hsl(39 67% 55% / 0.12)',
+      color: 'hsl(var(--primary))',
+      bg: 'hsl(var(--primary) / 0.12)',
     },
   ];
 

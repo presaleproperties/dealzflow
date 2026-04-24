@@ -57,7 +57,7 @@ export function AnalyticsTab() {
   }, [sentCampaigns]);
 
   const kpis = [
-    { label: 'Emails Sent (30d)', value: totalSent, icon: Mail, color: 'hsl(39 67% 55%)' },
+    { label: 'Emails Sent (30d)', value: totalSent, icon: Mail, color: 'hsl(var(--primary))' },
     { label: 'Open Rate', value: `${openRate}%`, icon: Eye, color: 'hsl(142 71% 45%)' },
     { label: 'Click Rate', value: `${clickRate}%`, icon: MousePointerClick, color: 'hsl(210 62% 46%)' },
   ];
@@ -86,15 +86,15 @@ export function AnalyticsTab() {
           <AreaChart data={opensOverTime}>
             <defs>
               <linearGradient id="emailOpenGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(39 67% 55%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(39 67% 55%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" interval="preserveStartEnd" />
             <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" allowDecimals={false} />
             <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} />
-            <Area type="monotone" dataKey="opens" stroke="hsl(39 67% 55%)" fill="url(#emailOpenGrad)" strokeWidth={2} />
+            <Area type="monotone" dataKey="opens" stroke="hsl(var(--primary))" fill="url(#emailOpenGrad)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -110,7 +110,7 @@ export function AnalyticsTab() {
               {topCampaigns.map(c => (
                 <div key={c.id} className="flex items-center justify-between py-1.5">
                   <span className="text-sm text-foreground truncate flex-1">{c.subject}</span>
-                  <span className="text-sm font-semibold ml-2" style={{ color: 'hsl(39 67% 55%)' }}>{c.openRate.toFixed(1)}%</span>
+                  <span className="text-sm font-semibold ml-2" style={{ color: 'hsl(var(--primary))' }}>{c.openRate.toFixed(1)}%</span>
                 </div>
               ))}
             </div>
@@ -129,7 +129,7 @@ export function AnalyticsTab() {
                 <XAxis type="number" tick={{ fontSize: 11 }} className="text-muted-foreground" />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} className="text-muted-foreground" />
                 <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} />
-                <Bar dataKey="opens" fill="hsl(39 67% 55%)" radius={[0, 4, 4, 0]} name="Opens" />
+                <Bar dataKey="opens" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Opens" />
                 <Bar dataKey="clicks" fill="hsl(210 62% 46%)" radius={[0, 4, 4, 0]} name="Clicks" />
               </BarChart>
             </ResponsiveContainer>

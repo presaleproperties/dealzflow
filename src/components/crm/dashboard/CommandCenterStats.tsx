@@ -54,7 +54,7 @@ export function CommandCenterStats() {
   }, [contacts]);
 
   const cards = [
-    { label: 'Active Leads', value: stats.active, icon: Users, color: 'hsl(39 67% 55%)', onClick: () => navigate('/crm/leads') },
+    { label: 'Active Leads', value: stats.active, icon: Users, color: 'hsl(var(--primary))', onClick: () => navigate('/crm/leads') },
     { label: '🔥 Hot Leads', value: stats.hot, icon: Flame, color: 'hsl(0 84% 60%)', accent: true, onClick: () => navigate('/crm/pipeline') },
     { label: 'Pending Tasks', value: extra?.pendingTasks ?? 0, icon: ListTodo, color: 'hsl(270 60% 55%)', onClick: () => navigate('/crm/leads') },
     { label: 'Emails (7d)', value: extra?.emailsSent7d ?? 0, icon: Mail, color: 'hsl(262 60% 55%)', onClick: () => navigate('/crm/email') },
