@@ -510,9 +510,15 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
+  const isWebActivity = (n: CrmNote) =>
+    /website behavior summary/i.test(n.content) || n.note_type === 'zapier';
+  const isManualLike = (n: CrmNote) =>
+    (n.note_type === 'manual' || n.note_type === 'note' || n.note_type === 'import') && !isWebActivity(n);
+
   const filteredNotes = useMemo(() => {
     if (filter === 'all') return notes;
-    if (filter === 'manual') return notes.filter(n => n.note_type === 'manual' || n.note_type === 'import');
+    if (filter === 'manual') return notes.filter(isManualLike);
+    if (filter === 'web') return notes.filter(isWebActivity);
     return notes.filter(n => n.note_type === filter);
   }, [notes, filter]);
 
@@ -523,7 +529,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     const groups: { label: string; notes: CrmNote[] }[] = [];
     let currentLabel = '';
     unpinnedNotes.forEach(note => {
-      const label = getDateGroup(note.created_at);
+      const label = getDateGroup(noteTime(note));
       if (label !== currentLabel) {
         groups.push({ label, notes: [note] });
         currentLabel = label;
@@ -536,9 +542,10 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
   const counts = useMemo(() => ({
     all: notes.length,
-    manual: notes.filter(n => n.note_type === 'manual' || n.note_type === 'import').length,
+    manual: notes.filter(isManualLike).length,
     email: notes.filter(n => n.note_type === 'email').length,
     call_log: notes.filter(n => n.note_type === 'call_log').length,
+    web: notes.filter(isWebActivity).length,
     system: notes.filter(n => n.note_type === 'system').length,
   }), [notes]);
 
