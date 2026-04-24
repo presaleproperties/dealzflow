@@ -155,7 +155,7 @@ export default function CrmContactsPage() {
       </div>
       <div className={`grid gap-2 ${isMobile ? 'grid-cols-1' : 'grid-cols-4'}`}>
         <MultiSelectFilter label="Project" options={dynamicOpts.projects} selected={filterProject} onChange={setFilterProject} />
-        <MultiSelectFilter label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
+        <MultiSelectFilter label="Lead Type" options={dynamicOpts.leadTypes?.length ? dynamicOpts.leadTypes : [...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} />
         <MultiSelectFilter label="Language" options={dynamicOpts.languages} selected={filterLanguage} onChange={setFilterLanguage} />
         <MultiSelectFilter label="Tags" options={dynamicOpts.tags} selected={filterTags} onChange={setFilterTags} />
       </div>
