@@ -614,11 +614,13 @@ export function LeadsTable({
 
   return (
     <div>
-      {isFetching && (
-        <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full mb-1">
-          <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
-        </div>
-      )}
+      <div className="h-0.5 w-full overflow-hidden rounded-full mb-1 bg-transparent">
+        {isFetching && (
+          <div className="h-full w-full bg-primary/20 rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
+          </div>
+        )}
+      </div>
       <div className={`overflow-x-auto rounded-xl border border-border bg-card shadow-sm transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
         <TooltipProvider delayDuration={200}>
           <table className="w-full text-sm">
