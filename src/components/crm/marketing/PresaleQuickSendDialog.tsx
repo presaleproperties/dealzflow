@@ -57,7 +57,7 @@ export function PresaleQuickSendDialog({
       const term = `%${query}%`;
       const { data } = await supabase
         .from('crm_contacts')
-        .select('id, first_name, last_name, email')
+        .select('id, first_name, last_name, email, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email')
         .or(`first_name.ilike.${term},last_name.ilike.${term},email.ilike.${term}`)
         .not('email', 'is', null)
         .limit(10);
@@ -67,6 +67,7 @@ export function PresaleQuickSendDialog({
           id: c.id,
           email: c.email!,
           name: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email!,
+          lead: c as RecipientLead,
         }));
       setResults(mapped);
       setSearching(false);
