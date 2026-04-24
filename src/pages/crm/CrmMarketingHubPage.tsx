@@ -168,31 +168,43 @@ export default function CrmMarketingHubPage() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Email Templates
+                {activeTab === 'emails'
+                  ? 'Email Templates'
+                  : activeTab === 'flyers'
+                    ? 'Print Flyers'
+                    : 'Social Posts'}
               </p>
               <div className="flex items-center bg-muted rounded-lg p-0.5 gap-0.5">
-                {(['emails', 'flyers', 'social'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={cn(
-                      'px-3 py-1 text-[11px] font-semibold rounded-md transition-all capitalize',
-                      activeTab === tab
-                        ? 'bg-card shadow-sm text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {tab === 'social' ? (
-                      <span className="flex items-center gap-1">
-                        <Share2 className="h-3 w-3" /> Social
-                      </span>
-                    ) : (
-                      <>
-                        {tab} ({tab === 'emails' ? emailAssets.length : flyerAssets.length})
-                      </>
-                    )}
-                  </button>
-                ))}
+                {(['emails', 'flyers', 'social'] as const).map((tab) => {
+                  const count =
+                    tab === 'emails'
+                      ? emailAssets.length
+                      : tab === 'flyers'
+                        ? flyerAssets.length
+                        : socialAssets.length;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        'px-3 py-1 text-[11px] font-semibold rounded-md transition-all capitalize',
+                        activeTab === tab
+                          ? 'bg-card shadow-sm text-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {tab === 'social' ? (
+                        <span className="flex items-center gap-1">
+                          <Share2 className="h-3 w-3" /> Social ({count})
+                        </span>
+                      ) : (
+                        <>
+                          {tab} ({count})
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
