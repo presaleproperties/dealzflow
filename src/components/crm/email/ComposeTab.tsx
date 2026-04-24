@@ -44,6 +44,7 @@ export function ComposeTab() {
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const { data: templates = [] } = useCrmEmailTemplates();
   const addMessage = useAddCrmMessage();
+  const bridgeSend = useBridgeSendEmail();
   const { data: emailSettings } = useEmailSettings();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
