@@ -22,7 +22,7 @@ import {
   Loader2, Megaphone, Send, Eye, MousePointerClick, Users, RefreshCw, Plus,
   Mail, Target, Clock, FileCheck2, ArrowLeft, ArrowRight, CalendarClock,
 } from "lucide-react";
-import { renderWithSampleData } from "@/lib/emailVariables";
+import { renderWithSampleData, renderForRecipient, type RecipientLead } from "@/lib/emailVariables";
 
 interface Campaign {
   id: string;
