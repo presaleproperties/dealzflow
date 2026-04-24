@@ -36,7 +36,11 @@ export function RichTextEditor({
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none min-h-[200px] p-4 outline-none text-foreground',
+        // When a signature/footer is rendered below, drop the bottom padding
+        // and last-paragraph margin so text can sit flush against it.
+        class: `prose prose-sm max-w-none min-h-[200px] px-4 pt-4 outline-none text-foreground [&_p:last-child]:mb-0 ${
+          footerSlot ? 'pb-0' : 'pb-4'
+        }`,
       },
     },
   });
