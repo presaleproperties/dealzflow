@@ -3,15 +3,17 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Bold, Italic, List, ListOrdered, Heading2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 interface Props {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  /** Optional content rendered inside the same bordered container, beneath the editor body. */
+  footerSlot?: ReactNode;
 }
 
-export function RichTextEditor({ content, onChange, placeholder = 'Write your email...' }: Props) {
+export function RichTextEditor({ content, onChange, placeholder = 'Write your email...', footerSlot }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -56,6 +58,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your em
         </Button>
       </div>
       <EditorContent editor={editor} />
+      {footerSlot}
     </div>
   );
 }
