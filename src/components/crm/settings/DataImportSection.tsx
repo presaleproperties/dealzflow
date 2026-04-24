@@ -487,13 +487,15 @@ export default function DataImportSection() {
                   {!hasFirstName && <span className="text-destructive ml-2">⚠ first_name required</span>}
                   {!hasLastName && <span className="text-destructive ml-2">⚠ last_name required</span>}
                 </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={reset}>Change File</Button>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-4 py-3">
               <div className="space-y-0.5">
                 <Label htmlFor="merge-mode" className="text-sm font-medium">Merge with existing contacts</Label>
                 <p className="text-xs text-muted-foreground">
-                  Match by email, phone, or Lofty ID. Tags & projects will be merged into the existing lead — no duplicates created.
+                  Match by email, phone, or Lofty ID. Tags and projects will be merged into the existing lead — no duplicates created.
                 </p>
               </div>
               <Switch id="merge-mode" checked={mergeMode} onCheckedChange={setMergeMode} />
