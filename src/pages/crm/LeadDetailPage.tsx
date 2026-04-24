@@ -848,6 +848,11 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
           </div>
         )}
       </WidgetSection>
+
+      {/* Presale Properties Activity */}
+      <WidgetSection title="Presale Activity">
+        <PresaleActivityWidget contactId={contact?.id} />
+      </WidgetSection>
     </div>
   );
 }
