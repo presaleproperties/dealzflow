@@ -364,12 +364,41 @@ export default function CrmLeadsPage() {
               <Button
                 size="sm"
                 variant={reorderMode ? 'default' : 'ghost'}
-                className="h-7 px-2 text-[11px] flex-shrink-0"
+                className="h-8 px-2 text-[11px] flex-shrink-0"
                 onClick={() => setReorderMode(v => !v)}
                 title="Reorder pipeline pills"
               >
                 {reorderMode ? 'Done' : 'Reorder'}
               </Button>
+              <div className="hidden sm:flex items-center gap-2 flex-shrink-0 ml-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                      <Settings2 className="w-3.5 h-3.5" /> Columns
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-48 p-2">
+                    <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
+                    {ALL_COLUMN_KEYS.map(col => (
+                      <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={visibleColumns.has(col.key)}
+                          onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
+                          disabled={'locked' in col && col.locked}
+                        />
+                        {col.label}
+                      </label>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  onClick={() => setShowAdd(true)}
+                  size="sm"
+                  className="h-9 px-6 bg-primary text-primary-foreground gap-2 font-semibold shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add Lead
+                </Button>
+              </div>
             </div>
           )}
 
