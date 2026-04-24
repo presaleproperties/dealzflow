@@ -189,25 +189,31 @@ function LeftSidebar({
     <div className="space-y-6">
       {/* Identity card — name + key contact info above the pipeline stage */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight truncate">
-              {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
-            </h2>
-            {contact.source && (
-              <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mt-1.5 truncate">
-                {contact.source}
-              </p>
-            )}
-          </div>
-          {(((contact as any).lead_types as string[] | undefined)?.length
-            ? ((contact as any).lead_types as string[])
-            : contact.lead_type ? [contact.lead_type] : []
-          ).slice(0, 3).map((t) => (
-            <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1 shrink-0">
-              {LEAD_TYPE_LABELS[t] || t}
-            </span>
-          ))}
+        <div className="min-w-0">
+          <h2 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight break-words">
+            {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
+          </h2>
+          {contact.source && (
+            <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mt-1.5 truncate">
+              {contact.source}
+            </p>
+          )}
+          {(() => {
+            const types = (((contact as any).lead_types as string[] | undefined)?.length
+              ? ((contact as any).lead_types as string[])
+              : contact.lead_type ? [contact.lead_type] : []
+            ).slice(0, 3);
+            if (types.length === 0) return null;
+            return (
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {types.map((t) => (
+                  <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1">
+                    {LEAD_TYPE_LABELS[t] || t}
+                  </span>
+                ))}
+              </div>
+            );
+          })()}
         </div>
         <div className="space-y-1.5 pt-3 border-t border-border/60">
           {contact.phone ? (
