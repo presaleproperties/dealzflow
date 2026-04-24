@@ -298,8 +298,10 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
               </Button>
             </div>
             <Textarea
+              ref={htmlRef}
               value={htmlContent}
               onChange={e => setHtmlContent(e.target.value)}
+              onFocus={() => { lastFocused.current = 'html'; }}
               placeholder="Paste your HTML email code here..."
               className="min-h-[300px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40 leading-relaxed"
               spellCheck={false}
@@ -309,10 +311,23 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           {/* Merge tags */}
           {mergeTags.length > 0 && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Merge Tags Detected</Label>
+              <Label className="text-xs text-muted-foreground">Variables in use</Label>
               <div className="flex flex-wrap gap-1.5">
                 {mergeTags.map(tag => (
                   <Badge key={tag} variant="secondary" className="text-[10px] font-mono">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {unknownTokens.length > 0 && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5 space-y-1">
+              <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3" /> Unknown variables — these won’t be replaced when sent:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {unknownTokens.map(t => (
+                  <Badge key={t} variant="outline" className="text-[10px] font-mono border-amber-500/40">{`{{${t}}}`}</Badge>
                 ))}
               </div>
             </div>
