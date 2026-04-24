@@ -58,7 +58,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
       return (
         <Select
           open
-          value={value ?? ''}
+          value={value || undefined}
           onValueChange={(v) => {
             if (v !== (value ?? '')) onSave(v);
             setEditing(false);
