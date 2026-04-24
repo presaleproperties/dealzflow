@@ -23,7 +23,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface NavChild { label: string; path: string; icon: LucideIcon; description?: string; ownerAdminOnly?: boolean; crmOnly?: boolean; }
-interface NavSection { label: string; path?: string; children?: NavChild[]; crmOnly?: boolean; }
+interface NavGroup { label: string; children: NavChild[]; }
+interface NavSection { label: string; path?: string; children?: NavChild[]; groups?: NavGroup[]; crmOnly?: boolean; }
 
 const SECTIONS: NavSection[] = [
   {
@@ -53,18 +54,33 @@ const SECTIONS: NavSection[] = [
   {
     label: 'CRM',
     crmOnly: true,
-    children: [
-      { label: 'CRM Dashboard',  path: '/crm/dashboard',   icon: LayoutDashboard, description: 'CRM overview' },
-      { label: 'Leads',          path: '/crm/leads',       icon: Users,           description: 'All leads & contacts' },
-      { label: 'Pipeline',       path: '/crm/pipeline',    icon: Kanban,          description: 'Lead pipeline' },
-      { label: 'Email Center',   path: '/crm/email',       icon: Mail,            description: 'Campaigns & inbox' },
-      { label: 'WhatsApp',       path: '/crm/whatsapp',    icon: MessageCircle,   description: 'Conversations' },
-      { label: 'Templates',      path: '/crm/templates',   icon: LayoutTemplate,  description: 'Email templates' },
-      { label: 'Calendar',       path: '/crm/calendar',    icon: CalendarDays,    description: 'Showings & events' },
-      { label: 'Reports',        path: '/crm/reports',     icon: BarChart3,       description: 'CRM analytics' },
-      { label: 'Automations',    path: '/crm/automations', icon: Zap,             description: 'Triggers & workflows', ownerAdminOnly: true },
-      { label: 'Integrations',   path: '/crm/integrations',icon: Plug,            description: 'Connect platforms',    ownerAdminOnly: true },
-      { label: 'CRM Settings',   path: '/crm/settings',    icon: Settings,        description: 'CRM configuration',    ownerAdminOnly: true },
+    groups: [
+      {
+        label: 'Engage',
+        children: [
+          { label: 'CRM Dashboard', path: '/crm/dashboard', icon: LayoutDashboard, description: 'CRM overview' },
+          { label: 'Leads',         path: '/crm/leads',     icon: Users,           description: 'All leads & contacts' },
+          { label: 'Pipeline',      path: '/crm/pipeline',  icon: Kanban,          description: 'Lead pipeline' },
+          { label: 'Calendar',      path: '/crm/calendar',  icon: CalendarDays,    description: 'Showings & events' },
+        ],
+      },
+      {
+        label: 'Marketing',
+        children: [
+          { label: 'Email Center', path: '/crm/email',     icon: Mail,           description: 'Campaigns & inbox' },
+          { label: 'WhatsApp',     path: '/crm/whatsapp',  icon: MessageCircle,  description: 'Conversations' },
+          { label: 'Templates',    path: '/crm/templates', icon: LayoutTemplate, description: 'Email templates' },
+          { label: 'Reports',      path: '/crm/reports',   icon: BarChart3,      description: 'CRM analytics' },
+        ],
+      },
+      {
+        label: 'Admin',
+        children: [
+          { label: 'Automations',  path: '/crm/automations',  icon: Zap,      description: 'Triggers & workflows', ownerAdminOnly: true },
+          { label: 'Integrations', path: '/crm/integrations', icon: Plug,     description: 'Connect platforms',    ownerAdminOnly: true },
+          { label: 'CRM Settings', path: '/crm/settings',     icon: Settings, description: 'CRM configuration',    ownerAdminOnly: true },
+        ],
+      },
     ],
   },
   {
@@ -104,8 +120,18 @@ export function TopNav() {
   const filterChildren = (children?: NavChild[]) =>
     (children ?? []).filter(c => !c.ownerAdminOnly || isCrmAdmin);
 
+  const filterGroups = (groups?: NavGroup[]) =>
+    (groups ?? [])
+      .map(g => ({ ...g, children: filterChildren(g.children) }))
+      .filter(g => g.children.length > 0);
+
   const isSectionActive = (s: NavSection) => {
     if (s.path) return isPathActive(location.pathname, s.path);
+    if (s.groups) {
+      return filterGroups(s.groups).some(g =>
+        g.children.some(c => isPathActive(location.pathname, c.path))
+      );
+    }
     return filterChildren(s.children).some(c => isPathActive(location.pathname, c.path));
   };
 
@@ -170,9 +196,58 @@ export function TopNav() {
                 );
               }
 
-              const children = filterChildren(section.children);
-              if (!children.length) return null;
+              const groups = section.groups ? filterGroups(section.groups) : null;
+              const children = !groups ? filterChildren(section.children) : [];
+              const hasContent = groups ? groups.length > 0 : children.length > 0;
+              if (!hasContent) return null;
               const isOpen = openSection === section.label;
+              const isMega = !!groups;
+
+              const renderItem = (child: NavChild) => {
+                const childActive = isPathActive(location.pathname, child.path);
+                const ChildIcon = child.icon;
+                return (
+                  <Link
+                    key={child.path}
+                    to={child.path}
+                    onClick={() => setOpenSection(null)}
+                    className="flex items-start gap-2.5 px-2.5 py-2 rounded-md transition-colors group"
+                    style={{
+                      background: childActive ? GOLD_BG : 'transparent',
+                      color: childActive ? GOLD : 'hsl(220 10% 80%)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!childActive) e.currentTarget.style.background = 'hsl(222 20% 16%)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!childActive) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
+                      style={{
+                        background: childActive ? 'hsl(39 67% 55% / 0.18)' : 'hsl(222 20% 16%)',
+                      }}
+                    >
+                      <ChildIcon
+                        className="w-3.5 h-3.5"
+                        strokeWidth={childActive ? 2.2 : 1.8}
+                        style={{ color: childActive ? GOLD : 'hsl(220 10% 70%)' }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold leading-tight">
+                        {child.label}
+                      </div>
+                      {child.description && (
+                        <div className="text-[11px] mt-0.5 leading-tight" style={{ color: 'hsl(220 8% 55%)' }}>
+                          {child.description}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              };
 
               return (
                 <DropdownMenu
@@ -203,54 +278,31 @@ export function TopNav() {
                     sideOffset={8}
                     onMouseEnter={() => openWithDelay(section.label)}
                     onMouseLeave={scheduleClose}
-                    className="p-1.5 min-w-[260px] border-0 shadow-2xl"
+                    className={cn('border-0 shadow-2xl', isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]')}
                     style={{ background: 'hsl(222 25% 12%)', border: `1px solid ${DARK_BORDER}` }}
                   >
-                    {children.map(child => {
-                      const childActive = isPathActive(location.pathname, child.path);
-                      const ChildIcon = child.icon;
-                      return (
-                        <Link
-                          key={child.path}
-                          to={child.path}
-                          onClick={() => setOpenSection(null)}
-                          className="flex items-start gap-2.5 px-2.5 py-2 rounded-md transition-colors group"
-                          style={{
-                            background: childActive ? GOLD_BG : 'transparent',
-                            color: childActive ? GOLD : 'hsl(220 10% 80%)',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!childActive) e.currentTarget.style.background = 'hsl(222 20% 16%)';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!childActive) e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <div
-                            className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-                            style={{
-                              background: childActive ? 'hsl(39 67% 55% / 0.18)' : 'hsl(222 20% 16%)',
-                            }}
-                          >
-                            <ChildIcon
-                              className="w-3.5 h-3.5"
-                              strokeWidth={childActive ? 2.2 : 1.8}
-                              style={{ color: childActive ? GOLD : 'hsl(220 10% 70%)' }}
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-semibold leading-tight">
-                              {child.label}
+                    {isMega ? (
+                      <div
+                        className="grid gap-x-3 gap-y-1"
+                        style={{ gridTemplateColumns: `repeat(${groups!.length}, minmax(0, 1fr))` }}
+                      >
+                        {groups!.map(group => (
+                          <div key={group.label} className="min-w-[200px]">
+                            <div
+                              className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                              style={{ color: 'hsl(220 8% 50%)' }}
+                            >
+                              {group.label}
                             </div>
-                            {child.description && (
-                              <div className="text-[11px] mt-0.5 leading-tight" style={{ color: 'hsl(220 8% 55%)' }}>
-                                {child.description}
-                              </div>
-                            )}
+                            <div className="space-y-0.5">
+                              {group.children.map(renderItem)}
+                            </div>
                           </div>
-                        </Link>
-                      );
-                    })}
+                        ))}
+                      </div>
+                    ) : (
+                      children.map(renderItem)
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               );
