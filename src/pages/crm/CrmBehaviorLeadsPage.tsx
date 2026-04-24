@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Activity, FileText, Eye, MousePointerClick, RefreshCw, Mail } from "lucide-react";
+import { ExternalLink, Activity, FileText, Eye, MousePointerClick, RefreshCw, Mail, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
 type Row = {
   contact_id: string | null;
@@ -31,6 +32,22 @@ export default function CrmBehaviorLeadsPage() {
   const [filter, setFilter] = useState<"all" | "linked" | "orphan">("all");
   const [search, setSearch] = useState("");
   const [totals, setTotals] = useState<Record<string, number>>({});
+  const [backfilling, setBackfilling] = useState(false);
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    const { data, error } = await supabase.rpc("backfill_behavior_notes" as any);
+    setBackfilling(false);
+    if (error) {
+      toast.error(`Backfill failed: ${error.message}`);
+      return;
+    }
+    const d = data as any;
+    toast.success(
+      `Backfilled — views:${d?.views ?? 0} sessions:${d?.sessions ?? 0} forms:${d?.forms ?? 0} engagement:${d?.engagement ?? 0}`
+    );
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
@@ -136,9 +153,15 @@ export default function CrmBehaviorLeadsPage() {
             Leads with records in <code>crm_lead_behavior_*</code> tables. Use this to verify URL rendering on a real lead.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={runBackfill} disabled={backfilling}>
+            <Wand2 className={`h-4 w-4 mr-2 ${backfilling ? "animate-pulse" : ""}`} />
+            {backfilling ? "Backfilling…" : "Backfill Notes"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
