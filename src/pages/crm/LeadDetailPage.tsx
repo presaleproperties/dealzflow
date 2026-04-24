@@ -192,6 +192,49 @@ function LeftSidebar({
 
   return (
     <div className="space-y-6">
+      {/* Identity card — name + key contact info above the pipeline stage */}
+      <div className="rounded-xl border border-border bg-card p-3.5 space-y-2.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold text-foreground leading-tight truncate">
+              {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
+            </p>
+            {contact.source && (
+              <p className="text-[10px] uppercase tracking-[0.12em] font-semibold text-muted-foreground mt-0.5 truncate">
+                {contact.source}
+              </p>
+            )}
+          </div>
+          {contact.lead_type && (
+            <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded px-1.5 py-0.5 shrink-0">
+              {contact.lead_type}
+            </span>
+          )}
+        </div>
+        <div className="space-y-1 pt-0.5 border-t border-border/60">
+          {contact.phone ? (
+            <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors group">
+              <Phone className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" />
+              <span className="truncate">{contact.phone}</span>
+            </a>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+              <Phone className="w-3 h-3 shrink-0" /> <span>No phone</span>
+            </div>
+          )}
+          {contact.email ? (
+            <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-xs text-foreground hover:text-primary transition-colors group">
+              <Mail className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0" />
+              <span className="truncate">{contact.email}</span>
+            </a>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+              <Mail className="w-3 h-3 shrink-0" /> <span>No email</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Pipeline Stage */}
       <div className="space-y-2">
         <SectionHeader>Pipeline Stage</SectionHeader>
