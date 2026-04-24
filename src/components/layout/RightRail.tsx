@@ -16,11 +16,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-const GOLD = 'hsl(39 67% 55%)';
-const RAIL_BG = 'hsl(222 25% 9%)';
-const RAIL_BORDER = 'hsl(222 20% 14% / 0.8)';
-const ICON_INACTIVE = 'hsl(220 8% 60%)';
-const HOVER_BG = 'hsl(222 20% 14%)';
+// Themed tokens — adapt to light/dark via index.css
+const GOLD = 'hsl(var(--primary))';
+const RAIL_BG = 'hsl(var(--background))';
+const RAIL_BORDER = 'hsl(var(--border) / 0.8)';
+const ICON_INACTIVE = 'hsl(var(--muted-foreground))';
+const HOVER_BG = 'hsl(var(--muted) / 0.6)';
+const SURFACE_BG = 'hsl(var(--card))';
 
 type CommsPanel = null | 'inbox' | 'notifications';
 
