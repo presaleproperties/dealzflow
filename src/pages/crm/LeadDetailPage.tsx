@@ -342,8 +342,12 @@ function LeftSidebar({
             : contact.lead_type ? [contact.lead_type] : [];
           const toggle = (t: string) => {
             const next = selected.includes(t) ? selected.filter(x => x !== t) : [...selected, t];
-            saveWithLog('lead_types', next);
-            saveWithLog('lead_type', next[0] ?? null);
+            // Single mutation to avoid double-refetch flicker
+            updateContact.mutate({
+              id: contact.id,
+              updates: { lead_types: next, lead_type: next[0] ?? null },
+              oldValues: { lead_types: selected, lead_type: contact.lead_type },
+            });
           };
           return (
             <div className="flex flex-wrap gap-1.5">
