@@ -214,6 +214,7 @@ export default function CrmLeadsPage() {
   const clearAllFilters = () => {
     setFilterContactType(''); setFilterStatus([]); setFilterSource([]); setFilterAgent([]);
     setFilterProject([]); setFilterLeadType([]); setFilterLanguage([]); setFilterTags([]);
+    setFilterExcludeTags([]);
     setFilterPropertyType([]); setFilterCity([]); setFilterPreApproved([]); setFilterCampaign([]);
     setLetterFilter(''); setPage(1);
   };
