@@ -341,35 +341,81 @@ export default function CrmLeadsPage() {
 
           {/* Pipeline Segment Pills */}
           {segments.length > 0 && (
-            <ScrollArea className="w-full">
-              <div className="flex items-center gap-1.5 pb-1 min-w-max">
-                {segments.map(seg => {
-                  const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
-                  const count = segmentCounts[seg.id];
-                  return (
-                    <button
-                      key={seg.id}
-                      onClick={() => handleSegmentClick(seg)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
-                        isActive
-                          ? 'text-white shadow-sm'
-                          : 'bg-transparent border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
-                      }`}
-                      style={isActive ? { background: seg.color, borderColor: seg.color } : undefined}
-                    >
-                      {seg.emoji && <span>{seg.emoji}</span>}
-                      {seg.name}
-                      {count !== undefined && (
-                        <span className={`text-[10px] font-bold ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
-                          {count.toLocaleString()}
-                        </span>
+            <div className="flex items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <ScrollArea className="w-full">
+                  <DragDropContext
+                    onDragEnd={(result: DropResult) => {
+                      if (!result.destination || result.destination.index === result.source.index) return;
+                      const next = Array.from(segments);
+                      const [moved] = next.splice(result.source.index, 1);
+                      next.splice(result.destination.index, 0, moved);
+                      reorderSegments.mutate(next.map(s => s.id));
+                    }}
+                  >
+                    <Droppable droppableId="segment-pills" direction="horizontal" isDropDisabled={!reorderMode}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="flex items-center gap-1.5 pb-1 min-w-max"
+                        >
+                          {segments.map((seg, index) => {
+                            const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
+                            const count = segmentCounts[seg.id];
+                            return (
+                              <Draggable key={seg.id} draggableId={seg.id} index={index} isDragDisabled={!reorderMode}>
+                                {(prov, snap) => (
+                                  <div
+                                    ref={prov.innerRef}
+                                    {...prov.draggableProps}
+                                    className={snap.isDragging ? 'opacity-90' : ''}
+                                  >
+                                    <button
+                                      onClick={() => !reorderMode && handleSegmentClick(seg)}
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
+                                        isActive
+                                          ? 'text-white shadow-sm'
+                                          : 'bg-transparent border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                                      } ${reorderMode ? 'cursor-grab active:cursor-grabbing ring-1 ring-dashed ring-border' : ''}`}
+                                      style={isActive ? { background: seg.color, borderColor: seg.color } : undefined}
+                                    >
+                                      {reorderMode && (
+                                        <span {...prov.dragHandleProps} className="-ml-1 flex items-center">
+                                          <GripVertical className="w-3 h-3" />
+                                        </span>
+                                      )}
+                                      {seg.emoji && <span>{seg.emoji}</span>}
+                                      {seg.name}
+                                      {count !== undefined && (
+                                        <span className={`text-[10px] font-bold ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
+                                          {count.toLocaleString()}
+                                        </span>
+                                      )}
+                                    </button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
+                        </div>
                       )}
-                    </button>
-                  );
-                })}
+                    </Droppable>
+                  </DragDropContext>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+              <Button
+                size="sm"
+                variant={reorderMode ? 'default' : 'ghost'}
+                className="h-7 px-2 text-[11px] flex-shrink-0"
+                onClick={() => setReorderMode(v => !v)}
+                title="Reorder pipeline pills"
+              >
+                {reorderMode ? 'Done' : 'Reorder'}
+              </Button>
+            </div>
           )}
 
           {/* A-Z letter filter */}
