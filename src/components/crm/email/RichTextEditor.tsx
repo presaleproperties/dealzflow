@@ -15,6 +15,13 @@ interface Props {
   toolbarSlot?: ReactNode;
   /** Max height (px) of the scrollable editor + footer area. Defaults to 460px. */
   maxBodyHeight?: number;
+  /**
+   * When true (and a `footerSlot` is rendered), aggressively collapse spacing
+   * between the body and the signature: zero out the last paragraph's bottom
+   * margin AND any trailing empty paragraphs/<br> nodes the user may have left
+   * behind, so text always sits flush against the signature.
+   */
+  flushSignature?: boolean;
 }
 
 export function RichTextEditor({
@@ -24,8 +31,13 @@ export function RichTextEditor({
   footerSlot,
   toolbarSlot,
   maxBodyHeight = 460,
+  flushSignature = false,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const flushClasses = flushSignature && footerSlot
+    ? ' [&_p:last-child]:mb-0 [&_p:last-child:empty]:hidden [&>*:last-child]:mb-0'
+    : ' [&_p:last-child]:mb-0';
 
   const editor = useEditor({
     extensions: [
@@ -38,7 +50,7 @@ export function RichTextEditor({
       attributes: {
         // When a signature/footer is rendered below, drop the bottom padding
         // and last-paragraph margin so text can sit flush against it.
-        class: `prose prose-sm max-w-none min-h-[200px] px-4 pt-4 outline-none text-foreground [&_p:last-child]:mb-0 ${
+        class: `prose prose-sm max-w-none min-h-[200px] px-4 pt-4 outline-none text-foreground${flushClasses} ${
           footerSlot ? 'pb-0' : 'pb-4'
         }`,
       },
