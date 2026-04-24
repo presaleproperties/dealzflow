@@ -55,7 +55,8 @@ export function GlobalLeadSearch() {
       const name = `${c.first_name ?? ''} ${c.last_name ?? ''}`.toLowerCase();
       const email = (c.email ?? '').toLowerCase();
       const phone = (c.phone ?? '').toLowerCase();
-      return name.includes(q) || email.includes(q) || phone.includes(q);
+      const address = (c.property_address ?? c.address ?? '').toLowerCase();
+      return name.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
     });
     return matches.slice(0, 12);
   }, [contacts, query]);
