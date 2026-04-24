@@ -275,6 +275,7 @@ export default function CrmLeadsPage() {
     { key: 'leadType', label: 'Lead Type', values: filterLeadType },
     { key: 'language', label: 'Language', values: filterLanguage },
     { key: 'tags', label: 'Tags', values: filterTags },
+    { key: 'excludeTags', label: 'Excluded Tags', values: filterExcludeTags },
     { key: 'propertyType', label: 'Prop Type', values: filterPropertyType },
     { key: 'city', label: 'City', values: filterCity },
     { key: 'preApproved', label: 'Pre-Approved', values: filterPreApproved },
