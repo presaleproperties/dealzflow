@@ -225,6 +225,7 @@ export default function CrmLeadsPage() {
       source: () => setFilterSource([]), agent: () => setFilterAgent([]),
       project: () => setFilterProject([]), leadType: () => setFilterLeadType([]),
       language: () => setFilterLanguage([]), tags: () => setFilterTags([]),
+      excludeTags: () => setFilterExcludeTags([]),
       propertyType: () => setFilterPropertyType([]), city: () => setFilterCity([]),
       preApproved: () => setFilterPreApproved([]), campaign: () => setFilterCampaign([]),
     };
