@@ -111,7 +111,7 @@ export default function CrmEmailCampaignsPage() {
     setPreviewLoading(true);
     let q = supabase
       .from("crm_contacts")
-      .select("email, first_name")
+      .select("id, email, first_name, last_name, phone, city, intent, budget_max, timeframe, property_type_pref, co_buyer_name, co_buyer_email")
       .not("email", "is", null)
       .eq("marketing_consent", true)
       .limit(2000);
@@ -119,7 +119,7 @@ export default function CrmEmailCampaignsPage() {
     if (statusFilter !== "__all__") q = q.eq("status", statusFilter);
     const { data, error } = await q;
     if (error) { toast.error(error.message); setPreviewLoading(false); return; }
-    setRecipientPreview((data ?? []).filter((r) => r.email));
+    setRecipientPreview(((data ?? []) as any[]).filter((r) => r.email));
     setPreviewLoading(false);
   };
 
