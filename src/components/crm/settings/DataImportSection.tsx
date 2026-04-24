@@ -142,9 +142,10 @@ const AUTO_MAP: Record<string, string> = {
   'preferred city': 'city_pref',
 };
 
-// Array fields that should be split from CSV comma-separated values
+// Array fields that should be split from CSV multi-value cells
 const ARRAY_FIELDS = new Set(['tags', 'projects']);
 const BOOLEAN_FIELDS = new Set(['is_pre_approved']);
+const MULTI_VALUE_DELIMITER_REGEX = /[|,;\n]+/;
 
 type ImportPhase = 'upload' | 'mapping' | 'importing' | 'done';
 
@@ -215,6 +216,29 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
 
   const [headers, ...rows] = parsedRows;
   return { headers, rows };
+}
+
+function parseMultiValueCell(value: string): string[] {
+  return Array.from(
+    new Map(
+      value
+        .split(MULTI_VALUE_DELIMITER_REGEX)
+        .map(item => item.trim().replace(/^['"]+|['"]+$/g, ''))
+        .filter(Boolean)
+        .map(item => [item.toLowerCase(), item])
+    ).values()
+  );
+}
+
+function normalizeMultiValueList(values: unknown): string[] {
+  if (!Array.isArray(values)) return [];
+  return Array.from(
+    new Map(
+      values
+        .flatMap(value => parseMultiValueCell(String(value ?? '')))
+        .map(item => [item.toLowerCase(), item])
+    ).values()
+  );
 }
 
 export default function DataImportSection() {
