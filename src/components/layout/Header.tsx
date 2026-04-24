@@ -48,12 +48,13 @@ function ThemeToggle() {
 
   return (
     <button
-      className="h-8 w-8 shrink-0 flex items-center justify-center rounded-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 active:scale-90 transition-all duration-200"
+      className="h-8 shrink-0 inline-flex items-center gap-1.5 px-2 rounded-[10px] text-muted-foreground/70 hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all duration-200"
       onClick={handleCycle}
       aria-label={`Theme: ${label}. Click to cycle.`}
-      title={`Theme: ${label}`}
+      title={`Theme: ${label}. Click to cycle.`}
     >
       <Icon className="h-[14px] w-[14px] transition-all duration-200" />
+      <span className="hidden sm:inline text-[12px] font-medium leading-none">{label}</span>
     </button>
   );
 }

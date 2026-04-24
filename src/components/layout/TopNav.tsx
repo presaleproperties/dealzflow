@@ -127,11 +127,12 @@ function ThemeToggleButton() {
     <button
       onClick={handleCycle}
       aria-label={`Theme: ${label}. Click to cycle.`}
-      title={`Theme: ${label}`}
-      className="h-9 w-9 flex items-center justify-center rounded-lg transition-colors hover:bg-foreground/5"
+      title={`Theme: ${label}. Click to cycle.`}
+      className="h-9 inline-flex items-center gap-1.5 px-2 sm:px-2.5 rounded-lg transition-colors hover:bg-foreground/5"
       style={{ color: INACTIVE_TEXT }}
     >
       <Icon className="w-[15px] h-[15px]" strokeWidth={1.8} />
+      <span className="hidden sm:inline text-[12px] font-medium leading-none">{label}</span>
     </button>
   );
 }
