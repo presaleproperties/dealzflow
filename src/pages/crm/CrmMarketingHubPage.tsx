@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
 import {
-  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2,
+  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useBridgeTemplates, type BridgeTemplate } from '@/hooks/useBridgeEmail';
 import { PresaleTemplateCard } from '@/components/crm/marketing/PresaleTemplateCard';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
+import { inferTemplateTags, countTags, TEMPLATE_TAG_ORDER, type TemplateTag } from '@/lib/templateTags';
 
 const CREATE_OPTIONS = [
   {
@@ -54,13 +56,45 @@ export default function CrmMarketingHubPage() {
   const [activeTab, setActiveTab] = useState<'emails' | 'flyers' | 'social'>('emails');
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
+  const [activeTags, setActiveTags] = useState<Set<TemplateTag>>(new Set());
+  const [search, setSearch] = useState('');
 
   // Bridge currently surfaces only emails. Flyers/social are placeholders that
   // mirror Presale's tabbed structure so the layout reads identically.
   const emailAssets = templates;
   const flyerAssets: BridgeTemplate[] = useMemo(() => [], []);
 
-  const filteredAssets = activeTab === 'emails' ? emailAssets : flyerAssets;
+  const tagCounts = useMemo(() => countTags(emailAssets), [emailAssets]);
+
+  const baseAssets = activeTab === 'emails' ? emailAssets : flyerAssets;
+
+  const filteredAssets = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return baseAssets.filter((t) => {
+      // Tag filter (OR across selected tags)
+      if (activeTags.size > 0) {
+        const tags = inferTemplateTags(t);
+        if (!tags.some((tg) => activeTags.has(tg))) return false;
+      }
+      // Search filter
+      if (q) {
+        const hay = `${t.name ?? ''} ${t.subject ?? ''} ${t.category ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [baseAssets, activeTags, search]);
+
+  const toggleTag = (tag: TemplateTag) => {
+    setActiveTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  };
+  const clearFilters = () => { setActiveTags(new Set()); setSearch(''); };
+  const hasFilters = activeTags.size > 0 || search.trim().length > 0;
 
   return (
     <div className="flex flex-col h-full bg-background -mx-2 sm:-mx-0">
@@ -160,6 +194,65 @@ export default function CrmMarketingHubPage() {
               </div>
             </div>
 
+            {/* Search + tag filter row (emails tab only) */}
+            {activeTab === 'emails' && emailAssets.length > 0 && (
+              <div className="mb-4 space-y-2.5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search templates by name, subject, or category…"
+                    className="pl-9 h-9 text-sm"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {TEMPLATE_TAG_ORDER.filter((tag) => tagCounts[tag] > 0).map((tag) => {
+                    const active = activeTags.has(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all',
+                          active
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground',
+                        )}
+                      >
+                        {tag}
+                        <span className={cn(
+                          'text-[10px] px-1 rounded',
+                          active ? 'bg-primary-foreground/20' : 'bg-muted',
+                        )}>{tagCounts[tag]}</span>
+                      </button>
+                    );
+                  })}
+                  {hasFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" /> Clear
+                    </button>
+                  )}
+                  <span className="ml-auto text-[11px] text-muted-foreground">
+                    {filteredAssets.length} of {emailAssets.length}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'social' ? (
               <EmptyState
                 icon={Share2}
@@ -181,17 +274,28 @@ export default function CrmMarketingHubPage() {
                 ))}
               </div>
             ) : filteredAssets.length === 0 ? (
-              <EmptyState
-                icon={activeTab === 'emails' ? Mail : FileText}
-                title={`No ${activeTab} synced yet`}
-                description={
-                  activeTab === 'emails'
-                    ? 'Create one in Presale Properties admin and it will appear here automatically.'
-                    : 'Flyers are managed in Presale Properties admin.'
-                }
-                ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
-                ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : 'Flyer'}`}
-              />
+              hasFilters ? (
+                <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-border rounded-xl text-center">
+                  <Search className="h-10 w-10 text-muted-foreground/20 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No templates match these filters</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1 mb-4">Try a different tag or clear the search.</p>
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="gap-1.5">
+                    <X className="h-3.5 w-3.5" /> Clear filters
+                  </Button>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={activeTab === 'emails' ? Mail : FileText}
+                  title={`No ${activeTab} synced yet`}
+                  description={
+                    activeTab === 'emails'
+                      ? 'Create one in Presale Properties admin and it will appear here automatically.'
+                      : 'Flyers are managed in Presale Properties admin.'
+                  }
+                  ctaUrl="https://presaleproperties.lovable.app/admin/marketing-hub"
+                  ctaLabel={`Create ${activeTab === 'emails' ? 'Email' : 'Flyer'}`}
+                />
+              )
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredAssets.map((asset) => (

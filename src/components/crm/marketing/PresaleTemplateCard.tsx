@@ -1,9 +1,20 @@
-import { useState, useRef } from 'react';
-import { Mail, Send, Eye, Clock, Pencil, Check } from 'lucide-react';
+import { useRef } from 'react';
+import { Mail, Send, Eye, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { BridgeTemplate } from '@/hooks/useBridgeEmail';
+import { inferTemplateTags, type TemplateTag } from '@/lib/templateTags';
+
+const TAG_STYLE: Record<TemplateTag, string> = {
+  Presale: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  Resale: 'bg-sky-500/10 text-sky-700 border-sky-500/20',
+  Offer: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  Newsletter: 'bg-violet-500/10 text-violet-700 border-violet-500/20',
+  Welcome: 'bg-rose-500/10 text-rose-700 border-rose-500/20',
+  'Follow-up': 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20',
+  Other: 'bg-muted text-muted-foreground border-border',
+};
 
 function timeAgo(dateStr?: string | null) {
   if (!dateStr) return 'Just now';
@@ -77,7 +88,22 @@ export function PresaleTemplateCard({ asset, onSend, onPreview }: Props) {
           <span className="text-muted-foreground/30">·</span>
           <span className="truncate">{projectName}</span>
         </div>
-        <p className="text-xs text-muted-foreground truncate mb-3">{asset.subject}</p>
+        <p className="text-xs text-muted-foreground truncate mb-2">{asset.subject}</p>
+
+        {/* Inferred filter tags */}
+        <div className="flex flex-wrap gap-1 mb-3 min-h-[18px]">
+          {inferTemplateTags(asset).map((tag) => (
+            <span
+              key={tag}
+              className={cn(
+                'inline-flex items-center text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border',
+                TAG_STYLE[tag],
+              )}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
         <div className="flex items-center gap-1.5 pt-3 border-t border-border">
           <Button size="sm" className="flex-1 h-8 text-xs gap-1.5" onClick={() => onSend(asset)}>
