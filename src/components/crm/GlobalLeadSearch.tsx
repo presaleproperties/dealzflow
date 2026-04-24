@@ -73,14 +73,18 @@ export function GlobalLeadSearch() {
         const email = c.email ?? '';
         const phone = c.phone ?? '';
         const address = c.property_address ?? c.address ?? '';
+        const city = c.city ?? '';
+        const project = c.project ?? (Array.isArray(c.projects) ? c.projects[0] : '') ?? '';
         const matchedField = name.toLowerCase().includes(q) ? 'name'
           : email.toLowerCase().includes(q) ? 'email'
           : phone.toLowerCase().includes(q) ? 'phone'
           : address.toLowerCase().includes(q) ? 'address'
+          : project.toLowerCase().includes(q) ? 'project'
+          : city.toLowerCase().includes(q) ? 'city'
           : null;
-        return matchedField ? { c, matchedField, name, email, phone, address } : null;
+        return matchedField ? { c, matchedField, name, email, phone, address, city, project } : null;
       })
-      .filter(Boolean) as Array<{ c: any; matchedField: string; name: string; email: string; phone: string; address: string }>;
+      .filter(Boolean) as Array<{ c: any; matchedField: string; name: string; email: string; phone: string; address: string; city: string; project: string }>;
     return matches.slice(0, 12);
   }, [contacts, query]);
 
