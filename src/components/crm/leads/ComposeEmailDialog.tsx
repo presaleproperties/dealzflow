@@ -104,6 +104,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [tplName, setTplName] = useState('');
   const [tplCategory, setTplCategory] = useState('general');
   const [previewTpl, setPreviewTpl] = useState<AnyTpl | null>(null);
+  const [varPickerOpen, setVarPickerOpen] = useState(false);
+  const [varSearch, setVarSearch] = useState('');
 
   /* Load recent template IDs from local storage when dialog opens */
   useEffect(() => {
