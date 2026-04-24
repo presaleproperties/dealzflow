@@ -5,6 +5,7 @@ import {
   Calendar, Plus, ListTodo,
   StickyNote, Zap, Send, Pin, PinOff, Pencil, MoreHorizontal, Trash2,
   Download, ArrowUpRight, ArrowDownLeft, X, ChevronDown, ChevronUp,
+  Eye, MousePointerClick,
 } from 'lucide-react';
 import { formatContactName, formatCurrency } from '@/lib/format';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
