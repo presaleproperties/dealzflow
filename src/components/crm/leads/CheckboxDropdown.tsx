@@ -43,13 +43,22 @@ export function CheckboxDropdown({
     }
   }, [open, searchable, allowCustom]);
 
+  // Case-insensitive helpers — needed because legacy data may have selected
+  // values with different casing/whitespace than the canonical option list.
+  const isSelected = (val: string) =>
+    selected.some(s => s.trim().toLowerCase() === val.trim().toLowerCase());
+
   const toggle = (val: string) => {
-    onChange(selected.includes(val) ? selected.filter(s => s !== val) : [...selected, val]);
+    if (isSelected(val)) {
+      onChange(selected.filter(s => s.trim().toLowerCase() !== val.trim().toLowerCase()));
+    } else {
+      onChange([...selected, val]);
+    }
   };
 
   const remove = (val: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange(selected.filter(s => s !== val));
+    onChange(selected.filter(s => s.trim().toLowerCase() !== val.trim().toLowerCase()));
   };
 
   // Combined options: known options + any selected custom values not in options.
