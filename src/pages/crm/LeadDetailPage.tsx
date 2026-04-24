@@ -142,11 +142,17 @@ function LeftSidebar({
   leadScore,
   lastTouchLabel,
   daysInPipeline,
+  onCall,
+  onSms,
+  onEmail,
 }: {
   contact: CrmContact;
   leadScore: { score: number; color: string; label: string };
   lastTouchLabel: string;
   daysInPipeline: number;
+  onCall?: () => void;
+  onSms?: () => void;
+  onEmail?: () => void;
 }) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
@@ -180,6 +186,8 @@ function LeftSidebar({
     save('tags', tags.filter(t => t !== tag));
   };
 
+  const showActionRow = !!(onCall || onSms || onEmail);
+
   return (
     <div className="space-y-6">
       {/* Pipeline Stage */}
@@ -194,6 +202,39 @@ function LeftSidebar({
           </SelectContent>
         </Select>
       </div>
+
+      {/* Quick action row — Call / Text / Email */}
+      {showActionRow && (
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={onCall}
+            disabled={!contact.phone}
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Call"
+          >
+            <Phone className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" strokeWidth={2} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Call</span>
+          </button>
+          <button
+            onClick={onSms}
+            disabled={!contact.phone}
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Text"
+          >
+            <Send className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" strokeWidth={2} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Text</span>
+          </button>
+          <button
+            onClick={onEmail}
+            disabled={!contact.email}
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Email"
+          >
+            <Mail className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" strokeWidth={2} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Email</span>
+          </button>
+        </div>
+      )}
 
       {/* Insight */}
       <div className="space-y-2.5">
@@ -936,7 +977,7 @@ export default function LeadDetailPage() {
           <Skeleton className="h-5 w-40" />
         </div>
         <div className="flex flex-1 min-h-0">
-          <div className="w-[300px] flex-shrink-0 border-r border-border bg-muted/20 p-5 space-y-5">
+          <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 p-5 space-y-5">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-9 w-full" />
             <div className="grid grid-cols-3 gap-1.5">
@@ -1056,9 +1097,17 @@ export default function LeadDetailPage() {
       />
 
       <div className="flex flex-1 min-h-0">
-        {/* Left sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-5">
-          <LeftSidebar contact={c} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} />
+        {/* Left sidebar — wider, inspired layout */}
+        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-5">
+          <LeftSidebar
+            contact={c}
+            leadScore={leadScore}
+            lastTouchLabel={lastTouchLabel}
+            daysInPipeline={daysInPipeline}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+            onEmail={() => setShowEmail(true)}
+          />
         </div>
 
         {/* Center */}
