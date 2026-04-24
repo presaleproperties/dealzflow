@@ -86,11 +86,6 @@ serve(async (req) => {
     const isActive = subscription.status === "active" || subscription.status === "trialing";
 
     // Update the database if status changed
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
-
     await supabaseAdmin
       .from("settings")
       .update({
