@@ -56,36 +56,68 @@ function LeadCard({ c, noteId, setNoteId, noteText, setNoteText, handleSaveNote,
 }) {
   const days = touchDays(c);
   const color = urgencyColor(days);
+  const tags = (c.tags ?? []) as string[];
   return (
     <div
-      className="rounded-lg border border-border/50 p-3 hover:bg-muted/30 transition-colors"
-      style={{ borderLeftWidth: 3, borderLeftColor: color }}
+      className="rounded-lg border border-border/60 bg-card/50 p-3 hover:bg-muted/30 transition-colors"
+      style={{ borderLeftWidth: 2, borderLeftColor: color }}
     >
+      {/* Header: Name + status + last touch */}
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <button
             onClick={() => navigate(`/crm/leads/${c.id}`)}
-            className="text-[15px] font-semibold text-foreground hover:text-primary truncate block"
+            className="text-[14px] font-semibold text-foreground hover:underline truncate block text-left"
           >
             {formatContactName(c.first_name, c.last_name)}
           </button>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             {c.status && (
-              <Badge
-                variant="outline"
-                className="border-0 text-[10px] font-semibold"
-                style={{ background: `${STATUS_COLORS[c.status] ?? 'hsl(220 10% 50%)'}20`, color: STATUS_COLORS[c.status] ?? 'hsl(220 10% 50%)' }}
-              >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
                 {c.status}
-              </Badge>
+              </span>
             )}
-            <span className="text-[11px]" style={{ color }}>
+            <span className="text-[11px] text-muted-foreground">
               {c.last_touch_at ? formatDistanceToNow(new Date(c.last_touch_at), { addSuffix: true }) : 'No activity'}
             </span>
           </div>
-          {c.project && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{c.project}</p>}
         </div>
       </div>
+
+      {/* Metadata row: source / project / tags */}
+      {(c.source || c.project || tags.length > 0) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          {c.source && (
+            <span className="flex items-center gap-1 min-w-0">
+              <Radio className="w-3 h-3 shrink-0 opacity-60" />
+              <span className="truncate font-medium text-foreground/80">{c.source}</span>
+            </span>
+          )}
+          {c.project && (
+            <span className="flex items-center gap-1 min-w-0">
+              <Building2 className="w-3 h-3 shrink-0 opacity-60" />
+              <span className="truncate">{c.project}</span>
+            </span>
+          )}
+          {c.lead_type && (
+            <span className="text-[10px] font-medium uppercase tracking-wider opacity-70">
+              {c.lead_type}
+            </span>
+          )}
+        </div>
+      )}
+
+      {tags.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1 items-center">
+          <Tag className="w-3 h-3 text-muted-foreground/60" />
+          {tags.slice(0, 4).map(t => (
+            <span key={t} className="text-[10px] font-medium border border-border/60 bg-muted/30 text-foreground/80 rounded px-1.5 py-0.5">
+              {t}
+            </span>
+          ))}
+          {tags.length > 4 && <span className="text-[10px] text-muted-foreground/60">+{tags.length - 4}</span>}
+        </div>
+      )}
 
       {noteId === c.id && (
         <div className="mt-2 flex gap-1">
@@ -114,7 +146,7 @@ function LeadCard({ c, noteId, setNoteId, noteText, setNoteText, handleSaveNote,
         </div>
       )}
 
-      <div className="flex items-center gap-1 mt-2">
+      <div className="flex items-center gap-0.5 mt-2 -ml-1.5">
         <TooltipProvider delayDuration={200}>
           {c.phone && (
             <Tooltip>
