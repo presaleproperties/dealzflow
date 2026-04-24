@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck } from 'lucide-react';
+import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
@@ -8,12 +8,14 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
+import { SendSmsDialog } from './SendSmsDialog';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
+  const [showSms, setShowSms] = useState(false);
 
   const handleStatusChange = (status: string) => {
     updateContact.mutate({ id: contact.id, updates: { status, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
@@ -38,6 +40,16 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
           </Button>
           <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 justify-start" onClick={() => setShowTask(true)}>
             <ListTodo className="w-3.5 h-3.5" style={{ color: 'hsl(38 92% 50%)' }} /> Create Task
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 text-xs gap-1.5 justify-start"
+            onClick={() => setShowSms(true)}
+            disabled={!contact.phone}
+            title={contact.phone ? 'Send SMS' : 'No phone number on file'}
+          >
+            <MessageSquare className="w-3.5 h-3.5" style={{ color: 'hsl(160 60% 40%)' }} /> Send SMS
           </Button>
         </div>
 
@@ -66,6 +78,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
       <BookShowingDialog contactId={contact.id} project={contact.project} open={showShowing} onOpenChange={setShowShowing} />
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
+      <SendSmsDialog contact={contact} open={showSms} onOpenChange={setShowSms} />
     </>
   );
 }
