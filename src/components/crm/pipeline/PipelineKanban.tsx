@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Mail, Phone, MapPin, Flame } from 'lucide-react';
+import { formatCurrencyCompact } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,14 @@ function daysInStage(contact: CrmContact) {
   return Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
 }
 
+/* ─── Budget formatter ─── */
+function formatBudget(min?: number | null, max?: number | null): string | null {
+  if (!min && !max) return null;
+  if (min && max) return `${formatCurrencyCompact(min)} – ${formatCurrencyCompact(max)}`;
+  if (max) return `Up to ${formatCurrencyCompact(max)}`;
+  return `${formatCurrencyCompact(min)}+`;
+}
+
 /* ─── Lead Card ─── */
 function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   const days = daysInStage(contact);
@@ -59,6 +68,13 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
     return d <= 7 ? 'hsl(142 71% 45%)' : d <= 30 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
   })();
 
+  const budget = formatBudget(contact.budget_min, contact.budget_max);
+  const score = contact.lead_score ?? 0;
+  const isHot = score >= 70;
+  const cAny = contact as any;
+  const cityPref = cAny.city_pref || contact.city;
+  const isPreApproved = !!cAny.is_pre_approved;
+
   return (
     <Draggable draggableId={contact.id} index={index}>
       {(provided, snapshot) => (
@@ -66,26 +82,28 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-card rounded-lg border border-border p-2.5 sm:p-3 mb-2 shadow-sm cursor-grab transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg]' : 'hover:shadow-md'}`}
+          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-grab transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg]' : 'hover:shadow-md hover:border-border/80'}`}
         >
-          <div className="flex items-start justify-between gap-2">
+          {/* Header: name + assigned avatar */}
+          <div className="flex items-start justify-between gap-2 mb-2">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground truncate">
-                {formatContactName(contact.first_name, contact.last_name)}
-              </p>
-              {contact.project && (
-                <Badge
-                  variant="outline"
-                  className="border-0 text-[10px] font-semibold mt-1"
-                  style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}
-                >
-                  {contact.project}
-                </Badge>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
+                  {formatContactName(contact.first_name, contact.last_name)}
+                </p>
+                {isHot && (
+                  <Flame className="w-3 h-3 flex-shrink-0" style={{ color: 'hsl(0 84% 60%)' }} />
+                )}
+              </div>
+              {contact.lead_type && (
+                <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide font-medium">
+                  {contact.lead_type}
+                </p>
               )}
             </div>
             {contact.assigned_to && (
               <div
-                className="flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold flex-shrink-0"
+                className="flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-bold flex-shrink-0"
                 style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
                 title={contact.assigned_to}
               >
@@ -93,17 +111,64 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
-            <span style={daysColor ? { color: daysColor } : undefined}>
-              {days !== null ? `${days}d in stage` : '—'}
-            </span>
-            {contact.last_touch_at ? (
-              <span style={{ color: touchColor }}>
-                {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
+
+          {/* Budget — primary metric */}
+          {budget && (
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <span className="text-[14px] font-bold text-foreground tabular-nums leading-none">{budget}</span>
+              <span className="text-[9px] text-muted-foreground uppercase tracking-wide">budget</span>
+            </div>
+          )}
+
+          {/* Tags row: project + city + pre-approved */}
+          {(contact.project || cityPref || isPreApproved) && (
+            <div className="flex flex-wrap items-center gap-1 mb-2">
+              {contact.project && (
+                <Badge
+                  variant="outline"
+                  className="border-0 text-[10px] font-semibold h-4 px-1.5"
+                  style={{ background: 'hsl(39 67% 55% / 0.15)', color: 'hsl(39 67% 55%)' }}
+                >
+                  {contact.project}
+                </Badge>
+              )}
+              {cityPref && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {cityPref}
+                </span>
+              )}
+              {isPreApproved && (
+                <Badge
+                  variant="outline"
+                  className="border-0 text-[10px] font-semibold h-4 px-1.5"
+                  style={{ background: 'hsl(142 71% 45% / 0.15)', color: 'hsl(142 71% 45%)' }}
+                >
+                  Pre-approved
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Footer: stage age, activity, contact icons */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/40">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span style={daysColor ? { color: daysColor, fontWeight: 600 } : undefined}>
+                {days !== null ? `${days}d` : '—'}
               </span>
-            ) : (
-              <span className="italic">No activity</span>
-            )}
+              <span className="text-border">·</span>
+              {contact.last_touch_at ? (
+                <span style={{ color: touchColor }}>
+                  {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
+                </span>
+              ) : (
+                <span className="italic">No activity</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+              {contact.email && <Mail className="w-3 h-3 text-muted-foreground" />}
+              {contact.phone && <Phone className="w-3 h-3 text-muted-foreground" />}
+            </div>
           </div>
         </div>
       )}
