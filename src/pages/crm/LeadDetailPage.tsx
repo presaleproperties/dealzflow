@@ -228,8 +228,9 @@ function LeftSidebar({
           <DetailRow label="Email" value={contact.email} href={contact.email ? `mailto:${contact.email}` : undefined} field="email" contactId={contact.id} type="email" />
           {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
           <DetailRow label="Source" value={contact.source} field="source" contactId={contact.id} />
-          <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} />
-          <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} />
+          <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
+          <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
+
           {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
 
           {(contact.budget_min != null || contact.budget_max != null) && (
