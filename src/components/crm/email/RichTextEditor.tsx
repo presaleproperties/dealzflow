@@ -58,6 +58,12 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your em
         <Button type="button" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
           <ListOrdered className="w-4 h-4" />
         </Button>
+        {toolbarSlot && (
+          <>
+            <div className="w-px h-5 bg-border/70 mx-1" />
+            <div className="flex items-center gap-1 ml-auto">{toolbarSlot}</div>
+          </>
+        )}
       </div>
       <EditorContent editor={editor} />
       {footerSlot}
