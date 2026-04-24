@@ -288,6 +288,7 @@ export function FilterPanel({
           <FilterAccordion label="Lead Type" options={[...LEAD_TYPES]} selected={filterLeadType} onChange={setFilterLeadType} optionLabels={LEAD_TYPE_LABELS} />
           <FilterAccordion label="Language" options={[...CRM_LANGUAGES]} selected={filterLanguage} onChange={setFilterLanguage} />
           <FilterAccordion label="Tags" options={dynamicTags} selected={filterTags} onChange={setFilterTags} optionCounts={tagCounts} />
+          <FilterAccordion label="Exclude Tags" options={dynamicTags} selected={filterExcludeTags} onChange={setFilterExcludeTags} optionCounts={tagCounts} tone="exclude" />
           <FilterAccordion label="Property Type" options={['condo', 'townhome', 'both']} selected={filterPropertyType} onChange={setFilterPropertyType} optionLabels={{ condo: 'Condo', townhome: 'Townhome', both: 'Both' }} />
           <FilterAccordion label="City Preference" options={[...FRASER_VALLEY_CITIES]} selected={filterCity} onChange={setFilterCity} />
           <FilterAccordion label="Pre-Approved" options={['yes', 'no']} selected={filterPreApproved} onChange={setFilterPreApproved} optionLabels={{ yes: 'Yes', no: 'No' }} />
