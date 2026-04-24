@@ -249,6 +249,15 @@ function SignatureEditForm({
         <Textarea
           value={draftHtml}
           onChange={(e) => onHtmlChange(e.target.value)}
+          onPaste={(e) => {
+            // Prefer the rich HTML payload over plain text so tables/styles survive
+            const html = e.clipboardData?.getData('text/html');
+            if (html && isRichHtml(html)) {
+              e.preventDefault();
+              onHtmlChange(html);
+              setShowPreview(true);
+            }
+          }}
           placeholder="<table>...</table>"
           className="min-h-[160px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40"
         />
