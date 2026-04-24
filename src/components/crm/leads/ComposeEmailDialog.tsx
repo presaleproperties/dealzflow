@@ -782,29 +782,33 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               {/* Footer */}
               <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={appendSignature}
-                      onChange={(e) => setAppendSignature(e.target.checked)}
-                      className="rounded border-border"
-                    />
-                    Append signature
-                  </label>
-                  {appendSignature && signatures.length > 0 && (
+                  {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
+                      Signature
+                    </span>
                     <select
-                      value={selectedSignatureId ?? ''}
-                      onChange={(e) => setSelectedSignatureId(e.target.value || null)}
-                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[180px]"
-                      title="Choose which signature to append"
+                      value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '__none__') {
+                          setAppendSignature(false);
+                        } else {
+                          setAppendSignature(true);
+                          setSelectedSignatureId(v || null);
+                        }
+                      }}
+                      className="h-7 rounded-md border border-border bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 max-w-[200px]"
+                      title="Choose a signature for this email"
                     >
+                      <option value="__none__">None</option>
                       {signatures.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}{s.is_default ? ' (default)' : ''}
                         </option>
                       ))}
                     </select>
-                  )}
+                  </div>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
