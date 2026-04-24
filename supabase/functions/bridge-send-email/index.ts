@@ -141,7 +141,8 @@ Deno.serve(async (req) => {
     // the HTML, and persist the same id on crm_email_log so crm-email-track
     // can correlate inbox opens back to this send.
     const trackingId = crypto.randomUUID();
-    const trackedHtml = injectTrackingPixel(body.html, trackingId);
+    const linkedHtml = rewriteLinks(body.html, trackingId);
+    const trackedHtml = injectTrackingPixel(linkedHtml, trackingId);
 
     const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
       method: "POST",
