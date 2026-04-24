@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Search, Sparkles, User, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { Loader2, Search, Sparkles, User, Mail, Phone, MapPin, ArrowRight, Building2 } from 'lucide-react';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
 import { cn } from '@/lib/utils';
