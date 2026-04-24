@@ -66,8 +66,8 @@ const FallbackThumb = ({ html: _html }: { html?: string | null }) => (
   </div>
 );
 
-const TemplateThumb: React.ComponentType<{ html?: string | null }> =
-  (typeof ImportedTemplateThumb === 'function' ? ImportedTemplateThumb : FallbackThumb) as React.ComponentType<{
+const TemplateThumb: ComponentType<{ html?: string | null }> =
+  (typeof ImportedTemplateThumb === 'function' ? ImportedTemplateThumb : FallbackThumb) as ComponentType<{
     html?: string | null;
   }>;
 
