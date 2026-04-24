@@ -359,10 +359,6 @@ export default function DataImportSection() {
       let existingTags: string[] = [];
 
       if (mergeMode) {
-        const tryMatch = async (q: ReturnType<typeof supabase.from>) => {
-          const { data } = await (q as never as { select: (s: string) => { limit: (n: number) => Promise<{ data: { id: string; tags: string[] | null }[] | null }> } });
-          return data;
-        };
         if (rec.lofty_id) {
           const { data } = await supabase.from('crm_contacts').select('id,tags').eq('lofty_id', rec.lofty_id as string).limit(1);
           if (data && data.length > 0) { existingId = data[0].id; existingTags = (data[0].tags as string[]) ?? []; }
