@@ -8,17 +8,15 @@ import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import {
-  Bell, Search, Settings2, ShieldAlert, LogOut, ChevronDown, Menu, X,
-  Command, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
-  Receipt, TrendingUp, BarChart2, Network, Sun, Moon, Monitor,
+  ChevronDown, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
+  Receipt, TrendingUp, BarChart2, Network,
   Users, Kanban, Mail, MessageCircle, LayoutTemplate, BookUser, Zap,
-  CalendarDays, BarChart3, Settings, Plug,
+  CalendarDays, BarChart3, Settings, Plug, ShieldAlert, LogOut,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -96,46 +94,7 @@ const SURFACE_STRONG = 'hsl(var(--popover))';
 const FG_STRONG = 'hsl(var(--foreground))';
 const FG_MUTED = 'hsl(var(--muted-foreground))';
 
-const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-
-function ThemeToggleButton() {
-  const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
-  const { data: settings } = useSettings();
-  const updateSettings = useUpdateSettings({ silent: true });
-
-  // On mount: restore theme from DB if user is logged in
-  useEffect(() => {
-    if (settings?.theme && settings.theme !== theme) {
-      setTheme(settings.theme);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings?.theme]);
-
-  function handleCycle() {
-    const current = (theme as 'light' | 'dark' | 'system') ?? 'system';
-    const idx = THEME_CYCLE.indexOf(current);
-    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
-    setTheme(next);
-    if (user) updateSettings.mutate({ theme: next });
-  }
-
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
-
-  return (
-    <button
-      onClick={handleCycle}
-      aria-label={`Theme: ${label}. Click to cycle.`}
-      title={`Theme: ${label}. Click to cycle.`}
-      className="h-9 inline-flex items-center gap-1.5 px-2 sm:px-2.5 rounded-lg transition-colors hover:bg-foreground/5"
-      style={{ color: INACTIVE_TEXT }}
-    >
-      <Icon className="w-[15px] h-[15px]" strokeWidth={1.8} />
-      <span className="hidden sm:inline text-[12px] font-medium leading-none">{label}</span>
-    </button>
-  );
-}
+// Theme toggle and other utility buttons live in the right rail (RightRail.tsx).
 
 function isPathActive(pathname: string, path: string): boolean {
   if (path === '/dashboard') return pathname === '/dashboard';
@@ -378,98 +337,8 @@ export function TopNav() {
             })}
           </nav>
 
-          {/* Spacer for mobile */}
-          <div className="flex-1 lg:hidden" />
-
-          {/* Right utility cluster */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <ThemeToggleButton />
-            <button
-              className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: INACTIVE_TEXT }}
-              aria-label="Search"
-            >
-              <Search className="w-[15px] h-[15px]" strokeWidth={1.8} />
-            </button>
-            <button
-              className="relative h-9 w-9 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: INACTIVE_TEXT }}
-              aria-label="Notifications"
-            >
-              <Bell className="w-[15px] h-[15px]" strokeWidth={1.8} />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: 'hsl(0 80% 60%)' }} />
-            </button>
-            <Link
-              to="/settings"
-              aria-label="Settings"
-              className="hidden sm:flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: isPathActive(location.pathname, '/settings') ? GOLD : INACTIVE_TEXT }}
-            >
-              <Settings2 className="w-[15px] h-[15px]" strokeWidth={1.8} />
-            </Link>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="ml-1 flex items-center gap-1.5 rounded-full pr-1 pl-0.5 py-0.5 transition-colors hover:bg-white/5 focus:outline-none"
-                  aria-label="Account menu"
-                >
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-[10.5px] font-bold text-white"
-                    style={{ background: GOLD }}
-                  >
-                    {initials}
-                  </div>
-                  <ChevronDown className="hidden sm:block w-3 h-3 opacity-60" style={{ color: INACTIVE_TEXT }} strokeWidth={2.2} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                sideOffset={8}
-                className="p-1.5 min-w-[200px] border-0"
-                style={{ background: SURFACE_STRONG, border: `1px solid ${NAV_BORDER}` }}
-              >
-                <div className="px-2.5 py-2 mb-1 border-b" style={{ borderColor: HOVER_BG }}>
-                  <div className="text-[11px]" style={{ color: FG_MUTED }}>Signed in as</div>
-                  <div className="text-[12.5px] font-medium truncate" style={{ color: FG_STRONG }}>
-                    {user?.email}
-                  </div>
-                </div>
-                <Link
-                  to="/settings"
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
-                  style={{ color: FG_STRONG }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = HOVER_BG; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <Settings2 className="w-4 h-4" strokeWidth={1.8} />
-                  Settings
-                </Link>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
-                    style={{ color: 'hsl(var(--warning))' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(var(--warning) / 0.1)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <ShieldAlert className="w-4 h-4" strokeWidth={1.8} />
-                    Admin
-                  </Link>
-                )}
-                <button
-                  onClick={requestSignOut}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors"
-                  style={{ color: 'hsl(var(--destructive))' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(var(--destructive) / 0.1)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <LogOut className="w-4 h-4" strokeWidth={1.8} />
-                  Sign out
-                </button>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {/* Spacer fills remaining width — utilities now live in the right rail */}
+          <div className="flex-1" />
         </div>
       </header>
 
@@ -496,123 +365,3 @@ export function TopNav() {
   );
 }
 
-function MobileNavSheet({
-  sections,
-  filterChildren,
-  isAdmin,
-  onSignOut,
-  pathname,
-}: {
-  sections: NavSection[];
-  filterChildren: (c?: NavChild[]) => NavChild[];
-  isAdmin: boolean;
-  onSignOut: () => void;
-  pathname: string;
-}) {
-  return (
-    <div className="flex flex-col h-full">
-      <div
-        className="flex items-center justify-between px-5 h-[60px] border-b shrink-0"
-        style={{ borderColor: NAV_BORDER }}
-      >
-        <Link to="/dashboard" className="flex items-center gap-2.5">
-          <img src={logoMark} alt="Dealzflow" className="w-[26px] h-[26px] rounded-[7px]" />
-          <span className="font-semibold text-[15px] tracking-[-0.02em] text-foreground">
-            Dealz<span style={{ color: GOLD }}>flow</span>
-          </span>
-        </Link>
-      </div>
-
-      <nav
-        className="flex-1 overflow-y-auto px-3 py-5 space-y-6"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
-      >
-        {sections.map(section => {
-          if (section.path) {
-            const active = isPathActive(pathname, section.path);
-            return (
-              <Link
-                key={section.label}
-                to={section.path}
-                className="flex items-center min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-                style={{
-                  color: active ? GOLD : INACTIVE_TEXT,
-                  background: active ? GOLD_BG : 'transparent',
-                  fontWeight: active ? 600 : 500,
-                }}
-              >
-                {section.label}
-              </Link>
-            );
-          }
-          const children = filterChildren(section.children);
-          if (!children.length) return null;
-          return (
-            <div key={section.label}>
-              <div
-                className="px-3.5 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
-                style={{ color: FG_MUTED }}
-              >
-                {section.label}
-              </div>
-              <div className="space-y-1">
-                {children.map(child => {
-                  const active = isPathActive(pathname, child.path);
-                  const Icon = child.icon;
-                  return (
-                    <Link
-                      key={child.path}
-                      to={child.path}
-                      className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-                      style={{
-                        color: active ? GOLD : INACTIVE_TEXT,
-                        background: active ? GOLD_BG : 'transparent',
-                        fontWeight: active ? 600 : 500,
-                      }}
-                    >
-                      <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={active ? 2.2 : 1.8} />
-                      {child.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="pt-4 mt-2 border-t space-y-1" style={{ borderColor: NAV_BORDER }}>
-          <Link
-            to="/settings"
-            className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-            style={{
-              color: isPathActive(pathname, '/settings') ? GOLD : INACTIVE_TEXT,
-              background: isPathActive(pathname, '/settings') ? GOLD_BG : 'transparent',
-              fontWeight: isPathActive(pathname, '/settings') ? 600 : 500,
-            }}
-          >
-            <Settings2 className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            Settings
-          </Link>
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-              style={{ color: 'hsl(var(--warning))', fontWeight: 500 }}
-            >
-              <ShieldAlert className="w-[18px] h-[18px]" strokeWidth={1.8} />
-              Admin
-            </Link>
-          )}
-          <button
-            onClick={onSignOut}
-            className="w-full flex items-center gap-3.5 min-h-[44px] px-3.5 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-            style={{ color: 'hsl(var(--destructive))', fontWeight: 500 }}
-          >
-            <LogOut className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            Sign out
-          </button>
-        </div>
-      </nav>
-    </div>
-  );
-}
