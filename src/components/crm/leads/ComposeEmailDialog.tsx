@@ -222,13 +222,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
     setBodyHtml(tpl.body_html || '<p></p>');
-    /* Track recent */
+    /* Track recent (per-user, local storage) */
     const next = [tpl.id, ...recentIds.filter((id) => id !== tpl.id)].slice(0, 8);
     setRecentIds(next);
     try {
       localStorage.setItem(RECENT_KEY, JSON.stringify(next));
     } catch {
       /* ignore */
+    }
+    /* Track team-wide usage for our own templates (bridge templates live elsewhere) */
+    if (!tpl.__isBridge) {
+      incrementUsage.mutate(tpl.id);
     }
     toast.success(`Loaded "${tpl.name}"`);
   };
