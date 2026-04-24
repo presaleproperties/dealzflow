@@ -8,17 +8,15 @@ import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import {
-  Bell, Search, Settings2, ShieldAlert, LogOut, ChevronDown, Menu, X,
-  Command, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
-  Receipt, TrendingUp, BarChart2, Network, Sun, Moon, Monitor,
+  ChevronDown, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
+  Receipt, TrendingUp, BarChart2, Network,
   Users, Kanban, Mail, MessageCircle, LayoutTemplate, BookUser, Zap,
-  CalendarDays, BarChart3, Settings, Plug,
+  CalendarDays, BarChart3, Settings, Plug, ShieldAlert, LogOut,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
