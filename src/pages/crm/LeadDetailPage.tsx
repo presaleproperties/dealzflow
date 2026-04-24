@@ -836,7 +836,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
               {visibleFields.map((f, i) => (
                 <div key={`${f.label}-${i}`} className="contents">
                   <dt className="text-[11px] uppercase tracking-wider text-muted-foreground/80 truncate pt-0.5">{f.label}</dt>
-                  <dd className="text-foreground/90 break-words">{f.value || '—'}</dd>
+                  <dd className="text-foreground/90 break-words"><LinkifiedText text={f.value || '—'} /></dd>
                 </div>
               ))}
             </dl>
