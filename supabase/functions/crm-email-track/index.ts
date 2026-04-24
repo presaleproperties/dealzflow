@@ -54,60 +54,100 @@ Deno.serve(async (req) => {
       .eq("tracking_id", trackingId)
       .maybeSingle();
 
+    // Also load the matching crm_email_log row (the table the CRM activity feed
+    // reads). Both updates are best-effort — neither should block the response.
+    const { data: emailLog } = await supabase
+      .from("crm_email_log")
+      .select("id, contact_id, open_count, click_count")
+      .eq("tracking_id", trackingId)
+      .maybeSingle();
+
     const nowIso = new Date().toISOString();
 
-    if (action === "open" && log) {
-      await supabase
-        .from("crm_email_send_log")
-        .update({
-          status: "opened",
-          opened_at: log.open_count === 0 ? nowIso : undefined,
-          last_opened_at: nowIso,
-          open_count: (log.open_count ?? 0) + 1,
-        })
-        .eq("id", log.id);
+    if (action === "open") {
+      if (log) {
+        await supabase
+          .from("crm_email_send_log")
+          .update({
+            status: "opened",
+            opened_at: log.open_count === 0 ? nowIso : undefined,
+            last_opened_at: nowIso,
+            open_count: (log.open_count ?? 0) + 1,
+          })
+          .eq("id", log.id);
+      }
+
+      if (emailLog) {
+        await supabase
+          .from("crm_email_log")
+          .update({
+            opened_at: emailLog.open_count === 0 ? nowIso : undefined,
+            last_opened_at: nowIso,
+            open_count: (emailLog.open_count ?? 0) + 1,
+          })
+          .eq("id", emailLog.id);
+      }
 
       // Only write an engagement event on the FIRST open to avoid timeline spam.
-      if (log.open_count === 0) {
+      const firstOpen =
+        (log?.open_count ?? emailLog?.open_count ?? 0) === 0;
+      const contactId = log?.contact_id ?? emailLog?.contact_id ?? null;
+      if (firstOpen && contactId) {
         await supabase.from("crm_lead_behavior_engagement").insert({
-          contact_id: log.contact_id,
-          email: log.email_to,
+          contact_id: contactId,
+          email: log?.email_to,
           event_type: "email_open",
-          campaign_id: log.campaign_id,
-          campaign_name: log.subject,
-          template_id: log.template_id,
-          template_name: log.template_type,
+          campaign_id: log?.campaign_id,
+          campaign_name: log?.subject,
+          template_id: log?.template_id,
+          template_name: log?.template_type,
           occurred_at: nowIso,
           metadata: { tracking_id: trackingId },
         });
       }
     }
 
-    if (action === "click" && log) {
-      await supabase
-        .from("crm_email_send_log")
-        .update({
-          status: "clicked",
-          clicked_at: log.click_count === 0 ? nowIso : undefined,
-          last_clicked_at: nowIso,
-          click_count: (log.click_count ?? 0) + 1,
-          clicked_url: targetUrl ?? undefined,
-        })
-        .eq("id", log.id);
+    if (action === "click") {
+      if (log) {
+        await supabase
+          .from("crm_email_send_log")
+          .update({
+            status: "clicked",
+            clicked_at: log.click_count === 0 ? nowIso : undefined,
+            last_clicked_at: nowIso,
+            click_count: (log.click_count ?? 0) + 1,
+            clicked_url: targetUrl ?? undefined,
+          })
+          .eq("id", log.id);
+      }
 
-      // Always write click events — clicks are higher-signal than opens.
-      await supabase.from("crm_lead_behavior_engagement").insert({
-        contact_id: log.contact_id,
-        email: log.email_to,
-        event_type: "email_click",
-        campaign_id: log.campaign_id,
-        campaign_name: log.subject,
-        template_id: log.template_id,
-        template_name: log.template_type,
-        link_url: targetUrl,
-        occurred_at: nowIso,
-        metadata: { tracking_id: trackingId },
-      });
+      if (emailLog) {
+        await supabase
+          .from("crm_email_log")
+          .update({
+            clicked_at: emailLog.click_count === 0 ? nowIso : undefined,
+            last_clicked_at: nowIso,
+            click_count: (emailLog.click_count ?? 0) + 1,
+          })
+          .eq("id", emailLog.id);
+      }
+
+      const contactId = log?.contact_id ?? emailLog?.contact_id ?? null;
+      if (contactId) {
+        // Always write click events — clicks are higher-signal than opens.
+        await supabase.from("crm_lead_behavior_engagement").insert({
+          contact_id: contactId,
+          email: log?.email_to,
+          event_type: "email_click",
+          campaign_id: log?.campaign_id,
+          campaign_name: log?.subject,
+          template_id: log?.template_id,
+          template_name: log?.template_type,
+          link_url: targetUrl,
+          occurred_at: nowIso,
+          metadata: { tracking_id: trackingId },
+        });
+      }
     }
   } catch (e) {
     console.error("track error", e);

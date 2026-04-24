@@ -14,6 +14,35 @@ const corsHeaders = {
 const PRESALE_FUNCTIONS_URL =
   "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1";
 
+// Public tracker endpoint on this CRM project. Recipients hit this from their
+// inbox so it must NOT require auth (crm-email-track is deployed with
+// verify_jwt = false).
+const TRACKER_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/crm-email-track`;
+
+/**
+ * Inject a 1×1 transparent tracking pixel right before </body> (or appended
+ * to the end if no </body> tag exists). Idempotent — if a pixel for this
+ * tracking_id is already present we skip re-injecting.
+ *
+ * Note: open tracking is inherently lossy. Gmail proxies images through its
+ * cache (1 open per recipient + occasional phantom prefetches), and Apple
+ * Mail Privacy Protection pre-fetches images so an "open" can fire without
+ * the user actually reading it. Treat counts as directional, not exact.
+ */
+function injectTrackingPixel(html: string, trackingId: string): string {
+  const pixelUrl = `${TRACKER_URL}?a=open&t=${encodeURIComponent(trackingId)}`;
+  const pixelTag =
+    `<img src="${pixelUrl}" width="1" height="1" alt="" ` +
+    `style="display:none!important;width:1px;height:1px;border:0;outline:none;" />`;
+
+  if (html.includes(pixelUrl)) return html; // already injected
+
+  if (/<\/body\s*>/i.test(html)) {
+    return html.replace(/<\/body\s*>/i, `${pixelTag}</body>`);
+  }
+  return `${html}${pixelTag}`;
+}
+
 interface SendBody {
   to: string | string[];
   cc?: string | string[];
@@ -77,6 +106,12 @@ Deno.serve(async (req) => {
     }
 
     // ── Immediate send via Presale bridge ──
+    // Generate a tracking_id up-front, inject the open-tracking pixel into
+    // the HTML, and persist the same id on crm_email_log so crm-email-track
+    // can correlate inbox opens back to this send.
+    const trackingId = crypto.randomUUID();
+    const trackedHtml = injectTrackingPixel(body.html, trackingId);
+
     const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
       method: "POST",
       headers: {
@@ -88,7 +123,7 @@ Deno.serve(async (req) => {
         cc: body.cc,
         bcc: body.bcc,
         subject: body.subject,
-        html: body.html,
+        html: trackedHtml,
         template_id: body.template_id ?? null,
         source: "dealzflow_crm",
       }),
@@ -114,17 +149,19 @@ Deno.serve(async (req) => {
           user_id: userId,
           direction: "outbound",
           subject: body.subject,
-          body: body.html,
+          body: trackedHtml,
           cc: ccStr,
           bcc: bccStr,
           sent_at: new Date().toISOString(),
+          tracking_id: trackingId,
         });
       } catch (e) {
         console.warn("crm_email_log insert failed", e);
       }
     }
 
-    return json({ success: true, ...upstreamJson }, 200);
+    return json({ success: true, tracking_id: trackingId, ...upstreamJson }, 200);
+
   } catch (e) {
     console.error("bridge-send-email error", e);
     return json({ error: e instanceof Error ? e.message : "Internal error" }, 500);
