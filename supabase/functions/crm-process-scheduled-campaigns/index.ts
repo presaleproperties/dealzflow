@@ -6,6 +6,51 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Per-recipient token rendering — mirrors src/lib/emailVariables.ts.
+// Replaces {{lead.*}}, legacy {{first_name}} etc. with the recipient's data.
+function renderForRecipient(input: string, lead: Record<string, unknown>): string {
+  if (!input) return input;
+  const get = (k: string) => {
+    const v = lead[k];
+    return v === null || v === undefined ? "" : String(v);
+  };
+  const first = get("first_name").trim();
+  const last = get("last_name").trim();
+  const full = [first, last].filter(Boolean).join(" ");
+  const budget = (() => {
+    const v = lead["budget_max"];
+    if (v === null || v === undefined || v === "") return "";
+    const n = typeof v === "string" ? Number(v.replace(/[^\d.-]/g, "")) : (v as number);
+    return Number.isFinite(n)
+      ? n.toLocaleString("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 })
+      : String(v);
+  })();
+  const values: Record<string, string> = {
+    "lead.first_name": first,
+    "lead.last_name": last,
+    "lead.full_name": full,
+    "lead.email": get("email"),
+    "lead.phone": get("phone"),
+    "lead.city": get("city"),
+    "lead.intent": get("intent"),
+    "lead.budget_max": budget,
+    "lead.timeframe": get("timeframe"),
+    "lead.home_type": get("home_type") || get("property_type_pref"),
+    "cobuyer.full_name": get("co_buyer_name"),
+    "cobuyer.email": get("co_buyer_email"),
+    first_name: first,
+    last_name: last,
+    lead_name: full,
+  };
+  return input.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, raw) => {
+    const tok = String(raw);
+    if (tok in values) return values[tok];
+    const lower = tok.toLowerCase();
+    if (lower in values) return values[lower];
+    return "";
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
