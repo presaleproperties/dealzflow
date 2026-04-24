@@ -1011,7 +1011,7 @@ export default function LeadDetailPage() {
           <Skeleton className="h-5 w-40" />
         </div>
         <div className="flex flex-1 min-h-0">
-          <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 p-5 space-y-5">
+          <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/30 p-5 space-y-5">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-9 w-full" />
             <div className="grid grid-cols-3 gap-1.5">
@@ -1042,7 +1042,7 @@ export default function LeadDetailPage() {
               ))}
             </div>
           </div>
-          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/20 p-5 space-y-4">
+          <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 p-5 space-y-4">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-12 w-full rounded-md" />
             <Skeleton className="h-12 w-full rounded-md" />
@@ -1132,7 +1132,7 @@ export default function LeadDetailPage() {
 
       <div className="flex flex-1 min-h-0">
         {/* Left sidebar — wider, inspired layout */}
-        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 overflow-y-auto p-5">
+        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-5">
           <LeftSidebar
             contact={c}
             leadScore={leadScore}
@@ -1150,7 +1150,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/20 overflow-y-auto p-5">
+        <div className="w-[300px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
           <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
         </div>
       </div>
