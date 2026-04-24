@@ -977,7 +977,7 @@ export default function LeadDetailPage() {
           <Skeleton className="h-5 w-40" />
         </div>
         <div className="flex flex-1 min-h-0">
-          <div className="w-[300px] flex-shrink-0 border-r border-border bg-muted/20 p-5 space-y-5">
+          <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/20 p-5 space-y-5">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-9 w-full" />
             <div className="grid grid-cols-3 gap-1.5">
