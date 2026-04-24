@@ -899,6 +899,7 @@ export type Database = {
           contact_id: string
           content: string
           created_at: string | null
+          event_at: string | null
           id: string
           is_pinned: boolean | null
           note_type: string
@@ -909,6 +910,7 @@ export type Database = {
           contact_id: string
           content: string
           created_at?: string | null
+          event_at?: string | null
           id?: string
           is_pinned?: boolean | null
           note_type?: string
@@ -919,6 +921,7 @@ export type Database = {
           contact_id?: string
           content?: string
           created_at?: string | null
+          event_at?: string | null
           id?: string
           is_pinned?: boolean | null
           note_type?: string
@@ -2569,7 +2572,19 @@ export type Database = {
         Args: { input: string[] }
         Returns: string[]
       }
+      parse_note_event_ts: {
+        Args: { _date: string; _time: string }
+        Returns: string
+      }
       split_crm_multi_value: { Args: { input: string }; Returns: string[] }
+      split_imported_note: {
+        Args: { _fallback_ts: string; _raw: string }
+        Returns: {
+          body: string
+          event_at: string
+          kind: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
