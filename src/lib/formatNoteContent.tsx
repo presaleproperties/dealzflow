@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { ExternalLink, Globe, Link2, Lock, Mail, ShieldAlert } from 'lucide-react';
+import { ExternalLink, Globe, Link2, Loader2, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,6 +150,61 @@ function useTimelineLinkBehavior(): TimelineLinkBehavior {
   return behavior;
 }
 
+/* ──────────────────────────────────────────────────────────────────
+   Server-side metadata fetch (page title / description / og:image)
+   ────────────────────────────────────────────────────────────────── */
+interface LinkMetadata {
+  url: string;
+  finalUrl?: string;
+  title?: string | null;
+  description?: string | null;
+  siteName?: string | null;
+  image?: string | null;
+  favicon?: string | null;
+  error?: string;
+}
+
+// Cache results in-memory for the session so reopening the same popover
+// is instant and we don't hammer the edge function.
+const META_CACHE = new Map<string, Promise<LinkMetadata | null>>();
+
+async function fetchLinkMetadata(url: string): Promise<LinkMetadata | null> {
+  const existing = META_CACHE.get(url);
+  if (existing) return existing;
+  const promise = (async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-link-metadata', {
+        body: { url },
+      });
+      if (error) return null;
+      return (data ?? null) as LinkMetadata | null;
+    } catch {
+      return null;
+    }
+  })();
+  META_CACHE.set(url, promise);
+  return promise;
+}
+
+function useLinkMetadata(url: string, enabled: boolean) {
+  const [data, setData] = useState<LinkMetadata | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    setLoading(true);
+    fetchLinkMetadata(url).then((result) => {
+      if (cancelled) return;
+      setData(result);
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [url, enabled]);
+
+  return { data, loading };
+}
+
 function LinkPreview({
   url,
   label,
@@ -164,6 +219,9 @@ function LinkPreview({
   const href = normalizeHref(url, kind);
   const behavior = useTimelineLinkBehavior();
   const meta = kind === 'url' ? parseUrlMeta(url) : null;
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  // Lazily fetch real page metadata only when the popover actually opens.
+  const { data: pageMeta, loading: metaLoading } = useLinkMetadata(href, popoverOpen && kind === 'url');
 
   const isEmail = kind === 'email';
   // For emails we open the user's mail client in the same tab; new tab
@@ -195,7 +253,7 @@ function LinkPreview({
   }
 
   return (
-    <Popover>
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -212,24 +270,64 @@ function LinkPreview({
         onClick={(e) => e.stopPropagation()}
         align="start"
       >
+        {/* Server-fetched page preview (title / description / image) */}
+        {pageMeta?.image && (
+          <div className="aspect-[1.91/1] w-full bg-muted overflow-hidden border-b">
+            <img
+              src={pageMeta.image}
+              alt=""
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        )}
+
         <div className="bg-muted/40 p-3 border-b">
           <div className="flex items-start gap-2">
-            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-              <Globe className="h-4 w-4 text-primary" />
+            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+              {pageMeta?.favicon ? (
+                <img
+                  src={pageMeta.favicon}
+                  alt=""
+                  className="h-4 w-4 object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <Globe className="h-4 w-4 text-primary" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-sm truncate">{meta?.host || url}</div>
+              <div className="font-medium text-sm truncate">
+                {pageMeta?.title || pageMeta?.siteName || meta?.host || url}
+              </div>
               <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                 {meta?.isSecure ? (
-                  <><Lock className="h-3 w-3" /> Secure (HTTPS)</>
+                  <><Lock className="h-3 w-3" /> {meta.host}</>
                 ) : (
-                  <><ShieldAlert className="h-3 w-3 text-amber-500" /> Not secure</>
+                  <><ShieldAlert className="h-3 w-3 text-amber-500" /> {meta?.host || 'Not secure'}</>
                 )}
               </div>
             </div>
           </div>
         </div>
+
         <div className="p-3 space-y-2 text-xs">
+          {metaLoading && !pageMeta && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Fetching page details…</span>
+            </div>
+          )}
+          {pageMeta?.description && (
+            <div>
+              <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5">Description</div>
+              <p className="text-[12px] text-foreground/90 leading-snug line-clamp-3">{pageMeta.description}</p>
+            </div>
+          )}
+          {!metaLoading && pageMeta?.error && !pageMeta?.title && !pageMeta?.description && (
+            <div className="text-[11px] text-muted-foreground italic">Couldn't load page preview.</div>
+          )}
           {meta?.path && meta.path !== '/' && (
             <div>
               <div className="text-muted-foreground uppercase tracking-wide text-[10px] mb-0.5">Path</div>
