@@ -21,6 +21,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { GlobalLeadSearch } from '@/components/crm/GlobalLeadSearch';
 
 interface NavChild { label: string; path: string; icon: LucideIcon; description?: string; ownerAdminOnly?: boolean; crmOnly?: boolean; }
 interface NavGroup { label: string; children: NavChild[]; }
