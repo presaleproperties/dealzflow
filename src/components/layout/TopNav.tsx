@@ -23,7 +23,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface NavChild { label: string; path: string; icon: LucideIcon; description?: string; ownerAdminOnly?: boolean; crmOnly?: boolean; }
-interface NavSection { label: string; path?: string; children?: NavChild[]; crmOnly?: boolean; }
+interface NavGroup { label: string; children: NavChild[]; }
+interface NavSection { label: string; path?: string; children?: NavChild[]; groups?: NavGroup[]; crmOnly?: boolean; }
 
 const SECTIONS: NavSection[] = [
   {
@@ -53,18 +54,33 @@ const SECTIONS: NavSection[] = [
   {
     label: 'CRM',
     crmOnly: true,
-    children: [
-      { label: 'CRM Dashboard',  path: '/crm/dashboard',   icon: LayoutDashboard, description: 'CRM overview' },
-      { label: 'Leads',          path: '/crm/leads',       icon: Users,           description: 'All leads & contacts' },
-      { label: 'Pipeline',       path: '/crm/pipeline',    icon: Kanban,          description: 'Lead pipeline' },
-      { label: 'Email Center',   path: '/crm/email',       icon: Mail,            description: 'Campaigns & inbox' },
-      { label: 'WhatsApp',       path: '/crm/whatsapp',    icon: MessageCircle,   description: 'Conversations' },
-      { label: 'Templates',      path: '/crm/templates',   icon: LayoutTemplate,  description: 'Email templates' },
-      { label: 'Calendar',       path: '/crm/calendar',    icon: CalendarDays,    description: 'Showings & events' },
-      { label: 'Reports',        path: '/crm/reports',     icon: BarChart3,       description: 'CRM analytics' },
-      { label: 'Automations',    path: '/crm/automations', icon: Zap,             description: 'Triggers & workflows', ownerAdminOnly: true },
-      { label: 'Integrations',   path: '/crm/integrations',icon: Plug,            description: 'Connect platforms',    ownerAdminOnly: true },
-      { label: 'CRM Settings',   path: '/crm/settings',    icon: Settings,        description: 'CRM configuration',    ownerAdminOnly: true },
+    groups: [
+      {
+        label: 'Engage',
+        children: [
+          { label: 'CRM Dashboard', path: '/crm/dashboard', icon: LayoutDashboard, description: 'CRM overview' },
+          { label: 'Leads',         path: '/crm/leads',     icon: Users,           description: 'All leads & contacts' },
+          { label: 'Pipeline',      path: '/crm/pipeline',  icon: Kanban,          description: 'Lead pipeline' },
+          { label: 'Calendar',      path: '/crm/calendar',  icon: CalendarDays,    description: 'Showings & events' },
+        ],
+      },
+      {
+        label: 'Marketing',
+        children: [
+          { label: 'Email Center', path: '/crm/email',     icon: Mail,           description: 'Campaigns & inbox' },
+          { label: 'WhatsApp',     path: '/crm/whatsapp',  icon: MessageCircle,  description: 'Conversations' },
+          { label: 'Templates',    path: '/crm/templates', icon: LayoutTemplate, description: 'Email templates' },
+          { label: 'Reports',      path: '/crm/reports',   icon: BarChart3,      description: 'CRM analytics' },
+        ],
+      },
+      {
+        label: 'Admin',
+        children: [
+          { label: 'Automations',  path: '/crm/automations',  icon: Zap,      description: 'Triggers & workflows', ownerAdminOnly: true },
+          { label: 'Integrations', path: '/crm/integrations', icon: Plug,     description: 'Connect platforms',    ownerAdminOnly: true },
+          { label: 'CRM Settings', path: '/crm/settings',     icon: Settings, description: 'CRM configuration',    ownerAdminOnly: true },
+        ],
+      },
     ],
   },
   {
