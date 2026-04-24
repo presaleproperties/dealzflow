@@ -45,8 +45,29 @@ export function ComposeTab() {
   const addMessage = useAddCrmMessage();
   const { data: emailSettings } = useEmailSettings();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [mode, setMode] = useState<SendMode>('individual');
+  // Locked recipient list — populated when navigated from Leads bulk bar with ?contactIds=...
+  // While locked, the filter UI is replaced by a banner showing the fixed recipient count.
+  const lockedIds = useMemo(() => {
+    const raw = searchParams.get('contactIds');
+    if (!raw) return null;
+    const ids = raw.split(',').map(s => s.trim()).filter(Boolean);
+    return ids.length > 0 ? new Set(ids) : null;
+  }, [searchParams]);
+
+  const [mode, setMode] = useState<SendMode>(lockedIds ? 'campaign' : 'individual');
+
+  // If a locked list arrives mid-session, force campaign mode.
+  useEffect(() => {
+    if (lockedIds && mode !== 'campaign') setMode('campaign');
+  }, [lockedIds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const clearLockedIds = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('contactIds');
+    setSearchParams(next, { replace: true });
+  };
 
   // Individual mode
   const [searchTo, setSearchTo] = useState('');
