@@ -155,13 +155,16 @@ export default function NetworkPage() {
 
   const tooltipStyle = {
     contentStyle: {
-      background: 'hsl(var(--card))',
+      background: 'hsl(var(--popover))',
       border: '1px solid hsl(var(--border))',
       borderRadius: '12px',
       fontSize: '12px',
-      boxShadow: '0 8px 32px -8px hsl(220 25% 10% / 0.2)',
+      boxShadow: '0 8px 32px -8px hsl(var(--foreground) / 0.2)',
       padding: '10px 14px',
+      color: 'hsl(var(--popover-foreground))',
     },
+    labelStyle: { color: 'hsl(var(--popover-foreground))' },
+    itemStyle: { color: 'hsl(var(--popover-foreground))' },
   };
 
   if (agentsLoading) {

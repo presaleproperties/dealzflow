@@ -43,11 +43,13 @@ export function CrmLeadsBySource() {
             <Tooltip
               contentStyle={{
                 background: 'hsl(var(--popover))',
-                border: 'none',
+                border: '1px solid hsl(var(--border))',
                 borderRadius: 8,
-                color: '#fff',
+                color: 'hsl(var(--popover-foreground))',
                 fontSize: 12,
               }}
+              labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+              itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
             />
             <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={18} />
           </BarChart>

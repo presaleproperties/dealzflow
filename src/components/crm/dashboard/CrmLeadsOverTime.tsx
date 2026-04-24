@@ -64,11 +64,13 @@ export function CrmLeadsOverTime() {
             <Tooltip
               contentStyle={{
                 background: 'hsl(var(--popover))',
-                border: 'none',
+                border: '1px solid hsl(var(--border))',
                 borderRadius: 8,
-                color: '#fff',
+                color: 'hsl(var(--popover-foreground))',
                 fontSize: 12,
               }}
+              labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+              itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
             />
             <Area
               type="monotone"

@@ -394,8 +394,11 @@ export default function ForecastPage() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '12px',
                       fontSize: '12px',
-                      boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
+                      boxShadow: '0 10px 25px -5px hsl(var(--foreground) / 0.1)',
+                      color: 'hsl(var(--popover-foreground))',
                     }}
+                    labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                    itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
                     formatter={(value: number, name: string) => {
                       const labels: Record<string, string> = {
                         commissions: 'Commissions',
