@@ -472,7 +472,7 @@ function DetailRow({ label, value, href, field, contactId, type, options }: {
 /* ═══════════════════════════════════════════════════
    CENTER COLUMN — Activity Timeline
    ═══════════════════════════════════════════════════ */
-type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'system';
+type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'web' | 'system';
 
 const NOTE_TYPE_META: Record<string, { icon: typeof StickyNote; label: string; color: string }> = {
   manual: { icon: StickyNote, label: 'Note', color: 'text-foreground/70' },
