@@ -338,15 +338,14 @@ export function TopNav() {
             })}
           </nav>
 
-          {/* Center/right: Global CRM search (Lofty-style) */}
-          <div className="flex-1 flex justify-end lg:justify-center">
+          {/* Right-aligned global CRM search (Lofty-style) */}
+          <div className="flex-1 flex justify-end">
             {isCrmMember && (
               <div className="hidden md:block">
                 <GlobalLeadSearch />
               </div>
             )}
           </div>
-          {/* Right-side utilities live in the right rail */}
           <div className="hidden lg:block w-2" />
         </div>
       </header>
