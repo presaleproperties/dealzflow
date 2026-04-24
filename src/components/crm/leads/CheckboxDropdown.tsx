@@ -96,7 +96,7 @@ export function CheckboxDropdown({
   const handleCreate = () => {
     const val = query.trim();
     if (!val) return;
-    if (!selected.includes(val)) onChange([...selected, val]);
+    if (!isSelected(val)) onChange([...selected, val]);
     setQuery('');
   };
 
