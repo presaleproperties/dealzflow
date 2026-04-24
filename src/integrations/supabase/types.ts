@@ -826,13 +826,17 @@ export type Database = {
           body_html: string | null
           category: string
           created_at: string | null
+          external_id: string | null
           id: string
           is_active: boolean
+          last_synced_at: string | null
           last_used_at: string | null
           merge_tags: string[] | null
           name: string
           project: string | null
+          source: string
           subject: string
+          sync_hash: string | null
           times_used: number | null
           updated_at: string | null
         }
@@ -840,13 +844,17 @@ export type Database = {
           body_html?: string | null
           category?: string
           created_at?: string | null
+          external_id?: string | null
           id?: string
           is_active?: boolean
+          last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
           name: string
           project?: string | null
+          source?: string
           subject: string
+          sync_hash?: string | null
           times_used?: number | null
           updated_at?: string | null
         }
@@ -854,17 +862,224 @@ export type Database = {
           body_html?: string | null
           category?: string
           created_at?: string | null
+          external_id?: string | null
           id?: string
           is_active?: boolean
+          last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
           name?: string
           project?: string | null
+          source?: string
           subject?: string
+          sync_hash?: string | null
           times_used?: number | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      crm_lead_behavior_engagement: {
+        Row: {
+          campaign_id: string | null
+          campaign_name: string | null
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          event_type: string
+          id: string
+          link_url: string | null
+          metadata: Json | null
+          occurred_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          campaign_name?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          event_type: string
+          id?: string
+          link_url?: string | null
+          metadata?: Json | null
+          occurred_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          campaign_name?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          event_type?: string
+          id?: string
+          link_url?: string | null
+          metadata?: Json | null
+          occurred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_behavior_engagement_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_behavior_forms: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          form_name: string | null
+          form_type: string
+          id: string
+          payload: Json | null
+          property_id: string | null
+          property_name: string | null
+          submitted_at: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          form_name?: string | null
+          form_type: string
+          id?: string
+          payload?: Json | null
+          property_id?: string | null
+          property_name?: string | null
+          submitted_at?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          form_name?: string | null
+          form_type?: string
+          id?: string
+          payload?: Json | null
+          property_id?: string | null
+          property_name?: string | null
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_behavior_forms_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_behavior_sessions: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          device_type: string | null
+          duration_seconds: number | null
+          email: string | null
+          ended_at: string | null
+          id: string
+          pages_viewed: number | null
+          referrer: string | null
+          session_id: string | null
+          started_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          duration_seconds?: number | null
+          email?: string | null
+          ended_at?: string | null
+          id?: string
+          pages_viewed?: number | null
+          referrer?: string | null
+          session_id?: string | null
+          started_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          duration_seconds?: number | null
+          email?: string | null
+          ended_at?: string | null
+          id?: string
+          pages_viewed?: number | null
+          referrer?: string | null
+          session_id?: string | null
+          started_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_behavior_sessions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_behavior_views: {
+        Row: {
+          action: string
+          contact_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          metadata: Json | null
+          presale_user_id: string | null
+          property_id: string | null
+          property_name: string | null
+          property_url: string | null
+          viewed_at: string
+        }
+        Insert: {
+          action?: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          presale_user_id?: string | null
+          property_id?: string | null
+          property_name?: string | null
+          property_url?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          action?: string
+          contact_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          presale_user_id?: string | null
+          property_id?: string | null
+          property_name?: string | null
+          property_url?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_behavior_views_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_lead_segments: {
         Row: {

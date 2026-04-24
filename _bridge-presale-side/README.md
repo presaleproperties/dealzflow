@@ -1,19 +1,44 @@
-# Presale Properties — Bridge Edge Functions (DEPLOY TO OTHER PROJECT)
+# Bridge — Presale Properties side
 
-These two files must be added to your **Presale Properties** project so the Dealzflow CRM can read templates and send emails through Presale's existing Gmail SMTP pipeline.
+These files belong on the **Presale Properties** project, not on the CRM.
+Open Presale Properties in Lovable and ask:
 
-## How to deploy
+> "Add these two edge functions and paste this code: `bridge-list-templates`, `bridge-send-email`, `push-lead-to-crm`, `sync-templates-with-crm`."
 
-1. Open the **Presale Properties** project in Lovable.
-2. Ask Lovable: *"Add these two edge functions to my project"* and paste the contents of:
-   - `bridge-list-templates.ts` → create `supabase/functions/bridge-list-templates/index.ts`
-   - `bridge-send-email.ts` → create `supabase/functions/bridge-send-email/index.ts`
-3. The `BRIDGE_SECRET` is already added to the Presale project (you confirmed this).
-4. Lovable will deploy them automatically — no extra config needed.
+## Files
 
-That's it. The CRM's `bridge-templates` and `bridge-send-email` functions on this side will start working as soon as those two are live on Presale.
+- `bridge-list-templates.ts` — exposes Presale's templates so CRM can read them live.
+- `bridge-send-email.ts` — lets CRM send emails through Presale's Gmail SMTP.
+- `push-lead-to-crm.ts` — call this from any Presale signup / behavior tracker. Sends the lead + behavior data into CRM (deduped & merged).
+- `sync-templates-with-crm.ts` — two-way template sync. Run via pg_cron every few minutes or on-demand after editing.
 
-## What they do
+## Required secret (already added)
 
-- `bridge-list-templates` — returns all rows from `campaign_templates` so the CRM can show them in its template picker (gated by `x-bridge-secret` header).
-- `bridge-send-email` — accepts `{ to, cc, bcc, subject, html, template_id?, source }`, sends via the existing `gmail-smtp.ts` shared module from `info@presaleproperties.com`, logs to `email_logs` with `template_type='crm_bridge'` for unified analytics.
+`BRIDGE_SECRET` — must match the value in CRM. ✅
+
+## Required table column on Presale templates
+
+Add `crm_id` (text, nullable, unique) and `source` (text, default 'presale') and `sync_hash` (text) and `last_synced_at` (timestamptz) to the Presale templates table to support two-way sync.
+
+## Behavior payload shape (what to post to push-lead-to-crm)
+
+```json
+{
+  "lead": {
+    "email": "buyer@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "phone": "+16041234567",
+    "source": "presale-website",
+    "project": "The Pinnacle",
+    "presale_user_id": "psu_123",
+    "tags": ["downtown", "2br"]
+  },
+  "behavior": {
+    "views": [{ "property_id": "p1", "property_name": "Unit 502", "action": "view" }],
+    "engagement": [{ "event_type": "email_open", "campaign_name": "May newsletter" }],
+    "forms": [{ "form_type": "brochure_download", "property_name": "The Pinnacle" }],
+    "sessions": [{ "pages_viewed": 7, "duration_seconds": 320, "utm_source": "facebook" }]
+  }
+}
+```
