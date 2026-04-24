@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Search, Send, User, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Search, Send, User, X, XCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,11 @@ export function PresaleQuickSendDialog({
   const [manualEmail, setManualEmail] = useState('');
   const [searching, setSearching] = useState(false);
   const [subject, setSubject] = useState('');
+  type SendStatus = 'pending' | 'sending' | 'success' | 'failed';
+  const [sendProgress, setSendProgress] = useState<
+    Record<string, { status: SendStatus; error?: string }>
+  >({});
+  const [isSending, setIsSending] = useState(false);
   const send = useBridgeSendEmail();
   const { data: emailSettings } = useEmailSettings();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -42,6 +48,8 @@ export function PresaleQuickSendDialog({
       setResults([]);
       setRecipients([]);
       setManualEmail('');
+      setSendProgress({});
+      setIsSending(false);
     }
     if (open && asset) setSubject(asset.subject || asset.name || '');
   }, [open, asset]);
@@ -102,8 +110,15 @@ export function PresaleQuickSendDialog({
       phone: (emailSettings as any)?.signature_builder_data?.phone || '',
       signature: emailSettings?.signature_html || '',
     };
+    setIsSending(true);
+    setSendProgress(
+      Object.fromEntries(recipients.map((r) => [r.email, { status: 'pending' as SendStatus }])),
+    );
+    let successes = 0;
+    let failures = 0;
     // Send each recipient individually so per-recipient tokens render correctly.
     for (const r of recipients) {
+      setSendProgress((p) => ({ ...p, [r.email]: { status: 'sending' } }));
       const ctx = { lead: r.lead ?? { first_name: r.name }, sender };
       const personalizedHtml = renderForRecipient(html, ctx);
       const personalizedSubject = renderForRecipient(
@@ -118,13 +133,30 @@ export function PresaleQuickSendDialog({
           template_id: asset.id,
           contact_id: r.id ?? null,
         });
-      } catch (e) {
+        successes++;
+        setSendProgress((p) => ({ ...p, [r.email]: { status: 'success' } }));
+      } catch (e: any) {
+        failures++;
         console.error('send failed', e);
+        setSendProgress((p) => ({
+          ...p,
+          [r.email]: { status: 'failed', error: e?.message || 'Failed to send' },
+        }));
       }
     }
+    setIsSending(false);
     onSent?.();
-    onOpenChange(false);
+    // Keep dialog open so user can review per-recipient results.
+    // They close manually via the Close button.
   };
+
+  const completedCount = Object.values(sendProgress).filter(
+    (s) => s.status === 'success' || s.status === 'failed',
+  ).length;
+  const successCount = Object.values(sendProgress).filter((s) => s.status === 'success').length;
+  const failedCount = Object.values(sendProgress).filter((s) => s.status === 'failed').length;
+  const totalCount = Object.keys(sendProgress).length;
+  const hasProgress = totalCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -237,23 +269,83 @@ export function PresaleQuickSendDialog({
               />
             </div>
           )}
+
+          {/* Send progress panel */}
+          {hasProgress && (
+            <div className="border border-border rounded-lg p-3 bg-muted/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {isSending ? 'Sending…' : 'Send results'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {completedCount}/{totalCount}
+                  {!isSending && (
+                    <>
+                      {' · '}
+                      <span className="text-emerald-600 dark:text-emerald-400">{successCount} sent</span>
+                      {failedCount > 0 && (
+                        <>
+                          {' · '}
+                          <span className="text-destructive">{failedCount} failed</span>
+                        </>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+              <Progress value={totalCount ? (completedCount / totalCount) * 100 : 0} className="h-1.5" />
+              <div className="max-h-40 overflow-y-auto space-y-1 mt-2">
+                {recipients.map((r) => {
+                  const s = sendProgress[r.email];
+                  if (!s) return null;
+                  return (
+                    <div
+                      key={r.email}
+                      className="flex items-center gap-2 text-xs px-2 py-1 rounded bg-background/60"
+                    >
+                      {s.status === 'pending' && (
+                        <span className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
+                      )}
+                      {s.status === 'sending' && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
+                      )}
+                      {s.status === 'success' && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      )}
+                      {s.status === 'failed' && (
+                        <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      )}
+                      <span className="flex-1 truncate">{r.name}</span>
+                      <span className="text-muted-foreground truncate max-w-[180px]">
+                        {s.status === 'failed' && s.error ? s.error : r.email}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-3 border-t border-border">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSending}>
+            {hasProgress && !isSending ? 'Close' : 'Cancel'}
           </Button>
           <Button
             onClick={handleSend}
-            disabled={recipients.length === 0 || !subject || send.isPending}
+            disabled={recipients.length === 0 || !subject || isSending}
             className="gap-1.5"
           >
-            {send.isPending ? (
+            {isSending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Send className="h-3.5 w-3.5" />
             )}
-            Send to {recipients.length || 0}
+            {isSending
+              ? `Sending ${completedCount}/${totalCount}…`
+              : hasProgress && failedCount > 0
+                ? `Retry ${failedCount} failed`
+                : `Send to ${recipients.length || 0}`}
           </Button>
         </div>
       </DialogContent>
