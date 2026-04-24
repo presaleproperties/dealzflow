@@ -34,7 +34,7 @@ import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useAddCrmMessage, useCrmContactMessages } from '@/hooks/useCrmLeadDetail';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
-import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
+import { useCrmEmailTemplates, useCreateTemplate, useIncrementTemplateUsage } from '@/hooks/useCrmEmail';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { EMAIL_VARIABLES, renderForRecipient } from '@/lib/emailVariables';
@@ -83,6 +83,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
   const createTemplate = useCreateTemplate();
+  const incrementUsage = useIncrementTemplateUsage();
   const { data: emailSettings } = useEmailSettings();
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [] } = useBridgeTemplates();
@@ -160,28 +161,33 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     [subject, senderCtx],
   );
 
-  /* Combined template list with bridge marker */
-  const allTemplates: AnyTpl[] = useMemo(
-    () => [
+  /* Combined template list with bridge marker — local templates sorted by team usage */
+  const allTemplates: AnyTpl[] = useMemo(() => {
+    const sortedLocal = [...localTemplates].sort((a, b) => {
+      const u = (b.times_used ?? 0) - (a.times_used ?? 0);
+      if (u !== 0) return u;
+      const ta = a.last_used_at ? new Date(a.last_used_at).getTime() : 0;
+      const tb = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
+      return tb - ta;
+    });
+    return [
+      ...sortedLocal.map((t) => ({ ...t, __isBridge: false } as AnyTpl)),
       ...bridgeTemplates.map((t) => ({ ...t, __isBridge: true } as AnyTpl)),
-      ...localTemplates.map((t) => ({ ...t, __isBridge: false } as AnyTpl)),
-    ],
-    [bridgeTemplates, localTemplates],
-  );
+    ];
+  }, [bridgeTemplates, localTemplates]);
 
-  /* Resolve recent templates (preserve order, fall back to most recently used) */
+  /* Resolve recent/most-used templates: prefer this user's recents, then top up with team most-used */
   const recentTemplates: AnyTpl[] = useMemo(() => {
     const byId = new Map(allTemplates.map((t) => [t.id, t]));
     const fromRecent = recentIds.map((id) => byId.get(id)).filter(Boolean) as AnyTpl[];
-    if (fromRecent.length >= 4) return fromRecent.slice(0, 6);
-    // Top up with first templates available
     const seen = new Set(fromRecent.map((t) => t.id));
+    /* allTemplates is already sorted most-used-first for local templates */
     for (const t of allTemplates) {
       if (seen.has(t.id)) continue;
       fromRecent.push(t);
       if (fromRecent.length >= 6) break;
     }
-    return fromRecent;
+    return fromRecent.slice(0, 6);
   }, [allTemplates, recentIds]);
 
   /* Search & filter the sidebar list */
@@ -216,13 +222,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const applyTemplate = (tpl: AnyTpl) => {
     setSubject(tpl.subject || '');
     setBodyHtml(tpl.body_html || '<p></p>');
-    /* Track recent */
+    /* Track recent (per-user, local storage) */
     const next = [tpl.id, ...recentIds.filter((id) => id !== tpl.id)].slice(0, 8);
     setRecentIds(next);
     try {
       localStorage.setItem(RECENT_KEY, JSON.stringify(next));
     } catch {
       /* ignore */
+    }
+    /* Track team-wide usage for our own templates (bridge templates live elsewhere) */
+    if (!tpl.__isBridge) {
+      incrementUsage.mutate(tpl.id);
     }
     toast.success(`Loaded "${tpl.name}"`);
   };
@@ -479,9 +489,16 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                           <p className="text-[11px] font-semibold text-foreground truncate leading-tight">
                             {tpl.name}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {tpl.subject}
-                          </p>
+                          <div className="flex items-center justify-between gap-1 mt-0.5">
+                            <p className="text-[10px] text-muted-foreground truncate flex-1">
+                              {tpl.subject}
+                            </p>
+                            {!tpl.__isBridge && (tpl.times_used ?? 0) > 0 && (
+                              <span className="text-[9px] font-medium text-muted-foreground/80 shrink-0 tabular-nums">
+                                {tpl.times_used}×
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </button>
                     ))}
