@@ -178,23 +178,27 @@ export default function CrmEmailCampaignsPage() {
         return;
       }
 
-      // Immediate send
+      // Immediate send — render per recipient so each gets their own personalized subject + body.
       let sent = 0, failed = 0;
       for (let i = 0; i < recipientPreview.length; i += 25) {
         const chunk = recipientPreview.slice(i, i + 25);
-        const results = await Promise.all(chunk.map((r) =>
-          supabase.functions.invoke("crm-send-via-presale", {
+        const results = await Promise.all(chunk.map((r) => {
+          const ctx = { lead: r as RecipientLead };
+          const personalSubject = renderForRecipient(subject, ctx);
+          const personalHtml = renderForRecipient(bodyHtml, ctx);
+          return supabase.functions.invoke("crm-send-via-presale", {
             body: {
               to: r.email,
               to_name: r.first_name,
-              subject,
-              html: bodyHtml,
+              subject: personalSubject,
+              html: personalHtml,
               template_id: templateId || undefined,
               template_type: "campaign",
               campaign_id: campaign.id,
+              contact_id: r.id,
             },
-          }).then((res) => (res.error ? false : true)).catch(() => false),
-        ));
+          }).then((res) => (res.error ? false : true)).catch(() => false);
+        }));
         sent += results.filter(Boolean).length;
         failed += results.filter((r) => !r).length;
       }
