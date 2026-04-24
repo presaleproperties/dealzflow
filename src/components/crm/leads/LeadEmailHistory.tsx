@@ -1,10 +1,12 @@
-import { Mail, Clock, ArrowUpRight, ArrowDownLeft, Eye, MousePointerClick } from 'lucide-react';
+import { Mail, Clock, ArrowUpRight, ArrowDownLeft, Eye, MousePointerClick, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
+import { useCrmEmailClicks } from '@/hooks/useCrmEmailClicks';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LeadEmailHistory({ contactId }: { contactId: string }) {
   const { data: emails, isLoading } = useCrmEmailLog(contactId);
+  const { data: clicksByTracking = {} } = useCrmEmailClicks(contactId);
 
   if (isLoading) {
     return (
