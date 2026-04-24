@@ -501,6 +501,7 @@ export type Database = {
           last_touch_type: string | null
           lead_score: number | null
           lead_type: string | null
+          lead_types: string[]
           lofty_id: string | null
           lofty_synced_at: string | null
           lofty_updated_at: string | null
@@ -558,6 +559,7 @@ export type Database = {
           last_touch_type?: string | null
           lead_score?: number | null
           lead_type?: string | null
+          lead_types?: string[]
           lofty_id?: string | null
           lofty_synced_at?: string | null
           lofty_updated_at?: string | null
@@ -615,6 +617,7 @@ export type Database = {
           last_touch_type?: string | null
           lead_score?: number | null
           lead_type?: string | null
+          lead_types?: string[]
           lofty_id?: string | null
           lofty_synced_at?: string | null
           lofty_updated_at?: string | null

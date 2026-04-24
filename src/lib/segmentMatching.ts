@@ -12,7 +12,11 @@ export function contactMatchesSegment(contact: CrmContact, filter: Record<string
     if (!(filter.status as string[]).includes(contact.status ?? '')) return false;
   }
   if (filter.lead_type && Array.isArray(filter.lead_type) && (filter.lead_type as string[]).length > 0) {
-    if (!(filter.lead_type as string[]).includes(contact.lead_type ?? '')) return false;
+    const wanted = filter.lead_type as string[];
+    const contactTypes: string[] = ((contact as any).lead_types as string[] | undefined)?.length
+      ? ((contact as any).lead_types as string[])
+      : contact.lead_type ? [contact.lead_type] : [];
+    if (!wanted.some(w => contactTypes.includes(w))) return false;
   }
   if (filter.source && Array.isArray(filter.source) && (filter.source as string[]).length > 0) {
     if (!(filter.source as string[]).includes(contact.source ?? '')) return false;
