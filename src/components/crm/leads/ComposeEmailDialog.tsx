@@ -21,6 +21,8 @@ import {
   X,
   Search,
   Paperclip,
+  Pencil,
+  Check,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
