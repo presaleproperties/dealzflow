@@ -227,6 +227,7 @@ export default function DataImportSection() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [mergeMode, setMergeMode] = useState(true);
 
   const handleFile = useCallback((file: File) => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
