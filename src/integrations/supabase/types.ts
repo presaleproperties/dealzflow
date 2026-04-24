@@ -1084,6 +1084,36 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          name_lower: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       crm_tasks: {
         Row: {
           assigned_to: string | null
