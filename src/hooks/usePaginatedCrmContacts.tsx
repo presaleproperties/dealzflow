@@ -51,6 +51,7 @@ interface PaginatedFilters {
   leadTypes: string[];
   languages: string[];
   tags: string[];
+  excludeTags?: string[];
   propertyTypes?: string[];
   cities?: string[];
   preApproved?: string[];
