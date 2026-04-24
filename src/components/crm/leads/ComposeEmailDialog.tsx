@@ -106,6 +106,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   const [appendSignature, setAppendSignature] = useState(true);
   const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
   const [logOnly, setLogOnly] = useState(false);
+  // Inline signature editor state
+  const [editingSignature, setEditingSignature] = useState(false);
+  const [sigDraft, setSigDraft] = useState('');
 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
