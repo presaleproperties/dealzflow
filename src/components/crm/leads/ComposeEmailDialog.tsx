@@ -18,6 +18,7 @@ import {
   Mail,
   User,
   Inbox,
+  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
