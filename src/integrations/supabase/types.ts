@@ -1276,6 +1276,7 @@ export type Database = {
           contact_id: string | null
           created_at: string
           email: string | null
+          event_id: string | null
           event_type: string
           id: string
           link_url: string | null
@@ -1290,6 +1291,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           email?: string | null
+          event_id?: string | null
           event_type: string
           id?: string
           link_url?: string | null
@@ -1304,6 +1306,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           email?: string | null
+          event_id?: string | null
           event_type?: string
           id?: string
           link_url?: string | null
@@ -1327,6 +1330,7 @@ export type Database = {
           contact_id: string | null
           created_at: string
           email: string | null
+          event_id: string | null
           form_name: string | null
           form_type: string
           funnel_step: number | null
@@ -1341,6 +1345,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           email?: string | null
+          event_id?: string | null
           form_name?: string | null
           form_type: string
           funnel_step?: number | null
@@ -1355,6 +1360,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           email?: string | null
+          event_id?: string | null
           form_name?: string | null
           form_type?: string
           funnel_step?: number | null
@@ -1383,6 +1389,7 @@ export type Database = {
           duration_seconds: number | null
           email: string | null
           ended_at: string | null
+          event_id: string | null
           exit_page: string | null
           id: string
           landing_page: string | null
@@ -1401,6 +1408,7 @@ export type Database = {
           duration_seconds?: number | null
           email?: string | null
           ended_at?: string | null
+          event_id?: string | null
           exit_page?: string | null
           id?: string
           landing_page?: string | null
@@ -1419,6 +1427,7 @@ export type Database = {
           duration_seconds?: number | null
           email?: string | null
           ended_at?: string | null
+          event_id?: string | null
           exit_page?: string | null
           id?: string
           landing_page?: string | null
@@ -1447,6 +1456,7 @@ export type Database = {
           created_at: string
           duration_seconds: number | null
           email: string | null
+          event_id: string | null
           id: string
           metadata: Json | null
           presale_user_id: string | null
@@ -1461,6 +1471,7 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           email?: string | null
+          event_id?: string | null
           id?: string
           metadata?: Json | null
           presale_user_id?: string | null
@@ -1475,6 +1486,7 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           email?: string | null
+          event_id?: string | null
           id?: string
           metadata?: Json | null
           presale_user_id?: string | null
