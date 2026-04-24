@@ -233,7 +233,7 @@ export default function AuthPage() {
         </div>
 
         {/* Central hero copy */}
-        <div className="relative space-y-7">
+        <div className="relative space-y-6 mt-10">
           {/* Audience badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -270,19 +270,22 @@ export default function AuthPage() {
           </div>
 
           {/* Integration badges */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <Wifi className="w-3 h-3 text-emerald-500" />
-              <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">ReZen — LIVE</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <Clock className="w-3 h-3 text-amber-500" />
-              <span className="text-[10.5px] font-semibold text-amber-600 dark:text-amber-400">SkySlope — Soon</span>
+          <div className="pt-1">
+            <p className="text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Integrations</p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <Wifi className="w-3 h-3 text-emerald-500" />
+                <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">ReZen — LIVE</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <Clock className="w-3 h-3 text-amber-500" />
+                <span className="text-[10.5px] font-semibold text-amber-600 dark:text-amber-400">SkySlope — Soon</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="relative flex gap-4 text-sm text-muted-foreground">
+        <div className="relative flex justify-center gap-6 text-sm text-muted-foreground mt-auto pt-8">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
         </div>
