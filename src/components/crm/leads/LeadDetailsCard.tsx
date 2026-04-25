@@ -2,6 +2,7 @@ import { Hash, Target, DollarSign, Building2, Fingerprint, BedDouble, MapPin, Ho
 import { Badge } from '@/components/ui/badge';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
+import { SourcePicker } from './SourcePicker';
 import { formatCurrency } from '@/lib/format';
 import { LEAD_TYPE_LABELS, type CrmContact } from '@/hooks/useCrmContacts';
 
