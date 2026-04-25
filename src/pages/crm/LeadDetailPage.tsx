@@ -648,6 +648,16 @@ function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowing }: {
 
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
+      {/* Sticky identity header — persistent context while the timeline scrolls */}
+      <StickyLeadHeader
+        contact={contact}
+        onCall={onCall}
+        onText={onText}
+        onEmail={onEmail}
+        onTask={onTask}
+        onShowing={onShowing}
+      />
+
       <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
         <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Activity
@@ -663,34 +673,14 @@ function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowing }: {
       </TabsList>
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-6 space-y-5">
-        {/* Compose */}
-        <div className="bg-card rounded-xl border border-border p-3.5 space-y-3">
-          <div className="flex items-center gap-3">
-            <Select value={noteType} onValueChange={setNoteType}>
-              <SelectTrigger className="w-[120px] h-9 text-sm border-border/60"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Note</SelectItem>
-                <SelectItem value="call_log">Call Log</SelectItem>
-                <SelectItem value="email">Email Log</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">⌘ + Enter to send</span>
-          </div>
-          <Textarea
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            placeholder="Write a note, log a call, or capture context…"
-            className="text-sm min-h-[72px] resize-none"
-            onKeyDown={e => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSave(); }
-            }}
-          />
-          <div className="flex justify-end">
-            <Button size="sm" className="h-9 text-xs gap-1.5" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
-              <Send className="w-3.5 h-3.5" /> Save
-            </Button>
-          </div>
-        </div>
+        {/* Unified Quick Action Bar — Note / Call / Email / Text / Task / Showing */}
+        <QuickActionBar
+          contact={contact}
+          onOpenEmail={onEmail}
+          onOpenText={onText}
+          onOpenTask={onTask}
+          onOpenShowing={onShowing}
+        />
 
         {/* Filter pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
