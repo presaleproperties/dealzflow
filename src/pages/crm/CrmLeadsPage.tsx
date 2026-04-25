@@ -53,18 +53,7 @@ const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Rec
   { id: '__closed', label: 'Closed',    emoji: '✅', filters: { status: ['Closed'] } },
 ];
 
-import { CrmLeadsMobileShell } from '@/components/crm/CrmLeadsMobileShell';
-
 export default function CrmLeadsPage() {
-  const isMobile = useIsMobile();
-  return (
-    <CrmLeadsMobileShell initialTab="leads" active={isMobile}>
-      <CrmLeadsDesktopPage />
-    </CrmLeadsMobileShell>
-  );
-}
-
-function CrmLeadsDesktopPage() {
   const { data: allContacts = [], isLoading: allContactsLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
