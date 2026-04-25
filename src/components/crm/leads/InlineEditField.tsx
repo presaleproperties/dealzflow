@@ -13,9 +13,11 @@ interface InlineEditFieldProps {
   options?: readonly string[];
   /** When provided, clicking the link calls this instead of navigating to href. */
   onActivate?: () => void;
+  /** Optional formatter applied to the displayed value (does not affect the editable input). */
+  displayFormatter?: (value: string) => string;
 }
 
-export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text', options, onActivate }: InlineEditFieldProps) {
+export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text', options, onActivate, displayFormatter }: InlineEditFieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
   const [emailWarning, setEmailWarning] = useState<EmailValidation>({ isValid: true, suggestion: null, correctedEmail: null });
@@ -123,7 +125,8 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
     );
   }
 
-  const display = value || placeholder;
+  const formattedValue = value && displayFormatter ? displayFormatter(value) : value;
+  const display = formattedValue || placeholder;
   const isMuted = !value;
 
   return (
