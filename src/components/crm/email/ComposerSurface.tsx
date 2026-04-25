@@ -593,7 +593,7 @@ export function ComposerSurface({
           </div>
         )}
         {mode === 'html' && (
-          <div className="p-5">
+          <div className="px-6 py-5 max-w-[760px] mx-auto">
             <textarea
               ref={htmlTextareaRef}
               value={bodyHtml}
