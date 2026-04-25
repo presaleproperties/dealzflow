@@ -97,15 +97,6 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-12 w-full rounded-md" />
-        <Skeleton className="h-12 w-full rounded-md" />
-      </div>
-    );
-  }
-
   const PRESALE_BASE = "https://presaleproperties.com";
   const toAbs = (u?: string | null): string | null => {
     if (!u) return null;
@@ -213,6 +204,15 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
       return true;
     });
   }, [items, activeKinds, deviceFilter]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-12 w-full rounded-md" />
+        <Skeleton className="h-12 w-full rounded-md" />
+      </div>
+    );
+  }
 
   const toggleKind = (k: Kind) => {
     setActiveKinds((prev) => {
