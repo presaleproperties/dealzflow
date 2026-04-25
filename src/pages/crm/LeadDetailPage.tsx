@@ -1409,10 +1409,26 @@ export default function LeadDetailPage() {
           />
         </div>
         <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ minHeight: 400 }}>
-          <CenterColumn contact={c} />
+          <CenterColumn
+            contact={c}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            onTask={() => setShowTask(true)}
+            onShowing={() => setShowShowing(true)}
+          />
         </div>
         <div className="bg-card rounded-lg border border-border p-4">
-          <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
+          <RightSidebar
+            contact={c}
+            onAddTask={() => setShowTask(true)}
+            onAddShowing={() => setShowShowing(true)}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            leadScore={leadScore}
+            lastTouchHours={lastTouchHours}
+          />
         </div>
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
