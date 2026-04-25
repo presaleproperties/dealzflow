@@ -109,11 +109,13 @@ function LeadTopBar({
 
       {/* Right: Primary CTAs + nav (call/email live in the sidebar) */}
       <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
+        <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask} title="New task (T)">
           <ListTodo className="w-3.5 h-3.5" /> Task
+          <kbd className="ml-1 hidden md:inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-muted text-muted-foreground border border-border">T</kbd>
         </Button>
-        <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing}>
+        <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing} title="Book showing (B)">
           <Calendar className="w-3.5 h-3.5" /> Book Showing
+          <kbd className="ml-1 hidden md:inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-primary-foreground/20 text-primary-foreground/90 border border-primary-foreground/20">B</kbd>
         </Button>
 
         {navInfo && (
