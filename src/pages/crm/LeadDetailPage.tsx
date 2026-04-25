@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
+import { BehaviorIngestionStatus } from '@/components/crm/leads/BehaviorIngestionStatus';
 import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
 import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiagnostics';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
