@@ -17,7 +17,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 type Mode = 'compose' | 'inbox';
