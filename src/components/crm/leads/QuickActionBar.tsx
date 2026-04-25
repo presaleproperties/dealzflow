@@ -8,15 +8,11 @@ import { cn } from '@/lib/utils';
 import { useAddNote } from '@/hooks/useCrmNotes';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
-type Mode = 'note' | 'call' | 'email' | 'text' | 'task' | 'showing';
+type Mode = 'note' | 'call';
 
 const MODES: { key: Mode; label: string; icon: typeof StickyNote; tint: string }[] = [
   { key: 'note',    label: 'Note',     icon: StickyNote,    tint: '45 90% 55%' },
   { key: 'call',    label: 'Log Call', icon: Phone,         tint: '142 70% 45%' },
-  { key: 'email',   label: 'Email',    icon: Mail,          tint: '218 85% 55%' },
-  { key: 'text',    label: 'Text',     icon: MessageSquare, tint: '198 90% 55%' },
-  { key: 'task',    label: 'Task',     icon: ListTodo,      tint: '260 75% 60%' },
-  { key: 'showing', label: 'Showing',  icon: Calendar,      tint: '325 70% 55%' },
 ];
 
 const CALL_OUTCOMES = [
