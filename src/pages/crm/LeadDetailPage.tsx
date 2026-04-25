@@ -1055,6 +1055,7 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
                   </div>
                 </div>
               </button>
+            ))}
           </div>
         )}
       </WidgetSection>
