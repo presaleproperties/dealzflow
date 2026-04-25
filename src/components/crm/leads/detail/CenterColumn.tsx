@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
 import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/useCrmNotes';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
-import { StickyLeadHeader } from '@/components/crm/leads/StickyLeadHeader';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
