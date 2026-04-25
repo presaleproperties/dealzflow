@@ -37,6 +37,7 @@ import { useThreadPins } from '@/hooks/useThreadPins';
 import { useThreadState } from '@/hooks/useThreadState';
 import { useRealtimeSmsLog } from '@/hooks/useRealtimeSmsLog';
 import { uploadSmsMedia } from '@/lib/smsMediaUpload';
+import { WhatsAppTemplatePicker } from '@/components/crm/sms/WhatsAppTemplatePicker';
 import { toast } from 'sonner';
 
 interface Thread {
