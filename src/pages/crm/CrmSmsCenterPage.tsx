@@ -164,6 +164,44 @@ export default function CrmSmsCenterPage() {
         </div>
       </div>
 
+      {/* WhatsApp readiness banner */}
+      {isWa && (() => {
+        const waFrom = settings?.whatsapp_from || '';
+        const isSandbox = waFrom === '+14155238886';
+        const hasConfig = !!(settings?.whatsapp_enabled && (waFrom || settings?.whatsapp_messaging_service_sid));
+        return (
+          <div className={cn(
+            'rounded-lg border px-3 py-2 text-xs flex flex-wrap items-center gap-2',
+            !hasConfig
+              ? 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400'
+              : isSandbox
+                ? 'border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-400'
+                : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
+          )}>
+            <span className="rounded-full bg-emerald-500 w-2 h-2 shrink-0" />
+            {!hasConfig ? (
+              <>
+                <span className="font-medium">WhatsApp not configured.</span>
+                <span>Add your Twilio WhatsApp sender (sandbox <code className="px-1 rounded bg-muted">+14155238886</code> or your approved business number) in Setup.</span>
+                <Button size="sm" variant="outline" className="ml-auto h-6 text-[11px]" onClick={() => setTab('settings')}>
+                  Open Setup
+                </Button>
+              </>
+            ) : isSandbox ? (
+              <>
+                <span className="font-medium">Twilio Sandbox mode</span>
+                <span>· sending from <code className="px-1 rounded bg-muted">+1 415 523 8886</code>. Recipients must opt in via the sandbox keyword first. Switch to your approved number in Setup once registered.</span>
+              </>
+            ) : (
+              <>
+                <span className="font-medium">Live WhatsApp Business</span>
+                <span>· sending from <code className="px-1 rounded bg-muted">{waFrom}</code>. Outside the 24h window, only approved templates can start a conversation.</span>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Stat strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <StatPill label="Sent" value={totals.sent} icon={Send} />
