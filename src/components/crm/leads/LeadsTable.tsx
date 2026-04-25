@@ -783,7 +783,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} />
                       </td>
                     ))}
                   </tr>
@@ -795,6 +795,13 @@ export function LeadsTable({
       </div>
       <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
         onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
+      {smsContact && (
+        <SendTextDialog
+          contact={smsContact}
+          open={!!smsContact}
+          onOpenChange={(o) => !o && setSmsContact(null)}
+        />
+      )}
     </div>
   );
 }
