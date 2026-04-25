@@ -14,6 +14,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { getDateGroup, noteTime, type CrmShowing } from './types';
 import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
+import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 
 type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'web' | 'system';
 
