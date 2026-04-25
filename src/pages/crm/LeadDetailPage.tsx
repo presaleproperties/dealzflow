@@ -525,7 +525,14 @@ function metaForNote(note: CrmNote): NoteMeta {
   return base;
 }
 
-function CenterColumn({ contact }: { contact: CrmContact }) {
+function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowing }: {
+  contact: CrmContact;
+  onCall: () => void;
+  onText: () => void;
+  onEmail: () => void;
+  onTask: () => void;
+  onShowing: () => void;
+}) {
   const { session } = useAuth();
   const currentUserId = session?.user?.id;
   const { data: rawNotes = [] } = useLeadNotes(contact.id);
