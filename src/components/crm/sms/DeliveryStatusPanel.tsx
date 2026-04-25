@@ -180,6 +180,64 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
         </div>
       </div>
 
+      {/* Verification result */}
+      {verification && (
+        <div className={cn(
+          'p-3 border-b border-border',
+          verification.ok ? 'bg-emerald-500/5' : 'bg-red-500/5'
+        )}>
+          <div className="flex items-start gap-2">
+            {verification.ok ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            ) : (
+              <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="text-xs font-semibold">
+                {verification.ok
+                  ? `✅ End-to-end verified — verdict: ${verification.verdict}`
+                  : `❌ Verification failed${verification.stage ? ` at "${verification.stage}"` : ''}`}
+              </div>
+              {verification.checks && (
+                <ul className="space-y-1">
+                  {verification.checks.map((c: any, i: number) => (
+                    <li key={i} className="text-[11px] flex items-start gap-1.5">
+                      {c.pass ? (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-3 h-3 text-red-600 shrink-0 mt-0.5" />
+                      )}
+                      <span className={cn(c.pass ? 'text-foreground' : 'text-red-700 dark:text-red-400')}>
+                        <strong>{c.name}</strong>
+                        {c.detail && <span className="text-muted-foreground"> — {c.detail}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {verification.twilio && (
+                <div className="text-[10px] font-mono bg-background/60 rounded p-2 space-y-0.5 text-muted-foreground">
+                  <div><span className="opacity-70">SID:</span> {verification.twilio.sid}</div>
+                  <div><span className="opacity-70">Status:</span> <span className="text-foreground font-semibold">{verification.twilio.status}</span></div>
+                  <div><span className="opacity-70">From → To:</span> {verification.twilio.from} → {verification.twilio.to}</div>
+                  {verification.twilio.date_sent && <div><span className="opacity-70">Date sent:</span> {verification.twilio.date_sent}</div>}
+                  {verification.twilio.price && <div><span className="opacity-70">Cost:</span> {verification.twilio.price} {verification.twilio.price_unit?.toUpperCase()}</div>}
+                </div>
+              )}
+              {verification.error && (
+                <div className="text-[11px] text-red-600">{verification.error}</div>
+              )}
+            </div>
+            <button
+              onClick={() => setVerification(null)}
+              className="text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* List */}
       <ScrollArea className="h-[520px]">
         {isLoading ? (
