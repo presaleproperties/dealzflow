@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail } from 'lucide-react';
@@ -37,9 +37,32 @@ interface Props {
   contactEmail?: string | null;
 }
 
-export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: Props) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+const BASE_STYLES = `
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Plus Jakarta Sans", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: #1a1a1a;
+    padding: 28px 32px;
+    word-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+  }
+  p { margin: 0 0 14px; }
+  a { color: hsl(220 90% 50%); text-decoration: underline; text-underline-offset: 2px; }
+  img { max-width: 100%; height: auto; border-radius: 6px; }
+  table { max-width: 100% !important; border-collapse: collapse; }
+  td, th { padding: 4px 8px; }
+  h1,h2,h3,h4 { line-height: 1.3; margin: 20px 0 10px; font-weight: 600; }
+  blockquote { border-left: 3px solid #e5e5e5; margin: 12px 0; padding: 4px 14px; color: #555; }
+  ul, ol { padding-left: 22px; margin: 0 0 14px; }
+  hr { border: 0; border-top: 1px solid #eee; margin: 18px 0; }
+  pre, code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  pre { background: #f6f7f9; padding: 10px 12px; border-radius: 6px; overflow-x: auto; }
+`;
 
+export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: Props) {
   const isInbound = email?.direction === 'inbound';
   const rawBody = (email?.body_html || email?.body || '').trim();
   const plainBody = (email?.body_text || '').trim();
@@ -49,61 +72,32 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
   const html = looksLikeHtml ? rawBody : '';
   const plain = looksLikeHtml ? plainBody : (rawBody || plainBody);
 
-  // Render into a sandboxed iframe so styles can't leak and scripts can't run.
-  // We always inject a base stylesheet so even minimal markup looks readable.
-  useEffect(() => {
-    if (!open || !iframeRef.current) return;
-    const doc = iframeRef.current.contentDocument;
-    if (!doc) return;
-
-    const baseStyles = `
-      <style>
-        :root { color-scheme: light; }
-        html, body { margin: 0; padding: 0; background: #ffffff; }
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Plus Jakarta Sans", Roboto, sans-serif;
-          font-size: 15px;
-          line-height: 1.65;
-          color: #1a1a1a;
-          padding: 28px 32px;
-          word-wrap: break-word;
-          -webkit-font-smoothing: antialiased;
-        }
-        p { margin: 0 0 14px; }
-        a { color: hsl(220 90% 50%); text-decoration: underline; text-underline-offset: 2px; }
-        img { max-width: 100%; height: auto; border-radius: 6px; }
-        table { max-width: 100% !important; border-collapse: collapse; }
-        td, th { padding: 4px 8px; }
-        h1,h2,h3,h4 { line-height: 1.3; margin: 20px 0 10px; font-weight: 600; }
-        blockquote { border-left: 3px solid #e5e5e5; margin: 12px 0; padding: 4px 14px; color: #555; }
-        ul, ol { padding-left: 22px; margin: 0 0 14px; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 18px 0; }
-        pre, code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
-        pre { background: #f6f7f9; padding: 10px 12px; border-radius: 6px; overflow-x: auto; }
-      </style>`;
-
-    doc.open();
+  // Build the iframe document as a single string. We use srcDoc rather than
+  // document.write because srcDoc is far more reliable across browsers when
+  // the iframe is sandboxed (which we want for safety).
+  const srcDoc = useMemo(() => {
+    const styleTag = `<style>${BASE_STYLES}</style>`;
     if (html) {
-      // If the email already has its own <html>/<head>, just inject our styles
-      // into <head>; otherwise wrap it in a clean shell.
+      // If the email already includes a full <html> document, inject our
+      // stylesheet into <head> so headers, footers, and tables render
+      // consistently. If <head> is missing, add one.
       if (/<html[\s>]/i.test(html)) {
-        const injected = html.replace(/<head([^>]*)>/i, `<head$1>${baseStyles}`);
-        doc.write(/<head[\s>]/i.test(html) ? injected : html.replace(/<html([^>]*)>/i, `<html$1><head>${baseStyles}</head>`));
-      } else {
-        doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${baseStyles}</head><body>${html}</body></html>`);
+        if (/<head[\s>]/i.test(html)) {
+          return html.replace(/<head([^>]*)>/i, `<head$1>${styleTag}`);
+        }
+        return html.replace(/<html([^>]*)>/i, `<html$1><head>${styleTag}</head>`);
       }
-    } else if (plain) {
-      // Convert plain text to clean paragraphs and auto-link URLs.
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${html}</body></html>`;
+    }
+    if (plain) {
       const paragraphs = plain
         .split(/\n{2,}/)
         .map(p => `<p>${linkify(escapeHtml(p)).replace(/\n/g, '<br/>')}</p>`)
         .join('');
-      doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${baseStyles}</head><body>${paragraphs}</body></html>`);
-    } else {
-      doc.write(`<!DOCTYPE html><html><head>${baseStyles}</head><body><p style="color:#888">(No body recorded for this email.)</p></body></html>`);
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${paragraphs}</body></html>`;
     }
-    doc.close();
-  }, [open, html, plain]);
+    return `<!DOCTYPE html><html><head>${styleTag}</head><body><p style="color:#888">(No body recorded for this email.)</p></body></html>`;
+  }, [html, plain]);
 
   if (!email) return null;
 
@@ -193,11 +187,12 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
           <div className="h-full bg-white rounded-lg border border-border/40 overflow-hidden shadow-sm">
             {html || plain ? (
               <iframe
-                ref={iframeRef}
+                key={email.id}
                 title="Email body"
+                srcDoc={srcDoc}
                 className="w-full h-full border-0 block"
                 style={{ minHeight: '400px' }}
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-popups"
               />
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center">

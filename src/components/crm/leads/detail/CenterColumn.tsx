@@ -5,9 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
 import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/useCrmNotes';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
+import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { getDateGroup, noteTime, type CrmShowing } from './types';
@@ -15,7 +17,7 @@ import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 
-type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'web' | 'system';
+type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
 
 interface Props {
   contact: CrmContact;
@@ -32,18 +34,21 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const { data: rawNotes = [] } = useLeadNotes(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emailLog = [] } = useCrmEmailLog(contact.id);
+  const { data: smsLog = [] } = useCrmContactSmsLog(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
 
-  // Merge real notes with virtual entries synthesized from the email log so
-  // every email shows up in the central timeline alongside notes.
-  const { notes, emailById } = useMemo(() => {
-    const byId = new Map<string, EmailLogRow>();
+  // Merge real notes with virtual entries synthesized from the email + SMS
+  // logs so every channel shows up in the central activity timeline.
+  const { notes, emailById, smsById } = useMemo(() => {
+    const emailMap = new Map<string, EmailLogRow>();
+    const smsMap = new Map<string, CrmSmsLogRow>();
+
     const emailNotes: CrmNote[] = (emailLog ?? []).map((e: EmailLogRow & { sent_by?: string | null }) => {
       const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
       const subject = e.subject || '(no subject)';
       const noteId = `email-${e.id}`;
-      byId.set(noteId, e);
+      emailMap.set(noteId, e);
       return {
         id: noteId,
         contact_id: contact.id,
@@ -56,14 +61,34 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         event_at: e.sent_at || e.created_at || null,
       };
     });
-    const merged = [...rawNotes, ...emailNotes];
+
+    const smsNotes: CrmNote[] = (smsLog ?? []).map((s) => {
+      const noteId = `sms-${s.id}`;
+      smsMap.set(noteId, s);
+      const channelLabel = s.channel === 'whatsapp' ? 'WhatsApp' : 'SMS';
+      const directionLabel = s.direction === 'inbound' ? 'Received' : 'Sent';
+      const preview = (s.body ?? '').slice(0, 80) || '(no body)';
+      return {
+        id: noteId,
+        contact_id: contact.id,
+        user_id: s.user_id || '',
+        content: `${directionLabel} ${channelLabel}: ${preview}`,
+        note_type: 'sms',
+        is_pinned: false,
+        created_at: s.sent_at || s.created_at,
+        updated_at: s.sent_at || s.created_at,
+        event_at: s.sent_at || s.created_at,
+      };
+    });
+
+    const merged = [...rawNotes, ...emailNotes, ...smsNotes];
     const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
     const sorted = merged.sort((a, b) => {
       if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
       return ts(b) - ts(a);
     });
-    return { notes: sorted, emailById: byId };
-  }, [rawNotes, emailLog, contact.id]);
+    return { notes: sorted, emailById: emailMap, smsById: smsMap };
+  }, [rawNotes, emailLog, smsLog, contact.id]);
 
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
   const handleOpenEmail = (noteId: string) => {
@@ -111,6 +136,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
     all: notes.length,
     manual: notes.filter(isManualLike).length,
     email: notes.filter(n => n.note_type === 'email').length,
+    sms: notes.filter(n => n.note_type === 'sms').length,
     call_log: notes.filter(n => n.note_type === 'call_log').length,
     web: notes.filter(isWebActivity).length,
     system: notes.filter(n => n.note_type === 'system').length,
@@ -129,6 +155,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
     { key: 'all', label: 'All' },
     { key: 'manual', label: 'Notes' },
     { key: 'email', label: 'Emails' },
+    { key: 'sms', label: 'Texts' },
     { key: 'call_log', label: 'Calls' },
     { key: 'web', label: 'Web' },
     { key: 'system', label: 'System' },
@@ -210,6 +237,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                     />
                   );
                 }
+                const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
+                if (smsRow) {
+                  return <SmsNoteCard key={note.id} message={smsRow} />;
+                }
                 return (
                   <NoteCard
                     key={note.id}
@@ -245,6 +276,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                       onOpen={() => setPreviewEmail(emailRow)}
                     />
                   );
+                }
+                const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
+                if (smsRow) {
+                  return <SmsNoteCard key={note.id} message={smsRow} />;
                 }
                 return (
                   <NoteCard
