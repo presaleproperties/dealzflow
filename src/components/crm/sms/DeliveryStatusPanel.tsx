@@ -129,9 +129,20 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
               Real-time queued → sent → delivered timeline for every outbound message.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => handleVerify()}
+              disabled={verifying}
+              className="gap-1.5"
+            >
+              {verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+              Verify last test
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Quick filter pills with counts */}
