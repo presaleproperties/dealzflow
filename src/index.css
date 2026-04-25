@@ -454,46 +454,152 @@
     @apply text-[14px] font-semibold text-foreground tracking-[-0.01em];
   }
 
-  /* ── WhatsApp chat surface ── */
-  .whatsapp-bg {
+  /* ════════════════════════════════════════════════════════════
+     iMESSAGE SURFACE
+     ════════════════════════════════════════════════════════════ */
+  .imsg-font {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      "Helvetica Neue", system-ui, sans-serif;
+    letter-spacing: -0.012em;
+  }
+  .imsg-bg {
+    background:
+      radial-gradient(1200px 800px at 50% -200px, hsl(var(--primary) / 0.04), transparent 60%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.25) 100%);
+  }
+  .dark .imsg-bg {
+    background:
+      radial-gradient(1200px 800px at 50% -200px, hsl(var(--primary) / 0.06), transparent 60%),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 25% 5%) 100%);
+  }
+  .imsg-bubble-out {
+    background: linear-gradient(180deg, #1e8eff 0%, #006eff 100%);
+    color: #ffffff;
+    box-shadow: 0 1px 1px hsl(212 80% 30% / 0.18);
+  }
+  .imsg-bubble-in {
+    background: hsl(220 13% 91%);
+    color: hsl(222 25% 10%);
+  }
+  .dark .imsg-bubble-in {
+    background: hsl(222 14% 22%);
+    color: hsl(220 14% 93%);
+  }
+  .imsg-header {
+    background: hsl(var(--background) / 0.78);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid hsl(var(--border) / 0.55);
+  }
+  .imsg-composer-pill {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 9999px;
+    transition: border-color 0.18s ease;
+  }
+  .imsg-composer-pill:focus-within {
+    border-color: hsl(212 90% 60% / 0.55);
+    box-shadow: 0 0 0 3px hsl(212 90% 60% / 0.12);
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     WHATSAPP SURFACE
+     ════════════════════════════════════════════════════════════ */
+  .wa-font {
+    font-family: "Helvetica Neue", "Segoe UI", Helvetica, Arial, system-ui, sans-serif;
+    letter-spacing: 0;
+  }
+  .wa-bg {
     background-color: #efeae2;
-    background-image:
-      radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.025) 1.5px, transparent 1.5px),
-      radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.025) 1px, transparent 1px),
-      radial-gradient(circle at 40% 80%, rgba(0, 0, 0, 0.02) 1.5px, transparent 1.5px),
-      radial-gradient(circle at 90% 30%, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
-    background-size: 90px 90px, 60px 60px, 110px 110px, 70px 70px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'><g fill='%23000000' fill-opacity='0.035'><circle cx='30' cy='30' r='2.2'/><circle cx='80' cy='60' r='1.6'/><circle cx='130' cy='40' r='2'/><circle cx='180' cy='70' r='1.4'/><circle cx='50' cy='110' r='1.8'/><circle cx='110' cy='130' r='2.4'/><circle cx='170' cy='150' r='1.6'/><circle cx='25' cy='180' r='2'/><circle cx='95' cy='195' r='1.5'/><circle cx='195' cy='195' r='2'/><path d='M55 150 q5 -8 12 0 t12 0' stroke='%23000' stroke-width='0.8' fill='none' opacity='0.25'/><path d='M150 90 q5 -8 12 0 t12 0' stroke='%23000' stroke-width='0.8' fill='none' opacity='0.25'/></g></svg>");
+    background-size: 360px 360px;
   }
-  .dark .whatsapp-bg {
+  .dark .wa-bg {
     background-color: #0b141a;
-    background-image:
-      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.025) 1.5px, transparent 1.5px),
-      radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-      radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.02) 1.5px, transparent 1.5px),
-      radial-gradient(circle at 90% 30%, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-    background-size: 90px 90px, 60px 60px, 110px 110px, 70px 70px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'><g fill='%23ffffff' fill-opacity='0.035'><circle cx='30' cy='30' r='2.2'/><circle cx='80' cy='60' r='1.6'/><circle cx='130' cy='40' r='2'/><circle cx='180' cy='70' r='1.4'/><circle cx='50' cy='110' r='1.8'/><circle cx='110' cy='130' r='2.4'/><circle cx='170' cy='150' r='1.6'/><circle cx='25' cy='180' r='2'/><circle cx='95' cy='195' r='1.5'/><circle cx='195' cy='195' r='2'/><path d='M55 150 q5 -8 12 0 t12 0' stroke='%23ffffff' stroke-width='0.8' fill='none' opacity='0.25'/><path d='M150 90 q5 -8 12 0 t12 0' stroke='%23ffffff' stroke-width='0.8' fill='none' opacity='0.25'/></g></svg>");
+    background-size: 360px 360px;
   }
-  .whatsapp-bubble-out {
+  .wa-header {
+    background: #008069;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  .dark .wa-header {
+    background: #1f2c33;
+    color: #e9edef;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .wa-bubble-out {
     background-color: #d9fdd3;
     color: #111b21;
+    box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
   }
-  .dark .whatsapp-bubble-out {
+  .dark .wa-bubble-out {
     background-color: #005c4b;
     color: #e9edef;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.4);
   }
-  .whatsapp-bubble-in {
+  .wa-bubble-in {
     background-color: #ffffff;
     color: #111b21;
+    box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
   }
-  .dark .whatsapp-bubble-in {
+  .dark .wa-bubble-in {
     background-color: #202c33;
     color: #e9edef;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.4);
   }
-  .whatsapp-meta {
-    color: rgba(17, 27, 33, 0.45);
+  .wa-meta {
+    color: rgba(17, 27, 33, 0.5);
+    font-size: 11px;
   }
-  .dark .whatsapp-meta {
+  .dark .wa-meta {
     color: rgba(233, 237, 239, 0.6);
+  }
+  .wa-meta-out {
+    color: rgba(17, 27, 33, 0.5);
+  }
+  .dark .wa-meta-out {
+    color: rgba(233, 237, 239, 0.65);
+  }
+  .wa-composer-bar {
+    background: #f0f2f5;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .dark .wa-composer-bar {
+    background: #1f2c33;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .wa-composer-input {
+    background: #ffffff;
+    color: #111b21;
+    border-radius: 9999px;
+  }
+  .dark .wa-composer-input {
+    background: #2a3942;
+    color: #e9edef;
+  }
+  .wa-send {
+    background: #00a884;
+    color: #ffffff;
+  }
+  .wa-send:hover { background: #06cf9c; }
+
+  /* Legacy aliases (existing code may still reference these) */
+  .whatsapp-bg { @apply wa-bg; }
+  .whatsapp-bubble-out { @apply wa-bubble-out; }
+  .whatsapp-bubble-in { @apply wa-bubble-in; }
+  .whatsapp-meta { @apply wa-meta; }
+
+  /* ── Bubble enter animation ── */
+  @keyframes msg-pop-in {
+    0%   { opacity: 0; transform: translateY(6px) scale(0.94); }
+    60%  { opacity: 1; transform: translateY(0)   scale(1.015); }
+    100% { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+  .msg-pop-in { animation: msg-pop-in 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @media (prefers-reduced-motion: reduce) {
+    .msg-pop-in { animation: none; }
   }
 
   /* ── Inset surface (for nested cards) ── */
