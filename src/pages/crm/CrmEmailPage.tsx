@@ -31,13 +31,13 @@ export default function CrmEmailPage() {
       <QuickSendBar onCompose={(c) => setComposeContact(c)} />
 
       <Tabs value={tab} onValueChange={setTab} className="w-full space-y-4">
-        <TabsList className="w-full sm:w-auto grid grid-cols-6 sm:flex">
-          <TabsTrigger value="hub" className="text-[12px] sm:text-sm gap-1.5"><Sparkles className="h-3.5 w-3.5" /><span className="hidden sm:inline">Templates</span></TabsTrigger>
-          <TabsTrigger value="center" className="text-[12px] sm:text-sm gap-1.5"><Mail className="h-3.5 w-3.5" /><span className="hidden sm:inline">Inbox</span></TabsTrigger>
-          <TabsTrigger value="campaigns" className="text-[12px] sm:text-sm gap-1.5"><Megaphone className="h-3.5 w-3.5" /><span className="hidden sm:inline">Campaigns</span></TabsTrigger>
-          <TabsTrigger value="workflows" className="text-[12px] sm:text-sm gap-1.5"><Workflow className="h-3.5 w-3.5" /><span className="hidden sm:inline">Workflows</span></TabsTrigger>
-          <TabsTrigger value="analytics" className="text-[12px] sm:text-sm gap-1.5"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Analytics</span></TabsTrigger>
-          <TabsTrigger value="health" className="text-[12px] sm:text-sm gap-1.5"><Activity className="h-3.5 w-3.5" /><span className="hidden sm:inline">Health</span></TabsTrigger>
+        <TabsList className="w-full sm:w-auto grid grid-cols-6 sm:flex h-auto">
+          <TabsTrigger value="hub" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Sparkles className="h-3.5 w-3.5" /><span>Templates</span></TabsTrigger>
+          <TabsTrigger value="center" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Mail className="h-3.5 w-3.5" /><span>Inbox</span></TabsTrigger>
+          <TabsTrigger value="campaigns" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Megaphone className="h-3.5 w-3.5" /><span>Campaigns</span></TabsTrigger>
+          <TabsTrigger value="workflows" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Workflow className="h-3.5 w-3.5" /><span>Flows</span></TabsTrigger>
+          <TabsTrigger value="analytics" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><BarChart3 className="h-3.5 w-3.5" /><span>Stats</span></TabsTrigger>
+          <TabsTrigger value="health" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Activity className="h-3.5 w-3.5" /><span>Health</span></TabsTrigger>
         </TabsList>
 
         <TabsContent value="hub" className="mt-0">{tab === 'hub' && <CrmMarketingHubPage />}</TabsContent>
