@@ -13,6 +13,8 @@ import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/data
 import { formatContactName, getContactInitials } from '@/lib/format';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import type { CrmContact } from '@/hooks/useCrmContacts';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -42,6 +44,7 @@ export default function CrmContactsPage() {
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [filterDataStatus, setFilterDataStatus] = useState('all');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [composeContact, setComposeContact] = useState<CrmContact | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Apply URL params on mount
@@ -350,7 +353,15 @@ export default function CrmContactsPage() {
                         {c.phone ? <a href={`tel:${c.phone}`} className="text-sm text-primary hover:underline">{c.phone}</a> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
-                        {c.email ? <a href={`mailto:${c.email}`} className="text-sm text-primary hover:underline truncate block max-w-[180px]">{c.email}</a> : <span className="text-muted-foreground">—</span>}
+                        {c.email ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setComposeContact(c); }}
+                            className="text-sm text-primary hover:underline truncate block max-w-[180px] text-left"
+                          >
+                            {c.email}
+                          </button>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden lg:table-cell">
                         {(c.projects ?? []).length > 0 || c.project ? (
@@ -381,6 +392,13 @@ export default function CrmContactsPage() {
             </tbody>
           </table>
         </div>
+      )}
+      {composeContact && (
+        <ComposeEmailDialog
+          contact={composeContact}
+          open={!!composeContact}
+          onOpenChange={(o) => { if (!o) setComposeContact(null); }}
+        />
       )}
     </div>
   );

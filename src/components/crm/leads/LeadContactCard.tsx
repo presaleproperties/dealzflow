@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
 import { CheckboxDropdown } from './CheckboxDropdown';
+import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -38,18 +39,22 @@ type Row = {
   show?: boolean;
   inputType?: 'text' | 'email';
   multiSelect?: { options: readonly string[]; allowCustom?: boolean };
+  onActivate?: () => void;
 };
 
 export function LeadContactCard({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
+  const [showCompose, setShowCompose] = useState(false);
 
   const save = (field: string, value: string) => {
     updateContact.mutate({ id: contact.id, updates: { [field]: value || null } });
   };
 
+  const openComposer = () => setShowCompose(true);
+
   const rows: Row[] = [
-    { icon: Mail, field: 'email', href: (v) => `mailto:${v}`, inputType: 'email' },
-    { icon: Mail, field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary, inputType: 'email' },
+    { icon: Mail, field: 'email', href: (v) => `mailto:${v}`, inputType: 'email', onActivate: openComposer },
+    { icon: Mail, field: 'email_secondary', href: (v) => `mailto:${v}`, show: !!contact.email_secondary, inputType: 'email', onActivate: openComposer },
     { icon: Phone, field: 'phone', href: (v) => `tel:${v}` },
     { icon: Phone, field: 'phone_secondary', href: (v) => `tel:${v}`, show: !!contact.phone_secondary },
     { icon: MapPin, field: 'city', multiSelect: { options: FRASER_VALLEY_CITIES, allowCustom: true } },
@@ -117,6 +122,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
                 onSave={(v) => save(row.field, v)}
                 href={val && row.href ? row.href(val) : undefined}
                 type={row.inputType}
+                onActivate={row.onActivate}
                 className="text-sm"
               />
               {val && <CopyButton value={val} />}
@@ -124,6 +130,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
           );
         })}
       </div>
+      <ComposeEmailDialog contact={contact} open={showCompose} onOpenChange={setShowCompose} />
     </div>
   );
 }

@@ -11,9 +11,11 @@ interface InlineEditFieldProps {
   className?: string;
   type?: 'text' | 'email' | 'select';
   options?: readonly string[];
+  /** When provided, clicking the link calls this instead of navigating to href. */
+  onActivate?: () => void;
 }
 
-export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text', options }: InlineEditFieldProps) {
+export function InlineEditField({ value, onSave, placeholder = '—', href, className = '', type = 'text', options, onActivate }: InlineEditFieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
   const [emailWarning, setEmailWarning] = useState<EmailValidation>({ isValid: true, suggestion: null, correctedEmail: null });
@@ -133,7 +135,13 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
         <a
           href={href}
           className="text-sm text-primary hover:underline truncate min-w-0"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onActivate) {
+              e.preventDefault();
+              onActivate();
+            }
+          }}
           title={display}
         >
           {display}

@@ -19,6 +19,7 @@ import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
+import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -378,7 +379,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact, tagLibrary, onSendSms }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[]; onSendSms: (c: CrmContact) => void }) {
+function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSendEmail }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[]; onSendSms: (c: CrmContact) => void; onSendEmail: (c: CrmContact) => void }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
@@ -490,9 +491,13 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms }: { c
           {contact.email && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`/crm/email?to=${encodeURIComponent(contact.email)}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onSendEmail(contact); }}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                >
                   <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                </a>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Email {formatEmail(contact.email)}</TooltipContent>
             </Tooltip>
@@ -662,6 +667,7 @@ export function LeadsTable({
   const isMobile = useIsMobile();
   const updateContact = useUpdateCrmContact();
   const [smsContact, setSmsContact] = useState<CrmContact | null>(null);
+  const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
@@ -730,7 +736,7 @@ export function LeadsTable({
               hasEmail={!!contact.email}
               onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
               onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
-              onEmail={() => contact.email && (window.location.href = `mailto:${contact.email}`)}
+              onEmail={() => contact.email && setEmailContact(contact)}
             >
               <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
             </SwipeRow>
@@ -740,6 +746,13 @@ export function LeadsTable({
           <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
             onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
         </div>
+        {emailContact && (
+          <ComposeEmailDialog
+            contact={emailContact}
+            open={!!emailContact}
+            onOpenChange={(o) => !o && setEmailContact(null)}
+          />
+        )}
       </div>
     );
   }
@@ -787,7 +800,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-2 align-middle">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} onSendEmail={setEmailContact} />
                       </td>
                     ))}
                   </tr>
@@ -810,6 +823,13 @@ export function LeadsTable({
           contact={smsContact}
           open={!!smsContact}
           onOpenChange={(o) => !o && setSmsContact(null)}
+        />
+      )}
+      {emailContact && (
+        <ComposeEmailDialog
+          contact={emailContact}
+          open={!!emailContact}
+          onOpenChange={(o) => !o && setEmailContact(null)}
         />
       )}
     </div>
