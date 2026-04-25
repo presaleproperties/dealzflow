@@ -1466,12 +1466,28 @@ export default function LeadDetailPage() {
 
         {/* Center */}
         <div className="flex-1 min-w-0 flex flex-col bg-background">
-          <CenterColumn contact={c} />
+          <CenterColumn
+            contact={c}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            onTask={() => setShowTask(true)}
+            onShowing={() => setShowShowing(true)}
+          />
         </div>
 
         {/* Right sidebar */}
         <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
-          <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
+          <RightSidebar
+            contact={c}
+            onAddTask={() => setShowTask(true)}
+            onAddShowing={() => setShowShowing(true)}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            leadScore={leadScore}
+            lastTouchHours={lastTouchHours}
+          />
         </div>
       </div>
 
