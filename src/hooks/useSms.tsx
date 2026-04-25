@@ -110,12 +110,13 @@ export function useContactSmsLog(contactId?: string | null) {
   });
 }
 
-export function useAllSmsLog(opts: { direction?: 'inbound' | 'outbound'; limit?: number } = {}) {
+export function useAllSmsLog(opts: { direction?: 'inbound' | 'outbound'; channel?: MessagingChannel; limit?: number } = {}) {
   return useQuery({
     queryKey: ['crm-sms-log-all', opts],
     queryFn: async () => {
       let q = supabase.from('crm_sms_log').select('*').order('sent_at', { ascending: false });
       if (opts.direction) q = q.eq('direction', opts.direction);
+      if (opts.channel) q = q.eq('channel', opts.channel);
       if (opts.limit) q = q.limit(opts.limit);
       const { data, error } = await q;
       if (error) throw error;
@@ -145,6 +146,7 @@ export function useSaveSmsTemplate() {
         name: template.name,
         body: template.body,
         category: template.category || 'general',
+        channel: (template as any).channel || 'sms',
         merge_tags: template.merge_tags || [],
         default_media_urls: template.default_media_urls || [],
         is_active: template.is_active ?? true,
