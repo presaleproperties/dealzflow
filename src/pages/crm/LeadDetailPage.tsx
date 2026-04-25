@@ -1088,6 +1088,13 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
           presaleUserId={(contact as any)?.presale_user_id}
         />
       </WidgetSection>
+
+      <EmailPreviewDialog
+        email={previewEmail}
+        open={!!previewEmail}
+        onOpenChange={(o) => !o && setPreviewEmail(null)}
+        contactEmail={contact.email}
+      />
     </div>
   );
 }
