@@ -18,6 +18,7 @@ import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
 import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
+import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 import type { CrmMessageRow, CrmShowing, CrmTask, LeadScore } from '@/components/crm/leads/detail/types';
 
 export default function LeadDetailPage() {
