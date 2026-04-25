@@ -291,6 +291,85 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
     </div>
   ) : null;
 
+  const filterBar = totalCount > 0 ? (
+    <div className="space-y-1.5 mb-1.5">
+      <div className="flex flex-wrap items-center gap-1">
+        {TYPE_CHIPS.map((c) => {
+          const active = activeKinds.has(c.kind);
+          return (
+            <button
+              key={c.kind}
+              onClick={() => toggleKind(c.kind)}
+              className={cn(
+                "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border/60 hover:border-border hover:text-foreground"
+              )}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              className={cn(
+                "text-[10px] px-2 py-0.5 rounded-full border inline-flex items-center gap-1 transition-colors",
+                dateRange?.from
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border/60 hover:border-border hover:text-foreground"
+              )}
+            >
+              <CalendarIcon className="w-2.5 h-2.5" />
+              {dateRange?.from
+                ? dateRange.to && dateRange.to.getTime() !== dateRange.from.getTime()
+                  ? `${format(dateRange.from, "MMM d")} – ${format(dateRange.to, "MMM d")}`
+                  : format(dateRange.from, "MMM d")
+                : "Date range"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="range"
+              selected={dateRange}
+              onSelect={setDateRange}
+              numberOfMonths={1}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+        {deviceOptions.length > 0 && (
+          <Select value={deviceFilter} onValueChange={setDeviceFilter}>
+            <SelectTrigger className="h-6 text-[10px] px-2 w-auto min-w-[80px] rounded-full border-border/60 bg-card">
+              <SelectValue placeholder="Device" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">All devices</SelectItem>
+              {deviceOptions.map((d) => (
+                <SelectItem key={d} value={d} className="text-xs capitalize">{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {filtersActive && (
+          <button
+            onClick={clearFilters}
+            className="text-[10px] px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-2.5 h-2.5" /> Clear
+          </button>
+        )}
+      </div>
+      {filtersActive && (
+        <div className="text-[10px] text-muted-foreground/70 px-0.5">
+          Showing {filteredCount} of {totalCount} events
+        </div>
+      )}
+    </div>
+  ) : null;
+
   if (totalCount === 0) {
     return (
       <div>
@@ -306,7 +385,7 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
     );
   }
 
-  const visible = showAll ? items : items.slice(0, INITIAL);
+  const visible = showAll ? filtered : filtered.slice(0, INITIAL);
 
   return (
     <div className="space-y-1.5">
