@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Search, Send, Plus, MoreHorizontal, Phone, Info, Sparkles,
-  Paperclip, Image as ImageIcon, ArrowLeft, MessageSquare,
+  Paperclip, Image as ImageIcon, ArrowLeft, MessageSquare, ArrowUp,
   CheckCircle2, Clock, AlertCircle, X, ChevronRight,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
   Pin, PinOff, Mail, BellOff, Bell, Trash2, Archive, ArchiveRestore,
@@ -544,14 +544,15 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
               />
             ) : active ? (
               <>
-                {/* Conversation header */}
-                <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 bg-background/80 backdrop-blur">
-                  <div className="flex items-center gap-2 min-w-0">
+                {/* Conversation header — iMessage centered avatar+name */}
+                <div className="px-4 py-2.5 border-b border-border/60 flex items-center gap-2 bg-background/95 backdrop-blur relative">
+                  {/* Left controls */}
+                  <div className="flex items-center gap-1 absolute left-3 top-1/2 -translate-y-1/2 z-10">
                     {isMobile && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 -ml-2"
+                        className="h-8 w-8 rounded-full"
                         onClick={() => setActiveKey(null)}
                       >
                         <ArrowLeft className="w-4 h-4" />
@@ -564,7 +565,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground -ml-1"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                               onClick={() => setLeftCollapsed(v => !v)}
                             >
                               {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -574,10 +575,18 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                         </Tooltip>
                       </TooltipProvider>
                     )}
-                    <Avatar className="h-9 w-9 ring-2 ring-background ml-1">
+                  </div>
+
+                  {/* Centered avatar + name */}
+                  <button
+                    onClick={() => active.contact && navigate(`/crm/leads/${active.contact.id}`)}
+                    className="mx-auto flex flex-col items-center gap-0.5 group/header max-w-[60%]"
+                    disabled={!active.contact}
+                  >
+                    <Avatar className="h-9 w-9 ring-1 ring-border">
                       <AvatarFallback
                         className={cn(
-                          'text-xs font-semibold',
+                          'text-[11px] font-semibold',
                           channel === 'whatsapp'
                             ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                             : 'bg-primary/15 text-primary',
@@ -586,22 +595,20 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                         {initialsFor(active.contact, active.phone)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0">
-                      <div className="text-[15px] font-semibold truncate flex items-center gap-1.5">
-                        {nameFor(active.contact, active.phone)}
-                        {threadState.isMuted(channel, active.key) && (
-                          <BellOff className="w-3 h-3 text-muted-foreground" />
-                        )}
-                        {channel === 'whatsapp' && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        )}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground font-mono">
-                        {active.phone}
-                      </div>
+                    <div className="flex items-center gap-1 text-[12px] font-semibold text-foreground/90 group-hover/header:text-primary transition-colors">
+                      <span className="truncate max-w-[180px]">{nameFor(active.contact, active.phone)}</span>
+                      {threadState.isMuted(channel, active.key) && (
+                        <BellOff className="w-2.5 h-2.5 text-muted-foreground" />
+                      )}
+                      {channel === 'whatsapp' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      )}
+                      {active.contact && (
+                        <ChevronRight className="w-3 h-3 text-muted-foreground/60" />
+                      )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1">
+                  </button>
+                  <div className="flex items-center gap-0.5 absolute right-3 top-1/2 -translate-y-1/2 z-10">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -729,7 +736,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                 {/* Messages */}
                 <div
                   ref={scrollRef}
-                  className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 bg-gradient-to-b from-muted/10 to-background"
+                  className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 bg-background"
                 >
                   <MessageList
                     messages={visibleMessages}
@@ -1041,8 +1048,16 @@ function MessageList({
     );
   }
 
+  const lastOutboundIdx = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].direction === 'outbound') return i;
+    }
+    return -1;
+  })();
+
   return (
-    <div className="space-y-1 max-w-3xl mx-auto">
+    <div className="space-y-0.5 max-w-3xl mx-auto">
+
       {messages.map((m, i) => {
         const prev = messages[i - 1];
         const next = messages[i + 1];
@@ -1079,15 +1094,15 @@ function MessageList({
                   <div className="relative max-w-[75%] sm:max-w-[65%]">
                     <div
                       className={cn(
-                        'px-3.5 py-2 text-[14.5px] leading-snug shadow-sm transition-opacity',
+                        'px-3.5 py-2 text-[14.5px] leading-[1.35] transition-opacity',
                         isOutbound
                           ? channel === 'whatsapp'
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground',
+                            ? 'bg-emerald-500 text-white shadow-[0_1px_2px_rgba(16,185,129,0.25)]'
+                            : 'bg-gradient-to-b from-primary to-[hsl(var(--primary)/0.88)] text-primary-foreground shadow-[0_1px_2px_hsl(var(--primary)/0.25)]'
+                          : 'bg-muted/70 text-foreground/95 shadow-[0_1px_1px_rgba(0,0,0,0.04)] dark:bg-muted/60',
                         isOutbound
-                          ? cn('rounded-2xl', sameSenderAsPrev && 'rounded-tr-md', sameSenderAsNext && 'rounded-br-md')
-                          : cn('rounded-2xl', sameSenderAsPrev && 'rounded-tl-md', sameSenderAsNext && 'rounded-bl-md'),
+                          ? cn('rounded-[20px]', sameSenderAsPrev && 'rounded-tr-[6px]', sameSenderAsNext && 'rounded-br-[6px]')
+                          : cn('rounded-[20px]', sameSenderAsPrev && 'rounded-tl-[6px]', sameSenderAsNext && 'rounded-bl-[6px]'),
                         (isOptimistic || isScheduled) && 'opacity-70',
                       )}
                     >
@@ -1218,10 +1233,13 @@ function MessageList({
               </ContextMenuContent>
             </ContextMenu>
 
-            {/* Status under last bubble in group */}
-            {isOutbound && !sameSenderAsNext && (
-              <div className="flex justify-end mt-0.5 mr-1">
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            {/* Status — iMessage shows status only under the very last outbound, OR for failed/scheduled messages anywhere */}
+            {isOutbound && (i === lastOutboundIdx || m.status === 'failed' || m.status === 'undelivered' || m.status === 'scheduled') && (
+              <div className="flex justify-end mt-0.5 mr-1.5">
+                <span className={cn(
+                  "text-[10px] flex items-center gap-1 font-medium tracking-tight",
+                  m.status === 'failed' || m.status === 'undelivered' ? 'text-destructive' : 'text-muted-foreground/80'
+                )}>
                   <StatusIcon status={m.status} />
                   {statusLabel(m.status, m.scheduled_for)}
                 </span>
@@ -1362,7 +1380,7 @@ function Composer({
           </div>
         )}
 
-        <div className="flex items-end gap-2 rounded-2xl border border-border bg-muted/30 focus-within:border-primary/40 focus-within:bg-background transition-colors px-3 py-2">
+        <div className="flex items-end gap-1.5">
           {/* Hidden file input */}
           <input
             ref={fileInputRef}
@@ -1373,110 +1391,112 @@ function Composer({
             onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
           />
 
-          {/* Templates */}
-          {templates.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-primary"
-                  title="Insert template"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-1.5">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
-                  Templates
-                </div>
-                <div className="max-h-72 overflow-y-auto">
-                  {templates.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => onChange(t.body)}
-                      className="w-full text-left px-2 py-2 rounded-md hover:bg-muted text-xs"
-                    >
-                      <div className="font-medium text-foreground">{t.name}</div>
-                      <div className="text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-
-          {/* Attach */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-primary"
-            title="Attach photo or file"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="w-3.5 h-3.5" />
-          </Button>
-
-          {/* Schedule */}
+          {/* iMessage-style + menu (templates / attach / schedule) */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className={cn(
-                  'h-7 w-7 rounded-full shrink-0',
-                  scheduledFor ? 'text-blue-600' : 'text-muted-foreground hover:text-primary',
-                )}
-                title="Schedule send"
+                className="h-8 w-8 rounded-full shrink-0 bg-muted/60 text-muted-foreground hover:text-primary hover:bg-muted"
+                title="More actions"
               >
-                <CalendarIcon className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-3 space-y-2">
-              <div className="text-xs font-semibold">Schedule send</div>
-              <p className="text-[11px] text-muted-foreground">
-                The message will be queued and delivered at the chosen time.
-              </p>
-              <Input
-                type="datetime-local"
-                value={scheduledFor || defaultScheduled}
-                min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
-                onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
-                className="text-xs h-8"
-              />
-              {scheduledFor && (
-                <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
-                  Clear schedule
-                </Button>
+            <PopoverContent align="start" side="top" className="w-52 p-1">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-muted text-xs text-foreground"
+              >
+                <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                Photo or file
+              </button>
+              {templates.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-muted text-xs text-foreground">
+                      <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                      Template
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" side="right" className="w-72 p-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
+                      Templates
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {templates.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => onChange(t.body)}
+                          className="w-full text-left px-2 py-2 rounded-md hover:bg-muted text-xs"
+                        >
+                          <div className="font-medium text-foreground">{t.name}</div>
+                          <div className="text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={cn(
+                    "w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-muted text-xs",
+                    scheduledFor ? "text-blue-600 dark:text-blue-400" : "text-foreground"
+                  )}>
+                    <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    Schedule send {scheduledFor && '·'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" side="right" className="w-72 p-3 space-y-2">
+                  <div className="text-xs font-semibold">Schedule send</div>
+                  <p className="text-[11px] text-muted-foreground">
+                    The message will be queued and delivered at the chosen time.
+                  </p>
+                  <Input
+                    type="datetime-local"
+                    value={scheduledFor || defaultScheduled}
+                    min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
+                    onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
+                    className="text-xs h-8"
+                  />
+                  {scheduledFor && (
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
+                      Clear schedule
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
             </PopoverContent>
           </Popover>
 
-          <Textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={channel === 'whatsapp' ? 'WhatsApp message…' : 'iMessage'}
-            rows={1}
-            className="flex-1 min-h-[36px] max-h-40 resize-none border-0 bg-transparent px-1 py-1.5 text-[14.5px] focus-visible:ring-0 focus-visible:border-0 shadow-none"
-            style={{ height: 'auto' }}
-          />
-
-          <Button
-            size="icon"
-            onClick={onSend}
-            disabled={!canSend}
-            className={cn(
-              'h-8 w-8 rounded-full shrink-0 transition-all',
-              canSend
-                ? channel === 'whatsapp'
-                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                  : 'bg-primary hover:bg-primary/90'
-                : 'opacity-40',
-            )}
-          >
-            {scheduledFor ? <CalendarIcon className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
-          </Button>
+          {/* iMessage pill input */}
+          <div className="flex-1 flex items-end gap-1 rounded-[20px] border border-border/80 bg-background focus-within:border-primary/50 transition-colors pl-3.5 pr-1 py-0.5">
+            <Textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={channel === 'whatsapp' ? 'WhatsApp' : 'iMessage'}
+              rows={1}
+              className="flex-1 min-h-[34px] max-h-40 resize-none border-0 bg-transparent px-0 py-1.5 text-[14.5px] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/60"
+              style={{ height: 'auto' }}
+            />
+            <Button
+              size="icon"
+              onClick={onSend}
+              disabled={!canSend}
+              className={cn(
+                'h-7 w-7 rounded-full shrink-0 transition-all mb-[3px]',
+                canSend
+                  ? channel === 'whatsapp'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground/40 hover:bg-muted',
+              )}
+            >
+              {scheduledFor ? <CalendarIcon className="w-3.5 h-3.5" /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} />}
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
