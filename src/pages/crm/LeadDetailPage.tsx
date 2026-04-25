@@ -1268,161 +1268,158 @@ export default function LeadDetailPage() {
     const typeLabel = TYPE_LABELS[c.contact_type] ?? 'LEAD';
     const initials = ((c.first_name?.[0] || '') + (c.last_name?.[0] || '')).toUpperCase() || '?';
     return (
-      <div className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 flex flex-col" style={{ minHeight: 'calc(100dvh - 60px)' }}>
-        {/* Sticky compact header */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
-          <div className="flex items-center gap-2 px-3 py-2.5">
+      <div
+        className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 flex flex-col flex-1 bg-background"
+        style={{ minHeight: 'calc(100dvh - 60px)' }}
+      >
+        {/* Sticky top nav bar — slim, clean */}
+        <div
+          className="sticky z-30 bg-background/90 backdrop-blur-md border-b border-border"
+          style={{ top: 'env(safe-area-inset-top, 0px)' }}
+        >
+          <div className="flex items-center justify-between h-12 px-2">
             <Link
               to="/crm/leads"
-              className="flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all shrink-0"
+              className="flex items-center justify-center w-10 h-10 rounded-full text-muted-foreground hover:text-foreground active:scale-95 transition-all"
               aria-label="Back to Leads"
             >
-              <ArrowLeft className="w-[18px] h-[18px]" />
+              <ArrowLeft className="w-[20px] h-[20px]" />
             </Link>
 
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
-                style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
-              >
-                {initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <h1 className="text-[15px] font-semibold text-foreground tracking-tight truncate leading-tight">
-                    {formatContactName(c.first_name, c.last_name) || 'Unnamed lead'}
-                  </h1>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground border border-border rounded px-1 py-0.5 shrink-0">
-                    {typeLabel}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-                  {c.status ?? 'New Lead'}{c.source ? ` · ${c.source}` : ''}
-                </p>
-              </div>
-            </div>
-
-            {navInfo && navInfo.total > 1 && (
-              <div className="flex items-center gap-0.5 shrink-0">
+            {navInfo && navInfo.total > 1 ? (
+              <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground tabular-nums">
                 <button
                   onClick={() => handleNavigate('prev')}
                   disabled={navInfo.index <= 0}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-25 disabled:pointer-events-none transition-all"
                   aria-label="Previous lead"
                 >
                   <ChevronLeft className="w-[18px] h-[18px]" />
                 </button>
+                <span className="px-1">{navInfo.index + 1} / {navInfo.total}</span>
                 <button
                   onClick={() => handleNavigate('next')}
                   disabled={navInfo.index >= navInfo.total - 1}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-25 disabled:pointer-events-none transition-all"
                   aria-label="Next lead"
                 >
                   <ChevronRight className="w-[18px] h-[18px]" />
                 </button>
               </div>
+            ) : (
+              <div className="w-10" />
             )}
           </div>
         </div>
 
-        {/* Tabbed content */}
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col">
-          <div className="sticky top-[57px] z-20 bg-background/95 backdrop-blur-md border-b border-border">
+        {/* Hero — avatar, name, status, inline contact actions */}
+        <div className="px-5 pt-5 pb-5 flex flex-col items-center text-center border-b border-border">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-bold mb-3"
+            style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+          >
+            {initials}
+          </div>
+          <h1 className="text-[19px] font-semibold text-foreground tracking-tight leading-tight">
+            {formatContactName(c.first_name, c.last_name) || 'Unnamed lead'}
+          </h1>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{typeLabel}</span>
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[12px] text-muted-foreground">{c.status ?? 'New Lead'}</span>
+          </div>
+          {c.source && (
+            <p className="text-[11px] text-muted-foreground/70 mt-1">via {c.source}</p>
+          )}
+
+          <div className="flex items-center justify-center gap-3 mt-5">
+            <button
+              onClick={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              disabled={!c.phone}
+              className="flex flex-col items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all"
+              aria-label="Call"
+            >
+              <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--primary) / 0.1)' }}>
+                <Phone className="w-[18px] h-[18px] text-primary" strokeWidth={2.2} />
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground">Call</span>
+            </button>
+            <button
+              onClick={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+              disabled={!c.phone}
+              className="flex flex-col items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all"
+              aria-label="Text"
+            >
+              <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--primary) / 0.1)' }}>
+                <MessageSquare className="w-[18px] h-[18px] text-primary" strokeWidth={2.2} />
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground">Text</span>
+            </button>
+            <button
+              onClick={() => setShowEmail(true)}
+              disabled={!c.email}
+              className="flex flex-col items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all"
+              aria-label="Email"
+            >
+              <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--primary) / 0.1)' }}>
+                <Mail className="w-[18px] h-[18px] text-primary" strokeWidth={2.2} />
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground">Email</span>
+            </button>
+            <button
+              onClick={() => setShowTask(true)}
+              className="flex flex-col items-center gap-1.5 active:scale-95 transition-all"
+              aria-label="Task"
+            >
+              <span className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--primary) / 0.1)' }}>
+                <ListTodo className="w-[18px] h-[18px] text-primary" strokeWidth={2.2} />
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground">Task</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={mobileTab} onValueChange={setMobileTab} className="flex-1 flex flex-col">
+          <div
+            className="sticky z-20 bg-background/95 backdrop-blur-md border-b border-border"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}
+          >
             <TabsList className="w-full h-11 bg-transparent rounded-none p-0 grid grid-cols-3">
-              <TabsTrigger
-                value="overview"
-                className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger
-                value="activity"
-                className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold"
-              >
-                Activity
-              </TabsTrigger>
-              <TabsTrigger
-                value="insights"
-                className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold"
-              >
-                Insights
-              </TabsTrigger>
+              <TabsTrigger value="overview" className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold">Overview</TabsTrigger>
+              <TabsTrigger value="activity" className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold">Activity</TabsTrigger>
+              <TabsTrigger value="insights" className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold">Insights</TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="overview" className="mt-0 px-3 py-4 pb-[calc(72px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
-            <LeftSidebar
-              contact={c}
-              leadScore={leadScore}
-              lastTouchLabel={lastTouchLabel}
-              daysInPipeline={daysInPipeline}
-            />
+          <TabsContent value="overview" className="mt-0 px-3 py-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
+            <LeftSidebar contact={c} leadScore={leadScore} lastTouchLabel={lastTouchLabel} daysInPipeline={daysInPipeline} />
           </TabsContent>
 
-          <TabsContent value="activity" className="mt-0 pb-[calc(72px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
+          <TabsContent value="activity" className="mt-0 pb-[calc(88px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
             <div className="bg-card border-y border-border" style={{ minHeight: 400 }}>
               <CenterColumn contact={c} />
             </div>
           </TabsContent>
 
-          <TabsContent value="insights" className="mt-0 px-3 py-4 pb-[calc(72px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
-            <RightSidebar
-              contact={c}
-              onAddTask={() => setShowTask(true)}
-              onAddShowing={() => setShowShowing(true)}
-            />
+          <TabsContent value="insights" className="mt-0 px-3 py-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
+            <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
           </TabsContent>
         </Tabs>
 
-        {/* Sticky bottom action bar — sits above the bottom nav (which adds 96px on mobile) */}
+        {/* Single primary CTA */}
         <div
           className="fixed left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border"
           style={{ bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))' }}
         >
-          <div className="flex items-stretch gap-1.5 px-3 py-2">
-            <button
-              onClick={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-              disabled={!c.phone}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
-              aria-label="Call"
-            >
-              <Phone className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
-              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Call</span>
-            </button>
-            <button
-              onClick={() => c.phone && (window.location.href = `sms:${c.phone}`)}
-              disabled={!c.phone}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
-              aria-label="Text"
-            >
-              <MessageSquare className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
-              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Text</span>
-            </button>
-            <button
-              onClick={() => setShowEmail(true)}
-              disabled={!c.email}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
-              aria-label="Email"
-            >
-              <Mail className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
-              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Email</span>
-            </button>
-            <button
-              onClick={() => setShowTask(true)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all"
-              aria-label="Task"
-            >
-              <ListTodo className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
-              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Task</span>
-            </button>
+          <div className="px-4 py-3">
             <button
               onClick={() => setShowShowing(true)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl text-primary-foreground active:scale-95 transition-all"
+              className="w-full h-12 rounded-xl flex items-center justify-center gap-2 text-primary-foreground font-semibold text-[14px] active:scale-[0.98] transition-all shadow-sm"
               style={{ background: 'hsl(var(--primary))' }}
-              aria-label="Book Showing"
             >
-              <Calendar className="w-[15px] h-[15px]" strokeWidth={2.2} />
-              <span className="text-[9.5px] font-bold uppercase tracking-wider">Book</span>
+              <Calendar className="w-[16px] h-[16px]" strokeWidth={2.4} />
+              Book showing
             </button>
           </div>
         </div>
