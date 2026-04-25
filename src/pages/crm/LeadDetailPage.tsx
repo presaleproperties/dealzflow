@@ -749,21 +749,34 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
               <div className="pl-9">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
-              {group.notes.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  isOwn={note.user_id === currentUserId}
-                  contactId={contact.id}
-                  editingId={editingId}
-                  editContent={editContent}
-                  onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
-                  onCancelEdit={() => setEditingId(null)}
-                  onSaveEdit={handleEditSave}
-                  setEditContent={setEditContent}
-                  onOpenEmail={handleOpenEmail}
-                />
-              ))}
+              {group.notes.map(note => {
+                const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
+                if (emailRow) {
+                  return (
+                    <EmailNoteCard
+                      key={note.id}
+                      email={emailRow}
+                      contactEmail={contact.email}
+                      onOpen={() => setPreviewEmail(emailRow)}
+                    />
+                  );
+                }
+                return (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    isOwn={note.user_id === currentUserId}
+                    contactId={contact.id}
+                    editingId={editingId}
+                    editContent={editContent}
+                    onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
+                    onCancelEdit={() => setEditingId(null)}
+                    onSaveEdit={handleEditSave}
+                    setEditContent={setEditContent}
+                    onOpenEmail={handleOpenEmail}
+                  />
+                );
+              })}
             </div>
           ))}
 
