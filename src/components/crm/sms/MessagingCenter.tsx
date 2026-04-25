@@ -608,7 +608,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                       )}
                     </div>
                   </button>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 absolute right-3 top-1/2 -translate-y-1/2 z-10">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
