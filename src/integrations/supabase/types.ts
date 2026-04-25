@@ -1989,6 +1989,7 @@ export type Database = {
         Row: {
           contact_id: string
           content: string
+          content_original: string | null
           created_at: string | null
           event_at: string | null
           id: string
@@ -2000,6 +2001,7 @@ export type Database = {
         Insert: {
           contact_id: string
           content: string
+          content_original?: string | null
           created_at?: string | null
           event_at?: string | null
           id?: string
@@ -2011,6 +2013,7 @@ export type Database = {
         Update: {
           contact_id?: string
           content?: string
+          content_original?: string | null
           created_at?: string | null
           event_at?: string | null
           id?: string
