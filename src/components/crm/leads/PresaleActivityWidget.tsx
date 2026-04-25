@@ -79,57 +79,105 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
     );
   }
 
+  const PRESALE_BASE = "https://presaleproperties.com";
+  const toAbs = (u?: string | null): string | null => {
+    if (!u) return null;
+    if (/^https?:\/\//i.test(u)) return u;
+    return `${PRESALE_BASE}${u.startsWith("/") ? "" : "/"}${u}`;
+  };
+  const buildSearchUrl = (s: any): string => {
+    const params = new URLSearchParams();
+    if (s.utm_source) params.set("utm_source", s.utm_source);
+    if (s.utm_medium) params.set("utm_medium", s.utm_medium);
+    if (s.utm_campaign) params.set("utm_campaign", s.utm_campaign);
+    const qs = params.toString();
+    return `${PRESALE_BASE}${qs ? `?${qs}` : ""}`;
+  };
+
+  type DeepLink = { label: string; href: string };
   type Item = {
     key: string;
     icon: any;
     label: string;
     detail: string;
-    url?: string | null;
+    primaryUrl?: string | null;     // absolute, for the main click target
+    primaryDisplay?: string | null; // what to show for the main link (relative path preferred)
+    deepLinks?: DeepLink[];         // additional clickable destinations
     extra?: string | null;
     at: string;
   };
 
   const items: Item[] = [
-    ...((data?.views || []) as any[]).map((v) => ({
-      key: `v-${v.id}`,
-      icon: v.action === "favorite" ? Heart : Eye,
-      label: v.action === "favorite" ? "Favorited property" : v.action === "share" ? "Shared property" : "Viewed property",
-      detail: v.property_name || v.property_id || "Property",
-      url: v.property_url,
-      extra: v.duration_seconds ? `${v.duration_seconds}s on page` : null,
-      at: v.viewed_at,
-    })),
-    ...((data?.forms || []) as any[]).map((f) => ({
-      key: `f-${f.id}`,
-      icon: FileText,
-      label: (f.form_type || "form").replace(/_/g, " "),
-      detail: f.form_name || f.property_name || "Submitted form",
-      url: (f.payload && (f.payload.page_url || f.payload.url)) || null,
-      extra: f.funnel_step ? `Step ${f.funnel_step}${f.funnel_total_steps ? `/${f.funnel_total_steps}` : ""}` : null,
-      at: f.submitted_at,
-    })),
+    ...((data?.views || []) as any[]).map((v) => {
+      const abs = toAbs(v.property_url);
+      return {
+        key: `v-${v.id}`,
+        icon: v.action === "favorite" ? Heart : Eye,
+        label: v.action === "favorite" ? "Favorited property" : v.action === "share" ? "Shared property" : "Viewed property",
+        detail: v.property_name || v.property_id || "Property",
+        primaryUrl: abs,
+        primaryDisplay: v.property_url || abs,
+        extra: v.duration_seconds ? `${v.duration_seconds}s on page` : null,
+        at: v.viewed_at,
+      } as Item;
+    }),
+    ...((data?.forms || []) as any[]).map((f) => {
+      const pageUrl = (f.payload && (f.payload.page_url || f.payload.url)) || null;
+      const propUrl = f.payload?.property_url || null;
+      const primary = toAbs(pageUrl) || toAbs(propUrl);
+      const deep: DeepLink[] = [];
+      if (propUrl && propUrl !== pageUrl) {
+        const a = toAbs(propUrl);
+        if (a) deep.push({ label: "Open property", href: a });
+      }
+      return {
+        key: `f-${f.id}`,
+        icon: FileText,
+        label: (f.form_type || "form").replace(/_/g, " "),
+        detail: f.form_name || f.property_name || "Submitted form",
+        primaryUrl: primary,
+        primaryDisplay: pageUrl || propUrl || primary,
+        deepLinks: deep,
+        extra: f.funnel_step ? `Step ${f.funnel_step}${f.funnel_total_steps ? `/${f.funnel_total_steps}` : ""}` : null,
+        at: f.submitted_at,
+      } as Item;
+    }),
     ...((data?.engagement || []) as any[]).map((e) => ({
       key: `e-${e.id}`,
       icon: (e.event_type || "").includes("click") ? MousePointerClick : Mail,
       label: (e.event_type || "event").replace(/_/g, " "),
       detail: e.campaign_name || e.template_name || "Email event",
-      url: e.link_url,
+      primaryUrl: toAbs(e.link_url),
+      primaryDisplay: e.link_url,
       extra: null,
       at: e.occurred_at,
-    })),
-    ...((data?.sessions || []) as any[]).map((s) => ({
-      key: `s-${s.id}`,
-      icon: Globe,
-      label: "Site visit",
-      detail: `${s.pages_viewed || 0} pages · ${s.utm_source || s.referrer || "direct"}`,
-      url: s.landing_page,
-      extra: [
-        s.duration_seconds ? `${Math.round(s.duration_seconds / 60)}m` : null,
-        s.device_type,
-        s.utm_campaign,
-      ].filter(Boolean).join(" · ") || null,
-      at: s.started_at,
-    })),
+    } as Item)),
+    ...((data?.sessions || []) as any[]).map((s) => {
+      const landingAbs = toAbs(s.landing_page);
+      const exitAbs = toAbs(s.exit_page);
+      const refAbs = s.referrer && /^https?:\/\//i.test(s.referrer) ? s.referrer : null;
+      const deep: DeepLink[] = [];
+      if (exitAbs && exitAbs !== landingAbs) deep.push({ label: "Exit page", href: exitAbs });
+      if (refAbs) deep.push({ label: "Referrer", href: refAbs });
+      if (s.utm_source || s.utm_campaign) {
+        deep.push({ label: "Campaign URL", href: buildSearchUrl(s) });
+      }
+      return {
+        key: `s-${s.id}`,
+        icon: Globe,
+        label: "Site visit",
+        detail: `${s.pages_viewed || 0} pages · ${s.utm_source || s.referrer || "direct"}`,
+        primaryUrl: landingAbs,
+        primaryDisplay: s.landing_page || landingAbs,
+        deepLinks: deep,
+        extra: [
+          s.duration_seconds ? `${Math.round(s.duration_seconds / 60)}m` : null,
+          s.device_type,
+          s.utm_campaign,
+        ].filter(Boolean).join(" · ") || null,
+        at: s.started_at,
+      } as Item;
+    }),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
   const totalCount = items.length;
