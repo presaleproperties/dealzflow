@@ -34,6 +34,7 @@ import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiag
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -1208,6 +1209,7 @@ export default function LeadDetailPage() {
 
   // Top-level dialog state (so top bar buttons work)
   const [showEmail, setShowEmail] = useState(false);
+  const [showText, setShowText] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
 
@@ -1342,7 +1344,7 @@ export default function LeadDetailPage() {
             lastTouchLabel={lastTouchLabel}
             daysInPipeline={daysInPipeline}
             onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+            onSms={() => setShowText(true)}
             onEmail={() => setShowEmail(true)}
           />
         </div>
@@ -1354,6 +1356,7 @@ export default function LeadDetailPage() {
         </div>
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
+        <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
         <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
         <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
       </div>
@@ -1380,7 +1383,7 @@ export default function LeadDetailPage() {
             lastTouchLabel={lastTouchLabel}
             daysInPipeline={daysInPipeline}
             onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+            onSms={() => setShowText(true)}
             onEmail={() => setShowEmail(true)}
           />
         </div>
@@ -1397,6 +1400,7 @@ export default function LeadDetailPage() {
       </div>
 
       <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
+      <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
       <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
     </div>
