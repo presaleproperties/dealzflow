@@ -88,6 +88,7 @@ export interface SmsNumber {
   label: string | null;
   is_company: boolean;
   is_active: boolean;
+  channel: 'sms' | 'whatsapp' | 'both';
   twilio_sid: string | null;
 }
 
