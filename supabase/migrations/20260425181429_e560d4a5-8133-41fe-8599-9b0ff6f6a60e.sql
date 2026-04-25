@@ -1,0 +1,1 @@
+ALTER TABLE public.crm_notes ADD COLUMN IF NOT EXISTS content_original text;
