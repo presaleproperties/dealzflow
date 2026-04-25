@@ -1233,10 +1233,13 @@ function MessageList({
               </ContextMenuContent>
             </ContextMenu>
 
-            {/* Status under last bubble in group */}
-            {isOutbound && !sameSenderAsNext && (
-              <div className="flex justify-end mt-0.5 mr-1">
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            {/* Status — iMessage shows status only under the very last outbound, OR for failed/scheduled messages anywhere */}
+            {isOutbound && (i === lastOutboundIdx || m.status === 'failed' || m.status === 'undelivered' || m.status === 'scheduled') && (
+              <div className="flex justify-end mt-0.5 mr-1.5">
+                <span className={cn(
+                  "text-[10px] flex items-center gap-1 font-medium tracking-tight",
+                  m.status === 'failed' || m.status === 'undelivered' ? 'text-destructive' : 'text-muted-foreground/80'
+                )}>
                   <StatusIcon status={m.status} />
                   {statusLabel(m.status, m.scheduled_for)}
                 </span>
