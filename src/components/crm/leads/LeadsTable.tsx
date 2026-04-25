@@ -736,7 +736,7 @@ export function LeadsTable({
               hasEmail={!!contact.email}
               onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
               onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
-              onEmail={() => contact.email && (window.location.href = `mailto:${contact.email}`)}
+              onEmail={() => contact.email && setEmailContact(contact)}
             >
               <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
             </SwipeRow>
