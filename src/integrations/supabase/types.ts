@@ -2248,6 +2248,7 @@ export type Database = {
       crm_sms_campaigns: {
         Row: {
           body: string
+          channel: string
           completed_at: string | null
           created_at: string
           created_by: string | null
@@ -2272,6 +2273,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          channel?: string
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -2296,6 +2298,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          channel?: string
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -2332,6 +2335,7 @@ export type Database = {
         Row: {
           body: string
           campaign_id: string | null
+          channel: string
           contact_id: string | null
           created_at: string
           delivered_at: string | null
@@ -2355,6 +2359,7 @@ export type Database = {
         Insert: {
           body: string
           campaign_id?: string | null
+          channel?: string
           contact_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -2378,6 +2383,7 @@ export type Database = {
         Update: {
           body?: string
           campaign_id?: string | null
+          channel?: string
           contact_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -2417,6 +2423,7 @@ export type Database = {
       }
       crm_sms_numbers: {
         Row: {
+          channel: string
           created_at: string
           id: string
           is_active: boolean
@@ -2428,6 +2435,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          channel?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -2439,6 +2447,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          channel?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -2505,6 +2514,9 @@ export type Database = {
           quiet_hours_start: number
           quiet_hours_timezone: string
           updated_at: string
+          whatsapp_enabled: boolean
+          whatsapp_from: string | null
+          whatsapp_messaging_service_sid: string | null
         }
         Insert: {
           append_optout_first_msg?: boolean
@@ -2518,6 +2530,9 @@ export type Database = {
           quiet_hours_start?: number
           quiet_hours_timezone?: string
           updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_from?: string | null
+          whatsapp_messaging_service_sid?: string | null
         }
         Update: {
           append_optout_first_msg?: boolean
@@ -2531,6 +2546,9 @@ export type Database = {
           quiet_hours_start?: number
           quiet_hours_timezone?: string
           updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_from?: string | null
+          whatsapp_messaging_service_sid?: string | null
         }
         Relationships: []
       }
@@ -2538,6 +2556,7 @@ export type Database = {
         Row: {
           body: string
           category: string
+          channel: string
           created_at: string
           created_by: string | null
           default_media_urls: string[]
@@ -2552,6 +2571,7 @@ export type Database = {
         Insert: {
           body: string
           category?: string
+          channel?: string
           created_at?: string
           created_by?: string | null
           default_media_urls?: string[]
@@ -2566,6 +2586,7 @@ export type Database = {
         Update: {
           body?: string
           category?: string
+          channel?: string
           created_at?: string
           created_by?: string | null
           default_media_urls?: string[]
