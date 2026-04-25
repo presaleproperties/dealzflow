@@ -319,17 +319,17 @@ export default function CrmEmailCenterPage() {
   return (
     <div className="space-y-5 max-w-[1400px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center"><Mail className="h-4 w-4 text-primary" /></div>
-            Email Center
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Mail className="h-4 w-4 text-primary" /></div>
+            <span className="truncate">Email Center</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Send template emails to leads & track engagement — synced with Presale Properties</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Send template emails to leads & track engagement</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 text-xs bg-muted/40 border border-border px-4 py-2 rounded-lg">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-3 text-[11px] sm:text-xs bg-muted/40 border border-border px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /><span className="font-semibold">{sentEmails.length}</span> sent</span>
-            <span className="flex items-center gap-1.5"><MailOpen className="h-3.5 w-3.5 text-blue-500" /><span className="font-semibold">{openRate}%</span> open rate</span>
+            <span className="flex items-center gap-1.5"><MailOpen className="h-3.5 w-3.5 text-blue-500" /><span className="font-semibold">{openRate}%</span> open</span>
           </div>
           <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="h-3.5 w-3.5" /></Button>
         </div>
