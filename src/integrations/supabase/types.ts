@@ -1887,50 +1887,231 @@ export type Database = {
           },
         ]
       }
+      crm_sms_campaign_recipients: {
+        Row: {
+          campaign_id: string
+          contact_id: string | null
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          phone: string
+          replied_at: string | null
+          sent_at: string | null
+          sms_log_id: string | null
+          status: string
+        }
+        Insert: {
+          campaign_id: string
+          contact_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          phone: string
+          replied_at?: string | null
+          sent_at?: string | null
+          sms_log_id?: string | null
+          status?: string
+        }
+        Update: {
+          campaign_id?: string
+          contact_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          phone?: string
+          replied_at?: string | null
+          sent_at?: string | null
+          sms_log_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sms_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sms_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_sms_campaign_recipients_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_sms_campaign_recipients_sms_log_id_fkey"
+            columns: ["sms_log_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sms_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_sms_campaigns: {
+        Row: {
+          body: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          delivered_count: number
+          failed_count: number
+          from_number: string | null
+          id: string
+          media_urls: string[]
+          messaging_service_sid: string | null
+          name: string
+          optout_count: number
+          recipients_count: number
+          reply_count: number
+          scheduled_for: string | null
+          segment_filter: Json | null
+          sent_count: number
+          started_at: string | null
+          status: string
+          template_id: string | null
+          throttle_per_min: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number
+          failed_count?: number
+          from_number?: string | null
+          id?: string
+          media_urls?: string[]
+          messaging_service_sid?: string | null
+          name: string
+          optout_count?: number
+          recipients_count?: number
+          reply_count?: number
+          scheduled_for?: string | null
+          segment_filter?: Json | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+          throttle_per_min?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number
+          failed_count?: number
+          from_number?: string | null
+          id?: string
+          media_urls?: string[]
+          messaging_service_sid?: string | null
+          name?: string
+          optout_count?: number
+          recipients_count?: number
+          reply_count?: number
+          scheduled_for?: string | null
+          segment_filter?: Json | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+          throttle_per_min?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sms_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sms_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_sms_log: {
         Row: {
           body: string
-          contact_id: string
+          campaign_id: string | null
+          contact_id: string | null
           created_at: string
+          delivered_at: string | null
           direction: string
+          error_code: string | null
           error_message: string | null
           from_number: string | null
           id: string
+          media_urls: string[]
+          message_type: string
+          num_segments: number | null
+          price: number | null
+          price_unit: string | null
+          scheduled_for: string | null
           sent_at: string
           status: string
           to_number: string
           twilio_message_sid: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           body: string
-          contact_id: string
+          campaign_id?: string | null
+          contact_id?: string | null
           created_at?: string
+          delivered_at?: string | null
           direction?: string
+          error_code?: string | null
           error_message?: string | null
           from_number?: string | null
           id?: string
+          media_urls?: string[]
+          message_type?: string
+          num_segments?: number | null
+          price?: number | null
+          price_unit?: string | null
+          scheduled_for?: string | null
           sent_at?: string
           status?: string
           to_number: string
           twilio_message_sid?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           body?: string
-          contact_id?: string
+          campaign_id?: string | null
+          contact_id?: string | null
           created_at?: string
+          delivered_at?: string | null
           direction?: string
+          error_code?: string | null
           error_message?: string | null
           from_number?: string | null
           id?: string
+          media_urls?: string[]
+          message_type?: string
+          num_segments?: number | null
+          price?: number | null
+          price_unit?: string | null
+          scheduled_for?: string | null
           sent_at?: string
           status?: string
           to_number?: string
           twilio_message_sid?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_sms_log_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_sms_campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_sms_log_contact_id_fkey"
             columns: ["contact_id"]
@@ -1939,6 +2120,170 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_sms_numbers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_company: boolean
+          label: string | null
+          phone: string
+          twilio_sid: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_company?: boolean
+          label?: string | null
+          phone: string
+          twilio_sid?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_company?: boolean
+          label?: string | null
+          phone?: string
+          twilio_sid?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_sms_opt_outs: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          id: string
+          opted_out_at: string
+          phone: string
+          re_opted_in_at: string | null
+          reason: string | null
+          source: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          opted_out_at?: string
+          phone: string
+          re_opted_in_at?: string | null
+          reason?: string | null
+          source?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          opted_out_at?: string
+          phone?: string
+          re_opted_in_at?: string | null
+          reason?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sms_opt_outs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_sms_settings: {
+        Row: {
+          append_optout_first_msg: boolean
+          created_at: string
+          default_throttle_per_min: number
+          enforce_quiet_hours: boolean
+          id: string
+          messaging_service_sid: string | null
+          optout_footer: string
+          quiet_hours_end: number
+          quiet_hours_start: number
+          quiet_hours_timezone: string
+          updated_at: string
+        }
+        Insert: {
+          append_optout_first_msg?: boolean
+          created_at?: string
+          default_throttle_per_min?: number
+          enforce_quiet_hours?: boolean
+          id?: string
+          messaging_service_sid?: string | null
+          optout_footer?: string
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          quiet_hours_timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          append_optout_first_msg?: boolean
+          created_at?: string
+          default_throttle_per_min?: number
+          enforce_quiet_hours?: boolean
+          id?: string
+          messaging_service_sid?: string | null
+          optout_footer?: string
+          quiet_hours_end?: number
+          quiet_hours_start?: number
+          quiet_hours_timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_sms_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          created_by: string | null
+          default_media_urls: string[]
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          merge_tags: string[]
+          name: string
+          times_used: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          default_media_urls?: string[]
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          merge_tags?: string[]
+          name: string
+          times_used?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          default_media_urls?: string[]
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          merge_tags?: string[]
+          name?: string
+          times_used?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       crm_source_events: {
         Row: {
@@ -3632,6 +3977,7 @@ export type Database = {
       is_crm_agent_or_above: { Args: { _user_id: string }; Returns: boolean }
       is_crm_member: { Args: { _user_id: string }; Returns: boolean }
       is_crm_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_phone_opted_out: { Args: { _phone: string }; Returns: boolean }
       log_source_event: {
         Args: {
           _email: string
