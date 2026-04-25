@@ -779,16 +779,30 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 }
 
 /* Note card */
-function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing, onCancelEdit, onSaveEdit, setEditContent }: {
+function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing, onCancelEdit, onSaveEdit, setEditContent, onOpenEmail }: {
   note: CrmNote; isOwn: boolean; contactId: string;
   editingId: string | null; editContent: string;
   onSetEditing: (id: string, content: string) => void;
   onCancelEdit: () => void;
   onSaveEdit: (id: string) => void;
   setEditContent: (v: string) => void;
+  /** Optional — if provided and the note is a virtual email entry, the card
+   *  becomes a button that opens the full email preview. */
+  onOpenEmail?: (noteId: string) => void;
 }) {
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
+  const meta = metaForNote(note);
+  const Icon = meta.icon;
+  const ts = noteTime(note);
+  const time = format(parseISO(ts), 'h:mm a');
+  const dateLabel = format(parseISO(ts), 'MMM d, yyyy');
+  const { parsed, isStructured } = formatNoteContent(note.content);
+  const [expanded, setExpanded] = useState(false);
+  const visibleFields = isStructured && !expanded ? parsed.fields.slice(0, 4) : parsed.fields;
+  const hasMore = isStructured && parsed.fields.length > 4;
+  const isVirtual = note.id.startsWith('email-');
+  const isClickableEmail = isVirtual && !!onOpenEmail;
   const meta = metaForNote(note);
   const Icon = meta.icon;
   const ts = noteTime(note);
