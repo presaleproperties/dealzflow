@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, Settings2, Eye, X } from 'lucide-react';
+import { Search, Plus, Filter, Settings2, Eye, X, ArrowDownNarrowWide } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
