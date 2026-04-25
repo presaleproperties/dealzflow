@@ -1263,40 +1263,168 @@ export default function LeadDetailPage() {
 
   const c = contact as CrmContact;
 
-  // Mobile layout
+  // Mobile layout — sticky header + tabbed content + sticky action bar
   if (isMobile) {
+    const typeLabel = TYPE_LABELS[c.contact_type] ?? 'LEAD';
+    const initials = ((c.first_name?.[0] || '') + (c.last_name?.[0] || '')).toUpperCase() || '?';
     return (
-      <div className="space-y-3 pb-6">
-        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to Leads
-        </Link>
+      <div className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 flex flex-col" style={{ minHeight: 'calc(100dvh - 60px)' }}>
+        {/* Sticky compact header */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
+          <div className="flex items-center gap-2 px-3 py-2.5">
+            <Link
+              to="/crm/leads"
+              className="flex items-center justify-center w-9 h-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all shrink-0"
+              aria-label="Back to Leads"
+            >
+              <ArrowLeft className="w-[18px] h-[18px]" />
+            </Link>
 
-        {/* Top action bar — Task + Book Showing (Call/Email live in LeftSidebar identity card) */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="h-10 text-xs gap-1.5" onClick={() => setShowTask(true)}>
-            <ListTodo className="w-4 h-4" /> Task
-          </Button>
-          <Button size="sm" className="h-10 text-xs gap-1.5" onClick={() => setShowShowing(true)}>
-            <Calendar className="w-4 h-4" /> Book Showing
-          </Button>
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+                style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+              >
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h1 className="text-[15px] font-semibold text-foreground tracking-tight truncate leading-tight">
+                    {formatContactName(c.first_name, c.last_name) || 'Unnamed lead'}
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground border border-border rounded px-1 py-0.5 shrink-0">
+                    {typeLabel}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                  {c.status ?? 'New Lead'}{c.source ? ` · ${c.source}` : ''}
+                </p>
+              </div>
+            </div>
+
+            {navInfo && navInfo.total > 1 && (
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  onClick={() => handleNavigate('prev')}
+                  disabled={navInfo.index <= 0}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                  aria-label="Previous lead"
+                >
+                  <ChevronLeft className="w-[18px] h-[18px]" />
+                </button>
+                <button
+                  onClick={() => handleNavigate('next')}
+                  disabled={navInfo.index >= navInfo.total - 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                  aria-label="Next lead"
+                >
+                  <ChevronRight className="w-[18px] h-[18px]" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-4">
-          <LeftSidebar
-            contact={c}
-            leadScore={leadScore}
-            lastTouchLabel={lastTouchLabel}
-            daysInPipeline={daysInPipeline}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onSms={() => c.phone && (window.location.href = `sms:${c.phone}`)}
-            onEmail={() => setShowEmail(true)}
-          />
-        </div>
-        <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ minHeight: 400 }}>
-          <CenterColumn contact={c} />
-        </div>
-        <div className="bg-card rounded-lg border border-border p-4">
-          <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
+        {/* Tabbed content */}
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col">
+          <div className="sticky top-[57px] z-20 bg-background/95 backdrop-blur-md border-b border-border">
+            <TabsList className="w-full h-11 bg-transparent rounded-none p-0 grid grid-cols-3">
+              <TabsTrigger
+                value="overview"
+                className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold"
+              >
+                Activity
+              </TabsTrigger>
+              <TabsTrigger
+                value="insights"
+                className="h-11 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-[13px] font-semibold"
+              >
+                Insights
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="overview" className="mt-0 px-3 py-4 pb-[calc(72px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
+            <LeftSidebar
+              contact={c}
+              leadScore={leadScore}
+              lastTouchLabel={lastTouchLabel}
+              daysInPipeline={daysInPipeline}
+            />
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-0 pb-[calc(72px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
+            <div className="bg-card border-y border-border" style={{ minHeight: 400 }}>
+              <CenterColumn contact={c} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="insights" className="mt-0 px-3 py-4 pb-[calc(72px+env(safe-area-inset-bottom,0px))] focus-visible:outline-none">
+            <RightSidebar
+              contact={c}
+              onAddTask={() => setShowTask(true)}
+              onAddShowing={() => setShowShowing(true)}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Sticky bottom action bar — sits above the bottom nav (which adds 96px on mobile) */}
+        <div
+          className="fixed left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border"
+          style={{ bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="flex items-stretch gap-1.5 px-3 py-2">
+            <button
+              onClick={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              disabled={!c.phone}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
+              aria-label="Call"
+            >
+              <Phone className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
+              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Call</span>
+            </button>
+            <button
+              onClick={() => c.phone && (window.location.href = `sms:${c.phone}`)}
+              disabled={!c.phone}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
+              aria-label="Text"
+            >
+              <MessageSquare className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
+              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Text</span>
+            </button>
+            <button
+              onClick={() => setShowEmail(true)}
+              disabled={!c.email}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none"
+              aria-label="Email"
+            >
+              <Mail className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
+              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Email</span>
+            </button>
+            <button
+              onClick={() => setShowTask(true)}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl bg-card border border-border hover:border-primary/40 active:scale-95 transition-all"
+              aria-label="Task"
+            >
+              <ListTodo className="w-[15px] h-[15px] text-primary" strokeWidth={2.2} />
+              <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Task</span>
+            </button>
+            <button
+              onClick={() => setShowShowing(true)}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl text-primary-foreground active:scale-95 transition-all"
+              style={{ background: 'hsl(var(--primary))' }}
+              aria-label="Book Showing"
+            >
+              <Calendar className="w-[15px] h-[15px]" strokeWidth={2.2} />
+              <span className="text-[9.5px] font-bold uppercase tracking-wider">Book</span>
+            </button>
+          </div>
         </div>
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
@@ -1305,6 +1433,7 @@ export default function LeadDetailPage() {
       </div>
     );
   }
+
 
   // Desktop: 3-column layout
   return (
