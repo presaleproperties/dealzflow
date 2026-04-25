@@ -118,16 +118,32 @@ function LeadTopBar({
           <kbd className="ml-1 hidden md:inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-primary-foreground/20 text-primary-foreground/90 border border-primary-foreground/20">B</kbd>
         </Button>
 
-        {navInfo && (
+        {navInfo && navInfo.total > 1 && (
           <>
             <div className="h-5 w-px bg-border mx-1" />
-            <button onClick={() => onNavigate('prev')} disabled={navInfo.index <= 0} className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors">
+            <button
+              onClick={() => onNavigate('prev')}
+              disabled={!navInfo.prev}
+              title={navInfo.prev ? `Previous: ${navInfo.prevName} (J or ←)` : 'Start of list'}
+              aria-label={navInfo.prev ? `Previous lead: ${navInfo.prevName}` : 'Previous lead (none)'}
+              className="p-1.5 rounded text-foreground hover:bg-muted active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:cursor-not-allowed disabled:active:scale-100 transition-colors"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs text-muted-foreground tabular-nums px-1">
+            <span
+              className="text-xs text-muted-foreground tabular-nums px-1 select-none"
+              aria-live="polite"
+              aria-label={`Lead ${navInfo.index + 1} of ${navInfo.total}`}
+            >
               {navInfo.index + 1} / {navInfo.total}
             </span>
-            <button onClick={() => onNavigate('next')} disabled={navInfo.index >= navInfo.total - 1} className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors">
+            <button
+              onClick={() => onNavigate('next')}
+              disabled={!navInfo.next}
+              title={navInfo.next ? `Next: ${navInfo.nextName} (K or →)` : 'End of list'}
+              aria-label={navInfo.next ? `Next lead: ${navInfo.nextName}` : 'Next lead (none)'}
+              className="p-1.5 rounded text-foreground hover:bg-muted active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:cursor-not-allowed disabled:active:scale-100 transition-colors"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </>
