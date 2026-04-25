@@ -59,6 +59,74 @@ export function useReorderCrmLeadSegments() {
   });
 }
 
+export type LeadSegmentInput = {
+  name: string;
+  emoji?: string | null;
+  color?: string;
+  filter_config?: Record<string, unknown>;
+};
+
+/** Create a new pipeline. Sort order is appended to the end. */
+export function useCreateLeadSegment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: LeadSegmentInput) => {
+      const existing = qc.getQueryData<LeadSegment[]>(['crm-lead-segments']) ?? [];
+      const nextOrder = (existing.length + 1) * 10 + 100;
+      const { data, error } = await supabase
+        .from('crm_lead_segments')
+        .insert({
+          name: input.name.trim(),
+          emoji: input.emoji ?? null,
+          color: input.color ?? '#6B7280',
+          filter_config: input.filter_config ?? {},
+          sort_order: nextOrder,
+          is_default: false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as LeadSegment;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead-segments'] });
+    },
+  });
+}
+
+/** Update an existing pipeline (rename, change emoji/color, edit filter). */
+export function useUpdateLeadSegment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<LeadSegmentInput> }) => {
+      const update: Record<string, unknown> = {};
+      if (patch.name !== undefined) update.name = patch.name.trim();
+      if (patch.emoji !== undefined) update.emoji = patch.emoji;
+      if (patch.color !== undefined) update.color = patch.color;
+      if (patch.filter_config !== undefined) update.filter_config = patch.filter_config;
+      const { error } = await supabase.from('crm_lead_segments').update(update).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead-segments'] });
+    },
+  });
+}
+
+/** Delete a pipeline. Caller MUST verify count is 0 first. */
+export function useDeleteLeadSegment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('crm_lead_segments').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead-segments'] });
+    },
+  });
+}
+
 /** Get live counts for each segment, optionally scoped to a base filter (saved view). */
 export function useSegmentCounts(
   segments: LeadSegment[],
