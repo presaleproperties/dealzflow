@@ -358,8 +358,9 @@ export function ComposerSurface({
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-card">
-      {/* Recipient bar */}
+      {/* Recipient bar — width matches the body composer (max-w-[760px]) */}
       <div className="px-6 pt-4 pb-3 border-b border-border/70 bg-card shrink-0">
+        <div className="max-w-[760px] mx-auto">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">New Message</h2>
           <button
