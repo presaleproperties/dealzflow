@@ -364,7 +364,7 @@ export default function CrmLeadsPage() {
               <Button
                 size="sm"
                 variant={reorderMode ? 'default' : 'ghost'}
-                className="h-8 px-2 text-[11px] flex-shrink-0"
+                className="hidden sm:inline-flex h-8 px-2 text-[11px] flex-shrink-0"
                 onClick={() => setReorderMode(v => !v)}
                 title="Reorder pipeline pills"
               >
