@@ -779,19 +779,26 @@ export function LeadsTable({
                 const isSelected = selectedIds.includes(contact.id);
                 return (
                   <tr key={contact.id}
+                    style={{ height: 56 }}
                     className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
-                    <td className="px-3 py-3.5" onClick={e => e.stopPropagation()}>
+                    <td className="px-3 py-2 align-middle" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
                     </td>
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-3.5">
+                      <td key={col.key} className="px-3 py-2 align-middle">
                         <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} />
                       </td>
                     ))}
                   </tr>
                 );
               })}
+              {/* Filler rows to keep stable height on partial pages */}
+              {contacts.length < pageSize && Array.from({ length: pageSize - contacts.length }).map((_, i) => (
+                <tr key={`pad-${i}`} style={{ height: 56 }} aria-hidden="true">
+                  <td colSpan={(visibleColumns ? visibleColumns.size : 0) + 1} />
+                </tr>
+              ))}
             </tbody>
           </table>
         </TooltipProvider>
