@@ -527,6 +527,7 @@ export function ComposerSurface({
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Body */}
