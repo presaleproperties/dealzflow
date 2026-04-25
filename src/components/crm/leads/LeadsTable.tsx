@@ -837,7 +837,7 @@ export function LeadsTable({
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
                     </td>
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-2 align-middle">
+                      <td key={col.key} className="px-3 py-2 align-middle overflow-hidden">
                         <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} onSendEmail={setEmailContact} />
                       </td>
                     ))}
