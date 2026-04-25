@@ -132,6 +132,7 @@ export default function CrmLeadsPage() {
   const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // Read initial view from URL
   useEffect(() => {
