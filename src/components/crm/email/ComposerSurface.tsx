@@ -468,8 +468,8 @@ export function ComposerSurface({
       </div>
 
       {/* Mode tabs */}
-      <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-1">
+      <div className="px-6 py-2 border-b border-border/70 bg-card flex items-center justify-between gap-2 shrink-0">
+        <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {(() => {
             const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
             return ([
@@ -482,8 +482,10 @@ export function ComposerSurface({
                 onClick={() => !(t as any).disabled && setMode(t.v)}
                 disabled={(t as any).disabled}
                 className={cn(
-                  'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
-                  mode === t.v ? 'bg-background border border-border text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  'h-7 px-3 text-[11.5px] rounded-md font-semibold transition-all flex items-center gap-1.5',
+                  mode === t.v
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
                   (t as any).disabled && 'opacity-40 cursor-not-allowed',
                 )}
               >
@@ -494,13 +496,23 @@ export function ComposerSurface({
           })()}
         </div>
         {mode === 'preview' && (
-          <div className="flex items-center gap-1">
-            <Button type="button" size="sm" variant={device === 'desktop' ? 'secondary' : 'ghost'} className="h-7 w-7 p-0" onClick={() => setDevice('desktop')}>
+          <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+            <button
+              type="button"
+              onClick={() => setDevice('desktop')}
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-md transition-colors', device === 'desktop' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+              aria-label="Desktop preview"
+            >
               <Monitor className="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" size="sm" variant={device === 'mobile' ? 'secondary' : 'ghost'} className="h-7 w-7 p-0" onClick={() => setDevice('mobile')}>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDevice('mobile')}
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-md transition-colors', device === 'mobile' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+              aria-label="Mobile preview"
+            >
               <Smartphone className="h-3.5 w-3.5" />
-            </Button>
+            </button>
           </div>
         )}
       </div>
