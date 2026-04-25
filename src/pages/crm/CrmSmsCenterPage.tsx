@@ -111,12 +111,12 @@ export default function CrmSmsCenterPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full sm:w-auto">
-          <TabsTrigger value="campaigns" className="gap-1.5"><Send className="w-3.5 h-3.5" />Blasts</TabsTrigger>
-          <TabsTrigger value="new" className="gap-1.5"><Plus className="w-3.5 h-3.5" />New</TabsTrigger>
-          <TabsTrigger value="templates" className="gap-1.5"><MessageSquare className="w-3.5 h-3.5" />Templates</TabsTrigger>
-          <TabsTrigger value="inbox" className="gap-1.5"><Inbox className="w-3.5 h-3.5" />Inbox</TabsTrigger>
-          <TabsTrigger value="optouts" className="gap-1.5"><ShieldOff className="w-3.5 h-3.5" />Opt-outs</TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full sm:w-auto h-auto">
+          <TabsTrigger value="campaigns" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2"><Send className="w-3.5 h-3.5" /><span>Blasts</span></TabsTrigger>
+          <TabsTrigger value="new" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2"><Plus className="w-3.5 h-3.5" /><span>New</span></TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2"><MessageSquare className="w-3.5 h-3.5" /><span>Templates</span></TabsTrigger>
+          <TabsTrigger value="inbox" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2"><Inbox className="w-3.5 h-3.5" /><span>Inbox</span></TabsTrigger>
+          <TabsTrigger value="optouts" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2"><ShieldOff className="w-3.5 h-3.5" /><span>Opt-outs</span></TabsTrigger>
         </TabsList>
 
         {/* === New blast === */}
