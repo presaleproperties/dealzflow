@@ -192,12 +192,28 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
             <div className="absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
 
+          {pinnedNotes.length === 0 && (
+            <div className="mb-5 pl-9">
+              <GenerateAiSummaryButton contactId={contact.id} hasExisting={false} />
+            </div>
+          )}
+
           {pinnedNotes.length > 0 && (
             <div className="space-y-2 mb-5">
               <div className="flex items-center gap-1.5 pl-9">
                 <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
               </div>
               {pinnedNotes.map(note => {
+                if (note.note_type === 'ai_summary') {
+                  return (
+                    <AiSummaryCard
+                      key={note.id}
+                      note={note}
+                      contactId={contact.id}
+                      isStale={(contact as any).ai_summary_stale}
+                    />
+                  );
+                }
                 const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
                 if (emailRow) {
                   return (
