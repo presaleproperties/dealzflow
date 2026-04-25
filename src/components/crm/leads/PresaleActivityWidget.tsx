@@ -1,14 +1,28 @@
-import { format } from "date-fns";
-import { Eye, Heart, FileText, Globe, MousePointerClick, Mail, ExternalLink, CheckCircle2, XCircle, Loader2, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { Eye, Heart, FileText, Globe, MousePointerClick, Mail, ExternalLink, CheckCircle2, XCircle, Loader2, ChevronRight, Calendar as CalendarIcon, Filter, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { usePresaleBehavior } from "@/hooks/usePresaleBehavior";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCrmAccess } from "@/contexts/CrmAccessContext";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 const INITIAL = 12;
+
+type EventKind = "view" | "form" | "session" | "engagement";
+const TYPE_CHIPS: { kind: EventKind; label: string }[] = [
+  { kind: "view", label: "Views" },
+  { kind: "form", label: "Forms" },
+  { kind: "session", label: "Sessions" },
+  { kind: "engagement", label: "Engagement" },
+];
+
 
 type SanityResult = {
   ok: boolean;
