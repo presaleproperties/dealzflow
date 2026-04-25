@@ -736,7 +736,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                 {/* Messages */}
                 <div
                   ref={scrollRef}
-                  className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 bg-gradient-to-b from-muted/10 to-background"
+                  className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 bg-background"
                 >
                   <MessageList
                     messages={visibleMessages}
