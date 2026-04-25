@@ -277,6 +277,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                     />
                   );
                 }
+                const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
+                if (smsRow) {
+                  return <SmsNoteCard key={note.id} message={smsRow} />;
+                }
                 return (
                   <NoteCard
                     key={note.id}
