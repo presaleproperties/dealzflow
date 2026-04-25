@@ -17,10 +17,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
       <div className="h-dvh flex flex-col bg-background overflow-hidden lg:pr-[52px]">
         <TopNav />
         <CrmSubNav />
-        <div
-          className="flex-1 min-h-0 p-3 sm:p-4 lg:p-6 flex flex-col overflow-y-auto lg:pb-6"
-          style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))' }}
-        >
+        <div className="flex-1 min-h-0 p-3 sm:p-4 lg:p-6 flex flex-col overflow-y-auto pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-6">
           {children}
         </div>
       </div>
