@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,9 +43,9 @@ export function BookShowingDialog({ contactId, project, open, onOpenChange }: Pr
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Book Showing</DialogTitle></DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="sm:max-w-md">
+        <ResponsiveDialogHeader><ResponsiveDialogTitle>Book Showing</ResponsiveDialogTitle></ResponsiveDialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3 pt-2">
           <div>
             <Label>Project *</Label>
@@ -86,7 +86,7 @@ export function BookShowingDialog({ contactId, project, open, onOpenChange }: Pr
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
