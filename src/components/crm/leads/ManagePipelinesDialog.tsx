@@ -399,9 +399,8 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
                 )}
               </Droppable>
             </DragDropContext>
-
-            </div>
           </ScrollArea>
+
 
           <DialogFooter className="border-t border-border/40 pt-4 sm:justify-between">
             <Button
