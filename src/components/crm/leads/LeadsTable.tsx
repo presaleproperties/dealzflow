@@ -491,9 +491,13 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
           {contact.email && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`/crm/email?to=${encodeURIComponent(contact.email)}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onSendEmail(contact); }}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                >
                   <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                </a>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Email {formatEmail(contact.email)}</TooltipContent>
             </Tooltip>
