@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
         const { data: row } = await admin.from('crm_sms_log').select('campaign_id').eq('twilio_message_sid', sid).maybeSingle();
         if (row?.campaign_id) {
           if (status === 'delivered') {
-            await admin.rpc('increment_sms_campaign_delivered', { _campaign_id: row.campaign_id }).catch(() => {});
+            try { await admin.rpc('increment_sms_campaign_delivered', { _campaign_id: row.campaign_id }); } catch {}
             await admin.from('crm_sms_campaign_recipients').update({
               status: 'delivered', delivered_at: new Date().toISOString(),
             }).eq('campaign_id', row.campaign_id).eq('sms_log_id', (await admin.from('crm_sms_log').select('id').eq('twilio_message_sid', sid).maybeSingle()).data?.id);
@@ -135,13 +135,15 @@ Deno.serve(async (req) => {
       const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'A lead';
       const { data: recipients } = await admin.rpc('crm_recipients_for_contact', { _assigned_to: contact.assigned_to });
       if (recipients) {
-        await admin.rpc('notify_crm', {
-          _user_ids: recipients,
-          _title: `📱 ${fullName} replied`,
-          _body: bodyText.slice(0, 140),
-          _type: 'sms_inbound',
-          _link_to: `/crm/leads/${contact.id}`,
-        }).catch(() => {});
+        try {
+          await admin.rpc('notify_crm', {
+            _user_ids: recipients,
+            _title: `📱 ${fullName} replied`,
+            _body: bodyText.slice(0, 140),
+            _type: 'sms_inbound',
+            _link_to: `/crm/leads/${contact.id}`,
+          });
+        } catch {}
       }
 
       // If part of an active campaign, mark recipient as replied
