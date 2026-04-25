@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Search, Send, Plus, MoreHorizontal, Phone, Info, Sparkles,
-  Paperclip, Image as ImageIcon, ArrowLeft, MessageSquare,
+  Paperclip, Image as ImageIcon, ArrowLeft, MessageSquare, ArrowUp,
   CheckCircle2, Clock, AlertCircle, X, ChevronRight,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
   Pin, PinOff, Mail, BellOff, Bell, Trash2, Archive, ArchiveRestore,
@@ -1380,7 +1380,7 @@ function Composer({
           </div>
         )}
 
-        <div className="flex items-end gap-2 rounded-2xl border border-border bg-muted/30 focus-within:border-primary/40 focus-within:bg-background transition-colors px-3 py-2">
+        <div className="flex items-end gap-1.5">
           {/* Hidden file input */}
           <input
             ref={fileInputRef}
@@ -1391,110 +1391,112 @@ function Composer({
             onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
           />
 
-          {/* Templates */}
-          {templates.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-primary"
-                  title="Insert template"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-1.5">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
-                  Templates
-                </div>
-                <div className="max-h-72 overflow-y-auto">
-                  {templates.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => onChange(t.body)}
-                      className="w-full text-left px-2 py-2 rounded-md hover:bg-muted text-xs"
-                    >
-                      <div className="font-medium text-foreground">{t.name}</div>
-                      <div className="text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-
-          {/* Attach */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-primary"
-            title="Attach photo or file"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="w-3.5 h-3.5" />
-          </Button>
-
-          {/* Schedule */}
+          {/* iMessage-style + menu (templates / attach / schedule) */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className={cn(
-                  'h-7 w-7 rounded-full shrink-0',
-                  scheduledFor ? 'text-blue-600' : 'text-muted-foreground hover:text-primary',
-                )}
-                title="Schedule send"
+                className="h-8 w-8 rounded-full shrink-0 bg-muted/60 text-muted-foreground hover:text-primary hover:bg-muted"
+                title="More actions"
               >
-                <CalendarIcon className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-3 space-y-2">
-              <div className="text-xs font-semibold">Schedule send</div>
-              <p className="text-[11px] text-muted-foreground">
-                The message will be queued and delivered at the chosen time.
-              </p>
-              <Input
-                type="datetime-local"
-                value={scheduledFor || defaultScheduled}
-                min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
-                onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
-                className="text-xs h-8"
-              />
-              {scheduledFor && (
-                <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
-                  Clear schedule
-                </Button>
+            <PopoverContent align="start" side="top" className="w-52 p-1">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-muted text-xs text-foreground"
+              >
+                <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                Photo or file
+              </button>
+              {templates.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-muted text-xs text-foreground">
+                      <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                      Template
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" side="right" className="w-72 p-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
+                      Templates
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {templates.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => onChange(t.body)}
+                          className="w-full text-left px-2 py-2 rounded-md hover:bg-muted text-xs"
+                        >
+                          <div className="font-medium text-foreground">{t.name}</div>
+                          <div className="text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={cn(
+                    "w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-muted text-xs",
+                    scheduledFor ? "text-blue-600 dark:text-blue-400" : "text-foreground"
+                  )}>
+                    <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    Schedule send {scheduledFor && '·'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" side="right" className="w-72 p-3 space-y-2">
+                  <div className="text-xs font-semibold">Schedule send</div>
+                  <p className="text-[11px] text-muted-foreground">
+                    The message will be queued and delivered at the chosen time.
+                  </p>
+                  <Input
+                    type="datetime-local"
+                    value={scheduledFor || defaultScheduled}
+                    min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
+                    onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
+                    className="text-xs h-8"
+                  />
+                  {scheduledFor && (
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
+                      Clear schedule
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
             </PopoverContent>
           </Popover>
 
-          <Textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={channel === 'whatsapp' ? 'WhatsApp message…' : 'iMessage'}
-            rows={1}
-            className="flex-1 min-h-[36px] max-h-40 resize-none border-0 bg-transparent px-1 py-1.5 text-[14.5px] focus-visible:ring-0 focus-visible:border-0 shadow-none"
-            style={{ height: 'auto' }}
-          />
-
-          <Button
-            size="icon"
-            onClick={onSend}
-            disabled={!canSend}
-            className={cn(
-              'h-8 w-8 rounded-full shrink-0 transition-all',
-              canSend
-                ? channel === 'whatsapp'
-                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                  : 'bg-primary hover:bg-primary/90'
-                : 'opacity-40',
-            )}
-          >
-            {scheduledFor ? <CalendarIcon className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
-          </Button>
+          {/* iMessage pill input */}
+          <div className="flex-1 flex items-end gap-1 rounded-[20px] border border-border/80 bg-background focus-within:border-primary/50 transition-colors pl-3.5 pr-1 py-0.5">
+            <Textarea
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={channel === 'whatsapp' ? 'WhatsApp' : 'iMessage'}
+              rows={1}
+              className="flex-1 min-h-[34px] max-h-40 resize-none border-0 bg-transparent px-0 py-1.5 text-[14.5px] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/60"
+              style={{ height: 'auto' }}
+            />
+            <Button
+              size="icon"
+              onClick={onSend}
+              disabled={!canSend}
+              className={cn(
+                'h-7 w-7 rounded-full shrink-0 transition-all mb-[3px]',
+                canSend
+                  ? channel === 'whatsapp'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground/40 hover:bg-muted',
+              )}
+            >
+              {scheduledFor ? <CalendarIcon className="w-3.5 h-3.5" /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} />}
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
