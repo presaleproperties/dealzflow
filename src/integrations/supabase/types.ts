@@ -3603,6 +3603,7 @@ export type Database = {
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
       backfill_behavior_notes: { Args: never; Returns: Json }
+      crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
