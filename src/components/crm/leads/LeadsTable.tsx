@@ -559,22 +559,17 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
           )}
         </div>
 
-        {/* Right column: temperature label + relative time */}
+        {/* Right column: colored score badge + relative time */}
         <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[60px]">
-          {tier ? (
-            <span
-              className={`text-[10px] font-bold uppercase tracking-[0.14em] tabular-nums ${
-                tier === 'HOT' ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              {tier}
-              <span className="ml-1.5 text-[11px] font-semibold text-muted-foreground/70">
-                {score}
-              </span>
-            </span>
-          ) : (
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50">—</span>
-          )}
+          <span
+            aria-label={hasScore ? `Lead score ${score}, ${tier?.toLowerCase()}` : 'No score'}
+            className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-bold uppercase tracking-[0.12em] tabular-nums ${badgeClass}`}
+          >
+            {tier ?? '—'}
+            {hasScore && (
+              <span className="text-[11px] font-semibold opacity-90">{score}</span>
+            )}
+          </span>
           {relTime && (
             <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap">{relTime}</span>
           )}
