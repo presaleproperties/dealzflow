@@ -7,7 +7,8 @@ import {
 import { formatContactName } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
-import { LEAD_STATUSES, useUpdateCrmContact } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 
 interface Props {
   contact: CrmContact;
