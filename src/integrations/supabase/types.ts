@@ -4233,6 +4233,7 @@ export type Database = {
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
       backfill_behavior_notes: { Args: never; Returns: Json }
+      bulk_reformat_crm_notes: { Args: never; Returns: Json }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
@@ -4246,6 +4247,7 @@ export type Database = {
         Args: { passphrase: string; plaintext: string }
         Returns: string
       }
+      format_note_content: { Args: { _raw: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
