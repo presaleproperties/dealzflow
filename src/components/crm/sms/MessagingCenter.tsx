@@ -1431,6 +1431,14 @@ function Composer({
             </Popover>
           )}
 
+          {/* WhatsApp template picker (only on WhatsApp channel) */}
+          {channel === 'whatsapp' && (
+            <WhatsAppTemplatePicker
+              outsideWindow={outsideWaWindow}
+              onPick={(body) => onChange(value ? `${value}\n${body}` : body)}
+            />
+          )}
+
           {/* Attach */}
           <Button
             size="icon"
