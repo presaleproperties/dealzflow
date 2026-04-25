@@ -268,7 +268,10 @@ export default function LeadDetailPage() {
           label="Lead insights panel"
         />
         {!rightCollapsed && (
-          <div className="w-[300px] xl:w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5 transition-all">
+          <div
+            className="w-[300px] xl:w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5 transition-all"
+            onDragStart={(e) => e.preventDefault()}
+          >
             <RightSidebar
               contact={c}
               onAddTask={() => setShowTask(true)}
