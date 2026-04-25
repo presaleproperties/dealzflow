@@ -1289,6 +1289,13 @@ export default function LeadDetailPage() {
     return `${days}d`;
   }, [contact]);
 
+  const lastTouchHours = useMemo<number | null>(() => {
+    if (!contact) return null;
+    const lt = (contact as any).last_touch_at;
+    if (!lt) return null;
+    return Math.floor((Date.now() - new Date(lt).getTime()) / 3600000);
+  }, [contact]);
+
   const daysInPipeline = useMemo(() => {
     if (!contact) return 0;
     return Math.floor((Date.now() - new Date(contact.created_at).getTime()) / 86400000);
