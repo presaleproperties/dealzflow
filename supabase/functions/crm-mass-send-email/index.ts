@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
         template_id: body.template_id ?? null,
         subject: body.subject,
         body_html: body.body_html,
+        body_text: body.body_html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000),
         recipient_ids: body.recipient_ids,
         total_count: reachable.length,
         sent_count: 0,
