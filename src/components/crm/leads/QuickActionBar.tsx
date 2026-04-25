@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Send, Phone, Mail, MessageSquare, ListTodo, Calendar, StickyNote, Clock, ChevronDown } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Send, Phone, StickyNote, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -8,15 +8,11 @@ import { cn } from '@/lib/utils';
 import { useAddNote } from '@/hooks/useCrmNotes';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
-type Mode = 'note' | 'call' | 'email' | 'text' | 'task' | 'showing';
+type Mode = 'note' | 'call';
 
 const MODES: { key: Mode; label: string; icon: typeof StickyNote; tint: string }[] = [
   { key: 'note',    label: 'Note',     icon: StickyNote,    tint: '45 90% 55%' },
   { key: 'call',    label: 'Log Call', icon: Phone,         tint: '142 70% 45%' },
-  { key: 'email',   label: 'Email',    icon: Mail,          tint: '218 85% 55%' },
-  { key: 'text',    label: 'Text',     icon: MessageSquare, tint: '198 90% 55%' },
-  { key: 'task',    label: 'Task',     icon: ListTodo,      tint: '260 75% 60%' },
-  { key: 'showing', label: 'Showing',  icon: Calendar,      tint: '325 70% 55%' },
 ];
 
 const CALL_OUTCOMES = [
@@ -25,19 +21,14 @@ const CALL_OUTCOMES = [
 
 interface Props {
   contact: CrmContact;
-  /** Open the existing dialogs for these modes (we don't replace them — they're great). */
-  onOpenEmail: () => void;
-  onOpenText: () => void;
-  onOpenTask: () => void;
-  onOpenShowing: () => void;
 }
 
 /**
- * Unified Quick Action Bar — one composer that morphs based on the chip you
- * pick. Note + Call Log save inline; Email / Text / Task / Showing open the
- * existing rich dialogs pre-bound to this lead. ⌘+Enter saves.
+ * Quick composer for Note / Call Log only. Email / Text / Task / Showing
+ * are reachable from the top bar and side panels — no need to duplicate them
+ * here. ⌘+Enter saves.
  */
-export function QuickActionBar({ contact, onOpenEmail, onOpenText, onOpenShowing, onOpenTask }: Props) {
+export function QuickActionBar({ contact }: Props) {
   const [mode, setMode] = useState<Mode>('note');
   const [body, setBody] = useState('');
   const [callDuration, setCallDuration] = useState('');
@@ -45,13 +36,7 @@ export function QuickActionBar({ contact, onOpenEmail, onOpenText, onOpenShowing
   const taRef = useRef<HTMLTextAreaElement>(null);
   const addNote = useAddNote();
 
-  // When user picks Email/Text/Task/Showing, open the rich dialog and
-  // immediately bounce back to Note mode so the composer stays useful.
   const switchMode = (next: Mode) => {
-    if (next === 'email')   { onOpenEmail();   return; }
-    if (next === 'text')    { onOpenText();    return; }
-    if (next === 'task')    { onOpenTask();    return; }
-    if (next === 'showing') { onOpenShowing(); return; }
     setMode(next);
     setTimeout(() => taRef.current?.focus(), 0);
   };
