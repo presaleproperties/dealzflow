@@ -2636,6 +2636,33 @@ export type Database = {
           },
         ]
       }
+      crm_sources: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          name_lower: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          name_lower?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       crm_sync_log: {
         Row: {
           contact_email: string | null

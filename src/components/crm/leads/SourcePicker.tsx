@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Check, Plus, X } from 'lucide-react';
 import { LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useCrmSources } from '@/hooks/useCrmSources';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -16,23 +15,17 @@ export function SourcePicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Pull all distinct source values currently in use across the CRM via RPC
-  // (avoids the 1000-row default limit on direct table reads).
-  const { data: dbSources = [] } = useQuery({
-    queryKey: ['crm-distinct-sources'],
-    staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('crm_distinct_sources');
-      if (error) throw error;
-      return ((data ?? []) as Array<{ source: string }>).map(r => r.source).filter(Boolean);
-    },
-  });
+  // Unified library — auto-synced from every contact's source via Postgres trigger.
+  const { data: librarySources = [] } = useCrmSources();
 
   const allOptions = useMemo(() => {
-    const set = new Set<string>([...LEAD_SOURCES, ...dbSources]);
+    const set = new Set<string>([
+      ...LEAD_SOURCES,
+      ...librarySources.map(s => s.name),
+    ]);
     if (value && value.trim()) set.add(value.trim());
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [dbSources, value]);
+  }, [librarySources, value]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
