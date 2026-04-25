@@ -1048,8 +1048,16 @@ function MessageList({
     );
   }
 
+  const lastOutboundIdx = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].direction === 'outbound') return i;
+    }
+    return -1;
+  })();
+
   return (
-    <div className="space-y-1 max-w-3xl mx-auto">
+    <div className="space-y-0.5 max-w-3xl mx-auto">
+
       {messages.map((m, i) => {
         const prev = messages[i - 1];
         const next = messages[i + 1];
