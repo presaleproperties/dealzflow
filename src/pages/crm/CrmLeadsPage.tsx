@@ -375,7 +375,7 @@ export default function CrmLeadsPage() {
 
 
           {segments.length > 0 && (
-            <div className="flex items-center gap-3">
+            <div className={`${isMobile ? 'hidden' : 'flex'} items-center gap-3`}>
               <div className="flex-1 min-w-0">
                 <ScrollArea className="w-full">
                   <DragDropContext
