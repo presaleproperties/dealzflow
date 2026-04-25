@@ -14,7 +14,7 @@ import CrmEmailAnalyticsPage from './CrmEmailAnalyticsPage';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import type { CrmContact } from '@/hooks/useCrmContacts';
-import { formatContactName } from '@/lib/formatContactName';
+import { formatContactName } from '@/lib/format';
 
 /**
  * CRM Email — top of page is a 30-second "Quick Send" composer launcher.
