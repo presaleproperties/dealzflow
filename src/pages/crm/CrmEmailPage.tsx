@@ -13,7 +13,7 @@ export default function CrmEmailPage() {
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="w-full space-y-4">
-      <TabsList className="w-full sm:w-auto grid grid-cols-6 sm:flex overflow-x-auto">
+      <TabsList className="w-full sm:w-auto grid grid-cols-6 sm:flex">
         <TabsTrigger value="hub" className="text-[12px] sm:text-sm gap-1.5"><Megaphone className="h-3.5 w-3.5" /><span className="hidden sm:inline">Marketing Hub</span></TabsTrigger>
         <TabsTrigger value="center" className="text-[12px] sm:text-sm gap-1.5"><Mail className="h-3.5 w-3.5" /><span className="hidden sm:inline">Inbox</span></TabsTrigger>
         <TabsTrigger value="campaigns" className="text-[12px] sm:text-sm gap-1.5"><Megaphone className="h-3.5 w-3.5" /><span className="hidden sm:inline">Campaigns</span></TabsTrigger>

@@ -295,8 +295,8 @@ export default function CrmLeadsPage() {
         <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto pr-1">
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
-            <div className="-mx-3 sm:-mx-4 -mt-3 sm:-mt-4 sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
-              <div className="flex items-center justify-between px-4 pt-3 pb-2">
+            <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
+              <div className="flex items-center justify-between px-4 pt-2 pb-1.5">
                 <div className="flex items-baseline gap-6">
                   <button
                     className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"

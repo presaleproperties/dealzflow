@@ -235,29 +235,56 @@ function EmailLogTable({ logs, loading, onDelete }: { logs: EmailLog[]; loading:
         <div className="text-center py-12 text-muted-foreground text-sm">No emails found</div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr_80px_80px_60px_80px_80px_40px] gap-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/30 px-4 py-2 border-b border-border">
-            <span>Recipient</span><span>Subject</span><span>Status</span><span>Opens</span><span>Clicks</span><span>Last Open</span><span>Sent</span><span></span>
-          </div>
-          <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-            {filtered.slice(0, 200).map(log => (
-              <div key={log.id} className="grid grid-cols-[1fr_1fr_80px_80px_60px_80px_80px_40px] gap-0 px-4 py-2.5 hover:bg-muted/20 items-center group">
-                <div className="min-w-0 pr-2">
-                  <p className="text-sm font-medium truncate">{log.recipient_name || log.email_to.split("@")[0]}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{log.email_to}</p>
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <div className="grid grid-cols-[1fr_1fr_80px_80px_60px_80px_80px_40px] gap-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/30 px-4 py-2 border-b border-border">
+              <span>Recipient</span><span>Subject</span><span>Status</span><span>Opens</span><span>Clicks</span><span>Last Open</span><span>Sent</span><span></span>
+            </div>
+            <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
+              {filtered.slice(0, 200).map(log => (
+                <div key={log.id} className="grid grid-cols-[1fr_1fr_80px_80px_60px_80px_80px_40px] gap-0 px-4 py-2.5 hover:bg-muted/20 items-center group">
+                  <div className="min-w-0 pr-2">
+                    <p className="text-sm font-medium truncate">{log.recipient_name || log.email_to.split("@")[0]}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{log.email_to}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground truncate pr-2">{log.subject}</span>
+                  <span><StatusBadge status={log.status} /></span>
+                  <span className="flex items-center gap-1.5">
+                    {log.opened_at ? (<><MailOpen className="h-3 w-3 text-blue-500" /><span className="text-xs font-medium text-blue-600">{log.open_count}×</span></>) : <span className="text-[10px] text-muted-foreground">—</span>}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {log.clicked_at ? (<><Zap className="h-3 w-3 text-orange-500" /><span className="text-xs font-medium text-orange-600">{log.click_count}×</span></>) : <span className="text-[10px] text-muted-foreground">—</span>}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{timeAgo(log.last_opened_at)}</span>
+                  <span className="text-[10px] text-muted-foreground">{timeAgo(log.sent_at)}</span>
+                  <button onClick={() => handleDelete(log.id)} disabled={deleting === log.id} className="h-7 w-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                    {deleting === log.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  </button>
                 </div>
-                <span className="text-xs text-muted-foreground truncate pr-2">{log.subject}</span>
-                <span><StatusBadge status={log.status} /></span>
-                <span className="flex items-center gap-1.5">
-                  {log.opened_at ? (<><MailOpen className="h-3 w-3 text-blue-500" /><span className="text-xs font-medium text-blue-600">{log.open_count}×</span></>) : <span className="text-[10px] text-muted-foreground">—</span>}
-                </span>
-                <span className="flex items-center gap-1">
-                  {log.clicked_at ? (<><Zap className="h-3 w-3 text-orange-500" /><span className="text-xs font-medium text-orange-600">{log.click_count}×</span></>) : <span className="text-[10px] text-muted-foreground">—</span>}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{timeAgo(log.last_opened_at)}</span>
-                <span className="text-[10px] text-muted-foreground">{timeAgo(log.sent_at)}</span>
-                <button onClick={() => handleDelete(log.id)} disabled={deleting === log.id} className="h-7 w-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
-                  {deleting === log.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                </button>
+              ))}
+            </div>
+          </div>
+          {/* Mobile list */}
+          <div className="md:hidden divide-y divide-border max-h-[600px] overflow-y-auto">
+            {filtered.slice(0, 200).map(log => (
+              <div key={log.id} className="px-3.5 py-3 hover:bg-muted/20 active:bg-muted/30">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold truncate">{log.recipient_name || log.email_to.split("@")[0]}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{log.email_to}</p>
+                  </div>
+                  <StatusBadge status={log.status} />
+                </div>
+                <p className="text-[12.5px] text-foreground/80 truncate mb-1.5">{log.subject}</p>
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    {log.opened_at ? (<><MailOpen className="h-3 w-3 text-blue-500" /><span className="font-medium text-blue-600">{log.open_count}× opens</span></>) : <span>No opens</span>}
+                  </span>
+                  {log.clicked_at && (
+                    <span className="flex items-center gap-1"><Zap className="h-3 w-3 text-orange-500" /><span className="font-medium text-orange-600">{log.click_count}×</span></span>
+                  )}
+                  <span className="ml-auto">{timeAgo(log.sent_at)}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -292,17 +319,17 @@ export default function CrmEmailCenterPage() {
   return (
     <div className="space-y-5 max-w-[1400px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center"><Mail className="h-4 w-4 text-primary" /></div>
-            Email Center
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Mail className="h-4 w-4 text-primary" /></div>
+            <span className="truncate">Email Center</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Send template emails to leads & track engagement — synced with Presale Properties</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Send template emails to leads & track engagement</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 text-xs bg-muted/40 border border-border px-4 py-2 rounded-lg">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-3 text-[11px] sm:text-xs bg-muted/40 border border-border px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /><span className="font-semibold">{sentEmails.length}</span> sent</span>
-            <span className="flex items-center gap-1.5"><MailOpen className="h-3.5 w-3.5 text-blue-500" /><span className="font-semibold">{openRate}%</span> open rate</span>
+            <span className="flex items-center gap-1.5"><MailOpen className="h-3.5 w-3.5 text-blue-500" /><span className="font-semibold">{openRate}%</span> open</span>
           </div>
           <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="h-3.5 w-3.5" /></Button>
         </div>
