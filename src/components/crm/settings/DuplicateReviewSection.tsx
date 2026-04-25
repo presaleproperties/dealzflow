@@ -52,7 +52,7 @@ export default function DuplicateReviewSection() {
     queryFn: async (): Promise<DupGroup[]> => {
       const { data, error } = await supabase.rpc('list_potential_duplicates', { _limit: 100 });
       if (error) throw error;
-      return (data ?? []) as DupGroup[];
+      return (data ?? []) as unknown as DupGroup[];
     },
     staleTime: 30_000,
   });
