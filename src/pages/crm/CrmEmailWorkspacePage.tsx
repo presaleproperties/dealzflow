@@ -27,8 +27,21 @@ export default function CrmEmailWorkspacePage() {
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.emailWorkspace.leftCollapsed') === '1';
+  });
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.emailWorkspace.rightCollapsed') === '1';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('crm.emailWorkspace.leftCollapsed', leftCollapsed ? '1' : '0');
+  }, [leftCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('crm.emailWorkspace.rightCollapsed', rightCollapsed ? '1' : '0');
+  }, [rightCollapsed]);
 
   const applyTemplate = (t: AnyTpl) => {
     setAppliedTpl(t);
@@ -37,15 +50,6 @@ export default function CrmEmailWorkspacePage() {
 
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
-
-  // Dynamic grid template based on collapsed panels (lg+ only)
-  const gridTemplateColumns = useMemo(() => {
-    const cols: string[] = [];
-    if (!leftCollapsed) cols.push('280px');
-    cols.push('1fr');
-    if (!rightCollapsed) cols.push('380px');
-    return cols.join(' ');
-  }, [leftCollapsed, rightCollapsed]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
