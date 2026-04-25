@@ -31,6 +31,7 @@ export function MassSendConfirmDialog({
 }: Props) {
   const [optedIn, setOptedIn] = useState(false);
   const count = recipients.length;
+  const overCap = count > MAX_PER_JOB;
   const estSec = Math.max(1, Math.ceil(count / THROTTLE_PER_SEC));
   const estLabel = estSec < 60 ? `~${estSec}s` : `~${Math.ceil(estSec / 60)}m`;
 
