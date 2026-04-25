@@ -445,13 +445,18 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
         );
       })}
 
-      {totalCount > INITIAL && (
+      {filteredCount > INITIAL && (
         <button
           onClick={() => setShowAll((s) => !s)}
           className="w-full text-[11px] text-muted-foreground hover:text-foreground py-2 mt-1"
         >
-          {showAll ? "Show less" : `Show all ${totalCount} events`}
+          {showAll ? "Show less" : `Show all ${filteredCount} events`}
         </button>
+      )}
+      {filteredCount === 0 && (
+        <div className="text-[11px] text-muted-foreground text-center py-4">
+          No events match these filters.
+        </div>
       )}
     </div>
   );
