@@ -13,6 +13,7 @@ import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
 import { LeadsTable } from '@/components/crm/leads/LeadsTable';
+import { ManagePipelinesDialog } from '@/components/crm/leads/ManagePipelinesDialog';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BulkActionsBar } from '@/components/crm/leads/BulkActionsBar';
 import { ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
@@ -74,6 +75,7 @@ export default function CrmLeadsPage() {
   const reorderSegments = useReorderCrmLeadSegments();
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
+  const [managePipelinesOpen, setManagePipelinesOpen] = useState(false);
 
   // Determine active view
   const activeView = useMemo(() => {
