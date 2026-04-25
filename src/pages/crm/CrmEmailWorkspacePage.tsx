@@ -93,67 +93,56 @@ export default function CrmEmailWorkspacePage() {
           <InboxView />
         ) : (
           <div
-            className="h-full grid grid-cols-1 min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm"
-            style={{ gridTemplateColumns: undefined }}
+            className="h-full grid grid-cols-1 min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm lg:[grid-template-columns:var(--cols)]"
+            style={{ ['--cols' as any]: gridTemplateColumns }}
           >
-            {/* Apply dynamic template at lg+ via inline style on a wrapper trick: use a child with utility */}
-            <div
-              className="h-full grid grid-cols-1 min-h-0"
-              style={{ gridTemplateColumns: undefined }}
-            >
-              <div
-                className="h-full grid grid-cols-1 lg:grid lg:[grid-template-columns:var(--cols)] min-h-0"
-                style={{ ['--cols' as any]: gridTemplateColumns }}
-              >
-                {!leftCollapsed && (
-                  <div className="hidden lg:block min-h-0">
-                    <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
-                  </div>
-                )}
-
-                <div className="min-h-0 overflow-hidden">
-                  <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
-                    <Sheet>
-                      <SheetTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1.5">
-                          <Mail className="h-3.5 w-3.5" />
-                          Templates
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent side="left" className="p-0 w-[300px]">
-                        <TemplatesRail onApply={(t) => { applyTemplate(t); }} activeTemplateId={activeTemplateId} />
-                      </SheetContent>
-                    </Sheet>
-                    <Sheet>
-                      <SheetTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
-                          <Send className="h-3.5 w-3.5" />
-                          Recipients ({recipients.length})
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
-                        <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
-                      </SheetContent>
-                    </Sheet>
-                  </div>
-
-                  <ComposerSurface
-                    recipients={recipients}
-                    onRemoveRecipient={removeRecipient}
-                    onClearRecipients={() => setRecipients([])}
-                    appliedTemplate={appliedTpl}
-                    onTemplateApplied={() => setAppliedTpl(null)}
-                    onSent={() => setActiveTemplateId(null)}
-                  />
-                </div>
-
-                {!rightCollapsed && (
-                  <div className="hidden lg:block min-h-0">
-                    <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
-                  </div>
-                )}
+            {!leftCollapsed && (
+              <div className="hidden lg:block min-h-0">
+                <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
               </div>
+            )}
+
+            <div className="min-h-0 overflow-hidden">
+              <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <Mail className="h-3.5 w-3.5" />
+                      Templates
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 w-[300px]">
+                    <TemplatesRail onApply={(t) => { applyTemplate(t); }} activeTemplateId={activeTemplateId} />
+                  </SheetContent>
+                </Sheet>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
+                      <Send className="h-3.5 w-3.5" />
+                      Recipients ({recipients.length})
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
+                    <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
+                  </SheetContent>
+                </Sheet>
+              </div>
+
+              <ComposerSurface
+                recipients={recipients}
+                onRemoveRecipient={removeRecipient}
+                onClearRecipients={() => setRecipients([])}
+                appliedTemplate={appliedTpl}
+                onTemplateApplied={() => setAppliedTpl(null)}
+                onSent={() => setActiveTemplateId(null)}
+              />
             </div>
+
+            {!rightCollapsed && (
+              <div className="hidden lg:block min-h-0">
+                <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
+              </div>
+            )}
           </div>
         )}
       </div>
