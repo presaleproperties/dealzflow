@@ -827,10 +827,19 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
       >
         <Icon className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${meta.tint})` }} />
       </div>
-      <div className={cn(
-        'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all hover:border-border',
-        note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
-      )}>
+      <div
+        className={cn(
+          'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all hover:border-border',
+          note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
+          isClickableEmail && 'cursor-pointer hover:bg-muted/30 hover:border-primary/40',
+        )}
+        onClick={isClickableEmail ? () => onOpenEmail!(note.id) : undefined}
+        role={isClickableEmail ? 'button' : undefined}
+        tabIndex={isClickableEmail ? 0 : undefined}
+        onKeyDown={isClickableEmail
+          ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenEmail!(note.id); } }
+          : undefined}
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
             <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">
@@ -844,6 +853,12 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
             <span className="opacity-30">·</span>
             <span className="shrink-0">{dateLabel} · {time}</span>
+            {isClickableEmail && (
+              <>
+                <span className="opacity-30">·</span>
+                <span className="text-primary font-medium shrink-0">View email →</span>
+              </>
+            )}
             {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60 shrink-0" />}
           </div>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
