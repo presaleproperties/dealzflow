@@ -34,6 +34,7 @@ export interface SmsTemplate {
   name: string;
   body: string;
   category: string;
+  channel: MessagingChannel;
   merge_tags: string[];
   default_media_urls: string[];
   is_active: boolean;
@@ -48,6 +49,7 @@ export interface SmsCampaign {
   id: string;
   name: string;
   body: string;
+  channel: MessagingChannel;
   media_urls: string[];
   template_id: string | null;
   segment_filter: any;
