@@ -10,23 +10,34 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger,
+  ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger,
 } from '@/components/ui/context-menu';
 import {
-  Search, Send, Plus, MoreHorizontal, Phone, Video, Info, Smile,
-  Paperclip, Image as ImageIcon, Sparkles, ArrowLeft, MessageSquare,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Search, Send, Plus, MoreHorizontal, Phone, Info, Sparkles,
+  Paperclip, Image as ImageIcon, ArrowLeft, MessageSquare,
   CheckCircle2, Clock, AlertCircle, X, ChevronRight,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
-  Pin, PinOff, Mail, BellOff, Trash2,
+  Pin, PinOff, Mail, BellOff, Bell, Trash2, Archive, ArchiveRestore,
+  Calendar as CalendarIcon, Reply, Smile, FileText,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   useAllSmsLog, useSendSms, useSmsTemplates, smsSegments,
+  useDeleteSmsMessage, useDeleteSmsConversation,
   type MessagingChannel, type SmsLogRow,
 } from '@/hooks/useSms';
 import { useCrmContacts, type CrmContact } from '@/hooks/useCrmContacts';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useThreadPins } from '@/hooks/useThreadPins';
+import { useThreadState } from '@/hooks/useThreadState';
+import { useRealtimeSmsLog } from '@/hooks/useRealtimeSmsLog';
+import { uploadSmsMedia } from '@/lib/smsMediaUpload';
+import { toast } from 'sonner';
 
 interface Thread {
   key: string;
@@ -38,6 +49,14 @@ interface Thread {
   unread: boolean;
   channel: MessagingChannel;
 }
+
+interface QuotedRef {
+  id: string;
+  body: string;
+  direction: 'inbound' | 'outbound';
+}
+
+const REACTION_EMOJIS = ['❤️', '👍', '👎', '😂', '‼️', '❓'];
 
 const normalize = (p: string) => (p || '').replace(/\D/g, '').slice(-10);
 
@@ -74,11 +93,15 @@ interface Props {
 export function MessagingCenter({ channel, onChannelChange }: Props) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  useRealtimeSmsLog(); // <<< live updates
   const { data: logs = [] } = useAllSmsLog({ limit: 1000 });
   const { data: contacts = [] } = useCrmContacts();
   const { data: templates = [] } = useSmsTemplates();
   const sendSms = useSendSms();
+  const deleteMessage = useDeleteSmsMessage();
+  const deleteConversation = useDeleteSmsConversation();
   const { isPinned, togglePin } = useThreadPins();
+  const threadState = useThreadState();
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -87,9 +110,15 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   const [newChatQuery, setNewChatQuery] = useState('');
   const [newChatContact, setNewChatContact] = useState<CrmContact | null>(null);
   const [newChatPhone, setNewChatPhone] = useState('');
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all');
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [convoSearch, setConvoSearch] = useState('');
+  const [showConvoSearch, setShowConvoSearch] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<File[]>([]);
+  const [scheduledFor, setScheduledFor] = useState<string>('');
+  const [quotedRef, setQuotedRef] = useState<QuotedRef | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ key: string; name: string } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -105,14 +134,8 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
       if (!t) {
         const contact = contacts.find(c => normalize(c.phone || '') === key);
         t = {
-          key,
-          phone,
-          contact,
-          messages: [],
-          lastInbound: null,
-          lastMessage: l,
-          unread: false,
-          channel,
+          key, phone, contact, messages: [], lastInbound: null,
+          lastMessage: l, unread: false, channel,
         };
         map.set(key, t);
       }
@@ -126,11 +149,14 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
         (a, b) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()
       );
       const last = sorted[sorted.length - 1];
+      const lastReadAt = threadState.get(channel, t.key).lastReadAt || 0;
+      const lastInboundTime = t.lastInbound ? new Date(t.lastInbound.sent_at).getTime() : 0;
+      const manuallyUnread = threadState.isManuallyUnread(channel, t.key);
       return {
         ...t,
         messages: sorted,
         lastMessage: last,
-        unread: !!t.lastInbound && last?.direction === 'inbound',
+        unread: manuallyUnread || (lastInboundTime > lastReadAt && last?.direction === 'inbound'),
       };
     });
     arr.sort(
@@ -139,18 +165,24 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
         new Date(a.lastMessage.sent_at).getTime()
     );
     return arr;
-  }, [logs, contacts, channel]);
+  }, [logs, contacts, channel, threadState]);
 
   const filteredThreads = useMemo(() => {
     let list = threads;
-    if (filter === 'unread') list = list.filter(t => t.unread);
+    // Archive filtering
+    if (filter === 'archived') {
+      list = list.filter(t => threadState.isArchived(channel, t.key));
+    } else {
+      list = list.filter(t => !threadState.isArchived(channel, t.key));
+      if (filter === 'unread') list = list.filter(t => t.unread);
+    }
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter(t => {
       const name = nameFor(t.contact, t.phone).toLowerCase();
       return name.includes(q) || t.phone.includes(q) || t.lastMessage.body?.toLowerCase().includes(q);
     });
-  }, [threads, search, filter]);
+  }, [threads, search, filter, threadState, channel]);
 
   // Auto-select first when channel changes
   useEffect(() => {
@@ -163,6 +195,11 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   useEffect(() => {
     setActiveKey(null);
     setComposeBody('');
+    setQuotedRef(null);
+    setConvoSearch('');
+    setShowConvoSearch(false);
+    setPendingMedia([]);
+    setScheduledFor('');
   }, [channel]);
 
   const active = useMemo(() => {
@@ -170,12 +207,29 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
     return threads.find(t => t.key === activeKey) || null;
   }, [threads, activeKey, showNewChat]);
 
+  // Mark as read whenever the active thread changes or new messages land
+  useEffect(() => {
+    if (active) {
+      threadState.markRead(channel, active.key);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.key, active?.messages.length, channel]);
+
   // Auto-scroll to bottom on new messages or thread switch
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [active?.messages.length, active?.key]);
+
+  // Reset convo search & quoted ref when switching threads
+  useEffect(() => {
+    setConvoSearch('');
+    setShowConvoSearch(false);
+    setQuotedRef(null);
+    setPendingMedia([]);
+    setScheduledFor('');
+  }, [active?.key]);
 
   const newChatResults = useMemo(() => {
     const q = newChatQuery.trim().toLowerCase();
@@ -191,7 +245,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
 
   const handleSend = async () => {
     const body = composeBody.trim();
-    if (!body) return;
+    if (!body && pendingMedia.length === 0) return;
 
     let to: string;
     let contactId: string | null = null;
@@ -207,14 +261,39 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
       return;
     }
 
+    // 1) Upload media if any
+    let mediaUrls: string[] = [];
+    if (pendingMedia.length > 0) {
+      try {
+        mediaUrls = await uploadSmsMedia(pendingMedia);
+      } catch (e: any) {
+        toast.error(e?.message || 'Media upload failed');
+        return;
+      }
+    }
+
+    // 2) Prepend quoted reply marker if present (iMessage-style "> Original")
+    let finalBody = body;
+    if (quotedRef) {
+      const quoteSnippet = quotedRef.body.length > 80
+        ? quotedRef.body.slice(0, 80) + '…'
+        : quotedRef.body;
+      finalBody = `↪ "${quoteSnippet}"\n${body}`;
+    }
+
     await sendSms.mutateAsync({
       to,
-      body,
+      body: finalBody,
       contact_id: contactId,
       channel,
+      media_urls: mediaUrls.length > 0 ? mediaUrls : undefined,
+      scheduled_for: scheduledFor || undefined,
     });
 
     setComposeBody('');
+    setPendingMedia([]);
+    setScheduledFor('');
+    setQuotedRef(null);
     if (showNewChat) {
       setShowNewChat(false);
       setNewChatContact(null);
@@ -235,6 +314,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
     setShowNewChat(true);
     setActiveKey(null);
     setComposeBody('');
+    setQuotedRef(null);
   };
 
   const pickNewChatContact = (c: CrmContact) => {
@@ -249,12 +329,19 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   const showCenterPane = !isMobile || active || showNewChat;
   const showRightPane = !isMobile && hasContactDetails && !rightCollapsed;
 
-  // Build dynamic grid template based on which panes are visible
   const gridCols = !isMobile
     ? [showLeftPane ? '340px' : null, '1fr', showRightPane ? '320px' : null]
         .filter(Boolean)
         .join('_')
     : null;
+
+  // Filter messages by in-thread search
+  const visibleMessages = useMemo(() => {
+    if (!active) return [];
+    const q = convoSearch.trim().toLowerCase();
+    if (!q) return active.messages;
+    return active.messages.filter(m => m.body?.toLowerCase().includes(q));
+  }, [active, convoSearch]);
 
   // ============== Render ==============
 
@@ -267,7 +354,6 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
         {/* ============ LEFT PANE: Threads ============ */}
         {showLeftPane && (
           <div className="flex flex-col border-r border-border bg-muted/20 min-h-0">
-            {/* Header */}
             <div className="px-4 pt-4 pb-3 border-b border-border bg-background/60 backdrop-blur">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-semibold tracking-tight">Messages</h2>
@@ -310,7 +396,6 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                 </button>
               </div>
 
-              {/* Search */}
               <div className="relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -321,18 +406,20 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                 />
               </div>
 
-              {/* Filter chips */}
-              <div className="flex items-center gap-1.5 mt-2.5">
+              <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
                 <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
                   All
                 </FilterChip>
                 <FilterChip active={filter === 'unread'} onClick={() => setFilter('unread')}>
                   Unread
-                  {threads.filter(t => t.unread).length > 0 && (
+                  {threads.filter(t => t.unread && !threadState.isArchived(channel, t.key)).length > 0 && (
                     <span className="ml-1 text-[10px] font-bold text-primary">
-                      {threads.filter(t => t.unread).length}
+                      {threads.filter(t => t.unread && !threadState.isArchived(channel, t.key)).length}
                     </span>
                   )}
+                </FilterChip>
+                <FilterChip active={filter === 'archived'} onClick={() => setFilter('archived')}>
+                  <Archive className="w-2.5 h-2.5 inline-block mr-0.5" /> Archived
                 </FilterChip>
               </div>
             </div>
@@ -341,12 +428,18 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
             <ScrollArea className="flex-1">
               {filteredThreads.length === 0 ? (
                 <div className="p-8 text-center text-xs text-muted-foreground">
-                  {search ? 'No matches' : `No ${channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} conversations yet.`}
-                  <div className="mt-3">
-                    <Button size="sm" variant="outline" onClick={startNewChat}>
-                      <Plus className="w-3.5 h-3.5 mr-1" /> New conversation
-                    </Button>
-                  </div>
+                  {filter === 'archived'
+                    ? 'No archived conversations.'
+                    : search
+                      ? 'No matches'
+                      : `No ${channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} conversations yet.`}
+                  {filter !== 'archived' && (
+                    <div className="mt-3">
+                      <Button size="sm" variant="outline" onClick={startNewChat}>
+                        <Plus className="w-3.5 h-3.5 mr-1" /> New conversation
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 (() => {
@@ -365,16 +458,25 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                               thread={t}
                               active={activeKey === t.key && !showNewChat}
                               pinned
+                              muted={threadState.isMuted(channel, t.key)}
+                              archived={threadState.isArchived(channel, t.key)}
                               onClick={() => {
                                 setShowNewChat(false);
                                 setActiveKey(t.key);
                               }}
                               onTogglePin={() => togglePin(channel, t.key)}
+                              onToggleMute={() => threadState.toggleMute(channel, t.key)}
+                              onToggleArchive={() => {
+                                threadState.toggleArchive(channel, t.key);
+                                if (activeKey === t.key) setActiveKey(null);
+                              }}
+                              onMarkUnread={() => threadState.markUnread(channel, t.key)}
+                              onDelete={() => setConfirmDelete({ key: t.key, name: nameFor(t.contact, t.phone) })}
                             />
                           ))}
                           {otherThreads.length > 0 && (
                             <div className="px-2.5 pt-3 pb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                              All Messages
+                              {filter === 'archived' ? 'Archived' : 'All Messages'}
                             </div>
                           )}
                         </>
@@ -385,11 +487,20 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                           thread={t}
                           active={activeKey === t.key && !showNewChat}
                           pinned={false}
+                          muted={threadState.isMuted(channel, t.key)}
+                          archived={threadState.isArchived(channel, t.key)}
                           onClick={() => {
                             setShowNewChat(false);
                             setActiveKey(t.key);
                           }}
                           onTogglePin={() => togglePin(channel, t.key)}
+                          onToggleMute={() => threadState.toggleMute(channel, t.key)}
+                          onToggleArchive={() => {
+                            threadState.toggleArchive(channel, t.key);
+                            if (activeKey === t.key) setActiveKey(null);
+                          }}
+                          onMarkUnread={() => threadState.markUnread(channel, t.key)}
+                          onDelete={() => setConfirmDelete({ key: t.key, name: nameFor(t.contact, t.phone) })}
                         />
                       ))}
                     </div>
@@ -404,7 +515,6 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
         {showCenterPane && (
           <div className="flex flex-col min-h-0 bg-background">
             {showNewChat ? (
-              /* NEW CHAT MODE */
               <NewChatPane
                 onBack={() => setShowNewChat(false)}
                 contact={newChatContact}
@@ -425,9 +535,14 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                 onKeyDown={onKeyDown}
                 sending={sendSms.isPending}
                 templates={channelTemplates}
+                pendingMedia={pendingMedia}
+                onMediaChange={setPendingMedia}
+                scheduledFor={scheduledFor}
+                onScheduledChange={setScheduledFor}
+                quotedRef={null}
+                onClearQuote={() => {}}
               />
             ) : active ? (
-              /* ACTIVE CONVERSATION */
               <>
                 {/* Conversation header */}
                 <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 bg-background/80 backdrop-blur">
@@ -474,6 +589,9 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                     <div className="min-w-0">
                       <div className="text-[15px] font-semibold truncate flex items-center gap-1.5">
                         {nameFor(active.contact, active.phone)}
+                        {threadState.isMuted(channel, active.key) && (
+                          <BellOff className="w-3 h-3 text-muted-foreground" />
+                        )}
                         {channel === 'whatsapp' && (
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         )}
@@ -485,6 +603,22 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                   </div>
                   <div className="flex items-center gap-1">
                     <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className={cn(
+                              'h-8 w-8 rounded-full text-muted-foreground hover:text-foreground',
+                              showConvoSearch && 'bg-primary/10 text-primary',
+                            )}
+                            onClick={() => setShowConvoSearch(v => !v)}
+                          >
+                            <Search className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Search in conversation</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
@@ -523,19 +657,88 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                           <TooltipContent>{rightCollapsed ? 'Show details' : 'Hide details'}</TooltipContent>
                         </Tooltip>
                       )}
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-52 p-1">
+                          <PopoverMenuItem
+                            icon={threadState.isMuted(channel, active.key) ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+                            onClick={() => threadState.toggleMute(channel, active.key)}
+                          >
+                            {threadState.isMuted(channel, active.key) ? 'Unmute' : 'Mute notifications'}
+                          </PopoverMenuItem>
+                          <PopoverMenuItem
+                            icon={threadState.isArchived(channel, active.key) ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                            onClick={() => {
+                              threadState.toggleArchive(channel, active.key);
+                              setActiveKey(null);
+                            }}
+                          >
+                            {threadState.isArchived(channel, active.key) ? 'Unarchive' : 'Archive'}
+                          </PopoverMenuItem>
+                          <PopoverMenuItem
+                            icon={<Mail className="w-3.5 h-3.5" />}
+                            onClick={() => threadState.markUnread(channel, active.key)}
+                          >
+                            Mark as unread
+                          </PopoverMenuItem>
+                          <div className="my-1 border-t border-border" />
+                          <PopoverMenuItem
+                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                            destructive
+                            onClick={() => setConfirmDelete({ key: active.key, name: nameFor(active.contact, active.phone) })}
+                          >
+                            Delete conversation
+                          </PopoverMenuItem>
+                        </PopoverContent>
+                      </Popover>
                     </TooltipProvider>
                   </div>
                 </div>
+
+                {/* In-conversation search bar */}
+                {showConvoSearch && (
+                  <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center gap-2">
+                    <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <Input
+                      autoFocus
+                      value={convoSearch}
+                      onChange={(e) => setConvoSearch(e.target.value)}
+                      placeholder="Find in conversation…"
+                      className="h-7 text-xs border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    />
+                    {convoSearch && (
+                      <span className="text-[10.5px] text-muted-foreground whitespace-nowrap">
+                        {visibleMessages.length} match{visibleMessages.length === 1 ? '' : 'es'}
+                      </span>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => { setShowConvoSearch(false); setConvoSearch(''); }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
 
                 {/* Messages */}
                 <div
                   ref={scrollRef}
                   className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 bg-gradient-to-b from-muted/10 to-background"
                 >
-                  <MessageList messages={active.messages} channel={channel} />
+                  <MessageList
+                    messages={visibleMessages}
+                    channel={channel}
+                    highlight={convoSearch.trim()}
+                    threadState={threadState}
+                    onReply={(m) => setQuotedRef({ id: m.id, body: m.body, direction: m.direction })}
+                    onDeleteMessage={(id) => deleteMessage.mutate(id)}
+                  />
                 </div>
 
                 {/* Composer */}
@@ -547,10 +750,15 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                   sending={sendSms.isPending}
                   channel={channel}
                   templates={channelTemplates}
+                  pendingMedia={pendingMedia}
+                  onMediaChange={setPendingMedia}
+                  scheduledFor={scheduledFor}
+                  onScheduledChange={setScheduledFor}
+                  quotedRef={quotedRef}
+                  onClearQuote={() => setQuotedRef(null)}
                 />
               </>
             ) : (
-              /* EMPTY STATE */
               <div className="flex-1 flex flex-col items-center justify-center text-center px-8 bg-gradient-to-b from-background to-muted/20">
                 <div
                   className={cn(
@@ -589,6 +797,39 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
           />
         )}
       </div>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation with {confirmDelete?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes every {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} message exchanged
+              with this contact from your records. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!confirmDelete) return;
+                deleteConversation.mutate(
+                  { phoneLast10: confirmDelete.key, channel },
+                  {
+                    onSuccess: () => {
+                      if (activeKey === confirmDelete.key) setActiveKey(null);
+                      setConfirmDelete(null);
+                    },
+                  },
+                );
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -601,7 +842,7 @@ function FilterChip({
     <button
       onClick={onClick}
       className={cn(
-        'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors',
+        'px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors inline-flex items-center',
         active
           ? 'bg-primary/15 text-primary'
           : 'text-muted-foreground hover:bg-muted',
@@ -612,15 +853,44 @@ function FilterChip({
   );
 }
 
-// ============== Thread row (with right-click context menu + hover pin) ==============
+function PopoverMenuItem({
+  icon, children, onClick, destructive,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  onClick: () => void;
+  destructive?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-xs hover:bg-muted text-left',
+        destructive && 'text-destructive hover:bg-destructive/10',
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+// ============== Thread row ==============
 function ThreadRow({
-  thread, active, pinned, onClick, onTogglePin,
+  thread, active, pinned, muted, archived, onClick, onTogglePin,
+  onToggleMute, onToggleArchive, onMarkUnread, onDelete,
 }: {
   thread: Thread;
   active: boolean;
   pinned: boolean;
+  muted: boolean;
+  archived: boolean;
   onClick: () => void;
   onTogglePin: () => void;
+  onToggleMute: () => void;
+  onToggleArchive: () => void;
+  onMarkUnread: () => void;
+  onDelete: () => void;
 }) {
   const last = thread.lastMessage;
   const lastDate = new Date(last.sent_at);
@@ -634,6 +904,7 @@ function ThreadRow({
           className={cn(
             'group relative w-full text-left px-2.5 py-2.5 rounded-xl flex gap-2.5 transition-colors',
             active ? 'bg-primary/10' : 'hover:bg-muted/60',
+            archived && 'opacity-70',
           )}
         >
           <Avatar className="h-10 w-10 shrink-0">
@@ -654,6 +925,9 @@ function ThreadRow({
                 {pinned && (
                   <Pin className="w-2.5 h-2.5 text-primary shrink-0 fill-primary" />
                 )}
+                {muted && (
+                  <BellOff className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
+                )}
                 <span
                   className={cn(
                     'text-[13.5px] truncate',
@@ -666,7 +940,7 @@ function ThreadRow({
               <span
                 className={cn(
                   'text-[10.5px] shrink-0',
-                  thread.unread ? 'text-primary font-semibold' : 'text-muted-foreground',
+                  thread.unread && !muted ? 'text-primary font-semibold' : 'text-muted-foreground',
                 )}
               >
                 {formatThreadTime(lastDate)}
@@ -681,13 +955,13 @@ function ThreadRow({
               >
                 {preview}
               </span>
-              {thread.unread && (
+              {thread.unread && !muted && (
                 <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
               )}
             </div>
           </div>
 
-          {/* Hover pin shortcut (top-right) */}
+          {/* Hover pin shortcut */}
           <span
             role="button"
             tabIndex={-1}
@@ -697,8 +971,7 @@ function ThreadRow({
             }}
             className={cn(
               'absolute top-1.5 right-1.5 h-6 w-6 rounded-full flex items-center justify-center transition-opacity',
-              'hover:bg-background/80 text-muted-foreground hover:text-primary',
-              pinned ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100',
+              'hover:bg-background/80 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100',
             )}
             title={pinned ? 'Unpin' : 'Pin'}
           >
@@ -706,22 +979,25 @@ function ThreadRow({
           </span>
         </button>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
+      <ContextMenuContent className="w-52">
         <ContextMenuItem onClick={onTogglePin} className="gap-2">
           {pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
           {pinned ? 'Unpin conversation' : 'Pin conversation'}
         </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem disabled className="gap-2 opacity-60">
+        <ContextMenuItem onClick={onMarkUnread} className="gap-2">
           <Mail className="w-3.5 h-3.5" />
           Mark as unread
         </ContextMenuItem>
-        <ContextMenuItem disabled className="gap-2 opacity-60">
-          <BellOff className="w-3.5 h-3.5" />
-          Mute (coming soon)
+        <ContextMenuItem onClick={onToggleMute} className="gap-2">
+          {muted ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+          {muted ? 'Unmute' : 'Mute notifications'}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onToggleArchive} className="gap-2">
+          {archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+          {archived ? 'Unarchive' : 'Archive conversation'}
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem disabled className="gap-2 opacity-60 text-destructive">
+        <ContextMenuItem onClick={onDelete} className="gap-2 text-destructive focus:text-destructive">
           <Trash2 className="w-3.5 h-3.5" />
           Delete conversation
         </ContextMenuItem>
@@ -730,12 +1006,37 @@ function ThreadRow({
   );
 }
 
-// ============== Message list with timestamps & grouping ==============
-function MessageList({ messages, channel }: { messages: SmsLogRow[]; channel: MessagingChannel }) {
+// ============== Highlight matched text ==============
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const safe = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${safe})`, 'gi'));
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === query.toLowerCase()
+          ? <mark key={i} className="bg-yellow-300/60 dark:bg-yellow-500/40 text-foreground rounded px-0.5">{p}</mark>
+          : <span key={i}>{p}</span>,
+      )}
+    </>
+  );
+}
+
+// ============== Message list ==============
+function MessageList({
+  messages, channel, highlight, threadState, onReply, onDeleteMessage,
+}: {
+  messages: SmsLogRow[];
+  channel: MessagingChannel;
+  highlight: string;
+  threadState: ReturnType<typeof useThreadState>;
+  onReply: (m: SmsLogRow) => void;
+  onDeleteMessage: (id: string) => void;
+}) {
   if (messages.length === 0) {
     return (
       <div className="text-center text-xs text-muted-foreground py-12">
-        No messages yet — say hi 👋
+        {highlight ? `No matches for "${highlight}"` : 'No messages yet — say hi 👋'}
       </div>
     );
   }
@@ -756,6 +1057,15 @@ function MessageList({ messages, channel }: { messages: SmsLogRow[]; channel: Me
           prev && prev.direction === m.direction &&
           differenceInMinutes(date, new Date(prev.sent_at)) < 2;
 
+        const reaction = threadState.getReaction(m.id);
+        const isOptimistic = m.id.startsWith('optimistic-');
+        const isScheduled = m.status === 'scheduled';
+
+        // Render quoted reply if body starts with "↪ "..."\n"
+        const quoteMatch = m.body?.match(/^↪ "([^"]+)"\n([\s\S]*)$/);
+        const quoteText = quoteMatch?.[1];
+        const bodyText = quoteMatch ? quoteMatch[2] : m.body;
+
         return (
           <div key={m.id}>
             {showTimestamp && (
@@ -763,46 +1073,157 @@ function MessageList({ messages, channel }: { messages: SmsLogRow[]; channel: Me
                 {format(date, isToday(date) ? "'Today' h:mm a" : isYesterday(date) ? "'Yesterday' h:mm a" : 'MMM d, h:mm a')}
               </div>
             )}
-            <div className={cn('flex', isOutbound ? 'justify-end' : 'justify-start')}>
-              <div
-                className={cn(
-                  'max-w-[75%] sm:max-w-[65%] px-3.5 py-2 text-[14.5px] leading-snug shadow-sm',
-                  // bubble corners — iMessage tail logic
-                  isOutbound
-                    ? channel === 'whatsapp'
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground',
-                  // rounding based on grouping
-                  isOutbound
-                    ? cn(
-                        'rounded-2xl',
-                        sameSenderAsPrev && 'rounded-tr-md',
-                        sameSenderAsNext && 'rounded-br-md',
-                      )
-                    : cn(
-                        'rounded-2xl',
-                        sameSenderAsPrev && 'rounded-tl-md',
-                        sameSenderAsNext && 'rounded-bl-md',
-                      ),
-                )}
-              >
-                <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                {m.media_urls?.length > 0 && (
-                  <div className="mt-1.5 grid grid-cols-2 gap-1">
-                    {m.media_urls.map((u: string, idx: number) => (
-                      <img key={idx} src={u} className="rounded-lg max-h-40 object-cover" alt="" />
-                    ))}
+            <ContextMenu>
+              <ContextMenuTrigger asChild>
+                <div className={cn('flex group', isOutbound ? 'justify-end' : 'justify-start')}>
+                  <div className="relative max-w-[75%] sm:max-w-[65%]">
+                    <div
+                      className={cn(
+                        'px-3.5 py-2 text-[14.5px] leading-snug shadow-sm transition-opacity',
+                        isOutbound
+                          ? channel === 'whatsapp'
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground',
+                        isOutbound
+                          ? cn('rounded-2xl', sameSenderAsPrev && 'rounded-tr-md', sameSenderAsNext && 'rounded-br-md')
+                          : cn('rounded-2xl', sameSenderAsPrev && 'rounded-tl-md', sameSenderAsNext && 'rounded-bl-md'),
+                        (isOptimistic || isScheduled) && 'opacity-70',
+                      )}
+                    >
+                      {/* Quoted reply preview inside bubble */}
+                      {quoteText && (
+                        <div className={cn(
+                          'mb-1.5 pl-2 border-l-2 text-[12px] italic line-clamp-2',
+                          isOutbound ? 'border-white/40 text-white/80' : 'border-foreground/30 text-foreground/70',
+                        )}>
+                          {quoteText}
+                        </div>
+                      )}
+                      <div className="whitespace-pre-wrap break-words">
+                        <HighlightedText text={bodyText} query={highlight} />
+                      </div>
+                      {m.media_urls?.length > 0 && (
+                        <div className="mt-1.5 grid grid-cols-2 gap-1">
+                          {m.media_urls.map((u: string, idx: number) => {
+                            const isImg = /\.(jpe?g|png|gif|webp|heic)$|image%2F/i.test(u);
+                            if (isImg) {
+                              return (
+                                <a key={idx} href={u} target="_blank" rel="noreferrer">
+                                  <img src={u} className="rounded-lg max-h-40 object-cover" alt="attachment" />
+                                </a>
+                              );
+                            }
+                            return (
+                              <a
+                                key={idx}
+                                href={u}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={cn(
+                                  'flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded-md',
+                                  isOutbound ? 'bg-white/15 hover:bg-white/25' : 'bg-background/60 hover:bg-background',
+                                )}
+                              >
+                                <FileText className="w-3 h-3" /> Attachment
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Reaction badge on the bubble */}
+                    {reaction && (
+                      <div
+                        className={cn(
+                          'absolute -bottom-2 px-1.5 py-0.5 rounded-full bg-background border border-border shadow-sm text-[12px] cursor-pointer',
+                          isOutbound ? '-left-1' : '-right-1',
+                        )}
+                        onClick={() => threadState.setReaction(m.id, null)}
+                        title="Click to remove"
+                      >
+                        {reaction}
+                      </div>
+                    )}
+
+                    {/* Hover quick-react popover */}
+                    <div
+                      className={cn(
+                        'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity',
+                        isOutbound ? '-left-9' : '-right-9',
+                      )}
+                    >
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background border border-border">
+                            <Smile className="w-3.5 h-3.5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="center" className="w-auto p-1.5">
+                          <div className="flex gap-0.5">
+                            {REACTION_EMOJIS.map(e => (
+                              <button
+                                key={e}
+                                onClick={() => threadState.setReaction(m.id, e === reaction ? null : e)}
+                                className={cn(
+                                  'h-8 w-8 rounded-full hover:bg-muted text-base transition-colors',
+                                  reaction === e && 'bg-primary/15',
+                                )}
+                              >
+                                {e}
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-            {/* Read receipt / status under the LAST outbound bubble in a group */}
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="w-44">
+                <ContextMenuItem onClick={() => onReply(m)} className="gap-2">
+                  <Reply className="w-3.5 h-3.5" /> Reply
+                </ContextMenuItem>
+                <ContextMenuSub>
+                  <ContextMenuSubTrigger className="gap-2">
+                    <Smile className="w-3.5 h-3.5" /> React
+                  </ContextMenuSubTrigger>
+                  <ContextMenuSubContent>
+                    {REACTION_EMOJIS.map(e => (
+                      <ContextMenuItem
+                        key={e}
+                        onClick={() => threadState.setReaction(m.id, e === reaction ? null : e)}
+                        className="text-base"
+                      >
+                        {e}
+                      </ContextMenuItem>
+                    ))}
+                  </ContextMenuSubContent>
+                </ContextMenuSub>
+                <ContextMenuItem
+                  onClick={() => navigator.clipboard.writeText(m.body)}
+                  className="gap-2"
+                >
+                  📋 Copy text
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  disabled={isOptimistic}
+                  onClick={() => onDeleteMessage(m.id)}
+                  className="gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete message
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
+
+            {/* Status under last bubble in group */}
             {isOutbound && !sameSenderAsNext && (
               <div className="flex justify-end mt-0.5 mr-1">
                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <StatusIcon status={m.status} />
-                  {statusLabel(m.status)}
+                  {statusLabel(m.status, m.scheduled_for)}
                 </span>
               </div>
             )}
@@ -813,7 +1234,11 @@ function MessageList({ messages, channel }: { messages: SmsLogRow[]; channel: Me
   );
 }
 
-function statusLabel(status: string) {
+function statusLabel(status: string, scheduledFor?: string | null) {
+  if (status === 'scheduled' && scheduledFor) {
+    const d = new Date(scheduledFor);
+    return `Scheduled · ${formatDistanceToNow(d, { addSuffix: true })}`;
+  }
   if (!status) return '';
   if (status === 'delivered' || status === 'read') return 'Delivered';
   if (status === 'sent') return 'Sent';
@@ -823,6 +1248,7 @@ function statusLabel(status: string) {
 }
 
 function StatusIcon({ status }: { status: string }) {
+  if (status === 'scheduled') return <CalendarIcon className="w-3 h-3 text-blue-500" />;
   if (status === 'delivered' || status === 'read') return <CheckCircle2 className="w-3 h-3 text-emerald-500" />;
   if (status === 'failed' || status === 'undelivered') return <AlertCircle className="w-3 h-3 text-destructive" />;
   if (status === 'queued' || status === 'sending' || status === 'pending') return <Clock className="w-3 h-3" />;
@@ -832,6 +1258,8 @@ function StatusIcon({ status }: { status: string }) {
 // ============== Composer ==============
 function Composer({
   value, onChange, onSend, onKeyDown, sending, channel, templates,
+  pendingMedia, onMediaChange, scheduledFor, onScheduledChange,
+  quotedRef, onClearQuote,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -840,14 +1268,111 @@ function Composer({
   sending: boolean;
   channel: MessagingChannel;
   templates: any[];
+  pendingMedia: File[];
+  onMediaChange: (f: File[]) => void;
+  scheduledFor: string;
+  onScheduledChange: (v: string) => void;
+  quotedRef: QuotedRef | null;
+  onClearQuote: () => void;
 }) {
   const seg = smsSegments(value);
-  const canSend = value.trim().length > 0 && !sending;
+  const canSend = (value.trim().length > 0 || pendingMedia.length > 0) && !sending;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Default scheduled value = now + 1h, rounded to next 15min
+  const defaultScheduled = useMemo(() => {
+    const d = new Date(Date.now() + 60 * 60 * 1000);
+    d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+    return d.toISOString().slice(0, 16); // datetime-local format
+  }, []);
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    if (pendingMedia.length + arr.length > 10) {
+      toast.error('Max 10 attachments per message');
+      return;
+    }
+    onMediaChange([...pendingMedia, ...arr]);
+  };
+
+  const removeMedia = (idx: number) => {
+    onMediaChange(pendingMedia.filter((_, i) => i !== idx));
+  };
 
   return (
     <div className="border-t border-border bg-background px-3 sm:px-4 py-3">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto space-y-2">
+        {/* Quoted reply preview */}
+        {quotedRef && (
+          <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-muted/50 border-l-2 border-primary">
+            <Reply className="w-3 h-3 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+                Replying to {quotedRef.direction === 'outbound' ? 'yourself' : 'them'}
+              </div>
+              <div className="truncate text-foreground/80">{quotedRef.body}</div>
+            </div>
+            <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={onClearQuote}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+
+        {/* Pending attachments preview */}
+        {pendingMedia.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap p-2 rounded-lg bg-muted/40 border border-dashed border-border">
+            {pendingMedia.map((f, idx) => {
+              const isImg = f.type.startsWith('image/');
+              return (
+                <div key={idx} className="relative group">
+                  {isImg ? (
+                    <img src={URL.createObjectURL(f)} alt={f.name} className="h-14 w-14 object-cover rounded-md border border-border" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-md border border-border bg-background flex flex-col items-center justify-center text-[9px] text-muted-foreground p-1">
+                      <FileText className="w-4 h-4 mb-0.5" />
+                      <span className="truncate max-w-full">{f.name.split('.').pop()?.toUpperCase()}</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => removeMedia(idx)}
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              );
+            })}
+            <span className="text-[10.5px] text-muted-foreground ml-1">
+              {pendingMedia.length}/10 · {(pendingMedia.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(1)}MB
+            </span>
+          </div>
+        )}
+
+        {/* Scheduled preview */}
+        {scheduledFor && (
+          <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400">
+            <CalendarIcon className="w-3 h-3" />
+            <span className="flex-1">
+              Sending {format(new Date(scheduledFor), "MMM d 'at' h:mm a")} ({formatDistanceToNow(new Date(scheduledFor), { addSuffix: true })})
+            </span>
+            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => onScheduledChange('')}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+
         <div className="flex items-end gap-2 rounded-2xl border border-border bg-muted/30 focus-within:border-primary/40 focus-within:bg-background transition-colors px-3 py-2">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,video/*,application/pdf"
+            className="hidden"
+            onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
+          />
+
           {/* Templates */}
           {templates.length > 0 && (
             <Popover>
@@ -880,15 +1405,52 @@ function Composer({
               </PopoverContent>
             </Popover>
           )}
+
+          {/* Attach */}
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
-            title="Attach (coming soon)"
-            disabled
+            className="h-7 w-7 rounded-full shrink-0 text-muted-foreground hover:text-primary"
+            title="Attach photo or file"
+            onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="w-3.5 h-3.5" />
           </Button>
+
+          {/* Schedule */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  'h-7 w-7 rounded-full shrink-0',
+                  scheduledFor ? 'text-blue-600' : 'text-muted-foreground hover:text-primary',
+                )}
+                title="Schedule send"
+              >
+                <CalendarIcon className="w-3.5 h-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-3 space-y-2">
+              <div className="text-xs font-semibold">Schedule send</div>
+              <p className="text-[11px] text-muted-foreground">
+                The message will be queued and delivered at the chosen time.
+              </p>
+              <Input
+                type="datetime-local"
+                value={scheduledFor || defaultScheduled}
+                min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
+                onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
+                className="text-xs h-8"
+              />
+              {scheduledFor && (
+                <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
+                  Clear schedule
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
 
           <Textarea
             value={value}
@@ -913,14 +1475,15 @@ function Composer({
                 : 'opacity-40',
             )}
           >
-            <Send className="w-3.5 h-3.5" />
+            {scheduledFor ? <CalendarIcon className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
           </Button>
         </div>
 
-        {/* Meta line */}
         <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
           <span>
-            {channel === 'whatsapp' ? 'WhatsApp Business · via Twilio' : `${seg.count} segment${seg.count > 1 ? 's' : ''} · ${seg.chars} chars`}
+            {channel === 'whatsapp'
+              ? 'WhatsApp Business · via Twilio'
+              : `${seg.count} segment${seg.count > 1 ? 's' : ''} · ${seg.chars} chars${pendingMedia.length > 0 ? ' · MMS' : ''}`}
           </span>
           <span className="opacity-70">⌘ + ↵ to send</span>
         </div>
@@ -934,6 +1497,7 @@ function NewChatPane({
   onBack, contact, phone, onPhoneChange, onClearContact,
   results, query, onQueryChange, onPick,
   channel, composeBody, onComposeChange, onSend, onKeyDown, sending, templates,
+  pendingMedia, onMediaChange, scheduledFor, onScheduledChange, quotedRef, onClearQuote,
 }: {
   onBack: () => void;
   contact: CrmContact | null;
@@ -951,10 +1515,15 @@ function NewChatPane({
   onKeyDown: (e: React.KeyboardEvent) => void;
   sending: boolean;
   templates: any[];
+  pendingMedia: File[];
+  onMediaChange: (f: File[]) => void;
+  scheduledFor: string;
+  onScheduledChange: (v: string) => void;
+  quotedRef: QuotedRef | null;
+  onClearQuote: () => void;
 }) {
   return (
     <>
-      {/* Header — recipient picker */}
       <div className="px-4 py-3 border-b border-border bg-background/80 backdrop-blur">
         <div className="flex items-center gap-2 mb-2.5">
           <Button size="icon" variant="ghost" className="h-8 w-8 -ml-1" onClick={onBack}>
@@ -993,7 +1562,6 @@ function NewChatPane({
         </div>
       </div>
 
-      {/* Body: results OR conversation start */}
       {!contact ? (
         <ScrollArea className="flex-1 bg-muted/10">
           <div className="p-2">
@@ -1060,6 +1628,12 @@ function NewChatPane({
         sending={sending}
         channel={channel}
         templates={templates}
+        pendingMedia={pendingMedia}
+        onMediaChange={onMediaChange}
+        scheduledFor={scheduledFor}
+        onScheduledChange={onScheduledChange}
+        quotedRef={quotedRef}
+        onClearQuote={onClearQuote}
       />
     </>
   );
@@ -1104,7 +1678,6 @@ function ContactDetailsPane({
             )}
           </div>
 
-          {/* Quick stats */}
           <div className="grid grid-cols-2 gap-2 mb-5">
             <div className="rounded-xl bg-background border border-border p-2.5 text-center">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Messages</div>
@@ -1118,7 +1691,6 @@ function ContactDetailsPane({
             </div>
           </div>
 
-          {/* Lead info */}
           <div className="space-y-3">
             <DetailRow label="Source" value={contact.source} />
             <DetailRow label="Type" value={contact.lead_type} />
