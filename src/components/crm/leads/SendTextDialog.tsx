@@ -147,8 +147,11 @@ export function SendTextDialog({ contact, open, onOpenChange }: Props) {
     setBody(t.body);
     if (t.default_media_urls?.length) setMediaUrls(t.default_media_urls);
     setTplOpen(false);
-    // bump usage
-    supabase.rpc('increment_crm_email_template_usage' as any, { _template_id: tplId }).catch(() => {});
+    // bump usage (best-effort)
+    supabase.from('crm_sms_templates').update({
+      times_used: (templates.find(t => t.id === tplId)?.times_used || 0) + 1,
+      last_used_at: new Date().toISOString(),
+    }).eq('id', tplId).then(() => {}, () => {});
   }
 
   const canSend = !!contact.phone && body.trim().length > 0 && !sendSms.isPending && !isOptedOut;
