@@ -387,15 +387,15 @@ export function ComposerSurface({
                   <span
                     key={r.id}
                     className={cn(
-                      'inline-flex items-center gap-1.5 h-6 pl-2 pr-1 rounded-full text-[11px] font-medium border',
+                      'inline-flex items-center gap-1.5 h-7 pl-2.5 pr-1 rounded-full text-[12px] font-medium border',
                       r.email
-                        ? 'bg-primary/8 border-primary/20 text-foreground'
+                        ? 'bg-primary/10 border-primary/25 text-foreground'
                         : 'bg-destructive/8 border-destructive/30 text-destructive',
                     )}
                     title={r.email ?? 'No email — will be skipped'}
                   >
-                    {!r.email && <MailWarning className="h-3 w-3" />}
-                    <span className="truncate max-w-[140px]">{formatContactName(r)}</span>
+                    {!r.email && <MailWarning className="h-3.5 w-3.5" />}
+                    <span className="truncate max-w-[180px]">{formatContactName(r)}</span>
                     {onRemoveRecipient && (
                       <button
                         type="button"
