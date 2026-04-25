@@ -105,7 +105,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 6. Sandbox vs approved sender check via Twilio
+    // 6. Sender account check via Twilio gateway. The connector gateway supports
+    // core REST resources; WhatsApp Sender v2 is not exposed here, so do not
+    // hard-fail on that unavailable lookup. Delivery still reports exact WA
+    // failures via send-sms/messaging-test-status (e.g. 63016 template window).
     let isSandbox = false;
     let approvedSender = false;
     let twilioDetail = '';
@@ -113,27 +116,17 @@ Deno.serve(async (req) => {
     if (waFromE164 && LOVABLE_API_KEY && TWILIO_API_KEY) {
       isSandbox = waFromE164 === SANDBOX_NUMBER;
       try {
-        // Use Messaging v1 Senders endpoint (WhatsApp senders live here, not /IncomingPhoneNumbers).
-        const r = await fetch(`https://messaging.twilio.com/v2/Channels/Senders?PageSize=200`, {
+        const r = await fetch(`${GATEWAY_URL}/IncomingPhoneNumbers.json?PhoneNumber=${encodeURIComponent(waFromE164)}`, {
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
             'X-Connection-Api-Key': TWILIO_API_KEY,
           },
         });
         const j = await r.json().catch(() => ({}));
-        if (r.ok && Array.isArray(j.senders)) {
-          const wa = j.senders.filter((s: { sender_id?: string; status?: string }) =>
-            (s.sender_id || '').toLowerCase().startsWith('whatsapp:'),
-          );
-          const match = wa.find((s: { sender_id?: string }) =>
-            (s.sender_id || '').replace(/^whatsapp:/i, '') === waFromE164,
-          );
-          if (match) {
-            approvedSender = (match as { status?: string }).status?.toUpperCase() === 'ONLINE';
-            twilioDetail = `Sender status: ${(match as { status?: string }).status ?? 'unknown'}`;
-          } else {
-            twilioDetail = `Not found in Senders v2 (${wa.length} WA senders on account).`;
-          }
+        if (r.ok && Array.isArray(j.incoming_phone_numbers) && j.incoming_phone_numbers.length > 0) {
+          approvedSender = true;
+          const found = j.incoming_phone_numbers[0];
+          twilioDetail = `Twilio owns ${found.phone_number || waFromE164}; WhatsApp sends will now surface exact delivery errors.`;
         } else {
           twilioDetail = j?.message ?? `HTTP ${r.status}`;
         }
@@ -148,14 +141,14 @@ Deno.serve(async (req) => {
           detail: `Using Twilio Sandbox (${SANDBOX_NUMBER}). Recipients must opt in with the join code first; not for production.`,
         });
       } else if (approvedSender) {
-        checks.push({ id: 'wa_sender_approval', label: 'Approved WhatsApp Sender', status: 'ok', detail: twilioDetail });
+        checks.push({ id: 'wa_sender_approval', label: 'WhatsApp sender account match', status: 'ok', detail: twilioDetail });
       } else {
         checks.push({
-          id: 'wa_sender_approval', label: 'Approved WhatsApp Sender',
+          id: 'wa_sender_approval', label: 'WhatsApp sender account match',
           status: 'fail',
-          detail: twilioDetail || `${waFromE164} is not an approved WhatsApp Sender on this Twilio account.`,
+          detail: twilioDetail || `${waFromE164} was not found on this Twilio account.`,
         });
-        blockers.push(`whatsapp_from ${waFromE164} does not match an approved Twilio WhatsApp Sender.`);
+        blockers.push(`whatsapp_from ${waFromE164} was not found on this Twilio account.`);
       }
     }
 

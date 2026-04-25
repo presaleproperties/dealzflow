@@ -8,6 +8,16 @@ const corsHeaders = {
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/twilio';
 
+function friendlyTwilioError(code?: unknown, message?: unknown): string | null {
+  const c = code === undefined || code === null ? '' : String(code);
+  if (c === '63016') {
+    return 'WhatsApp free-form messages can only be sent inside the 24-hour customer-service window. Have the contact reply first or use an approved WhatsApp template.';
+  }
+  if (c === '63007') return 'The configured WhatsApp sender is not enabled or approved for this Twilio account.';
+  if (c === '63003') return 'The recipient is not reachable on WhatsApp or has not joined the sandbox.';
+  return typeof message === 'string' && message.trim() ? message : null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -79,11 +89,12 @@ Deno.serve(async (req) => {
         });
         const j = await r.json().catch(() => ({}));
         if (r.ok) {
+          const friendlyError = friendlyTwilioError(j.error_code, j.error_message);
           twilio = {
             sid: j.sid,
             status: j.status,
             error_code: j.error_code,
-            error_message: j.error_message,
+            error_message: friendlyError,
             to: j.to,
             from: j.from,
             num_segments: j.num_segments,
@@ -98,7 +109,7 @@ Deno.serve(async (req) => {
             await admin.from('crm_sms_log').update({
               status: j.status,
               error_code: j.error_code ? String(j.error_code) : null,
-              error_message: j.error_message || null,
+              error_message: friendlyError,
               price: j.price ?? log.price,
               price_unit: j.price_unit ?? log.price_unit,
               updated_at: new Date().toISOString(),
