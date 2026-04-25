@@ -39,6 +39,7 @@ type Row = {
   show?: boolean;
   inputType?: 'text' | 'email';
   multiSelect?: { options: readonly string[]; allowCustom?: boolean };
+  onActivate?: () => void;
 };
 
 export function LeadContactCard({ contact }: { contact: CrmContact }) {
