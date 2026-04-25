@@ -667,6 +667,7 @@ export function LeadsTable({
   const isMobile = useIsMobile();
   const updateContact = useUpdateCrmContact();
   const [smsContact, setSmsContact] = useState<CrmContact | null>(null);
+  const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
