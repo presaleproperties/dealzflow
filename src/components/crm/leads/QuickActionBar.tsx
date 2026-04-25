@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Send, Phone, Mail, MessageSquare, ListTodo, Calendar, StickyNote, Clock, ChevronDown } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Send, Phone, StickyNote, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
