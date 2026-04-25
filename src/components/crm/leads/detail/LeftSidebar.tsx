@@ -14,6 +14,7 @@ import { SourcePicker } from '@/components/crm/leads/SourcePicker';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { SectionHeader, InsightCard, DetailRow } from './shared';
+import { CopyButton } from './CopyButton';
 
 interface Props {
   contact: CrmContact;
@@ -91,25 +92,31 @@ export function LeftSidebar({
         </div>
         <div className="space-y-1.5 pt-3 border-t border-border/60">
           {contact.phone ? (
-            <a href={`tel:${contact.phone.replace(/\D/g, '')}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group">
-              <Phone className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
-              <span className="truncate">{formatPhone(contact.phone)}</span>
-            </a>
+            <div className="flex items-center gap-1 group">
+              <a href={`tel:${contact.phone.replace(/\D/g, '')}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group/link min-w-0 flex-1">
+                <Phone className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary shrink-0" />
+                <span className="truncate">{formatPhone(contact.phone)}</span>
+              </a>
+              <CopyButton value={contact.phone} label="Phone" />
+            </div>
           ) : (
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
               <Phone className="w-3.5 h-3.5 shrink-0" /> <span>No phone</span>
             </div>
           )}
           {contact.email ? (
-            <button
-              type="button"
-              onClick={onEmail}
-              disabled={!onEmail}
-              className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group text-left w-full disabled:cursor-default"
-            >
-              <Mail className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
-              <span className="truncate">{contact.email}</span>
-            </button>
+            <div className="flex items-center gap-1 group">
+              <button
+                type="button"
+                onClick={onEmail}
+                disabled={!onEmail}
+                className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group/link text-left min-w-0 flex-1 disabled:cursor-default"
+              >
+                <Mail className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary shrink-0" />
+                <span className="truncate">{contact.email}</span>
+              </button>
+              <CopyButton value={contact.email} label="Email" />
+            </div>
           ) : (
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
               <Mail className="w-3.5 h-3.5 shrink-0" /> <span>No email</span>

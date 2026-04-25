@@ -117,6 +117,9 @@ export default function CrmEmailWorkspacePage() {
               <div className="flex-1 min-h-0">
                 <ComposerSurface
                   recipients={recipients}
+                  onAddRecipient={(c) =>
+                    setRecipients((prev) => (prev.some((p) => p.id === c.id) ? prev : [...prev, c]))
+                  }
                   onRemoveRecipient={removeRecipient}
                   onClearRecipients={() => setRecipients([])}
                   appliedTemplate={appliedTpl}
