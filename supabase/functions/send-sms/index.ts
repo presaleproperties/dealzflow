@@ -124,31 +124,46 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve sender: explicit override -> per-agent number -> company number -> messaging service SID -> legacy email_settings
+    // Resolve sender. WhatsApp uses dedicated WA sender from settings; SMS uses agent/company number → MS SID.
     let fromNumber: string | null = from_override ? normalizePhone(from_override) : null;
     let messagingServiceSid: string | null = null;
-    if (!fromNumber) {
-      const { data: agentNum } = await supabaseAdmin
-        .from('crm_sms_numbers').select('phone').eq('user_id', user.id).eq('is_active', true).maybeSingle();
-      if (agentNum?.phone) fromNumber = normalizePhone(agentNum.phone);
-    }
-    if (!fromNumber) {
-      const { data: companyNum } = await supabaseAdmin
-        .from('crm_sms_numbers').select('phone').eq('is_company', true).eq('is_active', true).maybeSingle();
-      if (companyNum?.phone) fromNumber = normalizePhone(companyNum.phone);
-    }
-    if (!fromNumber) {
-      messagingServiceSid = settings?.messaging_service_sid || Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') || null;
-    }
-    if (!fromNumber) {
-      // Legacy fallback
-      const { data: legacy } = await supabase
-        .from('crm_email_settings').select('twilio_from_number').eq('user_id', user.id).maybeSingle();
-      if (legacy?.twilio_from_number) fromNumber = normalizePhone(legacy.twilio_from_number);
+
+    if (channel === 'whatsapp') {
+      // WhatsApp sender comes from settings.whatsapp_from or env (Twilio sandbox = +14155238886)
+      if (!fromNumber) {
+        const waFrom = settings?.whatsapp_from || Deno.env.get('TWILIO_WHATSAPP_FROM') || null;
+        if (waFrom) fromNumber = normalizePhone(waFrom);
+      }
+      if (!fromNumber) {
+        messagingServiceSid = settings?.whatsapp_messaging_service_sid || null;
+      }
+    } else {
+      if (!fromNumber) {
+        const { data: agentNum } = await supabaseAdmin
+          .from('crm_sms_numbers').select('phone').eq('user_id', user.id).eq('is_active', true)
+          .in('channel', ['sms', 'both']).maybeSingle();
+        if (agentNum?.phone) fromNumber = normalizePhone(agentNum.phone);
+      }
+      if (!fromNumber) {
+        const { data: companyNum } = await supabaseAdmin
+          .from('crm_sms_numbers').select('phone').eq('is_company', true).eq('is_active', true)
+          .in('channel', ['sms', 'both']).maybeSingle();
+        if (companyNum?.phone) fromNumber = normalizePhone(companyNum.phone);
+      }
+      if (!fromNumber) {
+        messagingServiceSid = settings?.messaging_service_sid || Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') || null;
+      }
+      if (!fromNumber) {
+        const { data: legacy } = await supabase
+          .from('crm_email_settings').select('twilio_from_number').eq('user_id', user.id).maybeSingle();
+        if (legacy?.twilio_from_number) fromNumber = normalizePhone(legacy.twilio_from_number);
+      }
     }
     if (!fromNumber && !messagingServiceSid) {
       return new Response(JSON.stringify({
-        error: 'No Twilio sender configured. Add a number in CRM Settings → SMS, or set a Messaging Service SID.',
+        error: channel === 'whatsapp'
+          ? 'No WhatsApp sender configured. Add a WhatsApp number in Messaging Settings.'
+          : 'No Twilio sender configured. Add a number in CRM Settings → SMS, or set a Messaging Service SID.',
         code: 'NO_SENDER',
       }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
