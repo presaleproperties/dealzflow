@@ -244,6 +244,9 @@ export default function DataManagerSection() {
 
             {/* Source Backfill Tool */}
             <SourceBackfillSection />
+
+            {/* Source Library Manager — merge / rename */}
+            <SourceManagerSection />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
