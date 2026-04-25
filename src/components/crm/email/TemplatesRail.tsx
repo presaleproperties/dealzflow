@@ -39,7 +39,15 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
         if (!hay.includes(q)) return false;
       }
       if (activeTags.size > 0) {
-        const tags = t.__isBridge ? inferTemplateTags(t as any) : ['Other' as TemplateTag];
+        // Bridge templates: infer tags from name/category. Local templates: use category as a tag if it matches.
+        let tags: TemplateTag[];
+        if (t.__isBridge) {
+          tags = inferTemplateTags(t as any);
+        } else {
+          const cat = (t.category ?? '').trim();
+          const matched = TEMPLATE_TAG_ORDER.find((tag) => tag.toLowerCase() === cat.toLowerCase());
+          tags = matched ? [matched] : ['Other' as TemplateTag];
+        }
         if (!tags.some((tag) => activeTags.has(tag))) return false;
       }
       return true;
