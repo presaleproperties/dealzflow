@@ -13,6 +13,7 @@ import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
 import { LeadsTable } from '@/components/crm/leads/LeadsTable';
+import { ManagePipelinesDialog } from '@/components/crm/leads/ManagePipelinesDialog';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BulkActionsBar } from '@/components/crm/leads/BulkActionsBar';
 import { ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
@@ -74,6 +75,7 @@ export default function CrmLeadsPage() {
   const reorderSegments = useReorderCrmLeadSegments();
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
+  const [managePipelinesOpen, setManagePipelinesOpen] = useState(false);
 
   // Determine active view
   const activeView = useMemo(() => {
@@ -447,6 +449,16 @@ export default function CrmLeadsPage() {
                             );
                           })}
                           {provided.placeholder}
+                          {!reorderMode && (
+                            <button
+                              onClick={() => setManagePipelinesOpen(true)}
+                              className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors ml-1"
+                              title="Add or manage pipelines"
+                              aria-label="Add or manage pipelines"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </Droppable>
@@ -454,6 +466,15 @@ export default function CrmLeadsPage() {
                   <ScrollBar orientation="horizontal" />
                 </ScrollArea>
               </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hidden sm:inline-flex h-8 px-2 text-[11px] flex-shrink-0"
+                onClick={() => setManagePipelinesOpen(true)}
+                title="Add, edit, or remove pipelines"
+              >
+                Manage
+              </Button>
               <Button
                 size="sm"
                 variant={reorderMode ? 'default' : 'ghost'}
@@ -609,6 +630,11 @@ export default function CrmLeadsPage() {
       </div>
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} />
+      <ManagePipelinesDialog
+        open={managePipelinesOpen}
+        onClose={() => setManagePipelinesOpen(false)}
+        segmentCounts={segmentCounts}
+      />
     </>
   );
 }
