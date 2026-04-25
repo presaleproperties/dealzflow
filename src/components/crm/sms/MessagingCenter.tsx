@@ -12,6 +12,7 @@ import {
   Search, Send, Plus, MoreHorizontal, Phone, Video, Info, Smile,
   Paperclip, Image as ImageIcon, Sparkles, ArrowLeft, MessageSquare,
   CheckCircle2, Clock, AlertCircle, X, ChevronRight,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -81,6 +82,8 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   const [newChatContact, setNewChatContact] = useState<CrmContact | null>(null);
   const [newChatPhone, setNewChatPhone] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -235,19 +238,25 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
 
   const channelTemplates = templates.filter(t => (t.channel || 'sms') === channel && t.is_active);
 
-  const showLeftPane = !isMobile || (!active && !showNewChat);
+  const hasContactDetails = !!(active?.contact || (showNewChat && newChatContact));
+  const showLeftPane = isMobile ? (!active && !showNewChat) : !leftCollapsed;
   const showCenterPane = !isMobile || active || showNewChat;
-  const showRightPane = !isMobile && (active?.contact || (showNewChat && newChatContact));
+  const showRightPane = !isMobile && hasContactDetails && !rightCollapsed;
+
+  // Build dynamic grid template based on which panes are visible
+  const gridCols = !isMobile
+    ? [showLeftPane ? '340px' : null, '1fr', showRightPane ? '320px' : null]
+        .filter(Boolean)
+        .join('_')
+    : null;
 
   // ============== Render ==============
 
   return (
-    <div className="flex flex-col h-[calc(100vh-220px)] min-h-[560px] rounded-2xl overflow-hidden border border-border bg-background">
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[620px] rounded-2xl overflow-hidden border border-border bg-background shadow-sm">
       <div
-        className={cn(
-          'grid h-full',
-          showRightPane ? 'md:grid-cols-[320px_1fr_300px]' : 'md:grid-cols-[320px_1fr]',
-        )}
+        className="grid h-full grid-cols-1"
+        style={!isMobile ? { gridTemplateColumns: gridCols!.replace(/_/g, ' ') } : undefined}
       >
         {/* ============ LEFT PANE: Threads ============ */}
         {showLeftPane && (
@@ -383,7 +392,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
               <>
                 {/* Conversation header */}
                 <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 bg-background/80 backdrop-blur">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     {isMobile && (
                       <Button
                         size="icon"
@@ -394,7 +403,24 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                         <ArrowLeft className="w-4 h-4" />
                       </Button>
                     )}
-                    <Avatar className="h-9 w-9 ring-2 ring-background">
+                    {!isMobile && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground -ml-1"
+                              onClick={() => setLeftCollapsed(v => !v)}
+                            >
+                              {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{leftCollapsed ? 'Show conversations' : 'Hide conversations'}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    <Avatar className="h-9 w-9 ring-2 ring-background ml-1">
                       <AvatarFallback
                         className={cn(
                           'text-xs font-semibold',
@@ -441,6 +467,21 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Open lead</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {!isMobile && hasContactDetails && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                              onClick={() => setRightCollapsed(v => !v)}
+                            >
+                              {rightCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{rightCollapsed ? 'Show details' : 'Hide details'}</TooltipContent>
                         </Tooltip>
                       )}
                       <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
