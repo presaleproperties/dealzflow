@@ -358,8 +358,9 @@ export function ComposerSurface({
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-card">
-      {/* Recipient bar */}
+      {/* Recipient bar — width matches the body composer (max-w-[760px]) */}
       <div className="px-6 pt-4 pb-3 border-b border-border/70 bg-card shrink-0">
+        <div className="max-w-[760px] mx-auto">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">New Message</h2>
           <button
@@ -474,10 +475,12 @@ export function ComposerSurface({
             {unreachable} selected lead{unreachable === 1 ? '' : 's'} ha{unreachable === 1 ? 's' : 've'} no email and will be skipped
           </div>
         )}
+        </div>
       </div>
 
-      {/* Mode tabs */}
-      <div className="px-6 py-2 border-b border-border/70 bg-card flex items-center justify-between gap-2 shrink-0">
+      {/* Mode tabs — aligned to body width */}
+      <div className="px-6 py-2 border-b border-border/70 bg-card shrink-0">
+        <div className="max-w-[760px] mx-auto flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {(() => {
             const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
@@ -524,6 +527,7 @@ export function ComposerSurface({
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Body */}

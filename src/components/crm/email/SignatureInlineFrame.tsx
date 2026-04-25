@@ -39,13 +39,20 @@ export function SignatureInlineFrame({ html }: { html: string }) {
       color:hsl(0 0% 4%);
       background:transparent;
     }
-    /* Flush with editor text — no extra leading/trailing whitespace.
-       The composer controls the gap between message and signature. */
+    /* Flush with editor text — collapse vertical whitespace at the seam.
+       The composer keeps a one-line gap via the editor's last paragraph;
+       the signature itself adds zero leading/trailing space. */
+    body{padding-top:0 !important;padding-bottom:0 !important}
     body > *:first-child{margin-top:0 !important;padding-top:0 !important}
     body > *:last-child{margin-bottom:0 !important;padding-bottom:0 !important}
+    /* Hide empty leading/trailing paragraphs that some signatures ship with */
+    body > p:first-child:empty,
+    body > p:last-child:empty,
+    body > br:first-child,
+    body > br:last-child{display:none !important}
     p{margin:1.1428571em 0}
     a{color:hsl(217 91% 50%);text-decoration:underline}
-    img{max-width:100%;height:auto}
+    img{max-width:100%;height:auto;display:block}
     table{border-collapse:collapse}
     td,th{vertical-align:top}
   </style></head><body>${html}</body></html>`;
