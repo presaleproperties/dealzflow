@@ -803,16 +803,6 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
   const hasMore = isStructured && parsed.fields.length > 4;
   const isVirtual = note.id.startsWith('email-');
   const isClickableEmail = isVirtual && !!onOpenEmail;
-  const meta = metaForNote(note);
-  const Icon = meta.icon;
-  const ts = noteTime(note);
-  const time = format(parseISO(ts), 'h:mm a');
-  const dateLabel = format(parseISO(ts), 'MMM d, yyyy');
-  const { parsed, isStructured } = formatNoteContent(note.content);
-  const [expanded, setExpanded] = useState(false);
-  const visibleFields = isStructured && !expanded ? parsed.fields.slice(0, 4) : parsed.fields;
-  const hasMore = isStructured && parsed.fields.length > 4;
-  const isVirtual = note.id.startsWith('email-');
 
   if (editingId === note.id) {
     return (
