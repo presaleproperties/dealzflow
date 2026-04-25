@@ -312,13 +312,42 @@ export default function CrmLeadsPage() {
                   </Link>
                 </div>
                 <button
-                  onClick={() => setFiltersExpanded(true)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-95 transition-all"
-                  aria-label="Search & filter"
+                  onClick={() => setMobileSearchOpen(v => !v)}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                    mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+                  aria-expanded={mobileSearchOpen}
                 >
                   <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
                 </button>
               </div>
+
+              {/* Inline search input — filters list as you type */}
+              {mobileSearchOpen && (
+                <div className="px-4 pb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
+                    <input
+                      type="search"
+                      autoFocus
+                      value={search}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      placeholder="Search name, email, phone…"
+                      className="w-full h-10 pl-9 pr-9 rounded-lg bg-muted/50 border border-border/60 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/60 focus:border-primary/60"
+                    />
+                    {search && (
+                      <button
+                        onClick={() => handleSearchChange('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-4 h-4" strokeWidth={1.8} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Filter chip row — minimal text-forward */}
               <div className="overflow-x-auto scrollbar-hide">
