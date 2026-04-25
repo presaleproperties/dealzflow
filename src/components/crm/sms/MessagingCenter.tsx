@@ -238,19 +238,25 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
 
   const channelTemplates = templates.filter(t => (t.channel || 'sms') === channel && t.is_active);
 
-  const showLeftPane = !isMobile || (!active && !showNewChat);
+  const hasContactDetails = !!(active?.contact || (showNewChat && newChatContact));
+  const showLeftPane = isMobile ? (!active && !showNewChat) : !leftCollapsed;
   const showCenterPane = !isMobile || active || showNewChat;
-  const showRightPane = !isMobile && (active?.contact || (showNewChat && newChatContact));
+  const showRightPane = !isMobile && hasContactDetails && !rightCollapsed;
+
+  // Build dynamic grid template based on which panes are visible
+  const gridCols = !isMobile
+    ? [showLeftPane ? '340px' : null, '1fr', showRightPane ? '320px' : null]
+        .filter(Boolean)
+        .join('_')
+    : null;
 
   // ============== Render ==============
 
   return (
-    <div className="flex flex-col h-[calc(100vh-220px)] min-h-[560px] rounded-2xl overflow-hidden border border-border bg-background">
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[620px] rounded-2xl overflow-hidden border border-border bg-background shadow-sm">
       <div
-        className={cn(
-          'grid h-full',
-          showRightPane ? 'md:grid-cols-[320px_1fr_300px]' : 'md:grid-cols-[320px_1fr]',
-        )}
+        className="grid h-full grid-cols-1"
+        style={!isMobile ? { gridTemplateColumns: gridCols!.replace(/_/g, ' ') } : undefined}
       >
         {/* ============ LEFT PANE: Threads ============ */}
         {showLeftPane && (
