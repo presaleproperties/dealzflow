@@ -540,14 +540,14 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     const emailNotes: CrmNote[] = (emailLog ?? []).map((e: any) => {
       const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
       const subject = e.subject || '(no subject)';
-      const preview = (e.body_text || e.body_html || e.body || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
       const noteId = `email-${e.id}`;
       byId.set(noteId, e as EmailLogRow);
+      // Content kept minimal — the timeline renders these via EmailNoteCard.
       return {
         id: noteId,
         contact_id: contact.id,
         user_id: e.sent_by || '',
-        content: `Subject: ${subject}\nDirection: ${direction}${e.from_email ? `\nFrom: ${e.from_email}` : ''}${e.to_email ? `\nTo: ${e.to_email}` : ''}${preview ? `\n\n${preview}` : ''}`,
+        content: `${direction} email: ${subject}`,
         note_type: 'email',
         is_pinned: false,
         created_at: e.sent_at || e.created_at || new Date().toISOString(),
