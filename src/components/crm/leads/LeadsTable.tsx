@@ -490,8 +490,16 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   const score = (contact as any).lead_score as number | null | undefined;
   const hasScore = typeof score === 'number';
 
-  // Editorial temperature label — HOT / WARM / COLD
-  const tier = !hasScore ? null : score! >= 60 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
+  // Score tier — consistent thresholds: HOT ≥70, WARM ≥40, COLD <40
+  const tier = !hasScore ? null : score! >= 70 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
+  // Badge styling — gold for HOT (premium accent), neutral surfaces for WARM/COLD with readable contrast in both themes
+  const badgeClass = tier === 'HOT'
+    ? 'bg-primary text-primary-foreground border border-primary/60'
+    : tier === 'WARM'
+      ? 'bg-muted text-foreground border border-border'
+      : tier === 'COLD'
+        ? 'bg-muted/50 text-muted-foreground border border-border/60'
+        : 'bg-transparent text-muted-foreground/60 border border-border/40';
 
   // "New" / never-touched indicator — gold dot
   const isNew = !contact.last_touch_at;
@@ -551,22 +559,17 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
           )}
         </div>
 
-        {/* Right column: temperature label + relative time */}
+        {/* Right column: colored score badge + relative time */}
         <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[60px]">
-          {tier ? (
-            <span
-              className={`text-[10px] font-bold uppercase tracking-[0.14em] tabular-nums ${
-                tier === 'HOT' ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              {tier}
-              <span className="ml-1.5 text-[11px] font-semibold text-muted-foreground/70">
-                {score}
-              </span>
-            </span>
-          ) : (
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50">—</span>
-          )}
+          <span
+            aria-label={hasScore ? `Lead score ${score}, ${tier?.toLowerCase()}` : 'No score'}
+            className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-bold uppercase tracking-[0.12em] tabular-nums ${badgeClass}`}
+          >
+            {tier ?? '—'}
+            {hasScore && (
+              <span className="text-[11px] font-semibold opacity-90">{score}</span>
+            )}
+          </span>
           {relTime && (
             <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap">{relTime}</span>
           )}
