@@ -360,7 +360,7 @@ function IMessageList({ messages, highlight, threadState, onReply, onDeleteMessa
 // ════════════════════════════════════════════════════════════════════
 // Single iMessage bubble with SVG tail
 // ════════════════════════════════════════════════════════════════════
-import { useState } from 'react';
+
 
 interface BubbleProps {
   m: SmsLogRow;
