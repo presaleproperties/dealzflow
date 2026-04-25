@@ -37,6 +37,7 @@ import ApiDocsPage from "./pages/ApiDocsPage";
 import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import CrmPipelinePage from "./pages/crm/CrmPipelinePage";
 import CrmEmailPage from "./pages/crm/CrmEmailPage";
+import CrmEmailWorkspacePage from "./pages/crm/CrmEmailWorkspacePage";
 
 import CrmMarketingHubPage from "./pages/crm/CrmMarketingHubPage";
 import CrmEmailBuilderPage from "./pages/crm/CrmEmailBuilderPage";
@@ -164,7 +165,8 @@ const App = () => (
                   <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/email/legacy" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                   <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
