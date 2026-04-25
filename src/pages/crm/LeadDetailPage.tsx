@@ -767,6 +767,13 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
       <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-6">
         <ShowingsTab contactId={contact.id} showings={showings} />
       </TabsContent>
+
+      <EmailPreviewDialog
+        email={previewEmail}
+        open={!!previewEmail}
+        onOpenChange={(o) => !o && setPreviewEmail(null)}
+        contactEmail={contact.email}
+      />
     </Tabs>
   );
 }
