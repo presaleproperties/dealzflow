@@ -5,9 +5,29 @@ import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
  * Check if a contact matches a segment's filter_config.
  * Shared between Pipeline Kanban and Leads page for consistent behavior.
  */
+/**
+ * Matches a contact against a segment filter.
+ *
+ * Supports two filter "shapes":
+ *
+ *  Strict (legacy):
+ *    { status: [...], lead_type: [...], source: [...], tags: [...], contact_type, assigned_to }
+ *    — exact, case-sensitive matching. AND across keys.
+ *
+ *  Loose / case-insensitive (new):
+ *    { tags_any_ci: [...], lead_type_ci: [...] }
+ *    — case-insensitive, OR across the two keys (a contact matches if EITHER its
+ *      lead_type/lead_types OR its tags overlap any of the values, ignoring case).
+ *      Used by the seeded Pre-Sale 🔥 / Re-Sale 🔥 / Commercial chips because the
+ *      imported data is inconsistent ('Pre-Sale' as lead_type, 'presale' as a tag).
+ *
+ * Strict and loose can coexist on the same filter — strict keys are AND-applied
+ * first, then the loose keys must also pass.
+ */
 export function contactMatchesSegment(contact: CrmContact, filter: Record<string, unknown>): boolean {
   if (!filter || Object.keys(filter).length === 0) return true;
 
+  // ── Strict keys ──
   if (filter.status && Array.isArray(filter.status) && (filter.status as string[]).length > 0) {
     if (!(filter.status as string[]).includes(contact.status ?? '')) return false;
   }
@@ -31,6 +51,26 @@ export function contactMatchesSegment(contact: CrmContact, filter: Record<string
   if (filter.assigned_to && typeof filter.assigned_to === 'string') {
     if (contact.assigned_to !== filter.assigned_to) return false;
   }
+
+  // ── Loose / case-insensitive keys (OR'd together) ──
+  const looseTagsCi = (filter.tags_any_ci as string[] | undefined) ?? [];
+  const looseTypesCi = (filter.lead_type_ci as string[] | undefined) ?? [];
+  if (looseTagsCi.length > 0 || looseTypesCi.length > 0) {
+    const wantedTags = looseTagsCi.map(t => t.toLowerCase());
+    const wantedTypes = looseTypesCi.map(t => t.toLowerCase());
+
+    const contactTags = (contact.tags ?? []).map(t => (t ?? '').toLowerCase());
+    const rawContactTypes: string[] = ((contact as any).lead_types as string[] | undefined)?.length
+      ? ((contact as any).lead_types as string[])
+      : contact.lead_type ? [contact.lead_type] : [];
+    const contactTypesCi = rawContactTypes.map(t => (t ?? '').toLowerCase());
+
+    const tagHit = wantedTags.length > 0 && wantedTags.some(t => contactTags.includes(t));
+    const typeHit = wantedTypes.length > 0 && wantedTypes.some(t => contactTypesCi.includes(t));
+
+    if (!tagHit && !typeHit) return false;
+  }
+
   return true;
 }
 
