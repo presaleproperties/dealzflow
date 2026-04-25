@@ -5,13 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Pencil, Trash2, AlertCircle, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertCircle, Check, X, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import {
   useCrmLeadSegments,
   useCreateLeadSegment,
   useUpdateLeadSegment,
   useDeleteLeadSegment,
+  useReorderCrmLeadSegments,
   type LeadSegment,
 } from '@/hooks/useCrmLeadSegments';
 import { LEAD_STATUSES, LEAD_TYPES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
@@ -169,6 +171,7 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
   const createMut = useCreateLeadSegment();
   const updateMut = useUpdateLeadSegment();
   const deleteMut = useDeleteLeadSegment();
+  const reorderMut = useReorderCrmLeadSegments();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -270,93 +273,134 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
           </DialogHeader>
 
           <ScrollArea className="flex-1 -mx-6 px-6">
-            <div className="space-y-2 py-2">
-              {sortedSegments.map(s => {
-                const count = segmentCounts[s.id] ?? 0;
-                const canDelete = count === 0;
-                const isEditing = editingId === s.id;
-
-                if (isEditing) {
-                  return (
-                    <PipelineEditor
-                      key={s.id}
-                      draft={draft}
-                      setDraft={setDraft}
-                      onSave={saveEdit}
-                      onCancel={cancelEditor}
-                      saving={updateMut.isPending}
-                      isNew={false}
-                    />
-                  );
-                }
-
-                const isAllLeads = !s.filter_config || Object.keys(s.filter_config).length === 0;
-
-                return (
+            <DragDropContext
+              onDragEnd={(result: DropResult) => {
+                if (!result.destination || result.destination.index === result.source.index) return;
+                const next = Array.from(sortedSegments);
+                const [moved] = next.splice(result.source.index, 1);
+                next.splice(result.destination.index, 0, moved);
+                reorderMut.mutate(next.map(s => s.id));
+              }}
+            >
+              <Droppable droppableId="manage-pipelines-list">
+                {(dropProvided) => (
                   <div
-                    key={s.id}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border/40 hover:border-border transition-colors group"
+                    ref={dropProvided.innerRef}
+                    {...dropProvided.droppableProps}
+                    className="space-y-2 py-2"
                   >
-                    <div
-                      className="w-2 h-8 rounded-full shrink-0"
-                      style={{ background: s.color }}
-                    />
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {s.emoji && <span className="text-base">{s.emoji}</span>}
-                      <span className="font-medium text-sm truncate">{s.name}</span>
-                      <Badge variant="secondary" className="text-[10px] tabular-nums">
-                        {count.toLocaleString()}
-                      </Badge>
-                      {isAllLeads && (
-                        <Badge variant="outline" className="text-[9px] uppercase tracking-wide">System</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => startEdit(s)}
-                        title="Edit pipeline"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className={cn(
-                          'h-7 w-7',
-                          canDelete && !isAllLeads ? 'text-destructive hover:text-destructive' : 'opacity-50',
-                        )}
-                        onClick={() => !isAllLeads && askDelete(s)}
-                        disabled={isAllLeads}
-                        title={
-                          isAllLeads
-                            ? 'System pipeline — cannot delete'
-                            : canDelete
-                              ? 'Delete pipeline'
-                              : `Move ${count} lead${count === 1 ? '' : 's'} first`
-                        }
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
+                    {sortedSegments.map((s, index) => {
+                      const count = segmentCounts[s.id] ?? 0;
+                      const canDelete = count === 0;
+                      const isEditing = editingId === s.id;
 
-              {creating && (
-                <PipelineEditor
-                  draft={draft}
-                  setDraft={setDraft}
-                  onSave={saveCreate}
-                  onCancel={cancelEditor}
-                  saving={createMut.isPending}
-                  isNew
-                />
-              )}
-            </div>
+                      if (isEditing) {
+                        return (
+                          <PipelineEditor
+                            key={s.id}
+                            draft={draft}
+                            setDraft={setDraft}
+                            onSave={saveEdit}
+                            onCancel={cancelEditor}
+                            saving={updateMut.isPending}
+                            isNew={false}
+                          />
+                        );
+                      }
+
+                      const isAllLeads = !s.filter_config || Object.keys(s.filter_config).length === 0;
+                      const dragDisabled = creating || editingId !== null;
+
+                      return (
+                        <Draggable key={s.id} draggableId={s.id} index={index} isDragDisabled={dragDisabled}>
+                          {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              className={cn(
+                                'flex items-center gap-2 px-2 py-2.5 rounded-lg border border-border/40 hover:border-border transition-colors group bg-background',
+                                dragSnapshot.isDragging && 'border-primary shadow-lg',
+                              )}
+                            >
+                              <button
+                                {...dragProvided.dragHandleProps}
+                                className={cn(
+                                  'flex items-center justify-center w-6 h-8 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing shrink-0',
+                                  dragDisabled && 'opacity-30 cursor-not-allowed',
+                                )}
+                                title="Drag to reorder"
+                                aria-label="Drag to reorder"
+                                disabled={dragDisabled}
+                              >
+                                <GripVertical className="w-4 h-4" />
+                              </button>
+                              <div
+                                className="w-2 h-8 rounded-full shrink-0"
+                                style={{ background: s.color }}
+                              />
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {s.emoji && <span className="text-base">{s.emoji}</span>}
+                                <span className="font-medium text-sm truncate">{s.name}</span>
+                                <Badge variant="secondary" className="text-[10px] tabular-nums">
+                                  {count.toLocaleString()}
+                                </Badge>
+                                {isAllLeads && (
+                                  <Badge variant="outline" className="text-[9px] uppercase tracking-wide">System</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  onClick={() => startEdit(s)}
+                                  title="Edit pipeline"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={cn(
+                                    'h-7 w-7',
+                                    canDelete && !isAllLeads ? 'text-destructive hover:text-destructive' : 'opacity-50',
+                                  )}
+                                  onClick={() => !isAllLeads && askDelete(s)}
+                                  disabled={isAllLeads}
+                                  title={
+                                    isAllLeads
+                                      ? 'System pipeline — cannot delete'
+                                      : canDelete
+                                        ? 'Delete pipeline'
+                                        : `Move ${count} lead${count === 1 ? '' : 's'} first`
+                                  }
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {dropProvided.placeholder}
+
+                    {creating && (
+                      <PipelineEditor
+                        draft={draft}
+                        setDraft={setDraft}
+                        onSave={saveCreate}
+                        onCancel={cancelEditor}
+                        saving={createMut.isPending}
+                        isNew
+                      />
+                    )}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </ScrollArea>
+
 
           <DialogFooter className="border-t border-border/40 pt-4 sm:justify-between">
             <Button
