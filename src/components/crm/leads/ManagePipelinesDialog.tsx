@@ -171,6 +171,7 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
   const createMut = useCreateLeadSegment();
   const updateMut = useUpdateLeadSegment();
   const deleteMut = useDeleteLeadSegment();
+  const reorderMut = useReorderCrmLeadSegments();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
