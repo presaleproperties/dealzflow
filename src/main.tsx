@@ -5,21 +5,32 @@ import App from "./App.tsx";
 import "./index.css";
 
 // Kill any service workers that previously cached the old CRM build.
-// One-time evict — every existing tab/install will unregister its SW on
-// next load and force a clean fetch. Push notifications via sw-push.js are
-// temporarily disabled; they'll be re-wired through a clean registration flow.
+// If we find a stale SW, unregister + nuke caches + force ONE hard reload
+// so the user lands on the fresh build immediately (no second flash).
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  navigator.serviceWorker.getRegistrations().then((regs) => {
-    for (const reg of regs) {
-      reg.unregister().catch(() => {});
-    }
-  }).catch(() => {});
+  const RELOAD_FLAG = "__sw_evicted_v1";
+  (async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      const hadSW = regs.length > 0;
 
-  if (typeof caches !== "undefined") {
-    caches.keys().then((keys) => {
-      for (const k of keys) caches.delete(k).catch(() => {});
-    }).catch(() => {});
-  }
+      await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k).catch(() => {})));
+      }
+
+      // If we just evicted a stale SW for the first time, reload once so
+      // the next paint comes from the network — not the killed cache.
+      if (hadSW && !sessionStorage.getItem(RELOAD_FLAG)) {
+        sessionStorage.setItem(RELOAD_FLAG, "1");
+        window.location.reload();
+      }
+    } catch {
+      /* ignore */
+    }
+  })();
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
