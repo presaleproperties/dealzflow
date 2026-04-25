@@ -237,10 +237,14 @@ function LeftSidebar({
             </div>
           )}
           {contact.email ? (
-            <a href={`mailto:${contact.email}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group">
+            <button
+              type="button"
+              onClick={() => setShowEmail(true)}
+              className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group text-left w-full"
+            >
               <Mail className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
               <span className="truncate">{contact.email}</span>
-            </a>
+            </button>
           ) : (
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
               <Mail className="w-3.5 h-3.5 shrink-0" /> <span>No email</span>
