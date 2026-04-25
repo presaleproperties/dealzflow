@@ -28,7 +28,7 @@ export default function CrmEmailWorkspacePage() {
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
       {/* 3-pane workspace */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[260px_1fr_320px] min-h-0 rounded-xl border border-border overflow-hidden bg-card">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr_380px] min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm">
         {/* Left: templates (desktop) / drawer (mobile) */}
         <div className="hidden lg:block min-h-0">
           <TemplatesRail
@@ -62,7 +62,7 @@ export default function CrmEmailWorkspacePage() {
                   Recipients ({recipients.length})
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="p-0 w-[340px]">
+              <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
                 <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
               </SheetContent>
             </Sheet>
