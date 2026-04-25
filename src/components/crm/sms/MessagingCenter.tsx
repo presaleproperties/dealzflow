@@ -9,10 +9,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
+  ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
   Search, Send, Plus, MoreHorizontal, Phone, Video, Info, Smile,
   Paperclip, Image as ImageIcon, Sparkles, ArrowLeft, MessageSquare,
   CheckCircle2, Clock, AlertCircle, X, ChevronRight,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
+  Pin, PinOff, Mail, BellOff, Trash2,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -22,6 +26,7 @@ import {
 } from '@/hooks/useSms';
 import { useCrmContacts, type CrmContact } from '@/hooks/useCrmContacts';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useThreadPins } from '@/hooks/useThreadPins';
 
 interface Thread {
   key: string;
