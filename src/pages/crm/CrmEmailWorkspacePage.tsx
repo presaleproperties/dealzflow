@@ -62,7 +62,7 @@ export default function CrmEmailWorkspacePage() {
                   Recipients ({recipients.length})
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="p-0 w-[340px]">
+              <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
                 <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
               </SheetContent>
             </Sheet>
