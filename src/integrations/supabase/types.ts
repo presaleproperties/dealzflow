@@ -4281,6 +4281,7 @@ export type Database = {
           usage_count: number
         }[]
       }
+      crm_funnel_snapshot: { Args: never; Returns: Json }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
