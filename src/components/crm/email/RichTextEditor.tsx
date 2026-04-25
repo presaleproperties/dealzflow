@@ -104,8 +104,9 @@ export function RichTextEditor({
   const btnClass = 'h-8 w-8 p-0';
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-background">
-      <div className="flex items-center gap-0.5 p-1.5 border-b border-border bg-muted/30">
+    <div className="flex flex-col h-full min-h-[420px] bg-background">
+      {/* Toolbar — sits flush against the composer header above (no border-top, no rounded corners) */}
+      <div className="flex items-center gap-0.5 px-1 py-1.5 border-b border-border/60 bg-muted/20">
         <Button type="button" variant={editor.isActive('bold') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBold().run()}>
           <Bold className="w-4 h-4" />
         </Button>
@@ -128,11 +129,10 @@ export function RichTextEditor({
           </>
         )}
       </div>
-      {/* Single scrollable area: typed content + signature live in one box. */}
+      {/* Single scrollable area — fills remaining space so body feels expansive, not boxed */}
       <div
         ref={scrollRef}
-        className="overflow-y-auto"
-        style={{ maxHeight: maxBodyHeight }}
+        className="flex-1 min-h-0 overflow-y-auto"
       >
         <EditorContent editor={editor} />
         {footerSlot}
