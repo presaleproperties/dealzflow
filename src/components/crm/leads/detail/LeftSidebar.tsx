@@ -14,6 +14,7 @@ import { SourcePicker } from '@/components/crm/leads/SourcePicker';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { SectionHeader, InsightCard, DetailRow } from './shared';
+import { CopyButton } from './CopyButton';
 
 interface Props {
   contact: CrmContact;
