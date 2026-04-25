@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Phone, Mail, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatContactName, formatCurrency } from '@/lib/format';
+import { formatContactName, formatCurrency, formatPhone } from '@/lib/format';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
@@ -91,9 +91,9 @@ export function LeftSidebar({
         </div>
         <div className="space-y-1.5 pt-3 border-t border-border/60">
           {contact.phone ? (
-            <a href={`tel:${contact.phone}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group">
+            <a href={`tel:${contact.phone.replace(/\D/g, '')}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group">
               <Phone className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
-              <span className="truncate">{contact.phone}</span>
+              <span className="truncate">{formatPhone(contact.phone)}</span>
             </a>
           ) : (
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
