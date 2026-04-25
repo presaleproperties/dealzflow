@@ -80,7 +80,7 @@ function LeadTopBar({
   onShowing,
 }: {
   contact: CrmContact;
-  navInfo: { index: number; total: number } | null;
+  navInfo: { index: number; total: number; prev: CrmContact | null; next: CrmContact | null; prevName: string | null; nextName: string | null } | null;
   onNavigate: (dir: 'prev' | 'next') => void;
   onTask: () => void;
   onShowing: () => void;
@@ -118,16 +118,32 @@ function LeadTopBar({
           <kbd className="ml-1 hidden md:inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-primary-foreground/20 text-primary-foreground/90 border border-primary-foreground/20">B</kbd>
         </Button>
 
-        {navInfo && (
+        {navInfo && navInfo.total > 1 && (
           <>
             <div className="h-5 w-px bg-border mx-1" />
-            <button onClick={() => onNavigate('prev')} disabled={navInfo.index <= 0} className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors">
+            <button
+              onClick={() => onNavigate('prev')}
+              disabled={!navInfo.prev}
+              title={navInfo.prev ? `Previous: ${navInfo.prevName} (J or ←)` : 'Start of list'}
+              aria-label={navInfo.prev ? `Previous lead: ${navInfo.prevName}` : 'Previous lead (none)'}
+              className="p-1.5 rounded text-foreground hover:bg-muted active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:cursor-not-allowed disabled:active:scale-100 transition-colors"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-xs text-muted-foreground tabular-nums px-1">
+            <span
+              className="text-xs text-muted-foreground tabular-nums px-1 select-none"
+              aria-live="polite"
+              aria-label={`Lead ${navInfo.index + 1} of ${navInfo.total}`}
+            >
               {navInfo.index + 1} / {navInfo.total}
             </span>
-            <button onClick={() => onNavigate('next')} disabled={navInfo.index >= navInfo.total - 1} className="p-1.5 rounded hover:bg-muted disabled:opacity-30 transition-colors">
+            <button
+              onClick={() => onNavigate('next')}
+              disabled={!navInfo.next}
+              title={navInfo.next ? `Next: ${navInfo.nextName} (K or →)` : 'End of list'}
+              aria-label={navInfo.next ? `Next lead: ${navInfo.nextName}` : 'Next lead (none)'}
+              className="p-1.5 rounded text-foreground hover:bg-muted active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:cursor-not-allowed disabled:active:scale-100 transition-colors"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </>
@@ -1194,14 +1210,35 @@ export default function LeadDetailPage() {
     if (!id || allContacts.length === 0) return null;
     const idx = allContacts.findIndex(c => c.id === id);
     if (idx === -1) return null;
-    return { index: idx, total: allContacts.length };
+    const prev = idx > 0 ? allContacts[idx - 1] : null;
+    const next = idx < allContacts.length - 1 ? allContacts[idx + 1] : null;
+    return {
+      index: idx,
+      total: allContacts.length,
+      prev,
+      next,
+      prevName: prev ? formatContactName(prev.first_name, prev.last_name) || 'Unnamed' : null,
+      nextName: next ? formatContactName(next.first_name, next.last_name) || 'Unnamed' : null,
+    };
   }, [id, allContacts]);
+
+  // Persist last-visited lead id + index so refresh / back-nav restores position.
+  // Stored in sessionStorage to keep it scoped to the current browsing session.
+  useEffect(() => {
+    if (!id || !navInfo) return;
+    try {
+      sessionStorage.setItem(
+        'crm:lastLead',
+        JSON.stringify({ id, index: navInfo.index, total: navInfo.total, at: Date.now() }),
+      );
+    } catch { /* storage may be unavailable */ }
+  }, [id, navInfo]);
 
   const handleNavigate = (dir: 'prev' | 'next') => {
     if (!navInfo) return;
-    const newIdx = dir === 'prev' ? navInfo.index - 1 : navInfo.index + 1;
-    if (newIdx < 0 || newIdx >= navInfo.total) return;
-    navigate(`/crm/leads/${allContacts[newIdx].id}`);
+    const target = dir === 'prev' ? navInfo.prev : navInfo.next;
+    if (!target) return;
+    navigate(`/crm/leads/${target.id}`);
   };
 
   // ─── Keyboard shortcuts (mobile + desktop) ───
@@ -1377,20 +1414,29 @@ export default function LeadDetailPage() {
             </div>
 
             {navInfo && navInfo.total > 1 && (
-              <div className="flex items-center gap-0.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => handleNavigate('prev')}
-                  disabled={navInfo.index <= 0}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
-                  aria-label="Previous lead"
+                  disabled={!navInfo.prev}
+                  title={navInfo.prev ? `Previous: ${navInfo.prevName}` : 'Start of list'}
+                  aria-label={navInfo.prev ? `Previous lead: ${navInfo.prevName}` : 'Previous lead (none)'}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:active:scale-100 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronLeft className="w-[18px] h-[18px]" />
                 </button>
+                <span
+                  className="text-[10px] font-bold tabular-nums text-muted-foreground px-1.5 select-none"
+                  aria-live="polite"
+                  aria-label={`Lead ${navInfo.index + 1} of ${navInfo.total}`}
+                >
+                  {navInfo.index + 1}<span className="opacity-40 mx-0.5">/</span>{navInfo.total}
+                </span>
                 <button
                   onClick={() => handleNavigate('next')}
-                  disabled={navInfo.index >= navInfo.total - 1}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
-                  aria-label="Next lead"
+                  disabled={!navInfo.next}
+                  title={navInfo.next ? `Next: ${navInfo.nextName}` : 'End of list'}
+                  aria-label={navInfo.next ? `Next lead: ${navInfo.nextName}` : 'Next lead (none)'}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:active:scale-100 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronRight className="w-[18px] h-[18px]" />
                 </button>
