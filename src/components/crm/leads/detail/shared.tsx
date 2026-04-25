@@ -27,7 +27,7 @@ export function InsightCard({
 }
 
 export function DetailRow({
-  label, value, href, field, contactId, type, options, displayFormatter,
+  label, value, href, field, contactId, type, options, displayFormatter, copyable,
 }: {
   label: string;
   value: string | null | undefined;
@@ -37,12 +37,16 @@ export function DetailRow({
   type?: 'text' | 'email' | 'select';
   options?: readonly string[];
   displayFormatter?: (value: string) => string;
+  /** Show a small copy-to-clipboard button when value is set. Defaults to true for email/phone-like fields. */
+  copyable?: boolean;
 }) {
   const updateContact = useUpdateCrmContact();
+  const autoCopyable =
+    copyable ?? (type === 'email' || /phone|email/i.test(field));
   return (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
+    <div className="flex items-center justify-between gap-2 py-2 border-b border-border/40 group">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-      <div className="flex-1 min-w-0 flex justify-end">
+      <div className="flex-1 min-w-0 flex items-center justify-end gap-1">
         <InlineEditField
           value={value}
           onSave={(v) => updateContact.mutate({ id: contactId, updates: { [field]: v || null } })}
@@ -52,6 +56,7 @@ export function DetailRow({
           displayFormatter={displayFormatter}
           className="text-[13px] text-right truncate max-w-full"
         />
+        {autoCopyable && value && <CopyButton value={value} label={label} />}
       </div>
     </div>
   );
