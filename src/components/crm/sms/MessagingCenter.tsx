@@ -1102,7 +1102,11 @@ function MessageList({
                       {quoteText && (
                         <div className={cn(
                           'mb-1.5 pl-2 border-l-2 text-[12px] italic line-clamp-2',
-                          isOutbound ? 'border-white/40 text-white/80' : 'border-foreground/30 text-foreground/70',
+                          isOutbound
+                            ? channel === 'whatsapp'
+                              ? 'border-emerald-700/40 text-foreground/70 dark:text-white/70'
+                              : 'border-white/40 text-white/80'
+                            : 'border-foreground/30 text-foreground/70',
                         )}>
                           {quoteText}
                         </div>
