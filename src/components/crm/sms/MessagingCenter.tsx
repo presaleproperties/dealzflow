@@ -1274,7 +1274,7 @@ function StatusIcon({ status }: { status: string }) {
 function Composer({
   value, onChange, onSend, onKeyDown, sending, channel, templates,
   pendingMedia, onMediaChange, scheduledFor, onScheduledChange,
-  quotedRef, onClearQuote,
+  quotedRef, onClearQuote, lastInboundAt,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -1289,10 +1289,18 @@ function Composer({
   onScheduledChange: (v: string) => void;
   quotedRef: QuotedRef | null;
   onClearQuote: () => void;
+  lastInboundAt?: string | null;
 }) {
   const seg = smsSegments(value);
   const canSend = (value.trim().length > 0 || pendingMedia.length > 0) && !sending;
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // WhatsApp 24h freeform window
+  const outsideWaWindow = useMemo(() => {
+    if (channel !== 'whatsapp') return false;
+    if (!lastInboundAt) return true;
+    return Date.now() - new Date(lastInboundAt).getTime() > 24 * 60 * 60 * 1000;
+  }, [channel, lastInboundAt]);
 
   // Default scheduled value = now + 1h, rounded to next 15min
   const defaultScheduled = useMemo(() => {
