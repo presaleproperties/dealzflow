@@ -250,29 +250,29 @@ function LeftSidebar({
           <button
             onClick={onCall}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-emerald-500/5 border border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Call"
           >
-            <Phone className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" strokeWidth={2} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Call</span>
+            <Phone className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" strokeWidth={2} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 group-hover:text-emerald-700">Call</span>
           </button>
           <button
             onClick={onSms}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-sky-500/5 border border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Text"
           >
-            <Send className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" strokeWidth={2} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Text</span>
+            <Send className="w-4 h-4 text-sky-500 group-hover:scale-110 transition-transform" strokeWidth={2} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-600/80 group-hover:text-sky-600">Text</span>
           </button>
           <button
             onClick={onEmail}
             disabled={!contact.email}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-blue-700/5 border border-blue-700/30 hover:border-blue-700/60 hover:bg-blue-700/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Email"
           >
-            <Mail className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" strokeWidth={2} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground">Email</span>
+            <Mail className="w-4 h-4 text-blue-700 group-hover:scale-110 transition-transform" strokeWidth={2} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700/80 group-hover:text-blue-700">Email</span>
           </button>
         </div>
       )}
