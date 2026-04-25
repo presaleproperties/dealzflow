@@ -393,6 +393,13 @@ export default function CrmContactsPage() {
           </table>
         </div>
       )}
+      {composeContact && (
+        <ComposeEmailDialog
+          contact={composeContact}
+          open={!!composeContact}
+          onOpenChange={(o) => { if (!o) setComposeContact(null); }}
+        />
+      )}
     </div>
   );
 }
