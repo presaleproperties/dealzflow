@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const THROTTLE_PER_SEC = 5;
-const MAX_RECIPIENTS = 7000;
+const MAX_RECIPIENTS = 1500; // safe per-invocation ceiling (≈5 min wall clock at 5/sec)
 const PROGRESS_FLUSH_EVERY = 25; // update job row every N sends
 
 interface Body {
@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
         template_id: body.template_id ?? null,
         subject: body.subject,
         body_html: body.body_html,
+        body_text: body.body_html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 8000),
         recipient_ids: body.recipient_ids,
         total_count: reachable.length,
         sent_count: 0,

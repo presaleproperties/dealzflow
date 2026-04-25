@@ -13,6 +13,7 @@ import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 const THROTTLE_PER_SEC = 5;
+const MAX_PER_JOB = 1500;
 
 interface Props {
   open: boolean;
@@ -30,6 +31,7 @@ export function MassSendConfirmDialog({
 }: Props) {
   const [optedIn, setOptedIn] = useState(false);
   const count = recipients.length;
+  const overCap = count > MAX_PER_JOB;
   const estSec = Math.max(1, Math.ceil(count / THROTTLE_PER_SEC));
   const estLabel = estSec < 60 ? `~${estSec}s` : `~${Math.ceil(estSec / 60)}m`;
 
@@ -69,6 +71,17 @@ export function MassSendConfirmDialog({
               <iframe title="mass-preview" srcDoc={previewDoc} className="w-full bg-white block" style={{ height: 280 }} sandbox="allow-same-origin" />
             </div>
           </div>
+
+          {overCap && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <div className="text-xs text-destructive/90 leading-relaxed">
+                <strong>{count.toLocaleString()} recipients exceeds the per-job limit of {MAX_PER_JOB.toLocaleString()}.</strong>
+                <br />
+                Reduce the selection or split into multiple sends. Larger blasts should run through a dedicated marketing service.
+              </div>
+            </div>
+          )}
 
           {/* Excluded list */}
           {excluded.length > 0 && (
@@ -139,7 +152,7 @@ export function MassSendConfirmDialog({
             size="sm"
             className="gap-1.5 min-w-[160px]"
             onClick={onConfirm}
-            disabled={isPending || (count >= 5 && !optedIn) || count === 0}
+            disabled={isPending || (count >= 5 && !optedIn) || count === 0 || overCap}
           >
             {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
             {isPending ? 'Queueing…' : `Send to ${count.toLocaleString()}`}

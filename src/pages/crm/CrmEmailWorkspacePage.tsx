@@ -15,6 +15,12 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 export default function CrmEmailWorkspacePage() {
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+
+  const applyTemplate = (t: AnyTpl) => {
+    setAppliedTpl(t);
+    setActiveTemplateId(t.id);
+  };
 
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
@@ -26,8 +32,8 @@ export default function CrmEmailWorkspacePage() {
         {/* Left: templates (desktop) / drawer (mobile) */}
         <div className="hidden lg:block min-h-0">
           <TemplatesRail
-            onApply={setAppliedTpl}
-            activeTemplateId={appliedTpl?.id ?? null}
+            onApply={applyTemplate}
+            activeTemplateId={activeTemplateId}
           />
         </div>
 
@@ -44,8 +50,8 @@ export default function CrmEmailWorkspacePage() {
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-[300px]">
                 <TemplatesRail
-                  onApply={(t) => { setAppliedTpl(t); }}
-                  activeTemplateId={appliedTpl?.id ?? null}
+                  onApply={(t) => { applyTemplate(t); }}
+                  activeTemplateId={activeTemplateId}
                 />
               </SheetContent>
             </Sheet>
@@ -67,7 +73,8 @@ export default function CrmEmailWorkspacePage() {
             onRemoveRecipient={removeRecipient}
             onClearRecipients={() => setRecipients([])}
             appliedTemplate={appliedTpl}
-            onTemplateApplied={() => { /* keep highlight */ }}
+            onTemplateApplied={() => setAppliedTpl(null)}
+            onSent={() => setActiveTemplateId(null)}
           />
         </div>
 
