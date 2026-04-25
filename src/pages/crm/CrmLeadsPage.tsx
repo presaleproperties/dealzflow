@@ -449,6 +449,16 @@ export default function CrmLeadsPage() {
                             );
                           })}
                           {provided.placeholder}
+                          {!reorderMode && (
+                            <button
+                              onClick={() => setManagePipelinesOpen(true)}
+                              className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors ml-1"
+                              title="Add or manage pipelines"
+                              aria-label="Add or manage pipelines"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </Droppable>
@@ -456,6 +466,15 @@ export default function CrmLeadsPage() {
                   <ScrollBar orientation="horizontal" />
                 </ScrollArea>
               </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hidden sm:inline-flex h-8 px-2 text-[11px] flex-shrink-0"
+                onClick={() => setManagePipelinesOpen(true)}
+                title="Add, edit, or remove pipelines"
+              >
+                Manage
+              </Button>
               <Button
                 size="sm"
                 variant={reorderMode ? 'default' : 'ghost'}
