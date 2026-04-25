@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",       // was "autoUpdate" — caused stale CRM flash
+      injectRegister: false,        // we'll handle registration manually after auth
       devOptions: { enabled: false },
       includeAssets: ["favicon.png", "icon-192.png", "icon-512.png", "splash-screen.png"],
       manifest: {
@@ -28,60 +29,28 @@ export default defineConfig(({ mode }) => ({
         scope: "/",
         start_url: "/command-center",
         icons: [
-          {
-            src: "/icon-192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "any maskable"
-          },
-          {
-            src: "/icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable"
-          }
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
         ]
       },
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/~oauth/],
-        // Only pre-cache icons & fonts — NOT JS/CSS bundles (they change on every build)
-        globPatterns: ["**/*.{ico,png,svg,woff2}"],
-        importScripts: ["/sw-push.js"],
+        // Don't precache the app shell — fetch fresh every time.
+        globPatterns: [],
+        // Runtime cache: ONLY static assets (icons, fonts), never HTML/JS bundles.
         runtimeCaching: [
-          // HTML — always network first, zero cache TTL
           {
-            urlPattern: /\.html$/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "html-cache",
-              expiration: { maxEntries: 5, maxAgeSeconds: 0 },
-              networkTimeoutSeconds: 4,
-            }
-          },
-          // JS & CSS bundles — network first, short fallback cache (stale while revalidate kills old builds)
-          {
-            urlPattern: /\.(js|css)(\?.*)?$/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "assets-cache",
-              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 },
-              networkTimeoutSeconds: 4,
-              cacheableResponse: { statuses: [0, 200] },
-            }
-          },
-          // Google Fonts — long-lived cache is fine (immutable)
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp|woff2?)$/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "google-fonts-cache",
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          }
-        ]
+              cacheName: "static-assets",
+              expiration: { maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+        ],
       }
     })
   ].filter(Boolean),
