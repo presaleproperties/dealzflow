@@ -350,7 +350,7 @@ export function ComposerSurface({
   const sendLabel = recipientCount === 0
     ? 'Pick a recipient'
     : recipientCount === 1
-      ? `Send to ${formatContactName(reachable[0])}`
+      ? `Send to ${formatContactName(reachable[0].first_name, reachable[0].last_name)}`
       : `Send to ${recipientCount.toLocaleString()} recipients`;
 
   return (
@@ -395,13 +395,13 @@ export function ComposerSurface({
                     title={r.email ?? 'No email — will be skipped'}
                   >
                     {!r.email && <MailWarning className="h-3.5 w-3.5" />}
-                    <span className="truncate max-w-[180px]">{formatContactName(r)}</span>
+                    <span className="truncate max-w-[180px]">{formatContactName(r.first_name, r.last_name)}</span>
                     {onRemoveRecipient && (
                       <button
                         type="button"
                         onClick={() => onRemoveRecipient(r.id)}
                         className="rounded-full hover:bg-foreground/10 p-0.5"
-                        aria-label={`Remove ${formatContactName(r)}`}
+                        aria-label={`Remove ${formatContactName(r.first_name, r.last_name)}`}
                       >
                         <X className="h-3 w-3" />
                       </button>
