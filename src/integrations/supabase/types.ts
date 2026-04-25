@@ -473,6 +473,8 @@ export type Database = {
       crm_contacts: {
         Row: {
           address: string | null
+          ai_summary_stale: boolean
+          ai_summary_updated_at: string | null
           assigned_to: string | null
           bedrooms_preferred: string | null
           birthday: string | null
@@ -532,6 +534,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_summary_stale?: boolean
+          ai_summary_updated_at?: string | null
           assigned_to?: string | null
           bedrooms_preferred?: string | null
           birthday?: string | null
@@ -591,6 +595,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_summary_stale?: boolean
+          ai_summary_updated_at?: string | null
           assigned_to?: string | null
           bedrooms_preferred?: string | null
           birthday?: string | null
@@ -4377,6 +4383,10 @@ export type Database = {
           _url: string
         }
         Returns: string
+      }
+      mark_ai_summary_stale: {
+        Args: { _contact_id: string }
+        Returns: undefined
       }
       mark_source_event_processed: {
         Args: {
