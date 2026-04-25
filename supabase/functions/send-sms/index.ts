@@ -33,6 +33,16 @@ function isQuietHour(start: number, end: number, tz: string): boolean {
   } catch { return false; }
 }
 
+function friendlyTwilioError(code?: unknown, message?: unknown): string | null {
+  const c = code === undefined || code === null ? '' : String(code);
+  if (c === '63016') {
+    return 'WhatsApp free-form messages can only be sent inside the 24-hour customer-service window. Have the contact reply first or use an approved WhatsApp template.';
+  }
+  if (c === '63007') return 'The configured WhatsApp sender is not enabled or approved for this Twilio account.';
+  if (c === '63003') return 'The recipient is not reachable on WhatsApp or has not joined the sandbox.';
+  return typeof message === 'string' && message.trim() ? message : null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -188,13 +198,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Optional opt-out footer on first message to this contact
+    // Optional SMS-only opt-out footer. Use destination phone + channel, not contact_id,
+    // so duplicate CRM contacts with the same phone do not get repeated footers.
     let finalBody = message;
-    if (settings?.append_optout_first_msg && contact_id) {
+    if (channel === 'sms' && settings?.append_optout_first_msg) {
       const { count } = await supabaseAdmin
         .from('crm_sms_log').select('id', { count: 'exact', head: true })
-        .eq('contact_id', contact_id).eq('direction', 'outbound');
-      if ((count ?? 0) === 0 && !finalBody.toLowerCase().includes('stop')) {
+        .eq('to_number', to).eq('channel', 'sms').eq('direction', 'outbound');
+      const footer = (settings.optout_footer || ' Reply STOP to opt out.').trim();
+      if ((count ?? 0) === 0 && !finalBody.toLowerCase().includes(footer.toLowerCase())) {
         finalBody = finalBody + (settings.optout_footer || ' Reply STOP to opt out.');
       }
     }
@@ -273,6 +285,7 @@ Deno.serve(async (req) => {
       body: params,
     });
     const twilioData = await twilioRes.json();
+    const friendlyError = friendlyTwilioError(twilioData?.code, twilioData?.message);
 
     if (!twilioRes.ok) {
       await supabaseAdmin.from('crm_sms_log').insert({
@@ -280,11 +293,11 @@ Deno.serve(async (req) => {
         to_number: to, from_number: fromNumber, body: finalBody, media_urls,
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
         status: 'failed', campaign_id, channel,
-        error_message: twilioData?.message ?? `HTTP ${twilioRes.status}`,
+        error_message: friendlyError ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
       });
       return new Response(JSON.stringify({
-        error: twilioData?.message ?? 'Twilio send failed', code: twilioData?.code,
+        error: friendlyError ?? twilioData?.message ?? 'Twilio send failed', code: twilioData?.code,
       }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
