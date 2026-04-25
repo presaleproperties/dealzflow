@@ -207,6 +207,46 @@ export function useSendSms() {
       if (data?.error) throw new Error(data.error);
       return data;
     },
+    // Optimistic insert — message bubble appears instantly while the request is in flight.
+    onMutate: async (vars) => {
+      await qc.cancelQueries({ queryKey: ['crm-sms-log-all'] });
+      const previous = qc.getQueriesData({ queryKey: ['crm-sms-log-all'] });
+
+      const optimistic: SmsLogRow = {
+        id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        user_id: null,
+        contact_id: vars.contact_id || null,
+        direction: 'outbound',
+        to_number: vars.to,
+        from_number: vars.from || null,
+        body: vars.body,
+        status: vars.scheduled_for ? 'scheduled' : 'sending',
+        message_type: (vars.media_urls?.length ?? 0) > 0 ? 'mms' : 'sms',
+        media_urls: vars.media_urls || [],
+        twilio_message_sid: null,
+        campaign_id: vars.campaign_id || null,
+        scheduled_for: vars.scheduled_for || null,
+        delivered_at: null,
+        num_segments: 1,
+        error_code: null,
+        error_message: null,
+        price: null,
+        price_unit: null,
+        channel: vars.channel || 'sms',
+        sent_at: vars.scheduled_for || new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      qc.setQueriesData<SmsLogRow[]>({ queryKey: ['crm-sms-log-all'] }, (old) =>
+        old ? [optimistic, ...old] : [optimistic],
+      );
+      if (vars.contact_id) {
+        qc.setQueriesData<SmsLogRow[]>({ queryKey: ['crm-sms-log', vars.contact_id] }, (old) =>
+          old ? [optimistic, ...old] : [optimistic],
+        );
+      }
+      return { previous, optimisticId: optimistic.id };
+    },
     onSuccess: (data, vars) => {
       if (vars.contact_id) {
         qc.invalidateQueries({ queryKey: ['crm-sms-log', vars.contact_id] });
@@ -217,7 +257,59 @@ export function useSendSms() {
       else if (data?.queued) toast.success('Saved — will send once Twilio is connected');
       else toast.success('Text sent');
     },
-    onError: (e: any) => toast.error(e?.message || 'Failed to send text'),
+    onError: (e: any, _vars, ctx) => {
+      // Roll back optimistic update
+      ctx?.previous?.forEach(([key, value]) => qc.setQueryData(key, value));
+      toast.error(e?.message || 'Failed to send text');
+    },
+  });
+}
+
+// ============== Delete a single message OR an entire conversation ==============
+
+export function useDeleteSmsMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('crm_sms_log').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-sms-log-all'] });
+      qc.invalidateQueries({ queryKey: ['crm-sms-log'] });
+      toast.success('Message deleted');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to delete message'),
+  });
+}
+
+export function useDeleteSmsConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ phoneLast10, channel }: { phoneLast10: string; channel: MessagingChannel }) => {
+      // Match either inbound or outbound where the other party's number ends with phoneLast10
+      const { data: rows, error: fetchErr } = await supabase
+        .from('crm_sms_log')
+        .select('id, to_number, from_number, direction, channel');
+      if (fetchErr) throw fetchErr;
+      const ids = (rows || [])
+        .filter((r: any) => (r.channel || 'sms') === channel)
+        .filter((r: any) => {
+          const other = r.direction === 'inbound' ? r.from_number : r.to_number;
+          return (other || '').replace(/\D/g, '').slice(-10) === phoneLast10;
+        })
+        .map((r: any) => r.id);
+      if (ids.length === 0) return { count: 0 };
+      const { error } = await supabase.from('crm_sms_log').delete().in('id', ids);
+      if (error) throw error;
+      return { count: ids.length };
+    },
+    onSuccess: ({ count }) => {
+      qc.invalidateQueries({ queryKey: ['crm-sms-log-all'] });
+      qc.invalidateQueries({ queryKey: ['crm-sms-log'] });
+      toast.success(`Conversation deleted (${count} message${count === 1 ? '' : 's'})`);
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed to delete conversation'),
   });
 }
 
