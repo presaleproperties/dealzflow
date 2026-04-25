@@ -248,6 +248,9 @@ export default function DataManagerSection() {
 
             {/* Source Library Manager — merge / rename */}
             <SourceManagerSection />
+
+            {/* Duplicate review */}
+            <DuplicateReviewSection />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
