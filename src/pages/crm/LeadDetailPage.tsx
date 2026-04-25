@@ -1202,6 +1202,75 @@ export default function LeadDetailPage() {
     navigate(`/crm/leads/${allContacts[newIdx].id}`);
   };
 
+  // ─── Keyboard shortcuts (mobile + desktop) ───
+  // Single-key actions:
+  //   t = New Task        b = Book Showing       e = Compose Email
+  //   j / ←  = Prev lead  k / →  = Next lead     ? = Show shortcut hint
+  // Sequence (mobile tabs): g then o / a / i  → Overview / Activity / Insights
+  const gPrefixRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!contact) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore when typing in inputs / contenteditable / when modifier held
+      const t = e.target as HTMLElement | null;
+      const tag = (t?.tagName || '').toLowerCase();
+      if (
+        e.metaKey || e.ctrlKey || e.altKey ||
+        tag === 'input' || tag === 'textarea' || tag === 'select' ||
+        t?.isContentEditable
+      ) return;
+      // Suppress when a dialog/popover is open
+      if (showEmail || showTask || showShowing) return;
+
+      const key = e.key.toLowerCase();
+
+      // "g" prefix for tab nav (vim-style)
+      if (key === 'g') {
+        gPrefixRef.current = window.setTimeout(() => { gPrefixRef.current = null; }, 1000);
+        e.preventDefault();
+        return;
+      }
+      if (gPrefixRef.current !== null) {
+        if (key === 'o' || key === 'a' || key === 'i') {
+          window.clearTimeout(gPrefixRef.current);
+          gPrefixRef.current = null;
+          setMobileTab(key === 'o' ? 'overview' : key === 'a' ? 'activity' : 'insights');
+          e.preventDefault();
+          return;
+        }
+        // Cancel sequence on any other key
+        window.clearTimeout(gPrefixRef.current);
+        gPrefixRef.current = null;
+      }
+
+      switch (key) {
+        case 't':
+          setShowTask(true); e.preventDefault(); break;
+        case 'b':
+          setShowShowing(true); e.preventDefault(); break;
+        case 'e':
+          if (contact.email) { setShowEmail(true); e.preventDefault(); }
+          break;
+        case 'j':
+        case 'arrowleft':
+          handleNavigate('prev'); e.preventDefault(); break;
+        case 'k':
+        case 'arrowright':
+          handleNavigate('next'); e.preventDefault(); break;
+        case '?':
+          toast.info('Shortcuts', {
+            description: 't Task · b Showing · e Email · j/k prev/next · g+o/a/i tabs',
+            duration: 5000,
+          });
+          e.preventDefault();
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [contact, navInfo, showEmail, showTask, showShowing]);
+
+
   // Loading skeleton
   if (isLoading) {
     return (
