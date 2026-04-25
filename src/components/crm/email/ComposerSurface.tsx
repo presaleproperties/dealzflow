@@ -744,3 +744,107 @@ export function ComposerSurface({
     </div>
   );
 }
+
+/**
+ * Inline recipient quick-add — opens a popover with a fast search of all
+ * leads. One click adds them to the To row. Always available, even when the
+ * right Recipients panel is collapsed.
+ */
+function RecipientQuickAdd({
+  selectedIds,
+  onAdd,
+}: {
+  selectedIds: Set<string>;
+  onAdd: (c: CrmContact) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const { data: contacts = [] } = useCrmContacts();
+
+  const matches = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) {
+      return contacts
+        .filter((c) => !!c.email)
+        .slice(0, 12);
+    }
+    return contacts
+      .filter((c) => {
+        const name = formatContactName(c.first_name, c.last_name).toLowerCase();
+        const email = (c.email ?? '').toLowerCase();
+        const phone = (c.phone ?? '').toLowerCase();
+        return name.includes(needle) || email.includes(needle) || phone.includes(needle);
+      })
+      .slice(0, 30);
+  }, [contacts, q]);
+
+  return (
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQ(''); }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-semibold text-foreground bg-muted/50 border border-border hover:bg-muted hover:border-foreground/30 transition-colors"
+          aria-label="Add a recipient"
+        >
+          <UserPlus className="h-3 w-3" />
+          Add
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[340px] p-0 overflow-hidden">
+        <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search name, email or phone…"
+              className="h-8 pl-7 text-xs"
+            />
+          </div>
+        </div>
+        <div className="max-h-[340px] overflow-y-auto">
+          {matches.length === 0 ? (
+            <div className="text-[11.5px] text-muted-foreground text-center py-6 px-3">
+              No leads match "{q}"
+            </div>
+          ) : (
+            matches.map((c) => {
+              const already = selectedIds.has(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={already}
+                  onClick={() => {
+                    onAdd(c);
+                    setOpen(false);
+                    setQ('');
+                  }}
+                  className={cn(
+                    'w-full text-left px-3 py-2 border-b border-border/40 hover:bg-accent/60 transition-colors flex items-center justify-between gap-2',
+                    already && 'opacity-50 cursor-not-allowed',
+                  )}
+                >
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-medium text-foreground truncate">
+                      {formatContactName(c.first_name, c.last_name)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {c.email ?? <span className="text-amber-600">No email</span>}
+                    </p>
+                  </div>
+                  {already ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  ) : (
+                    <UserPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
