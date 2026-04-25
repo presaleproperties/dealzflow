@@ -76,6 +76,16 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           Send Email
         </Button>
 
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowBulkText(true)}
+          className="h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          Send Text
+        </Button>
+
         <Select onValueChange={handleAssign}>
           <SelectTrigger className="h-8 w-auto gap-1 text-xs border-0 bg-transparent hover:bg-muted">
             <UserCheck className="w-3.5 h-3.5" />
