@@ -2,15 +2,19 @@
 // Compose mode: Templates (left) · Composer (center) · Recipients (right)
 // Inbox mode: synced Gmail conversations (replies, threads).
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight, Inbox, PenSquare } from 'lucide-react';
+import {
+  Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight, Inbox, PenSquare,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
+} from 'lucide-react';
 import { TemplatesRail, type AnyTpl } from '@/components/crm/email/TemplatesRail';
 import { RecipientsRail } from '@/components/crm/email/RecipientsRail';
 import { ComposerSurface } from '@/components/crm/email/ComposerSurface';
 import InboxView from '@/components/crm/email/InboxView';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -21,6 +25,8 @@ export default function CrmEmailWorkspacePage() {
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   const applyTemplate = (t: AnyTpl) => {
     setAppliedTpl(t);
@@ -30,61 +36,123 @@ export default function CrmEmailWorkspacePage() {
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
 
+  // Dynamic grid template based on collapsed panels (lg+ only)
+  const gridTemplateColumns = useMemo(() => {
+    const cols: string[] = [];
+    if (!leftCollapsed) cols.push('280px');
+    cols.push('1fr');
+    if (!rightCollapsed) cols.push('380px');
+    return cols.join(' ');
+  }, [leftCollapsed, rightCollapsed]);
+
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
-      {/* Mode toggle */}
-      <div className="mb-3 inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-card shadow-sm w-fit">
-        <ModeBtn active={mode === 'compose'} onClick={() => setMode('compose')} icon={PenSquare} label="Compose" />
-        <ModeBtn active={mode === 'inbox'} onClick={() => setMode('inbox')} icon={Inbox} label="Inbox" />
+      {/* Mode toggle + panel collapse controls */}
+      <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
+        <div className="inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-card shadow-sm w-fit">
+          <ModeBtn active={mode === 'compose'} onClick={() => setMode('compose')} icon={PenSquare} label="Compose" />
+          <ModeBtn active={mode === 'inbox'} onClick={() => setMode('inbox')} icon={Inbox} label="Inbox" />
+        </div>
+
+        {mode === 'compose' && (
+          <TooltipProvider>
+            <div className="hidden lg:inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-card shadow-sm">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
+                    onClick={() => setLeftCollapsed((v) => !v)}
+                  >
+                    {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{leftCollapsed ? 'Show templates' : 'Hide templates'}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
+                    onClick={() => setRightCollapsed((v) => !v)}
+                  >
+                    {rightCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{rightCollapsed ? 'Show recipients' : 'Hide recipients'}</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        )}
       </div>
 
       <div className="flex-1 min-h-0">
         {mode === 'inbox' ? (
           <InboxView />
         ) : (
-          <div className="h-full grid grid-cols-1 lg:grid-cols-[280px_1fr_380px] min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-            <div className="hidden lg:block min-h-0">
-              <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
-            </div>
+          <div
+            className="h-full grid grid-cols-1 min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm"
+            style={{ gridTemplateColumns: undefined }}
+          >
+            {/* Apply dynamic template at lg+ via inline style on a wrapper trick: use a child with utility */}
+            <div
+              className="h-full grid grid-cols-1 min-h-0"
+              style={{ gridTemplateColumns: undefined }}
+            >
+              <div
+                className="h-full grid grid-cols-1 lg:grid lg:[grid-template-columns:var(--cols)] min-h-0"
+                style={{ ['--cols' as any]: gridTemplateColumns }}
+              >
+                {!leftCollapsed && (
+                  <div className="hidden lg:block min-h-0">
+                    <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
+                  </div>
+                )}
 
-            <div className="min-h-0 overflow-hidden">
-              <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5">
-                      <Mail className="h-3.5 w-3.5" />
-                      Templates
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="p-0 w-[300px]">
-                    <TemplatesRail onApply={(t) => { applyTemplate(t); }} activeTemplateId={activeTemplateId} />
-                  </SheetContent>
-                </Sheet>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
-                      <Send className="h-3.5 w-3.5" />
-                      Recipients ({recipients.length})
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
+                <div className="min-h-0 overflow-hidden">
+                  <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5">
+                          <Mail className="h-3.5 w-3.5" />
+                          Templates
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="left" className="p-0 w-[300px]">
+                        <TemplatesRail onApply={(t) => { applyTemplate(t); }} activeTemplateId={activeTemplateId} />
+                      </SheetContent>
+                    </Sheet>
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
+                          <Send className="h-3.5 w-3.5" />
+                          Recipients ({recipients.length})
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
+                        <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
+                      </SheetContent>
+                    </Sheet>
+                  </div>
+
+                  <ComposerSurface
+                    recipients={recipients}
+                    onRemoveRecipient={removeRecipient}
+                    onClearRecipients={() => setRecipients([])}
+                    appliedTemplate={appliedTpl}
+                    onTemplateApplied={() => setAppliedTpl(null)}
+                    onSent={() => setActiveTemplateId(null)}
+                  />
+                </div>
+
+                {!rightCollapsed && (
+                  <div className="hidden lg:block min-h-0">
                     <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
-                  </SheetContent>
-                </Sheet>
+                  </div>
+                )}
               </div>
-
-              <ComposerSurface
-                recipients={recipients}
-                onRemoveRecipient={removeRecipient}
-                onClearRecipients={() => setRecipients([])}
-                appliedTemplate={appliedTpl}
-                onTemplateApplied={() => setAppliedTpl(null)}
-                onSent={() => setActiveTemplateId(null)}
-              />
-            </div>
-
-            <div className="hidden lg:block min-h-0">
-              <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
             </div>
           </div>
         )}
