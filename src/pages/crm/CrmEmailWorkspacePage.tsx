@@ -50,8 +50,8 @@ export default function CrmEmailWorkspacePage() {
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-[300px]">
                 <TemplatesRail
-                  onApply={(t) => { setAppliedTpl(t); }}
-                  activeTemplateId={appliedTpl?.id ?? null}
+                  onApply={(t) => { applyTemplate(t); }}
+                  activeTemplateId={activeTemplateId}
                 />
               </SheetContent>
             </Sheet>
