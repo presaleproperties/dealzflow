@@ -48,6 +48,7 @@ import CrmSettingsPage from "./pages/crm/CrmSettingsPage";
 import CrmIntegrationsPage from "./pages/crm/CrmIntegrationsPage";
 import CrmBehaviorLeadsPage from "./pages/crm/CrmBehaviorLeadsPage";
 import CrmBehaviorDashboardPage from "./pages/crm/CrmBehaviorDashboardPage";
+import CrmSmsCenterPage from "./pages/crm/CrmSmsCenterPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const queryClient = new QueryClient({
@@ -164,6 +165,7 @@ const App = () => (
                   <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                   <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/email-builder" element={<ProtectedRoute><CrmLayout><CrmEmailBuilderPage /></CrmLayout></ProtectedRoute>} />

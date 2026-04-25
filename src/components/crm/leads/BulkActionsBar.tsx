@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail } from 'lucide-react';
+import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare } from 'lucide-react';
 import { useBulkUpdateContacts, useBulkDeleteContacts, useBulkAddTagsToContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
+import { BulkSendTextDialog } from './BulkSendTextDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -27,6 +28,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const [showDelete, setShowDelete] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [pendingTags, setPendingTags] = useState<string[]>([]);
+  const [showBulkText, setShowBulkText] = useState(false);
 
   const count = selectedIds.length;
   if (count === 0) return null;
@@ -72,6 +74,16 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         >
           <Mail className="w-3.5 h-3.5" />
           Send Email
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowBulkText(true)}
+          className="h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          Send Text
         </Button>
 
         <Select onValueChange={handleAssign}>
@@ -145,6 +157,14 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkSendTextDialog
+        open={showBulkText}
+        onOpenChange={setShowBulkText}
+        contactIds={selectedIds}
+        onComplete={onClearSelection}
+      />
     </>
+
   );
 }
