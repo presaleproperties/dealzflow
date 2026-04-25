@@ -1018,7 +1018,12 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         ) : (
           <div className="space-y-2">
             {emails.slice(0, 5).map((email: any) => (
-              <div key={email.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-border transition-colors">
+              <button
+                key={email.id}
+                type="button"
+                onClick={() => setPreviewEmail(email as EmailLogRow)}
+                className="w-full text-left flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-primary/50 hover:bg-muted/30 transition-colors"
+              >
                 <div className="w-8 h-8 rounded-md border border-border/60 flex items-center justify-center shrink-0">
                   {email.direction === 'outbound'
                     ? <ArrowUpRight className="w-4 h-4 text-foreground/70" />
