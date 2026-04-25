@@ -1086,15 +1086,15 @@ function MessageList({
                   <div className="relative max-w-[75%] sm:max-w-[65%]">
                     <div
                       className={cn(
-                        'px-3.5 py-2 text-[14.5px] leading-snug shadow-sm transition-opacity',
+                        'px-3.5 py-2 text-[14.5px] leading-[1.35] transition-opacity',
                         isOutbound
                           ? channel === 'whatsapp'
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground',
+                            ? 'bg-emerald-500 text-white shadow-[0_1px_2px_rgba(16,185,129,0.25)]'
+                            : 'bg-gradient-to-b from-primary to-[hsl(var(--primary)/0.88)] text-primary-foreground shadow-[0_1px_2px_hsl(var(--primary)/0.25)]'
+                          : 'bg-muted/70 text-foreground/95 shadow-[0_1px_1px_rgba(0,0,0,0.04)] dark:bg-muted/60',
                         isOutbound
-                          ? cn('rounded-2xl', sameSenderAsPrev && 'rounded-tr-md', sameSenderAsNext && 'rounded-br-md')
-                          : cn('rounded-2xl', sameSenderAsPrev && 'rounded-tl-md', sameSenderAsNext && 'rounded-bl-md'),
+                          ? cn('rounded-[20px]', sameSenderAsPrev && 'rounded-tr-[6px]', sameSenderAsNext && 'rounded-br-[6px]')
+                          : cn('rounded-[20px]', sameSenderAsPrev && 'rounded-tl-[6px]', sameSenderAsNext && 'rounded-bl-[6px]'),
                         (isOptimistic || isScheduled) && 'opacity-70',
                       )}
                     >
