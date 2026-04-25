@@ -60,7 +60,7 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
     return contacts.filter((c) => {
       if (onlyWithEmail && !c.email) return false;
       if (q) {
-        const name = formatContactName(c).toLowerCase();
+        const name = formatContactName(c.first_name, c.last_name).toLowerCase();
         const email = (c.email ?? '').toLowerCase();
         const phone = (c.phone ?? '').toLowerCase();
         if (!name.includes(q) && !email.includes(q) && !phone.includes(q)) return false;
@@ -357,7 +357,7 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
                 {/* Identity */}
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
-                    {formatContactName(c)}
+                    {formatContactName(c.first_name, c.last_name)}
                   </p>
                   <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
                     {c.email ?? <span className="text-amber-600">No email on file</span>}

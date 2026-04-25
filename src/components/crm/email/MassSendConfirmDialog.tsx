@@ -95,7 +95,7 @@ export function MassSendConfirmDialog({
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {excluded.slice(0, 12).map((r) => (
                       <Badge key={r.id} variant="outline" className="text-[10px] h-5 border-amber-500/40">
-                        {formatContactName(r)}
+                        {formatContactName(r.first_name, r.last_name)}
                       </Badge>
                     ))}
                     {excluded.length > 12 && (
@@ -117,7 +117,7 @@ export function MassSendConfirmDialog({
             <div className="flex flex-wrap gap-1">
               {recipients.slice(0, 8).map((r) => (
                 <Badge key={r.id} variant="secondary" className="text-[10px] h-5">
-                  {formatContactName(r)}
+                  {formatContactName(r.first_name, r.last_name)}
                 </Badge>
               ))}
               {recipients.length > 8 && (
