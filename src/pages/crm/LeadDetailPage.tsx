@@ -986,7 +986,19 @@ function ShowingsTab({ contactId, showings }: { contactId: string; showings: any
 /* ═══════════════════════════════════════════════════
    RIGHT SIDEBAR
    ═══════════════════════════════════════════════════ */
-function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContact; onAddTask: () => void; onAddShowing: () => void }) {
+function RightSidebar({
+  contact, onAddTask, onAddShowing, onCall, onText, onEmail,
+  leadScore, lastTouchHours,
+}: {
+  contact: CrmContact;
+  onAddTask: () => void;
+  onAddShowing: () => void;
+  onCall: () => void;
+  onText: () => void;
+  onEmail: () => void;
+  leadScore: { score: number; color: string; label: string };
+  lastTouchHours: number | null;
+}) {
   const { data: tasks = [] } = useCrmContactTasks(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emails, isLoading: emailsLoading } = useCrmEmailLog(contact.id);
@@ -1000,6 +1012,20 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
 
   return (
     <div className="space-y-6">
+      {/* Next Best Action — collapses the "what should I do next?" decision */}
+      <NextBestActionCard
+        contact={contact}
+        leadScore={leadScore}
+        lastTouchHours={lastTouchHours}
+        pendingTaskCount={pendingTasks.length}
+        upcomingShowingCount={upcomingShowings.length}
+        onCall={onCall}
+        onText={onText}
+        onEmail={onEmail}
+        onTask={onAddTask}
+        onShowing={onAddShowing}
+      />
+
       {/* Tasks */}
       <WidgetSection title="Tasks" count={pendingTasks.length} onAdd={onAddTask}>
         {pendingTasks.length === 0 ? (
