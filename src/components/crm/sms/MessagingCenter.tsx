@@ -12,6 +12,7 @@ import {
   Search, Send, Plus, MoreHorizontal, Phone, Video, Info, Smile,
   Paperclip, Image as ImageIcon, Sparkles, ArrowLeft, MessageSquare,
   CheckCircle2, Clock, AlertCircle, X, ChevronRight,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
