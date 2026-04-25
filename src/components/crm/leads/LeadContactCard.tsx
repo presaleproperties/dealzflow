@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
 import { CheckboxDropdown } from './CheckboxDropdown';
+import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
