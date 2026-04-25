@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type MessagingChannel = 'sms' | 'whatsapp';
+
 export interface SmsLogRow {
   id: string;
   user_id: string | null;
@@ -22,6 +24,7 @@ export interface SmsLogRow {
   error_message: string | null;
   price: number | null;
   price_unit: string | null;
+  channel: MessagingChannel;
   sent_at: string;
   created_at: string;
 }
@@ -31,6 +34,7 @@ export interface SmsTemplate {
   name: string;
   body: string;
   category: string;
+  channel: MessagingChannel;
   merge_tags: string[];
   default_media_urls: string[];
   is_active: boolean;
@@ -45,6 +49,7 @@ export interface SmsCampaign {
   id: string;
   name: string;
   body: string;
+  channel: MessagingChannel;
   media_urls: string[];
   template_id: string | null;
   segment_filter: any;
@@ -83,6 +88,7 @@ export interface SmsNumber {
   label: string | null;
   is_company: boolean;
   is_active: boolean;
+  channel: 'sms' | 'whatsapp' | 'both';
   twilio_sid: string | null;
 }
 
@@ -104,12 +110,13 @@ export function useContactSmsLog(contactId?: string | null) {
   });
 }
 
-export function useAllSmsLog(opts: { direction?: 'inbound' | 'outbound'; limit?: number } = {}) {
+export function useAllSmsLog(opts: { direction?: 'inbound' | 'outbound'; channel?: MessagingChannel; limit?: number } = {}) {
   return useQuery({
     queryKey: ['crm-sms-log-all', opts],
     queryFn: async () => {
       let q = supabase.from('crm_sms_log').select('*').order('sent_at', { ascending: false });
       if (opts.direction) q = q.eq('direction', opts.direction);
+      if (opts.channel) q = q.eq('channel', opts.channel);
       if (opts.limit) q = q.limit(opts.limit);
       const { data, error } = await q;
       if (error) throw error;
@@ -139,6 +146,7 @@ export function useSaveSmsTemplate() {
         name: template.name,
         body: template.body,
         category: template.category || 'general',
+        channel: (template as any).channel || 'sms',
         merge_tags: template.merge_tags || [],
         default_media_urls: template.default_media_urls || [],
         is_active: template.is_active ?? true,
@@ -187,6 +195,7 @@ export interface SendSmsArgs {
   scheduled_for?: string;
   skip_quiet_hours?: boolean;
   ignore_optout?: boolean;
+  channel?: MessagingChannel;
 }
 
 export function useSendSms() {
@@ -223,6 +232,7 @@ export interface BulkSmsArgs {
   scheduled_for?: string;
   throttle_per_min?: number;
   dry_run?: boolean;
+  channel?: MessagingChannel;
 }
 
 export function useBulkSendSms() {

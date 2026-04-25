@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     const scheduled_for: string | null = body?.scheduled_for ?? null;
     const skip_quiet_hours = !!body?.skip_quiet_hours;
     const ignore_optout = !!body?.ignore_optout;
+    const channel: 'sms' | 'whatsapp' = body?.channel === 'whatsapp' ? 'whatsapp' : 'sms';
 
     if (!to_raw || !message || message.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'to and body are required' }), {
@@ -123,31 +124,46 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve sender: explicit override -> per-agent number -> company number -> messaging service SID -> legacy email_settings
+    // Resolve sender. WhatsApp uses dedicated WA sender from settings; SMS uses agent/company number → MS SID.
     let fromNumber: string | null = from_override ? normalizePhone(from_override) : null;
     let messagingServiceSid: string | null = null;
-    if (!fromNumber) {
-      const { data: agentNum } = await supabaseAdmin
-        .from('crm_sms_numbers').select('phone').eq('user_id', user.id).eq('is_active', true).maybeSingle();
-      if (agentNum?.phone) fromNumber = normalizePhone(agentNum.phone);
-    }
-    if (!fromNumber) {
-      const { data: companyNum } = await supabaseAdmin
-        .from('crm_sms_numbers').select('phone').eq('is_company', true).eq('is_active', true).maybeSingle();
-      if (companyNum?.phone) fromNumber = normalizePhone(companyNum.phone);
-    }
-    if (!fromNumber) {
-      messagingServiceSid = settings?.messaging_service_sid || Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') || null;
-    }
-    if (!fromNumber) {
-      // Legacy fallback
-      const { data: legacy } = await supabase
-        .from('crm_email_settings').select('twilio_from_number').eq('user_id', user.id).maybeSingle();
-      if (legacy?.twilio_from_number) fromNumber = normalizePhone(legacy.twilio_from_number);
+
+    if (channel === 'whatsapp') {
+      // WhatsApp sender comes from settings.whatsapp_from or env (Twilio sandbox = +14155238886)
+      if (!fromNumber) {
+        const waFrom = settings?.whatsapp_from || Deno.env.get('TWILIO_WHATSAPP_FROM') || null;
+        if (waFrom) fromNumber = normalizePhone(waFrom);
+      }
+      if (!fromNumber) {
+        messagingServiceSid = settings?.whatsapp_messaging_service_sid || null;
+      }
+    } else {
+      if (!fromNumber) {
+        const { data: agentNum } = await supabaseAdmin
+          .from('crm_sms_numbers').select('phone').eq('user_id', user.id).eq('is_active', true)
+          .in('channel', ['sms', 'both']).maybeSingle();
+        if (agentNum?.phone) fromNumber = normalizePhone(agentNum.phone);
+      }
+      if (!fromNumber) {
+        const { data: companyNum } = await supabaseAdmin
+          .from('crm_sms_numbers').select('phone').eq('is_company', true).eq('is_active', true)
+          .in('channel', ['sms', 'both']).maybeSingle();
+        if (companyNum?.phone) fromNumber = normalizePhone(companyNum.phone);
+      }
+      if (!fromNumber) {
+        messagingServiceSid = settings?.messaging_service_sid || Deno.env.get('TWILIO_MESSAGING_SERVICE_SID') || null;
+      }
+      if (!fromNumber) {
+        const { data: legacy } = await supabase
+          .from('crm_email_settings').select('twilio_from_number').eq('user_id', user.id).maybeSingle();
+        if (legacy?.twilio_from_number) fromNumber = normalizePhone(legacy.twilio_from_number);
+      }
     }
     if (!fromNumber && !messagingServiceSid) {
       return new Response(JSON.stringify({
-        error: 'No Twilio sender configured. Add a number in CRM Settings → SMS, or set a Messaging Service SID.',
+        error: channel === 'whatsapp'
+          ? 'No WhatsApp sender configured. Add a WhatsApp number in Messaging Settings.'
+          : 'No Twilio sender configured. Add a number in CRM Settings → SMS, or set a Messaging Service SID.',
         code: 'NO_SENDER',
       }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -183,6 +199,7 @@ Deno.serve(async (req) => {
         status: 'scheduled',
         campaign_id,
         scheduled_for: when.toISOString(),
+        channel,
       }).select('id').maybeSingle();
       if (schedErr) throw schedErr;
       return new Response(JSON.stringify({ ok: true, scheduled: true, log_id: scheduled?.id }), {
@@ -203,6 +220,7 @@ Deno.serve(async (req) => {
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
         status: 'queued',
         campaign_id,
+        channel,
         error_message: 'Twilio not yet connected — message recorded for later delivery.',
       }).select('id').maybeSingle();
       return new Response(JSON.stringify({
@@ -211,10 +229,13 @@ Deno.serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Build Twilio request
+    // Build Twilio request — WhatsApp requires "whatsapp:" prefix on To and From
+    const twTo = channel === 'whatsapp' ? `whatsapp:${to}` : to;
+    const twFrom = channel === 'whatsapp' && fromNumber ? `whatsapp:${fromNumber}` : fromNumber;
+
     const params = new URLSearchParams();
-    params.set('To', to);
-    if (fromNumber) params.set('From', fromNumber);
+    params.set('To', twTo);
+    if (twFrom) params.set('From', twFrom);
     if (messagingServiceSid && !fromNumber) params.set('MessagingServiceSid', messagingServiceSid);
     params.set('Body', finalBody);
     media_urls.forEach((u) => params.append('MediaUrl', u));
@@ -238,7 +259,7 @@ Deno.serve(async (req) => {
         user_id: user.id, contact_id, direction: 'outbound',
         to_number: to, from_number: fromNumber, body: finalBody, media_urls,
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
-        status: 'failed', campaign_id,
+        status: 'failed', campaign_id, channel,
         error_message: twilioData?.message ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
       });
@@ -257,10 +278,11 @@ Deno.serve(async (req) => {
       price: twilioData?.price ?? null,
       price_unit: twilioData?.price_unit ?? null,
       campaign_id,
+      channel,
     }).select('id').maybeSingle();
 
     return new Response(JSON.stringify({
-      ok: true, sid: twilioData?.sid, status: twilioData?.status, log_id: logged?.id,
+      ok: true, sid: twilioData?.sid, status: twilioData?.status, log_id: logged?.id, channel,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';

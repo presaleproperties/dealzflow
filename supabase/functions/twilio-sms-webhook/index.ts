@@ -68,8 +68,13 @@ Deno.serve(async (req) => {
     }
 
     // ============== INBOUND MESSAGE ==============
-    const fromNum = data.From;
-    const toNum = data.To;
+    const fromRaw = data.From || '';
+    const toRaw = data.To || '';
+    // WhatsApp arrives as "whatsapp:+15551234567"
+    const isWhatsApp = fromRaw.startsWith('whatsapp:') || toRaw.startsWith('whatsapp:');
+    const channel = isWhatsApp ? 'whatsapp' : 'sms';
+    const fromNum = fromRaw.replace(/^whatsapp:/, '');
+    const toNum = toRaw.replace(/^whatsapp:/, '');
     const bodyText = (data.Body || '').trim();
     const sid = data.MessageSid;
     const numMedia = parseInt(data.NumMedia || '0', 10);
@@ -98,7 +103,7 @@ Deno.serve(async (req) => {
       }, { onConflict: 'phone' });
       // Log the inbound STOP
       await admin.from('crm_sms_log').insert({
-        contact_id: contact?.id ?? null, direction: 'inbound',
+        contact_id: contact?.id ?? null, direction: 'inbound', channel,
         to_number: toNum, from_number: fromNum, body: bodyText,
         message_type: 'sms', status: 'received', twilio_message_sid: sid,
       });
@@ -107,7 +112,7 @@ Deno.serve(async (req) => {
     if (START_WORDS.includes(word)) {
       await admin.from('crm_sms_opt_outs').update({ re_opted_in_at: new Date().toISOString() }).eq('phone', fromNum);
       await admin.from('crm_sms_log').insert({
-        contact_id: contact?.id ?? null, direction: 'inbound',
+        contact_id: contact?.id ?? null, direction: 'inbound', channel,
         to_number: toNum, from_number: fromNum, body: bodyText,
         message_type: 'sms', status: 'received', twilio_message_sid: sid,
       });
@@ -115,7 +120,7 @@ Deno.serve(async (req) => {
     }
     if (HELP_WORDS.includes(word)) {
       await admin.from('crm_sms_log').insert({
-        contact_id: contact?.id ?? null, direction: 'inbound',
+        contact_id: contact?.id ?? null, direction: 'inbound', channel,
         to_number: toNum, from_number: fromNum, body: bodyText,
         message_type: 'sms', status: 'received', twilio_message_sid: sid,
       });
@@ -124,7 +129,7 @@ Deno.serve(async (req) => {
 
     // Regular inbound message — log it
     const { data: logged } = await admin.from('crm_sms_log').insert({
-      contact_id: contact?.id ?? null, direction: 'inbound',
+      contact_id: contact?.id ?? null, direction: 'inbound', channel,
       to_number: toNum, from_number: fromNum, body: bodyText, media_urls: mediaUrls,
       message_type: numMedia > 0 ? 'mms' : 'sms',
       status: 'received', twilio_message_sid: sid,

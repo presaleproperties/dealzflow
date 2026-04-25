@@ -39,8 +39,9 @@ Deno.serve(async (req) => {
       }
       try {
         const params = new URLSearchParams();
-        params.set('To', row.to_number);
-        if (row.from_number) params.set('From', row.from_number);
+        const isWa = row.channel === 'whatsapp';
+        params.set('To', isWa ? `whatsapp:${row.to_number}` : row.to_number);
+        if (row.from_number) params.set('From', isWa ? `whatsapp:${row.from_number}` : row.from_number);
         params.set('Body', row.body);
         (row.media_urls || []).forEach((u: string) => params.append('MediaUrl', u));
         params.set('StatusCallback', `${Deno.env.get('SUPABASE_URL')}/functions/v1/twilio-sms-webhook?type=status`);

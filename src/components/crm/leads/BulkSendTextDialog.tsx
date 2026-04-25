@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users } from 'lucide-react';
+import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users, MessageSquare } from 'lucide-react';
 import {
-  useBulkSendSms, useSmsTemplates, SMS_VARIABLES, smsSegments,
+  useBulkSendSms, useSmsTemplates, SMS_VARIABLES, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
+import { cn } from '@/lib/utils';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -21,10 +22,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   contactIds: string[];
   onComplete?: () => void;
+  defaultChannel?: MessagingChannel;
 }
 
-export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete }: Props) {
+export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete, defaultChannel = 'sms' }: Props) {
   const bulkSend = useBulkSendSms();
+  const [channel, setChannel] = useState<MessagingChannel>(defaultChannel);
   const { data: templates = [] } = useSmsTemplates();
   const { data: allContacts = [] } = useCrmContacts();
 
@@ -108,6 +111,7 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete 
         contact_ids: reachable.map(r => r.id),
         scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
         throttle_per_min: throttle,
+        channel,
       },
       {
         onSuccess: () => {
@@ -124,8 +128,28 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete 
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            Send mass text
+            Send mass {channel === 'whatsapp' ? 'WhatsApp' : 'text'}
           </DialogTitle>
+          <div className="flex items-center gap-1 mt-2 p-0.5 rounded-md bg-muted w-fit">
+            <button
+              onClick={() => setChannel('sms')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] rounded font-medium transition-colors flex items-center gap-1',
+                channel === 'sms' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
+              )}
+            >
+              <MessageSquare className="w-3 h-3" /> SMS / MMS
+            </button>
+            <button
+              onClick={() => setChannel('whatsapp')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] rounded font-medium transition-colors flex items-center gap-1',
+                channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'
+              )}
+            >
+              <span className="w-3 h-3 rounded-full bg-emerald-500" /> WhatsApp
+            </button>
+          </div>
         </DialogHeader>
 
         <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
@@ -195,22 +219,24 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete 
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-1" align="start">
-                  {templates.length === 0 ? (
-                    <div className="p-3 text-xs text-muted-foreground">No templates yet.</div>
-                  ) : (
-                    <ScrollArea className="max-h-72">
-                      {templates.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => { setBody(t.body); setMediaUrls(t.default_media_urls || []); setTplOpen(false); }}
-                          className="w-full text-left p-2 rounded hover:bg-muted"
-                        >
-                          <div className="text-xs font-medium">{t.name}</div>
-                          <div className="text-[11px] text-muted-foreground line-clamp-2">{t.body}</div>
-                        </button>
-                      ))}
-                    </ScrollArea>
-                  )}
+                  {(() => {
+                    const ch = templates.filter(t => (t.channel || 'sms') === channel);
+                    if (ch.length === 0) return <div className="p-3 text-xs text-muted-foreground">No {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} templates yet.</div>;
+                    return (
+                      <ScrollArea className="max-h-72">
+                        {ch.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => { setBody(t.body); setMediaUrls(t.default_media_urls || []); setTplOpen(false); }}
+                            className="w-full text-left p-2 rounded hover:bg-muted"
+                          >
+                            <div className="text-xs font-medium">{t.name}</div>
+                            <div className="text-[11px] text-muted-foreground line-clamp-2">{t.body}</div>
+                          </button>
+                        ))}
+                      </ScrollArea>
+                    );
+                  })()}
                 </PopoverContent>
               </Popover>
 
