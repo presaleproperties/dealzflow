@@ -34,6 +34,7 @@ import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiag
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -530,13 +531,18 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
   // Merge real notes with virtual entries synthesized from the email log so
   // every sent / received email shows up in the central timeline alongside notes.
-  const notes = useMemo<CrmNote[]>(() => {
+  // We also keep an id→row map so clicking the timeline entry can open the
+  // full email preview (rendered HTML, not the plain-text snippet).
+  const { notes, emailById } = useMemo(() => {
+    const byId = new Map<string, EmailLogRow>();
     const emailNotes: CrmNote[] = (emailLog ?? []).map((e: any) => {
       const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
       const subject = e.subject || '(no subject)';
-      const preview = (e.body_text || e.body_html || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      const preview = (e.body_text || e.body_html || e.body || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      const noteId = `email-${e.id}`;
+      byId.set(noteId, e as EmailLogRow);
       return {
-        id: `email-${e.id}`,
+        id: noteId,
         contact_id: contact.id,
         user_id: e.sent_by || '',
         content: `Subject: ${subject}\nDirection: ${direction}${e.from_email ? `\nFrom: ${e.from_email}` : ''}${e.to_email ? `\nTo: ${e.to_email}` : ''}${preview ? `\n\n${preview}` : ''}`,
@@ -549,11 +555,18 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     });
     const merged = [...rawNotes, ...emailNotes];
     const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
-    return merged.sort((a, b) => {
+    const sorted = merged.sort((a, b) => {
       if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
       return ts(b) - ts(a);
     });
+    return { notes: sorted, emailById: byId };
   }, [rawNotes, emailLog, contact.id]);
+
+  const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
+  const handleOpenEmail = (noteId: string) => {
+    const row = emailById.get(noteId);
+    if (row) setPreviewEmail(row);
+  };
 
   const [draft, setDraft] = useState('');
   const [noteType, setNoteType] = useState('manual');
@@ -710,6 +723,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
                   onCancelEdit={() => setEditingId(null)}
                   onSaveEdit={handleEditSave}
                   setEditContent={setEditContent}
+                  onOpenEmail={handleOpenEmail}
                 />
               ))}
             </div>
@@ -732,6 +746,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
                   onCancelEdit={() => setEditingId(null)}
                   onSaveEdit={handleEditSave}
                   setEditContent={setEditContent}
+                  onOpenEmail={handleOpenEmail}
                 />
               ))}
             </div>
@@ -752,18 +767,28 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
       <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-6">
         <ShowingsTab contactId={contact.id} showings={showings} />
       </TabsContent>
+
+      <EmailPreviewDialog
+        email={previewEmail}
+        open={!!previewEmail}
+        onOpenChange={(o) => !o && setPreviewEmail(null)}
+        contactEmail={contact.email}
+      />
     </Tabs>
   );
 }
 
 /* Note card */
-function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing, onCancelEdit, onSaveEdit, setEditContent }: {
+function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing, onCancelEdit, onSaveEdit, setEditContent, onOpenEmail }: {
   note: CrmNote; isOwn: boolean; contactId: string;
   editingId: string | null; editContent: string;
   onSetEditing: (id: string, content: string) => void;
   onCancelEdit: () => void;
   onSaveEdit: (id: string) => void;
   setEditContent: (v: string) => void;
+  /** Optional — if provided and the note is a virtual email entry, the card
+   *  becomes a button that opens the full email preview. */
+  onOpenEmail?: (noteId: string) => void;
 }) {
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
@@ -777,6 +802,7 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
   const visibleFields = isStructured && !expanded ? parsed.fields.slice(0, 4) : parsed.fields;
   const hasMore = isStructured && parsed.fields.length > 4;
   const isVirtual = note.id.startsWith('email-');
+  const isClickableEmail = isVirtual && !!onOpenEmail;
 
   if (editingId === note.id) {
     return (
@@ -801,10 +827,19 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
       >
         <Icon className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${meta.tint})` }} />
       </div>
-      <div className={cn(
-        'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all hover:border-border',
-        note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
-      )}>
+      <div
+        className={cn(
+          'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all hover:border-border',
+          note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
+          isClickableEmail && 'cursor-pointer hover:bg-muted/30 hover:border-primary/40',
+        )}
+        onClick={isClickableEmail ? () => onOpenEmail!(note.id) : undefined}
+        role={isClickableEmail ? 'button' : undefined}
+        tabIndex={isClickableEmail ? 0 : undefined}
+        onKeyDown={isClickableEmail
+          ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenEmail!(note.id); } }
+          : undefined}
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
             <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">
@@ -818,6 +853,12 @@ function NoteCard({ note, isOwn, contactId, editingId, editContent, onSetEditing
             )}
             <span className="opacity-30">·</span>
             <span className="shrink-0">{dateLabel} · {time}</span>
+            {isClickableEmail && (
+              <>
+                <span className="opacity-30">·</span>
+                <span className="text-primary font-medium shrink-0">View email →</span>
+              </>
+            )}
             {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60 shrink-0" />}
           </div>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -921,6 +962,7 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
   const { data: tasks = [] } = useCrmContactTasks(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emails, isLoading: emailsLoading } = useCrmEmailLog(contact.id);
+  const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
 
   const now = new Date();
   const pendingTasks = tasks.filter((t: any) => t.status !== 'completed');
@@ -976,7 +1018,12 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         ) : (
           <div className="space-y-2">
             {emails.slice(0, 5).map((email: any) => (
-              <div key={email.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-border transition-colors">
+              <button
+                key={email.id}
+                type="button"
+                onClick={() => setPreviewEmail(email as EmailLogRow)}
+                className="w-full text-left flex items-start gap-2.5 p-3 rounded-lg bg-card border border-border/60 hover:border-primary/50 hover:bg-muted/30 transition-colors"
+              >
                 <div className="w-8 h-8 rounded-md border border-border/60 flex items-center justify-center shrink-0">
                   {email.direction === 'outbound'
                     ? <ArrowUpRight className="w-4 h-4 text-foreground/70" />
@@ -1007,7 +1054,7 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
                     )}
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -1041,6 +1088,13 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
           presaleUserId={(contact as any)?.presale_user_id}
         />
       </WidgetSection>
+
+      <EmailPreviewDialog
+        email={previewEmail}
+        open={!!previewEmail}
+        onOpenChange={(o) => !o && setPreviewEmail(null)}
+        contactEmail={contact.email}
+      />
     </div>
   );
 }
