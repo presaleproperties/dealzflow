@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, Loader2, Activity, ShieldCheck, MessageSquare, Wand2, PowerOff, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { SendWhatsAppTestCard } from './SendWhatsAppTestCard';
 
 type CheckStatus = 'ok' | 'warn' | 'fail';
 type Check = { id: string; label: string; status: CheckStatus; detail: string };
@@ -138,6 +139,9 @@ export function MessagingStatusPanel() {
         onDisable={() => setup.mutate({ action: 'disable' })}
         pending={setup.isPending}
       />
+
+      {/* WhatsApp test send */}
+      <SendWhatsAppTestCard />
 
       {/* Sender summary */}
       <Card className="p-4 space-y-2">
