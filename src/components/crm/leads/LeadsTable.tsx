@@ -7,6 +7,7 @@ import { formatContactName, formatPhone, formatEmail } from '@/lib/format';
 import { LEAD_TYPE_LABELS, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmTags } from '@/hooks/useCrmTags';
+import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
