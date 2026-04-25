@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users } from 'lucide-react';
+import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users, MessageSquare } from 'lucide-react';
 import {
-  useBulkSendSms, useSmsTemplates, SMS_VARIABLES, smsSegments,
+  useBulkSendSms, useSmsTemplates, SMS_VARIABLES, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
+import { cn } from '@/lib/utils';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
