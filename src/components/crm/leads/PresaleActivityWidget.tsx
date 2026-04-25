@@ -116,21 +116,25 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
   type DeepLink = { label: string; href: string };
   type Item = {
     key: string;
+    kind: EventKind;
+    device?: string | null;
     icon: any;
     label: string;
     detail: string;
-    primaryUrl?: string | null;     // absolute, for the main click target
-    primaryDisplay?: string | null; // what to show for the main link (relative path preferred)
-    deepLinks?: DeepLink[];         // additional clickable destinations
+    primaryUrl?: string | null;
+    primaryDisplay?: string | null;
+    deepLinks?: DeepLink[];
     extra?: string | null;
     at: string;
   };
 
-  const items: Item[] = [
+  const items: Item[] = useMemo(() => [
     ...((data?.views || []) as any[]).map((v) => {
       const abs = toAbs(v.property_url);
       return {
         key: `v-${v.id}`,
+        kind: "view" as EventKind,
+        device: v.metadata?.device_type || null,
         icon: v.action === "favorite" ? Heart : Eye,
         label: v.action === "favorite" ? "Favorited property" : v.action === "share" ? "Shared property" : "Viewed property",
         detail: v.property_name || v.property_id || "Property",
@@ -151,6 +155,8 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
       }
       return {
         key: `f-${f.id}`,
+        kind: "form" as EventKind,
+        device: f.payload?.device_type || null,
         icon: FileText,
         label: (f.form_type || "form").replace(/_/g, " "),
         detail: f.form_name || f.property_name || "Submitted form",
@@ -163,6 +169,8 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
     }),
     ...((data?.engagement || []) as any[]).map((e) => ({
       key: `e-${e.id}`,
+      kind: "engagement" as EventKind,
+      device: e.metadata?.device_type || null,
       icon: (e.event_type || "").includes("click") ? MousePointerClick : Mail,
       label: (e.event_type || "event").replace(/_/g, " "),
       detail: e.campaign_name || e.template_name || "Email event",
@@ -183,6 +191,8 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
       }
       return {
         key: `s-${s.id}`,
+        kind: "session" as EventKind,
+        device: s.device_type || null,
         icon: Globe,
         label: "Site visit",
         detail: `${s.pages_viewed || 0} pages · ${s.utm_source || s.referrer || "direct"}`,
@@ -197,7 +207,50 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
         at: s.started_at,
       } as Item;
     }),
-  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()), [data]);
+
+  // Available device options
+  const deviceOptions = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((i) => { if (i.device) set.add(String(i.device).toLowerCase()); });
+    return Array.from(set).sort();
+  }, [items]);
+
+  // Apply filters
+  const filtered = useMemo(() => {
+    const from = dateRange?.from ? startOfDay(dateRange.from) : null;
+    const to = dateRange?.to ? endOfDay(dateRange.to) : (dateRange?.from ? endOfDay(dateRange.from) : null);
+    return items.filter((it) => {
+      if (activeKinds.size > 0 && !activeKinds.has(it.kind)) return false;
+      if (deviceFilter !== "all") {
+        if (!it.device || String(it.device).toLowerCase() !== deviceFilter) return false;
+      }
+      if (from || to) {
+        const d = new Date(it.at);
+        if (from && isBefore(d, from)) return false;
+        if (to && isAfter(d, to)) return false;
+      }
+      return true;
+    });
+  }, [items, activeKinds, dateRange, deviceFilter]);
+
+  const totalCount = items.length;
+  const filteredCount = filtered.length;
+  const filtersActive = activeKinds.size > 0 || !!dateRange?.from || deviceFilter !== "all";
+
+  const toggleKind = (k: EventKind) => {
+    setActiveKinds((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
+  };
+  const clearFilters = () => {
+    setActiveKinds(new Set());
+    setDateRange(undefined);
+    setDeviceFilter("all");
+  };
+
 
   const totalCount = items.length;
 
