@@ -44,6 +44,7 @@ export default function CrmContactsPage() {
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [filterDataStatus, setFilterDataStatus] = useState('all');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [composeContact, setComposeContact] = useState<CrmContact | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Apply URL params on mount
