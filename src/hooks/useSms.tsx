@@ -195,6 +195,7 @@ export interface SendSmsArgs {
   scheduled_for?: string;
   skip_quiet_hours?: boolean;
   ignore_optout?: boolean;
+  channel?: MessagingChannel;
 }
 
 export function useSendSms() {
@@ -231,6 +232,7 @@ export interface BulkSmsArgs {
   scheduled_for?: string;
   throttle_per_min?: number;
   dry_run?: boolean;
+  channel?: MessagingChannel;
 }
 
 export function useBulkSendSms() {
