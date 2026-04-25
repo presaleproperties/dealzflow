@@ -713,21 +713,34 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
                 <Pin className="w-3 h-3 text-foreground/60" />
                 <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
               </div>
-              {pinnedNotes.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  isOwn={note.user_id === currentUserId}
-                  contactId={contact.id}
-                  editingId={editingId}
-                  editContent={editContent}
-                  onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
-                  onCancelEdit={() => setEditingId(null)}
-                  onSaveEdit={handleEditSave}
-                  setEditContent={setEditContent}
-                  onOpenEmail={handleOpenEmail}
-                />
-              ))}
+              {pinnedNotes.map(note => {
+                const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
+                if (emailRow) {
+                  return (
+                    <EmailNoteCard
+                      key={note.id}
+                      email={emailRow}
+                      contactEmail={contact.email}
+                      onOpen={() => setPreviewEmail(emailRow)}
+                    />
+                  );
+                }
+                return (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    isOwn={note.user_id === currentUserId}
+                    contactId={contact.id}
+                    editingId={editingId}
+                    editContent={editContent}
+                    onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
+                    onCancelEdit={() => setEditingId(null)}
+                    onSaveEdit={handleEditSave}
+                    setEditContent={setEditContent}
+                    onOpenEmail={handleOpenEmail}
+                  />
+                );
+              })}
             </div>
           )}
 
