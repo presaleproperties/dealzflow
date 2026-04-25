@@ -57,19 +57,23 @@ export function SourcePicker({ value, onChange }: Props) {
           {value || 'Set source…'}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[260px] p-0" align="end">
+      <PopoverContent className="w-[300px] p-0" align="end">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search or add new…"
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList>
+          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border/50 bg-muted/30">
+            {filtered.length} {filtered.length === 1 ? 'source' : 'sources'}
+            {search.trim() ? ` matching "${search.trim()}"` : ' available'}
+          </div>
+          <CommandList className="max-h-[360px]">
             <CommandEmpty>No matches</CommandEmpty>
             <CommandGroup>
               {filtered.map(opt => (
                 <CommandItem key={opt} value={opt} onSelect={() => select(opt)}>
-                  <Check className={cn('w-3.5 h-3.5 mr-2', value === opt ? 'opacity-100' : 'opacity-0')} />
+                  <Check className={cn('w-3.5 h-3.5 mr-2 shrink-0', value === opt ? 'opacity-100' : 'opacity-0')} />
                   <span className="truncate">{opt}</span>
                 </CommandItem>
               ))}
