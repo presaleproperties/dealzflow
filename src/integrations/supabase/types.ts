@@ -4232,6 +4232,7 @@ export type Database = {
     }
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
+      _touch_skip_enabled: { Args: never; Returns: boolean }
       backfill_behavior_notes: { Args: never; Returns: Json }
       bulk_reformat_crm_notes: { Args: never; Returns: Json }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
