@@ -15,6 +15,12 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 export default function CrmEmailWorkspacePage() {
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+
+  const applyTemplate = (t: AnyTpl) => {
+    setAppliedTpl(t);
+    setActiveTemplateId(t.id);
+  };
 
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
