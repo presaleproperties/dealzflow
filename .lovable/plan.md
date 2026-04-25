@@ -1,89 +1,34 @@
+# CRM Production-Readiness Plan
 
-## Landing Page Refresh: Audience Clarity + Integration Showcase
+## Audit Findings (P0 = blocker, P1 = important, P2 = polish)
 
-### Goal
-Make it immediately clear the product is built exclusively for **Real Brokerage agents** (not just "Canadian realtors"), highlight the direct ReZen connection as the #1 differentiator, and add a dedicated integrations section showing ReZen (live), SkySlope (coming soon), and Lofty (coming soon).
+### Behavior tracking (P0)
+- **Realtime not enabled** on `crm_lead_behavior_views/sessions/forms/engagement` — widget cannot live-update
+- **Stitching gap**: 6,977 of 6,978 contacts have no `presale_user_id`. Presale sends events without email, so they stay anonymous forever
+- **Zero forms/engagement events** — Presale side is not yet pushing these event types
+- **PresaleActivityWidget lost its filter UI** in a recent regeneration
+- **No realtime subscription** in widget — only invalidates on manual action
 
----
+### Notifications (P1)
+- No notify on signup completion / return visit / high-intent (3+ views in session)
+- `trg_behavior_session_return_notify` exists but only for sessions; no triggers for forms/views
 
-### Changes Overview
+### Cross-lead view (P1)
+- No CRM-wide behavior dashboard. Only per-lead timeline.
 
-#### 1. Hero Section — Audience Signal
-- Change badge from `"BUILT FOR CANADIAN REALTORS"` → `"BUILT FOR REAL BROKERAGE AGENTS"`
-- Update headline to reinforce the Real Brokerage connection — e.g. *"Financial Clarity for Every Real Deal"*
-- Update sub-copy to call out the auto-sync: *"Connect your ReZen account once. Your deals, commissions, and rev share sync automatically."*
-- Add a third hero trust tag: `"Syncs directly with ReZen"`
-- Replace hero stat card's generic numbers with a "Connected to ReZen" badge/indicator in the card
+### Design (P2)
+- Lead Detail uses some hardcoded text sizes (`text-[10px]`, `text-[11px]`) — fine for density but inconsistent
+- No global behavior empty-state across pages
 
-#### 2. New "Integrations" Section — placed after HowItWorks, before DealTypes
-A dedicated section with:
-- Header: *"Connects to the tools you already use"*
-- Three integration tiles in a row:
-  - **ReZen** — `LIVE` green badge — *"Auto-sync your deals, payouts, rev share, and network. Connect once and everything stays up to date."*
-  - **SkySlope** — `COMING SOON` amber badge — *"Transaction coordination data synced directly into your deal pipeline."*
-  - **Lofty (Chime)** — `COMING SOON` amber badge — *"CRM contacts and pipeline leads coming straight into your pipeline view."*
-- Each tile: platform logo placeholder (icon-based), name, badge, description, and a subtle animated pulse on the LIVE badge
+### Performance (P1)
+- `usePresaleBehavior` fires 4 sequential-but-parallel queries per lead view; could be a single RPC
+- No pagination on behavior tables for power users with thousands of events
 
-#### 3. HowItWorks Section — Update Step 1
-- Change "Add your deals" → "Connect ReZen once"
-- Update description: *"Paste your ReZen API key in Settings. Deals, commissions, and rev share populate automatically — no manual entry."*
-- Keep Steps 2 & 3 as-is (the math, the clarity)
-
-#### 4. Features Section — Add "ReZen Auto-Sync" Feature Card
-- Insert a new feature card at position 1 (before Safe-to-Spend):
-  - Icon: `Zap` or `RefreshCw`
-  - Title: "Auto-Sync from ReZen"
-  - Desc: *"Connect once and your deals, payouts, and rev share populate automatically. No manual entry."*
-  - Highlights: Auto-imports deals, Rev share tracking, Network data synced, Payouts auto-matched
-  - Gradient: `from-emerald-600 to-green-500`
-- This makes the grid 7 features — adjust to `lg:grid-cols-3 md:grid-cols-2` which already handles it by wrapping
-
-#### 5. Pain Section — Add a ReZen-specific pain
-- Replace one of the 4 generic pains with a more targeted one:
-  - Icon: `RefreshCw`
-  - Question: *"Why am I manually entering deals I already closed in ReZen?"*
-  - Detail: *"You close a deal in ReZen, then re-enter it somewhere else for tracking. That's wasted time on work you already did."*
-
-#### 6. Testimonials — Update brokerage names
-- Change all testimonials to reference **Real Brokerage** agents specifically:
-  - "Sarah M. — Real Brokerage, Vancouver"
-  - "David C. — Real Brokerage, Burnaby"  
-  - "Jennifer L. — Real Brokerage, Calgary"
-- This reinforces the product is purpose-built for this audience
-
-#### 7. FAQ — Add ReZen-specific question
-- Add: *"Does it work with other brokerages?"* → *"Right now, dealzflow is purpose-built for Real Brokerage agents using ReZen. SkySlope and Lofty integrations are coming soon."*
-
----
-
-### Technical Details
-
-**Files changed:**
-- `src/pages/LandingPage.tsx` — all changes above in one file
-
-**New imports needed:**
-- `RefreshCw`, `Wifi`, `Clock` from `lucide-react` (for new cards/icons)
-
-**New component added inside the file:**
-```tsx
-function IntegrationsSection() { ... }
-```
-Inserted between `<HowItWorksSection />` and `<DealTypesSection />` in the main render.
-
-**Integration tile structure:**
-```text
-┌─────────────────────────────────────┐
-│  [Icon]  ReZen          ● LIVE      │
-│  Auto-sync deals, payouts, rev...   │
-└─────────────────────────────────────┘
-┌─────────────────────────────────────┐
-│  [Icon]  SkySlope    ◌ COMING SOON  │
-│  Transaction coordination data...   │
-└─────────────────────────────────────┘
-┌─────────────────────────────────────┐
-│  [Icon]  Lofty (Chime) ◌ COMING SOON│
-│  CRM contacts and pipeline leads... │
-└─────────────────────────────────────┘
-```
-
-No database changes required. No new dependencies needed.
+## Phases
+1. ✅ Audit (this doc)
+2. Behavior realtime + stitching backfill + restore filter UI in widget + RPC for unified fetch
+3. Cross-lead Behavior Dashboard page (`/crm/behavior`) — top properties, active sessions, signup funnel, return visits
+4. Notification triggers on signup_completed, return visit (>30min), high-intent view burst
+5. Lead Detail design polish (typography scale, card consistency, mobile)
+6. Performance: indexes + RPC + pagination
+7. CRM-wide design sweep

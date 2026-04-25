@@ -47,6 +47,7 @@ import CrmReportsPage from "./pages/crm/CrmReportsPage";
 import CrmSettingsPage from "./pages/crm/CrmSettingsPage";
 import CrmIntegrationsPage from "./pages/crm/CrmIntegrationsPage";
 import CrmBehaviorLeadsPage from "./pages/crm/CrmBehaviorLeadsPage";
+import CrmBehaviorDashboardPage from "./pages/crm/CrmBehaviorDashboardPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const queryClient = new QueryClient({
@@ -173,6 +174,7 @@ const App = () => (
                   <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/behavior" element={<ProtectedRoute><CrmLayout><CrmBehaviorDashboardPage /></CrmLayout></ProtectedRoute>} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Kanban, Mail, MessageCircle,
-  LayoutTemplate, CalendarDays, BarChart3, Zap, Plug, Settings,
+  LayoutTemplate, CalendarDays, BarChart3, Zap, Plug, Settings, Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
@@ -15,6 +15,7 @@ const TABS: Tab[] = [
   { label: 'Email',        path: '/crm/email',        icon: Mail },
   { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate },
   { label: 'Calendar',     path: '/crm/calendar',     icon: CalendarDays },
+  { label: 'Behavior',     path: '/crm/behavior',     icon: Activity },
   { label: 'Reports',      path: '/crm/reports',      icon: BarChart3 },
   { label: 'Automations',  path: '/crm/automations',  icon: Zap,      ownerAdminOnly: true },
   { label: 'Integrations', path: '/crm/integrations', icon: Plug,     ownerAdminOnly: true },
