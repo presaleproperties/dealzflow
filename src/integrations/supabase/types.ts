@@ -861,13 +861,17 @@ export type Database = {
           created_at: string
           direction: string
           gmail_message_id: string | null
+          gmail_thread_id: string | null
           id: string
+          in_reply_to: string | null
           last_clicked_at: string | null
           last_opened_at: string | null
+          message_id_header: string | null
           open_count: number
           opened_at: string | null
           sent_at: string
           subject: string
+          thread_id: string | null
           tracking_id: string | null
           user_id: string
         }
@@ -881,13 +885,17 @@ export type Database = {
           created_at?: string
           direction?: string
           gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
+          in_reply_to?: string | null
           last_clicked_at?: string | null
           last_opened_at?: string | null
+          message_id_header?: string | null
           open_count?: number
           opened_at?: string | null
           sent_at?: string
           subject: string
+          thread_id?: string | null
           tracking_id?: string | null
           user_id: string
         }
@@ -901,13 +909,17 @@ export type Database = {
           created_at?: string
           direction?: string
           gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
+          in_reply_to?: string | null
           last_clicked_at?: string | null
           last_opened_at?: string | null
+          message_id_header?: string | null
           open_count?: number
           opened_at?: string | null
           sent_at?: string
           subject?: string
+          thread_id?: string | null
           tracking_id?: string | null
           user_id?: string
         }
@@ -917,6 +929,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_email_log_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -1255,6 +1274,65 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_email_threads: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          gmail_thread_id: string | null
+          id: string
+          is_archived: boolean
+          last_message_at: string
+          last_message_from: string | null
+          last_message_snippet: string | null
+          message_count: number
+          participants: string[]
+          subject: string
+          unread_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          gmail_thread_id?: string | null
+          id?: string
+          is_archived?: boolean
+          last_message_at?: string
+          last_message_from?: string | null
+          last_message_snippet?: string | null
+          message_count?: number
+          participants?: string[]
+          subject?: string
+          unread_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          gmail_thread_id?: string | null
+          id?: string
+          is_archived?: boolean
+          last_message_at?: string
+          last_message_from?: string | null
+          last_message_snippet?: string | null
+          message_count?: number
+          participants?: string[]
+          subject?: string
+          unread_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_email_threads_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_email_workflow_steps: {
         Row: {
           created_at: string
@@ -1326,6 +1404,150 @@ export type Database = {
           trigger_event?: string
           updated_at?: string
           workflow_key?: string
+        }
+        Relationships: []
+      }
+      crm_gmail_messages: {
+        Row: {
+          attachment_meta: Json | null
+          bcc_emails: string[]
+          body_html: string | null
+          body_text: string | null
+          cc_emails: string[]
+          contact_id: string | null
+          created_at: string
+          direction: string
+          from_email: string
+          from_name: string | null
+          gmail_message_id: string
+          gmail_thread_id: string
+          has_attachments: boolean
+          id: string
+          in_reply_to: string | null
+          internal_date: string
+          is_read: boolean
+          is_starred: boolean
+          labels: string[]
+          message_id_header: string | null
+          snippet: string | null
+          subject: string | null
+          thread_id: string | null
+          to_emails: string[]
+          user_id: string
+        }
+        Insert: {
+          attachment_meta?: Json | null
+          bcc_emails?: string[]
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          contact_id?: string | null
+          created_at?: string
+          direction: string
+          from_email: string
+          from_name?: string | null
+          gmail_message_id: string
+          gmail_thread_id: string
+          has_attachments?: boolean
+          id?: string
+          in_reply_to?: string | null
+          internal_date: string
+          is_read?: boolean
+          is_starred?: boolean
+          labels?: string[]
+          message_id_header?: string | null
+          snippet?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          to_emails?: string[]
+          user_id: string
+        }
+        Update: {
+          attachment_meta?: Json | null
+          bcc_emails?: string[]
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          contact_id?: string | null
+          created_at?: string
+          direction?: string
+          from_email?: string
+          from_name?: string | null
+          gmail_message_id?: string
+          gmail_thread_id?: string
+          has_attachments?: boolean
+          id?: string
+          in_reply_to?: string | null
+          internal_date?: string
+          is_read?: boolean
+          is_starred?: boolean
+          labels?: string[]
+          message_id_header?: string | null
+          snippet?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          to_emails?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_gmail_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_gmail_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_gmail_sync_state: {
+        Row: {
+          created_at: string
+          initial_sync_completed: boolean
+          initial_sync_started_at: string | null
+          last_error: string | null
+          last_error_at: string | null
+          last_history_id: string | null
+          last_sync_at: string | null
+          total_messages_synced: number
+          updated_at: string
+          user_id: string
+          watch_expires_at: string | null
+          watch_history_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          initial_sync_completed?: boolean
+          initial_sync_started_at?: string | null
+          last_error?: string | null
+          last_error_at?: string | null
+          last_history_id?: string | null
+          last_sync_at?: string | null
+          total_messages_synced?: number
+          updated_at?: string
+          user_id: string
+          watch_expires_at?: string | null
+          watch_history_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          initial_sync_completed?: boolean
+          initial_sync_started_at?: string | null
+          last_error?: string | null
+          last_error_at?: string | null
+          last_history_id?: string | null
+          last_sync_at?: string | null
+          total_messages_synced?: number
+          updated_at?: string
+          user_id?: string
+          watch_expires_at?: string | null
+          watch_history_id?: string | null
         }
         Relationships: []
       }
