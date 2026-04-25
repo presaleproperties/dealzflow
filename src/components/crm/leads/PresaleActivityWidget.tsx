@@ -251,9 +251,6 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
     setDeviceFilter("all");
   };
 
-
-  const totalCount = items.length;
-
   const sanityBar = isOwnerOrAdmin && contactId ? (
     <div className="rounded-md border border-dashed border-border/60 bg-muted/30 px-2.5 py-1.5 mb-1.5 flex items-center justify-between gap-2">
       <div className="flex items-center gap-1.5 min-w-0">
