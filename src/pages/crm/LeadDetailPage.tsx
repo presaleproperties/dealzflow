@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -17,6 +17,7 @@ import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
 import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
+import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 import type { CrmMessageRow, CrmShowing, CrmTask, LeadScore } from '@/components/crm/leads/detail/types';
 
 export default function LeadDetailPage() {
@@ -34,6 +35,21 @@ export default function LeadDetailPage() {
   const [showText, setShowText] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
+
+  const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.leadDetail.leftCollapsed') === '1';
+  });
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.leadDetail.rightCollapsed') === '1';
+  });
+  useEffect(() => {
+    localStorage.setItem('crm.leadDetail.leftCollapsed', leftCollapsed ? '1' : '0');
+  }, [leftCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('crm.leadDetail.rightCollapsed', rightCollapsed ? '1' : '0');
+  }, [rightCollapsed]);
 
   const leadScore = useMemo<LeadScore>(() => {
     const inbound = (messages as CrmMessageRow[]).filter((m) => m.direction === 'inbound').length;
@@ -212,17 +228,25 @@ export default function LeadDetailPage() {
       />
 
       <div className="flex flex-1 min-h-0">
-        <div className="w-[360px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-5">
-          <LeftSidebar
-            contact={c}
-            leadScore={leadScore}
-            lastTouchLabel={lastTouchLabel}
-            daysInPipeline={daysInPipeline}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onSms={() => setShowText(true)}
-            onEmail={() => setShowEmail(true)}
-          />
-        </div>
+        {!leftCollapsed && (
+          <div className="w-[300px] xl:w-[360px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-5 transition-all">
+            <LeftSidebar
+              contact={c}
+              leadScore={leadScore}
+              lastTouchLabel={lastTouchLabel}
+              daysInPipeline={daysInPipeline}
+              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onSms={() => setShowText(true)}
+              onEmail={() => setShowEmail(true)}
+            />
+          </div>
+        )}
+        <PanelEdgeHandle
+          side="left"
+          collapsed={leftCollapsed}
+          onToggle={() => setLeftCollapsed(v => !v)}
+          label="Lead details panel"
+        />
 
         <div className="flex-1 min-w-0 flex flex-col bg-background">
           <CenterColumn
@@ -235,18 +259,26 @@ export default function LeadDetailPage() {
           />
         </div>
 
-        <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
-          <RightSidebar
-            contact={c}
-            onAddTask={() => setShowTask(true)}
-            onAddShowing={() => setShowShowing(true)}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onText={() => setShowText(true)}
-            onEmail={() => setShowEmail(true)}
-            leadScore={leadScore}
-            lastTouchHours={lastTouchHours}
-          />
-        </div>
+        <PanelEdgeHandle
+          side="right"
+          collapsed={rightCollapsed}
+          onToggle={() => setRightCollapsed(v => !v)}
+          label="Lead insights panel"
+        />
+        {!rightCollapsed && (
+          <div className="w-[300px] xl:w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5 transition-all">
+            <RightSidebar
+              contact={c}
+              onAddTask={() => setShowTask(true)}
+              onAddShowing={() => setShowShowing(true)}
+              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onText={() => setShowText(true)}
+              onEmail={() => setShowEmail(true)}
+              leadScore={leadScore}
+              lastTouchHours={lastTouchHours}
+            />
+          </div>
+        )}
       </div>
 
       <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
