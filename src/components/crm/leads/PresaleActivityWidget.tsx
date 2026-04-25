@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Eye, Heart, FileText, Globe, MousePointerClick, Mail, ExternalLink, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Eye, Heart, FileText, Globe, MousePointerClick, Mail, ExternalLink, CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { usePresaleBehavior } from "@/hooks/usePresaleBehavior";
 import { Skeleton } from "@/components/ui/skeleton";
