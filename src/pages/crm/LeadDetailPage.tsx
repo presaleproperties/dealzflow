@@ -39,6 +39,7 @@ import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/Ema
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { StickyLeadHeader } from '@/components/crm/leads/StickyLeadHeader';
+import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { NextBestActionCard } from '@/components/crm/leads/NextBestActionCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
