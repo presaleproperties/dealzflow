@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useSms';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { BulkSendTextDialog } from '@/components/crm/leads/BulkSendTextDialog';
+import { MessagingCenter } from '@/components/crm/sms/MessagingCenter';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
