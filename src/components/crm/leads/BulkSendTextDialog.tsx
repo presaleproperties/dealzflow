@@ -22,10 +22,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   contactIds: string[];
   onComplete?: () => void;
+  defaultChannel?: MessagingChannel;
 }
 
-export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete }: Props) {
+export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete, defaultChannel = 'sms' }: Props) {
   const bulkSend = useBulkSendSms();
+  const [channel, setChannel] = useState<MessagingChannel>(defaultChannel);
   const { data: templates = [] } = useSmsTemplates();
   const { data: allContacts = [] } = useCrmContacts();
 
