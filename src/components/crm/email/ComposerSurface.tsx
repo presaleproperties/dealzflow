@@ -36,7 +36,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EMAIL_VARIABLES, EMAIL_VARIABLE_GROUPS, renderForRecipient } from '@/lib/emailVariables';
 import { formatContactName } from '@/lib/format';
-import type { CrmContact } from '@/hooks/useCrmContacts';
+import { useCrmContacts, type CrmContact } from '@/hooks/useCrmContacts';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
 
 type Mode = 'edit' | 'html' | 'preview';
