@@ -26,7 +26,7 @@ export function InsightCard({
 }
 
 export function DetailRow({
-  label, value, href, field, contactId, type, options,
+  label, value, href, field, contactId, type, options, displayFormatter,
 }: {
   label: string;
   value: string | null | undefined;
@@ -35,6 +35,7 @@ export function DetailRow({
   contactId: string;
   type?: 'text' | 'email' | 'select';
   options?: readonly string[];
+  displayFormatter?: (value: string) => string;
 }) {
   const updateContact = useUpdateCrmContact();
   return (
@@ -47,6 +48,7 @@ export function DetailRow({
           href={href}
           type={type}
           options={options}
+          displayFormatter={displayFormatter}
           className="text-[13px] text-right truncate max-w-full"
         />
       </div>
