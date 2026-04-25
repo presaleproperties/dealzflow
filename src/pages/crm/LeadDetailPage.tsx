@@ -1398,20 +1398,29 @@ export default function LeadDetailPage() {
             </div>
 
             {navInfo && navInfo.total > 1 && (
-              <div className="flex items-center gap-0.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => handleNavigate('prev')}
-                  disabled={navInfo.index <= 0}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
-                  aria-label="Previous lead"
+                  disabled={!navInfo.prev}
+                  title={navInfo.prev ? `Previous: ${navInfo.prevName}` : 'Start of list'}
+                  aria-label={navInfo.prev ? `Previous lead: ${navInfo.prevName}` : 'Previous lead (none)'}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:active:scale-100 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronLeft className="w-[18px] h-[18px]" />
                 </button>
+                <span
+                  className="text-[10px] font-bold tabular-nums text-muted-foreground px-1.5 select-none"
+                  aria-live="polite"
+                  aria-label={`Lead ${navInfo.index + 1} of ${navInfo.total}`}
+                >
+                  {navInfo.index + 1}<span className="opacity-40 mx-0.5">/</span>{navInfo.total}
+                </span>
                 <button
                   onClick={() => handleNavigate('next')}
-                  disabled={navInfo.index >= navInfo.total - 1}
-                  className="w-9 h-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
-                  aria-label="Next lead"
+                  disabled={!navInfo.next}
+                  title={navInfo.next ? `Next: ${navInfo.nextName}` : 'End of list'}
+                  aria-label={navInfo.next ? `Next lead: ${navInfo.nextName}` : 'Next lead (none)'}
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-foreground hover:bg-muted/60 active:scale-95 disabled:text-muted-foreground/30 disabled:bg-transparent disabled:active:scale-100 disabled:cursor-not-allowed transition-all"
                 >
                   <ChevronRight className="w-[18px] h-[18px]" />
                 </button>
