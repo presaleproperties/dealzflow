@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const THROTTLE_PER_SEC = 5;
-const MAX_RECIPIENTS = 7000;
+const MAX_RECIPIENTS = 1500; // safe per-invocation ceiling (≈5 min wall clock at 5/sec)
 const PROGRESS_FLUSH_EVERY = 25; // update job row every N sends
 
 interface Body {
