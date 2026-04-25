@@ -356,111 +356,120 @@ export function ComposerSurface({
   return (
     <div className="flex flex-col h-full min-h-0 bg-card">
       {/* Recipient bar */}
-      <div className="px-5 py-3 border-b border-border space-y-2 bg-card shrink-0">
-        <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-          <Label className="text-xs text-muted-foreground">From</Label>
-          <Input
-            value={emailSettings?.sender_name ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>` : (user?.email ?? '')}
-            disabled
-            className="h-9 bg-muted/40 text-xs"
-          />
+      <div className="px-6 pt-4 pb-3 border-b border-border/70 bg-card shrink-0">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">New Message</h2>
           <button
             type="button"
-            className="text-[11px] text-muted-foreground hover:text-foreground"
+            className="text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground font-semibold"
             onClick={() => setShowCcBcc((v) => !v)}
           >
-            {showCcBcc ? 'Hide Cc/Bcc' : 'Cc/Bcc'}
+            {showCcBcc ? 'Hide Cc/Bcc' : 'Add Cc/Bcc'}
           </button>
         </div>
 
-        {/* Recipient chips */}
-        <div className="grid grid-cols-[60px_1fr] items-start gap-2">
-          <Label className="text-xs text-muted-foreground pt-2">To</Label>
-          <div className="min-h-[36px] rounded-md border border-input bg-background px-2 py-1.5 flex flex-wrap gap-1.5 items-center">
-            {recipients.length === 0 ? (
-              <span className="text-xs text-muted-foreground/70 px-1">
-                Pick recipients from the right pane →
-              </span>
-            ) : (
-              <>
-                {recipients.slice(0, 6).map((r) => (
-                  <span
-                    key={r.id}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 h-7 pl-2.5 pr-1 rounded-full text-[12px] font-medium border',
-                      r.email
-                        ? 'bg-primary/10 border-primary/25 text-foreground'
-                        : 'bg-destructive/8 border-destructive/30 text-destructive',
-                    )}
-                    title={r.email ?? 'No email — will be skipped'}
-                  >
-                    {!r.email && <MailWarning className="h-3.5 w-3.5" />}
-                    <span className="truncate max-w-[180px]">{formatContactName(r.first_name, r.last_name)}</span>
-                    {onRemoveRecipient && (
-                      <button
-                        type="button"
-                        onClick={() => onRemoveRecipient(r.id)}
-                        className="rounded-full hover:bg-foreground/10 p-0.5"
-                        aria-label={`Remove ${formatContactName(r.first_name, r.last_name)}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </span>
-                ))}
-                {recipients.length > 6 && (
-                  <span className="text-[11px] text-muted-foreground px-1.5">
-                    +{recipients.length - 6} more
-                  </span>
-                )}
-                {onClearRecipients && recipients.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={onClearRecipients}
-                    className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-2"
-                  >
-                    Clear
-                  </button>
-                )}
-              </>
-            )}
+        <div className="space-y-0 divide-y divide-border/50 border-y border-border/50">
+          {/* From */}
+          <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
+            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">From</Label>
+            <span className="text-[12.5px] text-foreground/90 truncate">
+              {emailSettings?.sender_name
+                ? <><span className="font-medium">{emailSettings.sender_name}</span> <span className="text-muted-foreground">&lt;{emailSettings.reply_to ?? user?.email ?? ''}&gt;</span></>
+                : (user?.email ?? '')}
+            </span>
+          </div>
+
+          {/* To */}
+          <div className="grid grid-cols-[64px_1fr] items-start gap-3 py-2">
+            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold pt-1.5">To</Label>
+            <div className="min-h-[28px] flex flex-wrap gap-1.5 items-center">
+              {recipients.length === 0 ? (
+                <span className="text-[12px] text-muted-foreground/70">
+                  Pick recipients from the right panel →
+                </span>
+              ) : (
+                <>
+                  {recipients.slice(0, 6).map((r) => (
+                    <span
+                      key={r.id}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 h-6 pl-2 pr-0.5 rounded-full text-[11.5px] font-medium border',
+                        r.email
+                          ? 'bg-muted/60 border-border text-foreground'
+                          : 'bg-destructive/8 border-destructive/30 text-destructive',
+                      )}
+                      title={r.email ?? 'No email — will be skipped'}
+                    >
+                      {!r.email && <MailWarning className="h-3 w-3" />}
+                      <span className="truncate max-w-[180px]">{formatContactName(r.first_name, r.last_name)}</span>
+                      {onRemoveRecipient && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveRecipient(r.id)}
+                          className="rounded-full hover:bg-foreground/10 p-0.5"
+                          aria-label={`Remove ${formatContactName(r.first_name, r.last_name)}`}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                  {recipients.length > 6 && (
+                    <span className="text-[10.5px] text-muted-foreground px-1">
+                      +{recipients.length - 6} more
+                    </span>
+                  )}
+                  {onClearRecipients && recipients.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={onClearRecipients}
+                      className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-1"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {showCcBcc && (
+            <>
+              <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
+                <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Cc</Label>
+                <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
+              </div>
+              <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
+                <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Bcc</Label>
+                <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
+              </div>
+            </>
+          )}
+
+          {/* Subject */}
+          <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
+            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Subject</Label>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Subject — supports {{lead.first_name}}"
+              className="h-8 text-[13.5px] font-semibold border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent placeholder:font-normal placeholder:text-muted-foreground/60"
+              maxLength={200}
+            />
           </div>
         </div>
+
         {unreachable > 0 && (
-          <div className="ml-[60px] flex items-center gap-1.5 text-[11px] text-amber-600">
+          <div className="mt-2 ml-[64px] flex items-center gap-1.5 text-[11px] text-amber-600">
             <AlertTriangle className="h-3 w-3" />
             {unreachable} selected lead{unreachable === 1 ? '' : 's'} ha{unreachable === 1 ? 's' : 've'} no email and will be skipped
           </div>
         )}
-
-        {showCcBcc && (
-          <>
-            <div className="grid grid-cols-[60px_1fr] items-center gap-2">
-              <Label className="text-xs text-muted-foreground">Cc</Label>
-              <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" className="h-9" />
-            </div>
-            <div className="grid grid-cols-[60px_1fr] items-center gap-2">
-              <Label className="text-xs text-muted-foreground">Bcc</Label>
-              <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" className="h-9" />
-            </div>
-          </>
-        )}
-
-        <div className="grid grid-cols-[60px_1fr] items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Subject</Label>
-          <Input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Subject — supports {{lead.first_name}}"
-            className="h-9 font-medium"
-            maxLength={200}
-          />
-        </div>
       </div>
 
       {/* Mode tabs */}
-      <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-1">
+      <div className="px-6 py-2 border-b border-border/70 bg-card flex items-center justify-between gap-2 shrink-0">
+        <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {(() => {
             const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
             return ([
@@ -473,8 +482,10 @@ export function ComposerSurface({
                 onClick={() => !(t as any).disabled && setMode(t.v)}
                 disabled={(t as any).disabled}
                 className={cn(
-                  'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
-                  mode === t.v ? 'bg-background border border-border text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  'h-7 px-3 text-[11.5px] rounded-md font-semibold transition-all flex items-center gap-1.5',
+                  mode === t.v
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
                   (t as any).disabled && 'opacity-40 cursor-not-allowed',
                 )}
               >
@@ -485,21 +496,31 @@ export function ComposerSurface({
           })()}
         </div>
         {mode === 'preview' && (
-          <div className="flex items-center gap-1">
-            <Button type="button" size="sm" variant={device === 'desktop' ? 'secondary' : 'ghost'} className="h-7 w-7 p-0" onClick={() => setDevice('desktop')}>
+          <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+            <button
+              type="button"
+              onClick={() => setDevice('desktop')}
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-md transition-colors', device === 'desktop' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+              aria-label="Desktop preview"
+            >
               <Monitor className="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" size="sm" variant={device === 'mobile' ? 'secondary' : 'ghost'} className="h-7 w-7 p-0" onClick={() => setDevice('mobile')}>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDevice('mobile')}
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-md transition-colors', device === 'mobile' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+              aria-label="Mobile preview"
+            >
               <Smartphone className="h-3.5 w-3.5" />
-            </Button>
+            </button>
           </div>
         )}
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
+      <div className="flex-1 overflow-y-auto bg-background min-h-0">
         {mode === 'edit' && (
-          <div className="p-5">
+          <div className="px-6 py-5 max-w-[760px] mx-auto">
             <RichTextEditor
               content={bodyHtml}
               onChange={setBodyHtml}
@@ -572,7 +593,7 @@ export function ComposerSurface({
           </div>
         )}
         {mode === 'html' && (
-          <div className="p-5">
+          <div className="px-6 py-5 max-w-[760px] mx-auto">
             <textarea
               ref={htmlTextareaRef}
               value={bodyHtml}
@@ -594,7 +615,7 @@ export function ComposerSurface({
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
+      <div className="px-6 py-3 border-t border-border/70 bg-card/95 backdrop-blur flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground/80">Signature</span>

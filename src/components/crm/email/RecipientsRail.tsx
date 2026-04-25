@@ -279,16 +279,9 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
               <button
                 type="button"
                 onClick={selectAllVisible}
-                className={cn(
-                  'inline-flex items-center gap-1 h-6 px-2.5 rounded-md text-[10.5px] font-bold uppercase tracking-wider transition-colors',
-                  allVisibleSelected
-                    ? 'bg-muted text-foreground hover:bg-muted/80'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
-                )}
-                title={allVisibleSelected ? 'Deselect all filtered' : `Select all ${filtered.length} filtered leads`}
+                className="text-[10.5px] font-semibold uppercase tracking-wider text-primary hover:underline"
               >
-                <Check className="h-3 w-3" strokeWidth={3} />
-                {allVisibleSelected ? 'Deselect all' : `Select all ${filtered.length.toLocaleString()}`}
+                {allVisibleSelected ? 'Deselect' : `Select ${filtered.length.toLocaleString()}`}
               </button>
             )}
           </div>

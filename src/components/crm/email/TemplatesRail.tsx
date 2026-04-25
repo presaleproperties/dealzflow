@@ -66,12 +66,14 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
   const isLoading = bridgeLoading || localLoading;
 
   return (
-    <aside className="flex flex-col h-full min-h-0 border-r border-border bg-muted/5">
-      <div className="px-3.5 py-3 border-b border-border bg-card shrink-0">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">Templates</h3>
-          <span className="ml-auto text-[10px] text-muted-foreground">{filtered.length}</span>
+    <aside className="flex flex-col h-full min-h-0 border-r border-border bg-card/50">
+      <div className="px-4 pt-4 pb-3 border-b border-border/70 bg-card shrink-0 space-y-3">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <h3 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">Templates</h3>
+            <p className="text-[10.5px] text-muted-foreground mt-1">{filtered.length.toLocaleString()} available</p>
+          </div>
+          <Sparkles className="h-3.5 w-3.5 text-primary/70" />
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -79,11 +81,11 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search templates…"
-            className="pl-8 h-8 text-xs"
+            className="pl-8 h-9 text-[12.5px] bg-background"
           />
         </div>
         {/* Tag chips */}
-        <div className="flex flex-wrap gap-1 mt-2">
+        <div className="flex flex-wrap gap-1">
           {TEMPLATE_TAG_ORDER.map((tag) => {
             const isActive = activeTags.has(tag);
             return (
@@ -92,10 +94,10 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
                 type="button"
                 onClick={() => toggleTag(tag)}
                 className={cn(
-                  'inline-flex items-center gap-1 h-5 px-1.5 rounded-full text-[10px] font-medium border transition-colors',
+                  'inline-flex items-center h-6 px-2 rounded-full text-[10.5px] font-medium border transition-colors',
                   isActive
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted/60',
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-transparent text-muted-foreground border-border/70 hover:text-foreground hover:border-foreground/30',
                 )}
               >
                 {tag}
@@ -106,7 +108,7 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
             <button
               type="button"
               onClick={() => setActiveTags(new Set())}
-              className="inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full text-[10px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-0.5 h-6 px-1.5 rounded-full text-[10.5px] text-muted-foreground hover:text-foreground"
             >
               <X className="h-2.5 w-2.5" />
               Clear
@@ -115,12 +117,12 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0">
         {isLoading ? (
-          <div className="text-[11px] text-muted-foreground text-center py-6">Loading templates…</div>
+          <div className="text-[11.5px] text-muted-foreground text-center py-8">Loading templates…</div>
         ) : filtered.length === 0 ? (
-          <div className="text-[11px] text-muted-foreground text-center py-6 px-3">
-            <FileText className="h-5 w-5 mx-auto mb-1.5 text-muted-foreground/40" />
+          <div className="text-[11.5px] text-muted-foreground text-center py-10 px-3">
+            <FileText className="h-6 w-6 mx-auto mb-2 text-muted-foreground/40" />
             {search.trim() || activeTags.size > 0 ? 'No templates match your filters' : 'No templates yet'}
           </div>
         ) : (
@@ -130,23 +132,23 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
               type="button"
               onClick={() => onApply(tpl)}
               className={cn(
-                'w-full text-left bg-card border rounded-lg overflow-hidden hover:shadow-sm transition-all relative group',
+                'w-full text-left bg-card border rounded-xl overflow-hidden transition-all relative group',
                 activeTemplateId === tpl.id
-                  ? 'border-primary ring-1 ring-primary/30 shadow-sm'
-                  : 'border-border hover:border-primary/50',
+                  ? 'border-primary/70 ring-2 ring-primary/15 shadow-sm'
+                  : 'border-border/70 hover:border-foreground/25 hover:shadow-sm',
               )}
             >
               {tpl.__isBridge && (
-                <Badge className="absolute top-1 right-1 z-10 bg-primary/90 text-primary-foreground text-[8px] px-1 py-0 h-3.5">
-                  PRESALE
+                <Badge className="absolute top-1.5 right-1.5 z-10 bg-foreground text-background text-[8.5px] px-1.5 py-0 h-4 tracking-wider font-bold uppercase border-0">
+                  Presale
                 </Badge>
               )}
-              <div className="border-b border-border/40 overflow-hidden bg-muted/20">
+              <div className="border-b border-border/40 overflow-hidden bg-muted/10">
                 <TemplateThumb html={tpl.body_html ?? ''} />
               </div>
-              <div className="p-2">
-                <p className="text-[11.5px] font-semibold text-foreground truncate leading-tight">{tpl.name}</p>
-                <p className="text-[10.5px] text-muted-foreground truncate mt-0.5">
+              <div className="px-2.5 py-2">
+                <p className="text-[12px] font-semibold text-foreground truncate leading-tight">{tpl.name}</p>
+                <p className="text-[10.5px] text-muted-foreground truncate mt-0.5 leading-tight">
                   {tpl.subject || '(no subject)'}
                 </p>
               </div>

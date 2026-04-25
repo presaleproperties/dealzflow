@@ -231,10 +231,7 @@ export default function LeadDetailPage() {
 
       <div className="flex flex-1 min-h-0">
         {!leftCollapsed && (
-          <div
-            className="w-[300px] xl:w-[360px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-5 transition-all"
-            onDragStart={(e) => e.preventDefault()}
-          >
+          <div className="w-[300px] xl:w-[360px] flex-shrink-0 border-r border-border bg-muted/30 overflow-y-auto p-5 transition-all">
             <LeftSidebar
               contact={c}
               leadScore={leadScore}
@@ -271,10 +268,7 @@ export default function LeadDetailPage() {
           label="Lead insights panel"
         />
         {!rightCollapsed && (
-          <div
-            className="w-[300px] xl:w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5 transition-all"
-            onDragStart={(e) => e.preventDefault()}
-          >
+          <div className="w-[300px] xl:w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5 transition-all">
             <RightSidebar
               contact={c}
               onAddTask={() => setShowTask(true)}
