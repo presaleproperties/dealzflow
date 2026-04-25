@@ -16,23 +16,15 @@ export function SourcePicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Pull all distinct source values currently in use across the CRM
+  // Pull all distinct source values currently in use across the CRM via RPC
+  // (avoids the 1000-row default limit on direct table reads).
   const { data: dbSources = [] } = useQuery({
     queryKey: ['crm-distinct-sources'],
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('crm_contacts')
-        .select('source')
-        .not('source', 'is', null)
-        .limit(5000);
+      const { data, error } = await supabase.rpc('crm_distinct_sources');
       if (error) throw error;
-      const set = new Set<string>();
-      (data ?? []).forEach((r: any) => {
-        const s = (r.source ?? '').trim();
-        if (s) set.add(s);
-      });
-      return Array.from(set);
+      return ((data ?? []) as Array<{ source: string }>).map(r => r.source).filter(Boolean);
     },
   });
 
