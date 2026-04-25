@@ -135,7 +135,13 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
         <a
           href={href}
           className="text-sm text-primary hover:underline truncate min-w-0"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onActivate) {
+              e.preventDefault();
+              onActivate();
+            }
+          }}
           title={display}
         >
           {display}
