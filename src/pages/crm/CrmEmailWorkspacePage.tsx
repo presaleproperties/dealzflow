@@ -74,6 +74,7 @@ export default function CrmEmailWorkspacePage() {
             onClearRecipients={() => setRecipients([])}
             appliedTemplate={appliedTpl}
             onTemplateApplied={() => setAppliedTpl(null)}
+            onSent={() => setActiveTemplateId(null)}
           />
         </div>
 
