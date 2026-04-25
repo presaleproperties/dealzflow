@@ -1,4 +1,5 @@
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
+import { CopyButton } from './CopyButton';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 
 export function SectionHeader({ children }: { children: React.ReactNode }) {
