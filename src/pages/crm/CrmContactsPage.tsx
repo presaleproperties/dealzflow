@@ -13,6 +13,8 @@ import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/data
 import { formatContactName, getContactInitials } from '@/lib/format';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import type { CrmContact } from '@/hooks/useCrmContacts';
 
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
