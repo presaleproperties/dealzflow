@@ -5,9 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
 import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/useCrmNotes';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
+import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { getDateGroup, noteTime, type CrmShowing } from './types';
@@ -15,7 +17,7 @@ import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 
-type FilterType = 'all' | 'manual' | 'email' | 'call_log' | 'web' | 'system';
+type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
 
 interface Props {
   contact: CrmContact;
