@@ -292,7 +292,10 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
           toast.success(`Status → ${v}`);
         }}
       >
-        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] font-semibold shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 gap-1" style={{ color: sc.color }}>
+        <SelectTrigger
+          className="h-7 border-0 px-2.5 py-0 text-[11.5px] font-semibold uppercase tracking-[0.06em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
+          style={{ background: sc.bg, color: sc.color }}
+        >
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
             <span>{displayStatus}</span>
