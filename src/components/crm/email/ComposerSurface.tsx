@@ -615,7 +615,7 @@ export function ComposerSurface({
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
+      <div className="px-6 py-3 border-t border-border/70 bg-card/95 backdrop-blur flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground/80">Signature</span>
