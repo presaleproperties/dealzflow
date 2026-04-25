@@ -490,19 +490,13 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   const score = (contact as any).lead_score as number | null | undefined;
   const hasScore = typeof score === 'number';
 
-  // Color-code score badge: red <40, amber 40-59, green ≥60
-  const scoreStyle = !hasScore
-    ? { bg: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }
-    : score! >= 60
-      ? { bg: 'hsl(142 71% 45% / 0.14)', color: 'hsl(142 71% 35%)' }
-      : score! >= 40
-        ? { bg: 'hsl(38 92% 50% / 0.14)', color: 'hsl(28 90% 45%)' }
-        : { bg: 'hsl(0 75% 60% / 0.12)', color: 'hsl(0 70% 50%)' };
+  // Editorial temperature label — HOT / WARM / COLD
+  const tier = !hasScore ? null : score! >= 60 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
 
-  // "New" indicator: never touched
+  // "New" / never-touched indicator — gold dot
   const isNew = !contact.last_touch_at;
 
-  // Lead type label (Buyer / Seller / Investor / Renter)
+  // Lead type label (Buyer / Seller / Investor / Renter), falls back to contact_type
   const rawType = (contact as any).lead_type as string | null | undefined;
   const typeLabel = rawType
     ? rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()
@@ -521,17 +515,16 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-card px-4 py-3.5 border-b border-border/60 transition-colors active:bg-muted/40 focus:outline-none focus-visible:bg-muted/30"
+      className="w-full text-left bg-transparent px-4 py-4 border-b border-border/40 transition-colors active:bg-muted/30 focus:outline-none focus-visible:bg-muted/20"
     >
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          {/* Row 1: dot + name + score */}
+          {/* Row 1: gold dot (when new) + name */}
           <div className="flex items-center gap-2 min-w-0">
             {isNew && (
               <span
                 aria-label="New lead"
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: 'hsl(14 90% 55%)' }}
+                className="w-1.5 h-1.5 rounded-full shrink-0 bg-primary"
               />
             )}
             <h3 className="text-[15px] font-semibold text-foreground tracking-tight leading-tight truncate flex-1 min-w-0">
@@ -539,30 +532,43 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
             </h3>
           </div>
 
-          {/* Row 2: lead type */}
-          <p className="text-[13px] text-muted-foreground mt-0.5 leading-tight">{typeLabel}</p>
+          {/* Row 2: type · source — editorial dot separator */}
+          <p className="text-[13px] text-muted-foreground mt-1 leading-tight truncate">
+            {typeLabel}
+            {sourceText && (
+              <>
+                <span className="mx-1.5 text-muted-foreground/40">·</span>
+                <span className="truncate">{sourceText}</span>
+              </>
+            )}
+          </p>
 
-          {/* Row 3: source */}
-          {sourceText && (
-            <p className="text-[13px] text-muted-foreground mt-0.5 leading-tight truncate">{sourceText}</p>
-          )}
-
-          {/* Row 4: assignee */}
+          {/* Row 3: assignee */}
           {assignee && (
-            <p className="text-[13px] text-foreground/85 mt-1.5 leading-tight truncate">{assignee}</p>
+            <p className="text-[12px] text-muted-foreground/80 mt-1.5 leading-tight truncate tracking-wide">
+              {assignee}
+            </p>
           )}
         </div>
 
-        {/* Right column: score badge + relative time */}
-        <div className="flex flex-col items-end justify-between gap-2 shrink-0 self-stretch min-h-[64px]">
-          <span
-            className="inline-flex items-center justify-center min-w-[40px] h-7 px-2 rounded-md text-[13px] font-bold tabular-nums"
-            style={{ background: scoreStyle.bg, color: scoreStyle.color }}
-          >
-            {hasScore ? score : '—'}
-          </span>
+        {/* Right column: temperature label + relative time */}
+        <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[60px]">
+          {tier ? (
+            <span
+              className={`text-[10px] font-bold uppercase tracking-[0.14em] tabular-nums ${
+                tier === 'HOT' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              {tier}
+              <span className="ml-1.5 text-[11px] font-semibold text-muted-foreground/70">
+                {score}
+              </span>
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50">—</span>
+          )}
           {relTime && (
-            <span className="text-[12px] text-muted-foreground whitespace-nowrap">{relTime}</span>
+            <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap">{relTime}</span>
           )}
         </div>
       </div>
