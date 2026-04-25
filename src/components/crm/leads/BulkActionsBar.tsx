@@ -157,6 +157,14 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkSendTextDialog
+        open={showBulkText}
+        onOpenChange={setShowBulkText}
+        contactIds={selectedIds}
+        onComplete={onClearSelection}
+      />
     </>
+
   );
 }
