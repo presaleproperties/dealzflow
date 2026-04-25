@@ -1133,7 +1133,11 @@ function MessageList({
                                 rel="noreferrer"
                                 className={cn(
                                   'flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded-md',
-                                  isOutbound ? 'bg-white/15 hover:bg-white/25' : 'bg-background/60 hover:bg-background',
+                                  isOutbound
+                                    ? channel === 'whatsapp'
+                                      ? 'bg-emerald-700/10 hover:bg-emerald-700/20'
+                                      : 'bg-white/15 hover:bg-white/25'
+                                    : 'bg-background/60 hover:bg-background',
                                 )}
                               >
                                 <FileText className="w-3 h-3" /> Attachment
