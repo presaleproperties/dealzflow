@@ -72,6 +72,17 @@ export function MassSendConfirmDialog({
             </div>
           </div>
 
+          {overCap && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <div className="text-xs text-destructive/90 leading-relaxed">
+                <strong>{count.toLocaleString()} recipients exceeds the per-job limit of {MAX_PER_JOB.toLocaleString()}.</strong>
+                <br />
+                Reduce the selection or split into multiple sends. Larger blasts should run through a dedicated marketing service.
+              </div>
+            </div>
+          )}
+
           {/* Excluded list */}
           {excluded.length > 0 && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
