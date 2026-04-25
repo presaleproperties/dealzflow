@@ -714,6 +714,11 @@ function NewChatPane({
 
       {/* Lightweight composer for new chat (no schedule/media here — encourages picking the contact first) */}
       <div className="border-t border-border bg-background px-3 py-3">
+        {isWa && (
+          <div className="max-w-3xl mx-auto mb-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+            New WhatsApp chats are locked until the lead replies first. Use SMS to start outreach, then continue here after they respond.
+          </div>
+        )}
         <div className="max-w-3xl mx-auto flex items-end gap-2">
           <Input
             value={composeBody}
@@ -726,7 +731,7 @@ function NewChatPane({
           />
           <Button
             onClick={() => onSend()}
-            disabled={(!composeBody.trim()) || sending}
+            disabled={(!composeBody.trim()) || sending || isWa}
             className={cn('shrink-0', isWa && 'bg-emerald-600 hover:bg-emerald-700 text-white')}
           >
             Send
