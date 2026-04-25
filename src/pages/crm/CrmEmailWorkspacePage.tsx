@@ -80,11 +80,11 @@ export default function CrmEmailWorkspacePage() {
       {/* Footer strip — quick access to existing sub-tools */}
       <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px]">
         <span className="text-muted-foreground/70 uppercase tracking-wider mr-1">More:</span>
-        <FooterLink to="/crm/email-center" icon={Mail} label="Sent log" />
-        <FooterLink to="/crm/email-campaigns" icon={Megaphone} label="Campaigns" />
-        <FooterLink to="/crm/email-workflows" icon={Workflow} label="Flows" />
-        <FooterLink to="/crm/email-analytics" icon={BarChart3} label="Stats" />
-        <FooterLink to="/crm/email-health" icon={Activity} label="Health" />
+        <FooterLink to="/crm/email/legacy?tab=center" icon={Mail} label="Sent log" />
+        <FooterLink to="/crm/email/legacy?tab=campaigns" icon={Megaphone} label="Campaigns" />
+        <FooterLink to="/crm/email/legacy?tab=workflows" icon={Workflow} label="Flows" />
+        <FooterLink to="/crm/email/legacy?tab=analytics" icon={BarChart3} label="Stats" />
+        <FooterLink to="/crm/email/legacy?tab=health" icon={Activity} label="Health" />
       </div>
     </div>
   );
