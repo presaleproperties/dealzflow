@@ -266,7 +266,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'pipeline', label: 'Pipeline' },
   { key: 'tags', label: 'Tags' },
   { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent' },
-  { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Touch' },
+  { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Activity' },
   { key: 'created_at', sortKey: 'created_at', label: 'Added' },
   { key: 'campaign_source', label: 'Campaign' },
   { key: 'city_pref', label: 'City Pref' },
@@ -339,7 +339,7 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
   );
 }
 
-/* ── Last Touch with color coding ── */
+/* ── Last Activity with color coding ── */
 function LastTouchCell({ contact }: { contact: CrmContact }) {
   if (!contact.last_touch_at) {
     return (

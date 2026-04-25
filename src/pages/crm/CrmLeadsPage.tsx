@@ -36,7 +36,7 @@ const ALL_COLUMN_KEYS = [
   { key: 'pipeline', label: 'Pipeline' },
   { key: 'tags', label: 'Tags' },
   { key: 'assigned_to', label: 'Agent' },
-  { key: 'last_touch_at', label: 'Last Touch' },
+  { key: 'last_touch_at', label: 'Last Activity' },
   { key: 'created_at', label: 'Added' },
   { key: 'campaign_source', label: 'Campaign' },
   { key: 'city_pref', label: 'City Pref' },

@@ -300,7 +300,7 @@ function LeftSidebar({
             sublabel={leadScore.label.toUpperCase()}
             accent={leadScore.color}
           />
-          <InsightCard value={lastTouchLabel} label="Last Touch" />
+          <InsightCard value={lastTouchLabel} label="Last Activity" />
           <InsightCard value={`${daysInPipeline}d`} label="In Pipeline" />
         </div>
       </div>
