@@ -68,8 +68,13 @@ Deno.serve(async (req) => {
     }
 
     // ============== INBOUND MESSAGE ==============
-    const fromNum = data.From;
-    const toNum = data.To;
+    const fromRaw = data.From || '';
+    const toRaw = data.To || '';
+    // WhatsApp arrives as "whatsapp:+15551234567"
+    const isWhatsApp = fromRaw.startsWith('whatsapp:') || toRaw.startsWith('whatsapp:');
+    const channel = isWhatsApp ? 'whatsapp' : 'sms';
+    const fromNum = fromRaw.replace(/^whatsapp:/, '');
+    const toNum = toRaw.replace(/^whatsapp:/, '');
     const bodyText = (data.Body || '').trim();
     const sid = data.MessageSid;
     const numMedia = parseInt(data.NumMedia || '0', 10);
