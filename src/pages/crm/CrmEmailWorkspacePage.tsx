@@ -12,10 +12,12 @@ import { TemplatesRail, type AnyTpl } from '@/components/crm/email/TemplatesRail
 import { RecipientsRail } from '@/components/crm/email/RecipientsRail';
 import { ComposerSurface } from '@/components/crm/email/ComposerSurface';
 import InboxView from '@/components/crm/email/InboxView';
+import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 type Mode = 'compose' | 'inbox';
