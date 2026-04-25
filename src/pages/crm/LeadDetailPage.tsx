@@ -36,6 +36,7 @@ import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -539,14 +540,14 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     const emailNotes: CrmNote[] = (emailLog ?? []).map((e: any) => {
       const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
       const subject = e.subject || '(no subject)';
-      const preview = (e.body_text || e.body_html || e.body || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
       const noteId = `email-${e.id}`;
       byId.set(noteId, e as EmailLogRow);
+      // Content kept minimal — the timeline renders these via EmailNoteCard.
       return {
         id: noteId,
         contact_id: contact.id,
         user_id: e.sent_by || '',
-        content: `Subject: ${subject}\nDirection: ${direction}${e.from_email ? `\nFrom: ${e.from_email}` : ''}${e.to_email ? `\nTo: ${e.to_email}` : ''}${preview ? `\n\n${preview}` : ''}`,
+        content: `${direction} email: ${subject}`,
         note_type: 'email',
         is_pinned: false,
         created_at: e.sent_at || e.created_at || new Date().toISOString(),
@@ -712,21 +713,34 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
                 <Pin className="w-3 h-3 text-foreground/60" />
                 <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
               </div>
-              {pinnedNotes.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  isOwn={note.user_id === currentUserId}
-                  contactId={contact.id}
-                  editingId={editingId}
-                  editContent={editContent}
-                  onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
-                  onCancelEdit={() => setEditingId(null)}
-                  onSaveEdit={handleEditSave}
-                  setEditContent={setEditContent}
-                  onOpenEmail={handleOpenEmail}
-                />
-              ))}
+              {pinnedNotes.map(note => {
+                const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
+                if (emailRow) {
+                  return (
+                    <EmailNoteCard
+                      key={note.id}
+                      email={emailRow}
+                      contactEmail={contact.email}
+                      onOpen={() => setPreviewEmail(emailRow)}
+                    />
+                  );
+                }
+                return (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    isOwn={note.user_id === currentUserId}
+                    contactId={contact.id}
+                    editingId={editingId}
+                    editContent={editContent}
+                    onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
+                    onCancelEdit={() => setEditingId(null)}
+                    onSaveEdit={handleEditSave}
+                    setEditContent={setEditContent}
+                    onOpenEmail={handleOpenEmail}
+                  />
+                );
+              })}
             </div>
           )}
 
@@ -735,21 +749,34 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
               <div className="pl-9">
                 <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
-              {group.notes.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  isOwn={note.user_id === currentUserId}
-                  contactId={contact.id}
-                  editingId={editingId}
-                  editContent={editContent}
-                  onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
-                  onCancelEdit={() => setEditingId(null)}
-                  onSaveEdit={handleEditSave}
-                  setEditContent={setEditContent}
-                  onOpenEmail={handleOpenEmail}
-                />
-              ))}
+              {group.notes.map(note => {
+                const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
+                if (emailRow) {
+                  return (
+                    <EmailNoteCard
+                      key={note.id}
+                      email={emailRow}
+                      contactEmail={contact.email}
+                      onOpen={() => setPreviewEmail(emailRow)}
+                    />
+                  );
+                }
+                return (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    isOwn={note.user_id === currentUserId}
+                    contactId={contact.id}
+                    editingId={editingId}
+                    editContent={editContent}
+                    onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
+                    onCancelEdit={() => setEditingId(null)}
+                    onSaveEdit={handleEditSave}
+                    setEditContent={setEditContent}
+                    onOpenEmail={handleOpenEmail}
+                  />
+                );
+              })}
             </div>
           ))}
 
