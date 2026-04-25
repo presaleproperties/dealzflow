@@ -1,9 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, Loader2, Activity, ShieldCheck, MessageSquare } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, Loader2, Activity, ShieldCheck, MessageSquare, Wand2, PowerOff, Settings2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 type CheckStatus = 'ok' | 'warn' | 'fail';
@@ -31,6 +36,7 @@ function statusTone(status: CheckStatus) {
 }
 
 export function MessagingStatusPanel() {
+  const qc = useQueryClient();
   const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ['messaging-status'],
     queryFn: async (): Promise<StatusResponse> => {
@@ -40,6 +46,27 @@ export function MessagingStatusPanel() {
     },
     refetchOnWindowFocus: false,
     staleTime: 30_000,
+  });
+
+  const setup = useMutation({
+    mutationFn: async (payload: { action: 'enable' | 'disable'; phone?: string; messaging_service_sid?: string; label?: string }) => {
+      const { data, error } = await supabase.functions.invoke('whatsapp-setup', { body: payload });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      return data;
+    },
+    onSuccess: (d: unknown) => {
+      const result = d as { action?: string; whatsapp_from?: string };
+      toast.success(
+        result.action === 'disabled'
+          ? 'WhatsApp disabled'
+          : `WhatsApp enabled${result.whatsapp_from ? ` on ${result.whatsapp_from.replace('whatsapp:', '')}` : ''}`
+      );
+      qc.invalidateQueries({ queryKey: ['messaging-status'] });
+      qc.invalidateQueries({ queryKey: ['sms-settings'] });
+      qc.invalidateQueries({ queryKey: ['sms-numbers'] });
+    },
+    onError: (e: Error) => toast.error(e.message || 'Setup failed'),
   });
 
   if (isLoading) {
