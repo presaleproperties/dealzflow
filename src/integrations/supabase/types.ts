@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      _lofty_realtor_import: {
+        Row: {
+          email: string | null
+          first_name: string | null
+          last_name: string | null
+          other_email: string | null
+          other_phone: string | null
+          phone: string | null
+          source: string | null
+          tag: string | null
+        }
+        Insert: {
+          email?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          other_email?: string | null
+          other_phone?: string | null
+          phone?: string | null
+          source?: string | null
+          tag?: string | null
+        }
+        Update: {
+          email?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          other_email?: string | null
+          other_phone?: string | null
+          phone?: string | null
+          source?: string | null
+          tag?: string | null
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action: string
