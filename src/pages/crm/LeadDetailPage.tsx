@@ -1157,6 +1157,9 @@ export default function LeadDetailPage() {
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
 
+  // Mobile tab state — controlled so keyboard shortcuts can switch tabs.
+  const [mobileTab, setMobileTab] = useState<'overview' | 'activity' | 'insights'>('overview');
+
   const leadScore = useMemo(() => {
     const inbound = messages.filter((m: any) => m.direction === 'inbound').length;
     const showingCount = showings.length;
