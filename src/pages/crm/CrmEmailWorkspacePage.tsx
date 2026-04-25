@@ -98,17 +98,22 @@ export default function CrmEmailWorkspacePage() {
         {mode === 'inbox' ? (
           <InboxView />
         ) : (
-          <div
-            className="h-full grid grid-cols-1 min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm lg:[grid-template-columns:var(--cols)]"
-            style={{ ['--cols' as any]: gridTemplateColumns }}
-          >
+          <div className="h-full flex flex-col lg:flex-row min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm">
             {!leftCollapsed && (
-              <div className="hidden lg:block min-h-0">
+              <div className="hidden lg:block min-h-0 w-[280px] flex-shrink-0">
                 <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
               </div>
             )}
+            <div className="hidden lg:block">
+              <PanelEdgeHandle
+                side="left"
+                collapsed={leftCollapsed}
+                onToggle={() => setLeftCollapsed((v) => !v)}
+                label="Templates panel"
+              />
+            </div>
 
-            <div className="min-h-0 overflow-hidden">
+            <div className="min-h-0 overflow-hidden flex-1 min-w-0">
               <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -144,8 +149,16 @@ export default function CrmEmailWorkspacePage() {
               />
             </div>
 
+            <div className="hidden lg:block">
+              <PanelEdgeHandle
+                side="right"
+                collapsed={rightCollapsed}
+                onToggle={() => setRightCollapsed((v) => !v)}
+                label="Recipients panel"
+              />
+            </div>
             {!rightCollapsed && (
-              <div className="hidden lg:block min-h-0">
+              <div className="hidden lg:block min-h-0 w-[380px] flex-shrink-0">
                 <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
               </div>
             )}
