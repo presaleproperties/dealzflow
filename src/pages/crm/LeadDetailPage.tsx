@@ -1023,6 +1023,11 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
         <PresaleSignupSourceCard contact={contact} />
       </WidgetSection>
 
+      {/* Presale Properties — Behavior ingestion status */}
+      <WidgetSection title="Behavior Ingestion">
+        <BehaviorIngestionStatus contactId={contact?.id} />
+      </WidgetSection>
+
       {/* Presale Properties Activity */}
       <WidgetSection title="Web Behavior">
         <PresaleActivityWidget contactId={contact?.id} />
