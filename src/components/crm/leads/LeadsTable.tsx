@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
+import { SwipeRow } from './SwipeRow';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -704,7 +705,16 @@ export function LeadsTable({
         </div>
         <div className="bg-card border-t border-border/60">
           {contacts.map(contact => (
-            <LeadCard key={contact.id} contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
+            <SwipeRow
+              key={contact.id}
+              hasPhone={!!contact.phone}
+              hasEmail={!!contact.email}
+              onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
+              onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
+              onEmail={() => contact.email && (window.location.href = `mailto:${contact.email}`)}
+            >
+              <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
+            </SwipeRow>
           ))}
         </div>
         <div className="px-3">
