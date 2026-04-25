@@ -510,6 +510,7 @@ export type Database = {
           next_followup_date: string | null
           notes: string | null
           phone: string | null
+          phone_normalized: string | null
           phone_secondary: string | null
           postal_code: string | null
           presale_metadata: Json | null
@@ -568,6 +569,7 @@ export type Database = {
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
+          phone_normalized?: string | null
           phone_secondary?: string | null
           postal_code?: string | null
           presale_metadata?: Json | null
@@ -626,6 +628,7 @@ export type Database = {
           next_followup_date?: string | null
           notes?: string | null
           phone?: string | null
+          phone_normalized?: string | null
           phone_secondary?: string | null
           postal_code?: string | null
           presale_metadata?: Json | null
@@ -4255,7 +4258,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      crm_potential_duplicates: {
+        Row: {
+          contact_ids: string[] | null
+          dup_count: number | null
+          match_key: string | null
+          match_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
@@ -4270,6 +4281,7 @@ export type Database = {
           usage_count: number
         }[]
       }
+      crm_funnel_snapshot: { Args: never; Returns: Json }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
@@ -4281,6 +4293,23 @@ export type Database = {
       encrypt_api_credential: {
         Args: { passphrase: string; plaintext: string }
         Returns: string
+      }
+      find_potential_duplicate: {
+        Args: {
+          _email: string
+          _first_name?: string
+          _last_name?: string
+          _phone: string
+        }
+        Returns: {
+          confidence: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          match_type: string
+          phone: string
+        }[]
       }
       format_note_content: { Args: { _raw: string }; Returns: string }
       has_role: {
