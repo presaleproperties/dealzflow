@@ -349,19 +349,52 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                   </div>
                 </div>
               ) : (
-                <div className="px-2 py-2 space-y-0.5">
-                  {filteredThreads.map(t => (
-                    <ThreadRow
-                      key={t.key}
-                      thread={t}
-                      active={activeKey === t.key && !showNewChat}
-                      onClick={() => {
-                        setShowNewChat(false);
-                        setActiveKey(t.key);
-                      }}
-                    />
-                  ))}
-                </div>
+                (() => {
+                  const pinnedThreads = filteredThreads.filter(t => isPinned(channel, t.key));
+                  const otherThreads = filteredThreads.filter(t => !isPinned(channel, t.key));
+                  return (
+                    <div className="px-2 py-2 space-y-0.5">
+                      {pinnedThreads.length > 0 && (
+                        <>
+                          <div className="px-2.5 pt-1 pb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                            <Pin className="w-2.5 h-2.5" /> Pinned
+                          </div>
+                          {pinnedThreads.map(t => (
+                            <ThreadRow
+                              key={t.key}
+                              thread={t}
+                              active={activeKey === t.key && !showNewChat}
+                              pinned
+                              onClick={() => {
+                                setShowNewChat(false);
+                                setActiveKey(t.key);
+                              }}
+                              onTogglePin={() => togglePin(channel, t.key)}
+                            />
+                          ))}
+                          {otherThreads.length > 0 && (
+                            <div className="px-2.5 pt-3 pb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                              All Messages
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {otherThreads.map(t => (
+                        <ThreadRow
+                          key={t.key}
+                          thread={t}
+                          active={activeKey === t.key && !showNewChat}
+                          pinned={false}
+                          onClick={() => {
+                            setShowNewChat(false);
+                            setActiveKey(t.key);
+                          }}
+                          onTogglePin={() => togglePin(channel, t.key)}
+                        />
+                      ))}
+                    </div>
+                  );
+                })()
               )}
             </ScrollArea>
           </div>
