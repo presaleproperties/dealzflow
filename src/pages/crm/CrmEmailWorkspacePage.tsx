@@ -2,19 +2,18 @@
 // Compose mode: Templates (left) · Composer (center) · Recipients (right)
 // Inbox mode: synced Gmail conversations (replies, threads).
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight, Inbox, PenSquare,
-  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { TemplatesRail, type AnyTpl } from '@/components/crm/email/TemplatesRail';
 import { RecipientsRail } from '@/components/crm/email/RecipientsRail';
 import { ComposerSurface } from '@/components/crm/email/ComposerSurface';
 import InboxView from '@/components/crm/email/InboxView';
+import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -25,8 +24,22 @@ export default function CrmEmailWorkspacePage() {
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+
+  const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.emailWorkspace.leftCollapsed') === '1';
+  });
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.emailWorkspace.rightCollapsed') === '1';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('crm.emailWorkspace.leftCollapsed', leftCollapsed ? '1' : '0');
+  }, [leftCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('crm.emailWorkspace.rightCollapsed', rightCollapsed ? '1' : '0');
+  }, [rightCollapsed]);
 
   const applyTemplate = (t: AnyTpl) => {
     setAppliedTpl(t);
@@ -36,77 +49,50 @@ export default function CrmEmailWorkspacePage() {
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
 
-  // Dynamic grid template based on collapsed panels (lg+ only)
-  const gridTemplateColumns = useMemo(() => {
-    const cols: string[] = [];
-    if (!leftCollapsed) cols.push('280px');
-    cols.push('1fr');
-    if (!rightCollapsed) cols.push('380px');
-    return cols.join(' ');
-  }, [leftCollapsed, rightCollapsed]);
-
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
-      {/* Mode toggle + panel collapse controls */}
-      <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
-        <div className="inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-card shadow-sm w-fit">
+      {/* Header — Apple-Mail-style segmented control */}
+      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-[18px] font-semibold tracking-tight text-foreground leading-none">
+            {mode === 'compose' ? 'Compose' : 'Inbox'}
+          </h1>
+          <p className="text-[11.5px] text-muted-foreground mt-1">
+            {mode === 'compose'
+              ? 'Pick a template, choose recipients, write, send.'
+              : 'Synced replies and threads.'}
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-border/70 bg-card shadow-sm">
           <ModeBtn active={mode === 'compose'} onClick={() => setMode('compose')} icon={PenSquare} label="Compose" />
           <ModeBtn active={mode === 'inbox'} onClick={() => setMode('inbox')} icon={Inbox} label="Inbox" />
         </div>
-
-        {mode === 'compose' && (
-          <TooltipProvider>
-            <div className="hidden lg:inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-card shadow-sm">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
-                    onClick={() => setLeftCollapsed((v) => !v)}
-                  >
-                    {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{leftCollapsed ? 'Show templates' : 'Hide templates'}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
-                    onClick={() => setRightCollapsed((v) => !v)}
-                  >
-                    {rightCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{rightCollapsed ? 'Show recipients' : 'Hide recipients'}</TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
-        )}
       </div>
 
       <div className="flex-1 min-h-0">
         {mode === 'inbox' ? (
           <InboxView />
         ) : (
-          <div
-            className="h-full grid grid-cols-1 min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm lg:[grid-template-columns:var(--cols)]"
-            style={{ ['--cols' as any]: gridTemplateColumns }}
-          >
+          <div className="h-full flex flex-col lg:flex-row min-h-0 rounded-2xl border border-border/70 overflow-hidden bg-card shadow-sm">
             {!leftCollapsed && (
-              <div className="hidden lg:block min-h-0">
+              <div className="hidden lg:block min-h-0 w-[280px] flex-shrink-0">
                 <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
               </div>
             )}
+            <div className="hidden lg:block">
+              <PanelEdgeHandle
+                side="left"
+                collapsed={leftCollapsed}
+                onToggle={() => setLeftCollapsed((v) => !v)}
+                label="Templates panel"
+              />
+            </div>
 
-            <div className="min-h-0 overflow-hidden">
-              <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
+            <div className="min-h-0 overflow-hidden flex-1 min-w-0 flex flex-col">
+              <div className="lg:hidden flex items-center gap-2 px-4 py-2.5 border-b border-border/70 bg-muted/10">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5">
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
                       <Mail className="h-3.5 w-3.5" />
                       Templates
                     </Button>
@@ -117,7 +103,7 @@ export default function CrmEmailWorkspacePage() {
                 </Sheet>
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs ml-auto">
                       <Send className="h-3.5 w-3.5" />
                       Recipients ({recipients.length})
                     </Button>
@@ -128,18 +114,28 @@ export default function CrmEmailWorkspacePage() {
                 </Sheet>
               </div>
 
-              <ComposerSurface
-                recipients={recipients}
-                onRemoveRecipient={removeRecipient}
-                onClearRecipients={() => setRecipients([])}
-                appliedTemplate={appliedTpl}
-                onTemplateApplied={() => setAppliedTpl(null)}
-                onSent={() => setActiveTemplateId(null)}
-              />
+              <div className="flex-1 min-h-0">
+                <ComposerSurface
+                  recipients={recipients}
+                  onRemoveRecipient={removeRecipient}
+                  onClearRecipients={() => setRecipients([])}
+                  appliedTemplate={appliedTpl}
+                  onTemplateApplied={() => setAppliedTpl(null)}
+                  onSent={() => setActiveTemplateId(null)}
+                />
+              </div>
             </div>
 
+            <div className="hidden lg:block">
+              <PanelEdgeHandle
+                side="right"
+                collapsed={rightCollapsed}
+                onToggle={() => setRightCollapsed((v) => !v)}
+                label="Recipients panel"
+              />
+            </div>
             {!rightCollapsed && (
-              <div className="hidden lg:block min-h-0">
+              <div className="hidden lg:block min-h-0 w-[380px] flex-shrink-0">
                 <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
               </div>
             )}
@@ -148,7 +144,7 @@ export default function CrmEmailWorkspacePage() {
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px]">
-        <span className="text-muted-foreground/70 uppercase tracking-wider mr-1">More:</span>
+        <span className="text-muted-foreground/60 uppercase tracking-wider mr-1 font-semibold">More:</span>
         <FooterLink to="/crm/email/legacy?tab=center" icon={Mail} label="Sent log" />
         <FooterLink to="/crm/email/legacy?tab=campaigns" icon={Megaphone} label="Campaigns" />
         <FooterLink to="/crm/email/legacy?tab=workflows" icon={Workflow} label="Flows" />
@@ -164,8 +160,10 @@ function ModeBtn({ active, onClick, icon: Icon, label }: { active: boolean; onCl
     <button
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium transition-colors',
-        active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+        'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-[12px] font-semibold transition-all',
+        active
+          ? 'bg-foreground text-background shadow-sm'
+          : 'text-muted-foreground hover:text-foreground',
       )}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -178,7 +176,7 @@ function FooterLink({ to, icon: Icon, label }: { to: string; icon: any; label: s
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border bg-muted/30 text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
+      className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border/70 bg-transparent text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
     >
       <Icon className="h-3 w-3" />
       <span className="font-medium">{label}</span>
