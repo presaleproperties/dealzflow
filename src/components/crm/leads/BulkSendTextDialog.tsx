@@ -128,8 +128,28 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            Send mass text
+            Send mass {channel === 'whatsapp' ? 'WhatsApp' : 'text'}
           </DialogTitle>
+          <div className="flex items-center gap-1 mt-2 p-0.5 rounded-md bg-muted w-fit">
+            <button
+              onClick={() => setChannel('sms')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] rounded font-medium transition-colors flex items-center gap-1',
+                channel === 'sms' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
+              )}
+            >
+              <MessageSquare className="w-3 h-3" /> SMS / MMS
+            </button>
+            <button
+              onClick={() => setChannel('whatsapp')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] rounded font-medium transition-colors flex items-center gap-1',
+                channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'
+              )}
+            >
+              <span className="w-3 h-3 rounded-full bg-emerald-500" /> WhatsApp
+            </button>
+          </div>
         </DialogHeader>
 
         <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
