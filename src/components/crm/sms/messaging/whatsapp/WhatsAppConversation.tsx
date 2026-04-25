@@ -575,13 +575,13 @@ function WhatsAppComposer({
   pendingMedia, onMediaChange, scheduledFor, onScheduledChange,
   quotedRef, onClearQuote, lastInboundAt,
 }: ComposerProps) {
-  const canSend = (value.trim().length > 0 || pendingMedia.length > 0) && !sending;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const outsideWaWindow = useMemo(() => {
     if (!lastInboundAt) return true;
     return Date.now() - new Date(lastInboundAt).getTime() > 24 * 60 * 60 * 1000;
   }, [lastInboundAt]);
+  const canSend = (value.trim().length > 0 || pendingMedia.length > 0) && !sending && !outsideWaWindow;
 
   const defaultScheduled = useMemo(() => {
     const d = new Date(Date.now() + 60 * 60 * 1000);
@@ -662,6 +662,13 @@ function WhatsAppComposer({
             <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => onScheduledChange('')}>
               <X className="w-3 h-3" />
             </Button>
+          </div>
+        )}
+
+        {outsideWaWindow && (
+          <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            WhatsApp blocks free-form sends outside the 24-hour reply window. Have the lead reply first, or send by SMS.
           </div>
         )}
 
@@ -752,7 +759,7 @@ function WhatsAppComposer({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder={outsideWaWindow ? 'Use a template to start outside the 24h window…' : 'Type a message'}
+              placeholder={outsideWaWindow ? 'Waiting for a WhatsApp reply window…' : 'Type a message'}
               rows={1}
               className="w-full min-h-[28px] max-h-40 resize-none border-0 bg-transparent px-0 py-0.5 text-[15px] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/70"
             />
@@ -769,7 +776,7 @@ function WhatsAppComposer({
                 ? 'wa-send shadow-md hover:shadow-lg active:scale-95'
                 : 'wa-send opacity-90',
             )}
-            title={canSend ? 'Send' : 'Voice message'}
+            title={outsideWaWindow ? 'WhatsApp send locked outside the 24h window' : canSend ? 'Send' : 'Voice message'}
           >
             {canSend
               ? (scheduledFor ? <CalendarIcon className="w-5 h-5" /> : <Send className="w-[18px] h-[18px]" />)
