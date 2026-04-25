@@ -387,8 +387,9 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
   return (
     <div className="space-y-1.5">
       {sanityBar}
+      {filterBar}
       <div className="flex items-center justify-between text-[10px] text-muted-foreground/70 mb-1 px-0.5">
-        <span>{totalCount} {totalCount === 1 ? "event" : "events"} total</span>
+        <span>{filtersActive ? `${filteredCount} of ${totalCount}` : `${totalCount}`} {totalCount === 1 ? "event" : "events"}</span>
         <span className="tabular-nums">
           {data?.views?.length || 0} views · {data?.sessions?.length || 0} sessions · {data?.forms?.length || 0} forms · {data?.engagement?.length || 0} engagement
         </span>
