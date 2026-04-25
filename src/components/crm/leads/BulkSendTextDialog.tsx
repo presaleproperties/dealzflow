@@ -111,6 +111,7 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
         contact_ids: reachable.map(r => r.id),
         scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
         throttle_per_min: throttle,
+        channel,
       },
       {
         onSuccess: () => {
