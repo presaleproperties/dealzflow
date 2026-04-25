@@ -152,13 +152,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       </TabsList>
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-6 space-y-5">
-        <QuickActionBar
-          contact={contact}
-          onOpenEmail={onEmail}
-          onOpenText={onText}
-          onOpenTask={onTask}
-          onOpenShowing={onShowing}
-        />
+        <QuickActionBar contact={contact} />
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {filters.map(f => (
