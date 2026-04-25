@@ -518,7 +518,7 @@ export function ComposerSurface({
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
+      <div className="flex-1 overflow-y-auto bg-background min-h-0">
         {mode === 'edit' && (
           <div className="p-5">
             <RichTextEditor
