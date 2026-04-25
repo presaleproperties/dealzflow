@@ -531,13 +531,18 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
   // Merge real notes with virtual entries synthesized from the email log so
   // every sent / received email shows up in the central timeline alongside notes.
-  const notes = useMemo<CrmNote[]>(() => {
+  // We also keep an id→row map so clicking the timeline entry can open the
+  // full email preview (rendered HTML, not the plain-text snippet).
+  const { notes, emailById } = useMemo(() => {
+    const byId = new Map<string, EmailLogRow>();
     const emailNotes: CrmNote[] = (emailLog ?? []).map((e: any) => {
       const direction = e.direction === 'inbound' ? 'Received' : 'Sent';
       const subject = e.subject || '(no subject)';
-      const preview = (e.body_text || e.body_html || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      const preview = (e.body_text || e.body_html || e.body || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      const noteId = `email-${e.id}`;
+      byId.set(noteId, e as EmailLogRow);
       return {
-        id: `email-${e.id}`,
+        id: noteId,
         contact_id: contact.id,
         user_id: e.sent_by || '',
         content: `Subject: ${subject}\nDirection: ${direction}${e.from_email ? `\nFrom: ${e.from_email}` : ''}${e.to_email ? `\nTo: ${e.to_email}` : ''}${preview ? `\n\n${preview}` : ''}`,
@@ -550,11 +555,18 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
     });
     const merged = [...rawNotes, ...emailNotes];
     const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
-    return merged.sort((a, b) => {
+    const sorted = merged.sort((a, b) => {
       if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
       return ts(b) - ts(a);
     });
+    return { notes: sorted, emailById: byId };
   }, [rawNotes, emailLog, contact.id]);
+
+  const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
+  const handleOpenEmail = (noteId: string) => {
+    const row = emailById.get(noteId);
+    if (row) setPreviewEmail(row);
+  };
 
   const [draft, setDraft] = useState('');
   const [noteType, setNoteType] = useState('manual');
