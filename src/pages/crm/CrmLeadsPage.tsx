@@ -557,8 +557,8 @@ export default function CrmLeadsPage() {
             <Plus className="w-6 h-6" />
           </button>
 
-          {/* Conversion funnel + untouched alert */}
-          <ConversionFunnelBanner />
+          {/* Conversion funnel + untouched alert — temporarily hidden, may bring back later */}
+          {/* <ConversionFunnelBanner /> */}
 
           {/* Filter pills */}
           <ActiveFilterPills filters={filterPills} onClear={clearFilter} onClearAll={clearAllFilters} />
