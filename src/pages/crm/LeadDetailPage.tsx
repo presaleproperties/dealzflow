@@ -36,6 +36,21 @@ export default function LeadDetailPage() {
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
 
+  const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.leadDetail.leftCollapsed') === '1';
+  });
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.leadDetail.rightCollapsed') === '1';
+  });
+  useEffect(() => {
+    localStorage.setItem('crm.leadDetail.leftCollapsed', leftCollapsed ? '1' : '0');
+  }, [leftCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('crm.leadDetail.rightCollapsed', rightCollapsed ? '1' : '0');
+  }, [rightCollapsed]);
+
   const leadScore = useMemo<LeadScore>(() => {
     const inbound = (messages as CrmMessageRow[]).filter((m) => m.direction === 'inbound').length;
     const showingCount = showings.length;
