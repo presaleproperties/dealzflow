@@ -962,6 +962,7 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
   const { data: tasks = [] } = useCrmContactTasks(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emails, isLoading: emailsLoading } = useCrmEmailLog(contact.id);
+  const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
 
   const now = new Date();
   const pendingTasks = tasks.filter((t: any) => t.status !== 'completed');
