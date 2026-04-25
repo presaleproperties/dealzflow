@@ -1,0 +1,463 @@
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  X, ChevronDown, Image as ImageIcon, Variable, FileText, Hash, Building2, User2,
+  Send, Loader2, Calendar, AlertTriangle, Plus, Trash2, ShieldAlert, Sparkles,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  useSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
+  SMS_VARIABLES, renderSmsTemplate, smsSegments,
+} from '@/hooks/useSms';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import type { CrmContact } from '@/hooks/useCrmContacts';
+
+interface Props {
+  contact: CrmContact;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function formatPhoneDisplay(phone?: string | null): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+1 ${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `+1 ${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return phone;
+}
+
+export function SendTextDialog({ contact, open, onOpenChange }: Props) {
+  const { user } = useAuth();
+  const sendSms = useSendSms();
+  const { data: templates = [] } = useSmsTemplates();
+  const { data: numbers = [] } = useSmsNumbers();
+  const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
+
+  const [body, setBody] = useState('');
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [scheduled, setScheduled] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState('');
+  const [fromOverride, setFromOverride] = useState<string>('');
+  const [varOpen, setVarOpen] = useState(false);
+  const [tplOpen, setTplOpen] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [pendingMediaUrl, setPendingMediaUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Reset on close
+  useEffect(() => {
+    if (!open) {
+      setBody('');
+      setMediaUrls([]);
+      setScheduled(false);
+      setScheduledFor('');
+      setFromOverride('');
+    }
+  }, [open]);
+
+  // Resolve sender display
+  const myNumber = useMemo(() => numbers.find(n => n.user_id === user?.id && n.is_active), [numbers, user]);
+  const companyNumber = useMemo(() => numbers.find(n => n.is_company && n.is_active), [numbers]);
+  const effectiveSender = fromOverride || myNumber?.phone || companyNumber?.phone || '';
+  const senderLabel = fromOverride
+    ? 'Custom'
+    : myNumber?.phone
+    ? (myNumber.label || 'You')
+    : companyNumber?.phone
+    ? 'Company'
+    : 'No sender';
+
+  // Personalized preview
+  const ctx = useMemo(() => ({
+    first_name: contact.first_name,
+    last_name: contact.last_name,
+    full_name: `${contact.first_name || ''} ${contact.last_name || ''}`.trim(),
+    email: contact.email,
+    phone: contact.phone,
+    city: (contact as any).city,
+    agent_name: user?.user_metadata?.full_name || user?.email,
+    company: 'DealzFlow',
+  }), [contact, user]);
+
+  const preview = useMemo(() => renderSmsTemplate(body, ctx), [body, ctx]);
+  const segs = useMemo(() => smsSegments(preview), [preview]);
+
+  function insertAtCursor(text: string) {
+    const ta = textareaRef.current;
+    if (!ta) {
+      setBody(prev => prev + text);
+      return;
+    }
+    const start = ta.selectionStart ?? body.length;
+    const end = ta.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + text + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = start + text.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  }
+
+  async function handleFileUpload(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Max file size is 5 MB');
+      return;
+    }
+    try {
+      setUploading(true);
+      const ext = file.name.split('.').pop() || 'bin';
+      const path = `sms/${user?.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('crm-sms-media').upload(path, file, { upsert: false });
+      if (error) {
+        // bucket may not exist yet — fall back to public 'public' bucket if available, else error
+        toast.error('Storage bucket "crm-sms-media" not configured. Paste a public URL instead.');
+        return;
+      }
+      const { data } = supabase.storage.from('crm-sms-media').getPublicUrl(path);
+      setMediaUrls(prev => [...prev, data.publicUrl]);
+      toast.success('Media attached');
+    } catch (e: any) {
+      toast.error(e?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function applyTemplate(tplId: string) {
+    const t = templates.find(t => t.id === tplId);
+    if (!t) return;
+    setBody(t.body);
+    if (t.default_media_urls?.length) setMediaUrls(t.default_media_urls);
+    setTplOpen(false);
+    // bump usage (best-effort)
+    supabase.from('crm_sms_templates').update({
+      times_used: (templates.find(t => t.id === tplId)?.times_used || 0) + 1,
+      last_used_at: new Date().toISOString(),
+    }).eq('id', tplId).then(() => {}, () => {});
+  }
+
+  const canSend = !!contact.phone && body.trim().length > 0 && !sendSms.isPending && !isOptedOut;
+
+  function handleSend() {
+    if (!contact.phone) {
+      toast.error('This lead has no phone number');
+      return;
+    }
+    if (scheduled && !scheduledFor) {
+      toast.error('Pick a scheduled time');
+      return;
+    }
+    sendSms.mutate({
+      contact_id: contact.id,
+      to: contact.phone,
+      body,
+      from: fromOverride || undefined,
+      media_urls: mediaUrls,
+      scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
+    }, {
+      onSuccess: () => onOpenChange(false),
+    });
+  }
+
+  const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim().toUpperCase() || 'LEAD';
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="text-base font-bold uppercase tracking-wider">Send Text</h2>
+          <button onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* From row */}
+        <div className="flex items-center gap-3 px-6 py-3 border-b">
+          <span className="text-sm font-semibold text-foreground/90 shrink-0">From:</span>
+          <span className="text-sm font-mono text-foreground">
+            {formatPhoneDisplay(effectiveSender) || <span className="text-muted-foreground italic">Not configured</span>}
+          </span>
+          <Badge variant="secondary" className="text-[10px] uppercase tracking-wider px-2 py-0 h-5">
+            {senderLabel}
+          </Badge>
+          <div className="flex-1" />
+          {numbers.length > 1 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-2">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Pick sender</div>
+                {numbers.map(n => (
+                  <button
+                    key={n.id}
+                    onClick={() => setFromOverride(n.phone)}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm hover:bg-muted',
+                      fromOverride === n.phone && 'bg-muted'
+                    )}
+                  >
+                    <span className="font-mono">{formatPhoneDisplay(n.phone)}</span>
+                    {n.is_company && <Badge variant="secondary" className="text-[10px]">Company</Badge>}
+                    {n.user_id === user?.id && <Badge className="text-[10px]">You</Badge>}
+                  </button>
+                ))}
+                {fromOverride && (
+                  <button onClick={() => setFromOverride('')} className="w-full text-left text-xs text-muted-foreground px-2 py-1.5 hover:bg-muted rounded mt-1">
+                    Reset to default
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+
+        {/* To row */}
+        <div className="flex items-center gap-3 px-6 py-3 border-b">
+          <span className="text-sm font-semibold text-foreground/90 shrink-0">To:</span>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border">
+            <span className="text-sm font-medium tracking-wide">{fullName}</span>
+            {contact.phone && <span className="text-xs text-muted-foreground font-mono">{formatPhoneDisplay(contact.phone)}</span>}
+          </div>
+        </div>
+
+        {/* Opt-out / no phone warning */}
+        {!contact.phone && (
+          <div className="flex items-start gap-2 px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <p className="text-xs text-destructive">No phone number on file for this lead. Add one to send a text.</p>
+          </div>
+        )}
+        {isOptedOut && (
+          <div className="flex items-start gap-2 px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+            <p className="text-xs text-destructive font-medium">This contact has opted out (replied STOP). Sending is blocked.</p>
+          </div>
+        )}
+
+        {/* Composer */}
+        <div className="px-6 py-4 space-y-3">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Will be delivered as <strong className="text-foreground">{segs.count} message{segs.count !== 1 ? 's' : ''}</strong>.
+            </p>
+            <div className="flex items-center gap-1">
+              {/* Templates */}
+              <Popover open={tplOpen} onOpenChange={setTplOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Templates">
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 p-0">
+                  <div className="px-3 py-2 border-b">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Templates</p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {templates.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        No templates yet.<br />
+                        Create one in SMS Center.
+                      </div>
+                    ) : templates.filter(t => t.is_active).map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => applyTemplate(t.id)}
+                        className="w-full text-left px-3 py-2 hover:bg-muted border-b last:border-b-0"
+                      >
+                        <div className="text-sm font-medium">{t.name}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Property/Variables/etc placeholders */}
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Insert property" disabled>
+                <Building2 className="h-4 w-4" />
+              </Button>
+
+              {/* Image / Media */}
+              <Popover open={mediaOpen} onOpenChange={setMediaOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 relative" title="Attach image">
+                    <ImageIcon className="h-4 w-4" />
+                    {mediaUrls.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground">
+                        {mediaUrls.length}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 p-3 space-y-2">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Add media (MMS)</p>
+                  {mediaUrls.length > 0 && (
+                    <div className="space-y-1">
+                      {mediaUrls.map((u, i) => (
+                        <div key={i} className="flex items-center gap-2 p-1.5 bg-muted rounded">
+                          <span className="text-[11px] truncate flex-1 font-mono">{u.split('/').pop()}</span>
+                          <button onClick={() => setMediaUrls(prev => prev.filter((_, idx) => idx !== i))}>
+                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    ref={fileRef} type="file" accept="image/*,video/*" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }}
+                  />
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                    {uploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                    Upload file
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={pendingMediaUrl}
+                      onChange={(e) => setPendingMediaUrl(e.target.value)}
+                      placeholder="…or paste public image URL"
+                      className="text-xs h-8"
+                    />
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={() => {
+                        if (pendingMediaUrl.startsWith('http')) {
+                          setMediaUrls(prev => [...prev, pendingMediaUrl.trim()]);
+                          setPendingMediaUrl('');
+                        } else toast.error('Must be a public URL');
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each</p>
+                </PopoverContent>
+              </Popover>
+
+              {/* Variables */}
+              <Popover open={varOpen} onOpenChange={setVarOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Insert variable">
+                    <Variable className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 p-0">
+                  <div className="px-3 py-2 border-b">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Insert variable</p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto py-1">
+                    {SMS_VARIABLES.map(v => (
+                      <button
+                        key={v.tag}
+                        onClick={() => { insertAtCursor(v.tag); setVarOpen(false); }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-muted flex items-center justify-between gap-2"
+                      >
+                        <div>
+                          <div className="text-sm font-medium">{v.label}</div>
+                          <code className="text-[10px] text-muted-foreground font-mono">{v.tag}</code>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground italic truncate max-w-[100px]">{v.sample}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Hash / counter is informational, not interactive */}
+              <Button variant="ghost" size="icon" className="h-8 w-8" disabled title="Character count">
+                <Hash className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={`Write your message to ${contact.first_name || 'this lead'}…`}
+              maxLength={1600}
+              className="min-h-[180px] resize-none text-sm leading-relaxed border-2 focus-visible:ring-1 focus-visible:ring-primary"
+            />
+            <div className="absolute bottom-2 right-3 text-[11px] text-muted-foreground space-y-0.5 text-right pointer-events-none">
+              <div className="font-mono">{preview.length} / 1600</div>
+              <div className="text-[10px]">{segs.count} SMS · {segs.perSegment} chars/seg</div>
+            </div>
+          </div>
+
+          {/* Live preview when variables present */}
+          {body.includes('{{') && (
+            <div className="rounded-md border bg-muted/40 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">Preview</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{preview}</p>
+            </div>
+          )}
+
+          {/* Schedule + warning footer */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-2">
+              <Switch id="schedule" checked={scheduled} onCheckedChange={setScheduled} />
+              <Label htmlFor="schedule" className="text-xs cursor-pointer flex items-center gap-1">
+                <Calendar className="h-3 w-3" /> Schedule
+              </Label>
+              {scheduled && (
+                <Input
+                  type="datetime-local"
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                  className="h-7 text-xs w-44"
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              )}
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground italic">
+            <span className="text-destructive">*</span> Messages may be sent from a different number. Don't forget to introduce yourself!
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-6 py-3 border-t bg-muted/30">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            onClick={handleSend}
+            disabled={!canSend}
+            className="min-w-[100px]"
+          >
+            {sendSms.isPending ? (
+              <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Sending</>
+            ) : scheduled ? (
+              <><Calendar className="h-4 w-4 mr-1.5" />Schedule</>
+            ) : (
+              <><Send className="h-4 w-4 mr-1.5" />Send</>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
