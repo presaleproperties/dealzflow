@@ -67,7 +67,7 @@ export default function CrmEmailWorkspacePage() {
             onRemoveRecipient={removeRecipient}
             onClearRecipients={() => setRecipients([])}
             appliedTemplate={appliedTpl}
-            onTemplateApplied={() => { /* keep highlight */ }}
+            onTemplateApplied={() => setAppliedTpl(null)}
           />
         </div>
 
