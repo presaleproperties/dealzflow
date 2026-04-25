@@ -32,8 +32,8 @@ export default function CrmEmailWorkspacePage() {
         {/* Left: templates (desktop) / drawer (mobile) */}
         <div className="hidden lg:block min-h-0">
           <TemplatesRail
-            onApply={setAppliedTpl}
-            activeTemplateId={appliedTpl?.id ?? null}
+            onApply={applyTemplate}
+            activeTemplateId={activeTemplateId}
           />
         </div>
 
