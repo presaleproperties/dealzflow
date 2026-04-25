@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail, Check } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail, MessageSquare, Check } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName, formatPhone, formatEmail } from '@/lib/format';
 import { LEAD_TYPE_LABELS, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
@@ -18,6 +18,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { SwipeRow } from './SwipeRow';
+import { SendTextDialog } from './SendTextDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -291,7 +292,10 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
           toast.success(`Status → ${v}`);
         }}
       >
-        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] font-semibold shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 gap-1" style={{ color: sc.color }}>
+        <SelectTrigger
+          className="h-7 border-0 px-2.5 py-0 text-[11.5px] font-semibold uppercase tracking-[0.06em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
+          style={{ background: sc.bg, color: sc.color }}
+        >
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
             <span>{displayStatus}</span>
@@ -374,7 +378,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact, tagLibrary }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[] }) {
+function CellContent({ col, contact, updateContact, tagLibrary, onSendSms }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[]; onSendSms: (c: CrmContact) => void }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
@@ -467,6 +471,20 @@ function CellContent({ col, contact, updateContact, tagLibrary }: { col: ColumnD
                 </a>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call {formatPhone(contact.phone)}</TooltipContent>
+            </Tooltip>
+          )}
+          {contact.phone && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onSendSms(contact)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">Text {formatPhone(contact.phone)}</TooltipContent>
             </Tooltip>
           )}
           {contact.email && (
@@ -643,6 +661,7 @@ export function LeadsTable({
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const updateContact = useUpdateCrmContact();
+  const [smsContact, setSmsContact] = useState<CrmContact | null>(null);
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
@@ -764,7 +783,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} />
                       </td>
                     ))}
                   </tr>
@@ -776,6 +795,13 @@ export function LeadsTable({
       </div>
       <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
         onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
+      {smsContact && (
+        <SendTextDialog
+          contact={smsContact}
+          open={!!smsContact}
+          onOpenChange={(o) => !o && setSmsContact(null)}
+        />
+      )}
     </div>
   );
 }

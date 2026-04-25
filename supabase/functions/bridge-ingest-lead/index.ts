@@ -177,6 +177,7 @@ Deno.serve(async (req) => {
         tags: Array.from(new Set([...(L.tags || []), "presale-website"])),
         status: "New Lead",
         lead_type: "Pre-Sale",
+        assigned_to: "Uzair Muhammad",
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
       }).select("id").single();
