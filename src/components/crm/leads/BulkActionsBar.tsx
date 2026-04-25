@@ -28,6 +28,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const [showDelete, setShowDelete] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [pendingTags, setPendingTags] = useState<string[]>([]);
+  const [showBulkText, setShowBulkText] = useState(false);
 
   const count = selectedIds.length;
   if (count === 0) return null;
