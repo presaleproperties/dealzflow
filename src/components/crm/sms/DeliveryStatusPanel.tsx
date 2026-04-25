@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAllSmsLog, type MessagingChannel } from '@/hooks/useSms';
 import {
-  CheckCircle2, Clock, XCircle, Send, Search, Copy, RefreshCw, Inbox, AlertTriangle,
+  CheckCircle2, Clock, XCircle, Send, Search, Copy, RefreshCw, Inbox, AlertTriangle, ShieldCheck, Loader2,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 type Tone = 'emerald' | 'primary' | 'amber' | 'red' | 'muted';
 
@@ -52,6 +53,8 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
   const { data: logs = [], isLoading, refetch } = useAllSmsLog({ limit: 200, channel });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'queued' | 'sent' | 'delivered' | 'failed'>('all');
+  const [verifying, setVerifying] = useState(false);
+  const [verification, setVerification] = useState<any | null>(null);
 
   const outbound = useMemo(() => logs.filter(l => l.direction === 'outbound'), [logs]);
 
@@ -87,6 +90,29 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
     qc.invalidateQueries({ queryKey: ['sms-log-all'] });
     refetch();
     toast.success('Refreshed');
+  };
+
+  const handleVerify = async (sid?: string) => {
+    setVerifying(true);
+    setVerification(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-sms-delivery', {
+        body: sid ? { sid } : {},
+      });
+      if (error) throw error;
+      setVerification(data);
+      qc.invalidateQueries({ queryKey: ['sms-log-all'] });
+      if (data?.ok) {
+        toast.success(`Verified — Twilio status: ${data.twilio?.status || data.verdict}`);
+      } else {
+        toast.error(`Verification failed: ${data?.checks?.find((c: any) => !c.pass)?.detail || 'unknown'}`);
+      }
+    } catch (e: any) {
+      toast.error(`Verify failed: ${e?.message || e}`);
+      setVerification({ ok: false, stage: 'invoke', error: e?.message || String(e) });
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
