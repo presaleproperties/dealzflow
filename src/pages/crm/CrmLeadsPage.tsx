@@ -630,6 +630,11 @@ export default function CrmLeadsPage() {
       </div>
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} />
+      <ManagePipelinesDialog
+        open={managePipelinesOpen}
+        onClose={() => setManagePipelinesOpen(false)}
+        segmentCounts={segmentCounts}
+      />
     </>
   );
 }
