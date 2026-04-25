@@ -6,13 +6,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAllSmsLog, type MessagingChannel } from '@/hooks/useSms';
 import {
-  CheckCircle2, Clock, XCircle, Send, Search, Copy, RefreshCw, Inbox, AlertTriangle, ShieldCheck, Loader2,
+  CheckCircle2, Clock, XCircle, Send, Search, Copy, RefreshCw, Inbox, AlertTriangle,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 type Tone = 'emerald' | 'primary' | 'amber' | 'red' | 'muted';
 
@@ -53,8 +52,6 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
   const { data: logs = [], isLoading, refetch } = useAllSmsLog({ limit: 200, channel });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'queued' | 'sent' | 'delivered' | 'failed'>('all');
-  const [verifying, setVerifying] = useState(false);
-  const [verification, setVerification] = useState<any | null>(null);
 
   const outbound = useMemo(() => logs.filter(l => l.direction === 'outbound'), [logs]);
 
@@ -92,29 +89,6 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
     toast.success('Refreshed');
   };
 
-  const handleVerify = async (sid?: string) => {
-    setVerifying(true);
-    setVerification(null);
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-sms-delivery', {
-        body: sid ? { sid } : {},
-      });
-      if (error) throw error;
-      setVerification(data);
-      qc.invalidateQueries({ queryKey: ['sms-log-all'] });
-      if (data?.ok) {
-        toast.success(`Verified — Twilio status: ${data.twilio?.status || data.verdict}`);
-      } else {
-        toast.error(`Verification failed: ${data?.checks?.find((c: any) => !c.pass)?.detail || 'unknown'}`);
-      }
-    } catch (e: any) {
-      toast.error(`Verify failed: ${e?.message || e}`);
-      setVerification({ ok: false, stage: 'invoke', error: e?.message || String(e) });
-    } finally {
-      setVerifying(false);
-    }
-  };
-
   return (
     <Card className="overflow-hidden">
       {/* Header */}
@@ -129,20 +103,9 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
               Real-time queued → sent → delivered timeline for every outbound message.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => handleVerify()}
-              disabled={verifying}
-              className="gap-1.5"
-            >
-              {verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-              Verify last test
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </Button>
         </div>
 
         {/* Quick filter pills with counts */}
@@ -179,64 +142,6 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
           </div>
         </div>
       </div>
-
-      {/* Verification result */}
-      {verification && (
-        <div className={cn(
-          'p-3 border-b border-border',
-          verification.ok ? 'bg-emerald-500/5' : 'bg-red-500/5'
-        )}>
-          <div className="flex items-start gap-2">
-            {verification.ok ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            )}
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="text-xs font-semibold">
-                {verification.ok
-                  ? `✅ End-to-end verified — verdict: ${verification.verdict}`
-                  : `❌ Verification failed${verification.stage ? ` at "${verification.stage}"` : ''}`}
-              </div>
-              {verification.checks && (
-                <ul className="space-y-1">
-                  {verification.checks.map((c: any, i: number) => (
-                    <li key={i} className="text-[11px] flex items-start gap-1.5">
-                      {c.pass ? (
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
-                      ) : (
-                        <XCircle className="w-3 h-3 text-red-600 shrink-0 mt-0.5" />
-                      )}
-                      <span className={cn(c.pass ? 'text-foreground' : 'text-red-700 dark:text-red-400')}>
-                        <strong>{c.name}</strong>
-                        {c.detail && <span className="text-muted-foreground"> — {c.detail}</span>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {verification.twilio && (
-                <div className="text-[10px] font-mono bg-background/60 rounded p-2 space-y-0.5 text-muted-foreground">
-                  <div><span className="opacity-70">SID:</span> {verification.twilio.sid}</div>
-                  <div><span className="opacity-70">Status:</span> <span className="text-foreground font-semibold">{verification.twilio.status}</span></div>
-                  <div><span className="opacity-70">From → To:</span> {verification.twilio.from} → {verification.twilio.to}</div>
-                  {verification.twilio.date_sent && <div><span className="opacity-70">Date sent:</span> {verification.twilio.date_sent}</div>}
-                  {verification.twilio.price && <div><span className="opacity-70">Cost:</span> {verification.twilio.price} {verification.twilio.price_unit?.toUpperCase()}</div>}
-                </div>
-              )}
-              {verification.error && (
-                <div className="text-[11px] text-red-600">{verification.error}</div>
-              )}
-            </div>
-            <button
-              onClick={() => setVerification(null)}
-              className="text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* List */}
       <ScrollArea className="h-[520px]">
@@ -309,25 +214,14 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
                       {/* SID + error */}
                       <div className="flex flex-wrap items-center gap-2">
                         {sid ? (
-                          <>
-                            <button
-                              onClick={() => copy(sid, 'Twilio SID copied')}
-                              className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                              title="Copy Twilio Message SID"
-                            >
-                              <Copy className="w-2.5 h-2.5" />
-                              {sid}
-                            </button>
-                            <button
-                              onClick={() => handleVerify(sid)}
-                              disabled={verifying}
-                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                              title="Verify with Twilio"
-                            >
-                              <ShieldCheck className="w-2.5 h-2.5" />
-                              Verify
-                            </button>
-                          </>
+                          <button
+                            onClick={() => copy(sid, 'Twilio SID copied')}
+                            className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copy Twilio Message SID"
+                          >
+                            <Copy className="w-2.5 h-2.5" />
+                            {sid}
+                          </button>
                         ) : (
                           <span className="text-[10px] text-muted-foreground italic">No SID yet</span>
                         )}
