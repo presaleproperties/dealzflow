@@ -37,6 +37,9 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
+import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
+import { StickyLeadHeader } from '@/components/crm/leads/StickyLeadHeader';
+import { NextBestActionCard } from '@/components/crm/leads/NextBestActionCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -522,7 +525,14 @@ function metaForNote(note: CrmNote): NoteMeta {
   return base;
 }
 
-function CenterColumn({ contact }: { contact: CrmContact }) {
+function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowing }: {
+  contact: CrmContact;
+  onCall: () => void;
+  onText: () => void;
+  onEmail: () => void;
+  onTask: () => void;
+  onShowing: () => void;
+}) {
   const { session } = useAuth();
   const currentUserId = session?.user?.id;
   const { data: rawNotes = [] } = useLeadNotes(contact.id);
@@ -638,6 +648,16 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
 
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
+      {/* Sticky identity header — persistent context while the timeline scrolls */}
+      <StickyLeadHeader
+        contact={contact}
+        onCall={onCall}
+        onText={onText}
+        onEmail={onEmail}
+        onTask={onTask}
+        onShowing={onShowing}
+      />
+
       <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
         <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Activity
@@ -653,34 +673,14 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
       </TabsList>
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-6 space-y-5">
-        {/* Compose */}
-        <div className="bg-card rounded-xl border border-border p-3.5 space-y-3">
-          <div className="flex items-center gap-3">
-            <Select value={noteType} onValueChange={setNoteType}>
-              <SelectTrigger className="w-[120px] h-9 text-sm border-border/60"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Note</SelectItem>
-                <SelectItem value="call_log">Call Log</SelectItem>
-                <SelectItem value="email">Email Log</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">⌘ + Enter to send</span>
-          </div>
-          <Textarea
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            placeholder="Write a note, log a call, or capture context…"
-            className="text-sm min-h-[72px] resize-none"
-            onKeyDown={e => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSave(); }
-            }}
-          />
-          <div className="flex justify-end">
-            <Button size="sm" className="h-9 text-xs gap-1.5" onClick={handleSave} disabled={!draft.trim() || addNote.isPending}>
-              <Send className="w-3.5 h-3.5" /> Save
-            </Button>
-          </div>
-        </div>
+        {/* Unified Quick Action Bar — Note / Call / Email / Text / Task / Showing */}
+        <QuickActionBar
+          contact={contact}
+          onOpenEmail={onEmail}
+          onOpenText={onText}
+          onOpenTask={onTask}
+          onOpenShowing={onShowing}
+        />
 
         {/* Filter pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -986,7 +986,19 @@ function ShowingsTab({ contactId, showings }: { contactId: string; showings: any
 /* ═══════════════════════════════════════════════════
    RIGHT SIDEBAR
    ═══════════════════════════════════════════════════ */
-function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContact; onAddTask: () => void; onAddShowing: () => void }) {
+function RightSidebar({
+  contact, onAddTask, onAddShowing, onCall, onText, onEmail,
+  leadScore, lastTouchHours,
+}: {
+  contact: CrmContact;
+  onAddTask: () => void;
+  onAddShowing: () => void;
+  onCall: () => void;
+  onText: () => void;
+  onEmail: () => void;
+  leadScore: { score: number; color: string; label: string };
+  lastTouchHours: number | null;
+}) {
   const { data: tasks = [] } = useCrmContactTasks(contact.id);
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emails, isLoading: emailsLoading } = useCrmEmailLog(contact.id);
@@ -1000,6 +1012,20 @@ function RightSidebar({ contact, onAddTask, onAddShowing }: { contact: CrmContac
 
   return (
     <div className="space-y-6">
+      {/* Next Best Action — collapses the "what should I do next?" decision */}
+      <NextBestActionCard
+        contact={contact}
+        leadScore={leadScore}
+        lastTouchHours={lastTouchHours}
+        pendingTaskCount={pendingTasks.length}
+        upcomingShowingCount={upcomingShowings.length}
+        onCall={onCall}
+        onText={onText}
+        onEmail={onEmail}
+        onTask={onAddTask}
+        onShowing={onAddShowing}
+      />
+
       {/* Tasks */}
       <WidgetSection title="Tasks" count={pendingTasks.length} onAdd={onAddTask}>
         {pendingTasks.length === 0 ? (
@@ -1263,6 +1289,13 @@ export default function LeadDetailPage() {
     return `${days}d`;
   }, [contact]);
 
+  const lastTouchHours = useMemo<number | null>(() => {
+    if (!contact) return null;
+    const lt = (contact as any).last_touch_at;
+    if (!lt) return null;
+    return Math.floor((Date.now() - new Date(lt).getTime()) / 3600000);
+  }, [contact]);
+
   const daysInPipeline = useMemo(() => {
     if (!contact) return 0;
     return Math.floor((Date.now() - new Date(contact.created_at).getTime()) / 86400000);
@@ -1376,10 +1409,26 @@ export default function LeadDetailPage() {
           />
         </div>
         <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ minHeight: 400 }}>
-          <CenterColumn contact={c} />
+          <CenterColumn
+            contact={c}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            onTask={() => setShowTask(true)}
+            onShowing={() => setShowShowing(true)}
+          />
         </div>
         <div className="bg-card rounded-lg border border-border p-4">
-          <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
+          <RightSidebar
+            contact={c}
+            onAddTask={() => setShowTask(true)}
+            onAddShowing={() => setShowShowing(true)}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            leadScore={leadScore}
+            lastTouchHours={lastTouchHours}
+          />
         </div>
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
@@ -1417,12 +1466,28 @@ export default function LeadDetailPage() {
 
         {/* Center */}
         <div className="flex-1 min-w-0 flex flex-col bg-background">
-          <CenterColumn contact={c} />
+          <CenterColumn
+            contact={c}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            onTask={() => setShowTask(true)}
+            onShowing={() => setShowShowing(true)}
+          />
         </div>
 
         {/* Right sidebar */}
         <div className="w-[360px] flex-shrink-0 border-l border-border bg-muted/30 overflow-y-auto p-5">
-          <RightSidebar contact={c} onAddTask={() => setShowTask(true)} onAddShowing={() => setShowShowing(true)} />
+          <RightSidebar
+            contact={c}
+            onAddTask={() => setShowTask(true)}
+            onAddShowing={() => setShowShowing(true)}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+            onText={() => setShowText(true)}
+            onEmail={() => setShowEmail(true)}
+            leadScore={leadScore}
+            lastTouchHours={lastTouchHours}
+          />
         </div>
       </div>
 
