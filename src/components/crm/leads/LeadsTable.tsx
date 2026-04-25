@@ -70,18 +70,9 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   'Hot / Engaged':   { bg: 'hsl(0 84% 60% / 0.12)',   color: 'hsl(0 84% 60%)' },
 };
 
-// Pipeline dropdown options — matches the segment chip bar above
-const PIPELINE_OPTIONS = [
-  'New Leads',
-  'Pre-Sale',
-  'Re-Sale',
-  'Commercial',
-  'Showing Booked',
-  'Offer Made',
-  'Nurturing',
-  'Closed',
-  'Lost / Cold',
-] as const;
+// Pipeline dropdown options come from the crm_lead_segments table at runtime so
+// the in-row dropdown, the top pills, and the Pipeline Kanban can never drift
+// out of sync. See InlineStatusCell below.
 
 const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   lead: { bg: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)', label: 'Lead' },
