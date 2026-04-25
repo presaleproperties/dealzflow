@@ -40,6 +40,11 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
   const [sanityRunning, setSanityRunning] = useState(false);
   const [sanityResult, setSanityResult] = useState<SanityResult | null>(null);
 
+  // Filters
+  const [activeKinds, setActiveKinds] = useState<Set<EventKind>>(new Set());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [deviceFilter, setDeviceFilter] = useState<string>("all");
+
   const runSanityCheck = async () => {
     if (!contactId) return;
     setSanityRunning(true);
