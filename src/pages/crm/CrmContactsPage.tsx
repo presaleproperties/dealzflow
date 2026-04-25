@@ -353,7 +353,15 @@ export default function CrmContactsPage() {
                         {c.phone ? <a href={`tel:${c.phone}`} className="text-sm text-primary hover:underline">{c.phone}</a> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
-                        {c.email ? <a href={`mailto:${c.email}`} className="text-sm text-primary hover:underline truncate block max-w-[180px]">{c.email}</a> : <span className="text-muted-foreground">—</span>}
+                        {c.email ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setComposeContact(c); }}
+                            className="text-sm text-primary hover:underline truncate block max-w-[180px] text-left"
+                          >
+                            {c.email}
+                          </button>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden lg:table-cell">
                         {(c.projects ?? []).length > 0 || c.project ? (
