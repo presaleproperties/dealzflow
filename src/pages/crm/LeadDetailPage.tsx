@@ -320,9 +320,11 @@ function LeftSidebar({
       <div className="space-y-3">
         <SectionHeader>Details</SectionHeader>
         <div className="space-y-px">
-          <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-            <span className="text-xs text-muted-foreground">Source</span>
-            <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
+          <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
+            <span className="text-xs text-muted-foreground shrink-0">Source</span>
+            <div className="flex-1 min-w-0 flex justify-end">
+              <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
+            </div>
           </div>
           {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
           <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
