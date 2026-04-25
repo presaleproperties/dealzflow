@@ -1084,12 +1084,14 @@ function MessageList({
                   <div className="relative max-w-[75%] sm:max-w-[65%]">
                     <div
                       className={cn(
-                        'px-3.5 py-2 text-[14.5px] leading-snug shadow-sm transition-opacity',
+                        'px-3 py-1.5 text-[14.5px] leading-snug shadow-sm transition-opacity',
                         isOutbound
                           ? channel === 'whatsapp'
-                            ? 'bg-emerald-500 text-white'
+                            ? 'whatsapp-bubble-out'
                             : 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground',
+                          : channel === 'whatsapp'
+                            ? 'whatsapp-bubble-in'
+                            : 'bg-muted text-foreground',
                         isOutbound
                           ? cn('rounded-2xl', sameSenderAsPrev && 'rounded-tr-md', sameSenderAsNext && 'rounded-br-md')
                           : cn('rounded-2xl', sameSenderAsPrev && 'rounded-tl-md', sameSenderAsNext && 'rounded-bl-md'),
