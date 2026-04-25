@@ -135,7 +135,7 @@ export default function CrmSmsCenterPage() {
     : !!(numbers.length > 0 || settings?.messaging_service_sid);
 
   return (
-    <div className="space-y-4 p-4 sm:p-6 max-w-[1700px] mx-auto">
+    <div className="space-y-4 p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
