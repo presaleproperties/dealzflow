@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   MessageSquare, Send, Plus, Trash2, Pencil, Users, ShieldOff,
   Calendar, CheckCircle2, XCircle, Clock, Phone, Inbox, Loader2,
-  Sparkles, Search, ArrowRight, Filter, Settings as SettingsIcon, Zap,
+  Sparkles, Search, ArrowRight, Filter, Settings as SettingsIcon, Zap, Activity,
 } from 'lucide-react';
 import {
   useSmsTemplates, useSaveSmsTemplate, useDeleteSmsTemplate,
@@ -24,6 +24,7 @@ import {
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { BulkSendTextDialog } from '@/components/crm/leads/BulkSendTextDialog';
 import { MessagingCenter } from '@/components/crm/sms/MessagingCenter';
+import { DeliveryStatusPanel } from '@/components/crm/sms/DeliveryStatusPanel';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -173,9 +174,12 @@ export default function CrmSmsCenterPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full sm:w-auto h-auto">
+        <TabsList className="grid grid-cols-7 w-full sm:w-auto h-auto">
           <TabsTrigger value="inbox" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <Inbox className="w-3.5 h-3.5" /><span>Inbox</span>
+          </TabsTrigger>
+          <TabsTrigger value="delivery" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+            <Activity className="w-3.5 h-3.5" /><span>Delivery</span>
           </TabsTrigger>
           <TabsTrigger value="compose" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <Send className="w-3.5 h-3.5" /><span>Compose</span>
@@ -197,6 +201,11 @@ export default function CrmSmsCenterPage() {
         {/* === INBOX (iMessage-style conversation view) === */}
         <TabsContent value="inbox" className="mt-4">
           <MessagingCenter channel={channel} onChannelChange={setChannel} />
+        </TabsContent>
+
+        {/* === DELIVERY STATUS === */}
+        <TabsContent value="delivery" className="mt-4">
+          <DeliveryStatusPanel channel={channel} />
         </TabsContent>
 
         {/* === COMPOSE (filter + launch bulk) === */}
