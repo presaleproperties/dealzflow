@@ -5,13 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Pencil, Trash2, AlertCircle, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertCircle, Check, X, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import {
   useCrmLeadSegments,
   useCreateLeadSegment,
   useUpdateLeadSegment,
   useDeleteLeadSegment,
+  useReorderCrmLeadSegments,
   type LeadSegment,
 } from '@/hooks/useCrmLeadSegments';
 import { LEAD_STATUSES, LEAD_TYPES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
