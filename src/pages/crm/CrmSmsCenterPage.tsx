@@ -194,9 +194,9 @@ export default function CrmSmsCenterPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* === INBOX (conversation view) === */}
+        {/* === INBOX (iMessage-style conversation view) === */}
         <TabsContent value="inbox" className="mt-4">
-          <InboxTab logs={channelLogs} channel={channel} contacts={allContacts} onOpenLead={(id) => navigate(`/crm/leads/${id}`)} />
+          <MessagingCenter channel={channel} onChannelChange={setChannel} />
         </TabsContent>
 
         {/* === COMPOSE (filter + launch bulk) === */}
