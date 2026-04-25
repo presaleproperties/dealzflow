@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useCrmContacts, type CrmContact } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments';
-import { matchesSegment } from '@/lib/segmentMatching';
+import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 
 interface Props {
@@ -43,7 +43,7 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
         if (!name.includes(q) && !email.includes(q) && !phone.includes(q)) return false;
       }
       if (activeSegment && Object.keys(activeSegment.filter_config).length > 0) {
-        if (!matchesSegment(c, activeSegment.filter_config)) return false;
+        if (!contactMatchesSegment(c, activeSegment.filter_config)) return false;
       }
       return true;
     });
