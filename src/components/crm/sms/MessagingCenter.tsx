@@ -392,7 +392,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
               <>
                 {/* Conversation header */}
                 <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 bg-background/80 backdrop-blur">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     {isMobile && (
                       <Button
                         size="icon"
@@ -403,7 +403,24 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                         <ArrowLeft className="w-4 h-4" />
                       </Button>
                     )}
-                    <Avatar className="h-9 w-9 ring-2 ring-background">
+                    {!isMobile && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground -ml-1"
+                              onClick={() => setLeftCollapsed(v => !v)}
+                            >
+                              {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{leftCollapsed ? 'Show conversations' : 'Hide conversations'}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    <Avatar className="h-9 w-9 ring-2 ring-background ml-1">
                       <AvatarFallback
                         className={cn(
                           'text-xs font-semibold',
@@ -450,6 +467,21 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Open lead</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {!isMobile && hasContactDetails && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                              onClick={() => setRightCollapsed(v => !v)}
+                            >
+                              {rightCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{rightCollapsed ? 'Show details' : 'Hide details'}</TooltipContent>
                         </Tooltip>
                       )}
                       <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
