@@ -4329,6 +4329,15 @@ export type Database = {
       is_crm_member: { Args: { _user_id: string }; Returns: boolean }
       is_crm_owner: { Args: { _user_id: string }; Returns: boolean }
       is_phone_opted_out: { Args: { _phone: string }; Returns: boolean }
+      list_potential_duplicates: {
+        Args: { _limit?: number }
+        Returns: {
+          contacts: Json
+          dup_count: number
+          match_key: string
+          match_type: string
+        }[]
+      }
       log_source_event: {
         Args: {
           _email: string
@@ -4357,6 +4366,10 @@ export type Database = {
           _status?: string
         }
         Returns: undefined
+      }
+      merge_crm_contacts: {
+        Args: { _loser_ids: string[]; _winner_id: string }
+        Returns: Json
       }
       merge_crm_sources: {
         Args: { _from_names: string[]; _to_name: string }
