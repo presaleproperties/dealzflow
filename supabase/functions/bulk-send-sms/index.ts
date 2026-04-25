@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
     const scheduled_for: string | null = payload?.scheduled_for ?? null;
     const throttle_per_min: number = Math.min(Math.max(payload?.throttle_per_min || 60, 1), 240);
     const dry_run = !!payload?.dry_run;
+    const channel: 'sms' | 'whatsapp' = payload?.channel === 'whatsapp' ? 'whatsapp' : 'sms';
 
     if (!body || body.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'body is required' }), {
@@ -135,6 +136,7 @@ Deno.serve(async (req) => {
       scheduled_for,
       throttle_per_min,
       created_by: user.id,
+      channel,
       started_at: scheduled_for ? null : new Date().toISOString(),
     }).select().single();
     if (campErr) throw campErr;
@@ -176,6 +178,7 @@ Deno.serve(async (req) => {
               body: personalized,
               media_urls,
               campaign_id: campaign.id,
+              channel,
               skip_quiet_hours: true, // already gated at campaign creation
             }),
           });
