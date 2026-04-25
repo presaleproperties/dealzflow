@@ -55,6 +55,7 @@ import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
+import { SourcePicker } from '@/components/crm/leads/SourcePicker';
 
 /* ─── Type styles (text-only, editorial) ─── */
 const TYPE_LABELS: Record<string, string> = {
