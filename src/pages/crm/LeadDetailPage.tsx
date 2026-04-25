@@ -239,8 +239,9 @@ function LeftSidebar({
           {contact.email ? (
             <button
               type="button"
-              onClick={() => setShowEmail(true)}
-              className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group text-left w-full"
+              onClick={onEmail}
+              disabled={!onEmail}
+              className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group text-left w-full disabled:cursor-default"
             >
               <Mail className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
               <span className="truncate">{contact.email}</span>
