@@ -131,45 +131,9 @@ export default function CrmMarketingHubPage() {
 
       <div className="flex-1 overflow-auto">
         <div className="max-w-5xl mx-auto p-6 space-y-8">
-          {/* Create new */}
-          <section>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              Create New
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {CREATE_OPTIONS.map((opt) => (
-                <Link
-                  key={opt.key}
-                  to={opt.to}
-                  className="group flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-accent/30 transition-all text-left"
-                >
-                  <div
-                    className={cn(
-                      'h-10 w-10 rounded-lg flex items-center justify-center shrink-0',
-                      opt.bg,
-                    )}
-                  >
-                    <opt.icon className={cn('h-[18px] w-[18px]', opt.color)} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-sm font-semibold">{opt.title}</span>
-                      {opt.badge && (
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1.5 py-0">
-                          {opt.badge}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-snug">{opt.desc}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary/60 transition-colors shrink-0" />
-                </Link>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground/60 mt-2">
-              Composer is built into the CRM · saved templates sync to the shared library automatically
-            </p>
-          </section>
+          {/* Create New section removed — composing now happens via the
+              Quick Send bar at the top of the Email page (opens the native
+              CRM composer with the chosen lead pre-filled). */}
 
           {/* Saved work */}
           <section>
