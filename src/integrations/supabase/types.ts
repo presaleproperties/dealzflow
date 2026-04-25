@@ -4358,6 +4358,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      merge_crm_sources: {
+        Args: { _from_names: string[]; _to_name: string }
+        Returns: Json
+      }
       normalize_crm_multi_array: {
         Args: { input: string[] }
         Returns: string[]
@@ -4378,6 +4382,10 @@ export type Database = {
         Returns: string
       }
       recalc_lead_score: { Args: { _contact_id: string }; Returns: undefined }
+      rename_crm_source: {
+        Args: { _from_name: string; _to_name: string }
+        Returns: Json
+      }
       split_crm_multi_value: { Args: { input: string }; Returns: string[] }
       split_imported_note: {
         Args: { _fallback_ts: string; _raw: string }
