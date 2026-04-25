@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type MessagingChannel = 'sms' | 'whatsapp';
+
 export interface SmsLogRow {
   id: string;
   user_id: string | null;
@@ -22,6 +24,7 @@ export interface SmsLogRow {
   error_message: string | null;
   price: number | null;
   price_unit: string | null;
+  channel: MessagingChannel;
   sent_at: string;
   created_at: string;
 }
