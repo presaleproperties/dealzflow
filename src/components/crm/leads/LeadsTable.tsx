@@ -19,6 +19,7 @@ import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
+import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
