@@ -746,6 +746,7 @@ function CenterColumn({ contact }: { contact: CrmContact }) {
                   onCancelEdit={() => setEditingId(null)}
                   onSaveEdit={handleEditSave}
                   setEditContent={setEditContent}
+                  onOpenEmail={handleOpenEmail}
                 />
               ))}
             </div>
