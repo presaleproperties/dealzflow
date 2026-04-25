@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Mail, FileText, Plus, ChevronRight, Building2, Star, Megaphone, Share2, Search, X, RefreshCw, CheckCircle2, AlertCircle,
+  Mail, FileText, Plus, Megaphone, Share2, Search, X, RefreshCw, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
