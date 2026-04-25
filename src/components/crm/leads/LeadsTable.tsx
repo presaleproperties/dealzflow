@@ -248,26 +248,26 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
   );
 }
 
-type ColumnDef = { key: string; sortKey?: SortKey; label: string };
+type ColumnDef = { key: string; sortKey?: SortKey; label: string; width: string };
 
 const ALL_COLUMNS: ColumnDef[] = [
-  { key: 'name', sortKey: 'name', label: 'Name' },
-  { key: 'contactInfo', label: 'Contact Info' },
-  { key: 'phone', sortKey: 'phone', label: 'Phone' },
-  { key: 'email', sortKey: 'email', label: 'Email' },
-  { key: 'reg', sortKey: 'created_at', label: 'Reg' },
-  { key: 'project', sortKey: 'project', label: 'Projects' },
-  { key: 'source', sortKey: 'source', label: 'Source' },
-  { key: 'pipeline', label: 'Pipeline' },
-  { key: 'tags', label: 'Tags' },
-  { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent' },
-  { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Activity' },
-  { key: 'created_at', sortKey: 'created_at', label: 'Added' },
-  { key: 'campaign_source', label: 'Campaign' },
-  { key: 'city_pref', label: 'City Pref' },
-  { key: 'property_type_pref', label: 'Prop Type' },
-  { key: 'is_pre_approved', label: 'Pre-Approved' },
-  { key: 'quick_actions', label: 'Actions' },
+  { key: 'name', sortKey: 'name', label: 'Name', width: '200px' },
+  { key: 'contactInfo', label: 'Contact Info', width: '240px' },
+  { key: 'phone', sortKey: 'phone', label: 'Phone', width: '140px' },
+  { key: 'email', sortKey: 'email', label: 'Email', width: '220px' },
+  { key: 'reg', sortKey: 'created_at', label: 'Reg', width: '90px' },
+  { key: 'project', sortKey: 'project', label: 'Projects', width: '160px' },
+  { key: 'source', sortKey: 'source', label: 'Source', width: '130px' },
+  { key: 'pipeline', label: 'Pipeline', width: '160px' },
+  { key: 'tags', label: 'Tags', width: '200px' },
+  { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent', width: '130px' },
+  { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Activity', width: '130px' },
+  { key: 'created_at', sortKey: 'created_at', label: 'Added', width: '110px' },
+  { key: 'campaign_source', label: 'Campaign', width: '160px' },
+  { key: 'city_pref', label: 'City Pref', width: '120px' },
+  { key: 'property_type_pref', label: 'Prop Type', width: '120px' },
+  { key: 'is_pre_approved', label: 'Pre-Approved', width: '110px' },
+  { key: 'quick_actions', label: 'Actions', width: '120px' },
 ];
 
 /* ── Inline Pipeline Editor ──
@@ -803,7 +803,13 @@ export function LeadsTable({
         style={{ minHeight: 46 + pageSize * 56 }}
       >
         <TooltipProvider delayDuration={200}>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ tableLayout: 'fixed', minWidth: 1400 }}>
+            <colgroup>
+              <col style={{ width: '40px' }} />
+              {columns.map(col => (
+                <col key={col.key} style={{ width: col.width }} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/20">
                 <th className="w-10 px-3 py-3.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
@@ -831,7 +837,7 @@ export function LeadsTable({
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
                     </td>
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-2 align-middle">
+                      <td key={col.key} className="px-3 py-2 align-middle overflow-hidden">
                         <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} onSendEmail={setEmailContact} />
                       </td>
                     ))}
