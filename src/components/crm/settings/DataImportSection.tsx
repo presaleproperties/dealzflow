@@ -333,6 +333,18 @@ export default function DataImportSection() {
         record.projects = [];
       }
 
+      // Require email or phone — leads without either are useless
+      const hasEmail = typeof record.email === 'string' && (record.email as string).trim().length > 0;
+      const hasPhone = typeof record.phone === 'string' && (record.phone as string).trim().length > 0;
+      if (!hasEmail && !hasPhone) {
+        skipped.push({
+          rowNum: rowIndex + 2,
+          reason: 'Missing email and phone',
+          data: row.join(' | ').slice(0, 120),
+        });
+        return;
+      }
+
       // Fill missing names with placeholders so no row is ever skipped
       if (!record.first_name || !(record.first_name as string).trim()) {
         record.first_name = 'Unknown';
