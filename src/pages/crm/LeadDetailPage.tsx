@@ -80,7 +80,7 @@ function LeadTopBar({
   onShowing,
 }: {
   contact: CrmContact;
-  navInfo: { index: number; total: number } | null;
+  navInfo: { index: number; total: number; prev: CrmContact | null; next: CrmContact | null; prevName: string | null; nextName: string | null } | null;
   onNavigate: (dir: 'prev' | 'next') => void;
   onTask: () => void;
   onShowing: () => void;
