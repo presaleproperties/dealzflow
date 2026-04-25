@@ -199,6 +199,7 @@ Deno.serve(async (req) => {
         status: 'scheduled',
         campaign_id,
         scheduled_for: when.toISOString(),
+        channel,
       }).select('id').maybeSingle();
       if (schedErr) throw schedErr;
       return new Response(JSON.stringify({ ok: true, scheduled: true, log_id: scheduled?.id }), {
@@ -219,6 +220,7 @@ Deno.serve(async (req) => {
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
         status: 'queued',
         campaign_id,
+        channel,
         error_message: 'Twilio not yet connected — message recorded for later delivery.',
       }).select('id').maybeSingle();
       return new Response(JSON.stringify({
@@ -227,10 +229,13 @@ Deno.serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Build Twilio request
+    // Build Twilio request — WhatsApp requires "whatsapp:" prefix on To and From
+    const twTo = channel === 'whatsapp' ? `whatsapp:${to}` : to;
+    const twFrom = channel === 'whatsapp' && fromNumber ? `whatsapp:${fromNumber}` : fromNumber;
+
     const params = new URLSearchParams();
-    params.set('To', to);
-    if (fromNumber) params.set('From', fromNumber);
+    params.set('To', twTo);
+    if (twFrom) params.set('From', twFrom);
     if (messagingServiceSid && !fromNumber) params.set('MessagingServiceSid', messagingServiceSid);
     params.set('Body', finalBody);
     media_urls.forEach((u) => params.append('MediaUrl', u));
@@ -254,7 +259,7 @@ Deno.serve(async (req) => {
         user_id: user.id, contact_id, direction: 'outbound',
         to_number: to, from_number: fromNumber, body: finalBody, media_urls,
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
-        status: 'failed', campaign_id,
+        status: 'failed', campaign_id, channel,
         error_message: twilioData?.message ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
       });
@@ -273,10 +278,11 @@ Deno.serve(async (req) => {
       price: twilioData?.price ?? null,
       price_unit: twilioData?.price_unit ?? null,
       campaign_id,
+      channel,
     }).select('id').maybeSingle();
 
     return new Response(JSON.stringify({
-      ok: true, sid: twilioData?.sid, status: twilioData?.status, log_id: logged?.id,
+      ok: true, sid: twilioData?.sid, status: twilioData?.status, log_id: logged?.id, channel,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
