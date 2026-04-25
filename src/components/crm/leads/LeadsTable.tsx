@@ -746,6 +746,13 @@ export function LeadsTable({
           <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
             onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
         </div>
+        {emailContact && (
+          <ComposeEmailDialog
+            contact={emailContact}
+            open={!!emailContact}
+            onOpenChange={(o) => !o && setEmailContact(null)}
+          />
+        )}
       </div>
     );
   }
