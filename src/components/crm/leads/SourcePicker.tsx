@@ -60,62 +60,60 @@ export function SourcePicker({ value, onChange }: Props) {
   };
 
   return (
-    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              'flex-1 min-w-0 text-left text-sm px-2 py-1 rounded-md border border-transparent hover:border-border hover:bg-muted/40 transition-colors truncate',
-              !value && 'text-muted-foreground',
-            )}
-          >
-            {value || 'Set source…'}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[260px] p-0" align="start">
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Search or add new…"
-              value={search}
-              onValueChange={setSearch}
-            />
-            <CommandList>
-              <CommandEmpty>No matches</CommandEmpty>
-              <CommandGroup>
-                {filtered.map(opt => (
-                  <CommandItem key={opt} value={opt} onSelect={() => select(opt)}>
-                    <Check className={cn('w-3.5 h-3.5 mr-2', value === opt ? 'opacity-100' : 'opacity-0')} />
-                    <span className="truncate">{opt}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              {search.trim() && !exactMatch && (
-                <>
-                  <CommandSeparator />
-                  <CommandGroup>
-                    <CommandItem onSelect={() => select(search.trim())}>
-                      <Plus className="w-3.5 h-3.5 mr-2" />
-                      Add "{search.trim()}"
-                    </CommandItem>
-                  </CommandGroup>
-                </>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      {value && (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <button
           type="button"
-          onClick={() => select(null)}
-          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
-          title="Clear source"
-          aria-label="Clear source"
+          className={cn(
+            'text-[13px] font-medium text-foreground hover:text-primary transition-colors truncate text-right',
+            !value && 'text-muted-foreground/70 font-normal',
+          )}
         >
-          <X className="w-3 h-3" />
+          {value || 'Set source…'}
         </button>
-      )}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[260px] p-0" align="end">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search or add new…"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty>No matches</CommandEmpty>
+            <CommandGroup>
+              {filtered.map(opt => (
+                <CommandItem key={opt} value={opt} onSelect={() => select(opt)}>
+                  <Check className={cn('w-3.5 h-3.5 mr-2', value === opt ? 'opacity-100' : 'opacity-0')} />
+                  <span className="truncate">{opt}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {search.trim() && !exactMatch && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem onSelect={() => select(search.trim())}>
+                    <Plus className="w-3.5 h-3.5 mr-2" />
+                    Add "{search.trim()}"
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+            {value && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem onSelect={() => select(null)} className="text-muted-foreground">
+                    <X className="w-3.5 h-3.5 mr-2" />
+                    Clear source
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
