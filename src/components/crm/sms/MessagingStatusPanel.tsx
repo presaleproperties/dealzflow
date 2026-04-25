@@ -129,6 +129,16 @@ export function MessagingStatusPanel() {
         </Card>
       )}
 
+      {/* WhatsApp Setup */}
+      <WhatsAppSetupCard
+        smsFrom={data.sender.sms_from}
+        whatsappFrom={data.sender.whatsapp_from}
+        whatsappReady={data.whatsapp_ready}
+        onEnable={(opts) => setup.mutate({ action: 'enable', ...opts })}
+        onDisable={() => setup.mutate({ action: 'disable' })}
+        pending={setup.isPending}
+      />
+
       {/* Sender summary */}
       <Card className="p-4 space-y-2">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
