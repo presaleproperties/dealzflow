@@ -186,7 +186,29 @@ export function SendTextDialog({ contact, open, onOpenChange }: Props) {
       <ResponsiveDialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-base font-bold uppercase tracking-wider">Send Text</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-bold uppercase tracking-wider">
+              Send {channel === 'whatsapp' ? 'WhatsApp' : 'Text'}
+            </h2>
+            <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted">
+              <button
+                onClick={() => setChannel('sms')}
+                className={cn(
+                  'px-2 py-0.5 text-[10px] rounded font-semibold uppercase tracking-wider transition-colors',
+                  channel === 'sms' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
+                )}
+              >SMS</button>
+              <button
+                onClick={() => setChannel('whatsapp')}
+                className={cn(
+                  'px-2 py-0.5 text-[10px] rounded font-semibold uppercase tracking-wider transition-colors flex items-center gap-1',
+                  channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'
+                )}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> WA
+              </button>
+            </div>
+          </div>
           <button onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-5 w-5" />
           </button>
