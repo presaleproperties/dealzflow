@@ -74,7 +74,7 @@ export default function CrmLeadsPage() {
   const { data: segments = [] } = useCrmLeadSegments();
   const reorderSegments = useReorderCrmLeadSegments();
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
-  const [reorderMode, setReorderMode] = useState(false);
+  const reorderMode = false;
   const [managePipelinesOpen, setManagePipelinesOpen] = useState(false);
 
   // Determine active view
