@@ -345,13 +345,32 @@ export default function DataImportSection() {
         return;
       }
 
-      // Fill missing names with placeholders so no row is ever skipped
-      if (!record.first_name || !(record.first_name as string).trim()) {
-        record.first_name = 'Unknown';
+      // Normalize names: auto-split full name from first_name when last_name is missing.
+      // Never write the literal string "Unknown" — leave last_name blank instead.
+      const fnRaw = (record.first_name as string | undefined)?.trim() ?? '';
+      const lnRaw = (record.last_name as string | undefined)?.trim() ?? '';
+
+      let firstName = fnRaw;
+      let lastName = lnRaw;
+
+      // If first_name has multiple words and last_name is empty/placeholder → split on last space
+      if (
+        firstName &&
+        /\s/.test(firstName) &&
+        (!lastName || /^(unknown|\(unknown\))$/i.test(lastName))
+      ) {
+        const idx = firstName.lastIndexOf(' ');
+        lastName = firstName.slice(idx + 1).trim();
+        firstName = firstName.slice(0, idx).trim();
       }
-      if (!record.last_name || !(record.last_name as string).trim()) {
-        record.last_name = 'Unknown';
-      }
+
+      // Strip placeholder values
+      if (/^(unknown|\(unknown\))$/i.test(lastName)) lastName = '';
+      if (/^(unknown|\(unknown\))$/i.test(firstName)) firstName = '';
+
+      if (!firstName) firstName = 'Unknown';
+      record.first_name = firstName;
+      record.last_name = lastName;
 
       allRecords.push({ record, rowNum: rowIndex + 2 });
     });
