@@ -152,7 +152,7 @@ export function MassSendConfirmDialog({
             size="sm"
             className="gap-1.5 min-w-[160px]"
             onClick={onConfirm}
-            disabled={isPending || (count >= 5 && !optedIn) || count === 0}
+            disabled={isPending || (count >= 5 && !optedIn) || count === 0 || overCap}
           >
             {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
             {isPending ? 'Queueing…' : `Send to ${count.toLocaleString()}`}
