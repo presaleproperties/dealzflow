@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,9 +46,9 @@ export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Create Task</DialogTitle></DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="sm:max-w-md">
+        <ResponsiveDialogHeader><ResponsiveDialogTitle>Create Task</ResponsiveDialogTitle></ResponsiveDialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3 pt-2">
           <div>
             <Label>Title *</Label>
@@ -94,7 +94,7 @@ export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: 
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
