@@ -60,6 +60,9 @@ verify_jwt = false
 [functions.gmail-actions]
 verify_jwt = false
 
+[functions.gmail-sync-cron]
+verify_jwt = false
+
 [functions.mailerlite-api]
 verify_jwt = false
 
