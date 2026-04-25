@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Users, Merge, ExternalLink } from 'lucide-react';
+import { Users, Merge, ExternalLink, RefreshCw } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -46,6 +46,29 @@ export default function DuplicateReviewSection() {
   const [activeGroup, setActiveGroup] = useState<DupGroup | null>(null);
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [stats, setStats] = useState<{ groups: number; records: number; extra: number } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    const { data, error } = await supabase.rpc('count_potential_duplicates');
+    setStatsLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      setStats({ groups: 0, records: 0, extra: 0 });
+      return;
+    }
+    setStats({
+      groups: Number(row.groups_count ?? 0),
+      records: Number(row.records_count ?? 0),
+      extra: Number(row.extra_records ?? 0),
+    });
+    toast.success('Duplicate stats refreshed');
+  };
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ['potential-duplicates'],
@@ -101,6 +124,23 @@ export default function DuplicateReviewSection() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 flex items-center justify-between gap-3 flex-wrap border rounded-md p-3 bg-muted/30">
+          <div className="flex items-center gap-4 flex-wrap text-sm">
+            {stats ? (
+              <>
+                <div><span className="text-muted-foreground">Groups:</span> <span className="font-semibold">{stats.groups}</span></div>
+                <div><span className="text-muted-foreground">Records involved:</span> <span className="font-semibold">{stats.records}</span></div>
+                <div><span className="text-muted-foreground">Removable on merge:</span> <span className="font-semibold">{stats.extra}</span></div>
+              </>
+            ) : (
+              <span className="text-muted-foreground">Click refresh to count current potential duplicates.</span>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={fetchStats} disabled={statsLoading}>
+            <RefreshCw className={`h-4 w-4 mr-1 ${statsLoading ? 'animate-spin' : ''}`} />
+            {statsLoading ? 'Counting…' : 'Refresh count'}
+          </Button>
+        </div>
         {isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : !groups || groups.length === 0 ? (
