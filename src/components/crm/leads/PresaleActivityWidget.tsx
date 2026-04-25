@@ -248,9 +248,8 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
 
       {visible.map((it) => {
         const Icon = it.icon;
-        const absoluteUrl = it.url
-          ? (/^https?:\/\//i.test(it.url) ? it.url : `https://presaleproperties.com${it.url.startsWith("/") ? "" : "/"}${it.url}`)
-          : null;
+        const primary = it.primaryUrl || null;
+        const display = it.primaryDisplay || it.primaryUrl || null;
         return (
           <div key={it.key} className="flex items-start gap-2.5 p-2.5 rounded-md bg-card border border-border/50 hover:border-border transition-colors">
             <div className="w-7 h-7 rounded-md border border-border/60 flex items-center justify-center shrink-0">
@@ -259,16 +258,34 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-foreground capitalize">{it.label}</p>
               <p className="text-[11px] text-muted-foreground truncate">{it.detail}</p>
-              {absoluteUrl && (
+              {primary && (
                 <a
-                  href={absoluteUrl}
+                  href={primary}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-0.5 break-all"
+                  title={primary}
                 >
-                  <span className="truncate">{it.url}</span>
+                  <span className="truncate">{display}</span>
                   <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                 </a>
+              )}
+              {it.deepLinks && it.deepLinks.length > 0 && (
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                  {it.deepLinks.map((dl, i) => (
+                    <a
+                      key={i}
+                      href={dl.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={dl.href}
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      <ChevronRight className="w-2.5 h-2.5" />
+                      {dl.label}
+                    </a>
+                  ))}
+                </div>
               )}
               {it.extra && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{it.extra}</p>}
               <p className="text-[10px] text-muted-foreground/70 mt-0.5">
