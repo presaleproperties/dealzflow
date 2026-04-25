@@ -65,7 +65,7 @@ export function SourcePicker({ value, onChange }: Props) {
         <button
           type="button"
           className={cn(
-            'text-[13px] font-medium text-foreground hover:text-primary transition-colors truncate text-right',
+            'text-[13px] font-medium text-foreground hover:text-primary transition-colors',
             !value && 'text-muted-foreground/70 font-normal',
           )}
         >
