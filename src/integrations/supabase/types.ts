@@ -4236,6 +4236,13 @@ export type Database = {
       backfill_behavior_notes: { Args: never; Returns: Json }
       bulk_reformat_crm_notes: { Args: never; Returns: Json }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
+      crm_distinct_sources: {
+        Args: never
+        Returns: {
+          source: string
+          usage_count: number
+        }[]
+      }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
