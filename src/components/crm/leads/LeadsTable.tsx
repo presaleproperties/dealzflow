@@ -473,6 +473,20 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms }: { c
               <TooltipContent side="top" className="text-xs">Call {formatPhone(contact.phone)}</TooltipContent>
             </Tooltip>
           )}
+          {contact.phone && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onSendSms(contact)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">Text {formatPhone(contact.phone)}</TooltipContent>
+            </Tooltip>
+          )}
           {contact.email && (
             <Tooltip>
               <TooltipTrigger asChild>
