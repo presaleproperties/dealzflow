@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
-  SMS_VARIABLES, renderSmsTemplate, smsSegments,
+  SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +47,7 @@ export function SendTextDialog({ contact, open, onOpenChange }: Props) {
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
 
+  const [channel, setChannel] = useState<MessagingChannel>('sms');
   const [body, setBody] = useState('');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [scheduled, setScheduled] = useState(false);
@@ -171,6 +172,7 @@ export function SendTextDialog({ contact, open, onOpenChange }: Props) {
       body,
       from: fromOverride || undefined,
       media_urls: mediaUrls,
+      channel,
       scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
     }, {
       onSuccess: () => onOpenChange(false),
