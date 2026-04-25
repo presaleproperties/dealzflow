@@ -825,6 +825,13 @@ export function LeadsTable({
           onOpenChange={(o) => !o && setSmsContact(null)}
         />
       )}
+      {emailContact && (
+        <ComposeEmailDialog
+          contact={emailContact}
+          open={!!emailContact}
+          onOpenChange={(o) => !o && setEmailContact(null)}
+        />
+      )}
     </div>
   );
 }
