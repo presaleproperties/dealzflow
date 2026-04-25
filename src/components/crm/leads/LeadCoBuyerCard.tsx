@@ -1,10 +1,13 @@
 import { User, Phone, Mail, Cake } from 'lucide-react';
+import { useState } from 'react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
+import { ComposeEmailDialog } from './ComposeEmailDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 export function LeadCoBuyerCard({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
+  const [showCompose, setShowCompose] = useState(false);
   const has = contact.co_buyer_name || contact.co_buyer_phone || contact.co_buyer_email || contact.co_buyer_birthday;
   if (!has) return null;
 
@@ -32,7 +35,12 @@ export function LeadCoBuyerCard({ contact }: { contact: CrmContact }) {
           <div className="flex items-center gap-3">
             <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
             <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Email</span>
-            <InlineEditField value={contact.co_buyer_email} onSave={(v) => save('co_buyer_email', v)} href={`mailto:${contact.co_buyer_email}`} />
+            <InlineEditField
+              value={contact.co_buyer_email}
+              onSave={(v) => save('co_buyer_email', v)}
+              href={`mailto:${contact.co_buyer_email}`}
+              onActivate={() => setShowCompose(true)}
+            />
           </div>
         )}
         {contact.co_buyer_birthday && (
@@ -43,6 +51,7 @@ export function LeadCoBuyerCard({ contact }: { contact: CrmContact }) {
           </div>
         )}
       </div>
+      <ComposeEmailDialog contact={contact} open={showCompose} onOpenChange={setShowCompose} />
     </div>
   );
 }
