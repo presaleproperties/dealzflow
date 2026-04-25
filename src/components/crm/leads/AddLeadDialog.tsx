@@ -89,6 +89,10 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     const errs: Record<string, string> = {};
     if (!form.first_name.trim()) errs.first_name = 'First name is required';
     if (!form.last_name.trim()) errs.last_name = 'Last name is required';
+    if (!form.email.trim() && !form.phone.trim()) {
+      errs.email = 'Email or phone is required';
+      errs.phone = 'Email or phone is required';
+    }
     if (form.email && !validateEmail(form.email).isValid) errs.email = 'Invalid email format';
     if (form.first_name.length > 100) errs.first_name = 'Max 100 characters';
     if (form.last_name.length > 100) errs.last_name = 'Max 100 characters';
