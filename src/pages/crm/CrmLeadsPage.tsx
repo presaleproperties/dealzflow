@@ -582,3 +582,19 @@ export default function CrmLeadsPage() {
     </>
   );
 }
+
+/* ── Mobile editorial filter chip ── */
+function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 h-8 px-3 text-[13px] font-medium whitespace-nowrap tracking-tight transition-colors ${
+        active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+      }`}
+    >
+      {label}
+      <span className={`text-[9px] ${active ? 'text-primary/80' : 'text-muted-foreground/50'}`}>▼</span>
+      {active && <span className="ml-0.5 w-1 h-1 rounded-full bg-primary" />}
+    </button>
+  );
+}
