@@ -150,50 +150,6 @@ export function BottomNav() {
         }}
         aria-label="Primary"
       >
-        {/* Context switcher pill — only visible to CRM members */}
-        {isCrmMember && (
-          <div
-            className="px-4 pt-2 pb-1.5 border-b"
-            style={{ borderColor: BORDER }}
-          >
-            <div
-              className="relative flex items-center rounded-full p-0.5 mx-auto max-w-[260px]"
-              style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
-              role="tablist"
-              aria-label="Switch context"
-            >
-              {/* Active indicator */}
-              <div
-                className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full transition-transform duration-300 ease-out"
-                style={{
-                  background: GOLD,
-                  transform: mode === 'crm' ? 'translateX(calc(100% + 4px))' : 'translateX(0)',
-                  boxShadow: '0 2px 8px hsl(var(--primary) / 0.35)',
-                }}
-              />
-              <button
-                onClick={() => switchMode('workspace')}
-                role="tab"
-                aria-selected={mode === 'workspace'}
-                className="relative z-10 flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[12px] font-semibold transition-colors"
-                style={{ color: mode === 'workspace' ? 'hsl(var(--primary-foreground))' : INACTIVE }}
-              >
-                <Briefcase className="w-3.5 h-3.5" strokeWidth={2.2} />
-                Workspace
-              </button>
-              <button
-                onClick={() => switchMode('crm')}
-                role="tab"
-                aria-selected={mode === 'crm'}
-                className="relative z-10 flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[12px] font-semibold transition-colors"
-                style={{ color: mode === 'crm' ? 'hsl(var(--primary-foreground))' : INACTIVE }}
-              >
-                <Users className="w-3.5 h-3.5" strokeWidth={2.2} />
-                CRM
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="flex items-stretch justify-around h-[58px] px-1">
