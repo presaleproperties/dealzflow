@@ -2,6 +2,7 @@ import { Hash, Target, DollarSign, Building2, Fingerprint, BedDouble, MapPin, Ho
 import { Badge } from '@/components/ui/badge';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
+import { SourcePicker } from './SourcePicker';
 import { formatCurrency } from '@/lib/format';
 import { LEAD_TYPE_LABELS, type CrmContact } from '@/hooks/useCrmContacts';
 
@@ -100,7 +101,7 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
         <div className="flex items-center gap-3">
           <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
           <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Source</span>
-          <InlineEditField value={contact.source} onSave={(v) => save('source', v || null)} />
+          <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
         </div>
 
         {/* Lofty ID */}
