@@ -1194,14 +1194,35 @@ export default function LeadDetailPage() {
     if (!id || allContacts.length === 0) return null;
     const idx = allContacts.findIndex(c => c.id === id);
     if (idx === -1) return null;
-    return { index: idx, total: allContacts.length };
+    const prev = idx > 0 ? allContacts[idx - 1] : null;
+    const next = idx < allContacts.length - 1 ? allContacts[idx + 1] : null;
+    return {
+      index: idx,
+      total: allContacts.length,
+      prev,
+      next,
+      prevName: prev ? formatContactName(prev.first_name, prev.last_name) || 'Unnamed' : null,
+      nextName: next ? formatContactName(next.first_name, next.last_name) || 'Unnamed' : null,
+    };
   }, [id, allContacts]);
+
+  // Persist last-visited lead id + index so refresh / back-nav restores position.
+  // Stored in sessionStorage to keep it scoped to the current browsing session.
+  useEffect(() => {
+    if (!id || !navInfo) return;
+    try {
+      sessionStorage.setItem(
+        'crm:lastLead',
+        JSON.stringify({ id, index: navInfo.index, total: navInfo.total, at: Date.now() }),
+      );
+    } catch { /* storage may be unavailable */ }
+  }, [id, navInfo]);
 
   const handleNavigate = (dir: 'prev' | 'next') => {
     if (!navInfo) return;
-    const newIdx = dir === 'prev' ? navInfo.index - 1 : navInfo.index + 1;
-    if (newIdx < 0 || newIdx >= navInfo.total) return;
-    navigate(`/crm/leads/${allContacts[newIdx].id}`);
+    const target = dir === 'prev' ? navInfo.prev : navInfo.next;
+    if (!target) return;
+    navigate(`/crm/leads/${target.id}`);
   };
 
   // ─── Keyboard shortcuts (mobile + desktop) ───
