@@ -1313,7 +1313,7 @@ export default function LeadDetailPage() {
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100vh - 60px)' }}>
+      <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col flex-1 min-h-0" style={{ minHeight: 'calc(100dvh - 60px)' }}>
         <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center gap-4">
           <Skeleton className="h-4 w-16" />
           <div className="h-5 w-px bg-border" />
@@ -1379,9 +1379,15 @@ export default function LeadDetailPage() {
     const typeLabel = TYPE_LABELS[c.contact_type] ?? 'LEAD';
     const initials = ((c.first_name?.[0] || '') + (c.last_name?.[0] || '')).toUpperCase() || '?';
     return (
-      <div className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 flex flex-col" style={{ minHeight: 'calc(100dvh - 60px)' }}>
-        {/* Sticky compact header */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
+      <div
+        className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 flex flex-col flex-1"
+        style={{ minHeight: 'calc(100dvh - 60px)' }}
+      >
+        {/* Sticky compact header — respects iOS notch / Android status bar */}
+        <div
+          className="sticky z-30 bg-background/95 backdrop-blur-md border-b border-border"
+          style={{ top: 'env(safe-area-inset-top, 0px)' }}
+        >
           <div className="flex items-center gap-2 px-3 py-2.5">
             <Link
               to="/crm/leads"
@@ -1557,7 +1563,7 @@ export default function LeadDetailPage() {
 
   // Desktop: 3-column layout
   return (
-    <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100vh - 60px)' }}>
+    <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col flex-1 min-h-0" style={{ minHeight: 'calc(100dvh - 60px)' }}>
       <LeadTopBar
         contact={c}
         navInfo={navInfo}
