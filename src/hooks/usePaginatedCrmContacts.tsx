@@ -3,6 +3,29 @@ import { supabase } from '@/integrations/supabase/client';
 import type { CrmContact } from './useCrmContacts';
 import { normalizeCrmContactArrays } from '@/lib/crmMultiValue';
 
+/** Generate common case variants of a value so case-insensitive filters work
+ *  against btree-indexed text columns (status, lead_type) and text[] columns
+ *  (tags, lead_types) without forcing a sequential scan via lower(). */
+function caseVariants(values: string[]): string[] {
+  const out = new Set<string>();
+  values.forEach((raw) => {
+    const v = (raw ?? '').trim();
+    if (!v) return;
+    out.add(v);
+    out.add(v.toLowerCase());
+    out.add(v.toUpperCase());
+    // Title case (handles "Pre-Sale" / "First-Time Buyer" / etc.)
+    out.add(
+      v
+        .toLowerCase()
+        .split(/(\s+|-)/)
+        .map((part) => (/^(\s+|-)$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)))
+        .join('')
+    );
+  });
+  return Array.from(out);
+}
+
 function applyJsonFilters(query: any, filters: Record<string, unknown>) {
   if (!filters || Object.keys(filters).length === 0) return query;
   if (filters.status && Array.isArray(filters.status) && (filters.status as string[]).length > 0) {
@@ -23,6 +46,34 @@ function applyJsonFilters(query: any, filters: Record<string, unknown>) {
   if (filters.contact_type && typeof filters.contact_type === 'string') {
     query = query.eq('contact_type', filters.contact_type);
   }
+
+  // ── Case-insensitive / multi-shape segment filters ──
+  // Pre-Sale 🔥 / Re-Sale 🔥 / Commercial chips use these keys because the
+  // imported data is inconsistent (e.g. tag "presale" vs lead_type "Pre-Sale").
+  // tags_any_ci OR lead_type_ci → contact matches if EITHER overlaps.
+  const looseTagsCi = (filters.tags_any_ci as string[] | undefined) ?? [];
+  const looseTypesCi = (filters.lead_type_ci as string[] | undefined) ?? [];
+  if (looseTagsCi.length > 0 || looseTypesCi.length > 0) {
+    const orParts: string[] = [];
+
+    if (looseTagsCi.length > 0) {
+      const variants = caseVariants(looseTagsCi);
+      const arr = `{${variants.map((t) => `"${t.replace(/"/g, '\\"')}"`).join(',')}}`;
+      orParts.push(`tags.ov.${arr}`);
+    }
+    if (looseTypesCi.length > 0) {
+      const variants = caseVariants(looseTypesCi);
+      const inList = variants.map((t) => `"${t.replace(/"/g, '\\"')}"`).join(',');
+      orParts.push(`lead_type.in.(${inList})`);
+      const arr = `{${variants.map((t) => `"${t.replace(/"/g, '\\"')}"`).join(',')}}`;
+      orParts.push(`lead_types.ov.${arr}`);
+    }
+
+    if (orParts.length > 0) {
+      query = query.or(orParts.join(','));
+    }
+  }
+
   return query;
 }
 
