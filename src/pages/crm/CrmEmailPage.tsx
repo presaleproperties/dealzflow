@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, Workflow, Activity, Megaphone, BarChart3, Send, Search, X, User2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,14 +24,29 @@ import { formatContactName } from '@/lib/format';
  * the rest of the Email workspace live in the tabs below.
  */
 export default function CrmEmailPage() {
-  const [tab, setTab] = useState('hub');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') ?? 'hub';
+  const [tab, setTab] = useState(initialTab);
   const [composeContact, setComposeContact] = useState<CrmContact | null>(null);
+
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && t !== tab) setTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    setTab(v);
+    const sp = new URLSearchParams(searchParams);
+    sp.set('tab', v);
+    setSearchParams(sp, { replace: true });
+  };
 
   return (
     <div className="space-y-4">
       <QuickSendBar onCompose={(c) => setComposeContact(c)} />
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full space-y-4">
+      <Tabs value={tab} onValueChange={handleTabChange} className="w-full space-y-4">
         <TabsList className="w-full sm:w-auto grid grid-cols-6 sm:flex h-auto">
           <TabsTrigger value="hub" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Sparkles className="h-3.5 w-3.5" /><span>Templates</span></TabsTrigger>
           <TabsTrigger value="center" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Mail className="h-3.5 w-3.5" /><span>Inbox</span></TabsTrigger>

@@ -50,7 +50,7 @@ export function useMassSendEmail() {
         },
       );
       qc.invalidateQueries({ queryKey: ['crm-email-log'] });
-      qc.invalidateQueries({ queryKey: ['crm-mass-send-jobs'] });
+      qc.invalidateQueries({ queryKey: ['crm-email-send-jobs'] });
     },
     onError: (err: Error) => {
       toast.error(err.message ?? 'Mass send failed');
