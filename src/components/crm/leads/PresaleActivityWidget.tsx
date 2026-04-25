@@ -1,14 +1,74 @@
 import { format } from "date-fns";
-import { Eye, Heart, FileText, Globe, MousePointerClick, Mail, ExternalLink } from "lucide-react";
+import { Eye, Heart, FileText, Globe, MousePointerClick, Mail, ExternalLink, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { usePresaleBehavior } from "@/hooks/usePresaleBehavior";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useCrmAccess } from "@/contexts/CrmAccessContext";
+import { toast } from "sonner";
 
 const INITIAL = 12;
+
+type SanityResult = {
+  ok: boolean;
+  checks?: { views_rendered: boolean; sessions_rendered: boolean; forms_rendered: boolean; links_present: boolean };
+  counts?: { views: number; sessions: number; forms: number };
+  sample?: { view_url: string | null; session_landing: string | null; form_name: string | null };
+  error?: string;
+};
 
 export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
   const { data, isLoading } = usePresaleBehavior(contactId);
   const [showAll, setShowAll] = useState(false);
+  const queryClient = useQueryClient();
+  const { isOwnerOrAdmin } = useCrmAccess();
+  const [sanityRunning, setSanityRunning] = useState(false);
+  const [sanityResult, setSanityResult] = useState<SanityResult | null>(null);
+
+  const runSanityCheck = async () => {
+    if (!contactId) return;
+    setSanityRunning(true);
+    setSanityResult(null);
+    try {
+      const { data: res, error } = await supabase.functions.invoke("behavior-sanity-check", {
+        body: { contact_id: contactId },
+      });
+      if (error) throw error;
+      const result = res as SanityResult;
+      setSanityResult(result);
+      await queryClient.invalidateQueries({ queryKey: ["presale-behavior", contactId] });
+      if (result.ok) {
+        toast.success("Web Behavior sanity check passed", {
+          description: `Seeded ${result.counts?.views ?? 0} views, ${result.counts?.sessions ?? 0} session, ${result.counts?.forms ?? 0} form. Links present.`,
+        });
+      } else {
+        toast.error("Sanity check found issues", {
+          description: JSON.stringify(result.checks ?? result),
+        });
+      }
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      setSanityResult({ ok: false, error: msg });
+      toast.error("Sanity check failed", { description: msg });
+    } finally {
+      setSanityRunning(false);
+    }
+  };
+
+  const clearSanityRows = async () => {
+    if (!contactId) return;
+    try {
+      await supabase.functions.invoke("behavior-sanity-check", {
+        body: { contact_id: contactId, cleanup: true },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["presale-behavior", contactId] });
+      setSanityResult(null);
+      toast.success("Sanity rows cleared");
+    } catch (e: any) {
+      toast.error("Cleanup failed", { description: e?.message || String(e) });
+    }
+  };
 
   if (isLoading) {
     return (
