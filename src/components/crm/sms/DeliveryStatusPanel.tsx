@@ -309,14 +309,25 @@ export function DeliveryStatusPanel({ channel }: { channel: MessagingChannel }) 
                       {/* SID + error */}
                       <div className="flex flex-wrap items-center gap-2">
                         {sid ? (
-                          <button
-                            onClick={() => copy(sid, 'Twilio SID copied')}
-                            className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                            title="Copy Twilio Message SID"
-                          >
-                            <Copy className="w-2.5 h-2.5" />
-                            {sid}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => copy(sid, 'Twilio SID copied')}
+                              className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              title="Copy Twilio Message SID"
+                            >
+                              <Copy className="w-2.5 h-2.5" />
+                              {sid}
+                            </button>
+                            <button
+                              onClick={() => handleVerify(sid)}
+                              disabled={verifying}
+                              className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                              title="Verify with Twilio"
+                            >
+                              <ShieldCheck className="w-2.5 h-2.5" />
+                              Verify
+                            </button>
+                          </>
                         ) : (
                           <span className="text-[10px] text-muted-foreground italic">No SID yet</span>
                         )}
