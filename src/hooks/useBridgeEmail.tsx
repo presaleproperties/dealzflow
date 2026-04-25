@@ -92,6 +92,7 @@ interface SendArgs {
  * which forwards to Presale's Gmail SMTP and writes activity to crm_email_log.
  */
 export function useBridgeSendEmail() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: SendArgs) => {
       const { data, error } = await supabase.functions.invoke('bridge-send-email', {
@@ -101,12 +102,23 @@ export function useBridgeSendEmail() {
       if (data?.error) throw new Error(data.error);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       if (data?.scheduled) {
         toast.success('Email scheduled');
       } else {
         toast.success('Email sent');
       }
+      // Refresh anything that reads from crm_email_log so the lead detail
+      // history, dashboard KPIs, recent activity and right-rail update
+      // immediately after a send (mobile composer, dialog, campaign fan-out).
+      if (variables.contact_id) {
+        qc.invalidateQueries({ queryKey: ['crm-email-log', variables.contact_id] });
+      }
+      qc.invalidateQueries({ queryKey: ['crm-email-log'] });
+      qc.invalidateQueries({ queryKey: ['crm-recent-activity'] });
+      qc.invalidateQueries({ queryKey: ['cmd-activity-feed'] });
+      qc.invalidateQueries({ queryKey: ['crm-kpi-cards'] });
+      qc.invalidateQueries({ queryKey: ['command-center-stats'] });
     },
     onError: (err: Error) => toast.error(err.message || 'Send failed'),
   });
