@@ -220,3 +220,8 @@ function escapeHtml(s: string) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+function linkify(s: string) {
+  // Operates on already-escaped text — looks for http(s) URLs only.
+  return s.replace(/(https?:\/\/[^\s<]+)/g, (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
+}
