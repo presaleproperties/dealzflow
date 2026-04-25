@@ -761,6 +761,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                   onScheduledChange={setScheduledFor}
                   quotedRef={quotedRef}
                   onClearQuote={() => setQuotedRef(null)}
+                  lastInboundAt={active?.lastInbound?.sent_at || null}
                 />
               </>
             ) : (
