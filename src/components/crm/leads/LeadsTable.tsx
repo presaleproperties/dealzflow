@@ -793,7 +793,7 @@ export function LeadsTable({
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-2 align-middle">
-                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} />
+                        <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} onSendEmail={setEmailContact} />
                       </td>
                     ))}
                   </tr>
