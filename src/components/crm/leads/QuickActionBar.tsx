@@ -21,19 +21,14 @@ const CALL_OUTCOMES = [
 
 interface Props {
   contact: CrmContact;
-  /** Open the existing dialogs for these modes (we don't replace them — they're great). */
-  onOpenEmail: () => void;
-  onOpenText: () => void;
-  onOpenTask: () => void;
-  onOpenShowing: () => void;
 }
 
 /**
- * Unified Quick Action Bar — one composer that morphs based on the chip you
- * pick. Note + Call Log save inline; Email / Text / Task / Showing open the
- * existing rich dialogs pre-bound to this lead. ⌘+Enter saves.
+ * Quick composer for Note / Call Log only. Email / Text / Task / Showing
+ * are reachable from the top bar and side panels — no need to duplicate them
+ * here. ⌘+Enter saves.
  */
-export function QuickActionBar({ contact, onOpenEmail, onOpenText, onOpenShowing, onOpenTask }: Props) {
+export function QuickActionBar({ contact }: Props) {
   const [mode, setMode] = useState<Mode>('note');
   const [body, setBody] = useState('');
   const [callDuration, setCallDuration] = useState('');
@@ -41,13 +36,7 @@ export function QuickActionBar({ contact, onOpenEmail, onOpenText, onOpenShowing
   const taRef = useRef<HTMLTextAreaElement>(null);
   const addNote = useAddNote();
 
-  // When user picks Email/Text/Task/Showing, open the rich dialog and
-  // immediately bounce back to Note mode so the composer stays useful.
   const switchMode = (next: Mode) => {
-    if (next === 'email')   { onOpenEmail();   return; }
-    if (next === 'text')    { onOpenText();    return; }
-    if (next === 'task')    { onOpenTask();    return; }
-    if (next === 'showing') { onOpenShowing(); return; }
     setMode(next);
     setTimeout(() => taRef.current?.focus(), 0);
   };
