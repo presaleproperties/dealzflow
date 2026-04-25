@@ -75,14 +75,14 @@ export function useCreateLeadSegment() {
       const nextOrder = (existing.length + 1) * 10 + 100;
       const { data, error } = await supabase
         .from('crm_lead_segments')
-        .insert({
+        .insert([{
           name: input.name.trim(),
           emoji: input.emoji ?? null,
           color: input.color ?? '#6B7280',
-          filter_config: input.filter_config ?? {},
+          filter_config: (input.filter_config ?? {}) as any,
           sort_order: nextOrder,
           is_default: false,
-        })
+        }])
         .select()
         .single();
       if (error) throw error;
