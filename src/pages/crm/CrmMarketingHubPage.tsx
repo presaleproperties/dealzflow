@@ -13,38 +13,8 @@ import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/Presale
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
 import { inferTemplateTags, countTags, TEMPLATE_TAG_ORDER, type TemplateTag } from '@/lib/templateTags';
 
-const CREATE_OPTIONS = [
-  {
-    key: 'project-email',
-    title: 'Project Email',
-    desc: 'Hero image, stats, highlights, floor plans',
-    icon: Building2,
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-500/10',
-    badge: 'Most Used',
-    to: '/crm/email-builder?template=project-email',
-  },
-  {
-    key: 'exclusive-offer',
-    title: 'Exclusive Offer',
-    desc: 'High-urgency promo with incentive spotlight',
-    icon: Star,
-    color: 'text-amber-600',
-    bg: 'bg-amber-500/10',
-    badge: 'Promo',
-    to: '/crm/email-builder?template=exclusive-offer',
-  },
-  {
-    key: 'blank-email',
-    title: 'Blank Email',
-    desc: 'Start from scratch',
-    icon: Mail,
-    color: 'text-muted-foreground',
-    bg: 'bg-muted/40',
-    badge: null,
-    to: '/crm/email-builder?template=blank',
-  },
-];
+// CREATE_OPTIONS block removed — composing happens via the Quick Send bar
+// at the top of the Email page, which opens the native CRM composer.
 
 /**
  * Marketing Hub — exact visual & UX mirror of Presale Properties'
