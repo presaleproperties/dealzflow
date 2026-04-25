@@ -58,6 +58,7 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
+import GmailConnectCard from '@/components/crm/email/GmailConnectCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -479,6 +480,7 @@ function IntegrationsSection() {
         <CardTitle className="text-base sm:text-lg">Integrations</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-2 px-3 sm:px-6">
+        <GmailConnectCard />
         {INTEGRATIONS.map(intg => (
           <div key={intg.name} className="flex items-start gap-3 p-3 sm:p-4 rounded-lg border border-border/60 bg-muted/20">
             <div className="p-2 rounded-md bg-primary/10 shrink-0">

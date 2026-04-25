@@ -30,6 +30,7 @@ import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWid
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
 import { BehaviorIngestionStatus } from '@/components/crm/leads/BehaviorIngestionStatus';
 import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
+import { LeadConversationWidget } from '@/components/crm/leads/LeadConversationWidget';
 import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiagnostics';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
@@ -1113,6 +1114,11 @@ function RightSidebar({
             ))}
           </div>
         )}
+      </WidgetSection>
+
+      {/* Gmail conversation (replies + outbound, interleaved) */}
+      <WidgetSection title="Email Conversation">
+        <LeadConversationWidget contactId={contact?.id} />
       </WidgetSection>
 
       {/* Email Attribution (opens / clicks per send) */}

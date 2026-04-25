@@ -1,18 +1,23 @@
 // CRM Email Workspace — 3-pane Apple-Mail-style email platform.
-// Templates (left) · Composer (center, always-on) · Recipients (right).
-// Footer strip links to the existing sub-tabs (Sent/Campaigns/Flows/Stats/Health).
+// Compose mode: Templates (left) · Composer (center) · Recipients (right)
+// Inbox mode: synced Gmail conversations (replies, threads).
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight } from 'lucide-react';
+import { Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight, Inbox, PenSquare } from 'lucide-react';
 import { TemplatesRail, type AnyTpl } from '@/components/crm/email/TemplatesRail';
 import { RecipientsRail } from '@/components/crm/email/RecipientsRail';
 import { ComposerSurface } from '@/components/crm/email/ComposerSurface';
+import InboxView from '@/components/crm/email/InboxView';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
+type Mode = 'compose' | 'inbox';
+
 export default function CrmEmailWorkspacePage() {
+  const [mode, setMode] = useState<Mode>('compose');
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
@@ -27,64 +32,64 @@ export default function CrmEmailWorkspacePage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
-      {/* 3-pane workspace */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr_380px] min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-        {/* Left: templates (desktop) / drawer (mobile) */}
-        <div className="hidden lg:block min-h-0">
-          <TemplatesRail
-            onApply={applyTemplate}
-            activeTemplateId={activeTemplateId}
-          />
-        </div>
-
-        {/* Center: composer */}
-        <div className="min-h-0 overflow-hidden">
-          {/* Mobile rails as buttons */}
-          <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Mail className="h-3.5 w-3.5" />
-                  Templates
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-[300px]">
-                <TemplatesRail
-                  onApply={(t) => { applyTemplate(t); }}
-                  activeTemplateId={activeTemplateId}
-                />
-              </SheetContent>
-            </Sheet>
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
-                  <Send className="h-3.5 w-3.5" />
-                  Recipients ({recipients.length})
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
-                <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          <ComposerSurface
-            recipients={recipients}
-            onRemoveRecipient={removeRecipient}
-            onClearRecipients={() => setRecipients([])}
-            appliedTemplate={appliedTpl}
-            onTemplateApplied={() => setAppliedTpl(null)}
-            onSent={() => setActiveTemplateId(null)}
-          />
-        </div>
-
-        {/* Right: recipients (desktop) */}
-        <div className="hidden lg:block min-h-0">
-          <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
-        </div>
+      {/* Mode toggle */}
+      <div className="mb-3 inline-flex items-center gap-1 p-1 rounded-lg border border-border bg-card shadow-sm w-fit">
+        <ModeBtn active={mode === 'compose'} onClick={() => setMode('compose')} icon={PenSquare} label="Compose" />
+        <ModeBtn active={mode === 'inbox'} onClick={() => setMode('inbox')} icon={Inbox} label="Inbox" />
       </div>
 
-      {/* Footer strip — quick access to existing sub-tools */}
+      <div className="flex-1 min-h-0">
+        {mode === 'inbox' ? (
+          <InboxView />
+        ) : (
+          <div className="h-full grid grid-cols-1 lg:grid-cols-[280px_1fr_380px] min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+            <div className="hidden lg:block min-h-0">
+              <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
+            </div>
+
+            <div className="min-h-0 overflow-hidden">
+              <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <Mail className="h-3.5 w-3.5" />
+                      Templates
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 w-[300px]">
+                    <TemplatesRail onApply={(t) => { applyTemplate(t); }} activeTemplateId={activeTemplateId} />
+                  </SheetContent>
+                </Sheet>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 ml-auto">
+                      <Send className="h-3.5 w-3.5" />
+                      Recipients ({recipients.length})
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-[92vw] sm:w-[400px]">
+                    <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
+                  </SheetContent>
+                </Sheet>
+              </div>
+
+              <ComposerSurface
+                recipients={recipients}
+                onRemoveRecipient={removeRecipient}
+                onClearRecipients={() => setRecipients([])}
+                appliedTemplate={appliedTpl}
+                onTemplateApplied={() => setAppliedTpl(null)}
+                onSent={() => setActiveTemplateId(null)}
+              />
+            </div>
+
+            <div className="hidden lg:block min-h-0">
+              <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px]">
         <span className="text-muted-foreground/70 uppercase tracking-wider mr-1">More:</span>
         <FooterLink to="/crm/email/legacy?tab=center" icon={Mail} label="Sent log" />
@@ -94,6 +99,21 @@ export default function CrmEmailWorkspacePage() {
         <FooterLink to="/crm/email/legacy?tab=health" icon={Activity} label="Health" />
       </div>
     </div>
+  );
+}
+
+function ModeBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium transition-colors',
+        active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
   );
 }
 
