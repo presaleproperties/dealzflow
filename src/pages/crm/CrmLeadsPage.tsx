@@ -13,6 +13,7 @@ import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
 import { LeadsTable } from '@/components/crm/leads/LeadsTable';
+import { ConversionFunnelBanner } from '@/components/crm/leads/ConversionFunnelBanner';
 import { ManagePipelinesDialog } from '@/components/crm/leads/ManagePipelinesDialog';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BulkActionsBar } from '@/components/crm/leads/BulkActionsBar';
