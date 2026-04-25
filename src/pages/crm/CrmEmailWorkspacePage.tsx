@@ -2,7 +2,7 @@
 // Compose mode: Templates (left) · Composer (center) · Recipients (right)
 // Inbox mode: synced Gmail conversations (replies, threads).
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight, Inbox, PenSquare,
@@ -12,6 +12,7 @@ import { TemplatesRail, type AnyTpl } from '@/components/crm/email/TemplatesRail
 import { RecipientsRail } from '@/components/crm/email/RecipientsRail';
 import { ComposerSurface } from '@/components/crm/email/ComposerSurface';
 import InboxView from '@/components/crm/email/InboxView';
+import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,8 +26,21 @@ export default function CrmEmailWorkspacePage() {
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.emailWorkspace.leftCollapsed') === '1';
+  });
+  const [rightCollapsed, setRightCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('crm.emailWorkspace.rightCollapsed') === '1';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('crm.emailWorkspace.leftCollapsed', leftCollapsed ? '1' : '0');
+  }, [leftCollapsed]);
+  useEffect(() => {
+    localStorage.setItem('crm.emailWorkspace.rightCollapsed', rightCollapsed ? '1' : '0');
+  }, [rightCollapsed]);
 
   const applyTemplate = (t: AnyTpl) => {
     setAppliedTpl(t);
@@ -35,15 +49,6 @@ export default function CrmEmailWorkspacePage() {
 
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
-
-  // Dynamic grid template based on collapsed panels (lg+ only)
-  const gridTemplateColumns = useMemo(() => {
-    const cols: string[] = [];
-    if (!leftCollapsed) cols.push('280px');
-    cols.push('1fr');
-    if (!rightCollapsed) cols.push('380px');
-    return cols.join(' ');
-  }, [leftCollapsed, rightCollapsed]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
@@ -92,17 +97,22 @@ export default function CrmEmailWorkspacePage() {
         {mode === 'inbox' ? (
           <InboxView />
         ) : (
-          <div
-            className="h-full grid grid-cols-1 min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm lg:[grid-template-columns:var(--cols)]"
-            style={{ ['--cols' as any]: gridTemplateColumns }}
-          >
+          <div className="h-full flex flex-col lg:flex-row min-h-0 rounded-xl border border-border overflow-hidden bg-card shadow-sm">
             {!leftCollapsed && (
-              <div className="hidden lg:block min-h-0">
+              <div className="hidden lg:block min-h-0 w-[280px] flex-shrink-0">
                 <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
               </div>
             )}
+            <div className="hidden lg:block">
+              <PanelEdgeHandle
+                side="left"
+                collapsed={leftCollapsed}
+                onToggle={() => setLeftCollapsed((v) => !v)}
+                label="Templates panel"
+              />
+            </div>
 
-            <div className="min-h-0 overflow-hidden">
+            <div className="min-h-0 overflow-hidden flex-1 min-w-0">
               <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/10">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -138,8 +148,16 @@ export default function CrmEmailWorkspacePage() {
               />
             </div>
 
+            <div className="hidden lg:block">
+              <PanelEdgeHandle
+                side="right"
+                collapsed={rightCollapsed}
+                onToggle={() => setRightCollapsed((v) => !v)}
+                label="Recipients panel"
+              />
+            </div>
             {!rightCollapsed && (
-              <div className="hidden lg:block min-h-0">
+              <div className="hidden lg:block min-h-0 w-[380px] flex-shrink-0">
                 <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
               </div>
             )}
