@@ -1156,6 +1156,7 @@ export default function LeadDetailPage() {
   const [showEmail, setShowEmail] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
+  const [mobileTab, setMobileTab] = useState('overview');
 
   const leadScore = useMemo(() => {
     const inbound = messages.filter((m: any) => m.direction === 'inbound').length;
