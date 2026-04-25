@@ -51,6 +51,15 @@ verify_jwt = false
 [functions.gmail-send]
 verify_jwt = false
 
+[functions.gmail-webhook]
+verify_jwt = false
+
+[functions.gmail-sync]
+verify_jwt = false
+
+[functions.gmail-actions]
+verify_jwt = false
+
 [functions.mailerlite-api]
 verify_jwt = false
 
