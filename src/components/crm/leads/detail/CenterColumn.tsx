@@ -136,14 +136,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
-      <StickyLeadHeader
-        contact={contact}
-        onCall={onCall}
-        onText={onText}
-        onEmail={onEmail}
-        onTask={onTask}
-        onShowing={onShowing}
-      />
 
       <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
         <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
