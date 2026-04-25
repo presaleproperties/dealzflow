@@ -16,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { formatContactName } from '@/lib/format';
 import SourceBackfillSection from './SourceBackfillSection';
 import SourceManagerSection from './SourceManagerSection';
+import DuplicateReviewSection from './DuplicateReviewSection';
 import { format } from 'date-fns';
 
 const EXPORT_FIELDS = [
