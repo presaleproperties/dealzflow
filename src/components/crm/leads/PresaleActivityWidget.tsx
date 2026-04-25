@@ -134,14 +134,54 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
 
   const totalCount = items.length;
 
+  const sanityBar = isOwnerOrAdmin && contactId ? (
+    <div className="rounded-md border border-dashed border-border/60 bg-muted/30 px-2.5 py-1.5 mb-1.5 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {sanityResult?.ok ? (
+          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+        ) : sanityResult && !sanityResult.ok ? (
+          <XCircle className="w-3 h-3 text-destructive shrink-0" />
+        ) : null}
+        <span className="text-[10px] text-muted-foreground truncate">
+          {sanityResult?.ok
+            ? `Sanity OK · ${sanityResult.counts?.views ?? 0}v / ${sanityResult.counts?.sessions ?? 0}s / ${sanityResult.counts?.forms ?? 0}f · links present`
+            : sanityResult?.error
+              ? `Sanity error: ${sanityResult.error}`
+              : "Web Behavior sanity check (admin)"}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={runSanityCheck}
+          disabled={sanityRunning}
+          className="text-[10px] px-2 py-0.5 rounded border border-border/60 hover:bg-muted disabled:opacity-50 inline-flex items-center gap-1"
+        >
+          {sanityRunning ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : null}
+          Run check
+        </button>
+        {sanityResult?.ok ? (
+          <button
+            onClick={clearSanityRows}
+            className="text-[10px] px-2 py-0.5 rounded border border-border/60 hover:bg-muted text-muted-foreground"
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+    </div>
+  ) : null;
+
   if (totalCount === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 text-center">
-        <Globe className="w-6 h-6 text-muted-foreground/40 mb-2" />
-        <p className="text-xs text-muted-foreground">No web behavior received yet</p>
-        <p className="text-[10px] text-muted-foreground/70 mt-1">
-          Will appear here once Presale Properties pushes view, session, form, or engagement events.
-        </p>
+      <div>
+        {sanityBar}
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <Globe className="w-6 h-6 text-muted-foreground/40 mb-2" />
+          <p className="text-xs text-muted-foreground">No web behavior received yet</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">
+            Will appear here once Presale Properties pushes view, session, form, or engagement events.
+          </p>
+        </div>
       </div>
     );
   }
@@ -150,6 +190,7 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
 
   return (
     <div className="space-y-1.5">
+      {sanityBar}
       <div className="flex items-center justify-between text-[10px] text-muted-foreground/70 mb-1 px-0.5">
         <span>{totalCount} {totalCount === 1 ? "event" : "events"} total</span>
         <span className="tabular-nums">
