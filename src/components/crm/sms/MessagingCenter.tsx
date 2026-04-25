@@ -729,7 +729,12 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                 {/* Messages */}
                 <div
                   ref={scrollRef}
-                  className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 bg-gradient-to-b from-muted/10 to-background"
+                  className={cn(
+                    'flex-1 overflow-y-auto px-4 sm:px-6 py-6',
+                    channel === 'whatsapp'
+                      ? 'whatsapp-bg'
+                      : 'bg-gradient-to-b from-muted/10 to-background',
+                  )}
                 >
                   <MessageList
                     messages={visibleMessages}
