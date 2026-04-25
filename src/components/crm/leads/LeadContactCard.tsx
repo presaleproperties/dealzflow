@@ -122,6 +122,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
                 onSave={(v) => save(row.field, v)}
                 href={val && row.href ? row.href(val) : undefined}
                 type={row.inputType}
+                onActivate={row.onActivate}
                 className="text-sm"
               />
               {val && <CopyButton value={val} />}
@@ -129,6 +130,7 @@ export function LeadContactCard({ contact }: { contact: CrmContact }) {
           );
         })}
       </div>
+      <ComposeEmailDialog contact={contact} open={showCompose} onOpenChange={setShowCompose} />
     </div>
   );
 }
