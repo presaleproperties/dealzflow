@@ -270,43 +270,83 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'quick_actions', label: 'Actions' },
 ];
 
-/* ── Inline Status Editor ── */
+/* ── Inline Pipeline Editor ──
+ * Options come from crm_lead_segments so the in-row dropdown, the pill bar
+ * above the table, and the Pipeline Kanban board always show the same set.
+ * Picking a segment writes both `status` and `lead_type` from its
+ * filter_config (matching the Kanban drag-drop behavior).
+ */
 function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
-  // Normalize legacy "New Lead" → "New Leads" for display matching
-  const rawStatus = contact.status ?? 'New Leads';
-  const displayStatus = rawStatus === 'New Lead' ? 'New Leads' : rawStatus;
-  const sc = STATUS_COLORS[displayStatus] ?? STATUS_COLORS[rawStatus] ?? STATUS_COLORS['New Leads'] ?? { bg: 'transparent', color: 'hsl(var(--muted-foreground))' };
+  const { data: segments = [] } = useCrmLeadSegments();
+
+  // Pipeline-eligible segments (exclude the "All Leads" catch-all)
+  const pipelineSegments = useMemo(
+    () => segments.filter(s => s.filter_config && Object.keys(s.filter_config).length > 0),
+    [segments],
+  );
+
+  // Determine which segment this contact currently belongs to (first match wins,
+  // mirroring the Pipeline Kanban). Falls back to a label derived from status.
+  const activeSeg = useMemo(() => {
+    for (const seg of pipelineSegments) {
+      const fc = seg.filter_config as Record<string, unknown>;
+      const statusOk = !fc.status || (Array.isArray(fc.status) && (fc.status as string[]).includes(contact.status ?? ''));
+      const wantedTypes = Array.isArray(fc.lead_type) ? (fc.lead_type as string[]) : null;
+      const contactTypes: string[] = (((contact as any).lead_types as string[] | undefined)?.length)
+        ? ((contact as any).lead_types as string[])
+        : contact.lead_type ? [contact.lead_type] : [];
+      const typeOk = !wantedTypes || wantedTypes.some(w => contactTypes.includes(w));
+      if (statusOk && typeOk) return seg;
+    }
+    return null;
+  }, [pipelineSegments, contact]);
+
+  const displayLabel = activeSeg?.name ?? (contact.status ?? 'New Leads');
+  const displayColor = activeSeg?.color ?? 'hsl(var(--muted-foreground))';
+
+  const onPick = (segId: string) => {
+    const seg = pipelineSegments.find(s => s.id === segId);
+    if (!seg) return;
+    const fc = seg.filter_config as Record<string, unknown>;
+    const updates: Record<string, unknown> = {};
+    const oldValues: Record<string, unknown> = {};
+    if (Array.isArray(fc.status) && (fc.status as string[]).length > 0) {
+      updates.status = (fc.status as string[])[0];
+      updates.status_changed_at = new Date().toISOString();
+      oldValues.status = contact.status;
+    }
+    if (Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
+      updates.lead_type = (fc.lead_type as string[])[0];
+      oldValues.lead_type = contact.lead_type;
+    }
+    if (Object.keys(updates).length === 0) return;
+    updateContact.mutate({ id: contact.id, updates, oldValues });
+    toast.success(`Pipeline → ${seg.name}`);
+  };
+
   return (
     <div onClick={e => e.stopPropagation()}>
-      <Select
-        value={displayStatus}
-        onValueChange={v => {
-          updateContact.mutate({ id: contact.id, updates: { status: v, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
-          toast.success(`Status → ${v}`);
-        }}
-      >
+      <Select value={activeSeg?.id ?? ''} onValueChange={onPick}>
         <SelectTrigger
           className="h-7 border-0 px-2.5 py-0 text-[11.5px] font-semibold uppercase tracking-[0.06em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
-          style={{ background: sc.bg, color: sc.color }}
+          style={{ background: `${displayColor}1F`, color: displayColor }}
         >
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc.color }} />
-            <span>{displayStatus}</span>
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: displayColor }} />
+            <span>{displayLabel}</span>
           </span>
         </SelectTrigger>
         <SelectContent>
-          {PIPELINE_OPTIONS.map(s => {
-            const c = STATUS_COLORS[s] ?? STATUS_COLORS['New Leads'];
-            return (
-              <SelectItem key={s} value={s} className="text-xs">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
-                  {s}
-                  {s === displayStatus && <Check className="w-3 h-3 text-primary ml-1" />}
-                </span>
-              </SelectItem>
-            );
-          })}
+          {pipelineSegments.map(seg => (
+            <SelectItem key={seg.id} value={seg.id} className="text-xs">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: seg.color }} />
+                {seg.emoji && <span>{seg.emoji}</span>}
+                {seg.name}
+                {seg.id === activeSeg?.id && <Check className="w-3 h-3 text-primary ml-1" />}
+              </span>
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
