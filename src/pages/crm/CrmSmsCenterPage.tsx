@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useSms';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { BulkSendTextDialog } from '@/components/crm/leads/BulkSendTextDialog';
+import { MessagingCenter } from '@/components/crm/sms/MessagingCenter';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -193,9 +194,9 @@ export default function CrmSmsCenterPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* === INBOX (conversation view) === */}
+        {/* === INBOX (iMessage-style conversation view) === */}
         <TabsContent value="inbox" className="mt-4">
-          <InboxTab logs={channelLogs} channel={channel} contacts={allContacts} onOpenLead={(id) => navigate(`/crm/leads/${id}`)} />
+          <MessagingCenter channel={channel} onChannelChange={setChannel} />
         </TabsContent>
 
         {/* === COMPOSE (filter + launch bulk) === */}
