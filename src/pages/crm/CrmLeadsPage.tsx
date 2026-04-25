@@ -475,15 +475,6 @@ export default function CrmLeadsPage() {
               >
                 Manage
               </Button>
-              <Button
-                size="sm"
-                variant={reorderMode ? 'default' : 'ghost'}
-                className="hidden sm:inline-flex h-8 px-2 text-[11px] flex-shrink-0"
-                onClick={() => setReorderMode(v => !v)}
-                title="Reorder pipeline pills"
-              >
-                {reorderMode ? 'Done' : 'Reorder'}
-              </Button>
               <div className="hidden sm:flex items-center flex-shrink-0 ml-2">
                 <div className="flex items-center gap-1 pr-2 mr-2 border-r border-border/60">
                   <Button
