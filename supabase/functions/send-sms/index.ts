@@ -168,6 +168,26 @@ Deno.serve(async (req) => {
       }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Strict WhatsApp guard: settings.whatsapp_from must match the resolved sender
+    // and pass a basic E.164 check. Skips when an explicit override or MS SID is in use.
+    if (channel === 'whatsapp' && fromNumber && !body?.skip_preflight) {
+      const settingsFromRaw = (settings?.whatsapp_from || '').toString();
+      const settingsFromE164 = settingsFromRaw.replace(/^whatsapp:/i, '').trim();
+      const isE164 = /^\+[1-9]\d{7,14}$/.test(fromNumber);
+      if (!isE164) {
+        return new Response(JSON.stringify({
+          error: `WhatsApp sender ${fromNumber} is not in E.164 format.`,
+          code: 'WA_BAD_FORMAT',
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (settingsFromE164 && settingsFromE164 !== fromNumber && !from_override) {
+        return new Response(JSON.stringify({
+          error: `Resolved WhatsApp sender ${fromNumber} does not match crm_sms_settings.whatsapp_from (${settingsFromE164}). Run Health Check.`,
+          code: 'WA_SENDER_MISMATCH',
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // Optional opt-out footer on first message to this contact
     let finalBody = message;
     if (settings?.append_optout_first_msg && contact_id) {
