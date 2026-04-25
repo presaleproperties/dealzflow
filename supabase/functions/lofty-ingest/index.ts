@@ -34,11 +34,26 @@ Deno.serve(async (req: Request) => {
   );
 
   // Map Zapier/Lofty fields → crm_contacts columns
+  // Name handling: never write literal "Unknown". If last name is missing
+  // but first name has multiple words, split on the last space.
+  let _firstName = String(
+    payload.first_name || payload.firstName || payload["First Name"] || ""
+  ).trim();
+  let _lastName = String(
+    payload.last_name || payload.lastName || payload["Last Name"] || ""
+  ).trim();
+
+  if (_firstName && /\s/.test(_firstName) && (!_lastName || /^(unknown|\(unknown\))$/i.test(_lastName))) {
+    const idx = _firstName.lastIndexOf(" ");
+    _lastName = _firstName.slice(idx + 1).trim();
+    _firstName = _firstName.slice(0, idx).trim();
+  }
+  if (/^(unknown|\(unknown\))$/i.test(_lastName)) _lastName = "";
+  if (/^(unknown|\(unknown\))$/i.test(_firstName)) _firstName = "";
+
   const contact: Record<string, unknown> = {
-    first_name:
-      payload.first_name || payload.firstName || payload["First Name"] || "",
-    last_name:
-      payload.last_name || payload.lastName || payload["Last Name"] || "(unknown)",
+    first_name: _firstName,
+    last_name: _lastName,
     email: payload.email || payload.Email || payload.emails || null,
     phone: normalizePhone(
       (payload.phone ||
