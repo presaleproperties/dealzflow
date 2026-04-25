@@ -1379,63 +1379,56 @@ export default function LeadDetailPage() {
 
   const c = contact as CrmContact;
 
-  // Mobile layout
+  // Mobile layout — sticky header + tabbed content + bottom action bar
   if (isMobile) {
+    const onCall = () => c.phone && (window.location.href = `tel:${c.phone}`);
     return (
-      <div className="space-y-3 pb-6">
-        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to Leads
-        </Link>
-
-        {/* Top action bar — Task + Book Showing (Call/Email live in LeftSidebar identity card) */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="h-10 text-xs gap-1.5" onClick={() => setShowTask(true)}>
-            <ListTodo className="w-4 h-4" /> Task
-          </Button>
-          <Button size="sm" className="h-10 text-xs gap-1.5" onClick={() => setShowShowing(true)}>
-            <Calendar className="w-4 h-4" /> Book Showing
-          </Button>
-        </div>
-
-        <div className="bg-card rounded-lg border border-border p-4">
-          <LeftSidebar
-            contact={c}
-            leadScore={leadScore}
-            lastTouchLabel={lastTouchLabel}
-            daysInPipeline={daysInPipeline}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onSms={() => setShowText(true)}
-            onEmail={() => setShowEmail(true)}
-          />
-        </div>
-        <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ minHeight: 400 }}>
-          <CenterColumn
-            contact={c}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onText={() => setShowText(true)}
-            onEmail={() => setShowEmail(true)}
-            onTask={() => setShowTask(true)}
-            onShowing={() => setShowShowing(true)}
-          />
-        </div>
-        <div className="bg-card rounded-lg border border-border p-4">
-          <RightSidebar
-            contact={c}
-            onAddTask={() => setShowTask(true)}
-            onAddShowing={() => setShowShowing(true)}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onText={() => setShowText(true)}
-            onEmail={() => setShowEmail(true)}
-            leadScore={leadScore}
-            lastTouchHours={lastTouchHours}
-          />
-        </div>
+      <>
+        <MobileLeadDetail
+          contact={c}
+          leadScore={leadScore}
+          onCall={onCall}
+          onText={() => setShowText(true)}
+          onEmail={() => setShowEmail(true)}
+          onTask={() => setShowTask(true)}
+          onShowing={() => setShowShowing(true)}
+          activitySlot={
+            <CenterColumn
+              contact={c}
+              onCall={onCall}
+              onText={() => setShowText(true)}
+              onEmail={() => setShowEmail(true)}
+              onTask={() => setShowTask(true)}
+              onShowing={() => setShowShowing(true)}
+            />
+          }
+          detailsSlot={
+            <LeftSidebar
+              contact={c}
+              leadScore={leadScore}
+              lastTouchLabel={lastTouchLabel}
+              daysInPipeline={daysInPipeline}
+            />
+          }
+          insightsSlot={
+            <RightSidebar
+              contact={c}
+              onAddTask={() => setShowTask(true)}
+              onAddShowing={() => setShowShowing(true)}
+              onCall={onCall}
+              onText={() => setShowText(true)}
+              onEmail={() => setShowEmail(true)}
+              leadScore={leadScore}
+              lastTouchHours={lastTouchHours}
+            />
+          }
+        />
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
         <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
         <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
         <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
-      </div>
+      </>
     );
   }
 
