@@ -60,7 +60,7 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
     return contacts.filter((c) => {
       if (onlyWithEmail && !c.email) return false;
       if (q) {
-        const name = formatContactName(c).toLowerCase();
+        const name = formatContactName(c.first_name, c.last_name).toLowerCase();
         const email = (c.email ?? '').toLowerCase();
         const phone = (c.phone ?? '').toLowerCase();
         if (!name.includes(q) && !email.includes(q) && !phone.includes(q)) return false;
