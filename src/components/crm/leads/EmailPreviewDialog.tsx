@@ -187,11 +187,12 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
           <div className="h-full bg-white rounded-lg border border-border/40 overflow-hidden shadow-sm">
             {html || plain ? (
               <iframe
-                ref={iframeRef}
+                key={email.id}
                 title="Email body"
+                srcDoc={srcDoc}
                 className="w-full h-full border-0 block"
                 style={{ minHeight: '400px' }}
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-popups"
               />
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
