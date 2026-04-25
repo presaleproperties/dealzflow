@@ -11,10 +11,14 @@ interface Props {
   onNavigate: (dir: 'prev' | 'next') => void;
   onTask: () => void;
   onShowing: () => void;
+  /** Show "Task" CTA only when the left details panel is collapsed. */
+  showTaskCta?: boolean;
+  /** Show "Book Showing" CTA only when the right insights panel is collapsed. */
+  showShowingCta?: boolean;
 }
 
 /** Top bar — Lead identity, navigation, and primary CTAs. */
-export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing }: Props) {
+export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, showTaskCta, showShowingCta }: Props) {
   const typeLabel = TYPE_LABELS[contact.contact_type] ?? 'LEAD';
   return (
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
@@ -34,12 +38,16 @@ export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing }: 
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
-          <ListTodo className="w-3.5 h-3.5" /> Task
-        </Button>
-        <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing}>
-          <Calendar className="w-3.5 h-3.5" /> Book Showing
-        </Button>
+        {showTaskCta && (
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
+            <ListTodo className="w-3.5 h-3.5" /> Task
+          </Button>
+        )}
+        {showShowingCta && (
+          <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing}>
+            <Calendar className="w-3.5 h-3.5" /> Book Showing
+          </Button>
+        )}
 
         {navInfo && (
           <>

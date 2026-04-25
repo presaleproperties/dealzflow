@@ -225,6 +225,8 @@ export default function LeadDetailPage() {
         onNavigate={handleNavigate}
         onTask={() => setShowTask(true)}
         onShowing={() => setShowShowing(true)}
+        showTaskCta={leftCollapsed}
+        showShowingCta={rightCollapsed}
       />
 
       <div className="flex flex-1 min-h-0">
