@@ -82,6 +82,8 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   const [newChatContact, setNewChatContact] = useState<CrmContact | null>(null);
   const [newChatPhone, setNewChatPhone] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
