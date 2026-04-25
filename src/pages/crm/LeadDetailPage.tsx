@@ -1398,7 +1398,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Tabbed content */}
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col">
+        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'overview' | 'activity' | 'insights')} className="flex-1 flex flex-col">
           <div className="sticky top-[57px] z-20 bg-background/95 backdrop-blur-md border-b border-border">
             <TabsList className="w-full h-11 bg-transparent rounded-none p-0 grid grid-cols-3">
               <TabsTrigger
