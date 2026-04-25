@@ -606,14 +606,16 @@ export function ComposerSurface({
           </div>
         )}
         {mode === 'html' && (
-          <div className="px-6 py-5 max-w-[760px] mx-auto">
-            <textarea
-              ref={htmlTextareaRef}
-              value={bodyHtml}
-              onChange={(e) => setBodyHtml(e.target.value)}
-              className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              spellCheck={false}
-            />
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
+            <div className="max-w-[760px] mx-auto">
+              <textarea
+                ref={htmlTextareaRef}
+                value={bodyHtml}
+                onChange={(e) => setBodyHtml(e.target.value)}
+                className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                spellCheck={false}
+              />
+            </div>
           </div>
         )}
         {mode === 'preview' && (
