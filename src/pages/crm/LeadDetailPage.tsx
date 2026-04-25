@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Phone, Mail, ChevronLeft, ChevronRight,
@@ -109,11 +109,13 @@ function LeadTopBar({
 
       {/* Right: Primary CTAs + nav (call/email live in the sidebar) */}
       <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
+        <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask} title="New task (T)">
           <ListTodo className="w-3.5 h-3.5" /> Task
+          <kbd className="ml-1 hidden md:inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-muted text-muted-foreground border border-border">T</kbd>
         </Button>
-        <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing}>
+        <Button size="sm" className="h-9 text-xs gap-1.5" onClick={onShowing} title="Book showing (B)">
           <Calendar className="w-3.5 h-3.5" /> Book Showing
+          <kbd className="ml-1 hidden md:inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-primary-foreground/20 text-primary-foreground/90 border border-primary-foreground/20">B</kbd>
         </Button>
 
         {navInfo && (
@@ -1157,6 +1159,9 @@ export default function LeadDetailPage() {
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
 
+  // Mobile tab state — controlled so keyboard shortcuts can switch tabs.
+  const [mobileTab, setMobileTab] = useState<'overview' | 'activity' | 'insights'>('overview');
+
   const leadScore = useMemo(() => {
     const inbound = messages.filter((m: any) => m.direction === 'inbound').length;
     const showingCount = showings.length;
@@ -1198,6 +1203,75 @@ export default function LeadDetailPage() {
     if (newIdx < 0 || newIdx >= navInfo.total) return;
     navigate(`/crm/leads/${allContacts[newIdx].id}`);
   };
+
+  // ─── Keyboard shortcuts (mobile + desktop) ───
+  // Single-key actions:
+  //   t = New Task        b = Book Showing       e = Compose Email
+  //   j / ←  = Prev lead  k / →  = Next lead     ? = Show shortcut hint
+  // Sequence (mobile tabs): g then o / a / i  → Overview / Activity / Insights
+  const gPrefixRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!contact) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore when typing in inputs / contenteditable / when modifier held
+      const t = e.target as HTMLElement | null;
+      const tag = (t?.tagName || '').toLowerCase();
+      if (
+        e.metaKey || e.ctrlKey || e.altKey ||
+        tag === 'input' || tag === 'textarea' || tag === 'select' ||
+        t?.isContentEditable
+      ) return;
+      // Suppress when a dialog/popover is open
+      if (showEmail || showTask || showShowing) return;
+
+      const key = e.key.toLowerCase();
+
+      // "g" prefix for tab nav (vim-style)
+      if (key === 'g') {
+        gPrefixRef.current = window.setTimeout(() => { gPrefixRef.current = null; }, 1000);
+        e.preventDefault();
+        return;
+      }
+      if (gPrefixRef.current !== null) {
+        if (key === 'o' || key === 'a' || key === 'i') {
+          window.clearTimeout(gPrefixRef.current);
+          gPrefixRef.current = null;
+          setMobileTab(key === 'o' ? 'overview' : key === 'a' ? 'activity' : 'insights');
+          e.preventDefault();
+          return;
+        }
+        // Cancel sequence on any other key
+        window.clearTimeout(gPrefixRef.current);
+        gPrefixRef.current = null;
+      }
+
+      switch (key) {
+        case 't':
+          setShowTask(true); e.preventDefault(); break;
+        case 'b':
+          setShowShowing(true); e.preventDefault(); break;
+        case 'e':
+          if (contact.email) { setShowEmail(true); e.preventDefault(); }
+          break;
+        case 'j':
+        case 'arrowleft':
+          handleNavigate('prev'); e.preventDefault(); break;
+        case 'k':
+        case 'arrowright':
+          handleNavigate('next'); e.preventDefault(); break;
+        case '?':
+          toast.info('Shortcuts', {
+            description: 't Task · b Showing · e Email · j/k prev/next · g+o/a/i tabs',
+            duration: 5000,
+          });
+          e.preventDefault();
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [contact, navInfo, showEmail, showTask, showShowing]);
+
 
   // Loading skeleton
   if (isLoading) {
@@ -1326,7 +1400,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Tabbed content */}
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col">
+        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'overview' | 'activity' | 'insights')} className="flex-1 flex flex-col">
           <div className="sticky top-[57px] z-20 bg-background/95 backdrop-blur-md border-b border-border">
             <TabsList className="w-full h-11 bg-transparent rounded-none p-0 grid grid-cols-3">
               <TabsTrigger
