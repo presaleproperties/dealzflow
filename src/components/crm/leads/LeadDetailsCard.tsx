@@ -101,7 +101,7 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
         <div className="flex items-center gap-3">
           <Target className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
           <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Source</span>
-          <InlineEditField value={contact.source} onSave={(v) => save('source', v || null)} />
+          <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
         </div>
 
         {/* Lofty ID */}
