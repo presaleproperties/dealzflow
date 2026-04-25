@@ -45,6 +45,8 @@ type AnyTpl = CrmEmailTemplate & { __isBridge?: boolean };
 export interface ComposerSurfaceProps {
   /** Recipients selected via RecipientsRail (0 = nothing selected, 1 = single send, 2+ = mass). */
   recipients: CrmContact[];
+  /** Add a single recipient (used by the inline quick-add popover). */
+  onAddRecipient?: (contact: CrmContact) => void;
   /** Remove a single recipient (chip × click). */
   onRemoveRecipient?: (id: string) => void;
   /** Clear all recipients. */
@@ -63,6 +65,7 @@ const isRichSignatureHtml = (html: string) =>
 
 export function ComposerSurface({
   recipients,
+  onAddRecipient,
   onRemoveRecipient,
   onClearRecipients,
   appliedTemplate,
