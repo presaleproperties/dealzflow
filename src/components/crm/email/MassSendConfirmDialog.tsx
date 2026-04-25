@@ -13,6 +13,7 @@ import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 const THROTTLE_PER_SEC = 5;
+const MAX_PER_JOB = 1500;
 
 interface Props {
   open: boolean;
