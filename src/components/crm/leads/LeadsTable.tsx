@@ -803,7 +803,13 @@ export function LeadsTable({
         style={{ minHeight: 46 + pageSize * 56 }}
       >
         <TooltipProvider delayDuration={200}>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ tableLayout: 'fixed', minWidth: 1400 }}>
+            <colgroup>
+              <col style={{ width: '40px' }} />
+              {columns.map(col => (
+                <col key={col.key} style={{ width: col.width }} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/20">
                 <th className="w-10 px-3 py-3.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
