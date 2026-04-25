@@ -387,8 +387,8 @@ export function ComposerSurface({
             <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold pt-1.5">To</Label>
             <div className="min-h-[28px] flex flex-wrap gap-1.5 items-center">
               {recipients.length === 0 ? (
-                <span className="text-[12px] text-muted-foreground/70">
-                  Pick recipients from the right panel →
+                <span className="text-[12px] text-muted-foreground/70 mr-auto">
+                  Search for a lead or pick from the right panel
                 </span>
               ) : (
                 <>
@@ -422,16 +422,22 @@ export function ComposerSurface({
                       +{recipients.length - 6} more
                     </span>
                   )}
-                  {onClearRecipients && recipients.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={onClearRecipients}
-                      className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-1"
-                    >
-                      Clear
-                    </button>
-                  )}
                 </>
+              )}
+              {onAddRecipient && (
+                <RecipientQuickAdd
+                  selectedIds={new Set(recipients.map((r) => r.id))}
+                  onAdd={onAddRecipient}
+                />
+              )}
+              {onClearRecipients && recipients.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClearRecipients}
+                  className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-1"
+                >
+                  Clear
+                </button>
               )}
             </div>
           </div>
