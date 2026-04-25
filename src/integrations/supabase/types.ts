@@ -4273,6 +4273,18 @@ export type Database = {
       _touch_skip_enabled: { Args: never; Returns: boolean }
       backfill_behavior_notes: { Args: never; Returns: Json }
       bulk_reformat_crm_notes: { Args: never; Returns: Json }
+      contact_related_counts: {
+        Args: { _contact_ids: string[] }
+        Returns: {
+          contact_id: string
+          emails_count: number
+          messages_count: number
+          notes_count: number
+          showings_count: number
+          tasks_count: number
+          total_count: number
+        }[]
+      }
       count_potential_duplicates: {
         Args: never
         Returns: {
