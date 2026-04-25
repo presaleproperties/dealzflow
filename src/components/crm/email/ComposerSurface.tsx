@@ -475,6 +475,7 @@ export function ComposerSurface({
             {unreachable} selected lead{unreachable === 1 ? '' : 's'} ha{unreachable === 1 ? 's' : 've'} no email and will be skipped
           </div>
         )}
+        </div>
       </div>
 
       {/* Mode tabs */}
