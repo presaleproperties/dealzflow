@@ -983,6 +983,66 @@ export type Database = {
           },
         ]
       }
+      crm_email_send_jobs: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          failed_count: number
+          id: string
+          recipient_ids: string[]
+          results: Json
+          sent_count: number
+          started_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          total_count: number
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          recipient_ids?: string[]
+          results?: Json
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          total_count?: number
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          recipient_ids?: string[]
+          results?: Json
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          total_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_email_send_log: {
         Row: {
           campaign_id: string | null
