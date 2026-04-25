@@ -490,8 +490,16 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   const score = (contact as any).lead_score as number | null | undefined;
   const hasScore = typeof score === 'number';
 
-  // Editorial temperature label — HOT / WARM / COLD
-  const tier = !hasScore ? null : score! >= 60 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
+  // Score tier — consistent thresholds: HOT ≥70, WARM ≥40, COLD <40
+  const tier = !hasScore ? null : score! >= 70 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
+  // Badge styling — gold for HOT (premium accent), neutral surfaces for WARM/COLD with readable contrast in both themes
+  const badgeClass = tier === 'HOT'
+    ? 'bg-primary text-primary-foreground border border-primary/60'
+    : tier === 'WARM'
+      ? 'bg-muted text-foreground border border-border'
+      : tier === 'COLD'
+        ? 'bg-muted/50 text-muted-foreground border border-border/60'
+        : 'bg-transparent text-muted-foreground/60 border border-border/40';
 
   // "New" / never-touched indicator — gold dot
   const isNew = !contact.last_touch_at;
