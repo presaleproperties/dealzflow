@@ -150,8 +150,6 @@ export function BottomNav() {
         }}
         aria-label="Primary"
       >
-        {/* Workspace ↔ CRM context switcher now lives in the More pull-up sheet */}
-
 
         {/* Tabs */}
         <div className="flex items-stretch justify-around h-[58px] px-1">

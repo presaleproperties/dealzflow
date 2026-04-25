@@ -487,30 +487,83 @@ function CellContent({ col, contact, updateContact, tagLibrary }: { col: ColumnD
 
 /* ── Mobile Lead Card ── */
 function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => void }) {
-  const borderColor = STATUS_BORDER_COLORS[contact.status ?? 'New Lead'] ?? 'hsl(210 62% 46%)';
-  const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
+  const score = (contact as any).lead_score as number | null | undefined;
+  const hasScore = typeof score === 'number';
+
+  // Color-code score badge: red <40, amber 40-59, green ≥60
+  const scoreStyle = !hasScore
+    ? { bg: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }
+    : score! >= 60
+      ? { bg: 'hsl(142 71% 45% / 0.14)', color: 'hsl(142 71% 35%)' }
+      : score! >= 40
+        ? { bg: 'hsl(38 92% 50% / 0.14)', color: 'hsl(28 90% 45%)' }
+        : { bg: 'hsl(0 75% 60% / 0.12)', color: 'hsl(0 70% 50%)' };
+
+  // "New" indicator: never touched
+  const isNew = !contact.last_touch_at;
+
+  // Lead type label (Buyer / Seller / Investor / Renter)
+  const rawType = (contact as any).lead_type as string | null | undefined;
+  const typeLabel = rawType
+    ? rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()
+    : (contact.contact_type === 'realtor' ? 'Realtor'
+      : contact.contact_type === 'past_client' ? 'Client'
+      : 'Lead');
+
+  const sourceText = contact.source ?? '';
+  const assignee = contact.assigned_to ?? '';
+  const relTime = contact.last_touch_at
+    ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })
+    : contact.created_at
+      ? formatDistanceToNow(new Date(contact.created_at), { addSuffix: true })
+      : '';
+
   return (
-    <button onClick={onClick}
-      className="w-full text-left bg-card rounded-xl border border-border p-3.5 shadow-sm transition-colors active:bg-muted/40"
-      style={{ borderLeft: `3px solid ${borderColor}` }}>
-      <div className="flex items-start gap-2.5">
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0" style={{ background: typeStyle.bg, color: typeStyle.color }}>
-          {contact.first_name?.[0]?.toUpperCase()}{contact.last_name?.[0]?.toUpperCase()}
-        </div>
+    <button
+      onClick={onClick}
+      className="w-full text-left bg-card px-4 py-3.5 border-b border-border/60 transition-colors active:bg-muted/40 focus:outline-none focus-visible:bg-muted/30"
+    >
+      <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-[15px] font-semibold text-foreground leading-snug truncate min-w-0 flex-1">
-              {formatContactName(contact.first_name, contact.last_name)}
-            </p>
-            <div className="shrink-0">
-              <LeadStatusBadge status={contact.status} />
-            </div>
+          {/* Row 1: dot + name + score */}
+          <div className="flex items-center gap-2 min-w-0">
+            {isNew && (
+              <span
+                aria-label="New lead"
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: 'hsl(14 90% 55%)' }}
+              />
+            )}
+            <h3 className="text-[15px] font-semibold text-foreground tracking-tight leading-tight truncate flex-1 min-w-0">
+              {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
+            </h3>
           </div>
-          {contact.phone && <p className="text-[13px] text-muted-foreground mt-1 tabular-nums">{formatPhone(contact.phone)}</p>}
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap min-w-0">
-            {contact.source && <Badge variant="secondary" className="text-[11px] px-2 py-0.5 max-w-[180px] truncate">{contact.source}</Badge>}
-            {contact.assigned_to && <span className="text-[12px] text-muted-foreground truncate">{contact.assigned_to}</span>}
-          </div>
+
+          {/* Row 2: lead type */}
+          <p className="text-[13px] text-muted-foreground mt-0.5 leading-tight">{typeLabel}</p>
+
+          {/* Row 3: source */}
+          {sourceText && (
+            <p className="text-[13px] text-muted-foreground mt-0.5 leading-tight truncate">{sourceText}</p>
+          )}
+
+          {/* Row 4: assignee */}
+          {assignee && (
+            <p className="text-[13px] text-foreground/85 mt-1.5 leading-tight truncate">{assignee}</p>
+          )}
+        </div>
+
+        {/* Right column: score badge + relative time */}
+        <div className="flex flex-col items-end justify-between gap-2 shrink-0 self-stretch min-h-[64px]">
+          <span
+            className="inline-flex items-center justify-center min-w-[40px] h-7 px-2 rounded-md text-[13px] font-bold tabular-nums"
+            style={{ background: scoreStyle.bg, color: scoreStyle.color }}
+          >
+            {hasScore ? score : '—'}
+          </span>
+          {relTime && (
+            <span className="text-[12px] text-muted-foreground whitespace-nowrap">{relTime}</span>
+          )}
         </div>
       </div>
     </button>
@@ -632,21 +685,23 @@ export function LeadsTable({
 
   if (isMobile) {
     return (
-      <div>
-        <div className="h-0.5 w-full overflow-hidden rounded-full mb-2 bg-transparent">
+      <div className="-mx-3 sm:-mx-4">
+        <div className="h-0.5 w-full overflow-hidden bg-transparent">
           {isFetching && (
-            <div className="h-full w-full bg-primary/20 rounded-full overflow-hidden">
-              <div className="h-full w-1/3 bg-primary rounded-full animate-pulse" />
+            <div className="h-full w-full bg-primary/20 overflow-hidden">
+              <div className="h-full w-1/3 bg-primary animate-pulse" />
             </div>
           )}
         </div>
-        <div className="space-y-2">
+        <div className="bg-card border-t border-border/60">
           {contacts.map(contact => (
             <LeadCard key={contact.id} contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
           ))}
         </div>
-        <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
-          onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
+        <div className="px-3">
+          <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
+            onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
+        </div>
       </div>
     );
   }

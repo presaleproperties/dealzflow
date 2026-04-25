@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, Settings2, Eye, X } from 'lucide-react';
+import { Search, Plus, Filter, Settings2, Eye, X, ArrowDownNarrowWide } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
@@ -292,9 +292,90 @@ export default function CrmLeadsPage() {
       <div className="flex flex-1 min-h-0 h-full">
         {/* Main content */}
         <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto pr-1">
-          {/* Pipeline Segment Pills + Actions */}
+          {/* Mobile header — Leads / Contacts tabs + search + filter chips (Lofty-style) */}
+          {isMobile && (
+            <div className="-mx-3 sm:-mx-4 -mt-3 sm:-mt-4 sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
+              <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                <div className="flex items-baseline gap-5">
+                  <button
+                    className="text-[19px] font-bold text-foreground tracking-tight border-b-2 border-primary pb-1"
+                    aria-current="page"
+                  >
+                    Leads
+                  </button>
+                  <Link
+                    to="/crm/contacts"
+                    className="text-[19px] font-bold text-muted-foreground/70 tracking-tight pb-1"
+                  >
+                    Contacts
+                  </Link>
+                </div>
+                <button
+                  onClick={() => {/* placeholder for global search */}}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:scale-95 transition-all"
+                  aria-label="Search"
+                >
+                  <Search className="w-[20px] h-[20px]" strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Filter chip row */}
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-2 px-4 pb-2.5 min-w-max">
+                  <button
+                    onClick={() => setFiltersExpanded(true)}
+                    className={`inline-flex items-center gap-1 h-8 px-3 rounded-md text-[13px] font-semibold whitespace-nowrap ${
+                      activeSegmentId
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted/40 text-muted-foreground'
+                    }`}
+                  >
+                    Segment(s)
+                    <span className="text-[10px] opacity-70">▼</span>
+                  </button>
+                  <button
+                    onClick={() => setFiltersExpanded(true)}
+                    className={`inline-flex items-center gap-1 h-8 px-3 rounded-md text-[13px] font-semibold whitespace-nowrap ${
+                      filterStatus.length > 0
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted/40 text-muted-foreground'
+                    }`}
+                  >
+                    Pipeline
+                    <span className="text-[10px] opacity-70">▼</span>
+                  </button>
+                  <button
+                    onClick={() => setFiltersExpanded(true)}
+                    className={`inline-flex items-center gap-1 h-8 px-3 rounded-md text-[13px] font-semibold whitespace-nowrap ${
+                      filterAgent.length > 0
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted/40 text-muted-foreground'
+                    }`}
+                  >
+                    Assignee
+                    <span className="text-[10px] opacity-70">▼</span>
+                  </button>
+                  <button
+                    onClick={() => setFiltersExpanded(true)}
+                    className="inline-flex items-center gap-1 h-8 px-3 rounded-md text-[13px] font-semibold whitespace-nowrap bg-muted/40 text-muted-foreground"
+                  >
+                    Activities
+                  </button>
+                  <button
+                    onClick={() => handleSort('last_touch_at')}
+                    className="inline-flex items-center justify-center w-9 h-8 rounded-md text-muted-foreground bg-transparent ml-auto"
+                    aria-label="Sort"
+                  >
+                    <ArrowDownNarrowWide className="w-[18px] h-[18px]" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+
           {segments.length > 0 && (
-            <div className="flex items-center gap-3">
+            <div className={`${isMobile ? 'hidden' : 'flex'} items-center gap-3`}>
               <div className="flex-1 min-w-0">
                 <ScrollArea className="w-full">
                   <DragDropContext
@@ -364,7 +445,7 @@ export default function CrmLeadsPage() {
               <Button
                 size="sm"
                 variant={reorderMode ? 'default' : 'ghost'}
-                className="h-8 px-2 text-[11px] flex-shrink-0"
+                className="hidden sm:inline-flex h-8 px-2 text-[11px] flex-shrink-0"
                 onClick={() => setReorderMode(v => !v)}
                 title="Reorder pipeline pills"
               >
