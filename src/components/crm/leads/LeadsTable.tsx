@@ -685,21 +685,23 @@ export function LeadsTable({
 
   if (isMobile) {
     return (
-      <div>
-        <div className="h-0.5 w-full overflow-hidden rounded-full mb-2 bg-transparent">
+      <div className="-mx-3 sm:-mx-4">
+        <div className="h-0.5 w-full overflow-hidden bg-transparent">
           {isFetching && (
-            <div className="h-full w-full bg-primary/20 rounded-full overflow-hidden">
-              <div className="h-full w-1/3 bg-primary rounded-full animate-pulse" />
+            <div className="h-full w-full bg-primary/20 overflow-hidden">
+              <div className="h-full w-1/3 bg-primary animate-pulse" />
             </div>
           )}
         </div>
-        <div className="space-y-2">
+        <div className="bg-card border-t border-border/60">
           {contacts.map(contact => (
             <LeadCard key={contact.id} contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
           ))}
         </div>
-        <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
-          onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
+        <div className="px-3">
+          <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
+            onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
+        </div>
       </div>
     );
   }
