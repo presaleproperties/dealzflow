@@ -379,7 +379,7 @@ function LastTouchCell({ contact }: { contact: CrmContact }) {
 }
 
 /* ── Cell renderer ── */
-function CellContent({ col, contact, updateContact, tagLibrary, onSendSms }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[]; onSendSms: (c: CrmContact) => void }) {
+function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSendEmail }: { col: ColumnDef; contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact>; tagLibrary: TagLibItem[]; onSendSms: (c: CrmContact) => void; onSendEmail: (c: CrmContact) => void }) {
   switch (col.key) {
     case 'name': {
       const leadType = (contact as any).lead_type as string | null;
