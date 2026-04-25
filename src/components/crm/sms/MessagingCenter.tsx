@@ -78,6 +78,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   const { data: contacts = [] } = useCrmContacts();
   const { data: templates = [] } = useSmsTemplates();
   const sendSms = useSendSms();
+  const { isPinned, togglePin } = useThreadPins();
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [search, setSearch] = useState('');
