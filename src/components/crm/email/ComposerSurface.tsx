@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Send, FileText, Eye, Code2, Variable, Loader2, Monitor, Smartphone,
   Save, X, Search, Paperclip, Pencil, Check, Users, AlertTriangle,
-  ChevronDown, MailWarning,
+  ChevronDown, MailWarning, UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
