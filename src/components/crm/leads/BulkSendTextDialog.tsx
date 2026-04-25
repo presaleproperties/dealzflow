@@ -219,22 +219,24 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-1" align="start">
-                  {templates.length === 0 ? (
-                    <div className="p-3 text-xs text-muted-foreground">No templates yet.</div>
-                  ) : (
-                    <ScrollArea className="max-h-72">
-                      {templates.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => { setBody(t.body); setMediaUrls(t.default_media_urls || []); setTplOpen(false); }}
-                          className="w-full text-left p-2 rounded hover:bg-muted"
-                        >
-                          <div className="text-xs font-medium">{t.name}</div>
-                          <div className="text-[11px] text-muted-foreground line-clamp-2">{t.body}</div>
-                        </button>
-                      ))}
-                    </ScrollArea>
-                  )}
+                  {(() => {
+                    const ch = templates.filter(t => (t.channel || 'sms') === channel);
+                    if (ch.length === 0) return <div className="p-3 text-xs text-muted-foreground">No {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} templates yet.</div>;
+                    return (
+                      <ScrollArea className="max-h-72">
+                        {ch.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => { setBody(t.body); setMediaUrls(t.default_media_urls || []); setTplOpen(false); }}
+                            className="w-full text-left p-2 rounded hover:bg-muted"
+                          >
+                            <div className="text-xs font-medium">{t.name}</div>
+                            <div className="text-[11px] text-muted-foreground line-clamp-2">{t.body}</div>
+                          </button>
+                        ))}
+                      </ScrollArea>
+                    );
+                  })()}
                 </PopoverContent>
               </Popover>
 
