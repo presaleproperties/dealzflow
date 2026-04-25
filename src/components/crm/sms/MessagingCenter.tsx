@@ -544,14 +544,15 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
               />
             ) : active ? (
               <>
-                {/* Conversation header */}
-                <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 bg-background/80 backdrop-blur">
-                  <div className="flex items-center gap-2 min-w-0">
+                {/* Conversation header — iMessage centered avatar+name */}
+                <div className="px-4 py-2.5 border-b border-border/60 flex items-center gap-2 bg-background/95 backdrop-blur relative">
+                  {/* Left controls */}
+                  <div className="flex items-center gap-1 absolute left-3 top-1/2 -translate-y-1/2 z-10">
                     {isMobile && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 -ml-2"
+                        className="h-8 w-8 rounded-full"
                         onClick={() => setActiveKey(null)}
                       >
                         <ArrowLeft className="w-4 h-4" />
@@ -564,7 +565,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground -ml-1"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                               onClick={() => setLeftCollapsed(v => !v)}
                             >
                               {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -574,10 +575,18 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                         </Tooltip>
                       </TooltipProvider>
                     )}
-                    <Avatar className="h-9 w-9 ring-2 ring-background ml-1">
+                  </div>
+
+                  {/* Centered avatar + name */}
+                  <button
+                    onClick={() => active.contact && navigate(`/crm/leads/${active.contact.id}`)}
+                    className="mx-auto flex flex-col items-center gap-0.5 group/header max-w-[60%]"
+                    disabled={!active.contact}
+                  >
+                    <Avatar className="h-9 w-9 ring-1 ring-border">
                       <AvatarFallback
                         className={cn(
-                          'text-xs font-semibold',
+                          'text-[11px] font-semibold',
                           channel === 'whatsapp'
                             ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                             : 'bg-primary/15 text-primary',
@@ -586,21 +595,19 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                         {initialsFor(active.contact, active.phone)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0">
-                      <div className="text-[15px] font-semibold truncate flex items-center gap-1.5">
-                        {nameFor(active.contact, active.phone)}
-                        {threadState.isMuted(channel, active.key) && (
-                          <BellOff className="w-3 h-3 text-muted-foreground" />
-                        )}
-                        {channel === 'whatsapp' && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        )}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground font-mono">
-                        {active.phone}
-                      </div>
+                    <div className="flex items-center gap-1 text-[12px] font-semibold text-foreground/90 group-hover/header:text-primary transition-colors">
+                      <span className="truncate max-w-[180px]">{nameFor(active.contact, active.phone)}</span>
+                      {threadState.isMuted(channel, active.key) && (
+                        <BellOff className="w-2.5 h-2.5 text-muted-foreground" />
+                      )}
+                      {channel === 'whatsapp' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      )}
+                      {active.contact && (
+                        <ChevronRight className="w-3 h-3 text-muted-foreground/60" />
+                      )}
                     </div>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1">
                     <TooltipProvider>
                       <Tooltip>
