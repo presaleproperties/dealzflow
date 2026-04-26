@@ -153,14 +153,13 @@ export function TopNav() {
     closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 180);
   }
 
-  // Hide the top header on mobile inside CRM — the bottom nav handles primary nav and the
-  // CRM page provides its own compact mobile header
-  const inCrm = location.pathname.startsWith('/crm');
-
+  // Hide top header on mobile for ALL routes — the bottom nav handles primary
+  // nav, and individual pages render their own mobile header so the top bar
+  // doesn't waste vertical space with just a logo.
   return (
     <>
       <header
-        className={`${inCrm ? 'hidden lg:block' : ''} sticky top-0 z-40 backdrop-blur-xl native-chrome`}
+        className="hidden lg:block sticky top-0 z-40 backdrop-blur-xl native-chrome"
         style={{ background: NAV_BG, borderBottom: `1px solid ${NAV_BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center h-[54px] px-3 sm:px-4 lg:px-6 gap-2 sm:gap-4">
