@@ -296,10 +296,10 @@ export default function CrmLeadsPage() {
     <>
       <div className="flex flex-1 min-h-0 h-full">
         {/* Main content */}
-        <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 overflow-y-auto pr-1">
+        <div className="flex-1 min-w-0 max-w-full space-y-3 sm:space-y-4 overflow-y-auto overflow-x-hidden pr-1">
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
-            <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border">
+            <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden">
               <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
                 <div className="flex items-baseline gap-6">
                   <button
@@ -364,7 +364,7 @@ export default function CrmLeadsPage() {
 
               {/* Segment pills — same source/active-state logic as desktop */}
               {segments.length > 0 && (
-                <div className="overflow-x-auto scrollbar-hide border-t border-border/40">
+                <div className="overflow-x-auto overscroll-x-contain scrollbar-hide border-t border-border/40">
                   <div className="flex items-center gap-1.5 px-3 py-2 min-w-max">
                     {segments.map(seg => {
                       const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
