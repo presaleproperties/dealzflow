@@ -86,7 +86,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
       <SheetContent
         side="right"
         hideClose
-        className="w-full sm:max-w-md p-0 flex flex-col bg-muted/30 gap-0 border-l border-border"
+        className="w-full sm:max-w-md p-0 flex flex-col bg-muted gap-0 border-l border-border"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-2 h-14 border-b border-border bg-background/95 backdrop-blur shrink-0 sticky top-0 z-10">
@@ -206,7 +206,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mt-3">
+    <div className="mt-3 bg-muted">
       <div className="px-4 pb-1.5 text-[11px] uppercase tracking-wider text-muted-foreground/80 font-medium">{title}</div>
       <div className="bg-card border-y border-border/60">{children}</div>
     </div>
