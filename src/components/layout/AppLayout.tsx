@@ -10,10 +10,10 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="min-h-[100dvh] bg-background">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       <TopNav />
       <main
-        className="min-h-[calc(100dvh-54px)] lg:pr-[52px]"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain lg:pr-[52px]"
         style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
       >
         {children}
