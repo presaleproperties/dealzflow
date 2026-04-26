@@ -90,8 +90,8 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
       e.co_buyer_phone = 'Enter a valid phone number';
     }
 
-    if (state.birthday.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(state.birthday.trim())) {
-      e.birthday = 'Use YYYY-MM-DD format';
+    if (state.birthday.trim() && !/^(\d{2}-\d{2}|--\d{2}-\d{2}|\d{4}-\d{2}-\d{2})$/.test(state.birthday.trim())) {
+      e.birthday = 'Pick a month and day';
     }
 
     const bMin = state.budget_min ? Number(state.budget_min) : null;
