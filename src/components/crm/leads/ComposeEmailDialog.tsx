@@ -992,7 +992,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Mobile sticky action bar — Tools (Templates · Attach · Signature) on the left, Send on the right */}
+              {/* Mobile sticky action bar — single source of truth for mobile actions */}
               <div className="md:hidden flex items-center gap-1.5 px-2.5 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
                 <button
                   type="button"
