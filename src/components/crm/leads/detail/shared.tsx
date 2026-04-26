@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { CopyButton } from './CopyButton';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
