@@ -98,7 +98,7 @@ export function WhatsAppConversation(props: Props) {
   return (
     <div className="flex flex-col h-full wa-font">
       {/* ===== Teal header ===== */}
-      <div className="wa-header px-3 py-2 flex items-center gap-2">
+      <div className="wa-header px-3 py-2 flex items-center gap-2 native-safe-top">
         {isMobile ? (
           <Button size="icon" variant="ghost" className="h-9 w-9 text-white hover:bg-white/10 -ml-1" onClick={onBack}>
             <ArrowLeft className="w-5 h-5" />
