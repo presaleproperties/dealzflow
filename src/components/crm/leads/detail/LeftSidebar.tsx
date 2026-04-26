@@ -158,6 +158,34 @@ export function LeftSidebar({
           </DropdownMenu>
         </div>
 
+        {isMobile && (contact.phone || contact.email) && (
+          <div className="space-y-1.5 pt-3 border-t border-border/60">
+            {contact.phone && (
+              <div className="flex items-center justify-between gap-2">
+                <a
+                  href={`tel:${contact.phone}`}
+                  className="flex items-center gap-2 min-w-0 text-[13px] text-foreground hover:text-primary transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate font-medium tabular-nums">{formatPhone(contact.phone)}</span>
+                </a>
+                <CopyButton value={contact.phone} label="phone" />
+              </div>
+            )}
+            {contact.email && (
+              <div className="flex items-center justify-between gap-2">
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="flex items-center gap-2 min-w-0 text-[13px] text-foreground hover:text-primary transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{contact.email}</span>
+                </a>
+                <CopyButton value={contact.email} label="email" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <EditLeadDetailsSheet contact={contact} open={editOpen} onOpenChange={setEditOpen} />
