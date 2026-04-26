@@ -821,7 +821,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
             {/* Main composer column — single continuous surface, mail-app feel */}
             <div className="flex flex-col overflow-hidden min-h-0 bg-background">
               {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail */}
-              <div className="px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
+              <div className="px-3 sm:px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
                 <RecipientRow label="From">
                   <span className="text-[13px] text-foreground/80 truncate">
                     {emailSettings?.sender_name
@@ -997,34 +997,34 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Mobile sticky action bar — single source of truth for mobile actions */}
-              <div className="md:hidden flex items-center gap-1.5 px-2.5 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+              <div className="md:hidden flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+6px)]">
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}
                   aria-label="Templates"
-                  className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
+                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
                   title="Templates"
                 >
-                  <FileText className="h-4 w-4" />
+                  <FileText className="h-[15px] w-[15px]" />
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   aria-label="Attach"
-                  className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform disabled:opacity-50"
+                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform disabled:opacity-50"
                   title="Attach files"
                 >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                  {uploading ? <Loader2 className="h-[15px] w-[15px] animate-spin" /> : <Paperclip className="h-[15px] w-[15px]" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
                   aria-label={mode === 'preview' ? 'Edit' : 'Preview'}
-                  className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
+                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
                   title={mode === 'preview' ? 'Back to editor' : 'Preview email'}
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-[15px] w-[15px]" />
                 </button>
                 <select
                   value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
@@ -1037,7 +1037,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       setSelectedSignatureId(v || null);
                     }
                   }}
-                  className="shrink min-w-0 h-10 rounded-full border border-border bg-muted/60 px-3 text-[12px] font-medium text-foreground focus:outline-none truncate"
+                  className="min-w-0 flex-1 h-9 rounded-full border border-border bg-muted/60 px-2.5 text-[11.5px] font-medium text-foreground focus:outline-none truncate appearance-none"
                   aria-label="Signature"
                   title="Signature"
                 >
@@ -1053,12 +1053,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   type="button"
                   onClick={handleSend}
                   disabled={!canSend || isPending}
-                  className="ml-auto shrink-0 inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary text-primary-foreground text-[14px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
                 >
                   {isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-[15px] w-[15px] animate-spin" />
                   ) : (
-                    <Send className="h-4 w-4" />
+                    <Send className="h-[15px] w-[15px]" />
                   )}
                   {isPending ? 'Sending' : 'Send'}
                 </button>
@@ -1351,8 +1351,8 @@ function RecipientRow({
   trailing?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-b-0">
-      <span className="w-[58px] shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+    <div className="flex items-center gap-2 sm:gap-3 py-1.5 border-b border-border/30 last:border-b-0">
+      <span className="w-[44px] sm:w-[58px] shrink-0 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
         {label}
       </span>
       <div className="flex-1 min-w-0 flex items-center">{children}</div>
