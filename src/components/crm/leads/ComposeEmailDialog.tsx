@@ -881,21 +881,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Body area */}
-              <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
+              {/* Body area — flush, expansive, no inner padding boxes */}
+              <div className="flex-1 overflow-hidden bg-background min-h-0 flex flex-col">
                 {mode === 'edit' && (
-                  <div className="p-5">
+                  <div className="flex-1 min-h-0 flex flex-col">
                     <RichTextEditor
                       content={bodyHtml}
                       onChange={setBodyHtml}
                       placeholder="Write your message... use {{lead.first_name}} for personalization."
                       toolbarSlot={composerActions}
                       flushSignature
-
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
                           editingSignature ? (
-                            <div className="border-t border-border/60 bg-muted/5">
+                            <div className="border-t border-border/40">
                               <textarea
                                 value={sigDraft}
                                 onChange={(e) => setSigDraft(e.target.value)}
@@ -914,12 +913,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   </div>
                 )}
                 {mode === 'html' && (
-                  <div className="p-5">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     <textarea
                       ref={htmlTextareaRef}
                       value={bodyHtml}
                       onChange={(e) => setBodyHtml(e.target.value)}
-                      className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="w-full h-full font-mono text-xs p-5 bg-background border-0 resize-none focus-visible:outline-none"
                       spellCheck={false}
                     />
                   </div>
@@ -927,7 +926,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 {mode === 'preview' && (
                   <div
                     className={cn(
-                      'h-full w-full flex justify-center',
+                      'flex-1 min-h-0 w-full flex justify-center overflow-hidden',
                       device === 'desktop' ? 'bg-background' : 'bg-muted/20 p-5',
                     )}
                   >
