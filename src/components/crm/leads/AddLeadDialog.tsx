@@ -236,7 +236,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           </Group>
 
           <Group title="Phone">
-            <FieldRow label="Primary" error={errors.phone}>
+            <FieldRow label="Phone" error={errors.phone}>
               <Input
                 className={inputCls}
                 type="tel"
@@ -247,21 +247,41 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
                 maxLength={20}
               />
             </FieldRow>
-            <FieldRow label="Secondary">
-              <Input
-                className={inputCls}
-                type="tel"
-                inputMode="tel"
-                value={form.phone_secondary}
-                onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })}
-                placeholder="Optional"
-                maxLength={20}
-              />
-            </FieldRow>
+            {showSecondaryPhone ? (
+              <FieldRow
+                label="Secondary phone"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondaryPhone(false);
+                      setForm((prev) => ({ ...prev, phone_secondary: '' }));
+                    }}
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    aria-label="Remove secondary phone"
+                  >
+                    <X className="w-3.5 h-3.5" strokeWidth={2.4} />
+                  </button>
+                }
+              >
+                <Input
+                  className={inputCls}
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone_secondary}
+                  onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })}
+                  placeholder="Optional"
+                  maxLength={20}
+                  autoFocus
+                />
+              </FieldRow>
+            ) : (
+              <AddRow label="Add another number" onClick={() => setShowSecondaryPhone(true)} />
+            )}
           </Group>
 
           <Group title="Email">
-            <FieldRow label="Primary" error={errors.email}>
+            <FieldRow label="Email" error={errors.email}>
               <div className="space-y-1.5">
                 <Input
                   className={inputCls}
@@ -282,18 +302,38 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
                 )}
               </div>
             </FieldRow>
-            <FieldRow label="Secondary">
-              <Input
-                className={inputCls}
-                type="email"
-                inputMode="email"
-                autoCapitalize="none"
-                value={form.email_secondary}
-                onChange={(e) => setForm({ ...form, email_secondary: e.target.value })}
-                placeholder="Optional"
-                maxLength={255}
-              />
-            </FieldRow>
+            {showSecondaryEmail ? (
+              <FieldRow
+                label="Secondary email"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondaryEmail(false);
+                      setForm((prev) => ({ ...prev, email_secondary: '' }));
+                    }}
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    aria-label="Remove secondary email"
+                  >
+                    <X className="w-3.5 h-3.5" strokeWidth={2.4} />
+                  </button>
+                }
+              >
+                <Input
+                  className={inputCls}
+                  type="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  value={form.email_secondary}
+                  onChange={(e) => setForm({ ...form, email_secondary: e.target.value })}
+                  placeholder="Optional"
+                  maxLength={255}
+                  autoFocus
+                />
+              </FieldRow>
+            ) : (
+              <AddRow label="Add another email" onClick={() => setShowSecondaryEmail(true)} />
+            )}
           </Group>
 
           <Group title="Pipeline">
