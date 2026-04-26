@@ -269,7 +269,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           {groupedNotes.map(group => (
             <div key={group.label} className="space-y-2 mb-4 md:mb-5">
               {/* Sticky day divider on mobile so users always know where they are */}
-              <div className="md:pl-9 sticky top-0 md:static z-10 bg-background/95 md:bg-transparent backdrop-blur md:backdrop-blur-none px-3 md:px-0 py-1 md:py-0 border-b md:border-b-0 border-border/40">
+              <div className="md:pl-9 sticky top-0 md:static z-10 bg-background/95 md:bg-transparent backdrop-blur md:backdrop-blur-none -mx-3 md:mx-0 px-3 md:px-0 py-1 md:py-0 border-b md:border-b-0 border-border/40">
                 <span className="text-[10.5px] md:text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
               {group.notes.map(note => {
