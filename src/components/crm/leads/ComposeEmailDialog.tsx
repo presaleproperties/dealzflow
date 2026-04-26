@@ -419,6 +419,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   const isPending = sendBridge.isPending || addMessage.isPending;
 
+  /* Keyboard shortcut: ⌘+Enter / Ctrl+Enter sends from anywhere in the dialog */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (canSend && !isPending) handleSend();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, canSend, isPending, finalHtml, renderedSubject, logOnly, cc, bcc]);
+
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
 
   /** Upload one or more files to storage and embed them inline in the email body.
@@ -629,6 +643,28 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               {isPending ? 'Sending' : 'Send'}
             </button>
           </DialogHeader>
+
+          {/* Mobile sub-header: recipient pill + ⌘+Enter hint */}
+          <div className="md:hidden px-3 py-2 border-b border-border/60 bg-background/60 shrink-0 flex items-center gap-2">
+            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-semibold shrink-0">
+              {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">
+                {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email || 'Unknown'}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate leading-tight">{contact.email ?? 'No email on file'}</p>
+            </div>
+            {recentTemplates.length > 0 && (
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-border bg-card text-[11px] font-medium text-foreground active:scale-95 transition-transform"
+              >
+                <FileText className="h-3 w-3" />
+                Templates
+              </button>
+            )}
+          </div>
 
           {/* Desktop slim title bar */}
           <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
@@ -973,6 +1009,58 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
+              {/* Mobile sticky action bar — Templates · Signature · Attach (Send lives in top bar) */}
+              <div className="md:hidden flex items-center gap-1.5 px-2 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 overflow-x-auto pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Template
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                  Attach
+                </button>
+                <select
+                  value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '__none__') {
+                      setAppendSignature(false);
+                    } else {
+                      setAppendSignature(true);
+                      setSelectedSignatureId(v || null);
+                    }
+                  }}
+                  className="shrink-0 h-9 rounded-full border border-border bg-muted/60 px-3 text-[12px] font-medium text-foreground focus:outline-none max-w-[160px]"
+                  aria-label="Signature"
+                >
+                  <option value="__none__">No signature</option>
+                  {signatures.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      ✎ {s.name}{s.is_default ? ' (default)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform ml-auto"
+                  title={mode === 'preview' ? 'Back to editor' : 'Preview email'}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  {mode === 'preview' ? 'Edit' : 'Preview'}
+                </button>
+              </div>
+
+              {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
               <div className="hidden md:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
@@ -1112,6 +1200,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     size="sm"
                     onClick={handleSend}
                     disabled={!canSend || isPending}
+                    title="Send (⌘ + Enter)"
                     className="gap-1.5 min-w-[110px]"
                   >
                     {isPending ? (
