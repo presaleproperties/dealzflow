@@ -136,6 +136,18 @@ export function MobilePipelineView() {
           </div>
         )}
       </div>
+
+      {/* FAB — Add lead */}
+      <button
+        onClick={() => setAddOpen(true)}
+        aria-label="Add lead"
+        className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 active:scale-95 transition-all flex items-center justify-center"
+        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <Plus className="w-6 h-6" strokeWidth={2.2} />
+      </button>
+
+      <AddLeadDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
