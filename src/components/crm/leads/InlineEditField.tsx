@@ -27,7 +27,13 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
     if (editing) {
       setDraft(value ?? '');
       setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
-      if (type !== 'select') setTimeout(() => inputRef.current?.focus(), 0);
+      if (type !== 'select') {
+        setTimeout(() => {
+          inputRef.current?.focus();
+          // Make sure the field stays visible above the on-screen keyboard on mobile.
+          inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, 0);
+      }
     }
   }, [editing, value, type]);
 
@@ -69,7 +75,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
           }}
           onOpenChange={(open) => { if (!open) setEditing(false); }}
         >
-          <SelectTrigger className="h-7 text-xs w-auto min-w-[120px] border-primary/40">
+          <SelectTrigger className="h-9 md:h-7 text-sm md:text-xs w-auto min-w-[140px] md:min-w-[120px] border-primary/40">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className="max-h-[260px]">
@@ -88,7 +94,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
         onClick={() => setEditing(true)}
       >
         <span className={`text-sm truncate min-w-0 ${isMuted ? 'text-muted-foreground' : 'text-foreground'}`} title={value || undefined}>{display}</span>
-        <Pencil className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
+        <Pencil className="w-3 h-3 text-muted-foreground/60 md:text-muted-foreground/0 md:group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
       </span>
     );
   }
@@ -105,7 +111,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
             if (e.key === 'Enter') save();
             if (e.key === 'Escape') setEditing(false);
           }}
-          className={`text-sm bg-transparent border-b outline-none text-foreground w-full ${emailWarning.suggestion ? 'border-warning' : 'border-primary/40'} ${className}`}
+          className={`text-base md:text-sm bg-transparent border-b outline-none text-foreground w-full py-1 md:py-0 ${emailWarning.suggestion ? 'border-warning' : 'border-primary/40'} ${className}`}
         />
         {emailWarning.suggestion && (
           <div className="flex items-center gap-1.5 mt-0.5">
@@ -152,7 +158,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
       ) : (
         <span className={`text-sm truncate min-w-0 ${isMuted ? 'text-muted-foreground' : 'text-foreground'}`} title={value || undefined}>{display}</span>
       )}
-      <Pencil className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
+      <Pencil className="w-3 h-3 text-muted-foreground/60 md:text-muted-foreground/0 md:group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
     </span>
   );
 }
