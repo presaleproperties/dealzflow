@@ -30,6 +30,7 @@ export function MobilePipelineView() {
   const { data: segments = [], isLoading: sl } = useCrmLeadSegments();
   const [search, setSearch] = useState('');
   const [activeSegId, setActiveSegId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const pipelineSegments = useMemo(
     () => segments.filter(s => s.filter_config && Object.keys(s.filter_config).length > 0),
