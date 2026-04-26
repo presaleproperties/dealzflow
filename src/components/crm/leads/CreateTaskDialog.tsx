@@ -45,52 +45,84 @@ export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: 
     onOpenChange(false);
   };
 
+  const canSubmit = form.title.trim().length > 0 && !addTask.isPending;
+
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="sm:max-w-md">
-        <ResponsiveDialogHeader><ResponsiveDialogTitle>Create Task</ResponsiveDialogTitle></ResponsiveDialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3 pt-2">
-          <div>
-            <Label>Title *</Label>
-            <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Follow up call" maxLength={200} />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={1000} className="min-h-[60px]" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Due Date</Label>
-              <Input type="datetime-local" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+      <ResponsiveDialogContent className="sm:max-w-md p-0 gap-0 flex flex-col max-h-[92vh]">
+        <ResponsiveDialogHeader className="px-5 pt-5 pb-3 border-b border-border/60 shrink-0">
+          <ResponsiveDialogTitle className="text-lg font-semibold tracking-tight">Create Task</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
+
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title *</Label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="e.g. Follow up call"
+                maxLength={200}
+                autoFocus
+                className="h-11 text-base md:text-sm md:h-10"
+              />
             </div>
-            <div>
-              <Label>Priority</Label>
-              <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}</SelectContent>
-              </Select>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                maxLength={1000}
+                placeholder="Optional details…"
+                className="min-h-[80px] text-base md:text-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Due Date</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.due_date}
+                  onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                  className="h-11 text-base md:text-sm md:h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Priority</Label>
+                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                  <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</Label>
+                <Select value={form.task_type} onValueChange={(v) => setForm({ ...form, task_type: v })}>
+                  <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>{TASK_TYPES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t.replace('_', ' ')}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assigned To</Label>
+                <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
+                  <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue placeholder="Select agent" /></SelectTrigger>
+                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Type</Label>
-              <Select value={form.task_type} onValueChange={(v) => setForm({ ...form, task_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TASK_TYPES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t.replace('_', ' ')}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Assigned To</Label>
-              <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
-                <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
-                <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={addTask.isPending || !form.title.trim()}>
-              {addTask.isPending ? 'Creating...' : 'Create Task'}
+
+          {/* Sticky footer — thumb reachable */}
+          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border/60 bg-background shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] md:pb-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-11 md:h-10 flex-1 sm:flex-initial">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!canSubmit} className="h-11 md:h-10 flex-1 sm:flex-initial">
+              {addTask.isPending ? 'Creating…' : 'Create Task'}
             </Button>
           </div>
         </form>
