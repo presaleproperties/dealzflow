@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import {
-  isNative, platform, setStatusBar, setKeyboardResizeNative,
+  isNative, platform, setKeyboardResizeNative,
   onKeyboardShow, onKeyboardHide,
 } from '@/lib/native';
 
@@ -22,7 +22,8 @@ export function useNativeShell() {
     if (platform === 'ios') root.classList.add('is-ios');
     if (platform === 'android') root.classList.add('is-android');
 
-    setStatusBar('dark');
+    // Status bar style is driven by useStandaloneMode() so it follows the
+    // active theme instead of being hard-coded.
     setKeyboardResizeNative();
 
     const off1 = onKeyboardShow((h) => root.style.setProperty('--kb-h', `${h}px`));

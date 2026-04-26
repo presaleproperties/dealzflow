@@ -236,7 +236,7 @@ export default function DashboardPage() {
       {isEmpty ? (
         <EmptyDashboard />
       ) : (
-        <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100vh-56px)]">
+        <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
           {/* Connect banner */}
           {connections.length === 0 && (
             <div className="px-4 lg:px-6 pt-4">

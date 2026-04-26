@@ -183,7 +183,7 @@ export default function NetworkPage() {
   return (
     <AppLayout>
       <Header title="Network" subtitle="Agent network & revenue share" showAddDeal={false} />
-      <PullToRefresh onRefresh={handleRefresh} className="min-h-[calc(100vh-56px)]">
+      <PullToRefresh onRefresh={handleRefresh} className="min-h-[calc(100dvh-56px)]">
       <div className="p-4 sm:p-5 md:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
         {/* Hero Header */}
         <motion.div
