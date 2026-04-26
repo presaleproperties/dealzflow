@@ -615,9 +615,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl w-screen h-[100dvh] sm:w-[98vw] sm:h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl">
-          {/* Mobile header — Mail-app style: Cancel · title · Send. Desktop keeps the slim title bar. */}
-          <DialogHeader className="md:hidden px-3 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
+        <DialogContent className="max-w-7xl w-screen h-[100dvh] sm:w-[98vw] sm:h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden">
+          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
+          <DialogHeader className="md:hidden px-3 py-2.5 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -629,22 +629,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
             <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
               New Message
             </DialogTitle>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!canSend || isPending}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-primary-foreground text-[14px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              {isPending ? 'Sending' : 'Send'}
-            </button>
+            {/* Spacer to keep title centered */}
+            <span className="w-[52px]" aria-hidden />
           </DialogHeader>
 
-          {/* Mobile sub-header: recipient pill + ⌘+Enter hint */}
+          {/* Mobile sub-header: just recipient identity (Templates moved to single bottom bar to remove duplication) */}
           <div className="md:hidden px-3 py-2 border-b border-border/60 bg-background/60 shrink-0 flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-semibold shrink-0">
               {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
@@ -655,15 +644,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </p>
               <p className="text-[11px] text-muted-foreground truncate leading-tight">{contact.email ?? 'No email on file'}</p>
             </div>
-            {recentTemplates.length > 0 && (
-              <button
-                onClick={() => setPickerOpen(true)}
-                className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-border bg-card text-[11px] font-medium text-foreground active:scale-95 transition-transform"
-              >
-                <FileText className="h-3 w-3" />
-                Templates
-              </button>
-            )}
           </div>
 
           {/* Desktop slim title bar */}
@@ -1008,25 +988,35 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
-              {/* Mobile sticky action bar — Templates · Signature · Attach (Send lives in top bar) */}
-              <div className="md:hidden flex items-center gap-1.5 px-2 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 overflow-x-auto pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+              {/* Mobile sticky action bar — Tools (Templates · Attach · Signature) on the left, Send on the right */}
+              <div className="md:hidden flex items-center gap-1.5 px-2.5 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}
-                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform"
+                  aria-label="Templates"
+                  className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
+                  title="Templates"
                 >
-                  <FileText className="h-3.5 w-3.5" />
-                  Template
+                  <FileText className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform disabled:opacity-50"
+                  aria-label="Attach"
+                  className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform disabled:opacity-50"
+                  title="Attach files"
                 >
-                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-                  Attach
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
+                  aria-label={mode === 'preview' ? 'Edit' : 'Preview'}
+                  className="shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
+                  title={mode === 'preview' ? 'Back to editor' : 'Preview email'}
+                >
+                  <Eye className="h-4 w-4" />
                 </button>
                 <select
                   value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
@@ -1039,24 +1029,30 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                       setSelectedSignatureId(v || null);
                     }
                   }}
-                  className="shrink-0 h-9 rounded-full border border-border bg-muted/60 px-3 text-[12px] font-medium text-foreground focus:outline-none max-w-[160px]"
+                  className="shrink min-w-0 h-10 rounded-full border border-border bg-muted/60 px-3 text-[12px] font-medium text-foreground focus:outline-none truncate"
                   aria-label="Signature"
+                  title="Signature"
                 >
-                  <option value="__none__">No signature</option>
+                  <option value="__none__">No sig</option>
                   {signatures.map((s) => (
                     <option key={s.id} value={s.id}>
                       ✎ {s.name}{s.is_default ? ' (default)' : ''}
                     </option>
                   ))}
                 </select>
+                {/* Big primary Send button — bottom-right, thumb-reachable */}
                 <button
                   type="button"
-                  onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
-                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform ml-auto"
-                  title={mode === 'preview' ? 'Back to editor' : 'Preview email'}
+                  onClick={handleSend}
+                  disabled={!canSend || isPending}
+                  className="ml-auto shrink-0 inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary text-primary-foreground text-[14px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
                 >
-                  <Eye className="h-3.5 w-3.5" />
-                  {mode === 'preview' ? 'Edit' : 'Preview'}
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  {isPending ? 'Sending' : 'Send'}
                 </button>
               </div>
 
