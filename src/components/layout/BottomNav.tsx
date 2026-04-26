@@ -228,7 +228,7 @@ export function BottomNav() {
       <Link
         key={tab.path}
         to={tab.path}
-        onClick={() => triggerHaptic('light')}
+        onClick={() => triggerHaptic('selection')}
         className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
         style={{ color: active ? GOLD : INACTIVE }}
       >
