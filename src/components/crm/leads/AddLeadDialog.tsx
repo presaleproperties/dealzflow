@@ -414,24 +414,24 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           </Group>
 
           <Group title="Pipeline">
-            <FieldRow label="Stage">
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+            <FieldRow label="Stage" error={errors.status}>
+              <Select value={form.status} onValueChange={(v) => { setForm({ ...form, status: v }); setErrors((p) => ({ ...p, status: '' })); }}>
                 <SelectTrigger className={inputCls}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </FieldRow>
-            <FieldRow label="Lead Owner">
-              <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
-                <SelectTrigger className={inputCls}><SelectValue placeholder="Unassigned" /></SelectTrigger>
+            <FieldRow label="Lead Owner" error={errors.assigned_to}>
+              <Select value={form.assigned_to || undefined} onValueChange={(v) => { setForm({ ...form, assigned_to: v }); setErrors((p) => ({ ...p, assigned_to: '' })); }}>
+                <SelectTrigger className={inputCls}><SelectValue placeholder="Assign an agent" /></SelectTrigger>
                 <SelectContent>
                   {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
                 </SelectContent>
               </Select>
             </FieldRow>
-            <FieldRow label="Source">
-              <Select value={form.source || undefined} onValueChange={(v) => setForm({ ...form, source: v })}>
+            <FieldRow label="Source" error={errors.source}>
+              <Select value={form.source || undefined} onValueChange={(v) => { setForm({ ...form, source: v }); setErrors((p) => ({ ...p, source: '' })); }}>
                 <SelectTrigger className={inputCls}><SelectValue placeholder="Select source" /></SelectTrigger>
                 <SelectContent>
                   {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
