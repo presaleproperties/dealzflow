@@ -58,7 +58,7 @@ export function MobileLeadDetail({
       </div>
 
       {/* Sticky identity + CTAs — always reachable */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border px-3 pb-2 pt-2 flex-shrink-0">
+      <div className="sticky top-0 z-30 bg-background border-b border-border px-3 pb-2 pt-2 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div
             className="w-11 h-11 rounded-full flex items-center justify-center text-[14px] font-bold shrink-0 border"
