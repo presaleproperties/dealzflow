@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { TopNav } from './TopNav';
 import { BottomNav } from './BottomNav';
 import { RightRail } from './RightRail';
-import { useCrmAccess } from '@/contexts/CrmAccessContext';
+
 
 interface AppLayoutProps {
   children: ReactNode;
