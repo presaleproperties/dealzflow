@@ -47,10 +47,23 @@ export function LeftSidebar({
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const isMobile = useIsMobile();
+  // Mobile drawer router — single state lets us animate one drawer at a time
+  // and avoid stacked sheets which feel heavy on phone.
+  const [drawer, setDrawer] = useState<
+    | null
+    | 'status' | 'assigned_to' | 'source' | 'city' | 'language'
+    | 'lead_type' | 'tags' | 'projects'
+    | 'bedrooms' | 'budget_min' | 'budget_max' | 'birthday'
+    | 'email_secondary'
+    | 'co_buyer_name' | 'co_buyer_phone' | 'co_buyer_email'
+  >(null);
+  const closeDrawer = () => setDrawer(null);
 
   const { data: tagLib = [] } = useCrmTags();
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
+  const { data: librarySources = [] } = useCrmSources();
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
