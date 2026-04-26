@@ -142,7 +142,7 @@ export default function CrmLeadsPage() {
   const mobileScrollRef = useRef<HTMLDivElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [sortSheetOpen, setSortSheetOpen] = useState(false);
-  const [accumulated, setAccumulated] = useState<typeof contacts>([] as any);
+  const [accumulated, setAccumulated] = useState<any[]>([]);
   const lastFiltersKeyRef = useRef<string>('');
 
   // Read initial view from URL
