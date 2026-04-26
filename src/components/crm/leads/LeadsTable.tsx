@@ -618,16 +618,13 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
           )}
         </div>
 
-        {/* Right column: colored score badge + relative time */}
+        {/* Right column: numeric-only score (color tier-coded) + relative time */}
         <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[60px]">
           <span
-            aria-label={hasScore ? `Lead score ${score}, ${tier?.toLowerCase()}` : 'No score'}
-            className={`inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-bold uppercase tracking-[0.12em] tabular-nums ${badgeClass}`}
+            aria-label={hasScore ? `Lead score ${score}` : 'No score'}
+            className={`inline-flex items-center justify-center h-7 min-w-[34px] px-2 rounded-md text-[13px] font-bold tabular-nums ${badgeClass}`}
           >
-            {tier ?? '—'}
-            {hasScore && (
-              <span className="text-[11px] font-semibold opacity-90">{score}</span>
-            )}
+            {hasScore ? score : '—'}
           </span>
           {relTime && (
             <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap">{relTime}</span>
@@ -767,15 +764,7 @@ export function LeadsTable({
 
         {/* Edge-to-edge list — matches desktop table colors (bg-card, divide-border/50, muted header, primary/5 selection) */}
         <div className={`bg-card border-y border-border transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
-          {/* Header strip — mirrors desktop thead */}
-          <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {totalCount.toLocaleString()} {totalCount === 1 ? 'lead' : 'leads'}
-            </span>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Score
-            </span>
-          </div>
+          {/* Header strip removed on mobile per request — more space for leads */}
 
           <div className="divide-y divide-border/50">
             {contacts.map(contact => (
