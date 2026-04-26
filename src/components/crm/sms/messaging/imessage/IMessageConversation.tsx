@@ -816,15 +816,17 @@ function IMessageComposer({
             </PopoverContent>
           </Popover>
 
-          {/* Pill input */}
-          <div className="imsg-composer-pill flex items-center flex-1 px-4 py-1.5 min-h-[40px]">
+          {/* Pill input — grows up to 3 lines, then scrolls internally */}
+          <div className="imsg-composer-pill flex items-end flex-1 min-w-0 px-4 py-1.5 min-h-[40px]">
             <Textarea
+              ref={textareaRef}
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Message"
               rows={1}
-              className="flex-1 min-h-[24px] max-h-40 resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55"
+              className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
+              style={{ maxHeight: MAX_HEIGHT }}
             />
           </div>
 
