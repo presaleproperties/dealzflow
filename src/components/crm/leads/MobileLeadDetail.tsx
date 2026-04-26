@@ -58,7 +58,7 @@ export function MobileLeadDetail({
       </div>
 
       {/* Sticky identity + CTAs — always reachable */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border px-3 pb-2 pt-2 flex-shrink-0">
+      <div className="sticky top-0 z-30 bg-background border-b border-border px-3 pb-2 pt-2 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div
             className="w-11 h-11 rounded-full flex items-center justify-center text-[14px] font-bold shrink-0 border"
@@ -154,22 +154,22 @@ export function MobileLeadDetail({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="activity" className="flex-1 min-h-0 mt-0 px-2 pt-3 pb-24 overflow-y-auto">
+        <TabsContent value="activity" className="flex-1 min-h-0 mt-0 px-2 pt-3 pb-24 overflow-y-auto overscroll-contain">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             {activitySlot}
           </div>
         </TabsContent>
-        <TabsContent value="details" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto space-y-3">
+        <TabsContent value="details" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto overscroll-contain space-y-3">
           {detailsSlot}
         </TabsContent>
-        <TabsContent value="insights" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto space-y-3">
+        <TabsContent value="insights" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto overscroll-contain space-y-3">
           {insightsSlot}
         </TabsContent>
       </Tabs>
 
       {/* Bottom-fixed action bar — log/note/task/showing always reachable */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border px-3 py-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
       >
         <div className="grid grid-cols-4 gap-2 max-w-md mx-auto">
