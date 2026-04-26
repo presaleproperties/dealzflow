@@ -122,6 +122,17 @@
 }
 
 @layer base {
+  /* Floating iOS pill bottom-nav clearance.
+     Bar height ~60px + FAB protrudes ~22px above. We pad to 72px so any
+     bottom-pinned content (sticky bars, last list rows) clears the bar
+     without colliding with the floating FAB halo. Disabled on lg+. */
+  :root {
+    --bottom-nav-pad: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 1024px) {
+    :root { --bottom-nav-pad: 0px; }
+  }
+
   * {
     @apply border-border;
   }
