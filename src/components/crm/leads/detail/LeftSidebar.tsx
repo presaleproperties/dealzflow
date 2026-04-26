@@ -248,14 +248,22 @@ export function LeftSidebar({
       {/* Pipeline Stage */}
       <div className="space-y-2">
         <SectionHeader>Pipeline Stage</SectionHeader>
-        <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
-          <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {isMobile ? (
+          <MobileEditRow
+            label="Stage"
+            value={contact.status ?? 'New Lead'}
+            onClick={() => setDrawer('status')}
+          />
+        ) : (
+          <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
+            <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
 
