@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import {
-  isNative, platform, setStatusBar, setKeyboardResizeNative,
+  isNative, platform, setKeyboardResizeNative,
   onKeyboardShow, onKeyboardHide,
 } from '@/lib/native';
 
