@@ -78,8 +78,9 @@ const WORKSPACE_MORE: MoreGroup[] = [
 
 const CRM_MORE: MoreGroup[] = [
   {
-    label: 'Channels',
+    label: 'Workflow',
     items: [
+      { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
       { label: 'Email Center', path: '/crm/email',    icon: Mail },
       { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare },
     ],
