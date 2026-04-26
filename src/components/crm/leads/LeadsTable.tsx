@@ -760,34 +760,30 @@ export function LeadsTable({
           )}
         </div>
 
-        {/* Edge-to-edge list — matches desktop table colors (bg-card, divide-border/50, muted header, primary/5 selection) */}
-        <div className={`bg-card border-y border-border transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
-          {/* Header strip removed on mobile per request — more space for leads */}
-
-          <div className="divide-y divide-border/50">
-            {contacts.map(contact => (
-              <SwipeRow
-                key={contact.id}
-                hasPhone={!!contact.phone}
-                hasEmail={!!contact.email}
-                onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
-                onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
-                onEmail={() => contact.email && setEmailContact(contact)}
+        {/* Edge-to-edge list using the shared mobile system */}
+        <div className={`m-list transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
+          {contacts.map(contact => (
+            <SwipeRow
+              key={contact.id}
+              hasPhone={!!contact.phone}
+              hasEmail={!!contact.email}
+              onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
+              onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
+              onEmail={() => contact.email && setEmailContact(contact)}
+            >
+              <div
+                onPointerEnter={() => prefetchLead(contact.id)}
+                onTouchStart={() => prefetchLead(contact.id)}
               >
-                <div
-                  onPointerEnter={() => prefetchLead(contact.id)}
-                  onTouchStart={() => prefetchLead(contact.id)}
-                >
-                  <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
-                </div>
-              </SwipeRow>
-            ))}
-            {contacts.length === 0 && !isFetching && (
-              <div className="px-4 py-12 text-center text-[13px] text-muted-foreground">
-                No leads match the current filters.
+                <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
               </div>
-            )}
-          </div>
+            </SwipeRow>
+          ))}
+          {contacts.length === 0 && !isFetching && (
+            <div className="px-4 py-12 text-center text-[14px] text-muted-foreground">
+              No leads match the current filters.
+            </div>
+          )}
         </div>
 
         {!hidePagination && (
