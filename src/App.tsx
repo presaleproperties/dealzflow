@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { QuietHoursConfirmHost } from "@/components/crm/sms/QuietHoursConfirm";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -144,6 +145,7 @@ const App = () => (
               <UpdateBanner />
               <Toaster />
               <Sonner />
+              <QuietHoursConfirmHost />
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Navigate to="/auth" replace />} />

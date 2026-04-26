@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { confirmQuietHours } from '@/components/crm/sms/QuietHoursConfirm';
 
 export type MessagingChannel = 'sms' | 'whatsapp';
 
@@ -212,7 +213,7 @@ export function useSendSms() {
         || (error?.message?.includes('Quiet hours') ? error.message : '');
 
       if (quietMsg && !args.skip_quiet_hours && typeof window !== 'undefined') {
-        const ok = window.confirm(`${quietMsg}\n\nSend it now anyway?`);
+        const ok = await confirmQuietHours(quietMsg);
         if (!ok) throw new Error('Send cancelled (quiet hours).');
         ({ data, error } = await invoke({ ...args, skip_quiet_hours: true }));
       }
