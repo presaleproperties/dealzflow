@@ -486,10 +486,8 @@ export default function CrmLeadsPage() {
                   headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
-                  <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">
-                    Leads
-                  </h1>
+                <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+                  <h1 className="m-page-title">Leads</h1>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
