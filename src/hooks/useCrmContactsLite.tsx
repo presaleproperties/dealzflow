@@ -49,7 +49,7 @@ export function useCrmContactsLite() {
           .range(from, from + PAGE_SIZE - 1);
         if (error) throw error;
         if (data && data.length > 0) {
-          allData = allData.concat(data as Record<string, unknown>[]);
+          allData = allData.concat(data as unknown as Record<string, unknown>[]);
           from += PAGE_SIZE;
           hasMore = data.length === PAGE_SIZE;
         } else {
