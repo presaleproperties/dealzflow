@@ -314,8 +314,37 @@ export function LeftSidebar({
           {isMobile ? (
             <>
               <MobileEditRow label="Source" value={contact.source || ''} placeholder="Select source" onClick={() => setDrawer('source')} />
-              <MobileEditRow label="Email 2" value={contact.email_secondary || ''} placeholder="Add" onClick={() => setDrawer('email_secondary')} />
-              <MobileEditRow label="Phone 2" value={contact.phone_secondary ? formatPhone(contact.phone_secondary) : ''} placeholder="Add" onClick={() => setDrawer('phone_secondary')} />
+              {/* Email 2 / Phone 2 — only render when present.
+                  When empty, expose a compact "+ add" affordance so the editor
+                  is still reachable without reserving a blank labeled row. */}
+              {contact.email_secondary && (
+                <MobileEditRow label="Email 2" value={contact.email_secondary} placeholder="Add" onClick={() => setDrawer('email_secondary')} />
+              )}
+              {contact.phone_secondary && (
+                <MobileEditRow label="Phone 2" value={formatPhone(contact.phone_secondary)} placeholder="Add" onClick={() => setDrawer('phone_secondary')} />
+              )}
+              {(!contact.email_secondary || !contact.phone_secondary) && (
+                <div className="flex items-center gap-2 py-1.5">
+                  {!contact.email_secondary && (
+                    <button
+                      type="button"
+                      onClick={() => setDrawer('email_secondary')}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-border/70 hover:border-foreground/40 transition-colors"
+                    >
+                      + Add email
+                    </button>
+                  )}
+                  {!contact.phone_secondary && (
+                    <button
+                      type="button"
+                      onClick={() => setDrawer('phone_secondary')}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-border/70 hover:border-foreground/40 transition-colors"
+                    >
+                      + Add phone
+                    </button>
+                  )}
+                </div>
+              )}
               <MobileEditRow label="City" value={contact.city || ''} placeholder="Select" onClick={() => setDrawer('city')} />
               <MobileEditRow label="Language" value={contact.language || ''} placeholder="Select" onClick={() => setDrawer('language')} />
               <MobileEditRow label="Beds" value={contact.bedrooms_preferred || ''} placeholder="e.g. 2-3" onClick={() => setDrawer('bedrooms')} />
@@ -342,8 +371,37 @@ export function LeftSidebar({
                   <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
                 </div>
               </div>
-              <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />
-              <DetailRow label="Phone 2" value={contact.phone_secondary} field="phone_secondary" contactId={contact.id} displayFormatter={formatPhone} />
+              {/* Email 2 / Phone 2 — only render when present. Otherwise expose
+                  small "+ Add" pills so the user can still attach a secondary
+                  contact when needed. */}
+              {contact.email_secondary && (
+                <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />
+              )}
+              {contact.phone_secondary && (
+                <DetailRow label="Phone 2" value={contact.phone_secondary} field="phone_secondary" contactId={contact.id} displayFormatter={formatPhone} />
+              )}
+              {(!contact.email_secondary || !contact.phone_secondary) && (
+                <div className="flex items-center gap-2 py-2 border-b border-border/40">
+                  {!contact.email_secondary && (
+                    <button
+                      type="button"
+                      onClick={() => save('email_secondary', prompt('Secondary email') || null)}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-border/70 hover:border-foreground/40 transition-colors"
+                    >
+                      + Add email
+                    </button>
+                  )}
+                  {!contact.phone_secondary && (
+                    <button
+                      type="button"
+                      onClick={() => save('phone_secondary', prompt('Secondary phone') || null)}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-border/70 hover:border-foreground/40 transition-colors"
+                    >
+                      + Add phone
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* City + Language — multi-select to match mobile */}
               <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
