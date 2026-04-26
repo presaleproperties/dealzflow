@@ -226,7 +226,7 @@ export function LeftSidebar({
         </AlertDialogContent>
       </AlertDialog>
 
-      {showActionRow && !isMobile && (
+      {showActionRow && (
         <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
             onClick={onCall}
