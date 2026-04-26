@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { Phone, Mail, Send, MessageCircle, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { formatContactName } from '@/lib/format';
 import { EditLeadDetailsSheet } from './EditLeadDetailsSheet';
