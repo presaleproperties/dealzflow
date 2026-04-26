@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageSquare, Mail, ListTodo, Calendar, StickyNote, Plus, X } from 'lucide-react';
+import { ArrowLeft, ListTodo, Calendar, StickyNote, Plus, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatContactName } from '@/lib/format';
