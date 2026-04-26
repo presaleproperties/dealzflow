@@ -93,7 +93,7 @@ export function IMessageConversation(props: Props) {
   return (
     <div className="flex flex-col h-full imsg-font">
       {/* ===== Frosted header (centered title, iMessage style) ===== */}
-      <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+      <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top">
         {/* Left controls */}
         <div className="flex items-center gap-1">
           {isMobile ? (
