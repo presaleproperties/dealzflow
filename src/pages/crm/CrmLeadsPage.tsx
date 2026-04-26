@@ -399,37 +399,36 @@ export default function CrmLeadsPage() {
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
+
+                    {/* Inline divider + Filters/Sort — keeps the row compact instead of a full second row */}
+                    <span className="mx-1 h-5 w-px bg-border/60 shrink-0" aria-hidden="true" />
+                    <Button
+                      variant={activeFilterCount > 0 ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setFiltersExpanded(true)}
+                      className="h-8 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5 bg-primary/15 text-primary">
+                          {activeFilterCount}
+                        </Badge>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleSort('last_touch_at')}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+                      aria-label="Sort by last touch"
+                      title="Sort by last touch"
+                    >
+                      <ArrowDownNarrowWide className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               )}
-
-              {/* Filter + sort row — discreet, matches desktop ghost-button styling */}
-              <div className="flex items-center gap-1 px-2 pb-1.5">
-                <Button
-                  variant={activeFilterCount > 0 ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setFiltersExpanded(true)}
-                  className="h-9 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <Filter className="w-4 h-4" />
-                  Filters
-                  {activeFilterCount > 0 && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5 bg-primary/15 text-primary">
-                      {activeFilterCount}
-                    </Badge>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleSort('last_touch_at')}
-                  className="h-9 w-9 text-muted-foreground hover:text-foreground ml-auto"
-                  aria-label="Sort by last touch"
-                  title="Sort by last touch"
-                >
-                  <ArrowDownNarrowWide className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
           )}
 
