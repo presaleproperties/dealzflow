@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ListTodo, Calendar, StickyNote, Plus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadStatusBadge } from './LeadStatusBadge';
@@ -42,7 +40,6 @@ export function MobileLeadDetail({
   detailsSlot,
   insightsSlot,
 }: MobileLeadDetailProps) {
-  const [plusOpen, setPlusOpen] = useState(false);
   const updateContact = useUpdateCrmContact();
   const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || '?';
 
