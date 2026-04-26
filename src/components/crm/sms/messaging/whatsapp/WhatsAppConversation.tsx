@@ -616,7 +616,7 @@ function WhatsAppComposer({
   };
 
   return (
-    <div className="wa-composer-bar px-3 py-2 wa-font">
+    <div className="wa-composer-bar px-3 py-2 wa-font native-safe-bottom native-kb-lift">
       <div className="max-w-3xl mx-auto space-y-1.5">
         {quotedRef && (
           <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-white dark:bg-[#202c33] border-l-[3px] border-emerald-600 shadow-sm">
@@ -777,10 +777,10 @@ function WhatsAppComposer({
           {/* Send / Mic */}
           <Button
             size="icon"
-            onClick={canSend ? onSend : undefined}
+            onClick={canSend ? onSendWithHaptic : undefined}
             disabled={sending}
             className={cn(
-              'h-11 w-11 rounded-full shrink-0 transition-all',
+              'h-11 w-11 rounded-full shrink-0 transition-all native-press',
               canSend
                 ? 'wa-send shadow-md hover:shadow-lg active:scale-95'
                 : 'wa-send opacity-90',
