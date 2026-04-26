@@ -659,3 +659,101 @@ function MoreSheet({
     </div>
   );
 }
+
+function QuickActionsSheet({
+  mode,
+  actions,
+  onClose,
+}: {
+  mode: Mode;
+  actions: QuickAction[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex flex-col">
+      {/* Drag handle */}
+      <div className="shrink-0 pt-2.5 pb-1.5">
+        <div
+          className="mx-auto w-9 h-[3px] rounded-full"
+          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-5 pt-1 pb-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: SUBTLE }}>
+            Quick Add
+          </p>
+          <h2 className="text-[18px] font-bold tracking-[-0.02em] text-foreground mt-0.5">
+            What would you like to create?
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          className="h-9 w-9 flex items-center justify-center rounded-full active:scale-95 transition-transform border shrink-0"
+          style={{ background: SURFACE, color: 'hsl(var(--foreground))', borderColor: BORDER }}
+          aria-label="Close"
+        >
+          <X className="w-[16px] h-[16px]" strokeWidth={2.2} />
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div
+        className="px-5 pb-4 space-y-2"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+      >
+        {actions.map((action) => {
+          const Icon = action.icon;
+          const isGold = action.tone === 'gold';
+          return (
+            <button
+              key={action.label}
+              onClick={() => {
+                triggerHaptic('light');
+                action.onClick();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border active:scale-[0.98] transition-all text-left"
+              style={{
+                background: isGold ? GOLD_BG : SURFACE,
+                borderColor: isGold ? GOLD_RING : BORDER,
+              }}
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: isGold
+                    ? 'linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary) / 0.85))'
+                    : 'hsl(var(--muted) / 0.6)',
+                  color: isGold ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
+                  boxShadow: isGold
+                    ? '0 4px 12px -2px hsl(var(--primary) / 0.45), inset 0 1px 0 hsl(0 0% 100% / 0.25)'
+                    : 'none',
+                }}
+              >
+                <Icon className="w-[19px] h-[19px]" strokeWidth={2.1} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[14.5px] font-semibold tracking-[-0.01em]"
+                  style={{ color: isGold ? GOLD : 'hsl(var(--foreground))' }}
+                >
+                  {action.label}
+                </p>
+                <p className="text-[12px] mt-0.5 truncate" style={{ color: SUBTLE }}>
+                  {action.description}
+                </p>
+              </div>
+              <span style={{ color: SUBTLE }} className="text-[18px] leading-none">›</span>
+            </button>
+          );
+        })}
+
+        <p className="text-[11px] text-center pt-3" style={{ color: SUBTLE }}>
+          {mode === 'crm' ? 'CRM actions' : 'Workspace actions'}
+        </p>
+      </div>
+    </div>
+  );
+}
