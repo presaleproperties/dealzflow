@@ -75,7 +75,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
           }}
           onOpenChange={(open) => { if (!open) setEditing(false); }}
         >
-          <SelectTrigger className="h-7 text-xs w-auto min-w-[120px] border-primary/40">
+          <SelectTrigger className="h-9 md:h-7 text-sm md:text-xs w-auto min-w-[140px] md:min-w-[120px] border-primary/40">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className="max-h-[260px]">
