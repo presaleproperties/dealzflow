@@ -636,11 +636,11 @@ export function ComposerSurface({
         )}
       </div>
 
-      {/* Footer */}
-      <div className="px-6 py-3 border-t border-border/70 bg-card/95 backdrop-blur flex items-center justify-between gap-3 flex-wrap shrink-0">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground/80">Signature</span>
+      {/* Footer — premium sticky action bar */}
+      <div className="px-6 py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">Signature</span>
             <Select
               value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
               onValueChange={(v) => {
@@ -650,7 +650,7 @@ export function ComposerSurface({
               }}
               disabled={editingSignature}
             >
-              <SelectTrigger className="h-7 text-xs w-[180px]">
+              <SelectTrigger className="h-8 text-xs w-[180px] border-border/60 bg-background/60 hover:bg-background transition-colors">
                 <SelectValue placeholder="Pick signature" />
               </SelectTrigger>
               <SelectContent>
@@ -663,7 +663,7 @@ export function ComposerSurface({
               </SelectContent>
             </Select>
             {appendSignature && selectedSignatureId && !editingSignature && (
-              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 gap-1 text-[11px]" onClick={() => {
+              <Button type="button" size="sm" variant="ghost" className="h-8 px-2 gap-1 text-[11px] text-muted-foreground hover:text-foreground" onClick={() => {
                 const sig = signatures.find((s) => s.id === selectedSignatureId);
                 if (!sig) return;
                 setSigDraft(sig.html ?? '');
@@ -675,7 +675,7 @@ export function ComposerSurface({
             )}
             {editingSignature && (
               <>
-                <Button type="button" size="sm" className="h-7 px-2 gap-1 text-[11px]" disabled={upsertSignature.isPending} onClick={async () => {
+                <Button type="button" size="sm" className="h-8 px-2.5 gap-1 text-[11px]" disabled={upsertSignature.isPending} onClick={async () => {
                   const sig = signatures.find((s) => s.id === selectedSignatureId);
                   if (!sig) return;
                   try {
@@ -686,7 +686,7 @@ export function ComposerSurface({
                   {upsertSignature.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                   Save
                 </Button>
-                <Button type="button" size="sm" variant="ghost" className="h-7 px-2 gap-1 text-[11px] text-muted-foreground" onClick={() => { setEditingSignature(false); setSigDraft(''); }}>
+                <Button type="button" size="sm" variant="ghost" className="h-8 px-2 gap-1 text-[11px] text-muted-foreground" onClick={() => { setEditingSignature(false); setSigDraft(''); }}>
                   <X className="h-3 w-3" />
                   Cancel
                 </Button>
@@ -695,18 +695,28 @@ export function ComposerSurface({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={openSaveDialog} disabled={isPending} className="gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={openSaveDialog}
+            disabled={isPending}
+            className="h-9 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          >
             <Save className="h-3.5 w-3.5" />
             Save as template
           </Button>
+          <div className="h-6 w-px bg-border/60 mx-1" />
           <Button
             type="button"
             size="sm"
             onClick={handleSendClick}
             disabled={!canSend || isPending}
             className={cn(
-              'gap-1.5 min-w-[140px] font-semibold',
-              recipientCount > 1 && 'bg-primary',
+              'h-9 gap-2 min-w-[160px] px-4 font-semibold text-[12.5px] tracking-[-0.005em] rounded-lg',
+              'bg-primary text-primary-foreground hover:bg-primary/90',
+              'shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.5)] hover:shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.55)]',
+              'transition-all disabled:shadow-none disabled:opacity-50',
             )}
           >
             {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : recipientCount > 1 ? <Users className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
