@@ -137,24 +137,28 @@ export function WhatsAppConversation(props: Props) {
         </button>
 
         <div className="flex items-center gap-1">
-          <SoundToggle dark />
+          {!isMobile && <SoundToggle dark />}
           <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
-                  <Video className="w-[18px] h-[18px]" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Video call</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
-                  <Phone className="w-[17px] h-[17px]" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Voice call</TooltipContent>
-            </Tooltip>
+            {!isMobile && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
+                      <Video className="w-[18px] h-[18px]" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Video call</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
+                      <Phone className="w-[17px] h-[17px]" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Voice call</TooltipContent>
+                </Tooltip>
+              </>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
