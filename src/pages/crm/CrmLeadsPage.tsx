@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -352,38 +353,41 @@ export default function CrmLeadsPage() {
                 </div>
               )}
 
-              {/* Filter chip row — minimal text-forward */}
-              <div className="overflow-x-auto scrollbar-hide">
-                <div className="flex items-center gap-1 px-2 pb-2 min-w-max">
-                  <FilterChip
-                    label="Segments"
-                    active={!!activeSegmentId}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
-                  <FilterChip
-                    label="Pipeline"
-                    active={filterStatus.length > 0}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
-                  <FilterChip
-                    label="Assignee"
-                    active={filterAgent.length > 0}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
-                  <FilterChip
-                    label="Activity"
-                    active={false}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
+              {/* Filter + sort row — single consolidated entry point */}
+              <div className="flex items-center gap-2 px-3 pb-2">
+                <button
+                  onClick={() => setFiltersExpanded(true)}
+                  className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-medium tracking-tight transition-colors border ${
+                    activeFilterCount > 0
+                      ? 'bg-primary/10 text-primary border-primary/40'
+                      : 'bg-transparent text-muted-foreground border-border/60 hover:text-foreground'
+                  }`}
+                  aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+                >
+                  <Filter className="w-[15px] h-[15px]" strokeWidth={1.8} />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tabular-nums">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+                {activeFilterCount > 0 && (
                   <button
-                    onClick={() => handleSort('last_touch_at')}
-                    className="inline-flex items-center justify-center w-9 h-8 text-muted-foreground hover:text-foreground transition-colors ml-auto mr-1"
-                    aria-label="Sort"
-                    title="Sort by last touch"
+                    onClick={clearAllFilters}
+                    className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <ArrowDownNarrowWide className="w-[17px] h-[17px]" strokeWidth={1.8} />
+                    Clear
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={() => handleSort('last_touch_at')}
+                  className="inline-flex items-center justify-center w-9 h-9 text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                  aria-label="Sort by last touch"
+                  title="Sort by last touch"
+                >
+                  <ArrowDownNarrowWide className="w-[17px] h-[17px]" strokeWidth={1.8} />
+                </button>
               </div>
             </div>
           )}
@@ -575,53 +579,74 @@ export default function CrmLeadsPage() {
           />
         </div>
 
-        {/* Right-side Filter Panel */}
-        <FilterPanel
-          open={filtersExpanded}
-          onClose={() => setFiltersExpanded(false)}
-          filterContactType={filterContactType}
-          setFilterContactType={v => {
-            setFilterContactType(v);
-            // Segments are pipeline stages for leads — clear segment when filtering to realtors/clients
-            if (v && v !== 'lead') setActiveSegmentId(null);
-            setPage(1);
-          }}
-          filterStatus={filterStatus}
-          setFilterStatus={v => { setFilterStatus(v); setPage(1); }}
-          filterSource={filterSource}
-          setFilterSource={v => { setFilterSource(v); setPage(1); }}
-          filterAgent={filterAgent}
-          setFilterAgent={v => { setFilterAgent(v); setPage(1); }}
-          filterProject={filterProject}
-          setFilterProject={v => { setFilterProject(v); setPage(1); }}
-          filterLeadType={filterLeadType}
-          setFilterLeadType={v => { setFilterLeadType(v); setPage(1); }}
-          filterLanguage={filterLanguage}
-          setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
-          filterTags={filterTags}
-          setFilterTags={v => { setFilterTags(v); setPage(1); }}
-          filterExcludeTags={filterExcludeTags}
-          setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
-          filterPropertyType={filterPropertyType}
-          setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
-          filterCity={filterCity}
-          setFilterCity={v => { setFilterCity(v); setPage(1); }}
-          filterPreApproved={filterPreApproved}
-          setFilterPreApproved={v => { setFilterPreApproved(v); setPage(1); }}
-          filterCampaign={filterCampaign}
-          setFilterCampaign={v => { setFilterCampaign(v); setPage(1); }}
-          dynamicProjects={dynamicOpts.projects}
-          dynamicLanguages={dynamicOpts.languages}
-          dynamicTags={dynamicOpts.tags}
-          dynamicCities={dynamicOpts.cities}
-          dynamicCampaigns={dynamicOpts.campaigns}
-          dynamicLeadTypes={dynamicOpts.leadTypes}
-          tagCounts={dynamicOpts.tagCounts}
-          projectCounts={dynamicOpts.projectCounts}
-          leadTypeCounts={dynamicOpts.leadTypeCounts}
-          onClearAll={clearAllFilters}
-          activeFilterCount={activeFilterCount}
-        />
+        {/* Right-side Filter Panel — inline on desktop, bottom sheet on mobile to avoid layout shift */}
+        {(() => {
+          const panel = (
+            <FilterPanel
+              open={isMobile ? true : filtersExpanded}
+              onClose={() => setFiltersExpanded(false)}
+              filterContactType={filterContactType}
+              setFilterContactType={v => {
+                setFilterContactType(v);
+                if (v && v !== 'lead') setActiveSegmentId(null);
+                setPage(1);
+              }}
+              filterStatus={filterStatus}
+              setFilterStatus={v => { setFilterStatus(v); setPage(1); }}
+              filterSource={filterSource}
+              setFilterSource={v => { setFilterSource(v); setPage(1); }}
+              filterAgent={filterAgent}
+              setFilterAgent={v => { setFilterAgent(v); setPage(1); }}
+              filterProject={filterProject}
+              setFilterProject={v => { setFilterProject(v); setPage(1); }}
+              filterLeadType={filterLeadType}
+              setFilterLeadType={v => { setFilterLeadType(v); setPage(1); }}
+              filterLanguage={filterLanguage}
+              setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
+              filterTags={filterTags}
+              setFilterTags={v => { setFilterTags(v); setPage(1); }}
+              filterExcludeTags={filterExcludeTags}
+              setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
+              filterPropertyType={filterPropertyType}
+              setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
+              filterCity={filterCity}
+              setFilterCity={v => { setFilterCity(v); setPage(1); }}
+              filterPreApproved={filterPreApproved}
+              setFilterPreApproved={v => { setFilterPreApproved(v); setPage(1); }}
+              filterCampaign={filterCampaign}
+              setFilterCampaign={v => { setFilterCampaign(v); setPage(1); }}
+              dynamicProjects={dynamicOpts.projects}
+              dynamicLanguages={dynamicOpts.languages}
+              dynamicTags={dynamicOpts.tags}
+              dynamicCities={dynamicOpts.cities}
+              dynamicCampaigns={dynamicOpts.campaigns}
+              dynamicLeadTypes={dynamicOpts.leadTypes}
+              tagCounts={dynamicOpts.tagCounts}
+              projectCounts={dynamicOpts.projectCounts}
+              leadTypeCounts={dynamicOpts.leadTypeCounts}
+              onClearAll={clearAllFilters}
+              activeFilterCount={activeFilterCount}
+            />
+          );
+
+          if (isMobile) {
+            return (
+              <Sheet open={filtersExpanded} onOpenChange={setFiltersExpanded}>
+                <SheetContent
+                  side="bottom"
+                  className="h-[88dvh] p-0 rounded-t-2xl border-t border-border [&>button]:hidden"
+                >
+                  {/* Override panel chrome so it fills the sheet (no left margin / fixed width) */}
+                  <div className="h-full [&>div]:!w-full [&>div]:!ml-0 [&>div]:!rounded-none [&>div]:!border-l-0 [&>div]:!h-full">
+                    {panel}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            );
+          }
+
+          return panel;
+        })()}
       </div>
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} />
