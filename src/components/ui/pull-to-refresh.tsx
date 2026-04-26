@@ -18,34 +18,46 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
   const startY = useRef(0);
   const currentY = useRef(0);
 
+  // Find the nearest scrolling ancestor so PTR works whether the parent
+  // <main> is the scroll container (mobile/PWA) or window itself is.
+  const getScrollParent = (el: HTMLElement | null): HTMLElement | Window => {
+    let node: HTMLElement | null = el?.parentElement ?? null;
+    while (node) {
+      const style = getComputedStyle(node);
+      const overflowY = style.overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return window;
+  };
+
+  const getScrollTop = (sp: HTMLElement | Window): number =>
+    sp instanceof Window ? (sp.scrollY || document.documentElement.scrollTop || 0) : sp.scrollTop;
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isRefreshing) return;
-    
-    const container = containerRef.current;
-    if (!container || container.scrollTop > 0) return;
-    
+    const sp = getScrollParent(containerRef.current);
+    if (getScrollTop(sp) > 0) return;
     startY.current = e.touches[0].clientY;
     setIsPulling(true);
   }, [isRefreshing]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isPulling || isRefreshing) return;
-    
-    const container = containerRef.current;
-    if (!container || container.scrollTop > 0) {
+    const sp = getScrollParent(containerRef.current);
+    if (getScrollTop(sp) > 0) {
       setPullDistance(0);
       return;
     }
 
     currentY.current = e.touches[0].clientY;
     const diff = currentY.current - startY.current;
-    
+
     if (diff > 0) {
-      // Apply resistance - the further you pull, the harder it gets
       const resistance = Math.min(diff * 0.5, MAX_PULL);
       setPullDistance(resistance);
-      
-      // Prevent default scroll when pulling down
       if (diff > 10) {
         e.preventDefault();
       }
