@@ -54,7 +54,7 @@ export function MobileLeadDetail({
         className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="px-4 h-12 flex items-center justify-between">
+        <div className="px-3 h-12 flex items-center justify-between">
           <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary active:opacity-60 transition-opacity">
             <ArrowLeft className="w-4 h-4" /> Leads
           </Link>
