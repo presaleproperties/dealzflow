@@ -43,7 +43,7 @@ export default function CrmEmailPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 crm-mobile-page">
       <QuickSendBar onCompose={(c) => setComposeContact(c)} />
 
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full space-y-4">
