@@ -60,15 +60,19 @@ export function MobileLeadDetail({
         className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
-          <Link to="/crm/leads" className="inline-flex items-center gap-1 text-[13px] font-medium text-primary active:opacity-60 transition-opacity">
-            <ArrowLeft className="w-4 h-4" /> Leads
+        {/* Row 1: back link + tier-tinted score chip — single tight row */}
+        <div className="px-3 pt-1 pb-0.5 flex items-center justify-between gap-2">
+          <Link
+            to="/crm/leads"
+            className="inline-flex items-center gap-1 -ml-1 px-1 h-8 text-[14px] font-semibold text-primary active:opacity-60 transition-opacity"
+          >
+            <ArrowLeft className="w-[18px] h-[18px]" strokeWidth={2.2} />
+            Leads
           </Link>
-          {/* Compact tier-tinted score chip — no duplicate letter badge */}
           <div
             className="m-score tabular-nums"
             data-tier={tier}
-            style={{ width: 'auto', height: '30px', padding: '0 12px', fontSize: '15px' }}
+            style={{ width: 'auto', height: '28px', padding: '0 10px', fontSize: '14px' }}
             aria-label={`Lead score ${leadScore.score} out of 100 — ${leadScore.label}`}
           >
             {leadScore.score}
@@ -77,7 +81,9 @@ export function MobileLeadDetail({
             </span>
           </div>
         </div>
-        <div className="px-3 pb-2 flex items-center gap-2.5">
+
+        {/* Row 2: avatar + name + status + stage swap */}
+        <div className="px-3 pt-1 pb-2 flex items-center gap-2.5">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 border"
             style={{ background: `${leadScore.color}15`, borderColor: `${leadScore.color}40`, color: leadScore.color }}
@@ -88,7 +94,7 @@ export function MobileLeadDetail({
             <h1 className="text-[20px] font-bold text-foreground leading-tight tracking-[-0.015em] truncate">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-0.5">
               <LeadStatusBadge status={contact.status} />
             </div>
           </div>
