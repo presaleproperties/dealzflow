@@ -46,8 +46,8 @@ export function MobileLeadDetail({
   const updateContact = useUpdateCrmContact();
   const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || '?';
 
-  // Only the global BottomNav sits at the bottom now — pad once.
-  const bottomPadClass = 'pb-[calc(72px+env(safe-area-inset-bottom,0px))]';
+  // Pad scroll panels to clear the floating bottom-nav (uses global token).
+  const bottomPadStyle = { paddingBottom: 'var(--bottom-nav-pad)' } as const;
 
   return (
     <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
