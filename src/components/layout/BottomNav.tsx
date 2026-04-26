@@ -293,6 +293,9 @@ export function BottomNav() {
               maxWidth: 'min(640px, 100%)',
             }}
           >
+            {/* Left tabs */}
+            {leftTabs.map(renderTab)}
+
             {/* Center premium "+" action */}
             <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
               <SheetTrigger asChild>
