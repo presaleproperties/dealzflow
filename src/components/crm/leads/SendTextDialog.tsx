@@ -461,6 +461,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                   min={new Date().toISOString().slice(0, 16)}
                 />
               )}
+            </div>
           </div>
         </div>
 
