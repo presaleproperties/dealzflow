@@ -59,16 +59,33 @@ export default function LeadDetailPage() {
     localStorage.setItem('crm.leadDetail.rightCollapsed', rightCollapsed ? '1' : '0');
   }, [rightCollapsed]);
 
+  // Source of truth: server-computed `lead_score` (recalc_lead_score in DB).
+  // Tiers must match LeadsTable / Kanban / Mobile list (70 = hot, 40 = warm).
+  const queryClient = useQueryClient();
   const leadScore = useMemo<LeadScore>(() => {
-    const inbound = (messages as CrmMessageRow[]).filter((m) => m.direction === 'inbound').length;
-    const showingCount = showings.length;
-    const completedTasks = (tasks as CrmTask[]).filter((t) => t.status === 'completed').length;
-    const noteCount = notes.length;
-    const score = Math.min(100, inbound * 10 + showingCount * 15 + completedTasks * 20 + noteCount * 5);
-    const color = score >= 61 ? 'hsl(142 71% 45%)' : score >= 31 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
-    const label = score >= 61 ? 'Hot' : score >= 31 ? 'Warm' : 'Cold';
+    const raw = (contact as unknown as Record<string, unknown> | undefined)?.lead_score;
+    const score = typeof raw === 'number' ? raw : 0;
+    const color = score >= 70 ? 'hsl(142 71% 45%)' : score >= 40 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
+    const label = score >= 70 ? 'Hot' : score >= 40 ? 'Warm' : score > 0 ? 'Cold' : 'New';
     return { score, color, label };
-  }, [messages, showings, tasks, notes]);
+  }, [contact]);
+
+  // Recompute this lead's score whenever its detail page opens, then refresh
+  // every cache that displays a score so the list, Kanban, and detail agree.
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    (async () => {
+      const { error } = await (supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }> })
+        .rpc('recalc_lead_score', { _contact_id: id });
+      if (cancelled || error) return;
+      queryClient.invalidateQueries({ queryKey: ['crm-contact', id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+    })();
+    return () => { cancelled = true; };
+  }, [id, queryClient, messages.length, showings.length, tasks.length, notes.length]);
 
   const lastTouchLabel = useMemo(() => {
     if (!contact) return 'N/A';
