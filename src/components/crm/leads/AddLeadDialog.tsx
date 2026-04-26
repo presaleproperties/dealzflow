@@ -70,6 +70,8 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     setForm(initialForm());
     setErrors({});
     setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
+    setShowSecondaryPhone(false);
+    setShowSecondaryEmail(false);
   };
 
   const handleSubmit = async () => {
