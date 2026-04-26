@@ -26,6 +26,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -81,6 +83,35 @@ export default function CrmLeadsPage() {
   const { data: allContacts = [], isLoading: allContactsLoading } = useCrmContactsLite();
   const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
+
+  /**
+   * Lead-score freshness: the recency bonus inside recalc_lead_score()
+   * decays over time even when nothing happens, so a lead that hasn't
+   * been touched in 8 days quietly drops 10 points. To keep what the
+   * user sees on the Leads page accurate, recompute scores in the
+   * background once per session (per device) and then revalidate the
+   * contact lists. Cheap on-DB, async, doesn't block the UI.
+   */
+  useEffect(() => {
+    const KEY = 'crm:lead-scores-refreshed';
+    try {
+      const last = sessionStorage.getItem(KEY);
+      if (last) return;
+      sessionStorage.setItem(KEY, String(Date.now()));
+    } catch { /* private mode — fine, just run anyway */ }
+
+    let cancelled = false;
+    (async () => {
+      const { error } = await (supabase as any).rpc('recalc_all_lead_scores');
+      if (cancelled || error) return;
+      // Pull fresh scores into both the lite list and any paginated views.
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+    })();
+    return () => { cancelled = true; };
+  }, [queryClient]);
 
   // Quick view state
   const [activeViewId, setActiveViewId] = useState<QuickViewId>('__all');
