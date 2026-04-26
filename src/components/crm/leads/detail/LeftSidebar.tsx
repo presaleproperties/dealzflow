@@ -442,10 +442,18 @@ export function LeftSidebar({
             </>
           )}
 
-          <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-            <span className="text-xs text-muted-foreground">Registered</span>
-            <span className="text-[13px] text-foreground tabular-nums">{format(new Date(contact.created_at), 'MMM d, yyyy')}</span>
-          </div>
+          {(() => {
+            const created = contact.created_at ? new Date(contact.created_at) : null;
+            const validCreated = created && !isNaN(created.getTime());
+            return (
+              <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground">Registered</span>
+                <span className="text-[13px] text-foreground tabular-nums">
+                  {validCreated ? format(created, 'MMM d, yyyy') : '—'}
+                </span>
+              </div>
+            );
+          })()}
 
           {(syncSource === 'zapier_lofty' || syncSource === 'lofty_api_sync') && (
             <>
