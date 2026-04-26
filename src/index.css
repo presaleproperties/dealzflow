@@ -127,11 +127,10 @@
      the OS safe-area inset (no extra spacer). Pages reserve 12px breathing
      room above the bar so the last row never kisses it. Disabled on lg+. */
   :root {
-    /* Slim flush bottom-nav: 52px tab row + safe-area, no extra breathing room.
-       Pages clear the bar exactly — bar hugs the home indicator like native iOS. */
-    --bottom-nav-pad: calc(52px + env(safe-area-inset-bottom, 0px));
-    /* Mobile top breathing room — sits just below the OS status bar.
-       8px feels native and removes the double-padding gap. */
+    /* Slim flush bottom-nav: 50px tab row + iOS home-indicator inset.
+       Bar hugs the home indicator; pages reserve exact bar height as bottom padding. */
+    --bottom-nav-pad: calc(50px + env(safe-area-inset-bottom, 0px));
+    /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
   @media (min-width: 1024px) {
@@ -1122,7 +1121,7 @@ html.is-standalone *:focus-visible {
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
 /* Bottom-nav clearance helper (alias kept for backwards compat) */
-:root { --bottom-nav-pad: calc(52px + env(safe-area-inset-bottom, 0px)); }
+:root { --bottom-nav-pad: calc(50px + env(safe-area-inset-bottom, 0px)); }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */
