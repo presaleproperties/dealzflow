@@ -263,27 +263,30 @@ export function BottomNav() {
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 native-chrome"
         aria-label="Primary"
       >
-        {/* Slim flush bar — frosted glass, hugs the home indicator. */}
+        {/* Slim flush bar — frosted glass, hugs the home indicator with full safe-area. */}
         <div
           className="relative backdrop-blur-2xl"
           style={{
             background:
-              'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
+              'linear-gradient(180deg, hsl(var(--background) / 0.94) 0%, hsl(var(--background) / 0.99) 100%)',
             borderTop: `1px solid ${BORDER}`,
+            // Full iOS home-indicator inset — bar sits as low as the OS allows.
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            // Soft upward elevation so content scrolling underneath stays legible.
+            boxShadow: '0 -8px 24px -12px hsl(var(--background) / 0.6)',
           }}
         >
           {/* Subtle gold sheen across top edge */}
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-32 pointer-events-none"
             style={{
-              background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent)',
+              background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.55), transparent)',
             }}
           />
 
-          {/* Tabs row — 52px equal-width grid (slim flush bar, hugs home indicator) */}
+          {/* Tabs row — 50px equal-width grid (slim flush bar, hugs home indicator) */}
           <div
-            className="grid h-[52px] mx-auto max-w-[520px] px-2"
+            className="grid h-[50px] mx-auto max-w-[520px] px-2"
             style={{ gridTemplateColumns: `repeat(${cellCount}, minmax(0, 1fr))` }}
           >
             {tabs.map(renderTab)}
