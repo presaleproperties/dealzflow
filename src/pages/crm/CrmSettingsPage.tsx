@@ -135,7 +135,7 @@ export default function CrmSettingsPage() {
   if (accessLoading || !isOwnerOrAdmin) return null;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 h-full min-h-0">
+    <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 h-full min-h-0 crm-mobile-page">
       {/* Mobile/Tablet: horizontal tab bar */}
       <div className="lg:hidden overflow-x-auto border-b border-border bg-background sticky top-0 z-10 -mx-3 -mt-3 px-3 sm:-mx-4 sm:-mt-4 sm:px-4">
         <div className="flex gap-1 py-2 min-w-max">
