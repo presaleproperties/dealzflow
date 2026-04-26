@@ -83,5 +83,28 @@ export function useCrmChats(channelFilter?: ChatChannel | 'all') {
       });
     },
     staleTime: 30_000,
+    select: (threads: ChatThread[]) => {
+      // Collapse to one row per (contact_id, channel). When multiple
+      // crm_conversations rows exist for the same lead+channel, keep the
+      // most-recently-active conversation as the canonical row but sum
+      // unread counts across the duplicates so nothing is lost.
+      const byKey = new Map<string, ChatThread>();
+      for (const t of threads) {
+        const key = `${t.contact_id}::${t.channel}`;
+        const existing = byKey.get(key);
+        if (!existing) {
+          byKey.set(key, { ...t });
+          continue;
+        }
+        existing.unread_count = (existing.unread_count ?? 0) + (t.unread_count ?? 0);
+        // threads arrive sorted by last_message_at desc, so `existing` already
+        // holds the freshest preview/timestamp — nothing else to merge.
+      }
+      return Array.from(byKey.values()).sort((a, b) => {
+        const av = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+        const bv = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+        return bv - av;
+      });
+    },
   });
 }
