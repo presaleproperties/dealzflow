@@ -567,14 +567,12 @@ export function LeftSidebar({
                 <MobileEditRow label="Phone" value={contact.co_buyer_phone ? formatPhone(contact.co_buyer_phone) : ''} onClick={() => setDrawer('co_buyer_phone')} />
                 <MobileEditRow label="Email" value={contact.co_buyer_email || ''} onClick={() => setDrawer('co_buyer_email')} />
               </>
-            ) : hasCoBuyer ? (
+            ) : (
               <>
                 <DetailRow label="Name" value={contact.co_buyer_name} field="co_buyer_name" contactId={contact.id} />
                 <DetailRow label="Phone" value={contact.co_buyer_phone} field="co_buyer_phone" contactId={contact.id} displayFormatter={formatPhone} />
                 <DetailRow label="Email" value={contact.co_buyer_email} field="co_buyer_email" contactId={contact.id} type="email" />
               </>
-            ) : (
-              <p className="text-xs text-muted-foreground/70">No co-buyer info</p>
             )}
           </div>
         )}
