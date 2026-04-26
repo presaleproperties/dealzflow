@@ -318,6 +318,69 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
             )}
           </Group>
 
+          <Group title="Classification">
+            {fieldRow(
+              'Source',
+              (() => {
+                const sourceSet = new Set<string>([...LEAD_SOURCES, ...librarySources.map((s) => s.name)]);
+                if (form.source) sourceSet.add(form.source);
+                const sourceOptions = Array.from(sourceSet).sort();
+                return (
+                  <Select value={form.source || undefined} onValueChange={(v) => update('source', v)}>
+                    <SelectTrigger className={inputCls()}><SelectValue placeholder="Select source" /></SelectTrigger>
+                    <SelectContent>
+                      {sourceOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                );
+              })(),
+            )}
+            {fieldRow(
+              'Lead Type',
+              (() => {
+                const libMap = new Map<string, { label: string; count: number }>();
+                leadTypeLib.forEach((l) => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
+                LEAD_TYPES.forEach((t) => {
+                  if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { label: t, count: 0 });
+                });
+                const merged = Array.from(libMap.values()).sort((a, b) => b.count - a.count);
+                return (
+                  <InlineLibraryPicker
+                    selected={form.lead_types}
+                    library={merged}
+                    onChange={(next) => update('lead_types', next)}
+                    onCreate={(name) => createLeadType.mutate(name)}
+                    renderLabel={(v) => LEAD_TYPE_LABELS[v] ?? v}
+                    placeholder="Search or add lead type…"
+                    emptyText="No lead types yet"
+                  />
+                );
+              })(),
+            )}
+            {fieldRow(
+              'Tags',
+              <InlineLibraryPicker
+                selected={form.tags}
+                library={tagLib.map((t) => ({ label: t.name, count: t.usage_count }))}
+                onChange={(next) => update('tags', next)}
+                onCreate={(name) => createTag.mutate(name)}
+                placeholder="Search or add tag…"
+                emptyText="No tags yet"
+              />,
+            )}
+            {fieldRow(
+              'Projects',
+              <InlineLibraryPicker
+                selected={form.projects}
+                library={projectLib.map((p) => ({ label: p.name, count: p.usage_count }))}
+                onChange={(next) => update('projects', next)}
+                onCreate={(name) => createProject.mutate(name)}
+                placeholder="Search or add project…"
+                emptyText="No projects yet"
+              />,
+            )}
+          </Group>
+
           <Group title="Preferences">
             {fieldRow(
               'City',
