@@ -151,7 +151,11 @@ export default function CrmLeadsPage() {
   const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
   const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1);
+  const [page, setPage] = useState(() =>
+    mobileListCache.accumulated.length > 0
+      ? mobileListCache.page
+      : Number(searchParams.get('page')) || 1,
+  );
   const [pageSize, setPageSize] = useState(50);
   const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get('sort') as SortKey) || 'last_touch_at');
   const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
