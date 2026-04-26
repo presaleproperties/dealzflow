@@ -99,11 +99,11 @@ export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSend} disabled={sending || !to.trim() || !body.trim()}>
-              <Send className="w-4 h-4 mr-1.5" /> {sending ? 'Sending…' : 'Send SMS'}
+            <Button onClick={handleSend} disabled={!to.trim() || !body.trim()}>
+              <Send className="w-4 h-4 mr-1.5" /> Send SMS
             </Button>
           </div>
         </div>
