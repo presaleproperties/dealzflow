@@ -67,7 +67,7 @@ export function LeftSidebar({
     });
   };
 
-  const showActionRow = !!(onCall || onSms || onEmail);
+  const showActionRow = !!(onCall || onSms || onEmail || onWhatsApp);
   const contactExt = contact as unknown as Record<string, unknown>;
   const leadTypesArr = (contactExt.lead_types as string[] | undefined) ?? [];
   const syncSource = contactExt.sync_source as string | undefined;
