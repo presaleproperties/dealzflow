@@ -221,8 +221,9 @@ export function BottomNav() {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="p-0 border-0 rounded-t-2xl max-h-[88vh] flex flex-col"
-              style={{ background: BG, height: '88vh' }}
+              hideClose
+              className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+              style={{ background: BG, height: '90vh' }}
             >
               <MoreSheet
                 mode={mode}
@@ -282,108 +283,107 @@ function MoreSheet({
   return (
     <div className="flex flex-col h-full">
       {/* Drag handle */}
-      <div className="shrink-0 pt-2.5 pb-1">
+      <div className="shrink-0 pt-2.5 pb-1.5">
         <div
-          className="mx-auto w-10 h-1 rounded-full"
-          style={{ background: 'hsl(var(--muted-foreground) / 0.3)' }}
+          className="mx-auto w-9 h-[3px] rounded-full"
+          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
         />
       </div>
-      <div
-        className="shrink-0 flex items-center justify-between px-5 pb-3 pt-1 border-b"
-        style={{ borderColor: BORDER }}
-      >
+
+      {/* Header — single close button only */}
+      <div className="shrink-0 flex items-center justify-between px-5 pt-1 pb-3">
         <div className="flex items-center gap-2.5">
-          <img src={logoMark} alt="Dealzflow" className="w-[24px] h-[24px] rounded-[6px]" />
-          <span className="font-semibold text-[15px] tracking-[-0.02em] text-foreground">
-            Dealz<span style={{ color: GOLD }}>flow</span>
-            <span className="ml-2 text-[11px] font-medium uppercase tracking-wider" style={{ color: SUBTLE }}>
-              · {mode === 'crm' ? 'CRM' : 'Workspace'}
+          <img src={logoMark} alt="Dealzflow" className="w-[26px] h-[26px] rounded-[7px]" />
+          <div className="flex flex-col leading-none">
+            <span className="font-semibold text-[15px] tracking-[-0.02em] text-foreground">
+              Dealz<span style={{ color: GOLD }}>flow</span>
             </span>
-          </span>
+            <span className="text-[10px] mt-0.5 font-medium uppercase tracking-[0.16em]" style={{ color: SUBTLE }}>
+              {mode === 'crm' ? 'CRM Workspace' : 'Operations'}
+            </span>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="h-9 w-9 flex items-center justify-center rounded-full active:scale-95 transition-transform"
-          style={{ background: SURFACE, color: INACTIVE }}
+          className="h-9 w-9 flex items-center justify-center rounded-full active:scale-95 transition-transform border"
+          style={{ background: SURFACE, color: 'hsl(var(--foreground))', borderColor: BORDER }}
           aria-label="Close"
         >
-          <X className="w-[18px] h-[18px]" strokeWidth={2} />
+          <X className="w-[16px] h-[16px]" strokeWidth={2.2} />
         </button>
       </div>
 
-      {/* User row */}
-      <div
-        className="shrink-0 flex items-center gap-3 px-5 py-3.5 border-b"
-        style={{ borderColor: BORDER }}
-      >
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
-          style={{ background: GOLD, color: 'hsl(var(--primary-foreground))' }}
-        >
-          {initials}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[11px]" style={{ color: SUBTLE }}>Signed in as</div>
-          <div className="text-[13px] font-medium truncate text-foreground">{userEmail}</div>
-        </div>
-      </div>
-
-      {/* Quick switch (also available on the persistent pill, but reinforced here) */}
+      {/* Context switcher — premium segmented pill */}
       {isCrmMember && (
-        <div className="shrink-0 px-5 py-3 border-b" style={{ borderColor: BORDER }}>
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] mb-2" style={{ color: SUBTLE }}>
-            Switch context
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="shrink-0 px-5 pb-3">
+          <div
+            className="relative flex items-center p-1 rounded-full"
+            style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+          >
+            {/* Sliding indicator */}
+            <div
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 ease-out"
+              style={{
+                background: GOLD,
+                boxShadow: '0 4px 14px hsl(var(--primary) / 0.35)',
+                transform: mode === 'workspace' ? 'translateX(0)' : 'translateX(calc(100% + 8px))',
+              }}
+            />
             <button
               onClick={() => onSwitchMode('workspace')}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2.5 rounded-xl active:scale-[0.96] transition-all',
-                mode === 'workspace' ? 'ring-1' : ''
-              )}
-              style={{
-                background: mode === 'workspace' ? GOLD_BG : SURFACE,
-                color: mode === 'workspace' ? GOLD : 'hsl(var(--foreground))',
-                ['--tw-ring-color' as never]: GOLD_RING,
-              }}
+              className="relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full transition-colors"
+              style={{ color: mode === 'workspace' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))' }}
             >
-              <Briefcase className="w-4 h-4" strokeWidth={2} />
-              <span className="text-[13px] font-semibold">Workspace</span>
+              <Briefcase className="w-[15px] h-[15px]" strokeWidth={2.2} />
+              <span className="text-[13px] font-semibold tracking-[-0.01em]">Workspace</span>
             </button>
             <button
               onClick={() => onSwitchMode('crm')}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2.5 rounded-xl active:scale-[0.96] transition-all',
-                mode === 'crm' ? 'ring-1' : ''
-              )}
-              style={{
-                background: mode === 'crm' ? GOLD_BG : SURFACE,
-                color: mode === 'crm' ? GOLD : 'hsl(var(--foreground))',
-                ['--tw-ring-color' as never]: GOLD_RING,
-              }}
+              className="relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full transition-colors"
+              style={{ color: mode === 'crm' ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))' }}
             >
-              <Users className="w-4 h-4" strokeWidth={2} />
-              <span className="text-[13px] font-semibold">CRM</span>
+              <Users className="w-[15px] h-[15px]" strokeWidth={2.2} />
+              <span className="text-[13px] font-semibold tracking-[-0.01em]">CRM</span>
             </button>
           </div>
         </div>
       )}
 
+      {/* User row — minimalist */}
+      <div
+        className="shrink-0 mx-5 mb-3 flex items-center gap-3 px-3.5 py-2.5 rounded-2xl border"
+        style={{ borderColor: BORDER, background: SURFACE }}
+      >
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-[11.5px] font-bold shrink-0"
+          style={{ background: GOLD_BG, color: GOLD, border: `1px solid ${GOLD_RING}` }}
+        >
+          {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-medium uppercase tracking-[0.12em]" style={{ color: SUBTLE }}>Signed in</div>
+          <div className="text-[13px] font-medium truncate text-foreground">{userEmail}</div>
+        </div>
+      </div>
+
       {/* Scrollable groups */}
       <div
-        className="flex-1 overflow-y-auto px-3 py-4 space-y-5"
+        className="flex-1 overflow-y-auto px-5 pt-1 space-y-5"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
       >
         {groups.map(group => (
           <div key={group.label}>
             <div
-              className="px-3 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
+              className="px-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.18em]"
               style={{ color: SUBTLE }}
             >
               {group.label}
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {group.items.map(item => {
+            <div
+              className="rounded-2xl overflow-hidden border"
+              style={{ background: SURFACE, borderColor: BORDER }}
+            >
+              {group.items.map((item, idx) => {
                 const active = isActive(pathname, item.path);
                 const Icon = item.icon;
                 return (
@@ -391,19 +391,37 @@ function MoreSheet({
                     key={item.path}
                     to={item.path}
                     onClick={onClose}
-                    className="flex flex-col items-center justify-center gap-1.5 py-3.5 px-2 rounded-xl active:scale-[0.96] transition-transform"
+                    className={cn(
+                      'flex items-center gap-3.5 px-4 py-3.5 active:bg-muted/40 transition-colors relative',
+                      idx !== group.items.length - 1 && 'border-b',
+                    )}
                     style={{
-                      background: active ? GOLD_BG : SURFACE,
+                      borderColor: BORDER,
                       color: active ? GOLD : 'hsl(var(--foreground))',
                     }}
                   >
-                    <Icon className="w-[20px] h-[20px]" strokeWidth={active ? 2.2 : 1.8} />
+                    {active && (
+                      <span
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
+                        style={{ background: GOLD }}
+                      />
+                    )}
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                      style={{
+                        background: active ? GOLD_BG : 'hsl(var(--muted) / 0.5)',
+                        color: active ? GOLD : 'hsl(var(--foreground))',
+                      }}
+                    >
+                      <Icon className="w-[17px] h-[17px]" strokeWidth={active ? 2.2 : 1.8} />
+                    </div>
                     <span
-                      className="text-[11.5px] leading-tight text-center line-clamp-2"
+                      className="flex-1 text-[14px] tracking-[-0.01em]"
                       style={{ fontWeight: active ? 600 : 500 }}
                     >
                       {item.label}
                     </span>
+                    <span style={{ color: SUBTLE }} className="text-[18px] leading-none">›</span>
                   </Link>
                 );
               })}
@@ -412,39 +430,69 @@ function MoreSheet({
         ))}
 
         {/* Account actions */}
-        <div className="pt-2 border-t space-y-1" style={{ borderColor: BORDER }}>
-          <Link
-            to="/settings"
-            onClick={onClose}
-            className="flex items-center gap-3 min-h-[48px] px-3 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-            style={{
-              color: isActive(pathname, '/settings') ? GOLD : 'hsl(var(--foreground))',
-              background: isActive(pathname, '/settings') ? GOLD_BG : 'transparent',
-              fontWeight: isActive(pathname, '/settings') ? 600 : 500,
-            }}
+        <div>
+          <div
+            className="px-1 pb-2.5 text-[10px] font-bold uppercase tracking-[0.18em]"
+            style={{ color: SUBTLE }}
           >
-            <Settings2 className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            Settings
-          </Link>
-          {isAdmin && (
+            Account
+          </div>
+          <div
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: SURFACE, borderColor: BORDER }}
+          >
             <Link
-              to="/admin"
+              to="/settings"
               onClick={onClose}
-              className="flex items-center gap-3 min-h-[48px] px-3 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-              style={{ color: 'hsl(38 90% 60%)', fontWeight: 500 }}
+              className="flex items-center gap-3.5 px-4 py-3.5 active:bg-muted/40 transition-colors border-b"
+              style={{
+                borderColor: BORDER,
+                color: isActive(pathname, '/settings') ? GOLD : 'hsl(var(--foreground))',
+              }}
             >
-              <ShieldAlert className="w-[18px] h-[18px]" strokeWidth={1.8} />
-              Admin
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: isActive(pathname, '/settings') ? GOLD_BG : 'hsl(var(--muted) / 0.5)',
+                  color: isActive(pathname, '/settings') ? GOLD : 'hsl(var(--foreground))',
+                }}
+              >
+                <Settings2 className="w-[17px] h-[17px]" strokeWidth={1.9} />
+              </div>
+              <span className="flex-1 text-[14px] font-medium tracking-[-0.01em]">Settings</span>
+              <span style={{ color: SUBTLE }} className="text-[18px] leading-none">›</span>
             </Link>
-          )}
-          <button
-            onClick={onSignOut}
-            className="w-full flex items-center gap-3 min-h-[48px] px-3 rounded-xl text-[14px] active:scale-[0.98] transition-transform"
-            style={{ color: 'hsl(var(--destructive))', fontWeight: 500 }}
-          >
-            <LogOut className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            Sign out
-          </button>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={onClose}
+                className="flex items-center gap-3.5 px-4 py-3.5 active:bg-muted/40 transition-colors border-b"
+                style={{ borderColor: BORDER, color: 'hsl(38 90% 60%)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'hsl(38 90% 60% / 0.12)', color: 'hsl(38 90% 60%)' }}
+                >
+                  <ShieldAlert className="w-[17px] h-[17px]" strokeWidth={1.9} />
+                </div>
+                <span className="flex-1 text-[14px] font-medium tracking-[-0.01em]">Admin</span>
+                <span style={{ color: SUBTLE }} className="text-[18px] leading-none">›</span>
+              </Link>
+            )}
+            <button
+              onClick={onSignOut}
+              className="w-full flex items-center gap-3.5 px-4 py-3.5 active:bg-muted/40 transition-colors"
+              style={{ color: 'hsl(var(--destructive))' }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'hsl(var(--destructive) / 0.12)', color: 'hsl(var(--destructive))' }}
+              >
+                <LogOut className="w-[17px] h-[17px]" strokeWidth={1.9} />
+              </div>
+              <span className="flex-1 text-left text-[14px] font-medium tracking-[-0.01em]">Sign out</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
