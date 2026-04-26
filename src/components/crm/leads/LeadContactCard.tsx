@@ -6,10 +6,14 @@ import { InlineEditField } from './InlineEditField';
 import { CheckboxDropdown } from './CheckboxDropdown';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { formatMonthDay } from './MonthDayInput';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 function tryFormatDate(v: string | null): string | null {
   if (!v) return null;
+  // Month + day storage (MM-DD or --MM-DD) — show as "Aug 15".
+  const md = formatMonthDay(v);
+  if (md) return md;
   for (const fmt of ['yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy']) {
     const d = parse(v, fmt, new Date());
     if (isValid(d)) return format(d, 'MMM d, yyyy');
