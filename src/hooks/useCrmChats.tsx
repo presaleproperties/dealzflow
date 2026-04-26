@@ -24,7 +24,10 @@ export interface ChatThread {
  * Unified inbox feed — pulls from `crm_conversations` and joins the contact.
  * Used by the new mobile-first /crm/chats page.
  */
-export function useCrmChats(channelFilter?: ChatChannel | 'all') {
+/** UI-level filter — 'text' is a virtual channel meaning SMS ∪ WhatsApp. */
+export type ChatChannelFilter = ChatChannel | 'text' | 'all';
+
+export function useCrmChats(channelFilter?: ChatChannelFilter) {
   return useQuery({
     queryKey: ['crm-chats', channelFilter ?? 'all'],
     queryFn: async (): Promise<ChatThread[]> => {
@@ -37,7 +40,9 @@ export function useCrmChats(channelFilter?: ChatChannel | 'all') {
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .limit(200);
 
-      if (channelFilter && channelFilter !== 'all') {
+      if (channelFilter === 'text') {
+        q = q.in('channel', ['sms', 'whatsapp']);
+      } else if (channelFilter && channelFilter !== 'all') {
         q = q.eq('channel', channelFilter);
       }
 
