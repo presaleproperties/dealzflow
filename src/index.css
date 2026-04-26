@@ -245,39 +245,40 @@
    tidy by rounding to the nearest pixel via the browser).
    ────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Identity card name (desktop H1 in identity card) */
-  --ld-name-size: calc(24px * var(--device-scale));
-  --ld-name-weight: 700;
-  --ld-name-leading: 1.15;
-  --ld-name-tracking: -0.02em;
+  /* Identity card name — matches desktop h2 (lead names are not h1) */
+  --ld-name-size: calc(22px * var(--device-scale));
+  --ld-name-weight: 600;
+  --ld-name-leading: 1.2;
+  --ld-name-tracking: -0.025em;
 
-  /* Eyebrow / section header (desktop SectionHeader) */
-  --ld-eyebrow-size: calc(11px * var(--device-scale));
+  /* Eyebrow / section header — matches desktop section-header utility
+     (text-[11.5px] font-semibold uppercase tracking-[0.075em]) */
+  --ld-eyebrow-size: calc(11.5px * var(--device-scale));
   --ld-eyebrow-weight: 600;
-  --ld-eyebrow-tracking: 0.12em;
+  --ld-eyebrow-tracking: 0.075em;
 
-  /* Sub-eyebrow under name (e.g. source line) */
-  --ld-sub-size: calc(11px * var(--device-scale));
+  /* Sub-eyebrow under name (e.g. source line) — same eyebrow rhythm */
+  --ld-sub-size: calc(11.5px * var(--device-scale));
   --ld-sub-weight: 600;
-  --ld-sub-tracking: 0.14em;
+  --ld-sub-tracking: 0.075em;
 
-  /* Detail-row label / value */
-  --ld-row-label-size: calc(12px * var(--device-scale));
-  --ld-row-value-size: calc(13px * var(--device-scale));
+  /* Detail-row label / value — desktop body scale */
+  --ld-row-label-size: calc(13px * var(--device-scale));
+  --ld-row-value-size: calc(14px * var(--device-scale));
   --ld-row-pad-y: 8px;
 
   /* Insight cards */
   --ld-insight-value-size: calc(20px * var(--device-scale));
-  --ld-insight-label-size: calc(10px * var(--device-scale));
+  --ld-insight-label-size: calc(10.5px * var(--device-scale));
 
-  /* Tab triggers — read by both desktop and mobile lead-detail tabs */
-  --ld-tab-size: calc(13px * var(--device-scale));
+  /* Tab triggers — eyebrow style on both desktop and mobile lead-detail */
+  --ld-tab-size: calc(11.5px * var(--device-scale));
   --ld-tab-weight: 600;
-  --ld-tab-tracking: 0.06em;
+  --ld-tab-tracking: 0.075em;
   --ld-tab-pad-y: 10px;
 
   /* Top-bar back link */
-  --ld-topbar-link-size: calc(14px * var(--device-scale));
+  --ld-topbar-link-size: calc(13px * var(--device-scale));
 }
 
 
@@ -907,23 +908,24 @@
     --m-page-pad-y: var(--device-pad-y);          /* page top breathing room */
     --m-section-gap: var(--device-gap);           /* gap between sections */
     --m-row-pad-x: var(--device-pad-x);           /* list row side padding */
-    --m-row-pad-y: calc(16px * var(--device-scale));
-    --m-row-min-h: calc(88px * var(--device-scale));
-    --m-row-divider: hsl(var(--border) / 0.55);
-    --m-title-size: calc(28px * var(--device-scale));
-    --m-title-weight: 700;
-    --m-tab-size: calc(22px * var(--device-scale));
-    --m-name-size: calc(17px * var(--device-scale));
-    --m-meta-size: calc(15px * var(--device-scale));
-    --m-meta-weak-size: calc(14px * var(--device-scale));
-    --m-chip-h: calc(32px * var(--device-scale));
-    --m-chip-pad-x: calc(14px * var(--device-scale));
-    --m-chip-radius: 10px;
-    --m-score-w: calc(44px * var(--device-scale));
-    --m-score-h: calc(34px * var(--device-scale));
-    --m-score-radius: 8px;
-    --m-score-font: calc(18px * var(--device-scale));
-    --m-fab-size: calc(56px * var(--device-scale));
+    --m-row-pad-y: calc(14px * var(--device-scale));
+    --m-row-min-h: calc(72px * var(--device-scale));
+    --m-row-divider: hsl(var(--border) / 0.5);
+    /* Match desktop editorial scale — Plus Jakarta Sans, premium minimalist */
+    --m-title-size: calc(26px * var(--device-scale));   /* ≈ desktop h2 */
+    --m-title-weight: 600;
+    --m-tab-size: calc(13px * var(--device-scale));     /* eyebrow-style tabs */
+    --m-name-size: calc(15px * var(--device-scale));    /* desktop body */
+    --m-meta-size: calc(13px * var(--device-scale));
+    --m-meta-weak-size: calc(12px * var(--device-scale));
+    --m-chip-h: calc(28px * var(--device-scale));
+    --m-chip-pad-x: calc(12px * var(--device-scale));
+    --m-chip-radius: 8px;
+    --m-score-w: calc(40px * var(--device-scale));
+    --m-score-h: calc(30px * var(--device-scale));
+    --m-score-radius: 7px;
+    --m-score-font: calc(15px * var(--device-scale));
+    --m-fab-size: calc(52px * var(--device-scale));
   }
 
   /* Page wrapper — gives every mobile screen the same outer shell. */
@@ -938,19 +940,21 @@
   .m-page-title {
     font-size: var(--m-title-size);
     font-weight: var(--m-title-weight);
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+    letter-spacing: -0.028em;       /* desktop h2 tracking */
+    line-height: 1.15;
     color: hsl(var(--foreground));
   }
 
-  /* Tab strip (Leads / Contacts style) */
+  /* Tab strip — eyebrow style (uppercase, tight tracking) to match the
+     editorial desktop pattern instead of Lofty-style chunky tabs. */
   .m-tabs { @apply flex items-end gap-5; }
   .m-tab {
     font-size: var(--m-tab-size);
-    font-weight: 700;
-    letter-spacing: -0.015em;
+    font-weight: 600;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
     line-height: 1.15;
-    padding-bottom: 6px;
+    padding-bottom: 8px;
     color: hsl(var(--muted-foreground));
     border-bottom: 2px solid transparent;
     transition: color 160ms ease, border-color 160ms ease;
@@ -1109,14 +1113,9 @@ html.is-native, html.is-native body {
   -webkit-tap-highlight-color: transparent;
 }
 
-html.is-ios body {
-  /* San Francisco when running on iOS, fall back to our brand font everywhere
-     else. Matches Messages / WhatsApp typography. */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
-}
-html.is-android body {
-  font-family: 'Roboto', 'Plus Jakarta Sans', system-ui, sans-serif;
-}
+/* Native shells keep our brand typography (Plus Jakarta Sans) — we deliberately
+   do NOT swap to SF Pro / Roboto so the app feels like Dealzflow on every
+   platform instead of "another iOS / Material app". */
 
 /* Safe-area helper classes — use on any sticky header / floating composer
    inside a native shell so they clear the notch and home indicator. */
@@ -1164,8 +1163,8 @@ html.is-standalone body {
 }
 
 html.is-standalone body {
-  /* Use SF on iOS PWA so type matches every other native app */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Keep Plus Jakarta Sans in the iOS PWA — brand typography stays consistent
+     across web, mobile web and home-screen install. */
   /* Lock the body — only inner scroll containers should ever scroll */
   position: fixed;
   inset: 0;
