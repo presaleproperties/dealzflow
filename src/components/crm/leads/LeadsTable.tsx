@@ -550,14 +550,20 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
 
   // Score tier — consistent thresholds: HOT ≥70, WARM ≥40, COLD <40
   const tier = !hasScore ? null : score! >= 70 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
-  // Badge styling — gold for HOT (premium accent), neutral surfaces for WARM/COLD with readable contrast in both themes
+  // Bigger, more prominent score badge — sized like an iOS notification badge
+  // but readable at a glance. Gold for HOT, neutral surfaces for WARM/COLD.
   const badgeClass = tier === 'HOT'
-    ? 'bg-primary text-primary-foreground border border-primary/60'
+    ? 'bg-primary text-primary-foreground border border-primary shadow-sm shadow-primary/30'
     : tier === 'WARM'
-      ? 'bg-muted text-foreground border border-border'
+      ? 'bg-foreground/[0.08] text-foreground border border-foreground/10'
       : tier === 'COLD'
-        ? 'bg-muted/50 text-muted-foreground border border-border/60'
+        ? 'bg-muted/60 text-muted-foreground border border-border/50'
         : 'bg-transparent text-muted-foreground/60 border border-border/40';
+  const tierLabelClass = tier === 'HOT'
+    ? 'text-primary'
+    : tier === 'WARM'
+      ? 'text-foreground/70'
+      : 'text-muted-foreground';
 
   // "New" / never-touched indicator — gold dot
   const isNew = !contact.last_touch_at;
@@ -619,16 +625,23 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
           )}
         </div>
 
-        {/* Right column: numeric-only score (color tier-coded) + relative time */}
-        <div className="flex flex-col items-end justify-between gap-2 shrink-0 self-stretch min-h-[64px]">
-          <span
-            aria-label={hasScore ? `Lead score ${score}` : 'No score'}
-            className={`inline-flex items-center justify-center h-7 min-w-[36px] px-2 rounded-md text-[13px] font-bold tabular-nums ${badgeClass}`}
-          >
-            {hasScore ? score : '—'}
-          </span>
+        {/* Right column: prominent score badge + tier + relative time */}
+        <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[68px]">
+          <div className="flex flex-col items-center gap-0.5">
+            <span
+              aria-label={hasScore ? `Lead score ${score} out of 100` : 'No score yet'}
+              className={`inline-flex items-center justify-center h-12 min-w-[52px] px-2.5 rounded-2xl text-[22px] font-bold tabular-nums leading-none tracking-[-0.02em] ${badgeClass}`}
+            >
+              {hasScore ? score : '—'}
+            </span>
+            {tier && (
+              <span className={`text-[9.5px] font-bold uppercase tracking-[0.1em] mt-0.5 ${tierLabelClass}`}>
+                {tier}
+              </span>
+            )}
+          </div>
           {relTime && (
-            <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap tracking-tight">{relTime}</span>
+            <span className="text-[10.5px] text-muted-foreground/70 whitespace-nowrap tracking-tight">{relTime}</span>
           )}
         </div>
       </div>
