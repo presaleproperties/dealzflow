@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
-import { LeadStatusBadge } from './LeadStatusBadge';
+
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
 
