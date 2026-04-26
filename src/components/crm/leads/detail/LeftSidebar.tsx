@@ -346,6 +346,7 @@ export function LeftSidebar({
             <>
               <MobileEditRow label="Source" value={contact.source || ''} placeholder="Select source" onClick={() => setDrawer('source')} />
               <MobileEditRow label="Email 2" value={contact.email_secondary || ''} placeholder="Add" onClick={() => setDrawer('email_secondary')} />
+              <MobileEditRow label="Phone 2" value={contact.phone_secondary ? formatPhone(contact.phone_secondary) : ''} placeholder="Add" onClick={() => setDrawer('phone_secondary')} />
               <MobileEditRow label="City" value={contact.city || ''} placeholder="Select" onClick={() => setDrawer('city')} />
               <MobileEditRow label="Language" value={contact.language || ''} placeholder="Select" onClick={() => setDrawer('language')} />
               <MobileEditRow label="Beds" value={contact.bedrooms_preferred || ''} placeholder="e.g. 2-3" onClick={() => setDrawer('bedrooms')} />
