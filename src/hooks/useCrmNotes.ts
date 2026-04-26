@@ -62,6 +62,11 @@ export function useAddNote() {
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['crm-notes', vars.contact_id] });
+      // Score column on the leads list comes from a DB trigger — refresh both
+      // the full list and the paginated view so the badge reflects the new note.
+      qc.invalidateQueries({ queryKey: ['crm-contacts'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      qc.invalidateQueries({ queryKey: ['crm-contact', vars.contact_id] });
     },
     onError: (err: Error) => toast.error(err.message),
   });
