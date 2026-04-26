@@ -1,6 +1,9 @@
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+// Aligned with Tailwind's `lg` breakpoint so tablets (iPad portrait ~810px,
+// iPad landscape 1024px) get the mobile-optimized layout — TopNav and
+// RightRail are also gated on `lg`, so this keeps everything consistent.
+const MOBILE_BREAKPOINT = 1024;
 
 // Synchronous initializer prevents the first-render flash where mobile pages
 // briefly mount the desktop layout before swapping to mobile.
