@@ -164,7 +164,8 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
 
-      <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
+      {/* Inner tab strip — desktop only. On mobile the parent already has Details/Activity/Insights tabs. */}
+      <TabsList className="hidden md:flex w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
         <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Activity
         </TabsTrigger>
@@ -178,42 +179,45 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-6 space-y-5">
+      <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 p-3 md:p-6 space-y-3 md:space-y-5">
         <QuickActionBar contact={contact} />
 
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {filters.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-semibold transition-all uppercase tracking-[0.08em]',
-                filter === f.key
-                  ? 'bg-foreground text-background'
-                  : 'bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50',
-              )}
-            >
-              {f.label}
-              {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
-            </button>
-          ))}
+        {/* Filter strip — single horizontal scroll row on mobile, wrap on desktop */}
+        <div className="-mx-3 md:mx-0 px-3 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none">
+          <div className="flex items-center gap-1.5 md:flex-wrap min-w-max md:min-w-0">
+            {filters.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  'shrink-0 px-3 py-1.5 rounded-full text-[11px] md:text-xs font-semibold transition-all uppercase tracking-[0.08em]',
+                  filter === f.key
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted/40 md:bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                )}
+              >
+                {f.label}
+                {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="relative space-y-1.5">
           {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
-            <div className="absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
+            <div className="hidden md:block absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
 
           {pinnedNotes.length === 0 && (
-            <div className="mb-5 pl-9">
+            <div className="mb-4 md:mb-5 md:pl-9">
               <GenerateAiSummaryButton contactId={contact.id} hasExisting={false} />
             </div>
           )}
 
           {pinnedNotes.length > 0 && (
-            <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-1.5 pl-9">
-                <span className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
+            <div className="space-y-2 mb-4 md:mb-5">
+              <div className="flex items-center gap-1.5 md:pl-9">
+                <span className="text-[10.5px] md:text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
               </div>
               {pinnedNotes.map(note => {
                 if (note.note_type === 'ai_summary') {
@@ -261,9 +265,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           )}
 
           {groupedNotes.map(group => (
-            <div key={group.label} className="space-y-2 mb-5">
-              <div className="pl-9">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
+            <div key={group.label} className="space-y-2 mb-4 md:mb-5">
+              {/* Sticky day divider on mobile so users always know where they are */}
+              <div className="md:pl-9 sticky top-0 md:static z-10 bg-background/95 md:bg-transparent backdrop-blur md:backdrop-blur-none -mx-3 md:mx-0 px-3 md:px-0 py-1 md:py-0 border-b md:border-b-0 border-border/40">
+                <span className="text-[10.5px] md:text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
               {group.notes.map(note => {
                 const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
@@ -301,7 +306,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           ))}
 
           {filteredNotes.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
               <div className="w-10 h-10 rounded-full border border-border/60 flex items-center justify-center mb-3">
                 <StickyNote className="w-4 h-4 text-muted-foreground" />
               </div>
@@ -310,9 +315,27 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
             </div>
           )}
         </div>
+
+        {/* Mobile-only Appointments accordion — replaces the desktop inner tab */}
+        {showings.length > 0 && (
+          <details className="md:hidden mt-4 group rounded-xl border border-border bg-card/50 overflow-hidden">
+            <summary className="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/80">
+              <span className="flex items-center gap-2">
+                Appointments
+                <span className="text-[10.5px] bg-muted text-foreground/80 rounded-full px-2 py-0.5 font-semibold normal-case tracking-normal tabular-nums">
+                  {showings.length}
+                </span>
+              </span>
+              <span className="text-muted-foreground text-[18px] leading-none group-open:rotate-45 transition-transform">+</span>
+            </summary>
+            <div className="border-t border-border p-3">
+              <ShowingsTab contactId={contact.id} showings={showings as CrmShowing[]} />
+            </div>
+          </details>
+        )}
       </TabsContent>
 
-      <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-6">
+      <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-3 md:p-6">
         <ShowingsTab contactId={contact.id} showings={showings as CrmShowing[]} />
       </TabsContent>
 
@@ -325,3 +348,4 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
     </Tabs>
   );
 }
+
