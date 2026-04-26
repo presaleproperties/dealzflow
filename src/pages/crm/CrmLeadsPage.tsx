@@ -118,9 +118,9 @@ export default function CrmLeadsPage() {
   const segmentCounts = useMemo(() => computeSegmentCounts(allContacts, segments), [allContacts, segments]);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [letterFilter, setLetterFilter] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(DEFAULT_VISIBLE);
 
@@ -144,7 +144,7 @@ export default function CrmLeadsPage() {
   const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(() => !!searchParams.get('search'));
 
   // Mobile-only: collapse the title row on scroll, infinite scroll accumulator, sort sheet
   const mobileScrollRef = useRef<HTMLDivElement>(null);
@@ -176,13 +176,23 @@ export default function CrmLeadsPage() {
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
-    if (searchTimeout) clearTimeout(searchTimeout);
-    const t = setTimeout(() => {
-      setDebouncedSearch(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    // Empty string → flush immediately (clear button feels instant)
+    if (value.trim() === '') {
+      setDebouncedSearch('');
       setPage(1);
-    }, 300);
-    setSearchTimeoutId(t);
-  }, [searchTimeout]);
+      return;
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(value.trim());
+      setPage(1);
+    }, 250);
+  }, []);
+
+  // Cleanup pending debounce on unmount
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
 
   const { contacts, totalCount, isLoading, isFetching } = usePaginatedCrmContacts({
     page,
@@ -390,7 +400,13 @@ export default function CrmLeadsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setMobileSearchOpen(v => !v)}
+                      onClick={() => {
+                        setMobileSearchOpen(v => {
+                          // Closing the bar: also clear any active search so results aren't silently filtered.
+                          if (v) handleSearchChange('');
+                          return !v;
+                        });
+                      }}
                       className={`h-11 w-11 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-foreground'}`}
                       aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
                       aria-expanded={mobileSearchOpen}
