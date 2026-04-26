@@ -9,15 +9,12 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { isMember } = useCrmAccess();
-  // Pill adds ~38px to the nav for CRM members
-  const navOffset = isMember ? 96 : 58;
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
       <main
-        className="min-h-[calc(100vh-54px)] lg:pb-0 lg:pr-[52px]"
-        style={{ paddingBottom: `calc(${navOffset}px + env(safe-area-inset-bottom, 0px))` }}
+        className="min-h-[calc(100vh-54px)] lg:pr-[52px]"
+        style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
       >
         {children}
       </main>
