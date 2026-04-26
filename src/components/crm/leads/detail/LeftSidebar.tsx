@@ -499,6 +499,140 @@ export function LeftSidebar({
           </div>
         )}
       </div>
+      {/* ── Mobile drawers (rendered once; routed by `drawer` state) ── */}
+      {isMobile && (() => {
+        const selectedLT = leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : [];
+        const ltLibMap = new Map<string, { label: string; count: number }>();
+        leadTypeLib.forEach(l => ltLibMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
+        LEAD_TYPES.forEach(t => { if (!ltLibMap.has(t.toLowerCase())) ltLibMap.set(t.toLowerCase(), { label: t, count: 0 }); });
+        const ltMerged = Array.from(ltLibMap.values()).sort((a, b) => b.count - a.count);
+
+        const sourceSet = new Set<string>([...LEAD_SOURCES, ...librarySources.map(s => s.name)]);
+        if (contact.source) sourceSet.add(contact.source);
+        const sourceOptions = Array.from(sourceSet).sort();
+
+        return (
+          <>
+            <MobileMultiPickerDrawer
+              open={drawer === 'status'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Pipeline Stage"
+              options={LEAD_STATUSES.map(s => ({ value: s, label: s }))}
+              value={contact.status ? [contact.status] : []}
+              onChange={(next) => saveWithLog('status', next[0] ?? 'New Lead')}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'assigned_to'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Assigned To"
+              options={AGENTS.map(a => ({ value: a, label: a }))}
+              value={contact.assigned_to ? [contact.assigned_to] : []}
+              onChange={(next) => saveWithLog('assigned_to', next[0] ?? null)}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'source'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Source"
+              options={sourceOptions.map(s => ({ value: s, label: s }))}
+              value={contact.source ? [contact.source] : []}
+              onChange={(next) => save('source', next[0] ?? null)}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'city'} onOpenChange={(o) => !o && closeDrawer()}
+              title="City"
+              options={FRASER_VALLEY_CITIES.map(c => ({ value: c, label: c }))}
+              value={contact.city ? contact.city.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
+              onChange={(next) => save('city', next.join(' | ') || null)}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'language'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Language"
+              options={CRM_LANGUAGES.map(l => ({ value: l, label: l }))}
+              value={contact.language ? contact.language.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
+              onChange={(next) => save('language', next.join(' | ') || null)}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'lead_type'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Lead Type"
+              options={ltMerged.map(o => ({ value: o.label, label: LEAD_TYPE_LABELS[o.label] ?? o.label, count: o.count }))}
+              value={selectedLT}
+              onChange={(next) => updateContact.mutate({
+                id: contact.id,
+                updates: { lead_types: next, lead_type: next[0] ?? null },
+                oldValues: { lead_types: selectedLT, lead_type: contact.lead_type },
+              })}
+              onCreate={(name) => createLeadType.mutate(name)}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'tags'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Tags"
+              options={tagLib.map(t => ({ value: t.name, label: t.name, count: t.usage_count }))}
+              value={tags}
+              onChange={(next) => save('tags', next)}
+              onCreate={(name) => createTag.mutate(name)}
+            />
+            <MobileMultiPickerDrawer
+              open={drawer === 'projects'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Projects"
+              options={projectLib.map(p => ({ value: p.name, label: p.name, count: p.usage_count }))}
+              value={projects}
+              onChange={(next) => updateContact.mutate({
+                id: contact.id,
+                updates: { projects: next, project: next[0] ?? null },
+                oldValues: { projects: contact.projects ?? [], project: contact.project },
+              })}
+              onCreate={(name) => createProject.mutate(name)}
+            />
+
+            {/* Text drawers */}
+            <MobileTextEditDrawer
+              open={drawer === 'email_secondary'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Email 2" type="email" placeholder="name@example.com"
+              value={contact.email_secondary ?? ''}
+              onSave={(v) => save('email_secondary', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'bedrooms'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Bedrooms" placeholder="e.g. 2-3"
+              value={contact.bedrooms_preferred ?? ''}
+              onSave={(v) => save('bedrooms_preferred', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'budget_min'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Budget Min" type="number" placeholder="0"
+              value={contact.budget_min != null ? String(contact.budget_min) : ''}
+              onSave={(v) => save('budget_min', v ? Number(v) : null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'budget_max'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Budget Max" type="number" placeholder="0"
+              value={contact.budget_max != null ? String(contact.budget_max) : ''}
+              onSave={(v) => save('budget_max', v ? Number(v) : null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'birthday'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Birthday" placeholder="YYYY-MM-DD"
+              value={contact.birthday ?? ''}
+              onSave={(v) => save('birthday', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'co_buyer_name'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Co-Buyer Name" placeholder="Full name"
+              value={contact.co_buyer_name ?? ''}
+              onSave={(v) => save('co_buyer_name', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'co_buyer_phone'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Co-Buyer Phone" type="tel" placeholder="+1 …"
+              value={contact.co_buyer_phone ?? ''}
+              onSave={(v) => save('co_buyer_phone', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'co_buyer_email'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Co-Buyer Email" type="email" placeholder="name@example.com"
+              value={contact.co_buyer_email ?? ''}
+              onSave={(v) => save('co_buyer_email', v || null)}
+            />
+          </>
+        );
+      })()}
     </div>
   );
 }
