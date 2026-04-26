@@ -228,7 +228,7 @@ export function BottomNav() {
       <Link
         key={tab.path}
         to={tab.path}
-        onClick={() => triggerHaptic('light')}
+        onClick={() => triggerHaptic('selection')}
         className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
         style={{ color: active ? GOLD : INACTIVE }}
       >
@@ -292,6 +292,7 @@ export function BottomNav() {
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
               <SheetTrigger asChild>
                 <button
+                  onClick={() => triggerHaptic('selection')}
                   className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
                   style={{ color: moreActive ? GOLD : INACTIVE }}
                   aria-label="More"
@@ -711,7 +712,7 @@ function QuickActionsSheet({
             <button
               key={action.label}
               onClick={() => {
-                triggerHaptic('light');
+                triggerHaptic('selection');
                 action.onClick();
               }}
               className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border active:scale-[0.98] transition-all text-left"
