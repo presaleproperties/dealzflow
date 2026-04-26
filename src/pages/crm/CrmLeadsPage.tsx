@@ -479,14 +479,17 @@ export default function CrmLeadsPage() {
         >
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
-            <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden">
+            <div
+              className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden"
+              style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+            >
               {/* Title row — collapses on scroll to reclaim vertical space */}
               <div
                 className={`overflow-hidden transition-all duration-200 ease-out ${
                   headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
                   <h1 className="m-page-title">Leads</h1>
                   <div className="flex items-center gap-1">
                     <Button
@@ -875,7 +878,7 @@ export default function CrmLeadsPage() {
           onClick={() => setShowAdd(true)}
           aria-label="Add lead"
           className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center"
-          style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+          style={{ bottom: 'var(--bottom-nav-pad)' }}
         >
           <Plus className="w-6 h-6" strokeWidth={2.2} />
         </button>

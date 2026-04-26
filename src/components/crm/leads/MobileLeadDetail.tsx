@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ListTodo, Calendar, StickyNote, Plus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadStatusBadge } from './LeadStatusBadge';
@@ -42,40 +40,39 @@ export function MobileLeadDetail({
   detailsSlot,
   insightsSlot,
 }: MobileLeadDetailProps) {
-  const [plusOpen, setPlusOpen] = useState(false);
   const updateContact = useUpdateCrmContact();
   const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || '?';
 
   // Pad scroll panels to clear the floating bottom-nav (uses global token).
   const bottomPadStyle = { paddingBottom: 'var(--bottom-nav-pad)' } as const;
 
+  // Score tier for tinted chip.
+  const tier =
+    leadScore.score >= 70 ? 'hot'
+    : leadScore.score >= 40 ? 'warm'
+    : leadScore.score > 0 ? 'cold'
+    : 'none';
+
   return (
     <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
       {/* Slim identity header (sticky) */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0">
+      <div
+        className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
           <Link to="/crm/leads" className="inline-flex items-center gap-1 text-[13px] font-medium text-primary active:opacity-60 transition-opacity">
             <ArrowLeft className="w-4 h-4" /> Leads
           </Link>
-          {/* Prominent live lead score chip */}
+          {/* Compact tier-tinted score chip — no duplicate letter badge */}
           <div
-            className="inline-flex items-center gap-2 h-9 pl-2.5 pr-3 rounded-full border tabular-nums shadow-sm"
-            style={{
-              background: `${leadScore.color}14`,
-              borderColor: `${leadScore.color}40`,
-            }}
+            className="m-score tabular-nums"
+            data-tier={tier}
+            style={{ width: 'auto', height: '30px', padding: '0 12px', fontSize: '15px' }}
             aria-label={`Lead score ${leadScore.score} out of 100 — ${leadScore.label}`}
           >
-            <span
-              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.04em]"
-              style={{ background: leadScore.color, color: '#fff' }}
-            >
-              {leadScore.label?.[0] || '·'}
-            </span>
-            <span className="text-[18px] font-bold leading-none" style={{ color: leadScore.color }}>
-              {leadScore.score}
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {leadScore.score}
+            <span className="ml-1 text-[10px] font-semibold uppercase tracking-[0.06em] opacity-70">
               / 100
             </span>
           </div>
@@ -95,7 +92,7 @@ export function MobileLeadDetail({
               <LeadStatusBadge status={contact.status} />
             </div>
           </div>
-          {/* Inline stage swap — discreet */}
+          {/* Inline stage swap — discreet. The global "+" lives in BottomNav. */}
           <select
             value={contact.status || ''}
             onChange={(e) =>
@@ -105,22 +102,13 @@ export function MobileLeadDetail({
                 oldValues: { status: contact.status },
               })
             }
-            className="h-8 max-w-[96px] px-1.5 rounded-md bg-muted/40 border border-border text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+            className="h-8 max-w-[120px] px-2 rounded-md bg-muted/40 border border-border text-[12px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
             aria-label="Stage"
           >
             {LEAD_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          {/* Inline Quick add — saves a row */}
-          <button
-            onClick={() => setPlusOpen(true)}
-            aria-label="Quick add"
-            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-          >
-            <Plus className="w-4 h-4" strokeWidth={2.6} />
-          </button>
         </div>
       </div>
 
@@ -151,88 +139,7 @@ export function MobileLeadDetail({
         </TabsContent>
       </Tabs>
 
-      {/* + action sheet — premium quick-add */}
-      <Sheet open={plusOpen} onOpenChange={setPlusOpen}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-3xl border-t border-border/60 px-5 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+20px)] [&>button]:hidden"
-        >
-          {/* Drag handle */}
-          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted-foreground/25" aria-hidden />
-
-          <SheetHeader className="text-left space-y-1 pb-4">
-            <SheetTitle className="text-[20px] font-bold tracking-tight">Quick add</SheetTitle>
-            <p className="text-[13px] text-muted-foreground">
-              Log activity for {contact.first_name || 'this lead'}
-            </p>
-          </SheetHeader>
-
-          <div className="space-y-2">
-            <QuickAction
-              icon={StickyNote}
-              title="Note"
-              description="Capture a thought or call summary"
-              tint="amber"
-              onClick={() => {
-                setPlusOpen(false);
-                setTimeout(() => document.querySelector<HTMLTextAreaElement>('[data-quick-note-input]')?.focus(), 220);
-              }}
-            />
-            <QuickAction
-              icon={ListTodo}
-              title="Task"
-              description="Schedule a follow-up to do"
-              tint="blue"
-              onClick={() => { setPlusOpen(false); onTask(); }}
-            />
-            <QuickAction
-              icon={Calendar}
-              title="Showing"
-              description="Book a property tour"
-              tint="green"
-              onClick={() => { setPlusOpen(false); onShowing(); }}
-            />
-          </div>
-
-          <button
-            onClick={() => setPlusOpen(false)}
-            className="mt-5 w-full h-11 rounded-2xl bg-muted/60 text-[14px] font-semibold text-foreground active:scale-[0.98] transition-transform"
-          >
-            Cancel
-          </button>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
 
-const TINT_STYLES: Record<string, { bg: string; fg: string; ring: string }> = {
-  amber: { bg: 'bg-amber-500/12', fg: 'text-amber-500', ring: 'ring-amber-500/20' },
-  blue:  { bg: 'bg-sky-500/12',   fg: 'text-sky-500',   ring: 'ring-sky-500/20' },
-  green: { bg: 'bg-emerald-500/12', fg: 'text-emerald-500', ring: 'ring-emerald-500/20' },
-};
-
-function QuickAction({
-  icon: Icon, title, description, onClick, tint = 'amber', disabled,
-}: {
-  icon: any; title: string; description: string; onClick: () => void;
-  tint?: 'amber' | 'blue' | 'green'; disabled?: boolean;
-}) {
-  const t = TINT_STYLES[tint];
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="group w-full flex items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-3.5 text-left active:scale-[0.99] active:bg-muted/40 disabled:opacity-40 transition-all"
-    >
-      <span className={`shrink-0 h-11 w-11 rounded-xl flex items-center justify-center ring-1 ${t.bg} ${t.ring}`}>
-        <Icon className={`w-5 h-5 ${t.fg}`} strokeWidth={2.2} />
-      </span>
-      <span className="flex-1 min-w-0">
-        <span className="block text-[15px] font-semibold text-foreground leading-tight">{title}</span>
-        <span className="block text-[12.5px] text-muted-foreground leading-snug mt-0.5">{description}</span>
-      </span>
-      <span className="shrink-0 text-muted-foreground/50 text-[18px] leading-none pr-1">›</span>
-    </button>
-  );
-}
