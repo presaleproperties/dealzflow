@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { haptic } from '@/lib/native';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -599,11 +600,18 @@ function WhatsAppComposer({
     onMediaChange([...pendingMedia, ...arr]);
   };
 
+  // Wraps the parent's onSend with a native haptic so iOS / Android users feel
+  // the same little "thump" they'd get in WhatsApp.
+  const onSendWithHaptic = useCallback(async () => {
+    haptic('light');
+    await onSend();
+  }, [onSend]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     // Enter sends; Shift+Enter inserts a newline (standard chat behavior).
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      onSend();
+      onSendWithHaptic();
     }
   };
 
