@@ -63,16 +63,18 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const fileRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Reset on close
+  // Reset on close; sync channel with `initialChannel` on open
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setChannel(initialChannel);
+    } else {
       setBody('');
       setMediaUrls([]);
       setScheduled(false);
       setScheduledFor('');
       setFromOverride('');
     }
-  }, [open]);
+  }, [open, initialChannel]);
 
   // Resolve sender display
   const myNumber = useMemo(() => numbers.find(n => n.user_id === user?.id && n.is_active), [numbers, user]);
