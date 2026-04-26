@@ -26,6 +26,8 @@ interface Props {
   contact: CrmContact;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-select a channel (e.g. 'whatsapp' from the WhatsApp action button). */
+  initialChannel?: MessagingChannel;
 }
 
 function formatPhoneDisplay(phone?: string | null): string {
@@ -40,14 +42,14 @@ function formatPhoneDisplay(phone?: string | null): string {
   return phone;
 }
 
-export function SendTextDialog({ contact, open, onOpenChange }: Props) {
+export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms' }: Props) {
   const { user } = useAuth();
   const sendSms = useSendSms();
   const { data: templates = [] } = useSmsTemplates();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
 
-  const [channel, setChannel] = useState<MessagingChannel>('sms');
+  const [channel, setChannel] = useState<MessagingChannel>(initialChannel);
   const [body, setBody] = useState('');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [scheduled, setScheduled] = useState(false);
