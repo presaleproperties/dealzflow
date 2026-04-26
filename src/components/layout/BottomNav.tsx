@@ -263,15 +263,14 @@ export function BottomNav() {
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 native-chrome"
         aria-label="Primary"
       >
-        {/* Premium frosted bar — gradient + blur + hairline */}
+        {/* Slim flush bar — frosted glass, hugs the home indicator. */}
         <div
           className="relative backdrop-blur-2xl"
           style={{
             background:
-              'linear-gradient(180deg, hsl(var(--background) / 0.85) 0%, hsl(var(--background) / 0.98) 60%, hsl(var(--background)) 100%)',
+              'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
             borderTop: `1px solid ${BORDER}`,
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            boxShadow: '0 -8px 32px -12px hsl(0 0% 0% / 0.25)',
           }}
         >
           {/* Subtle gold sheen across top edge */}
@@ -282,9 +281,9 @@ export function BottomNav() {
             }}
           />
 
-          {/* Tabs row — equal-width grid for perfect centering */}
+          {/* Tabs row — 56px equal-width grid */}
           <div
-            className="grid h-[64px] mx-auto max-w-[520px] px-2"
+            className="grid h-[56px] mx-auto max-w-[520px] px-2"
             style={{ gridTemplateColumns: `repeat(${cellCount}, minmax(0, 1fr))` }}
           >
             {tabs.map(renderTab)}
