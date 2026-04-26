@@ -366,36 +366,36 @@ export function ComposerSurface({
   return (
     <div className="flex flex-col h-full min-h-0 bg-card">
       {/* Recipient bar — width matches the body composer (max-w-[920px]) */}
-      <div className="px-6 pt-4 pb-3 border-b border-border/70 bg-card shrink-0">
+      <div className="px-6 pt-5 pb-4 border-b border-border/50 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">New Message</h2>
+        <div className="flex items-baseline justify-between mb-3.5">
+          <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-foreground leading-none">New Message</h2>
           <button
             type="button"
-            className="text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground font-semibold"
+            className="text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground font-semibold transition-colors"
             onClick={() => setShowCcBcc((v) => !v)}
           >
             {showCcBcc ? 'Hide Cc/Bcc' : 'Add Cc/Bcc'}
           </button>
         </div>
 
-        <div className="space-y-0 divide-y divide-border/50 border-y border-border/50">
+        <div className="space-y-0 divide-y divide-border/40 rounded-lg border border-border/40 bg-background/40 px-3.5">
           {/* From */}
-          <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">From</Label>
+          <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+            <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">From</Label>
             <span className="text-[12.5px] text-foreground/90 truncate">
               {emailSettings?.sender_name
-                ? <><span className="font-medium">{emailSettings.sender_name}</span> <span className="text-muted-foreground">&lt;{emailSettings.reply_to ?? user?.email ?? ''}&gt;</span></>
+                ? <><span className="font-medium">{emailSettings.sender_name}</span> <span className="text-muted-foreground/80">&lt;{emailSettings.reply_to ?? user?.email ?? ''}&gt;</span></>
                 : (user?.email ?? '')}
             </span>
           </div>
 
           {/* To */}
-          <div className="grid grid-cols-[64px_1fr] items-start gap-3 py-2">
-            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold pt-1.5">To</Label>
+          <div className="grid grid-cols-[60px_1fr] items-start gap-3 py-2.5">
+            <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold pt-1.5">To</Label>
             <div className="min-h-[28px] flex flex-wrap gap-1.5 items-center">
               {recipients.length === 0 ? (
-                <span className="text-[12px] text-muted-foreground/70 mr-auto">
+                <span className="text-[12px] text-muted-foreground/60 mr-auto italic">
                   Search for a lead or pick from the right panel
                 </span>
               ) : (
@@ -404,9 +404,9 @@ export function ComposerSurface({
                     <span
                       key={r.id}
                       className={cn(
-                        'inline-flex items-center gap-1.5 h-6 pl-2 pr-0.5 rounded-full text-[11.5px] font-medium border',
+                        'inline-flex items-center gap-1.5 h-6 pl-2 pr-0.5 rounded-full text-[11.5px] font-medium border transition-colors',
                         r.email
-                          ? 'bg-muted/60 border-border text-foreground'
+                          ? 'bg-muted/60 border-border/60 text-foreground hover:bg-muted'
                           : 'bg-destructive/8 border-destructive/30 text-destructive',
                       )}
                       title={r.email ?? 'No email — will be skipped'}
@@ -417,7 +417,7 @@ export function ComposerSurface({
                         <button
                           type="button"
                           onClick={() => onRemoveRecipient(r.id)}
-                          className="rounded-full hover:bg-foreground/10 p-0.5"
+                          className="rounded-full hover:bg-foreground/10 p-0.5 transition-colors"
                           aria-label={`Remove ${formatContactName(r.first_name, r.last_name)}`}
                         >
                           <X className="h-2.5 w-2.5" />
@@ -442,7 +442,7 @@ export function ComposerSurface({
                 <button
                   type="button"
                   onClick={onClearRecipients}
-                  className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-1"
+                  className="ml-auto text-[10px] uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground px-1 transition-colors"
                 >
                   Clear
                 </button>
@@ -452,32 +452,32 @@ export function ComposerSurface({
 
           {showCcBcc && (
             <>
-              <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-                <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Cc</Label>
+              <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+                <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Cc</Label>
                 <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
-              <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-                <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Bcc</Label>
+              <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+                <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Bcc</Label>
                 <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
             </>
           )}
 
           {/* Subject */}
-          <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Subject</Label>
+          <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+            <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Subject</Label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Subject — supports {{lead.first_name}}"
-              className="h-8 text-[13.5px] font-semibold border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent placeholder:font-normal placeholder:text-muted-foreground/60"
+              className="h-8 text-[14px] font-semibold border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent placeholder:font-normal placeholder:text-muted-foreground/55 placeholder:italic tracking-[-0.01em]"
               maxLength={200}
             />
           </div>
         </div>
 
         {unreachable > 0 && (
-          <div className="mt-2 ml-[64px] flex items-center gap-1.5 text-[11px] text-amber-600">
+          <div className="mt-2.5 ml-1 flex items-center gap-1.5 text-[11px] text-amber-600">
             <AlertTriangle className="h-3 w-3" />
             {unreachable} selected lead{unreachable === 1 ? '' : 's'} ha{unreachable === 1 ? 's' : 've'} no email and will be skipped
           </div>
@@ -486,7 +486,7 @@ export function ComposerSurface({
       </div>
 
       {/* Mode tabs — aligned to body width */}
-      <div className="px-6 py-2 border-b border-border/70 bg-card shrink-0">
+      <div className="px-6 py-2 border-b border-border/40 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {(() => {
@@ -636,11 +636,11 @@ export function ComposerSurface({
         )}
       </div>
 
-      {/* Footer */}
-      <div className="px-6 py-3 border-t border-border/70 bg-card/95 backdrop-blur flex items-center justify-between gap-3 flex-wrap shrink-0">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] uppercase tracking-wider text-muted-foreground/80">Signature</span>
+      {/* Footer — premium sticky action bar */}
+      <div className="px-6 py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">Signature</span>
             <Select
               value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
               onValueChange={(v) => {
@@ -650,7 +650,7 @@ export function ComposerSurface({
               }}
               disabled={editingSignature}
             >
-              <SelectTrigger className="h-7 text-xs w-[180px]">
+              <SelectTrigger className="h-8 text-xs w-[180px] border-border/60 bg-background/60 hover:bg-background transition-colors">
                 <SelectValue placeholder="Pick signature" />
               </SelectTrigger>
               <SelectContent>
@@ -663,7 +663,7 @@ export function ComposerSurface({
               </SelectContent>
             </Select>
             {appendSignature && selectedSignatureId && !editingSignature && (
-              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 gap-1 text-[11px]" onClick={() => {
+              <Button type="button" size="sm" variant="ghost" className="h-8 px-2 gap-1 text-[11px] text-muted-foreground hover:text-foreground" onClick={() => {
                 const sig = signatures.find((s) => s.id === selectedSignatureId);
                 if (!sig) return;
                 setSigDraft(sig.html ?? '');
@@ -675,7 +675,7 @@ export function ComposerSurface({
             )}
             {editingSignature && (
               <>
-                <Button type="button" size="sm" className="h-7 px-2 gap-1 text-[11px]" disabled={upsertSignature.isPending} onClick={async () => {
+                <Button type="button" size="sm" className="h-8 px-2.5 gap-1 text-[11px]" disabled={upsertSignature.isPending} onClick={async () => {
                   const sig = signatures.find((s) => s.id === selectedSignatureId);
                   if (!sig) return;
                   try {
@@ -686,7 +686,7 @@ export function ComposerSurface({
                   {upsertSignature.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                   Save
                 </Button>
-                <Button type="button" size="sm" variant="ghost" className="h-7 px-2 gap-1 text-[11px] text-muted-foreground" onClick={() => { setEditingSignature(false); setSigDraft(''); }}>
+                <Button type="button" size="sm" variant="ghost" className="h-8 px-2 gap-1 text-[11px] text-muted-foreground" onClick={() => { setEditingSignature(false); setSigDraft(''); }}>
                   <X className="h-3 w-3" />
                   Cancel
                 </Button>
@@ -695,18 +695,28 @@ export function ComposerSurface({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={openSaveDialog} disabled={isPending} className="gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={openSaveDialog}
+            disabled={isPending}
+            className="h-9 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          >
             <Save className="h-3.5 w-3.5" />
             Save as template
           </Button>
+          <div className="h-6 w-px bg-border/60 mx-1" />
           <Button
             type="button"
             size="sm"
             onClick={handleSendClick}
             disabled={!canSend || isPending}
             className={cn(
-              'gap-1.5 min-w-[140px] font-semibold',
-              recipientCount > 1 && 'bg-primary',
+              'h-9 gap-2 min-w-[160px] px-4 font-semibold text-[12.5px] tracking-[-0.005em] rounded-lg',
+              'bg-primary text-primary-foreground hover:bg-primary/90',
+              'shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.5)] hover:shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.55)]',
+              'transition-all disabled:shadow-none disabled:opacity-50',
             )}
           >
             {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : recipientCount > 1 ? <Users className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
