@@ -972,8 +972,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Footer */}
-              <div className="px-5 py-3 border-t border-border bg-card flex items-center justify-between gap-3 flex-wrap shrink-0">
+              {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
+              <div className="hidden md:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
                   <div className="flex items-center gap-1.5">
