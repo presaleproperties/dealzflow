@@ -20,7 +20,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
         <TopNav />
         <CrmSubNav />
         <div
-          className="flex-1 min-h-0 px-3 sm:px-4 lg:px-6 pt-0 lg:pt-4 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain lg:pb-6"
+          className="flex-1 min-h-0 px-0 lg:px-6 pt-0 lg:pt-4 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain lg:pb-6"
           style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
         >
           {children}
