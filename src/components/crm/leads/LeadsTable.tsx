@@ -767,15 +767,7 @@ export function LeadsTable({
 
         {/* Edge-to-edge list — matches desktop table colors (bg-card, divide-border/50, muted header, primary/5 selection) */}
         <div className={`bg-card border-y border-border transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
-          {/* Header strip — mirrors desktop thead */}
-          <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {totalCount.toLocaleString()} {totalCount === 1 ? 'lead' : 'leads'}
-            </span>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Score
-            </span>
-          </div>
+          {/* Header strip removed on mobile per request — more space for leads */}
 
           <div className="divide-y divide-border/50">
             {contacts.map(contact => (
