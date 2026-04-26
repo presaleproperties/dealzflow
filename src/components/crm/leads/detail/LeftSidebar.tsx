@@ -727,7 +727,9 @@ export function LeftSidebar({
             />
             <MobileTextEditDrawer
               open={drawer === 'birthday'} onOpenChange={(o) => !o && closeDrawer()}
-              title="Birthday" placeholder="YYYY-MM-DD"
+              title="Birthday" placeholder="Pick month & day"
+              type="monthday"
+              description="Just the month and day — we don't need a year."
               value={contact.birthday ?? ''}
               onSave={(v) => save('birthday', v || null)}
             />
