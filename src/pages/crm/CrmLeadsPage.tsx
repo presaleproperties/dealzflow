@@ -207,6 +207,56 @@ export default function CrmLeadsPage() {
     },
   });
 
+  // ── Mobile infinite scroll: accumulate pages locally; reset whenever filters/sort change
+  const filtersKey = useMemo(() => JSON.stringify({
+    debouncedSearch, filterContactType, filterStatus, filterSource, filterAgent,
+    filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+    filterPropertyType, filterCity, filterPreApproved, filterCampaign, letterFilter,
+    pipelineView, activeSegmentId, activeViewId, sortKey, sortDir, pageSize,
+  }), [debouncedSearch, filterContactType, filterStatus, filterSource, filterAgent,
+       filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+       filterPropertyType, filterCity, filterPreApproved, filterCampaign, letterFilter,
+       pipelineView, activeSegmentId, activeViewId, sortKey, sortDir, pageSize]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (lastFiltersKeyRef.current !== filtersKey) {
+      lastFiltersKeyRef.current = filtersKey;
+      setAccumulated([]);
+      if (page !== 1) setPage(1);
+      return;
+    }
+    if (contacts.length === 0) return;
+    setAccumulated(prev => {
+      // Merge by id to avoid duplicates if a page is re-fetched
+      const seen = new Set(prev.map((c: any) => c.id));
+      const additions = contacts.filter((c: any) => !seen.has(c.id));
+      if (additions.length === 0 && page === 1) return contacts as any[];
+      if (page === 1) return contacts as any[];
+      return [...prev, ...additions];
+    });
+  }, [isMobile, contacts, filtersKey, page]);
+
+  const mobileContacts = isMobile ? accumulated : contacts;
+  const hasMoreMobile = isMobile && accumulated.length < totalCount && !isFetching;
+
+  // Infinite scroll listener — fires when user is within 600px of bottom
+  useEffect(() => {
+    if (!isMobile) return;
+    const el = mobileScrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      // Collapse header after 32px scroll
+      setHeaderCollapsed(el.scrollTop > 32);
+      // Load more when near bottom
+      if (hasMoreMobile && el.scrollHeight - el.scrollTop - el.clientHeight < 600) {
+        setPage(p => p + 1);
+      }
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [isMobile, hasMoreMobile]);
+
   const activeFilterCount = [
     filterContactType ? 1 : 0,
     filterStatus.length > 0 ? 1 : 0,
