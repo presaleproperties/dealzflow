@@ -1109,14 +1109,9 @@ html.is-native, html.is-native body {
   -webkit-tap-highlight-color: transparent;
 }
 
-html.is-ios body {
-  /* San Francisco when running on iOS, fall back to our brand font everywhere
-     else. Matches Messages / WhatsApp typography. */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
-}
-html.is-android body {
-  font-family: 'Roboto', 'Plus Jakarta Sans', system-ui, sans-serif;
-}
+/* Native shells keep our brand typography (Plus Jakarta Sans) — we deliberately
+   do NOT swap to SF Pro / Roboto so the app feels like Dealzflow on every
+   platform instead of "another iOS / Material app". */
 
 /* Safe-area helper classes — use on any sticky header / floating composer
    inside a native shell so they clear the notch and home indicator. */
