@@ -142,7 +142,7 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
     queryFn: async () => {
       let query = supabase
         .from('crm_contacts')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'estimated' });
 
       if (filters.search) {
         const q = `%${filters.search}%`;
