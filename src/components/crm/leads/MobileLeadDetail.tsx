@@ -169,7 +169,7 @@ export function MobileLeadDetail({
 
       {/* Bottom-fixed action bar — log/note/task/showing always reachable */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border px-3 py-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
       >
         <div className="grid grid-cols-4 gap-2 max-w-md mx-auto">
