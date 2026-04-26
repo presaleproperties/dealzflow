@@ -53,13 +53,32 @@ export function MobileLeadDetail({
     <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
       {/* Slim identity header (sticky) */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0">
-        <div className="px-3 pt-2 pb-1 flex items-center justify-between">
+        <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
           <Link to="/crm/leads" className="inline-flex items-center gap-1 text-[13px] font-medium text-primary active:opacity-60 transition-opacity">
             <ArrowLeft className="w-4 h-4" /> Leads
           </Link>
-          <span className="text-[11px] text-muted-foreground tabular-nums font-semibold">
-            Score <span className="text-foreground">{leadScore.score}</span>
-          </span>
+          {/* Prominent live lead score chip */}
+          <div
+            className="inline-flex items-center gap-2 h-9 pl-2.5 pr-3 rounded-full border tabular-nums shadow-sm"
+            style={{
+              background: `${leadScore.color}14`,
+              borderColor: `${leadScore.color}40`,
+            }}
+            aria-label={`Lead score ${leadScore.score} out of 100 — ${leadScore.label}`}
+          >
+            <span
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.04em]"
+              style={{ background: leadScore.color, color: '#fff' }}
+            >
+              {leadScore.label?.[0] || '·'}
+            </span>
+            <span className="text-[18px] font-bold leading-none" style={{ color: leadScore.color }}>
+              {leadScore.score}
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              / 100
+            </span>
+          </div>
         </div>
         <div className="px-3 pb-2 flex items-center gap-2.5">
           <div
