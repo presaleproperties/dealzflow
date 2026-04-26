@@ -781,6 +781,56 @@ export default function CrmLeadsPage() {
         onClose={() => setManagePipelinesOpen(false)}
         segmentCounts={segmentCounts}
       />
+
+      {/* Mobile sort sheet — descriptive labels instead of an opaque icon */}
+      {isMobile && (
+        <Sheet open={sortSheetOpen} onOpenChange={setSortSheetOpen}>
+          <SheetContent
+            side="bottom"
+            className="rounded-t-2xl border-t border-border [&>button]:hidden p-0"
+          >
+            <div className="px-4 pt-3 pb-2">
+              <div className="mx-auto h-1 w-10 rounded-full bg-border mb-3" />
+              <h3 className="text-[15px] font-semibold tracking-tight text-foreground">Sort leads by</h3>
+            </div>
+            <div className="px-2 pb-4">
+              {SORT_OPTIONS.map(opt => {
+                const isActive = sortKey === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => {
+                      if (sortKey === opt.key) {
+                        setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+                      } else {
+                        setSortKey(opt.key);
+                        setSortDir(opt.defaultDir);
+                      }
+                      setPage(1);
+                      setSortSheetOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-lg text-[14px] transition-colors ${
+                      isActive ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted/40'
+                    }`}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="flex items-center gap-2 text-muted-foreground text-[12px]">
+                      {isActive && (
+                        <>
+                          <span className="uppercase tracking-wider font-semibold text-primary">
+                            {sortDir === 'asc' ? 'Asc' : 'Desc'}
+                          </span>
+                          <Check className="w-4 h-4 text-primary" />
+                        </>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }
