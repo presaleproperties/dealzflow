@@ -306,11 +306,15 @@ export function LeftSidebar({
         </div>
       </div>
 
-      {/* Assigned To — placed right after Details so ownership sits with the lead facts */}
-      <div className="space-y-2">
+      {/* Assigned To — placed right after Details so ownership sits with the lead facts.
+          Uses a gentle slide-in so it feels smooth when swiping back into the lead detail on mobile. */}
+      <div
+        className="space-y-2 animate-fade-in motion-safe:[animation-duration:420ms] [animation-delay:60ms] [animation-fill-mode:both] will-change-transform"
+        style={{ contain: 'layout paint' }}
+      >
         <SectionHeader>Assigned To</SectionHeader>
         <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
-          <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-sm bg-card transition-all duration-200"><SelectValue placeholder="Select agent" /></SelectTrigger>
           <SelectContent>
             {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
