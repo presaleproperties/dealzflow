@@ -270,7 +270,10 @@ export function BottomNav() {
         />
         {/* Edge-to-edge floating pill — flush bottom so Safari's URL bar
             moves it naturally on scroll. */}
-        <div className="px-3 pb-1.5 flex justify-center pointer-events-none">
+        <div
+          className="px-2 flex justify-center pointer-events-none"
+          style={{ paddingBottom: 'max(6px, env(safe-area-inset-bottom, 0px))' }}
+        >
           <div
             className="pointer-events-auto relative flex items-center h-[56px] rounded-full w-full"
             style={{
