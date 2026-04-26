@@ -53,8 +53,12 @@ export function LeftSidebar({
   contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail, onWhatsApp,
 }: Props) {
   const updateContact = useUpdateCrmContact();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const isMobile = useIsMobile();
   // Mobile drawer router — single state lets us animate one drawer at a time
   // and avoid stacked sheets which feel heavy on phone.
