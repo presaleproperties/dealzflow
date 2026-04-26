@@ -16,6 +16,7 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
+import { MonthDayInput } from '@/components/crm/leads/MonthDayInput';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
