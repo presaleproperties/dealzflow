@@ -8,6 +8,7 @@ import { formatContactName, formatPhone } from '@/lib/format';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/ChatThreadSkeleton';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
 
