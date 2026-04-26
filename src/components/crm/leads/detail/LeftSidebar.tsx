@@ -221,6 +221,42 @@ export function LeftSidebar({
 
       <EditLeadDetailsSheet contact={contact} open={editOpen} onOpenChange={setEditOpen} />
 
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {formatContactName(contact.first_name, contact.last_name) || 'This lead'} will be permanently removed along with their notes, messages, and activity. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={async (e) => {
+                e.preventDefault();
+                setDeleting(true);
+                try {
+                  const { error } = await supabase.from('crm_contacts').delete().eq('id', contact.id);
+                  if (error) throw error;
+                  toast.success('Lead deleted');
+                  queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+                  setDeleteOpen(false);
+                  navigate('/crm/leads');
+                } catch (err) {
+                  toast.error(`Delete failed: ${(err as Error).message}`);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting…' : 'Delete lead'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {showActionRow && (
         <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
