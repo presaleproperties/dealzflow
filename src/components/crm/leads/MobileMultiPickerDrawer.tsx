@@ -38,25 +38,48 @@ export function MobileMultiPickerDrawer({
 }: Props) {
   const [pending, setPending] = useState<string[]>(value);
   const [search, setSearch] = useState('');
+  // Snapshot of which values were selected when the drawer opened.
+  // We sort *these* to the top (and keep them pinned) so toggling a row
+  // doesn't make rows jump around mid-interaction. Newly-selected items
+  // stay in their original position until the next open.
+  const [initialSelected, setInitialSelected] = useState<string[]>(value);
 
   useEffect(() => {
     if (open) {
       setPending(value);
+      setInitialSelected(value);
       setSearch('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Reorder options so initially-selected ones appear first (preserving
+  // their relative order from the source list), then everything else.
+  const ordered = useMemo(() => {
+    if (initialSelected.length === 0) return options;
+    const selectedSet = new Set(initialSelected);
+    const top = options.filter((o) => selectedSet.has(o.value));
+    const rest = options.filter((o) => !selectedSet.has(o.value));
+    return [...top, ...rest];
+  }, [options, initialSelected]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((o) => o.label.toLowerCase().includes(q));
-  }, [options, search]);
+    if (!q) return ordered;
+    return ordered.filter((o) => o.label.toLowerCase().includes(q));
+  }, [ordered, search]);
 
   const exactMatch = useMemo(
     () => options.some((o) => o.label.toLowerCase() === search.trim().toLowerCase()),
     [options, search],
   );
+
+  // Index of the first non-selected row (used to draw a subtle divider
+  // between "Selected" and "Available" sections when not searching).
+  const firstUnselectedIndex = useMemo(() => {
+    if (search.trim() || initialSelected.length === 0) return -1;
+    return filtered.findIndex((o) => !initialSelected.includes(o.value));
+  }, [filtered, initialSelected, search]);
 
   const toggle = (val: string) => {
     setPending((prev) => (prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]));
