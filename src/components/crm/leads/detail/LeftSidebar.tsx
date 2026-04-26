@@ -371,20 +371,45 @@ export function LeftSidebar({
                   <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
                 </div>
               </div>
-              {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
-              <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
-              <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
+              <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />
+              <DetailRow label="Phone 2" value={contact.phone_secondary} field="phone_secondary" contactId={contact.id} displayFormatter={formatPhone} />
 
-              {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
-
-              {(contact.budget_min != null || contact.budget_max != null) && (
-                <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                  <span className="text-xs text-muted-foreground">Budget</span>
-                  <span className="text-[13px] text-foreground font-medium tabular-nums">
-                    {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '—'}
-                  </span>
+              {/* City + Language — multi-select to match mobile */}
+              <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground shrink-0 pt-1">City</span>
+                <div className="flex-1 min-w-0">
+                  <InlineLibraryPicker
+                    selected={contact.city ? contact.city.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
+                    library={FRASER_VALLEY_CITIES.map((c) => ({ label: c, count: 0 }))}
+                    onChange={(next) => save('city', next.join(' | ') || null)}
+                    placeholder="Search or add city…"
+                    emptyText="No cities"
+                  />
                 </div>
-              )}
+              </div>
+              <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground shrink-0 pt-1">Language</span>
+                <div className="flex-1 min-w-0">
+                  <InlineLibraryPicker
+                    selected={contact.language ? contact.language.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
+                    library={CRM_LANGUAGES.map((l) => ({ label: l, count: 0 }))}
+                    onChange={(next) => save('language', next.join(' | ') || null)}
+                    placeholder="Search or add language…"
+                    emptyText="No languages"
+                  />
+                </div>
+              </div>
+
+              <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />
+
+              <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground">Budget</span>
+                <span className="text-[13px] text-foreground font-medium tabular-nums">
+                  {contact.budget_min != null ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max != null ? formatCurrency(Number(contact.budget_max)) : '—'}
+                </span>
+              </div>
+
+              <DetailRow label="Birthday" value={contact.birthday} field="birthday" contactId={contact.id} />
             </>
           )}
 
