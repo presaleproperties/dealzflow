@@ -170,13 +170,17 @@ export default function LeadDetailPage() {
   // Mobile layout
   if (isMobile) {
     const onCall = () => c.phone && (window.location.href = `tel:${c.phone}`);
+    const onSms = () => { setTextChannel('sms'); setShowText(true); };
+    const onWhatsApp = () => {
+      void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
+    };
     return (
       <>
         <MobileLeadDetail
           contact={c}
           leadScore={leadScore}
           onCall={onCall}
-          onText={() => setShowText(true)}
+          onText={onSms}
           onEmail={() => setShowEmail(true)}
           onTask={() => setShowTask(true)}
           onShowing={() => setShowShowing(true)}
@@ -184,7 +188,7 @@ export default function LeadDetailPage() {
             <CenterColumn
               contact={c}
               onCall={onCall}
-              onText={() => setShowText(true)}
+              onText={onSms}
               onEmail={() => setShowEmail(true)}
               onTask={() => setShowTask(true)}
               onShowing={() => setShowShowing(true)}
@@ -197,8 +201,9 @@ export default function LeadDetailPage() {
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
               onCall={onCall}
-              onSms={() => setShowText(true)}
+              onSms={onSms}
               onEmail={() => setShowEmail(true)}
+              onWhatsApp={onWhatsApp}
             />
           }
           insightsSlot={
@@ -207,7 +212,7 @@ export default function LeadDetailPage() {
               onAddTask={() => setShowTask(true)}
               onAddShowing={() => setShowShowing(true)}
               onCall={onCall}
-              onText={() => setShowText(true)}
+              onText={onSms}
               onEmail={() => setShowEmail(true)}
               leadScore={leadScore}
               lastTouchHours={lastTouchHours}
@@ -216,7 +221,7 @@ export default function LeadDetailPage() {
         />
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
-        <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
+        <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
         <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
         <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
       </>
