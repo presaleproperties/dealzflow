@@ -204,7 +204,7 @@ export default function SettingsPage() {
         }
       />
 
-      <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100vh-56px)]">
+      <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
       <motion.div 
         className="p-4 md:p-6 lg:p-6 max-w-5xl"
         initial={{ opacity: 0, y: 20 }}

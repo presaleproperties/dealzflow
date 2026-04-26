@@ -179,7 +179,7 @@ export default function ForecastPage() {
         subtitle={allSelected ? 'Multi-Year Projection' : `${availableYears.filter(y => !excludedYears.has(y)).join(', ')} Outlook`}
       />
 
-      <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100vh-56px)]">
+      <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
         <motion.div 
           className="p-3 sm:p-4 md:p-6 lg:p-6 space-y-3 sm:space-y-4"
           variants={containerVariants}

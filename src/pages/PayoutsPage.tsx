@@ -438,7 +438,7 @@ export default function PayoutsPage() {
         }
       />
 
-      <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100vh-56px)]">
+      <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
         <motion.div 
           className="p-4 sm:p-5 md:p-6 lg:p-6 space-y-4 sm:space-y-5"
           variants={containerVariants}
