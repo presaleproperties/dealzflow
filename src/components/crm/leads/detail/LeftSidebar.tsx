@@ -528,7 +528,7 @@ export function LeftSidebar({
       </div>
 
       {/* Co-Buyer */}
-      <div className="space-y-2.5">
+      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
         <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
           <SectionHeader>{hasCoBuyer ? 'Co-Buyer' : 'Family Member'}</SectionHeader>
           {coBuyerOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
