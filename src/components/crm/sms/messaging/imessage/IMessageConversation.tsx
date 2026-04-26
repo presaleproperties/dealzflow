@@ -613,6 +613,24 @@ function IMessageComposer({
   const seg = smsSegments(value);
   const canSend = (value.trim().length > 0 || pendingMedia.length > 0) && !sending;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize: grow the textarea up to MAX_LINES (matches iMessage / WhatsApp).
+  // The right-side icons stay aligned because the parent row uses items-end and
+  // each icon button has a fixed h-9, so they pin to the bottom line of the pill.
+  const LINE_HEIGHT = 21;   // 15px font * 1.4 line-height (matches className)
+  const MAX_LINES   = 3;
+  const MAX_HEIGHT  = LINE_HEIGHT * MAX_LINES; // 63px
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    // Reset to a single line so scrollHeight reflects only the content.
+    el.style.height = 'auto';
+    const next = Math.min(el.scrollHeight, MAX_HEIGHT);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+  }, [value, MAX_HEIGHT]);
 
   const defaultScheduled = useMemo(() => {
     const d = new Date(Date.now() + 60 * 60 * 1000);
@@ -704,7 +722,7 @@ function IMessageComposer({
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -798,15 +816,17 @@ function IMessageComposer({
             </PopoverContent>
           </Popover>
 
-          {/* Pill input */}
-          <div className="imsg-composer-pill flex items-center flex-1 px-4 py-1.5 min-h-[40px]">
+          {/* Pill input — grows up to 3 lines, then scrolls internally */}
+          <div className="imsg-composer-pill flex items-end flex-1 min-w-0 px-4 py-1.5 min-h-[40px]">
             <Textarea
+              ref={textareaRef}
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="Message"
               rows={1}
-              className="flex-1 min-h-[24px] max-h-40 resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55"
+              className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
+              style={{ maxHeight: MAX_HEIGHT }}
             />
           </div>
 
