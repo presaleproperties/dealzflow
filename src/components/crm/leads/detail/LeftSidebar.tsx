@@ -374,33 +374,51 @@ export function LeftSidebar({
       {/* Tags */}
       <div className="space-y-2.5">
         <SectionHeader>Tags</SectionHeader>
-        <InlineLibraryPicker
-          selected={tags}
-          library={tagLib.map(t => ({ label: t.name, count: t.usage_count }))}
-          onChange={(next) => save('tags', next)}
-          onCreate={(name) => createTag.mutate(name)}
-          placeholder="Search or add tag…"
-          emptyText="No tags yet"
-        />
+        {isMobile ? (
+          <MobileEditRow
+            label="Selected"
+            value={tags.length ? tags.join(', ') : ''}
+            placeholder="Add tags"
+            onClick={() => setDrawer('tags')}
+          />
+        ) : (
+          <InlineLibraryPicker
+            selected={tags}
+            library={tagLib.map(t => ({ label: t.name, count: t.usage_count }))}
+            onChange={(next) => save('tags', next)}
+            onCreate={(name) => createTag.mutate(name)}
+            placeholder="Search or add tag…"
+            emptyText="No tags yet"
+          />
+        )}
       </div>
 
       {/* Projects */}
       <div className="space-y-2.5">
         <SectionHeader>Projects</SectionHeader>
-        <InlineLibraryPicker
-          selected={projects}
-          library={projectLib.map(p => ({ label: p.name, count: p.usage_count }))}
-          onChange={(next) => {
-            updateContact.mutate({
-              id: contact.id,
-              updates: { projects: next, project: next[0] ?? null },
-              oldValues: { projects: contact.projects ?? [], project: contact.project },
-            });
-          }}
-          onCreate={(name) => createProject.mutate(name)}
-          placeholder="Search or add project…"
-          emptyText="No projects yet"
-        />
+        {isMobile ? (
+          <MobileEditRow
+            label="Selected"
+            value={projects.length ? projects.join(', ') : ''}
+            placeholder="Add projects"
+            onClick={() => setDrawer('projects')}
+          />
+        ) : (
+          <InlineLibraryPicker
+            selected={projects}
+            library={projectLib.map(p => ({ label: p.name, count: p.usage_count }))}
+            onChange={(next) => {
+              updateContact.mutate({
+                id: contact.id,
+                updates: { projects: next, project: next[0] ?? null },
+                oldValues: { projects: contact.projects ?? [], project: contact.project },
+              });
+            }}
+            onCreate={(name) => createProject.mutate(name)}
+            placeholder="Search or add project…"
+            emptyText="No projects yet"
+          />
+        )}
       </div>
 
       {/* Co-Buyer */}
