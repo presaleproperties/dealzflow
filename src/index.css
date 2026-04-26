@@ -835,3 +835,107 @@ html.is-native .native-press:active {
   transform: scale(0.97);
   opacity: 0.85;
 }
+
+/* ==========================================================================
+   iOS PWA standalone mode — applied when launched from the Home Screen
+   (Add to Home Screen). The .is-standalone class is toggled by
+   useStandaloneMode() so we can give the same native-grade treatment we
+   give Capacitor: real safe-area padding, no rubber-band, no tap flash,
+   stable viewport, no input zoom, no callout/selection on chrome, and
+   keyboard-aware layout.
+   ========================================================================== */
+html.is-standalone,
+html.is-standalone body {
+  /* Lock the viewport so swipes never feel like a "browser scroll" */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  /* Prevent iOS Safari from shrinking text on landscape rotation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html.is-standalone body {
+  /* Use SF on iOS PWA so type matches every other native app */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Lock the body — only inner scroll containers should ever scroll */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* Native-feel font smoothing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.is-standalone #root {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Allow text selection where it's expected (inputs, content areas) even
+   when we suppress it on the rest of the chrome. */
+html.is-standalone input,
+html.is-standalone textarea,
+html.is-standalone [contenteditable="true"],
+html.is-standalone .allow-select {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Kill the iOS auto-zoom-on-focus by forcing 16px minimum input type size. */
+html.is-standalone input,
+html.is-standalone select,
+html.is-standalone textarea {
+  font-size: 16px;
+}
+
+/* Remove the dotted focus ring that iOS Safari draws on tap */
+html.is-standalone *:focus { outline: none; }
+html.is-standalone *:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Buttons / links inside chrome should never show the iOS "press" callout
+   or selection ring. Apply .native-chrome to nav rows, headers, tabs. */
+.native-chrome,
+.native-chrome * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Status bar spacer — use INSIDE a sticky/fixed bar so it grows under the
+   notch instead of being hidden by it. Works for both PWA and Capacitor. */
+.native-status-spacer { height: env(safe-area-inset-top, 0px); }
+
+/* Bottom-nav clearance helper (alias kept for backwards compat) */
+:root { --bottom-nav-pad: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+/* Force any 100vh layout to use the dynamic viewport on standalone iOS so
+   the page can't be cropped under the home indicator on rotation. */
+html.is-standalone .full-viewport,
+html.is-standalone .min-h-screen { min-height: 100dvh; }
+
+/* iOS-style momentum scroll for any opt-in scroll container */
+.native-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Hide the desktop-only scrollbar in standalone — iOS apps don't show one */
+html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
+
+/* Pressable rows / list items get a UIKit-style highlight */
+.native-row {
+  transition: background-color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.native-row:active { background-color: hsl(var(--muted) / 0.7); }
+
+/* Prevent long-press image save / drag on chrome icons + avatars */
+.native-chrome img,
+.native-icon { -webkit-user-drag: none; pointer-events: auto; }
