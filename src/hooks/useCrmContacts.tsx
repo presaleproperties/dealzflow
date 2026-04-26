@@ -131,7 +131,10 @@ export const LEAD_TYPE_LABELS: Record<string, string> = {
   'realtor': 'Realtor',
 };
 
-export function useCrmContacts() {
+export function useCrmContacts(
+  _unused?: undefined,
+  options?: { enabled?: boolean },
+) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -166,6 +169,7 @@ export function useCrmContacts() {
     staleTime: 30_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    enabled: options?.enabled ?? true,
   });
 
   useEffect(() => {
