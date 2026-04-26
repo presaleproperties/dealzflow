@@ -229,30 +229,27 @@ export function BottomNav() {
         key={tab.path}
         to={tab.path}
         onClick={() => triggerHaptic('light')}
-        className="flex-1 flex flex-col items-center justify-center gap-[3px] min-w-0 active:scale-[0.94] transition-transform duration-150 relative h-full"
+        className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
         style={{ color: active ? GOLD : INACTIVE }}
-        aria-current={active ? 'page' : undefined}
       >
+        <span
+          className={cn(
+            'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
+            active ? 'w-6 opacity-100' : 'w-0 opacity-0'
+          )}
+          style={{ background: GOLD }}
+        />
         <Icon
-          className="w-[22px] h-[22px] transition-all duration-200"
-          strokeWidth={active ? 2.2 : 1.7}
-          style={active ? { filter: 'drop-shadow(0 1px 6px hsl(var(--primary) / 0.35))' } : undefined}
+          className="w-[22px] h-[22px] transition-transform"
+          strokeWidth={active ? 2.4 : 1.8}
+          style={active ? { filter: 'drop-shadow(0 1px 4px hsl(var(--primary) / 0.35))' } : undefined}
         />
         <span
-          className="text-[10px] leading-none truncate max-w-full px-1 tracking-[-0.005em]"
-          style={{ fontWeight: active ? 600 : 500, letterSpacing: active ? 0 : '0.005em' }}
+          className="text-[10.5px] leading-none truncate max-w-full px-1"
+          style={{ fontWeight: active ? 700 : 500 }}
         >
           {tab.label}
         </span>
-        {/* Tiny gold dot under active label — replaces the top underline for a cleaner iOS look */}
-        <span
-          className={cn(
-            'absolute bottom-[5px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-all duration-300',
-            active ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-          )}
-          style={{ background: GOLD }}
-          aria-hidden
-        />
       </Link>
     );
   };
@@ -260,152 +257,145 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 pointer-events-none"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40"
         aria-label="Primary"
       >
-        {/* Floating Liquid-Glass pill — true iOS Tab Bar treatment */}
+        {/* Premium frosted bar — gradient + blur + hairline */}
         <div
-          className="pointer-events-auto mx-3 relative"
+          className="relative backdrop-blur-2xl"
           style={{
-            marginBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+            background:
+              'linear-gradient(180deg, hsl(var(--background) / 0.85) 0%, hsl(var(--background) / 0.98) 60%, hsl(var(--background)) 100%)',
+            borderTop: `1px solid ${BORDER}`,
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            boxShadow: '0 -8px 32px -12px hsl(0 0% 0% / 0.25)',
           }}
         >
-          {/* Subtle ambient shadow under the pill */}
+          {/* Subtle gold sheen across top edge */}
           <div
-            aria-hidden
-            className="absolute inset-x-6 -bottom-3 h-8 rounded-[40px] blur-2xl opacity-60"
-            style={{ background: 'hsl(0 0% 0% / 0.35)' }}
+            className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-32 pointer-events-none"
+            style={{
+              background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent)',
+            }}
           />
 
-          <div
-            className="relative rounded-[28px] overflow-hidden"
-            style={{
-              background: 'hsl(var(--background) / 0.62)',
-              backdropFilter: 'blur(28px) saturate(200%)',
-              WebkitBackdropFilter: 'blur(28px) saturate(200%)',
-              border: '1px solid hsl(var(--border) / 0.55)',
-              boxShadow:
-                '0 1px 0 0 hsl(0 0% 100% / 0.06) inset,' +
-                '0 -1px 0 0 hsl(0 0% 0% / 0.18) inset,' +
-                '0 12px 40px -8px hsl(0 0% 0% / 0.45),' +
-                '0 4px 12px -4px hsl(0 0% 0% / 0.25)',
-            }}
-          >
-            {/* Top specular highlight — micro gold sheen */}
-            <div
-              aria-hidden
-              className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-24 pointer-events-none"
-              style={{
-                background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.55), transparent)',
-              }}
-            />
+          {/* Tabs row with center notch for FAB */}
+          <div className="flex items-stretch h-[60px] px-1 relative">
+            {leftTabs.map(renderTab)}
 
-            {/* Tabs row */}
-            <div className="flex items-stretch h-[58px] px-1 relative">
-              {leftTabs.map(renderTab)}
+            {/* Center spacer where the FAB lives */}
+            <div className="w-[68px] shrink-0" aria-hidden />
 
-              {/* Center "+" button — sits flush inside the bar, refined iOS pill */}
-              <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
-                <SheetTrigger asChild>
-                  <button
-                    onClick={() => triggerHaptic('medium')}
-                    aria-label="Quick add"
-                    className="shrink-0 self-center mx-1 group relative active:scale-90 transition-transform duration-150"
-                  >
-                    {/* Soft ambient glow */}
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 rounded-full blur-md opacity-50 group-active:opacity-80 transition-opacity"
-                      style={{
-                        background:
-                          'radial-gradient(circle, hsl(var(--primary) / 0.55) 0%, transparent 70%)',
-                        transform: 'scale(1.25)',
-                      }}
-                    />
-                    <span
-                      className={cn(
-                        'relative flex items-center justify-center w-[44px] h-[44px] rounded-full',
-                        'transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
-                        quickOpen && 'rotate-45',
-                      )}
-                      style={{
-                        background:
-                          'linear-gradient(155deg, hsl(39 78% 64%) 0%, hsl(39 70% 52%) 55%, hsl(39 60% 44%) 100%)',
-                        boxShadow:
-                          '0 1px 0 0 hsl(0 0% 100% / 0.32) inset,' +
-                          '0 -1px 2px 0 hsl(39 50% 30% / 0.45) inset,' +
-                          '0 6px 16px -4px hsl(39 70% 40% / 0.55),' +
-                          '0 2px 4px -1px hsl(39 60% 30% / 0.4)',
-                        color: 'hsl(222 25% 10%)',
-                      }}
-                    >
-                      <Plus className="w-[22px] h-[22px]" strokeWidth={2.6} />
-                    </span>
-                  </button>
-                </SheetTrigger>
-                <SheetContent
-                  side="bottom"
-                  hideClose
-                  className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-                  style={{ background: BG }}
+            {rightTabs.map(renderTab)}
+
+            {/* More button */}
+            <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
+                  style={{ color: moreActive ? GOLD : INACTIVE }}
+                  aria-label="More"
                 >
-                  <QuickActionsSheet
-                    mode={mode}
-                    actions={quickActions}
-                    onClose={() => setQuickOpen(false)}
+                  <span
+                    className={cn(
+                      'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
+                      moreActive ? 'w-6 opacity-100' : 'w-0 opacity-0'
+                    )}
+                    style={{ background: GOLD }}
                   />
-                </SheetContent>
-              </Sheet>
-
-              {rightTabs.map(renderTab)}
-
-              {/* More button */}
-              <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-                <SheetTrigger asChild>
-                  <button
-                    className="flex-1 flex flex-col items-center justify-center gap-[3px] min-w-0 active:scale-[0.94] transition-transform duration-150 relative h-full"
-                    style={{ color: moreActive ? GOLD : INACTIVE }}
-                    aria-label="More"
+                  <MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={moreActive ? 2.4 : 1.8} />
+                  <span
+                    className="text-[10.5px] leading-none"
+                    style={{ fontWeight: moreActive ? 700 : 500 }}
                   >
-                    <MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={moreActive ? 2.2 : 1.7} />
-                    <span
-                      className="text-[10px] leading-none tracking-[-0.005em]"
-                      style={{ fontWeight: moreActive ? 600 : 500 }}
-                    >
-                      More
-                    </span>
-                    <span
-                      className={cn(
-                        'absolute bottom-[5px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full transition-all duration-300',
-                        moreActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                      )}
-                      style={{ background: GOLD }}
-                      aria-hidden
-                    />
-                  </button>
-                </SheetTrigger>
-                <SheetContent
-                  side="bottom"
-                  hideClose
-                  className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-                  style={{ background: BG, height: '90vh' }}
-                >
-                  <MoreSheet
-                    mode={mode}
-                    pathname={location.pathname}
-                    groups={visibleMore}
-                    isAdmin={!!isAdmin}
-                    userEmail={user?.email}
-                    initials={initials}
-                    onClose={() => setMoreOpen(false)}
-                    onSignOut={() => { setMoreOpen(false); setSignOutOpen(true); }}
-                    onSwitchMode={(m) => { setMoreOpen(false); switchMode(m); }}
-                    isCrmMember={isCrmMember}
-                  />
-                </SheetContent>
-              </Sheet>
-            </div>
+                    More
+                  </span>
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="bottom"
+                hideClose
+                className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+                style={{ background: BG, height: '90vh' }}
+              >
+                <MoreSheet
+                  mode={mode}
+                  pathname={location.pathname}
+                  groups={visibleMore}
+                  isAdmin={!!isAdmin}
+                  userEmail={user?.email}
+                  initials={initials}
+                  onClose={() => setMoreOpen(false)}
+                  onSignOut={() => { setMoreOpen(false); setSignOutOpen(true); }}
+                  onSwitchMode={(m) => { setMoreOpen(false); switchMode(m); }}
+                  isCrmMember={isCrmMember}
+                />
+              </SheetContent>
+            </Sheet>
           </div>
+
+          {/* Floating Action Button — premium gold pill */}
+          <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+            <SheetTrigger asChild>
+              <button
+                onClick={() => triggerHaptic('medium')}
+                aria-label="Quick add"
+                className="absolute left-1/2 -translate-x-1/2 group"
+                style={{
+                  top: -22,
+                }}
+              >
+                {/* Soft glow halo */}
+                <span
+                  className="absolute inset-0 rounded-full blur-xl opacity-70 group-active:opacity-100 transition-opacity"
+                  style={{
+                    background:
+                      'radial-gradient(circle, hsl(var(--primary) / 0.55) 0%, transparent 70%)',
+                    transform: 'scale(1.4)',
+                  }}
+                  aria-hidden
+                />
+                <span
+                  className={cn(
+                    'relative flex items-center justify-center w-[58px] h-[58px] rounded-full',
+                    'transition-all duration-200 ease-out',
+                    'active:scale-90',
+                    quickOpen && 'rotate-45',
+                  )}
+                  style={{
+                    background:
+                      'linear-gradient(145deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 50%, hsl(var(--primary) / 0.95) 100%)',
+                    boxShadow:
+                      '0 8px 24px -4px hsl(var(--primary) / 0.55), 0 2px 6px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.35), inset 0 -2px 6px hsl(0 0% 0% / 0.18)',
+                    color: 'hsl(var(--primary-foreground))',
+                    transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  {/* Inner ring for depth */}
+                  <span
+                    className="absolute inset-[3px] rounded-full pointer-events-none"
+                    style={{
+                      border: '1px solid hsl(0 0% 100% / 0.18)',
+                    }}
+                    aria-hidden
+                  />
+                  <Plus className="w-7 h-7 relative" strokeWidth={2.6} />
+                </span>
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              hideClose
+              className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+              style={{ background: BG }}
+            >
+              <QuickActionsSheet
+                mode={mode}
+                actions={quickActions}
+                onClose={() => setQuickOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
         </div>
       </nav>
 
