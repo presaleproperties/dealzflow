@@ -250,8 +250,11 @@ export default function LeadDetailPage() {
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
               onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-              onSms={() => setShowText(true)}
+              onSms={() => { setTextChannel('sms'); setShowText(true); }}
               onEmail={() => setShowEmail(true)}
+              onWhatsApp={() => {
+                void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
+              }}
             />
           </div>
         )}
