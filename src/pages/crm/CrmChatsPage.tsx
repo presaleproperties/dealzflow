@@ -208,7 +208,7 @@ export default function CrmChatsPage() {
                     />
                   )}
                   <button
-                    onClick={() => navigate(`/crm/leads/${t.contact_id}`)}
+                    onClick={() => navigate(`/crm/chats/${t.id}`)}
                     className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 active:bg-muted/50 transition-colors"
                   >
                     {/* Gradient avatar with channel chip */}
