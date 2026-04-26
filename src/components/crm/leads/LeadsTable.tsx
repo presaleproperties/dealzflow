@@ -41,6 +41,7 @@ interface LeadsTableProps {
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
   visibleColumns: Set<string>;
+  hidePagination?: boolean;
 }
 
 const STATUS_BORDER_COLORS: Record<string, string> = {
@@ -695,7 +696,7 @@ export function LeadsTable({
   contacts, isLoading, isFetching, totalCount,
   selectedIds, onSelectionChange,
   page, pageSize, onPageChange, onPageSizeChange,
-  sortKey, sortDir, onSort, visibleColumns,
+  sortKey, sortDir, onSort, visibleColumns, hidePagination = false,
 }: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -797,10 +798,12 @@ export function LeadsTable({
           </div>
         </div>
 
-        <div className="px-3">
-          <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
-            onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
-        </div>
+        {!hidePagination && (
+          <div className="px-3">
+            <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
+              onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
+          </div>
+        )}
         {emailContact && (
           <ComposeEmailDialog
             contact={emailContact}

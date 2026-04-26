@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, Settings2, Eye, X, ArrowDownNarrowWide } from 'lucide-react';
+import { Search, Plus, Filter, Settings2, Eye, X, ArrowDownNarrowWide, Check, ChevronDown } from 'lucide-react';
 import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
@@ -54,6 +54,13 @@ type QuickViewId = '__all' | '__closed';
 const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Record<string, unknown> }[] = [
   { id: '__all',    label: 'All Leads', emoji: '📋', filters: {} },
   { id: '__closed', label: 'Closed',    emoji: '✅', filters: { status: ['Closed'] } },
+];
+
+// Mobile sort options — keys must match SortKey
+const SORT_OPTIONS: { key: SortKey; shortLabel: string; label: string; defaultDir: SortDir }[] = [
+  { key: 'last_touch_at', shortLabel: 'Recent',    label: 'Recent activity',  defaultDir: 'desc' },
+  { key: 'created_at',    shortLabel: 'Newest',    label: 'Newest added',     defaultDir: 'desc' },
+  { key: 'name',          shortLabel: 'Name',      label: 'Name (A–Z)',       defaultDir: 'asc'  },
 ];
 
 export default function CrmLeadsPage() {
@@ -138,6 +145,13 @@ export default function CrmLeadsPage() {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
+  // Mobile-only: collapse the title row on scroll, infinite scroll accumulator, sort sheet
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [accumulated, setAccumulated] = useState<any[]>([]);
+  const lastFiltersKeyRef = useRef<string>('');
+
   // Read initial view from URL
   useEffect(() => {
     const viewParam = searchParams.get('view') as QuickViewId | null;
@@ -199,6 +213,56 @@ export default function CrmLeadsPage() {
       birthdayMonth: !!activeView.filters._birthday_month,
     },
   });
+
+  // ── Mobile infinite scroll: accumulate pages locally; reset whenever filters/sort change
+  const filtersKey = useMemo(() => JSON.stringify({
+    debouncedSearch, filterContactType, filterStatus, filterSource, filterAgent,
+    filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+    filterPropertyType, filterCity, filterPreApproved, filterCampaign, letterFilter,
+    pipelineView, activeSegmentId, activeViewId, sortKey, sortDir, pageSize,
+  }), [debouncedSearch, filterContactType, filterStatus, filterSource, filterAgent,
+       filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+       filterPropertyType, filterCity, filterPreApproved, filterCampaign, letterFilter,
+       pipelineView, activeSegmentId, activeViewId, sortKey, sortDir, pageSize]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (lastFiltersKeyRef.current !== filtersKey) {
+      lastFiltersKeyRef.current = filtersKey;
+      setAccumulated([]);
+      if (page !== 1) setPage(1);
+      return;
+    }
+    if (contacts.length === 0) return;
+    setAccumulated(prev => {
+      // Merge by id to avoid duplicates if a page is re-fetched
+      const seen = new Set(prev.map((c: any) => c.id));
+      const additions = contacts.filter((c: any) => !seen.has(c.id));
+      if (additions.length === 0 && page === 1) return contacts as any[];
+      if (page === 1) return contacts as any[];
+      return [...prev, ...additions];
+    });
+  }, [isMobile, contacts, filtersKey, page]);
+
+  const mobileContacts = isMobile ? accumulated : contacts;
+  const hasMoreMobile = isMobile && accumulated.length < totalCount && !isFetching;
+
+  // Infinite scroll listener — fires when user is within 600px of bottom
+  useEffect(() => {
+    if (!isMobile) return;
+    const el = mobileScrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      // Collapse header after 32px scroll
+      setHeaderCollapsed(el.scrollTop > 32);
+      // Load more when near bottom
+      if (hasMoreMobile && el.scrollHeight - el.scrollTop - el.clientHeight < 600) {
+        setPage(p => p + 1);
+      }
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [isMobile, hasMoreMobile]);
 
   const activeFilterCount = [
     filterContactType ? 1 : 0,
@@ -296,37 +360,44 @@ export default function CrmLeadsPage() {
     <>
       <div className="flex flex-1 min-h-0 h-full">
         {/* Main content */}
-        <div className="flex-1 min-w-0 max-w-full space-y-3 sm:space-y-4 overflow-y-auto overflow-x-hidden pr-1">
+        <div ref={mobileScrollRef} className="flex-1 min-w-0 max-w-full space-y-3 sm:space-y-4 overflow-y-auto overflow-x-hidden pr-1">
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
             <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden">
-              <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
-                <div className="flex items-baseline gap-6">
-                  <button
-                    className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
-                    aria-current="page"
-                  >
-                    Leads
-                  </button>
-                  <Link
-                    to="/crm/contacts"
-                    className="text-[19px] font-semibold text-muted-foreground/60 tracking-tight pb-1.5 hover:text-foreground transition-colors"
-                  >
-                    Contacts
-                  </Link>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileSearchOpen(v => !v)}
-                    className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
-                    aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
-                    aria-expanded={mobileSearchOpen}
-                  >
-                    <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
-                  </Button>
-                  {/* Add Lead moved to floating action button (bottom-right) */}
+              {/* Title row — collapses on scroll to reclaim vertical space */}
+              <div
+                className={`overflow-hidden transition-all duration-200 ease-out ${
+                  headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
+                  <div className="flex items-baseline gap-6">
+                    <button
+                      className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
+                      aria-current="page"
+                    >
+                      Leads
+                    </button>
+                    <Link
+                      to="/crm/contacts"
+                      className="text-[19px] font-semibold text-muted-foreground/60 tracking-tight pb-1.5 hover:text-foreground transition-colors"
+                    >
+                      Contacts
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileSearchOpen(v => !v)}
+                      className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
+                      aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+                      aria-expanded={mobileSearchOpen}
+                    >
+                      <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                    </Button>
+                    {/* Add Lead moved to floating action button (bottom-right) */}
+                  </div>
                 </div>
               </div>
 
@@ -412,13 +483,14 @@ export default function CrmLeadsPage() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      onClick={() => handleSort('last_touch_at')}
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
-                      aria-label="Sort by last touch"
-                      title="Sort by last touch"
+                      size="sm"
+                      onClick={() => setSortSheetOpen(true)}
+                      className="h-8 px-2.5 gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground shrink-0"
+                      aria-label="Change sort"
                     >
-                      <ArrowDownNarrowWide className="w-4 h-4" />
+                      <ArrowDownNarrowWide className="w-3.5 h-3.5" />
+                      {SORT_OPTIONS.find(o => o.key === sortKey)?.shortLabel ?? 'Sort'}
+                      <ChevronDown className="w-3 h-3 opacity-60" />
                     </Button>
                   </div>
                 </div>
@@ -598,13 +670,27 @@ export default function CrmLeadsPage() {
           {/* Bulk actions */}
           <BulkActionsBar selectedIds={selectedIds} onClearSelection={() => setSelectedIds([])} />
 
-          {/* Table */}
+          {/* Table — mobile uses accumulated infinite-scroll list */}
           <LeadsTable
-            contacts={contacts} isLoading={isLoading} isFetching={isFetching} totalCount={totalCount}
+            contacts={mobileContacts} isLoading={isLoading} isFetching={isFetching} totalCount={totalCount}
             selectedIds={selectedIds} onSelectionChange={setSelectedIds}
             page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={handlePageSizeChange}
             sortKey={sortKey} sortDir={sortDir} onSort={handleSort} visibleColumns={visibleColumns}
+            hidePagination={isMobile}
           />
+
+          {/* Mobile infinite-scroll loader */}
+          {isMobile && hasMoreMobile && (
+            <div className="flex items-center justify-center py-4 text-[12px] text-muted-foreground">
+              <span className="inline-block w-3 h-3 rounded-full border-2 border-primary/40 border-t-primary animate-spin mr-2" />
+              Loading more…
+            </div>
+          )}
+          {isMobile && !hasMoreMobile && accumulated.length > 0 && accumulated.length >= totalCount && (
+            <div className="text-center py-4 text-[11px] text-muted-foreground/60">
+              {totalCount.toLocaleString()} {totalCount === 1 ? 'lead' : 'leads'} total
+            </div>
+          )}
         </div>
 
         {/* Right-side Filter Panel — inline on desktop, bottom sheet on mobile to avoid layout shift */}
@@ -695,6 +781,56 @@ export default function CrmLeadsPage() {
         onClose={() => setManagePipelinesOpen(false)}
         segmentCounts={segmentCounts}
       />
+
+      {/* Mobile sort sheet — descriptive labels instead of an opaque icon */}
+      {isMobile && (
+        <Sheet open={sortSheetOpen} onOpenChange={setSortSheetOpen}>
+          <SheetContent
+            side="bottom"
+            className="rounded-t-2xl border-t border-border [&>button]:hidden p-0"
+          >
+            <div className="px-4 pt-3 pb-2">
+              <div className="mx-auto h-1 w-10 rounded-full bg-border mb-3" />
+              <h3 className="text-[15px] font-semibold tracking-tight text-foreground">Sort leads by</h3>
+            </div>
+            <div className="px-2 pb-4">
+              {SORT_OPTIONS.map(opt => {
+                const isActive = sortKey === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => {
+                      if (sortKey === opt.key) {
+                        setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+                      } else {
+                        setSortKey(opt.key);
+                        setSortDir(opt.defaultDir);
+                      }
+                      setPage(1);
+                      setSortSheetOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-lg text-[14px] transition-colors ${
+                      isActive ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted/40'
+                    }`}
+                  >
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="flex items-center gap-2 text-muted-foreground text-[12px]">
+                      {isActive && (
+                        <>
+                          <span className="uppercase tracking-wider font-semibold text-primary">
+                            {sortDir === 'asc' ? 'Asc' : 'Desc'}
+                          </span>
+                          <Check className="w-4 h-4 text-primary" />
+                        </>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }
