@@ -269,6 +269,9 @@ export function BottomNav() {
           className="relative flex items-center h-[56px] w-full"
           style={{ padding: '0 4px' }}
         >
+            {/* Left tabs */}
+            {leftTabs.map(renderTab)}
+
             {/* Center premium "+" action */}
             <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
               <SheetTrigger asChild>
