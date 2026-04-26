@@ -277,7 +277,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l border-border/60 bg-gradient-to-b from-background via-background to-muted/10"
+        className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l border-border/60 bg-gradient-to-b from-background via-background to-muted/10 native-safe-top"
       >
         <SheetTitle className="sr-only">Add Lead</SheetTitle>
 
