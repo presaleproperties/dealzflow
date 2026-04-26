@@ -39,6 +39,7 @@ import CrmPipelinePage from "./pages/crm/CrmPipelinePage";
 import CrmEmailPage from "./pages/crm/CrmEmailPage";
 import CrmEmailWorkspacePage from "./pages/crm/CrmEmailWorkspacePage";
 import CrmChatsPage from "./pages/crm/CrmChatsPage";
+import CrmChatThreadPage from "./pages/crm/CrmChatThreadPage";
 
 import CrmMarketingHubPage from "./pages/crm/CrmMarketingHubPage";
 import CrmEmailBuilderPage from "./pages/crm/CrmEmailBuilderPage";
