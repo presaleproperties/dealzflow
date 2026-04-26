@@ -50,7 +50,7 @@ export default function CrmEmailWorkspacePage() {
     setRecipients((prev) => prev.filter((r) => r.id !== id));
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
+    <div className="flex flex-col h-[calc(100dvh-140px)] min-h-[600px]">
       {/* Header — Apple-Mail-style segmented control */}
       <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div>

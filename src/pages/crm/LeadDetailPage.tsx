@@ -148,7 +148,7 @@ export default function LeadDetailPage() {
       );
     }
     return (
-      <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100vh - 60px)' }}>
+      <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100dvh - 60px)' }}>
         <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center gap-4">
           <Skeleton className="h-4 w-16" />
           <div className="h-5 w-px bg-border" />
@@ -272,7 +272,7 @@ export default function LeadDetailPage() {
 
   // Desktop: 3-column layout
   return (
-    <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100vh - 60px)' }}>
+    <div className="-m-3 sm:-m-4 lg:-m-6 flex flex-col" style={{ height: 'calc(100dvh - 60px)' }}>
       <LeadTopBar
         contact={c}
         navInfo={navInfo}
