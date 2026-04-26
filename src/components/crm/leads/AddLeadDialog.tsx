@@ -611,8 +611,9 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       title="Birthday"
       value={form.birthday}
       onSave={(v) => setForm((p) => ({ ...p, birthday: v }))}
-      placeholder="YYYY-MM-DD"
-      type="date"
+      placeholder="Pick month & day"
+      type="monthday"
+      description="Just the month and day — we don't need a year."
     />
     <MobileTextEditDrawer
       open={drawer === 'notes'}
