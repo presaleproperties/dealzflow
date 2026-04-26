@@ -359,10 +359,10 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
                     href={primary}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-0.5 break-all"
+                    className="flex items-center gap-1 text-[10px] text-primary hover:underline mt-0.5 max-w-full min-w-0"
                     title={primary}
                   >
-                    <span className="truncate">{display}</span>
+                    <span className="truncate min-w-0 flex-1">{display}</span>
                     <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                   </a>
                 )}
