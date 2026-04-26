@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useCrmContact, useCrmContactMessages, useCrmContactShowings, useCrmContactTasks,
