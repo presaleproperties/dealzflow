@@ -299,7 +299,7 @@ export default function LeadDetailPage() {
       </div>
 
       <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
-      <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
+      <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
       <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
     </div>
