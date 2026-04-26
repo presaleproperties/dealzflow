@@ -563,6 +563,31 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         </div>
       </SheetContent>
     </Sheet>
+    {/* iOS-style full-screen pickers for the dropdown fields. */}
+    <MobilePickerDrawer
+      open={picker === 'status'}
+      onOpenChange={(o) => { if (!o) setPicker(null); }}
+      title="Stage"
+      options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))}
+      value={form.status}
+      onChange={(v) => { setForm((p) => ({ ...p, status: v })); setErrors((p) => ({ ...p, status: '' })); }}
+    />
+    <MobilePickerDrawer
+      open={picker === 'assigned_to'}
+      onOpenChange={(o) => { if (!o) setPicker(null); }}
+      title="Lead Owner"
+      options={AGENTS.map((a) => ({ value: a, label: a }))}
+      value={form.assigned_to}
+      onChange={(v) => { setForm((p) => ({ ...p, assigned_to: v })); setErrors((p) => ({ ...p, assigned_to: '' })); }}
+    />
+    <MobilePickerDrawer
+      open={picker === 'source'}
+      onOpenChange={(o) => { if (!o) setPicker(null); }}
+      title="Source"
+      options={LEAD_SOURCES.map((s) => ({ value: s, label: s }))}
+      value={form.source}
+      onChange={(v) => { setForm((p) => ({ ...p, source: v })); setErrors((p) => ({ ...p, source: '' })); }}
+    />
 
     {/* Duplicate-detection prompt — shown when email or phone matches an existing CRM contact. */}
     <AlertDialog open={dupes.length > 0} onOpenChange={(o) => { if (!o) { setDupes([]); setPendingPayload(null); } }}>
