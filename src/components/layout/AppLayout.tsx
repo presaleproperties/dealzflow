@@ -10,8 +10,9 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { isMember } = useCrmAccess();
-  // Pill adds ~38px to the nav for CRM members
-  const navOffset = isMember ? 96 : 58;
+  // Floating pill nav (≈58px) + 8px gap + breathing room.
+  // CRM members get the mode-switch pill above the nav, adding ~38px.
+  const navOffset = isMember ? 110 : 76;
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
