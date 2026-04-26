@@ -245,39 +245,40 @@
    tidy by rounding to the nearest pixel via the browser).
    ────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Identity card name (desktop H1 in identity card) */
-  --ld-name-size: calc(24px * var(--device-scale));
-  --ld-name-weight: 700;
-  --ld-name-leading: 1.15;
-  --ld-name-tracking: -0.02em;
+  /* Identity card name — matches desktop h2 (lead names are not h1) */
+  --ld-name-size: calc(22px * var(--device-scale));
+  --ld-name-weight: 600;
+  --ld-name-leading: 1.2;
+  --ld-name-tracking: -0.025em;
 
-  /* Eyebrow / section header (desktop SectionHeader) */
-  --ld-eyebrow-size: calc(11px * var(--device-scale));
+  /* Eyebrow / section header — matches desktop section-header utility
+     (text-[11.5px] font-semibold uppercase tracking-[0.075em]) */
+  --ld-eyebrow-size: calc(11.5px * var(--device-scale));
   --ld-eyebrow-weight: 600;
-  --ld-eyebrow-tracking: 0.12em;
+  --ld-eyebrow-tracking: 0.075em;
 
-  /* Sub-eyebrow under name (e.g. source line) */
-  --ld-sub-size: calc(11px * var(--device-scale));
+  /* Sub-eyebrow under name (e.g. source line) — same eyebrow rhythm */
+  --ld-sub-size: calc(11.5px * var(--device-scale));
   --ld-sub-weight: 600;
-  --ld-sub-tracking: 0.14em;
+  --ld-sub-tracking: 0.075em;
 
-  /* Detail-row label / value */
-  --ld-row-label-size: calc(12px * var(--device-scale));
-  --ld-row-value-size: calc(13px * var(--device-scale));
+  /* Detail-row label / value — desktop body scale */
+  --ld-row-label-size: calc(13px * var(--device-scale));
+  --ld-row-value-size: calc(14px * var(--device-scale));
   --ld-row-pad-y: 8px;
 
   /* Insight cards */
   --ld-insight-value-size: calc(20px * var(--device-scale));
-  --ld-insight-label-size: calc(10px * var(--device-scale));
+  --ld-insight-label-size: calc(10.5px * var(--device-scale));
 
-  /* Tab triggers — read by both desktop and mobile lead-detail tabs */
-  --ld-tab-size: calc(13px * var(--device-scale));
+  /* Tab triggers — eyebrow style on both desktop and mobile lead-detail */
+  --ld-tab-size: calc(11.5px * var(--device-scale));
   --ld-tab-weight: 600;
-  --ld-tab-tracking: 0.06em;
+  --ld-tab-tracking: 0.075em;
   --ld-tab-pad-y: 10px;
 
   /* Top-bar back link */
-  --ld-topbar-link-size: calc(14px * var(--device-scale));
+  --ld-topbar-link-size: calc(13px * var(--device-scale));
 }
 
 
