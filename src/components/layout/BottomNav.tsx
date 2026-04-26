@@ -227,69 +227,89 @@ export function BottomNav() {
         onClick={() => triggerHaptic('selection')}
         aria-label={tab.label}
         aria-current={active ? 'page' : undefined}
-        className="group relative flex h-full min-w-0 flex-col items-center justify-center gap-[3px] px-1 active:scale-[0.94] transition-transform duration-150"
+        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center active:scale-[0.92] transition-transform duration-150"
         style={{ color: active ? GOLD : INACTIVE }}
       >
-        {/* Active pill background */}
+        <Icon
+          className="relative w-[22px] h-[22px] transition-all duration-300"
+          strokeWidth={active ? 2.2 : 1.7}
+        />
+        {/* Active dot — single elegant indicator */}
         <span
           aria-hidden
           className={cn(
-            'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl transition-all duration-300 ease-out',
-            active ? 'w-[54px] h-[36px] opacity-100' : 'w-[44px] h-[32px] opacity-0',
+            'absolute bottom-[7px] left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
+            active ? 'w-[4px] h-[4px] opacity-100' : 'w-[4px] h-[4px] opacity-0',
           )}
-          style={{ background: GOLD_BG }}
+          style={{ background: GOLD, boxShadow: active ? `0 0 8px ${GOLD}` : 'none' }}
         />
-        <Icon
-          className="relative w-[22px] h-[22px] transition-transform duration-200"
-          strokeWidth={active ? 2.3 : 1.8}
-          style={active ? { filter: 'drop-shadow(0 1px 4px hsl(var(--primary) / 0.35))' } : undefined}
-        />
-        <span
-          className="relative text-[10.5px] leading-none tracking-[-0.01em] truncate max-w-full"
-          style={{ fontWeight: active ? 700 : 500 }}
-        >
-          {tab.label}
-        </span>
       </Link>
     );
   };
 
-  // All primary destinations (tabs + More) share equal-width grid cells
-  const cellCount = tabs.length + 1;
+  // Split tabs around center "+" for CRM mode; workspace mode also gets a center +.
+  const leftTabs = tabs.slice(0, Math.ceil(tabs.length / 2));
+  const rightTabs = tabs.slice(Math.ceil(tabs.length / 2));
 
   return (
     <>
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 native-chrome"
+        className="lg:hidden fixed left-0 right-0 z-40 native-chrome pointer-events-none"
         aria-label="Primary"
+        style={{
+          bottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
-        {/* Slim flush bar — frosted glass, hugs the home indicator with full safe-area. */}
-        <div
-          className="relative backdrop-blur-2xl"
-          style={{
-            background:
-              'linear-gradient(180deg, hsl(var(--background) / 0.94) 0%, hsl(var(--background) / 0.99) 100%)',
-            borderTop: `1px solid ${BORDER}`,
-            // Full iOS home-indicator inset — bar sits as low as the OS allows.
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            // Soft upward elevation so content scrolling underneath stays legible.
-            boxShadow: '0 -8px 24px -12px hsl(var(--background) / 0.6)',
-          }}
-        >
-          {/* Subtle gold sheen across top edge */}
+        {/* Floating Liquid-Glass pill — centered, with margin from edges */}
+        <div className="px-4 pb-[6px] pt-0 flex justify-center pointer-events-none">
           <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-32 pointer-events-none"
+            className="pointer-events-auto relative flex items-center h-[56px] rounded-full"
             style={{
-              background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.55), transparent)',
+              // True liquid-glass: heavy blur, translucent surface, hairline border, dual shadow.
+              background: 'hsl(var(--card) / 0.72)',
+              backdropFilter: 'blur(28px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+              border: '1px solid hsl(var(--border) / 0.5)',
+              boxShadow:
+                '0 1px 0 hsl(0 0% 100% / 0.06) inset, 0 12px 32px -12px hsl(0 0% 0% / 0.45), 0 2px 8px -2px hsl(0 0% 0% / 0.18)',
+              padding: '0 8px',
+              minWidth: 'min(420px, calc(100vw - 32px))',
+              maxWidth: 'min(480px, calc(100vw - 32px))',
             }}
-          />
-
-          {/* Tabs row — 50px equal-width grid (slim flush bar, hugs home indicator) */}
-          <div
-            className="grid h-[50px] mx-auto max-w-[520px] px-2"
-            style={{ gridTemplateColumns: `repeat(${cellCount}, minmax(0, 1fr))` }}
           >
-            {tabs.map(renderTab)}
+            {/* Left tabs */}
+            {leftTabs.map(renderTab)}
+
+            {/* Center premium "+" action */}
+            <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => triggerHaptic('medium')}
+                  aria-label="Quick add"
+                  className="relative mx-1 shrink-0 h-[44px] w-[44px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
+                  style={{
+                    background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary) / 0.88))',
+                    boxShadow:
+                      '0 6px 16px -4px hsl(var(--primary) / 0.55), 0 2px 6px -2px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.3)',
+                    color: 'hsl(var(--primary-foreground))',
+                  }}
+                >
+                  <Plus className="w-[22px] h-[22px]" strokeWidth={2.4} />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="bottom"
+                hideClose
+                className="p-0 border-0 rounded-t-[28px] max-h-[80vh] overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+                style={{ background: BG }}
+              >
+                <QuickActionsSheet mode={mode} actions={quickActions} onClose={() => setQuickOpen(false)} />
+              </SheetContent>
+            </Sheet>
+
+            {/* Right tabs */}
+            {rightTabs.map(renderTab)}
 
             {/* More button */}
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
@@ -299,27 +319,21 @@ export function BottomNav() {
                   onClick={() => triggerHaptic('selection')}
                   aria-label="More"
                   aria-current={moreActive ? 'page' : undefined}
-                  className="group relative flex h-full min-w-0 flex-col items-center justify-center gap-[3px] px-1 active:scale-[0.94] transition-transform duration-150"
+                  className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center active:scale-[0.92] transition-transform duration-150"
                   style={{ color: moreActive ? GOLD : INACTIVE }}
                 >
+                  <MoreHorizontal
+                    className="relative w-[22px] h-[22px]"
+                    strokeWidth={moreActive ? 2.2 : 1.7}
+                  />
                   <span
                     aria-hidden
                     className={cn(
-                      'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl transition-all duration-300 ease-out',
-                      moreActive ? 'w-[54px] h-[36px] opacity-100' : 'w-[44px] h-[32px] opacity-0',
+                      'absolute bottom-[7px] left-1/2 -translate-x-1/2 rounded-full transition-all duration-300',
+                      moreActive ? 'w-[4px] h-[4px] opacity-100' : 'w-[4px] h-[4px] opacity-0',
                     )}
-                    style={{ background: GOLD_BG }}
+                    style={{ background: GOLD, boxShadow: moreActive ? `0 0 8px ${GOLD}` : 'none' }}
                   />
-                  <MoreHorizontal
-                    className="relative w-[22px] h-[22px]"
-                    strokeWidth={moreActive ? 2.3 : 1.8}
-                  />
-                  <span
-                    className="relative text-[10.5px] leading-none tracking-[-0.01em]"
-                    style={{ fontWeight: moreActive ? 700 : 500 }}
-                  >
-                    More
-                  </span>
                 </button>
               </SheetTrigger>
               <SheetContent
