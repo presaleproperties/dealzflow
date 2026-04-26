@@ -62,16 +62,6 @@ export function LeadDetailsCard({ contact }: { contact: CrmContact }) {
           );
         })()}
 
-        {/* Budget */}
-        {hasBudget && (
-          <div className="flex items-center gap-3">
-            <DollarSign className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
-            <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Budget</span>
-            <span className="text-sm text-foreground">
-              {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '?'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '?'}
-            </span>
-          </div>
-        )}
 
         {/* Bedrooms */}
         {contact.bedrooms_preferred && (
