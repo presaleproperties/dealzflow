@@ -344,6 +344,16 @@ export function LeftSidebar({
         <SectionHeader>Lead Type</SectionHeader>
         {(() => {
           const selected: string[] = leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : [];
+          if (isMobile) {
+            return (
+              <MobileEditRow
+                label="Selected"
+                value={selected.length ? selected.map(v => LEAD_TYPE_LABELS[v] ?? v).join(', ') : ''}
+                placeholder="Set lead type"
+                onClick={() => setDrawer('lead_type')}
+              />
+            );
+          }
           const libMap = new Map<string, { label: string; count: number }>();
           leadTypeLib.forEach(l => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
           LEAD_TYPES.forEach(t => {
