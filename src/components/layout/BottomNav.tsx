@@ -5,7 +5,8 @@ import {
   Users, Kanban, Mail, Inbox, BarChart3, Zap, LayoutTemplate, Plug,
   Settings, Settings2, Receipt, TrendingUp, BarChart2, Network,
   DollarSign, GitBranch, ShieldAlert, LogOut, X, Briefcase, Sparkles,
-  MessageCircle, MessageSquare,
+  MessageCircle, MessageSquare, Plus, UserPlus, CalendarPlus, FileText,
+  PenSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -19,6 +20,8 @@ import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { triggerHaptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
+import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
+import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
 
 type Mode = 'workspace' | 'crm';
 
@@ -40,20 +43,17 @@ const BORDER = 'hsl(var(--border) / 0.7)';
 const INACTIVE = 'hsl(var(--muted-foreground))';
 const SUBTLE = 'hsl(var(--muted-foreground) / 0.7)';
 
-// ── Workspace tabs (Operations set) ──────────────────────────────
+// ── Workspace tabs (3 + FAB + More) ──────────────────────────────
 const WORKSPACE_TABS: TabItem[] = [
   { label: 'Home',     path: '/dashboard', icon: LayoutDashboard },
   { label: 'Deals',    path: '/deals',     icon: Handshake },
   { label: 'Clients',  path: '/inventory', icon: Building2 },
-  { label: 'Network',  path: '/network',   icon: Network },
 ];
 
-// ── CRM tabs (Daily flow set) ────────────────────────────────────
-// ── CRM tabs (Lofty-style: Chats · Leads · Pipeline · Calendar · More) ──
+// ── CRM tabs (Chats · Leads · [+] · Calendar · More) ─────────────
 const CRM_TABS: TabItem[] = [
   { label: 'Chats',    path: '/crm/chats',    icon: MessageCircle },
   { label: 'Leads',    path: '/crm/leads',    icon: Users },
-  { label: 'Pipeline', path: '/crm/pipeline', icon: Kanban },
   { label: 'Calendar', path: '/crm/calendar', icon: CalendarDays },
 ];
 
@@ -62,6 +62,7 @@ const WORKSPACE_MORE: MoreGroup[] = [
     label: 'Production',
     items: [
       { label: 'Pipeline', path: '/pipeline', icon: GitBranch },
+      { label: 'Network',  path: '/network',  icon: Network },
       { label: 'Payouts',  path: '/payouts',  icon: DollarSign },
     ],
   },
@@ -77,8 +78,9 @@ const WORKSPACE_MORE: MoreGroup[] = [
 
 const CRM_MORE: MoreGroup[] = [
   {
-    label: 'Channels',
+    label: 'Workflow',
     items: [
+      { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
       { label: 'Email Center', path: '/crm/email',    icon: Mail },
       { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare },
     ],
@@ -115,6 +117,14 @@ function detectMode(pathname: string): Mode {
   return pathname.startsWith('/crm') ? 'crm' : 'workspace';
 }
 
+type QuickAction = {
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  tone?: 'gold' | 'default';
+};
+
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -123,6 +133,9 @@ export function BottomNav() {
   const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin } = useCrmAccess();
   const [moreOpen, setMoreOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [bookShowingOpen, setBookShowingOpen] = useState(false);
 
   const mode = detectMode(location.pathname);
 
@@ -148,99 +161,247 @@ export function BottomNav() {
     navigate(target === 'crm' ? '/crm/leads' : '/dashboard');
   }
 
+  // Quick-action menu — context-aware
+  const quickActions: QuickAction[] = useMemo(() => {
+    const close = () => setQuickOpen(false);
+    if (mode === 'crm') {
+      return [
+        {
+          label: 'Add Lead',
+          description: 'Create a new contact in the CRM',
+          icon: UserPlus,
+          tone: 'gold',
+          onClick: () => { close(); setAddLeadOpen(true); },
+        },
+        {
+          label: 'Book Showing',
+          description: 'Schedule a property visit',
+          icon: CalendarPlus,
+          onClick: () => { close(); setBookShowingOpen(true); },
+        },
+        {
+          label: 'Compose Email',
+          description: 'Open the email center',
+          icon: Mail,
+          onClick: () => { close(); navigate('/crm/email'); },
+        },
+        {
+          label: 'Send Text',
+          description: 'SMS or WhatsApp',
+          icon: MessageSquare,
+          onClick: () => { close(); navigate('/crm/sms'); },
+        },
+      ];
+    }
+    return [
+      {
+        label: 'New Deal',
+        description: 'Log a new transaction',
+        icon: Handshake,
+        tone: 'gold',
+        onClick: () => { close(); navigate('/deals/new'); },
+      },
+      {
+        label: 'Add Expense',
+        description: 'Track a business expense',
+        icon: Receipt,
+        onClick: () => { close(); navigate('/expenses'); },
+      },
+      {
+        label: 'New Note',
+        description: 'Quick capture',
+        icon: PenSquare,
+        onClick: () => { close(); navigate('/dashboard'); },
+      },
+    ];
+  }, [mode, navigate]);
+
+  // Split tabs evenly around the center FAB
+  const halfCount = Math.ceil(tabs.length / 2);
+  const leftTabs = tabs.slice(0, halfCount);
+  const rightTabs = tabs.slice(halfCount);
+
+  const renderTab = (tab: TabItem) => {
+    const active = isActive(location.pathname, tab.path);
+    const Icon = tab.icon;
+    return (
+      <Link
+        key={tab.path}
+        to={tab.path}
+        onClick={() => triggerHaptic('light')}
+        className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
+        style={{ color: active ? GOLD : INACTIVE }}
+      >
+        <span
+          className={cn(
+            'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
+            active ? 'w-6 opacity-100' : 'w-0 opacity-0'
+          )}
+          style={{ background: GOLD }}
+        />
+        <Icon
+          className="w-[22px] h-[22px] transition-transform"
+          strokeWidth={active ? 2.4 : 1.8}
+          style={active ? { filter: 'drop-shadow(0 1px 4px hsl(var(--primary) / 0.35))' } : undefined}
+        />
+        <span
+          className="text-[10.5px] leading-none truncate max-w-full px-1"
+          style={{ fontWeight: active ? 700 : 500 }}
+        >
+          {tab.label}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <>
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl"
-        style={{
-          background: BG,
-          borderTop: `1px solid ${BORDER}`,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40"
         aria-label="Primary"
       >
+        {/* Premium frosted bar — gradient + blur + hairline */}
+        <div
+          className="relative backdrop-blur-2xl"
+          style={{
+            background:
+              'linear-gradient(180deg, hsl(var(--background) / 0.85) 0%, hsl(var(--background) / 0.98) 60%, hsl(var(--background)) 100%)',
+            borderTop: `1px solid ${BORDER}`,
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            boxShadow: '0 -8px 32px -12px hsl(0 0% 0% / 0.25)',
+          }}
+        >
+          {/* Subtle gold sheen across top edge */}
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-32 pointer-events-none"
+            style={{
+              background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent)',
+            }}
+          />
 
-        {/* Tabs */}
-        <div className="flex items-stretch justify-around h-[58px] px-1">
-          {tabs.map(tab => {
-            const active = isActive(location.pathname, tab.path);
-            const Icon = tab.icon;
-            return (
-              <Link
-                key={tab.path}
-                to={tab.path}
-                onClick={() => triggerHaptic('light')}
-                className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
-                style={{ color: active ? GOLD : INACTIVE }}
-              >
-                {/* Active dot indicator on top */}
-                <span
-                  className={cn(
-                    'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
-                    active ? 'w-6 opacity-100' : 'w-0 opacity-0'
-                  )}
-                  style={{ background: GOLD }}
-                />
-                <Icon
-                  className="w-[22px] h-[22px] transition-transform"
-                  strokeWidth={active ? 2.4 : 1.8}
-                  style={active ? { filter: 'drop-shadow(0 1px 4px hsl(var(--primary) / 0.35))' } : undefined}
-                />
-                <span
-                  className="text-[10.5px] leading-none truncate max-w-full px-1"
-                  style={{ fontWeight: active ? 700 : 500 }}
+          {/* Tabs row with center notch for FAB */}
+          <div className="flex items-stretch h-[60px] px-1 relative">
+            {leftTabs.map(renderTab)}
+
+            {/* Center spacer where the FAB lives */}
+            <div className="w-[68px] shrink-0" aria-hidden />
+
+            {rightTabs.map(renderTab)}
+
+            {/* More button */}
+            <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
+                  style={{ color: moreActive ? GOLD : INACTIVE }}
+                  aria-label="More"
                 >
-                  {tab.label}
-                </span>
-              </Link>
-            );
-          })}
+                  <span
+                    className={cn(
+                      'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
+                      moreActive ? 'w-6 opacity-100' : 'w-0 opacity-0'
+                    )}
+                    style={{ background: GOLD }}
+                  />
+                  <MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={moreActive ? 2.4 : 1.8} />
+                  <span
+                    className="text-[10.5px] leading-none"
+                    style={{ fontWeight: moreActive ? 700 : 500 }}
+                  >
+                    More
+                  </span>
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="bottom"
+                hideClose
+                className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+                style={{ background: BG, height: '90vh' }}
+              >
+                <MoreSheet
+                  mode={mode}
+                  pathname={location.pathname}
+                  groups={visibleMore}
+                  isAdmin={!!isAdmin}
+                  userEmail={user?.email}
+                  initials={initials}
+                  onClose={() => setMoreOpen(false)}
+                  onSignOut={() => { setMoreOpen(false); setSignOutOpen(true); }}
+                  onSwitchMode={(m) => { setMoreOpen(false); switchMode(m); }}
+                  isCrmMember={isCrmMember}
+                />
+              </SheetContent>
+            </Sheet>
+          </div>
 
-          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+          {/* Floating Action Button — premium gold pill */}
+          <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
             <SheetTrigger asChild>
               <button
-                className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
-                style={{ color: moreActive ? GOLD : INACTIVE }}
-                aria-label="More"
+                onClick={() => triggerHaptic('medium')}
+                aria-label="Quick add"
+                className="absolute left-1/2 -translate-x-1/2 group"
+                style={{
+                  top: -22,
+                }}
               >
+                {/* Soft glow halo */}
+                <span
+                  className="absolute inset-0 rounded-full blur-xl opacity-70 group-active:opacity-100 transition-opacity"
+                  style={{
+                    background:
+                      'radial-gradient(circle, hsl(var(--primary) / 0.55) 0%, transparent 70%)',
+                    transform: 'scale(1.4)',
+                  }}
+                  aria-hidden
+                />
                 <span
                   className={cn(
-                    'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
-                    moreActive ? 'w-6 opacity-100' : 'w-0 opacity-0'
+                    'relative flex items-center justify-center w-[58px] h-[58px] rounded-full',
+                    'transition-all duration-200 ease-out',
+                    'active:scale-90',
+                    quickOpen && 'rotate-45',
                   )}
-                  style={{ background: GOLD }}
-                />
-                <MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={moreActive ? 2.4 : 1.8} />
-                <span
-                  className="text-[10.5px] leading-none"
-                  style={{ fontWeight: moreActive ? 700 : 500 }}
+                  style={{
+                    background:
+                      'linear-gradient(145deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 50%, hsl(var(--primary) / 0.95) 100%)',
+                    boxShadow:
+                      '0 8px 24px -4px hsl(var(--primary) / 0.55), 0 2px 6px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.35), inset 0 -2px 6px hsl(0 0% 0% / 0.18)',
+                    color: 'hsl(var(--primary-foreground))',
+                    transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
                 >
-                  More
+                  {/* Inner ring for depth */}
+                  <span
+                    className="absolute inset-[3px] rounded-full pointer-events-none"
+                    style={{
+                      border: '1px solid hsl(0 0% 100% / 0.18)',
+                    }}
+                    aria-hidden
+                  />
+                  <Plus className="w-7 h-7 relative" strokeWidth={2.6} />
                 </span>
               </button>
             </SheetTrigger>
             <SheetContent
               side="bottom"
               hideClose
-              className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-              style={{ background: BG, height: '90vh' }}
+              className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+              style={{ background: BG }}
             >
-              <MoreSheet
+              <QuickActionsSheet
                 mode={mode}
-                pathname={location.pathname}
-                groups={visibleMore}
-                isAdmin={!!isAdmin}
-                userEmail={user?.email}
-                initials={initials}
-                onClose={() => setMoreOpen(false)}
-                onSignOut={() => { setMoreOpen(false); setSignOutOpen(true); }}
-                onSwitchMode={(m) => { setMoreOpen(false); switchMode(m); }}
-                isCrmMember={isCrmMember}
+                actions={quickActions}
+                onClose={() => setQuickOpen(false)}
               />
             </SheetContent>
           </Sheet>
         </div>
       </nav>
+
+      {/* Quick-add dialogs */}
+      <AddLeadDialog open={addLeadOpen} onOpenChange={setAddLeadOpen} />
+      <BookShowingModal open={bookShowingOpen} onOpenChange={setBookShowingOpen} />
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
         <AlertDialogContent>
@@ -494,6 +655,104 @@ function MoreSheet({
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickActionsSheet({
+  mode,
+  actions,
+  onClose,
+}: {
+  mode: Mode;
+  actions: QuickAction[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex flex-col">
+      {/* Drag handle */}
+      <div className="shrink-0 pt-2.5 pb-1.5">
+        <div
+          className="mx-auto w-9 h-[3px] rounded-full"
+          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-5 pt-1 pb-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: SUBTLE }}>
+            Quick Add
+          </p>
+          <h2 className="text-[18px] font-bold tracking-[-0.02em] text-foreground mt-0.5">
+            What would you like to create?
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          className="h-9 w-9 flex items-center justify-center rounded-full active:scale-95 transition-transform border shrink-0"
+          style={{ background: SURFACE, color: 'hsl(var(--foreground))', borderColor: BORDER }}
+          aria-label="Close"
+        >
+          <X className="w-[16px] h-[16px]" strokeWidth={2.2} />
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div
+        className="px-5 pb-4 space-y-2"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+      >
+        {actions.map((action) => {
+          const Icon = action.icon;
+          const isGold = action.tone === 'gold';
+          return (
+            <button
+              key={action.label}
+              onClick={() => {
+                triggerHaptic('light');
+                action.onClick();
+              }}
+              className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border active:scale-[0.98] transition-all text-left"
+              style={{
+                background: isGold ? GOLD_BG : SURFACE,
+                borderColor: isGold ? GOLD_RING : BORDER,
+              }}
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: isGold
+                    ? 'linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary) / 0.85))'
+                    : 'hsl(var(--muted) / 0.6)',
+                  color: isGold ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
+                  boxShadow: isGold
+                    ? '0 4px 12px -2px hsl(var(--primary) / 0.45), inset 0 1px 0 hsl(0 0% 100% / 0.25)'
+                    : 'none',
+                }}
+              >
+                <Icon className="w-[19px] h-[19px]" strokeWidth={2.1} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[14.5px] font-semibold tracking-[-0.01em]"
+                  style={{ color: isGold ? GOLD : 'hsl(var(--foreground))' }}
+                >
+                  {action.label}
+                </p>
+                <p className="text-[12px] mt-0.5 truncate" style={{ color: SUBTLE }}>
+                  {action.description}
+                </p>
+              </div>
+              <span style={{ color: SUBTLE }} className="text-[18px] leading-none">›</span>
+            </button>
+          );
+        })}
+
+        <p className="text-[11px] text-center pt-3" style={{ color: SUBTLE }}>
+          {mode === 'crm' ? 'CRM actions' : 'Workspace actions'}
+        </p>
       </div>
     </div>
   );
