@@ -216,10 +216,6 @@ export function BottomNav() {
     ];
   }, [mode, navigate]);
 
-  // Split tabs evenly around the center FAB
-  const halfCount = Math.ceil(tabs.length / 2);
-  const leftTabs = tabs.slice(0, halfCount);
-  const rightTabs = tabs.slice(halfCount);
 
   const renderTab = (tab: TabItem) => {
     const active = isActive(location.pathname, tab.path);
@@ -279,18 +275,9 @@ export function BottomNav() {
             }}
           />
 
-          {/* Tabs row — center notch only when FAB is present (CRM mode) */}
+          {/* Tabs row — clean 4-tab layout, no center FAB */}
           <div className="flex items-stretch h-[60px] px-1 relative">
-            {mode === 'crm' ? (
-              <>
-                {leftTabs.map(renderTab)}
-                {/* Center spacer where the FAB lives */}
-                <div className="w-[68px] shrink-0" aria-hidden />
-                {rightTabs.map(renderTab)}
-              </>
-            ) : (
-              tabs.map(renderTab)
-            )}
+            {tabs.map(renderTab)}
 
             {/* More button */}
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
@@ -338,71 +325,6 @@ export function BottomNav() {
               </SheetContent>
             </Sheet>
           </div>
-
-          {/* Floating Action Button — CRM only */}
-          {mode === 'crm' && (
-            <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
-              <SheetTrigger asChild>
-                <button
-                  onClick={() => triggerHaptic('medium')}
-                  aria-label="Quick add"
-                  className="absolute left-1/2 -translate-x-1/2 group"
-                  style={{
-                    top: -22,
-                  }}
-                >
-                  {/* Soft glow halo */}
-                  <span
-                    className="absolute inset-0 rounded-full blur-xl opacity-70 group-active:opacity-100 transition-opacity"
-                    style={{
-                      background:
-                        'radial-gradient(circle, hsl(var(--primary) / 0.55) 0%, transparent 70%)',
-                      transform: 'scale(1.4)',
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    className={cn(
-                      'relative flex items-center justify-center w-[58px] h-[58px] rounded-full',
-                      'transition-all duration-200 ease-out',
-                      'active:scale-90',
-                      quickOpen && 'rotate-45',
-                    )}
-                    style={{
-                      background:
-                        'linear-gradient(145deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 50%, hsl(var(--primary) / 0.95) 100%)',
-                      boxShadow:
-                        '0 8px 24px -4px hsl(var(--primary) / 0.55), 0 2px 6px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.35), inset 0 -2px 6px hsl(0 0% 0% / 0.18)',
-                      color: 'hsl(var(--primary-foreground))',
-                      transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                  >
-                    {/* Inner ring for depth */}
-                    <span
-                      className="absolute inset-[3px] rounded-full pointer-events-none"
-                      style={{
-                        border: '1px solid hsl(0 0% 100% / 0.18)',
-                      }}
-                      aria-hidden
-                    />
-                    <Plus className="w-7 h-7 relative" strokeWidth={2.6} />
-                  </span>
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="bottom"
-                hideClose
-                className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-                style={{ background: BG }}
-              >
-                <QuickActionsSheet
-                  mode={mode}
-                  actions={quickActions}
-                  onClose={() => setQuickOpen(false)}
-                />
-              </SheetContent>
-            </Sheet>
-          )}
         </div>
       </nav>
 
