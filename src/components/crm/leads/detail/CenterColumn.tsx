@@ -320,7 +320,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
         {/* Mobile-only Appointments accordion — replaces the desktop inner tab */}
         {showings.length > 0 && (
-          <details className="md:hidden mt-4 group rounded-xl border border-border bg-card/50 overflow-hidden">
+          <details className="md:hidden mt-4 mx-3 md:mx-0 group rounded-xl border border-border bg-card/50 overflow-hidden">
             <summary className="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/80">
               <span className="flex items-center gap-2">
                 Appointments
