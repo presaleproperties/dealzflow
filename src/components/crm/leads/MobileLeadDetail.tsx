@@ -154,15 +154,15 @@ export function MobileLeadDetail({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="activity" className="flex-1 min-h-0 mt-0 px-2 pt-3 pb-24 overflow-y-auto">
+        <TabsContent value="activity" className="flex-1 min-h-0 mt-0 px-2 pt-3 pb-24 overflow-y-auto overscroll-contain">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             {activitySlot}
           </div>
         </TabsContent>
-        <TabsContent value="details" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto space-y-3">
+        <TabsContent value="details" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto overscroll-contain space-y-3">
           {detailsSlot}
         </TabsContent>
-        <TabsContent value="insights" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto space-y-3">
+        <TabsContent value="insights" className="flex-1 min-h-0 mt-0 px-3 pt-3 pb-24 overflow-y-auto overscroll-contain space-y-3">
           {insightsSlot}
         </TabsContent>
       </Tabs>
