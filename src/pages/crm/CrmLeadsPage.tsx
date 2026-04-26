@@ -50,6 +50,19 @@ const ALL_COLUMN_KEYS = [
 
 const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
+/**
+ * Module-level cache so that navigating into a lead detail page and swiping
+ * back restores the mobile list instantly — same accumulated rows, same page,
+ * and same scroll position. Without this, the page state resets on every
+ * mount and the user has to wait for page 1 → N to refetch and re-scroll.
+ */
+const mobileListCache: {
+  filtersKey: string;
+  accumulated: any[];
+  page: number;
+  scrollTop: number;
+} = { filtersKey: '', accumulated: [], page: 1, scrollTop: 0 };
+
 // Quick view definitions — kept minimal. Pipeline categories live in the pill row above.
 type QuickViewId = '__all' | '__closed';
 const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Record<string, unknown> }[] = [
@@ -138,7 +151,11 @@ export default function CrmLeadsPage() {
   const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
   const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1);
+  const [page, setPage] = useState(() =>
+    mobileListCache.accumulated.length > 0
+      ? mobileListCache.page
+      : Number(searchParams.get('page')) || 1,
+  );
   const [pageSize, setPageSize] = useState(50);
   const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get('sort') as SortKey) || 'last_touch_at');
   const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
@@ -150,8 +167,9 @@ export default function CrmLeadsPage() {
   const mobileScrollRef = useRef<HTMLDivElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [sortSheetOpen, setSortSheetOpen] = useState(false);
-  const [accumulated, setAccumulated] = useState<any[]>([]);
+  const [accumulated, setAccumulated] = useState<any[]>(() => mobileListCache.accumulated);
   const lastFiltersKeyRef = useRef<string>('');
+  const didRestoreScrollRef = useRef(false);
 
   // Read initial view from URL
   useEffect(() => {
@@ -238,10 +256,33 @@ export default function CrmLeadsPage() {
 
   useEffect(() => {
     if (!isMobile) return;
+
+    // First render after mount: if the cached snapshot matches the current
+    // filter set, keep the restored rows + page and skip the reset.
+    if (lastFiltersKeyRef.current === '') {
+      lastFiltersKeyRef.current = filtersKey;
+      if (mobileListCache.filtersKey === filtersKey && mobileListCache.accumulated.length > 0) {
+        // Already seeded from cache via useState initializer — nothing to do.
+        return;
+      }
+      // Cache is stale (different filters) — fall through to a clean reset.
+      setAccumulated([]);
+      if (page !== 1) setPage(1);
+      mobileListCache.filtersKey = filtersKey;
+      mobileListCache.accumulated = [];
+      mobileListCache.page = 1;
+      mobileListCache.scrollTop = 0;
+      return;
+    }
+
     if (lastFiltersKeyRef.current !== filtersKey) {
       lastFiltersKeyRef.current = filtersKey;
       setAccumulated([]);
       if (page !== 1) setPage(1);
+      mobileListCache.filtersKey = filtersKey;
+      mobileListCache.accumulated = [];
+      mobileListCache.page = 1;
+      mobileListCache.scrollTop = 0;
       return;
     }
     if (contacts.length === 0) return;
@@ -249,14 +290,41 @@ export default function CrmLeadsPage() {
       // Merge by id to avoid duplicates if a page is re-fetched
       const seen = new Set(prev.map((c: any) => c.id));
       const additions = contacts.filter((c: any) => !seen.has(c.id));
-      if (additions.length === 0 && page === 1) return contacts as any[];
-      if (page === 1) return contacts as any[];
-      return [...prev, ...additions];
+      let next: any[];
+      if (additions.length === 0 && page === 1) next = contacts as any[];
+      else if (page === 1) next = contacts as any[];
+      else next = [...prev, ...additions];
+      mobileListCache.filtersKey = filtersKey;
+      mobileListCache.accumulated = next;
+      mobileListCache.page = page;
+      return next;
     });
   }, [isMobile, contacts, filtersKey, page]);
 
   const mobileContacts = isMobile ? accumulated : contacts;
   const hasMoreMobile = isMobile && accumulated.length < totalCount && !isFetching;
+
+  // Restore scroll position once the list has rendered rows from cache.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (didRestoreScrollRef.current) return;
+    if (mobileListCache.filtersKey !== filtersKey) return;
+    if (accumulated.length === 0) return;
+    const el = mobileScrollRef.current;
+    if (!el) return;
+    const target = mobileListCache.scrollTop;
+    if (target > 0) {
+      // Two RAFs to wait for layout after the rows paint.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.scrollTop = target;
+          didRestoreScrollRef.current = true;
+        });
+      });
+    } else {
+      didRestoreScrollRef.current = true;
+    }
+  }, [isMobile, accumulated.length, filtersKey]);
 
   // Infinite scroll listener — fires when user is within 600px of bottom
   useEffect(() => {
@@ -266,6 +334,8 @@ export default function CrmLeadsPage() {
     const onScroll = () => {
       // Collapse header after 32px scroll
       setHeaderCollapsed(el.scrollTop > 32);
+      // Persist scroll position so navigating away & back restores it.
+      mobileListCache.scrollTop = el.scrollTop;
       // Load more when near bottom
       if (hasMoreMobile && el.scrollHeight - el.scrollTop - el.clientHeight < 600) {
         setPage(p => p + 1);
