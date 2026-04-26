@@ -66,6 +66,9 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     }
   };
 
+  // Required to match the identity shown on the Lead Detail page.
+  // Keep this list in sync with LeftSidebar's primary fields so we never
+  // create a half-empty lead that looks broken in the detail view.
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.first_name.trim()) errs.first_name = 'First name is required';
@@ -75,9 +78,23 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       errs.phone = 'Email or phone is required';
     }
     if (form.email && !validateEmail(form.email).isValid) errs.email = 'Invalid email format';
+    if (!form.status) errs.status = 'Pipeline stage is required';
+    if (!form.assigned_to) errs.assigned_to = 'Assign an agent';
+    if (!form.source) errs.source = 'Lead source is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
+
+  // Live "is the form ready to save?" check — drives the Save button's
+  // disabled state without surfacing red errors before the user submits.
+  const canSubmit =
+    !!form.first_name.trim() &&
+    !!form.last_name.trim() &&
+    (!!form.email.trim() || !!form.phone.trim()) &&
+    (!form.email || validateEmail(form.email).isValid) &&
+    !!form.status &&
+    !!form.assigned_to &&
+    !!form.source;
 
   const reset = () => {
     setForm(initialForm());
