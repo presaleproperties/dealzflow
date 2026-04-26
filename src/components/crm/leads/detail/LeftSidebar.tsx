@@ -796,12 +796,6 @@ function BirthdayPopover({
   trigger: React.ReactNode;
 }) {
   const [draft, setDraft] = useState(value);
-  // re-sync when reopened
-  useState(() => { setDraft(value); });
-  // Lazy require to avoid import cycle at top.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  const { Popover, PopoverTrigger, PopoverContent } = require('@/components/ui/popover');
-  const { MonthDayInput } = require('@/components/crm/leads/MonthDayInput');
   return (
     <Popover open={open} onOpenChange={(o: boolean) => { onOpenChange(o); if (o) setDraft(value); }}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
