@@ -732,6 +732,28 @@ export function LeadsTable({
   };
 
   if (isLoading) {
+    if (isMobile) {
+      // Premium shimmer rows that match the LeadCard rhythm
+      return (
+        <div className="-mx-3 bg-card border-y border-border">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="px-5 py-4 flex items-start gap-4">
+                <div className="flex-1 space-y-2.5">
+                  <div className="crm-skeleton h-4 w-2/3" />
+                  <div className="crm-skeleton h-3 w-1/2" />
+                  <div className="crm-skeleton h-3 w-3/4" />
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="crm-skeleton h-7 w-9 rounded-md" />
+                  <div className="crm-skeleton h-3 w-12" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="space-y-2">
         {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
