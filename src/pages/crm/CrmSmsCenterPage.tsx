@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   MessageSquare, Send, Plus, Trash2, Pencil, Users, ShieldOff,
   Calendar, CheckCircle2, XCircle, Clock, Phone, Inbox, Loader2,
-  Sparkles, Search, ArrowRight, Filter, Settings as SettingsIcon, Zap, Activity, ShieldCheck,
+  Sparkles, Search, ArrowRight, Filter, Settings as SettingsIcon, Zap, Activity, ShieldCheck, BarChart3,
 } from 'lucide-react';
 import {
   useSmsTemplates, useSaveSmsTemplate, useDeleteSmsTemplate,
