@@ -12,6 +12,8 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
+import type { MessagingChannel } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
 import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
