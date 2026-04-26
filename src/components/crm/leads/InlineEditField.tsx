@@ -27,7 +27,13 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
     if (editing) {
       setDraft(value ?? '');
       setEmailWarning({ isValid: true, suggestion: null, correctedEmail: null });
-      if (type !== 'select') setTimeout(() => inputRef.current?.focus(), 0);
+      if (type !== 'select') {
+        setTimeout(() => {
+          inputRef.current?.focus();
+          // Make sure the field stays visible above the on-screen keyboard on mobile.
+          inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, 0);
+      }
     }
   }, [editing, value, type]);
 
