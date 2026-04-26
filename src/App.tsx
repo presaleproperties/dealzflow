@@ -13,6 +13,7 @@ import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
+import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -138,6 +139,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function NativeBootstrap({ children }: { children: React.ReactNode }) {
   useNativeShell();
+  useStandaloneMode();
   return <>{children}</>;
 }
 
