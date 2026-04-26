@@ -232,6 +232,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
+    <>
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         ref={sheetContentRef}
