@@ -50,6 +50,19 @@ const ALL_COLUMN_KEYS = [
 
 const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
+/**
+ * Module-level cache so that navigating into a lead detail page and swiping
+ * back restores the mobile list instantly — same accumulated rows, same page,
+ * and same scroll position. Without this, the page state resets on every
+ * mount and the user has to wait for page 1 → N to refetch and re-scroll.
+ */
+const mobileListCache: {
+  filtersKey: string;
+  accumulated: any[];
+  page: number;
+  scrollTop: number;
+} = { filtersKey: '', accumulated: [], page: 1, scrollTop: 0 };
+
 // Quick view definitions — kept minimal. Pipeline categories live in the pill row above.
 type QuickViewId = '__all' | '__closed';
 const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Record<string, unknown> }[] = [
