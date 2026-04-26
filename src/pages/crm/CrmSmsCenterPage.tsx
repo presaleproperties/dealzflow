@@ -85,6 +85,9 @@ export default function CrmSmsCenterPage() {
   const channelLogs = useMemo(() => logs.filter(l => (l.channel || 'sms') === channel), [logs, channel]);
 
   const [tab, setTab] = useState('inbox');
+  const [monitorTab, setMonitorTab] = useState<'stats' | 'status' | 'health' | 'delivery'>('stats');
+  const [blastsTab, setBlastsTab] = useState<'compose' | 'history'>('compose');
+  const [setupTab, setSetupTab] = useState<'config' | 'optouts'>('config');
 
   // Composer (bulk)
   const [composerOpen, setComposerOpen] = useState(false);
@@ -131,39 +134,19 @@ export default function CrmSmsCenterPage() {
     );
   }, [campaigns]);
 
-  // Twilio readiness
   const isWa = channel === 'whatsapp';
-  const readyForChannel = isWa
-    ? !!(settings?.whatsapp_enabled && (settings?.whatsapp_from || settings?.whatsapp_messaging_service_sid))
-    : !!(numbers.length > 0 || settings?.messaging_service_sid);
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
-            Messaging Center
-            <Badge variant="outline" className="text-[10px] font-medium">
-              {channel === 'whatsapp' ? 'WhatsApp' : 'SMS / MMS'}
-            </Badge>
-          </h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Messaging Center</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Conversations, blasts, templates & compliance — powered by Twilio
+            Conversations, blasts &amp; templates — powered by Twilio
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <ChannelToggle channel={channel} onChange={setChannel} />
-          {readyForChannel ? (
-            <Badge variant="outline" className="text-emerald-600 border-emerald-600/30 gap-1 justify-center">
-              <CheckCircle2 className="w-3 h-3" /> {isWa ? 'WhatsApp ready' : 'Twilio ready'}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-amber-600 border-amber-600/30 gap-1 justify-center">
-              <Phone className="w-3 h-3" /> {isWa ? 'WhatsApp not configured' : 'Twilio not connected'}
-            </Badge>
-          )}
-        </div>
+        <ChannelToggle channel={channel} onChange={setChannel} />
       </div>
 
       {/* WhatsApp readiness banner */}
@@ -205,132 +188,99 @@ export default function CrmSmsCenterPage() {
       })()}
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-10 w-full sm:w-auto h-auto">
-          <TabsTrigger value="inbox" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+        <TabsList className="grid grid-cols-5 w-full sm:w-auto h-auto">
+          <TabsTrigger value="inbox" className="gap-1.5 text-xs sm:text-sm py-2">
             <Inbox className="w-3.5 h-3.5" /><span>Inbox</span>
           </TabsTrigger>
-          <TabsTrigger value="stats" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
-            <BarChart3 className="w-3.5 h-3.5" /><span>Stats</span>
-          </TabsTrigger>
-          <TabsTrigger value="status" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
-            <ShieldCheck className="w-3.5 h-3.5" /><span>Status</span>
-          </TabsTrigger>
-          <TabsTrigger value="health" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
-            <ShieldCheck className="w-3.5 h-3.5" /><span>Health</span>
-          </TabsTrigger>
-          <TabsTrigger value="delivery" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
-            <Activity className="w-3.5 h-3.5" /><span>Delivery</span>
-          </TabsTrigger>
-          <TabsTrigger value="compose" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
-            <Send className="w-3.5 h-3.5" /><span>Compose</span>
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+          <TabsTrigger value="blasts" className="gap-1.5 text-xs sm:text-sm py-2">
             <Zap className="w-3.5 h-3.5" /><span>Blasts</span>
           </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+          <TabsTrigger value="templates" className="gap-1.5 text-xs sm:text-sm py-2">
             <MessageSquare className="w-3.5 h-3.5" /><span>Templates</span>
           </TabsTrigger>
-          <TabsTrigger value="optouts" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
-            <ShieldOff className="w-3.5 h-3.5" /><span>Opt-outs</span>
+          <TabsTrigger value="monitor" className="gap-1.5 text-xs sm:text-sm py-2">
+            <Activity className="w-3.5 h-3.5" /><span>Monitor</span>
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+          <TabsTrigger value="setup" className="gap-1.5 text-xs sm:text-sm py-2">
             <SettingsIcon className="w-3.5 h-3.5" /><span>Setup</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* === INBOX (iMessage-style conversation view) === */}
+        {/* === INBOX (iMessage / WhatsApp conversation view) === */}
         <TabsContent value="inbox" className="mt-4">
           <MessagingCenter channel={channel} onChannelChange={setChannel} />
         </TabsContent>
 
-        {/* === STATS === */}
-        <TabsContent value="stats" className="mt-4 space-y-4">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground mb-1">{channel === 'sms' ? 'SMS' : 'WhatsApp'} performance</h3>
-            <p className="text-xs text-muted-foreground">Lifetime totals across this channel.</p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            <StatPill label="Sent" value={totals.sent} icon={Send} />
-            <StatPill label="Delivered" value={totals.delivered} icon={CheckCircle2} tone="emerald" />
-            <StatPill label="Failed" value={totals.failed} icon={XCircle} tone="red" />
-            <StatPill label="Replies" value={totals.replies} icon={Inbox} tone="primary" />
-            <StatPill label="Opt-outs" value={optOuts.length} icon={ShieldOff} tone="amber" />
-          </div>
-        </TabsContent>
+        {/* === BLASTS (Compose + History) === */}
+        <TabsContent value="blasts" className="mt-4 space-y-4">
+          <SubTabBar
+            value={blastsTab}
+            onChange={(v) => setBlastsTab(v as any)}
+            options={[
+              { value: 'compose', label: 'New blast', icon: Send },
+              { value: 'history', label: `History (${campaigns.length})`, icon: Clock },
+            ]}
+          />
 
-        {/* === SYSTEM STATUS === */}
-        <TabsContent value="status" className="mt-4">
-          <MessagingStatusPanel />
-        </TabsContent>
-
-        {/* === WHATSAPP HEALTH CHECK === */}
-        <TabsContent value="health" className="mt-4">
-          <WhatsAppHealthCheckPanel />
-        </TabsContent>
-
-        {/* === DELIVERY STATUS === */}
-        <TabsContent value="delivery" className="mt-4">
-          <DeliveryStatusPanel channel={channel} />
-        </TabsContent>
-
-        {/* === COMPOSE (filter + launch bulk) === */}
-        <TabsContent value="compose" className="space-y-3 mt-4">
-          <Card className="p-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold">Target by segment, source, agent or tag</h2>
-            </div>
-
-            <FilterRow label="Pipeline stage" options={LEAD_STATUSES} selected={fStatuses} onToggle={(v) => toggleArr(fStatuses, v, setFStatuses)} />
-            <FilterRow label="Lead source" options={LEAD_SOURCES} selected={fSources} onToggle={(v) => toggleArr(fSources, v, setFSources)} />
-            <FilterRow label="Assigned to" options={AGENTS} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Tags (comma-separated)</Label>
-              <Input value={fTags} onChange={(e) => setFTags(e.target.value)} placeholder="vip, hot-lead, newsletter" />
-            </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <div className="text-sm">
-                <span className="font-semibold text-foreground">{filteredRecipients.length}</span>
-                <span className="text-muted-foreground"> recipients with phone numbers</span>
+          {blastsTab === 'compose' && (
+            <Card className="p-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold">Target by segment, source, agent or tag</h2>
               </div>
-              <Button onClick={launchBlast} disabled={filteredRecipients.length === 0} size="sm">
-                <Send className="w-3.5 h-3.5 mr-1.5" />
-                Compose {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} blast
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
 
-        {/* === CAMPAIGNS / BLASTS === */}
-        <TabsContent value="campaigns" className="space-y-2 mt-4">
-          {campaigns.length === 0 ? (
-            <Card className="p-8 text-center text-sm text-muted-foreground">
-              No {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} blasts yet. Use <strong>Compose</strong> to send your first one.
-            </Card>
-          ) : (
-            campaigns.map(c => (
-              <Card key={c.id} className="p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium truncate">{c.name}</h3>
-                      <CampaignStatusBadge status={c.status} />
-                      <ChannelBadge channel={c.channel || 'sms'} />
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{c.body}</p>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
-                      <span><Users className="w-3 h-3 inline mr-1" />{c.recipients_count} recipients</span>
-                      {c.scheduled_for && <span><Calendar className="w-3 h-3 inline mr-1" />{format(new Date(c.scheduled_for), 'MMM d, h:mm a')}</span>}
-                      <span>{c.delivered_count}/{c.recipients_count} delivered</span>
-                      {c.failed_count > 0 && <span className="text-red-600">{c.failed_count} failed</span>}
-                      {c.reply_count > 0 && <span className="text-primary">{c.reply_count} replies</span>}
-                    </div>
-                  </div>
+              <FilterRow label="Pipeline stage" options={LEAD_STATUSES} selected={fStatuses} onToggle={(v) => toggleArr(fStatuses, v, setFStatuses)} />
+              <FilterRow label="Lead source" options={LEAD_SOURCES} selected={fSources} onToggle={(v) => toggleArr(fSources, v, setFSources)} />
+              <FilterRow label="Assigned to" options={AGENTS} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Tags (comma-separated)</Label>
+                <Input value={fTags} onChange={(e) => setFTags(e.target.value)} placeholder="vip, hot-lead, newsletter" />
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <div className="text-sm">
+                  <span className="font-semibold text-foreground">{filteredRecipients.length}</span>
+                  <span className="text-muted-foreground"> recipients with phone numbers</span>
                 </div>
-              </Card>
-            ))
+                <Button onClick={launchBlast} disabled={filteredRecipients.length === 0} size="sm">
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
+                  Compose {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} blast
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {blastsTab === 'history' && (
+            <div className="space-y-2">
+              {campaigns.length === 0 ? (
+                <Card className="p-8 text-center text-sm text-muted-foreground">
+                  No {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} blasts yet. Switch to <strong>New blast</strong> to send your first one.
+                </Card>
+              ) : (
+                campaigns.map(c => (
+                  <Card key={c.id} className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium truncate">{c.name}</h3>
+                          <CampaignStatusBadge status={c.status} />
+                          <ChannelBadge channel={c.channel || 'sms'} />
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{c.body}</p>
+                        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          <span><Users className="w-3 h-3 inline mr-1" />{c.recipients_count} recipients</span>
+                          {c.scheduled_for && <span><Calendar className="w-3 h-3 inline mr-1" />{format(new Date(c.scheduled_for), 'MMM d, h:mm a')}</span>}
+                          <span>{c.delivered_count}/{c.recipients_count} delivered</span>
+                          {c.failed_count > 0 && <span className="text-red-600">{c.failed_count} failed</span>}
+                          {c.reply_count > 0 && <span className="text-primary">{c.reply_count} replies</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
           )}
         </TabsContent>
 
@@ -339,33 +289,79 @@ export default function CrmSmsCenterPage() {
           <TemplatesTab channel={channel} templates={templates} />
         </TabsContent>
 
-        {/* === OPT-OUTS === */}
-        <TabsContent value="optouts" className="space-y-2 mt-4">
-          {optOuts.length === 0 ? (
-            <Card className="p-8 text-center text-sm text-muted-foreground">No opt-outs.</Card>
-          ) : (
-            <Card className="divide-y divide-border">
-              {optOuts.map(o => (
-                <div key={o.id} className="p-3 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-mono text-sm">{o.phone}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {o.source} · {format(new Date(o.opted_out_at), 'MMM d, yyyy')}
-                      {o.reason && ` · ${o.reason}`}
-                    </div>
-                  </div>
-                  {o.re_opted_in_at && <Badge variant="outline" className="text-emerald-600 border-emerald-600/30">Re-opted in</Badge>}
-                </div>
-              ))}
-            </Card>
+        {/* === MONITOR (Stats + Status + Health + Delivery) === */}
+        <TabsContent value="monitor" className="mt-4 space-y-4">
+          <SubTabBar
+            value={monitorTab}
+            onChange={(v) => setMonitorTab(v as any)}
+            options={[
+              { value: 'stats', label: 'Stats', icon: BarChart3 },
+              { value: 'delivery', label: 'Delivery', icon: Activity },
+              { value: 'status', label: 'System', icon: ShieldCheck },
+              ...(isWa ? [{ value: 'health' as const, label: 'WA health', icon: ShieldCheck }] : []),
+            ]}
+          />
+
+          {monitorTab === 'stats' && (
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-1">{channel === 'sms' ? 'SMS' : 'WhatsApp'} performance</h3>
+                <p className="text-xs text-muted-foreground">Lifetime totals across this channel.</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <StatPill label="Sent" value={totals.sent} icon={Send} />
+                <StatPill label="Delivered" value={totals.delivered} icon={CheckCircle2} tone="emerald" />
+                <StatPill label="Failed" value={totals.failed} icon={XCircle} tone="red" />
+                <StatPill label="Replies" value={totals.replies} icon={Inbox} tone="primary" />
+                <StatPill label="Opt-outs" value={optOuts.length} icon={ShieldOff} tone="amber" />
+              </div>
+            </div>
           )}
+          {monitorTab === 'delivery' && <DeliveryStatusPanel channel={channel} />}
+          {monitorTab === 'status' && <MessagingStatusPanel />}
+          {monitorTab === 'health' && isWa && <WhatsAppHealthCheckPanel />}
         </TabsContent>
 
-        {/* === SETTINGS / SETUP === */}
-        <TabsContent value="settings" className="mt-4">
-          <SettingsTab channel={channel} settings={settings} numbers={numbers} />
+        {/* === SETUP (Config + Opt-outs) === */}
+        <TabsContent value="setup" className="mt-4 space-y-4">
+          <SubTabBar
+            value={setupTab}
+            onChange={(v) => setSetupTab(v as any)}
+            options={[
+              { value: 'config', label: 'Configuration', icon: SettingsIcon },
+              { value: 'optouts', label: `Opt-outs (${optOuts.length})`, icon: ShieldOff },
+            ]}
+          />
+
+          {setupTab === 'config' && (
+            <SettingsTab channel={channel} settings={settings} numbers={numbers} />
+          )}
+
+          {setupTab === 'optouts' && (
+            <div className="space-y-2">
+              {optOuts.length === 0 ? (
+                <Card className="p-8 text-center text-sm text-muted-foreground">No opt-outs.</Card>
+              ) : (
+                <Card className="divide-y divide-border">
+                  {optOuts.map(o => (
+                    <div key={o.id} className="p-3 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-mono text-sm">{o.phone}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {o.source} · {format(new Date(o.opted_out_at), 'MMM d, yyyy')}
+                          {o.reason && ` · ${o.reason}`}
+                        </div>
+                      </div>
+                      {o.re_opted_in_at && <Badge variant="outline" className="text-emerald-600 border-emerald-600/30">Re-opted in</Badge>}
+                    </div>
+                  ))}
+                </Card>
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+
 
       <BulkSendTextDialog
         open={composerOpen}
@@ -394,6 +390,39 @@ function ChannelBadge({ channel }: { channel: MessagingChannel }) {
 }
 
 // ==================== Stat pill ====================
+// ==================== Sub-tab bar (lightweight pill nav) ====================
+function SubTabBar<T extends string>({
+  value, onChange, options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: Array<{ value: T; label: string; icon: any }>;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-0.5 w-full sm:w-auto overflow-x-auto">
+      {options.map(o => {
+        const Icon = o.icon;
+        const active = value === o.value;
+        return (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 whitespace-nowrap',
+              active
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function StatPill({ label, value, icon: Icon, tone }: { label: string; value: number; icon: any; tone?: 'emerald' | 'red' | 'amber' | 'primary' }) {
   const toneClass = tone === 'emerald' ? 'text-emerald-600' :
                     tone === 'red' ? 'text-red-600' :
