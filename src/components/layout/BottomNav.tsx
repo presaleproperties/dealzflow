@@ -254,11 +254,8 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="lg:hidden fixed left-0 right-0 z-40 native-chrome pointer-events-none"
+        className="lg:hidden fixed left-0 right-0 bottom-0 z-40 native-chrome pointer-events-none"
         aria-label="Primary"
-        style={{
-          bottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
       >
         {/* Soft fade mask above the pill — hides scroll content cleanly so it
             doesn't bleed through the translucent surface and look broken. */}
@@ -267,14 +264,15 @@ export function BottomNav() {
           className="absolute left-0 right-0 pointer-events-none"
           style={{
             bottom: '100%',
-            height: '24px',
+            height: '20px',
             background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0) 100%)',
           }}
         />
-        {/* Floating Liquid-Glass pill — centered, with margin from edges */}
-        <div className="px-4 pb-[6px] pt-0 flex justify-center pointer-events-none">
+        {/* Edge-to-edge floating pill — flush bottom so Safari's URL bar
+            moves it naturally on scroll. */}
+        <div className="px-3 pb-1.5 flex justify-center pointer-events-none">
           <div
-            className="pointer-events-auto relative flex items-center h-[56px] rounded-full"
+            className="pointer-events-auto relative flex items-center h-[56px] rounded-full w-full"
             style={{
               // True liquid-glass: more opaque so list rows can't bleed through.
               background: 'hsl(var(--card) / 0.92)',
@@ -284,13 +282,9 @@ export function BottomNav() {
               boxShadow:
                 '0 1px 0 hsl(0 0% 100% / 0.08) inset, 0 12px 32px -12px hsl(0 0% 0% / 0.45), 0 2px 8px -2px hsl(0 0% 0% / 0.18)',
               padding: '0 8px',
-              minWidth: 'min(420px, calc(100vw - 32px))',
-              maxWidth: 'min(480px, calc(100vw - 32px))',
+              maxWidth: '480px',
             }}
           >
-            {/* Left tabs */}
-            {leftTabs.map(renderTab)}
-
             {/* Center premium "+" action */}
             <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
               <SheetTrigger asChild>
