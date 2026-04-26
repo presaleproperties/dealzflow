@@ -1200,6 +1200,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     size="sm"
                     onClick={handleSend}
                     disabled={!canSend || isPending}
+                    title="Send (⌘ + Enter)"
                     className="gap-1.5 min-w-[110px]"
                   >
                     {isPending ? (
