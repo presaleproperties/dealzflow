@@ -203,6 +203,27 @@ export function ComposerSurface({
 
   const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
   const canSend = recipientCount > 0 && subject.trim() && bodyText;
+  const isBodyEmpty = !bodyText;
+
+  /* Quick-start openers — fill the empty composer with one tasteful click. */
+  const QUICK_OPENERS: { label: string; html: string }[] = [
+    {
+      label: 'Warm intro',
+      html: `<p>Hi {{lead.first_name}},</p><p>Hope you're having a great week. I wanted to follow up on the units we discussed — happy to share fresh availability whenever you're ready.</p><p>Best,<br/>{{sender.first_name}}</p>`,
+    },
+    {
+      label: 'New listing',
+      html: `<p>Hi {{lead.first_name}},</p><p>A new presale that fits what you're looking for just hit the market. Want me to send the floorplans and price list?</p><p>Talk soon,<br/>{{sender.first_name}}</p>`,
+    },
+    {
+      label: 'Quick check-in',
+      html: `<p>Hi {{lead.first_name}},</p><p>Quick check-in — still on the hunt, or has timing shifted? Either way, I'll keep an eye out for the right fit.</p><p>Cheers,<br/>{{sender.first_name}}</p>`,
+    },
+    {
+      label: 'Book a call',
+      html: `<p>Hi {{lead.first_name}},</p><p>Would a 15-minute call this week help map out next steps? I can send a couple of times that work on my end.</p><p>Best,<br/>{{sender.first_name}}</p>`,
+    },
+  ];
 
   /* Attachments */
   const fileInputRef = useRef<HTMLInputElement | null>(null);
