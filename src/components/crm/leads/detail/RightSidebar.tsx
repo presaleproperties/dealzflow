@@ -63,7 +63,7 @@ export function RightSidebar({
         onShowing={onAddShowing}
       />
 
-      <WidgetSection title="Tasks" count={pendingTasks.length} onAdd={onAddTask}>
+      <WidgetSection title="Tasks" count={pendingTasks.length} onAdd={onAddTask} collapsible defaultOpen={pendingTasks.length > 0}>
         {pendingTasks.length === 0 ? (
           <EmptyWidget icon={ListTodo} message="No pending tasks" />
         ) : (
@@ -73,7 +73,7 @@ export function RightSidebar({
         )}
       </WidgetSection>
 
-      <WidgetSection title="Appointments" count={upcomingShowings.length} onAdd={onAddShowing}>
+      <WidgetSection title="Appointments" count={upcomingShowings.length} onAdd={onAddShowing} collapsible defaultOpen={upcomingShowings.length > 0}>
         {upcomingShowings.length === 0 ? (
           <EmptyWidget icon={Calendar} message="No upcoming appointments" />
         ) : (
