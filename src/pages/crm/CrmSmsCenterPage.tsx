@@ -85,6 +85,9 @@ export default function CrmSmsCenterPage() {
   const channelLogs = useMemo(() => logs.filter(l => (l.channel || 'sms') === channel), [logs, channel]);
 
   const [tab, setTab] = useState('inbox');
+  const [monitorTab, setMonitorTab] = useState<'stats' | 'status' | 'health' | 'delivery'>('stats');
+  const [blastsTab, setBlastsTab] = useState<'compose' | 'history'>('compose');
+  const [setupTab, setSetupTab] = useState<'config' | 'optouts'>('config');
 
   // Composer (bulk)
   const [composerOpen, setComposerOpen] = useState(false);
