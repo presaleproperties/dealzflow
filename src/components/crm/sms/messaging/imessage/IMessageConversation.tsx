@@ -18,7 +18,7 @@ import {
   Bell, BellOff, Mail, Archive, ArchiveRestore, Trash2,
   Reply, Smile, Sparkles, Paperclip, Calendar as CalendarIcon, X,
   CheckCircle2, Clock, AlertCircle, FileText, Volume2, VolumeX,
-  Camera, ChevronUp,
+  Camera, ChevronUp, Plus, AudioLines,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
