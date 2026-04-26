@@ -41,6 +41,7 @@ interface LeadsTableProps {
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
   visibleColumns: Set<string>;
+  hidePagination?: boolean;
 }
 
 const STATUS_BORDER_COLORS: Record<string, string> = {
