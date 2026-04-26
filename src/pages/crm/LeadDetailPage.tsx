@@ -35,6 +35,8 @@ export default function LeadDetailPage() {
 
   const [showEmail, setShowEmail] = useState(false);
   const [showText, setShowText] = useState(false);
+  const [textChannel, setTextChannel] = useState<MessagingChannel>('sms');
+  const openWhatsAppChat = useOpenWhatsAppChat();
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
 
