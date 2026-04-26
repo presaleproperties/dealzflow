@@ -1216,3 +1216,29 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     </>
   );
 }
+
+/**
+ * RecipientRow — Apple Mail / Gmail style hairline-separated row.
+ * Fixed-width muted label on the left, content fills the rest, optional
+ * trailing action (e.g. "Cc Bcc" toggle). Borderless inputs sit inside so
+ * the recipient stack reads as one continuous surface — not stacked boxes.
+ */
+function RecipientRow({
+  label,
+  children,
+  trailing,
+}: {
+  label: string;
+  children: React.ReactNode;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-b-0">
+      <span className="w-[58px] shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+        {label}
+      </span>
+      <div className="flex-1 min-w-0 flex items-center">{children}</div>
+      {trailing && <div className="shrink-0">{trailing}</div>}
+    </div>
+  );
+}
