@@ -347,3 +347,5 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       />
     </Tabs>
   );
+}
+
