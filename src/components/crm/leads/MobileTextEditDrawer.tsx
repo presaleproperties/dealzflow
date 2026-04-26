@@ -49,7 +49,7 @@ export function MobileTextEditDrawer({
       <SheetContent
         side="right"
         hideClose
-        className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l border-border/60 bg-background"
+        className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l border-border/60 bg-background native-safe-top"
       >
         <SheetTitle className="sr-only">{title}</SheetTitle>
 
