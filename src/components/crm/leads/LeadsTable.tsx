@@ -22,6 +22,7 @@ import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePrefetchLead } from '@/hooks/usePrefetchCrm';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
