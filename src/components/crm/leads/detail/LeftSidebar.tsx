@@ -66,14 +66,28 @@ export function LeftSidebar({
 
   return (
     <div className="space-y-6">
-      {/* Identity card */}
+      {/* Identity card — name, phone, and email are all editable inline */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="min-w-0">
-          <h2 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight break-words">
-            {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
-          </h2>
+        <div className="min-w-0 space-y-2">
+          {/* Editable name — split into first / last for clean updates */}
+          <div className="flex items-center gap-2 group/name">
+            <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
+              <InlineEditField
+                value={contact.first_name}
+                placeholder="First name"
+                onSave={(v) => save('first_name', v || null)}
+                className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight"
+              />
+              <InlineEditField
+                value={contact.last_name}
+                placeholder="Last name"
+                onSave={(v) => save('last_name', v || null)}
+                className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight"
+              />
+            </div>
+          </div>
           {contact.source && (
-            <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mt-1.5 truncate">
+            <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground truncate">
               {contact.source}
             </p>
           )}
@@ -81,7 +95,7 @@ export function LeftSidebar({
             const types = (leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : []).slice(0, 3);
             if (types.length === 0) return null;
             return (
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {types.map((t) => (
                   <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1">
                     {LEAD_TYPE_LABELS[t] || t}
@@ -92,37 +106,56 @@ export function LeftSidebar({
           })()}
         </div>
         <div className="space-y-1.5 pt-3 border-t border-border/60">
-          {contact.phone ? (
-            <div className="flex items-center gap-1 group">
-              <a href={`tel:${contact.phone.replace(/\D/g, '')}`} className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group/link min-w-0 flex-1">
-                <Phone className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary shrink-0" />
-                <span className="truncate">{formatPhone(contact.phone)}</span>
+          {/* Phone — tap icon to call, tap value to edit */}
+          <div className="flex items-center gap-2 group min-h-[34px]">
+            {contact.phone ? (
+              <a
+                href={`tel:${contact.phone.replace(/\D/g, '')}`}
+                className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                aria-label="Call"
+              >
+                <Phone className="w-3.5 h-3.5" />
               </a>
-              <CopyButton value={contact.phone} label="Phone" />
+            ) : (
+              <Phone className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <InlineEditField
+                value={contact.phone}
+                placeholder="Add phone"
+                onSave={(v) => save('phone', v || null)}
+                displayFormatter={formatPhone}
+                className="text-sm font-medium"
+              />
             </div>
-          ) : (
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
-              <Phone className="w-3.5 h-3.5 shrink-0" /> <span>No phone</span>
-            </div>
-          )}
-          {contact.email ? (
-            <div className="flex items-center gap-1 group">
+            {contact.phone && <CopyButton value={contact.phone} label="Phone" />}
+          </div>
+
+          {/* Email — tap icon to compose, tap value to edit */}
+          <div className="flex items-center gap-2 group min-h-[34px]">
+            {contact.email && onEmail ? (
               <button
                 type="button"
                 onClick={onEmail}
-                disabled={!onEmail}
-                className="flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-primary transition-colors group/link text-left min-w-0 flex-1 disabled:cursor-default"
+                className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                aria-label="Email"
               >
-                <Mail className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary shrink-0" />
-                <span className="truncate">{contact.email}</span>
+                <Mail className="w-3.5 h-3.5" />
               </button>
-              <CopyButton value={contact.email} label="Email" />
+            ) : (
+              <Mail className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <InlineEditField
+                value={contact.email}
+                placeholder="Add email"
+                type="email"
+                onSave={(v) => save('email', v || null)}
+                className="text-sm font-medium"
+              />
             </div>
-          ) : (
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground/60">
-              <Mail className="w-3.5 h-3.5 shrink-0" /> <span>No email</span>
-            </div>
-          )}
+            {contact.email && <CopyButton value={contact.email} label="Email" />}
+          </div>
         </div>
       </div>
 
