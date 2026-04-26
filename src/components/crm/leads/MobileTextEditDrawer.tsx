@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ChevronLeft } from 'lucide-react';
+import { MonthDayInput, formatMonthDay } from './MonthDayInput';
 
 interface Props {
   open: boolean;
@@ -9,7 +10,7 @@ interface Props {
   value: string;
   onSave: (value: string) => void;
   placeholder?: string;
-  type?: 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'date';
+  type?: 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'date' | 'monthday';
   description?: string;
 }
 
