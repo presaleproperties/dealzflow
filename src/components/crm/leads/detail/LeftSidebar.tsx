@@ -308,7 +308,7 @@ export function LeftSidebar({
       </div>
 
       {/* Details */}
-      <div className="space-y-3">
+      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-3'}>
         <SectionHeader>Details</SectionHeader>
         <div className="space-y-px">
           {isMobile ? (
