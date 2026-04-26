@@ -182,7 +182,48 @@
   }
 }
 
-/* Mobile scroll */
+/* ──────────────────────────────────────────────────────────────────────
+   Lead Detail typography tokens — shared across desktop AND mobile so
+   the two views render with identical sizes, weights and line-heights.
+   Edit here once and both surfaces update.
+   ────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Identity card name (desktop H1 in identity card) */
+  --ld-name-size: 24px;
+  --ld-name-weight: 700;
+  --ld-name-leading: 1.15;
+  --ld-name-tracking: -0.02em;
+
+  /* Eyebrow / section header (desktop SectionHeader) */
+  --ld-eyebrow-size: 11px;
+  --ld-eyebrow-weight: 600;
+  --ld-eyebrow-tracking: 0.12em;
+
+  /* Sub-eyebrow under name (e.g. source line) */
+  --ld-sub-size: 11px;
+  --ld-sub-weight: 600;
+  --ld-sub-tracking: 0.14em;
+
+  /* Detail-row label / value */
+  --ld-row-label-size: 12px;
+  --ld-row-value-size: 13px;
+  --ld-row-pad-y: 8px;
+
+  /* Insight cards */
+  --ld-insight-value-size: 20px;
+  --ld-insight-label-size: 10px;
+
+  /* Tab triggers — read by both desktop and mobile lead-detail tabs */
+  --ld-tab-size: 13px;
+  --ld-tab-weight: 600;
+  --ld-tab-tracking: 0.06em;
+  --ld-tab-pad-y: 10px;
+
+  /* Top-bar back link */
+  --ld-topbar-link-size: 14px;
+}
+
+
 @media (max-width: 640px) {
   .snap-container {
     scroll-snap-type: y proximity;
