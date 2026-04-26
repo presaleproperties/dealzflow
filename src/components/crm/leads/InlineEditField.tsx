@@ -111,7 +111,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
             if (e.key === 'Enter') save();
             if (e.key === 'Escape') setEditing(false);
           }}
-          className={`text-sm bg-transparent border-b outline-none text-foreground w-full ${emailWarning.suggestion ? 'border-warning' : 'border-primary/40'} ${className}`}
+          className={`text-base md:text-sm bg-transparent border-b outline-none text-foreground w-full py-1 md:py-0 ${emailWarning.suggestion ? 'border-warning' : 'border-primary/40'} ${className}`}
         />
         {emailWarning.suggestion && (
           <div className="flex items-center gap-1.5 mt-0.5">
