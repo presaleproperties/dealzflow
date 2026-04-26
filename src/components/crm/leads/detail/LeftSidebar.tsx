@@ -669,6 +669,18 @@ export function LeftSidebar({
               onSave={(v) => save('email_secondary', v || null)}
             />
             <MobileTextEditDrawer
+              open={drawer === 'phone_secondary'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Phone 2" type="tel" placeholder="+1 …"
+              value={contact.phone_secondary ?? ''}
+              onSave={(v) => save('phone_secondary', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'notes'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Notes" type="textarea" placeholder="Internal notes about this lead…"
+              value={contact.notes ?? ''}
+              onSave={(v) => save('notes', v || null)}
+            />
+            <MobileTextEditDrawer
               open={drawer === 'bedrooms'} onOpenChange={(o) => !o && closeDrawer()}
               title="Bedrooms" placeholder="e.g. 2-3"
               value={contact.bedrooms_preferred ?? ''}
