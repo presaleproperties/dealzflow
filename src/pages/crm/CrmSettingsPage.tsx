@@ -178,7 +178,7 @@ export default function CrmSettingsPage() {
 
       {/* Main content — scrollable */}
       <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto space-y-6 sm:space-y-8 max-w-3xl">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground lg:hidden">CRM Settings</h1>
+        <h1 className="m-page-title lg:hidden">CRM Settings</h1>
 
         <div id="settings-team" className="scroll-mt-16">
           <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
