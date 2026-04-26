@@ -865,9 +865,11 @@ function IMessageComposer({
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
-          <span>{seg.count} segment{seg.count > 1 ? 's' : ''} · {seg.chars} chars{pendingMedia.length > 0 ? ' · MMS' : ''}</span>
-        </div>
+        {pendingMedia.length > 0 && (
+          <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
+            <span>MMS</span>
+          </div>
+        )}
       </div>
     </div>
   );
