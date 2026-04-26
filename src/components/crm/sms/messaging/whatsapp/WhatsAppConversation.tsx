@@ -428,7 +428,7 @@ function WhatsAppBubble({
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap break-words pr-12">
+              <div className="whitespace-pre-wrap break-words pr-[64px]">
                 <HighlightedText text={text} query={highlight} />
               </div>
 
