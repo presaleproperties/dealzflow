@@ -4,6 +4,7 @@ import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
+import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
 import { formatContactName } from '@/lib/format';
 
 /**
@@ -52,6 +53,7 @@ function channelChip(c: ChatChannel) {
 
 export default function CrmChatsPage() {
   const navigate = useNavigate();
+  const prefetchThread = usePrefetchChatThread();
   const [filter, setFilter] = useState<ChatChannelFilter>('all');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -214,6 +216,8 @@ export default function CrmChatsPage() {
                     />
                   )}
                   <button
+                    onPointerEnter={() => prefetchThread(t.id)}
+                    onTouchStart={() => prefetchThread(t.id)}
                     onClick={() => navigate(`/crm/chats/${t.id}`)}
                     className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 active:bg-muted/50 transition-colors"
                   >

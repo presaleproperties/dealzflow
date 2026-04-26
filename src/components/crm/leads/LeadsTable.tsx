@@ -22,6 +22,7 @@ import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePrefetchLead } from '@/hooks/usePrefetchCrm';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
@@ -697,6 +698,7 @@ export function LeadsTable({
 }: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const prefetchLead = usePrefetchLead();
   const updateContact = useUpdateCrmContact();
   const [smsContact, setSmsContact] = useState<CrmContact | null>(null);
   const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
@@ -798,7 +800,12 @@ export function LeadsTable({
                 onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
                 onEmail={() => contact.email && setEmailContact(contact)}
               >
-                <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
+                <div
+                  onPointerEnter={() => prefetchLead(contact.id)}
+                  onTouchStart={() => prefetchLead(contact.id)}
+                >
+                  <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
+                </div>
               </SwipeRow>
             ))}
             {contacts.length === 0 && !isFetching && (
@@ -869,6 +876,7 @@ export function LeadsTable({
                   <tr key={contact.id}
                     style={{ height: 56 }}
                     className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
+                    onMouseEnter={() => prefetchLead(contact.id)}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
                     <td className="px-3 py-2 align-middle" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
