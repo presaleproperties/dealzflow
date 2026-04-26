@@ -45,6 +45,8 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   // form feels light, with secondary fields fully optional.
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
   const [showSecondaryEmail, setShowSecondaryEmail] = useState(false);
+  // Which dropdown picker is currently open (iOS-style full-screen drawer)
+  const [picker, setPicker] = useState<null | 'status' | 'assigned_to' | 'source'>(null);
 
   // Duplicate detection state — when the email/phone matches existing
   // crm_contacts rows we surface them in a confirm dialog before inserting.
