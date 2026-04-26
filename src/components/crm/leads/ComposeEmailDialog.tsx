@@ -489,7 +489,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
    * single source of truth for these actions to avoid duplication. */
   const composerActions = (
     <div className="hidden md:flex items-center gap-1">
-    <>
       <input
         ref={fileInputRef}
         type="file"
