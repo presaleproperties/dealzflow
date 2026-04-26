@@ -87,37 +87,78 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     setShowSecondaryEmail(false);
   };
 
-  const handleSubmit = () => {
-    if (!validate()) return;
-    // Snapshot the payload so we can close + reset the form instantly,
-    // then fire the mutation in the background. The mutation does an
-    // optimistic insert into the leads cache so the new lead appears
-    // immediately in lists/Kanban/segments without waiting for the round-trip.
-    const payload = {
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      phone: form.phone.trim() || undefined,
-      phone_secondary: form.phone_secondary.trim() || undefined,
-      email: form.email.trim() || undefined,
-      email_secondary: form.email_secondary.trim() || undefined,
-      status: form.status,
-      assigned_to: form.assigned_to || undefined,
-      source: form.source || undefined,
-      projects: form.projects.length ? form.projects : undefined,
-      project: form.projects[0] || undefined,
-      tags: form.tags.length ? form.tags : undefined,
-      lead_types: form.lead_types.length ? form.lead_types : undefined,
-      city: form.city || undefined,
-      language: form.language || undefined,
-      bedrooms_preferred: form.bedrooms_preferred.trim() || undefined,
-      budget_min: form.budget_min ? Number(form.budget_min) : undefined,
-      budget_max: form.budget_max ? Number(form.budget_max) : undefined,
-      birthday: form.birthday.trim() || undefined,
-      notes: form.notes.trim() || undefined,
-    };
+  const buildPayload = () => ({
+    first_name: form.first_name.trim(),
+    last_name: form.last_name.trim(),
+    phone: form.phone.trim() || undefined,
+    phone_secondary: form.phone_secondary.trim() || undefined,
+    email: form.email.trim() || undefined,
+    email_secondary: form.email_secondary.trim() || undefined,
+    status: form.status,
+    assigned_to: form.assigned_to || undefined,
+    source: form.source || undefined,
+    projects: form.projects.length ? form.projects : undefined,
+    project: form.projects[0] || undefined,
+    tags: form.tags.length ? form.tags : undefined,
+    lead_types: form.lead_types.length ? form.lead_types : undefined,
+    city: form.city || undefined,
+    language: form.language || undefined,
+    bedrooms_preferred: form.bedrooms_preferred.trim() || undefined,
+    budget_min: form.budget_min ? Number(form.budget_min) : undefined,
+    budget_max: form.budget_max ? Number(form.budget_max) : undefined,
+    birthday: form.birthday.trim() || undefined,
+    notes: form.notes.trim() || undefined,
+  });
+
+  const commitInsert = (payload: ReturnType<typeof buildPayload>) => {
     reset();
+    setPendingPayload(null);
+    setDupes([]);
     onOpenChange(false);
     addContact.mutate(payload); // success/error toasts handled inside the hook
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    const payload = buildPayload();
+    const email = payload.email?.toLowerCase();
+    // Last-10-digits comparison handles formatting differences like
+    // "+1 (778) 231-3592" vs "778-231-3592" vs "17782313592".
+    const phoneLast10 = payload.phone?.replace(/\D/g, '').slice(-10) || '';
+
+    // Build an OR filter against email + phone (substring match on last 10 digits).
+    const filters: string[] = [];
+    if (email) filters.push(`email.ilike.${email}`);
+    if (email) filters.push(`email_secondary.ilike.${email}`);
+    if (phoneLast10) filters.push(`phone.ilike.%${phoneLast10}%`);
+    if (phoneLast10) filters.push(`phone_secondary.ilike.%${phoneLast10}%`);
+
+    if (filters.length === 0) {
+      // No email or phone to compare — skip the check entirely.
+      commitInsert(payload);
+      return;
+    }
+
+    setCheckingDupes(true);
+    try {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .select('id, first_name, last_name, email, phone, status')
+        .or(filters.join(','))
+        .limit(5);
+      if (error) throw error;
+      const matches = (data ?? []) as DupContact[];
+      if (matches.length > 0) {
+        setPendingPayload(payload);
+        setDupes(matches);
+        setCheckingDupes(false);
+        return;
+      }
+    } catch {
+      // Best-effort check — if the lookup fails, fall through to insert.
+    }
+    setCheckingDupes(false);
+    commitInsert(payload);
   };
 
   const handleClose = (next: boolean) => {
