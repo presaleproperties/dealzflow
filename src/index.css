@@ -784,6 +784,206 @@
 
   /* Tap-able row chevron */
   .crm-row-chev { @apply text-muted-foreground/50 w-4 h-4 flex-shrink-0; }
+
+  /* ──────────────────────────────────────────────────────────────
+     Lofty-derived mobile design system (v1)
+     Source of truth for spacing, sizing, and rhythm on phones.
+     Use these classes anywhere on mobile to stay in sync.
+     ────────────────────────────────────────────────────────────── */
+
+  /* Token defaults — every screen reads from these so re-skinning
+     the entire app is one edit. Values calibrated to the reference
+     screenshot at a 390pt iPhone width. */
+  :root {
+    --m-page-pad-x: 16px;        /* page side gutter */
+    --m-page-pad-y: 14px;        /* page top breathing room */
+    --m-section-gap: 18px;       /* gap between sections */
+    --m-row-pad-x: 16px;         /* list row side padding */
+    --m-row-pad-y: 16px;         /* list row vertical padding */
+    --m-row-min-h: 88px;         /* default 3-line row */
+    --m-row-divider: hsl(var(--border) / 0.55);
+    --m-title-size: 28px;        /* page H1 */
+    --m-title-weight: 700;
+    --m-tab-size: 22px;
+    --m-name-size: 17px;         /* row primary */
+    --m-meta-size: 15px;         /* row secondary */
+    --m-meta-weak-size: 14px;
+    --m-chip-h: 32px;            /* filter chip */
+    --m-chip-pad-x: 14px;
+    --m-chip-radius: 10px;
+    --m-score-w: 44px;
+    --m-score-h: 34px;
+    --m-score-radius: 8px;
+    --m-score-font: 18px;
+    --m-fab-size: 56px;
+  }
+
+  /* Page wrapper — gives every mobile screen the same outer shell. */
+  .m-page {
+    padding-left: var(--m-page-pad-x);
+    padding-right: var(--m-page-pad-x);
+    padding-top: var(--m-page-pad-y);
+    padding-bottom: var(--bottom-nav-pad, 0px);
+  }
+
+  /* Page title — used at the top of every primary mobile screen. */
+  .m-page-title {
+    font-size: var(--m-title-size);
+    font-weight: var(--m-title-weight);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: hsl(var(--foreground));
+  }
+
+  /* Tab strip (Leads / Contacts style) */
+  .m-tabs { @apply flex items-end gap-5; }
+  .m-tab {
+    font-size: var(--m-tab-size);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    padding-bottom: 6px;
+    color: hsl(var(--muted-foreground));
+    border-bottom: 2px solid transparent;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .m-tab[data-active='true'] {
+    color: hsl(var(--foreground));
+    border-bottom-color: hsl(var(--primary));
+  }
+
+  /* Filter chip — neutral by default, tinted when active. */
+  .m-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--m-chip-h);
+    padding: 0 var(--m-chip-pad-x);
+    border-radius: var(--m-chip-radius);
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--foreground) / 0.78);
+    background: hsl(var(--muted) / 0.55);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  }
+  .m-chip[data-active='true'] {
+    background: hsl(var(--primary) / 0.10);
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.30);
+  }
+  .m-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px var(--m-page-pad-x);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .m-chip-row::-webkit-scrollbar { display: none; }
+
+  /* List container — edge-to-edge, hairline dividers, no card chrome. */
+  .m-list {
+    background: hsl(var(--background));
+    border-top: 1px solid var(--m-row-divider);
+    border-bottom: 1px solid var(--m-row-divider);
+  }
+  .m-list > * + * { border-top: 1px solid var(--m-row-divider); }
+
+  /* Single list row — 3 lines + right-aligned chip/timestamp. */
+  .m-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: var(--m-row-pad-y) var(--m-row-pad-x);
+    min-height: var(--m-row-min-h);
+    background: transparent;
+    text-align: left;
+    width: 100%;
+    transition: background-color 140ms ease;
+  }
+  .m-row:active { background: hsl(var(--muted) / 0.45); }
+  .m-row__main { flex: 1 1 auto; min-width: 0; }
+  .m-row__title {
+    font-size: var(--m-name-size);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .m-row__meta {
+    font-size: var(--m-meta-size);
+    color: hsl(var(--muted-foreground));
+    line-height: 1.35;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .m-row__meta-weak {
+    font-size: var(--m-meta-weak-size);
+    color: hsl(var(--muted-foreground) / 0.85);
+    line-height: 1.35;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .m-row__side {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    align-self: stretch;
+  }
+  .m-row__time {
+    font-size: var(--m-meta-weak-size);
+    color: hsl(var(--muted-foreground) / 0.85);
+    white-space: nowrap;
+  }
+
+  /* Score chip — tinted by tier (cold / warm / hot). */
+  .m-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--m-score-w);
+    height: var(--m-score-h);
+    border-radius: var(--m-score-radius);
+    font-size: var(--m-score-font);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .m-score[data-tier='cold'] {
+    background: hsl(220 14% 90%);
+    color: hsl(220 9% 56%);
+  }
+  .m-score[data-tier='warm'] {
+    background: hsl(35 100% 92%);
+    color: hsl(28 92% 55%);
+  }
+  .m-score[data-tier='hot'] {
+    background: hsl(150 60% 92%);
+    color: hsl(150 65% 38%);
+  }
+  .m-score[data-tier='none'] {
+    background: hsl(var(--muted) / 0.6);
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Section header — small caps eyebrow used between row groups. */
+  .m-eyebrow {
+    @apply text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+    padding: 18px var(--m-page-pad-x) 8px;
+  }
 }
 
 /* ==========================================================================

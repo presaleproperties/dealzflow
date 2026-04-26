@@ -486,10 +486,8 @@ export default function CrmLeadsPage() {
                   headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
-                  <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">
-                    Leads
-                  </h1>
+                <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+                  <h1 className="m-page-title">Leads</h1>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
@@ -549,19 +547,16 @@ export default function CrmLeadsPage() {
                         <button
                           key={seg.id}
                           onClick={() => handleSegmentClick(seg)}
-                          className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
-                            isActive
-                              ? 'text-white shadow-sm'
-                              : 'bg-transparent border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
-                          }`}
-                          style={isActive ? { background: seg.color, borderColor: seg.color } : undefined}
+                          className="m-chip"
+                          data-active={isActive ? 'true' : 'false'}
+                          style={isActive && seg.color ? { background: `${seg.color}1A`, borderColor: `${seg.color}55`, color: seg.color } : undefined}
                         >
                           {seg.emoji && <span>{seg.emoji}</span>}
                           {seg.name}
                           {allContactsLoading ? (
-                            <span className={`inline-block h-2.5 w-5 rounded-full animate-pulse ${isActive ? 'bg-white/40' : 'bg-muted-foreground/20'}`} />
+                            <span className={`inline-block h-2.5 w-5 rounded-full animate-pulse ${isActive ? 'bg-current/40' : 'bg-muted-foreground/20'}`} />
                           ) : count !== undefined && (
-                            <span className={`text-[10px] font-bold tabular-nums ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
+                            <span className={`text-[11px] font-bold tabular-nums ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
                               {count.toLocaleString()}
                             </span>
                           )}

@@ -131,7 +131,7 @@ export function MobilePipelineView() {
         {list.length === 0 ? (
           <div className="text-center py-16 text-sm text-muted-foreground">No leads in this stage</div>
         ) : (
-          <div className="divide-y divide-border/40">
+          <div className="m-list">
             {list.map(c => <PipelineRow key={c.id} contact={c} onClick={() => navigate(`/crm/leads/${c.id}`)} />)}
           </div>
         )}
@@ -164,38 +164,33 @@ function avatarBg(id: string): string {
 
 function PipelineRow({ contact, onClick }: { contact: CrmContact; onClick: () => void }) {
   const score = contact.lead_score ?? 0;
-  const isHot = score >= 70;
-  const rel = contact.last_touch_at ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true }) : 'No activity';
+  const tier: 'hot' | 'warm' | 'cold' | 'none' = score >= 70 ? 'hot' : score >= 40 ? 'warm' : score > 0 ? 'cold' : 'none';
+  const rel = contact.last_touch_at
+    ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: false })
+        .replace('about ', '')
+        .replace(/ minutes?/, ' min')
+        .replace(/ hours?/, ' hrs')
+    : '';
+  const timeLabel = rel ? `${rel} ago` : 'No activity';
   const name = formatContactName(contact.first_name, contact.last_name) || 'Unnamed';
-  const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || name.slice(0, 2).toUpperCase();
+  const rawType = (contact as any).lead_type as string | null | undefined;
+  const typeLabel = rawType
+    ? rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()
+    : 'Buyer';
+  const sourceText = contact.source ?? '';
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left flex items-center gap-3 px-4 py-3 active:bg-muted/40 transition-colors"
-    >
-      <div
-        className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-white text-[14px] font-semibold"
-        style={{ background: avatarBg(contact.id) }}
-      >
-        {initials}
+    <button onClick={onClick} className="m-row focus:outline-none">
+      <div className="m-row__main">
+        <div className="m-row__title">{name}</div>
+        <div className="m-row__meta">{typeLabel}</div>
+        {sourceText && <div className="m-row__meta">{sourceText}</div>}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {isHot && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" fill="currentColor" />}
-          <h3 className="text-[14.5px] font-semibold text-foreground truncate">{name}</h3>
-        </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[12px] text-muted-foreground">
-          {contact.phone && <Phone className="w-3 h-3 shrink-0" />}
-          {contact.email && <Mail className="w-3 h-3 shrink-0" />}
-          <span className="truncate">{rel}</span>
-        </div>
-      </div>
-      <div className="text-right shrink-0">
-        {score > 0 && (
-          <div className="text-[11px] font-bold text-foreground tabular-nums">{score}</div>
-        )}
-        <ChevronRight className="w-4 h-4 text-muted-foreground/60 ml-auto" />
+      <div className="m-row__side">
+        <span className="m-score" data-tier={tier}>
+          {score > 0 ? score : '—'}
+        </span>
+        <span className="m-row__time">{timeLabel}</span>
       </div>
     </button>
   );

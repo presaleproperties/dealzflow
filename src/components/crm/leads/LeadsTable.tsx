@@ -548,25 +548,14 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   const score = (contact as any).lead_score as number | null | undefined;
   const hasScore = typeof score === 'number';
 
-  // Score tier — consistent thresholds: HOT ≥70, WARM ≥40, COLD <40
-  const tier = !hasScore ? null : score! >= 70 ? 'HOT' : score! >= 40 ? 'WARM' : 'COLD';
-  // Bigger, more prominent score badge — sized like an iOS notification badge
-  // but readable at a glance. Gold for HOT, neutral surfaces for WARM/COLD.
-  const badgeClass = tier === 'HOT'
-    ? 'bg-primary text-primary-foreground border border-primary shadow-sm shadow-primary/30'
-    : tier === 'WARM'
-      ? 'bg-foreground/[0.08] text-foreground border border-foreground/10'
-      : tier === 'COLD'
-        ? 'bg-muted/60 text-muted-foreground border border-border/50'
-        : 'bg-transparent text-muted-foreground/60 border border-border/40';
-  const tierLabelClass = tier === 'HOT'
-    ? 'text-primary'
-    : tier === 'WARM'
-      ? 'text-foreground/70'
-      : 'text-muted-foreground';
-
-  // "New" / never-touched indicator — gold dot
-  const isNew = !contact.last_touch_at;
+  // Score tier — drives the tinted chip color (cold / warm / hot)
+  const tier: 'hot' | 'warm' | 'cold' | 'none' = !hasScore
+    ? 'none'
+    : score! >= 70
+      ? 'hot'
+      : score! >= 40
+        ? 'warm'
+        : 'cold';
 
   // Lead type label (Buyer / Seller / Investor / Renter), falls back to contact_type
   const rawType = (contact as any).lead_type as string | null | undefined;
@@ -574,76 +563,48 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
     ? rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()
     : (contact.contact_type === 'realtor' ? 'Realtor'
       : contact.contact_type === 'past_client' ? 'Client'
-      : 'Lead');
+      : 'Buyer');
 
   const sourceText = contact.source ?? '';
-  const emailText = contact.email ?? '';
+  const assignee = (contact as any).assigned_to as string | null | undefined;
   const relTime = contact.last_touch_at
-    ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })
+    ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: false })
     : contact.created_at
-      ? formatDistanceToNow(new Date(contact.created_at), { addSuffix: true })
+      ? formatDistanceToNow(new Date(contact.created_at), { addSuffix: false })
       : '';
+  // Compress " ago" formatting like the reference ("3 hrs ago", "2 days ago")
+  const timeShort = relTime
+    .replace('about ', '')
+    .replace(/ minutes?/, ' min')
+    .replace(/ hours?/, ' hrs')
+    .replace(/ months?/, ' mo')
+    .replace(/ years?/, ' yr');
+  const timeLabel = timeShort ? `${timeShort} ago` : '';
 
   return (
-    <button
-      onClick={onClick}
-      className={`relative w-full text-left bg-card px-5 py-4 transition-all duration-150 hover:bg-muted/20 active:bg-muted/40 active:scale-[0.998] focus:outline-none focus-visible:bg-muted/20 ${
-        tier === 'HOT' ? 'before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary' : ''
-      }`}
-    >
-      <div className="flex items-start gap-4">
-        <div className="flex-1 min-w-0">
-          {/* Row 1: gold dot (when new) + name */}
-          <div className="flex items-center gap-2 min-w-0">
-            {isNew && (
-              <span
-                aria-label="New lead"
-                className="w-1.5 h-1.5 rounded-full shrink-0 bg-primary"
-              />
-            )}
-            <h3 className="text-[16px] font-semibold text-foreground tracking-[-0.01em] leading-tight truncate flex-1 min-w-0">
-              {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
-            </h3>
-          </div>
-
-          {/* Row 2: type · source — editorial dot separator */}
-          <p className="text-[13px] text-muted-foreground mt-1.5 leading-tight truncate">
-            {typeLabel}
-            {sourceText && (
-              <>
-                <span className="mx-1.5 text-muted-foreground/40">·</span>
-                <span className="truncate">{sourceText}</span>
-              </>
-            )}
-          </p>
-
-          {/* Row 3: lead email */}
-          {emailText && (
-            <p className="text-[12.5px] text-muted-foreground/75 mt-2 leading-tight truncate lowercase">
-              {emailText}
-            </p>
-          )}
+    <button onClick={onClick} className="m-row focus:outline-none">
+      <div className="m-row__main">
+        {/* Row 1: Name */}
+        <div className="m-row__title">
+          {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
         </div>
+        {/* Row 2: Lead type */}
+        <div className="m-row__meta">{typeLabel}</div>
+        {/* Row 3: Source */}
+        {sourceText && <div className="m-row__meta">{sourceText}</div>}
+        {/* Row 4: Assignee (matches reference's "Uzair Muhammad" line) */}
+        {assignee && <div className="m-row__meta-weak">{assignee}</div>}
+      </div>
 
-        {/* Right column: prominent score badge + tier + relative time */}
-        <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[68px]">
-          <div className="flex flex-col items-center gap-0.5">
-            <span
-              aria-label={hasScore ? `Lead score ${score} out of 100` : 'No score yet'}
-              className={`inline-flex items-center justify-center h-12 min-w-[52px] px-2.5 rounded-2xl text-[22px] font-bold tabular-nums leading-none tracking-[-0.02em] ${badgeClass}`}
-            >
-              {hasScore ? score : '—'}
-            </span>
-            {tier && (
-              <span className={`text-[9.5px] font-bold uppercase tracking-[0.1em] mt-0.5 ${tierLabelClass}`}>
-                {tier}
-              </span>
-            )}
-          </div>
-          {relTime && (
-            <span className="text-[10.5px] text-muted-foreground/70 whitespace-nowrap tracking-tight">{relTime}</span>
-          )}
-        </div>
+      <div className="m-row__side">
+        <span
+          aria-label={hasScore ? `Lead score ${score} out of 100` : 'No score yet'}
+          className="m-score"
+          data-tier={tier}
+        >
+          {hasScore ? score : '—'}
+        </span>
+        {timeLabel && <span className="m-row__time">{timeLabel}</span>}
       </div>
     </button>
   );
@@ -799,34 +760,30 @@ export function LeadsTable({
           )}
         </div>
 
-        {/* Edge-to-edge list — matches desktop table colors (bg-card, divide-border/50, muted header, primary/5 selection) */}
-        <div className={`bg-card border-y border-border transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
-          {/* Header strip removed on mobile per request — more space for leads */}
-
-          <div className="divide-y divide-border/50">
-            {contacts.map(contact => (
-              <SwipeRow
-                key={contact.id}
-                hasPhone={!!contact.phone}
-                hasEmail={!!contact.email}
-                onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
-                onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
-                onEmail={() => contact.email && setEmailContact(contact)}
+        {/* Edge-to-edge list using the shared mobile system */}
+        <div className={`m-list transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
+          {contacts.map(contact => (
+            <SwipeRow
+              key={contact.id}
+              hasPhone={!!contact.phone}
+              hasEmail={!!contact.email}
+              onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
+              onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
+              onEmail={() => contact.email && setEmailContact(contact)}
+            >
+              <div
+                onPointerEnter={() => prefetchLead(contact.id)}
+                onTouchStart={() => prefetchLead(contact.id)}
               >
-                <div
-                  onPointerEnter={() => prefetchLead(contact.id)}
-                  onTouchStart={() => prefetchLead(contact.id)}
-                >
-                  <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
-                </div>
-              </SwipeRow>
-            ))}
-            {contacts.length === 0 && !isFetching && (
-              <div className="px-4 py-12 text-center text-[13px] text-muted-foreground">
-                No leads match the current filters.
+                <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
               </div>
-            )}
-          </div>
+            </SwipeRow>
+          ))}
+          {contacts.length === 0 && !isFetching && (
+            <div className="px-4 py-12 text-center text-[14px] text-muted-foreground">
+              No leads match the current filters.
+            </div>
+          )}
         </div>
 
         {!hidePagination && (
