@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ChevronLeft, Check } from 'lucide-react';
 
@@ -25,12 +25,25 @@ export function MobilePickerDrawer({
   onChange,
 }: MobilePickerDrawerProps) {
   const [pending, setPending] = useState<string | undefined>(value);
+  // Snapshot of the value when the drawer opened — used to pin the
+  // initially-selected row to the top so user can see what's already chosen.
+  const [initialValue, setInitialValue] = useState<string | undefined>(value);
 
   // Sync pending → current value whenever the drawer opens
   const handleOpenChange = (next: boolean) => {
-    if (next) setPending(value);
+    if (next) {
+      setPending(value);
+      setInitialValue(value);
+    }
     onOpenChange(next);
   };
+
+  const ordered = useMemo(() => {
+    if (!initialValue) return options;
+    const top = options.filter((o) => o.value === initialValue);
+    const rest = options.filter((o) => o.value !== initialValue);
+    return [...top, ...rest];
+  }, [options, initialValue]);
 
   const commit = () => {
     if (pending && pending !== value) onChange(pending);
@@ -68,7 +81,7 @@ export function MobilePickerDrawer({
 
         {/* List */}
         <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom,0px)]">
-          {options.map((opt) => {
+          {ordered.map((opt) => {
             const selected = pending === opt.value;
             return (
               <button

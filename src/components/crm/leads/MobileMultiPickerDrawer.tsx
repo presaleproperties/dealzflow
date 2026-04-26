@@ -38,25 +38,48 @@ export function MobileMultiPickerDrawer({
 }: Props) {
   const [pending, setPending] = useState<string[]>(value);
   const [search, setSearch] = useState('');
+  // Snapshot of which values were selected when the drawer opened.
+  // We sort *these* to the top (and keep them pinned) so toggling a row
+  // doesn't make rows jump around mid-interaction. Newly-selected items
+  // stay in their original position until the next open.
+  const [initialSelected, setInitialSelected] = useState<string[]>(value);
 
   useEffect(() => {
     if (open) {
       setPending(value);
+      setInitialSelected(value);
       setSearch('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Reorder options so initially-selected ones appear first (preserving
+  // their relative order from the source list), then everything else.
+  const ordered = useMemo(() => {
+    if (initialSelected.length === 0) return options;
+    const selectedSet = new Set(initialSelected);
+    const top = options.filter((o) => selectedSet.has(o.value));
+    const rest = options.filter((o) => !selectedSet.has(o.value));
+    return [...top, ...rest];
+  }, [options, initialSelected]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((o) => o.label.toLowerCase().includes(q));
-  }, [options, search]);
+    if (!q) return ordered;
+    return ordered.filter((o) => o.label.toLowerCase().includes(q));
+  }, [ordered, search]);
 
   const exactMatch = useMemo(
     () => options.some((o) => o.label.toLowerCase() === search.trim().toLowerCase()),
     [options, search],
   );
+
+  // Index of the first non-selected row (used to draw a subtle divider
+  // between "Selected" and "Available" sections when not searching).
+  const firstUnselectedIndex = useMemo(() => {
+    if (search.trim() || initialSelected.length === 0) return -1;
+    return filtered.findIndex((o) => !initialSelected.includes(o.value));
+  }, [filtered, initialSelected, search]);
 
   const toggle = (val: string) => {
     setPending((prev) => (prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]));
@@ -120,31 +143,45 @@ export function MobileMultiPickerDrawer({
 
         {/* List */}
         <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom,0px)]">
-          {filtered.map((opt) => {
+          {/* Section header — Selected */}
+          {firstUnselectedIndex !== 0 && initialSelected.length > 0 && !search.trim() && (
+            <div className="px-5 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground bg-background sticky top-0 z-[1]">
+              Selected
+            </div>
+          )}
+          {filtered.map((opt, idx) => {
             const selected = pending.includes(opt.value);
+            const showAvailableHeader =
+              firstUnselectedIndex > -1 && idx === firstUnselectedIndex;
             return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => toggle(opt.value)}
-                className="w-full flex items-center justify-between px-5 h-14 text-left border-b border-border/30 active:bg-muted/40 transition-colors"
-              >
-                <span className="text-[16px] text-foreground truncate flex-1">{opt.label}</span>
-                <div className="flex items-center gap-3 shrink-0">
-                  {opt.count != null && opt.count > 0 && (
-                    <span className="text-[12px] tabular-nums text-muted-foreground">{opt.count}</span>
-                  )}
-                  <span
-                    className={`flex items-center justify-center w-6 h-6 rounded-full border transition-all ${
-                      selected
-                        ? 'bg-primary border-primary text-primary-foreground'
-                        : 'border-border bg-transparent'
-                    }`}
-                  >
-                    {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-                  </span>
-                </div>
-              </button>
+              <div key={opt.value}>
+                {showAvailableHeader && (
+                  <div className="px-5 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground bg-background border-t border-border/40 mt-1">
+                    Available
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggle(opt.value)}
+                  className="w-full flex items-center justify-between px-5 h-14 text-left border-b border-border/30 active:bg-muted/40 transition-colors"
+                >
+                  <span className="text-[16px] text-foreground truncate flex-1">{opt.label}</span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {opt.count != null && opt.count > 0 && (
+                      <span className="text-[12px] tabular-nums text-muted-foreground">{opt.count}</span>
+                    )}
+                    <span
+                      className={`flex items-center justify-center w-6 h-6 rounded-full border transition-all ${
+                        selected
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-border bg-transparent'
+                      }`}
+                    >
+                      {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                    </span>
+                  </div>
+                </button>
+              </div>
             );
           })}
 
