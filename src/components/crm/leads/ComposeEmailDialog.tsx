@@ -613,7 +613,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
           </div>
         </PopoverContent>
       </Popover>
-    </>
+    </div>
   );
 
   return (
