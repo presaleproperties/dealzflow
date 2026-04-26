@@ -77,7 +77,8 @@ export function MobileLeadDetail({
             </span>
           </div>
         </div>
-        <div className="px-3 pb-2 flex items-center gap-2.5">
+        {/* Row 2: avatar + name (full width). Stage selector lives below to prevent name truncation. */}
+        <div className="px-3 pt-1 pb-2 flex items-start gap-2.5">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 border"
             style={{ background: `${leadScore.color}15`, borderColor: `${leadScore.color}40`, color: leadScore.color }}
@@ -88,27 +89,28 @@ export function MobileLeadDetail({
             <h1 className="text-[20px] font-bold text-foreground leading-tight tracking-[-0.015em] truncate">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
               <LeadStatusBadge status={contact.status} />
+              {/* Inline stage swap — sits next to the status badge so it never overlaps the name. */}
+              <select
+                value={contact.status || ''}
+                onChange={(e) =>
+                  updateContact.mutate({
+                    id: contact.id,
+                    updates: { status: e.target.value, status_changed_at: new Date().toISOString() },
+                    oldValues: { status: contact.status },
+                  })
+                }
+                className="h-7 max-w-[140px] px-2 rounded-md bg-muted/40 border border-border text-[11.5px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+                aria-label="Change stage"
+              >
+                {LEAD_STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
           </div>
-          {/* Inline stage swap — discreet. The global "+" lives in BottomNav. */}
-          <select
-            value={contact.status || ''}
-            onChange={(e) =>
-              updateContact.mutate({
-                id: contact.id,
-                updates: { status: e.target.value, status_changed_at: new Date().toISOString() },
-                oldValues: { status: contact.status },
-              })
-            }
-            className="h-8 max-w-[120px] px-2 rounded-md bg-muted/40 border border-border text-[12px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
-            aria-label="Stage"
-          >
-            {LEAD_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          {/* Global "+" lives in BottomNav — no duplicate here. */}
         </div>
       </div>
 
