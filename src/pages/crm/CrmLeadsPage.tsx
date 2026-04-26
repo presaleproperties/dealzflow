@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Filter, Settings2, Eye, X, ArrowDownNarrowWide, Check, ChevronDown } from 'lucide-react';
-import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, useCrmContacts } from '@/hooks/useCrmContacts';
+import { useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { useCrmContactsLite } from '@/hooks/useCrmContactsLite';
 import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 import { useCrmLeadSegments, useReorderCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
@@ -64,7 +65,7 @@ const SORT_OPTIONS: { key: SortKey; shortLabel: string; label: string; defaultDi
 ];
 
 export default function CrmLeadsPage() {
-  const { data: allContacts = [], isLoading: allContactsLoading } = useCrmContacts();
+  const { data: allContacts = [], isLoading: allContactsLoading } = useCrmContactsLite();
   const dynamicOpts = useDynamicFilterOptions(allContacts);
   const isMobile = useIsMobile();
 
