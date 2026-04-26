@@ -353,6 +353,47 @@ export default function CrmLeadsPage() {
                 </div>
               )}
 
+              {/* Segment pills — same source/active-state logic as desktop */}
+              {segments.length > 0 && (
+                <div className="overflow-x-auto scrollbar-hide border-t border-border/40">
+                  <div className="flex items-center gap-1.5 px-3 py-2 min-w-max">
+                    {segments.map(seg => {
+                      const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
+                      const count = segmentCounts[seg.id];
+                      return (
+                        <button
+                          key={seg.id}
+                          onClick={() => handleSegmentClick(seg)}
+                          className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
+                            isActive
+                              ? 'text-white shadow-sm'
+                              : 'bg-transparent border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                          }`}
+                          style={isActive ? { background: seg.color, borderColor: seg.color } : undefined}
+                        >
+                          {seg.emoji && <span>{seg.emoji}</span>}
+                          {seg.name}
+                          {allContactsLoading ? (
+                            <span className={`inline-block h-2.5 w-5 rounded-full animate-pulse ${isActive ? 'bg-white/40' : 'bg-muted-foreground/20'}`} />
+                          ) : count !== undefined && (
+                            <span className={`text-[10px] font-bold tabular-nums ${isActive ? 'opacity-80' : 'text-muted-foreground'}`}>
+                              {count.toLocaleString()}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setManagePipelinesOpen(true)}
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-dashed border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors ml-1 shrink-0"
+                      aria-label="Manage pipelines"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Filter + sort row — single consolidated entry point */}
               <div className="flex items-center gap-2 px-3 pb-2">
                 <button
@@ -391,6 +432,7 @@ export default function CrmLeadsPage() {
               </div>
             </div>
           )}
+
 
 
           {segments.length > 0 && (
