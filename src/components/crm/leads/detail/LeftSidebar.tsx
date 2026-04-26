@@ -344,26 +344,11 @@ export function LeftSidebar({
         <div className="space-y-px">
           {isMobile ? (
             <>
+              {/* Mobile mirrors desktop sidebar — desktop is source of truth. */}
               <MobileEditRow label="Source" value={contact.source || ''} placeholder="Select source" onClick={() => setDrawer('source')} />
-              <MobileEditRow label="Email 2" value={contact.email_secondary || ''} placeholder="Add" onClick={() => setDrawer('email_secondary')} />
-              <MobileEditRow label="Phone 2" value={contact.phone_secondary ? formatPhone(contact.phone_secondary) : ''} placeholder="Add" onClick={() => setDrawer('phone_secondary')} />
               <MobileEditRow label="City" value={contact.city || ''} placeholder="Select" onClick={() => setDrawer('city')} />
               <MobileEditRow label="Language" value={contact.language || ''} placeholder="Select" onClick={() => setDrawer('language')} />
-              <MobileEditRow label="Beds" value={contact.bedrooms_preferred || ''} placeholder="e.g. 2-3" onClick={() => setDrawer('bedrooms')} />
-              <MobileEditRow
-                label="Budget min"
-                value={contact.budget_min != null ? formatCurrency(Number(contact.budget_min)) : ''}
-                placeholder="Add"
-                onClick={() => setDrawer('budget_min')}
-              />
-              <MobileEditRow
-                label="Budget max"
-                value={contact.budget_max != null ? formatCurrency(Number(contact.budget_max)) : ''}
-                placeholder="Add"
-                onClick={() => setDrawer('budget_max')}
-              />
               <MobileEditRow label="Birthday" value={contact.birthday || ''} placeholder="YYYY-MM-DD" onClick={() => setDrawer('birthday')} />
-              <MobileEditRow label="Notes" value={contact.notes ? (contact.notes.length > 40 ? contact.notes.slice(0, 40) + '…' : contact.notes) : ''} placeholder="Add notes" onClick={() => setDrawer('notes')} />
             </>
           ) : (
             <>
