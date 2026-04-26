@@ -766,76 +766,70 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </aside>
 
-            {/* Main composer column */}
-            <div className="flex flex-col overflow-hidden min-h-0">
-              {/* Recipient rows */}
-              <div className="px-5 py-3 border-b border-border space-y-2 bg-card shrink-0">
-                <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">From</Label>
-                  <Input
-                    value={emailSettings?.sender_name ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>` : (user?.email ?? '')}
-                    disabled
-                    className="h-9 bg-muted/40 text-xs"
-                  />
-                  <span className="w-[68px]" />
-                </div>
-                <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">To</Label>
-                  <Input
-                    value={contact.email ?? ''}
-                    disabled
-                    className="h-9 bg-muted/40"
-                    placeholder={contact.email ? '' : 'No email on file'}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs text-muted-foreground"
-                    onClick={() => setShowCcBcc((v) => !v)}
-                  >
-                    {showCcBcc ? 'Hide' : 'Cc / Bcc'}
-                  </Button>
-                </div>
+            {/* Main composer column — single continuous surface, mail-app feel */}
+            <div className="flex flex-col overflow-hidden min-h-0 bg-background">
+              {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail */}
+              <div className="px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
+                <RecipientRow label="From">
+                  <span className="text-[13px] text-foreground/80 truncate">
+                    {emailSettings?.sender_name
+                      ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>`
+                      : (user?.email ?? '')}
+                  </span>
+                </RecipientRow>
+                <RecipientRow
+                  label="To"
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowCcBcc((v) => !v)}
+                      className="text-[11px] text-muted-foreground/80 hover:text-foreground transition-colors"
+                    >
+                      {showCcBcc ? 'Hide' : 'Cc Bcc'}
+                    </button>
+                  }
+                >
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full">
+                    <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">
+                      {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
+                    </span>
+                    <span className="truncate">{contact.email ?? 'No email on file'}</span>
+                  </span>
+                </RecipientRow>
                 {showCcBcc && (
                   <>
-                    <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">Cc</Label>
-                      <Input
+                    <RecipientRow label="Cc">
+                      <input
                         value={cc}
                         onChange={(e) => setCc(e.target.value)}
                         placeholder="cc@example.com"
-                        className="h-9"
+                        className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground/50 px-0"
                       />
-                      <span className="w-[68px]" />
-                    </div>
-                    <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">Bcc</Label>
-                      <Input
+                    </RecipientRow>
+                    <RecipientRow label="Bcc">
+                      <input
                         value={bcc}
                         onChange={(e) => setBcc(e.target.value)}
                         placeholder="bcc@example.com"
-                        className="h-9"
+                        className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground/50 px-0"
                       />
-                      <span className="w-[68px]" />
-                    </div>
+                    </RecipientRow>
                   </>
                 )}
-                <div className="grid grid-cols-[60px_1fr] items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">Subject</Label>
-                  <Input
+                <RecipientRow label="Subject">
+                  <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Subject line — supports {{lead.first_name}}"
-                    className="h-9 font-medium"
+                    placeholder="Subject — supports {{lead.first_name}}"
                     maxLength={200}
+                    className="w-full bg-transparent border-0 outline-none text-[14px] font-semibold tracking-[-0.01em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/50 px-0"
                   />
-                </div>
+                </RecipientRow>
               </div>
 
-              {/* Mode tabs */}
-              <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center justify-between gap-2 shrink-0">
-                <div className="flex items-center gap-1">
+              {/* Mode tabs — flush row, no heavy background block */}
+              <div className="px-4 py-1.5 border-b border-border/60 flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-0.5">
                   {(() => {
                     /* Detect "rich" template HTML the rich text editor can't represent. */
                     const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
@@ -850,10 +844,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                         disabled={(t as any).disabled}
                         title={(t as any).hint}
                         className={cn(
-                          'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
+                          'h-7 px-2.5 text-[11.5px] rounded-md font-medium transition-colors flex items-center gap-1.5',
                           mode === t.v
-                            ? 'bg-background border border-border text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground',
+                            ? 'bg-muted text-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                           (t as any).disabled && 'opacity-40 cursor-not-allowed',
                         )}
                       >
@@ -864,7 +858,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   })()}
                 </div>
                 {mode === 'preview' && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <Button
                       type="button"
                       size="sm"
