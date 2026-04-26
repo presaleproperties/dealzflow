@@ -290,30 +290,37 @@ export function ComposerSurface({
     setAppliedTplId(null);
   };
 
-  const doSingleSend = async () => {
+  const doSingleSend = () => {
     const c = reachable[0];
     if (!c?.email) return;
-    try {
-      await sendBridge.mutateAsync({
-        to: c.email,
-        cc: cc.trim() || undefined,
-        bcc: bcc.trim() || undefined,
-        subject: renderedSubject,
-        html: finalHtml,
-        contact_id: c.id,
-      });
-      await addMessage.mutateAsync({
-        contact_id: c.id,
-        direction: 'outbound',
-        content: `Subject: ${renderedSubject}\n\n${finalHtml.replace(/<[^>]*>/g, ' ').trim()}`,
-        channel: 'email',
-        sent_by: 'Agent',
-        message_type: 'text',
-      });
-      resetComposer();
-      onClearRecipients?.();
-      onSent?.();
-    } catch { /* hook handles toast */ }
+    // Snapshot args so we can clear the composer immediately for instant UX,
+    // then fire the network call in the background. Toasts are surfaced by
+    // the underlying hooks if anything actually fails.
+    const args = {
+      to: c.email,
+      cc: cc.trim() || undefined,
+      bcc: bcc.trim() || undefined,
+      subject: renderedSubject,
+      html: finalHtml,
+      contact_id: c.id,
+    };
+    const logArgs = {
+      contact_id: c.id,
+      direction: 'outbound' as const,
+      content: `Subject: ${renderedSubject}\n\n${finalHtml.replace(/<[^>]*>/g, ' ').trim()}`,
+      channel: 'email' as const,
+      sent_by: 'Agent',
+      message_type: 'text' as const,
+    };
+    resetComposer();
+    onClearRecipients?.();
+    onSent?.();
+    void (async () => {
+      try {
+        await sendBridge.mutateAsync(args);
+        await addMessage.mutateAsync(logArgs);
+      } catch { /* hook handles toast */ }
+    })();
   };
 
   const doMassSend = async () => {
