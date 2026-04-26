@@ -697,6 +697,7 @@ export function LeadsTable({
 }: LeadsTableProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const prefetchLead = usePrefetchLead();
   const updateContact = useUpdateCrmContact();
   const [smsContact, setSmsContact] = useState<CrmContact | null>(null);
   const [emailContact, setEmailContact] = useState<CrmContact | null>(null);
