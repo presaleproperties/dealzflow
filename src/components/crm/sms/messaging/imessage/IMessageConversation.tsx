@@ -613,6 +613,24 @@ function IMessageComposer({
   const seg = smsSegments(value);
   const canSend = (value.trim().length > 0 || pendingMedia.length > 0) && !sending;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize: grow the textarea up to MAX_LINES (matches iMessage / WhatsApp).
+  // The right-side icons stay aligned because the parent row uses items-end and
+  // each icon button has a fixed h-9, so they pin to the bottom line of the pill.
+  const LINE_HEIGHT = 21;   // 15px font * 1.4 line-height (matches className)
+  const MAX_LINES   = 3;
+  const MAX_HEIGHT  = LINE_HEIGHT * MAX_LINES; // 63px
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    // Reset to a single line so scrollHeight reflects only the content.
+    el.style.height = 'auto';
+    const next = Math.min(el.scrollHeight, MAX_HEIGHT);
+    el.style.height = `${next}px`;
+    el.style.overflowY = el.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+  }, [value, MAX_HEIGHT]);
 
   const defaultScheduled = useMemo(() => {
     const d = new Date(Date.now() + 60 * 60 * 1000);
