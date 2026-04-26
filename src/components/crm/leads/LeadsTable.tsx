@@ -800,7 +800,11 @@ export function LeadsTable({
                 onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
                 onEmail={() => contact.email && setEmailContact(contact)}
               >
-                <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
+                <LeadCard
+                  contact={contact}
+                  onClick={() => navigate(`/crm/leads/${contact.id}`)}
+                  onPointerEnter={() => prefetchLead(contact.id)}
+                />
               </SwipeRow>
             ))}
             {contacts.length === 0 && !isFetching && (
