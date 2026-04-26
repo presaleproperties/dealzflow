@@ -141,11 +141,7 @@ export default function CrmChatThreadPage() {
   const meta = useMemo(() => channelMeta((conv?.channel ?? 'email') as Channel), [conv?.channel]);
 
   if (threadLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <ChatThreadSkeleton onBack={() => navigate('/crm/chats')} />;
   }
   if (!thread || !conv || !contact) {
     return (
