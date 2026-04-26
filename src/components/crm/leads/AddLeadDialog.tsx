@@ -470,7 +470,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             />
             <PickerRow
               label="Birthday"
-              value={form.birthday}
+              value={formatMonthDay(form.birthday) || form.birthday}
               placeholder="—"
               onClick={() => setDrawer('birthday')}
               last
