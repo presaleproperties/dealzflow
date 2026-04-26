@@ -183,45 +183,102 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────
+   Device-tier responsive scale.
+
+   Three iPhone tiers are auto-detected from viewport width:
+     · compact   ≤ 375px   (SE 2/3, 12 mini, 13 mini)            → scale 0.94
+     · regular   376–413px (12, 13, 14, 15, 16)                  → scale 1.00 (baseline)
+     · pro-max   ≥ 414px   (Plus, Pro Max, 14/15/16 Pro Max)     → scale 1.06
+
+   Two knobs drive everything downstream:
+     --device-scale   multiplier for typography sizes
+     --device-pad-x   horizontal page gutter (auto-larger on Pro Max)
+     --device-pad-y   vertical breathing room (auto-larger on Pro Max)
+     --device-gap     section/card spacing rhythm
+
+   Token blocks below (mobile list system, lead-detail typography) read
+   from these so a single media query rescales the whole UI for the
+   device. Desktop (≥ 1024px) ignores the scale.
+   ────────────────────────────────────────────────────────────────────── */
+:root {
+  --device-scale: 1;
+  --device-pad-x: 16px;
+  --device-pad-y: 14px;
+  --device-gap: 18px;
+}
+
+/* Compact iPhones (SE / mini) — tighten everything slightly */
+@media (max-width: 375px) {
+  :root {
+    --device-scale: 0.94;
+    --device-pad-x: 14px;
+    --device-pad-y: 12px;
+    --device-gap: 16px;
+  }
+}
+
+/* Pro Max / Plus / Pro Max iPhones — give the UI more room to breathe */
+@media (min-width: 414px) and (max-width: 1023px) {
+  :root {
+    --device-scale: 1.06;
+    --device-pad-x: 20px;
+    --device-pad-y: 18px;
+    --device-gap: 22px;
+  }
+}
+
+/* Desktop / tablet — ignore the device scale */
+@media (min-width: 1024px) {
+  :root {
+    --device-scale: 1;
+    --device-pad-x: 16px;
+    --device-pad-y: 14px;
+    --device-gap: 18px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
    Lead Detail typography tokens — shared across desktop AND mobile so
    the two views render with identical sizes, weights and line-heights.
-   Edit here once and both surfaces update.
+   Sizes auto-scale with --device-scale on phones (calc keeps fractions
+   tidy by rounding to the nearest pixel via the browser).
    ────────────────────────────────────────────────────────────────────── */
 :root {
   /* Identity card name (desktop H1 in identity card) */
-  --ld-name-size: 24px;
+  --ld-name-size: calc(24px * var(--device-scale));
   --ld-name-weight: 700;
   --ld-name-leading: 1.15;
   --ld-name-tracking: -0.02em;
 
   /* Eyebrow / section header (desktop SectionHeader) */
-  --ld-eyebrow-size: 11px;
+  --ld-eyebrow-size: calc(11px * var(--device-scale));
   --ld-eyebrow-weight: 600;
   --ld-eyebrow-tracking: 0.12em;
 
   /* Sub-eyebrow under name (e.g. source line) */
-  --ld-sub-size: 11px;
+  --ld-sub-size: calc(11px * var(--device-scale));
   --ld-sub-weight: 600;
   --ld-sub-tracking: 0.14em;
 
   /* Detail-row label / value */
-  --ld-row-label-size: 12px;
-  --ld-row-value-size: 13px;
+  --ld-row-label-size: calc(12px * var(--device-scale));
+  --ld-row-value-size: calc(13px * var(--device-scale));
   --ld-row-pad-y: 8px;
 
   /* Insight cards */
-  --ld-insight-value-size: 20px;
-  --ld-insight-label-size: 10px;
+  --ld-insight-value-size: calc(20px * var(--device-scale));
+  --ld-insight-label-size: calc(10px * var(--device-scale));
 
   /* Tab triggers — read by both desktop and mobile lead-detail tabs */
-  --ld-tab-size: 13px;
+  --ld-tab-size: calc(13px * var(--device-scale));
   --ld-tab-weight: 600;
   --ld-tab-tracking: 0.06em;
   --ld-tab-pad-y: 10px;
 
   /* Top-bar back link */
-  --ld-topbar-link-size: 14px;
+  --ld-topbar-link-size: calc(14px * var(--device-scale));
 }
+
 
 
 @media (max-width: 640px) {
