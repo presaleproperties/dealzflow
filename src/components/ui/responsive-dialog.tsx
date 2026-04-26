@@ -34,6 +34,9 @@ export const ResponsiveDialogContent = React.forwardRef<
     return (
       <SheetContent
         side="bottom"
+        // Suppress the built-in Sheet close so dialogs can render their own header X
+        // without doubling up in the top-right corner.
+        hideClose
         className={cn(
           'rounded-t-2xl max-h-[92vh] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+10px)]',
           className,
