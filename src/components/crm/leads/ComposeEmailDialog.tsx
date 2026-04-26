@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
+import { useComposerBackButton } from '@/hooks/useComposerBackButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ResponsiveDialog, ResponsiveDialogContent } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
