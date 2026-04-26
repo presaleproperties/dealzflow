@@ -206,7 +206,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mt-3">
+    <div className="mt-3 bg-muted">
       <div className="px-4 pb-1.5 text-[11px] uppercase tracking-wider text-muted-foreground/80 font-medium">{title}</div>
       <div className="bg-card border-y border-border/60">{children}</div>
     </div>
