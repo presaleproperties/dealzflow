@@ -135,11 +135,11 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <ResponsiveDialogHeader>
+      <ResponsiveDialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto p-0 sm:p-6">
+        <ResponsiveDialogHeader className="px-4 pt-4 sm:p-0 sm:pb-2">
           <ResponsiveDialogTitle>Add New Lead</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+88px)] sm:px-0 sm:pb-0 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="first_name">First Name *</Label>
