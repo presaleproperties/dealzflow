@@ -579,7 +579,9 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-transparent px-3 py-3.5 transition-colors hover:bg-muted/20 active:bg-muted/30 focus:outline-none focus-visible:bg-muted/20"
+      className={`relative w-full text-left bg-card px-4 py-3 transition-colors hover:bg-muted/20 active:bg-muted/30 focus:outline-none focus-visible:bg-muted/20 ${
+        tier === 'HOT' ? 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary' : ''
+      }`}
     >
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
