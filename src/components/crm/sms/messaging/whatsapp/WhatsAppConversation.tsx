@@ -226,14 +226,18 @@ export function WhatsAppConversation(props: Props) {
           <Input
             autoFocus value={convoSearch} onChange={(e) => onConvoSearchChange(e.target.value)}
             placeholder="Search messages…"
-            className="h-7 text-xs border-0 bg-transparent shadow-none focus-visible:ring-0"
+            className="h-7 text-xs border-0 bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0"
           />
           {convoSearch && (
-            <span className="text-[10.5px] text-muted-foreground whitespace-nowrap">
+            <span className="text-[10.5px] text-muted-foreground whitespace-nowrap shrink-0">
               {visibleMessages.length} match{visibleMessages.length === 1 ? '' : 'es'}
             </span>
           )}
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onToggleConvoSearch}>
+          <Button
+            size="icon" variant="ghost" className="h-6 w-6 shrink-0"
+            onClick={() => { if (convoSearch) onConvoSearchChange(''); else onToggleConvoSearch(); }}
+            aria-label={convoSearch ? 'Clear search' : 'Close search'}
+          >
             <X className="w-3.5 h-3.5" />
           </Button>
         </div>
