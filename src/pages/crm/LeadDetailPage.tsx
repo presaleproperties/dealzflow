@@ -192,6 +192,9 @@ export default function LeadDetailPage() {
               leadScore={leadScore}
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
+              onCall={onCall}
+              onSms={() => setShowText(true)}
+              onEmail={() => setShowEmail(true)}
             />
           }
           insightsSlot={
