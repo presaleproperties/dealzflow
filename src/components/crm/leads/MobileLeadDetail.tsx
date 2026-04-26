@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageSquare, Mail, ListTodo, Calendar, StickyNote, Plus, X } from 'lucide-react';
+import { ArrowLeft, ListTodo, Calendar, StickyNote, Plus, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatContactName } from '@/lib/format';
@@ -61,7 +61,7 @@ export function MobileLeadDetail({
             Score <span className="text-foreground">{leadScore.score}</span>
           </span>
         </div>
-        <div className="px-3 pb-2 flex items-center gap-3">
+        <div className="px-3 pb-2 flex items-center gap-2.5">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 border"
             style={{ background: `${leadScore.color}15`, borderColor: `${leadScore.color}40`, color: leadScore.color }}
@@ -86,32 +86,28 @@ export function MobileLeadDetail({
                 oldValues: { status: contact.status },
               })
             }
-            className="h-8 max-w-[110px] px-2 rounded-md bg-muted/40 border border-border text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+            className="h-8 max-w-[96px] px-1.5 rounded-md bg-muted/40 border border-border text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
             aria-label="Stage"
           >
             {LEAD_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-        </div>
-
-        {/* Quick add (+) only — Call/Email/Text now live in the Details panel, matching desktop */}
-        <div className="px-3 pb-2 flex items-center justify-end">
+          {/* Inline Quick add — saves a row */}
           <button
             onClick={() => setPlusOpen(true)}
             aria-label="Quick add"
-            className="shrink-0 h-9 px-3 rounded-full flex items-center gap-1.5 active:scale-95 transition-transform shadow-sm"
+            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
             <Plus className="w-4 h-4" strokeWidth={2.6} />
-            <span className="text-[12px] font-semibold">Add</span>
           </button>
         </div>
       </div>
 
       {/* Tabs — Details first */}
       <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[120px] z-20 bg-background">
+        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[88px] z-20 bg-background">
           {(['details','activity','insights'] as const).map(v => (
             <TabsTrigger
               key={v}
@@ -156,30 +152,6 @@ export function MobileLeadDetail({
         </SheetContent>
       </Sheet>
     </div>
-  );
-}
-
-const TONE: Record<string, { bg: string; fg: string; ring: string }> = {
-  emerald: { bg: 'hsl(142 71% 45% / 0.10)', fg: 'hsl(142 71% 38%)', ring: 'hsl(142 71% 45% / 0.25)' },
-  blue:    { bg: 'hsl(220 90% 56% / 0.10)', fg: 'hsl(220 90% 50%)', ring: 'hsl(220 90% 56% / 0.25)' },
-  sky:     { bg: 'hsl(199 89% 48% / 0.10)', fg: 'hsl(199 89% 42%)', ring: 'hsl(199 89% 48% / 0.25)' },
-};
-
-function ActionChip({
-  icon: Icon, label, onClick, disabled, tone,
-}: { icon: any; label: string; onClick: () => void; disabled?: boolean; tone: 'emerald' | 'blue' | 'sky' }) {
-  const t = TONE[tone];
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="flex-1 min-w-0 h-11 rounded-full flex items-center justify-center gap-1.5 active:scale-[0.96] disabled:opacity-40 transition-all border"
-      style={{ background: t.bg, color: t.fg, borderColor: t.ring }}
-    >
-      <Icon className="w-[18px] h-[18px]" strokeWidth={2.2} />
-      <span className="text-[12px] font-semibold">{label}</span>
-    </button>
   );
 }
 
