@@ -10,10 +10,10 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[100dvh] bg-background">
       <TopNav />
       <main
-        className="min-h-[calc(100vh-54px)] lg:pr-[52px]"
+        className="min-h-[calc(100dvh-54px)] lg:pr-[52px]"
         style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
       >
         {children}
