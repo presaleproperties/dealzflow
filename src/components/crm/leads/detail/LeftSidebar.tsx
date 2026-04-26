@@ -411,7 +411,10 @@ export function LeftSidebar({
       {/* Assigned To — placed right after Details so ownership sits with the lead facts.
           Uses a gentle slide-in so it feels smooth when swiping back into the lead detail on mobile. */}
       <div
-        className="space-y-2 animate-fade-in motion-safe:[animation-duration:420ms] [animation-delay:60ms] [animation-fill-mode:both] will-change-transform"
+        className={
+          (isMobile ? 'rounded-xl border border-border/60 bg-card p-4 ' : '') +
+          'space-y-2 animate-fade-in motion-safe:[animation-duration:420ms] [animation-delay:60ms] [animation-fill-mode:both] will-change-transform'
+        }
         style={{ contain: 'layout paint' }}
       >
         <SectionHeader>Assigned To</SectionHeader>
