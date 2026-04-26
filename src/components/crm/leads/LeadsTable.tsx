@@ -752,15 +752,28 @@ export function LeadsTable({
 
   if (isMobile) {
     return (
-      <div>
-        <div className="h-0.5 w-full overflow-hidden rounded-full mb-1 bg-transparent">
+      <div className="-mx-3">
+        {/* Loading shimmer */}
+        <div className="h-0.5 w-full overflow-hidden bg-transparent">
           {isFetching && (
-            <div className="h-full w-full bg-primary/20 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
+            <div className="h-full w-full bg-primary/20 overflow-hidden">
+              <div className="h-full bg-primary animate-pulse" style={{ width: '40%' }} />
             </div>
           )}
         </div>
-        <div className={`overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
+
+        {/* Edge-to-edge list — matches desktop table colors (bg-card, divide-border/50, muted header, primary/5 selection) */}
+        <div className={`bg-card border-y border-border transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
+          {/* Header strip — mirrors desktop thead */}
+          <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {totalCount.toLocaleString()} {totalCount === 1 ? 'lead' : 'leads'}
+            </span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Score
+            </span>
+          </div>
+
           <div className="divide-y divide-border/50">
             {contacts.map(contact => (
               <SwipeRow
@@ -774,9 +787,15 @@ export function LeadsTable({
                 <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
               </SwipeRow>
             ))}
+            {contacts.length === 0 && !isFetching && (
+              <div className="px-4 py-12 text-center text-[13px] text-muted-foreground">
+                No leads match the current filters.
+              </div>
+            )}
           </div>
         </div>
-        <div>
+
+        <div className="px-3">
           <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
             onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
         </div>
