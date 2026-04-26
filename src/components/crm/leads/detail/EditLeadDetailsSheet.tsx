@@ -409,6 +409,9 @@ function isValidPhone(value: string): boolean {
 }
 
 function initialForm(contact: CrmContact) {
+  const ext = contact as unknown as Record<string, unknown>;
+  const leadTypes = (ext.lead_types as string[] | undefined) ?? (contact.lead_type ? [contact.lead_type] : []);
+  const projects = contact.projects?.length ? contact.projects : (contact.project ? [contact.project] : []);
   return {
     first_name: contact.first_name ?? '',
     last_name: contact.last_name ?? '',
@@ -424,6 +427,10 @@ function initialForm(contact: CrmContact) {
     budget_max: contact.budget_max != null ? String(contact.budget_max) : '',
     status: contact.status ?? 'New Lead',
     assigned_to: contact.assigned_to ?? '',
+    source: contact.source ?? '',
+    lead_types: leadTypes,
+    tags: (contact.tags ?? []) as string[],
+    projects,
     co_buyer_name: contact.co_buyer_name ?? '',
     co_buyer_phone: contact.co_buyer_phone ?? '',
     co_buyer_email: contact.co_buyer_email ?? '',
