@@ -275,7 +275,7 @@ export default function ClientInventoryPage() {
         showAddDeal={false}
       />
 
-      <div className="p-5 md:p-7 lg:p-6 space-y-5 pb-24 lg:pb-8">
+      <div className="p-5 md:p-7 lg:p-6 space-y-5">
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
           {[
