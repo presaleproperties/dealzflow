@@ -103,6 +103,9 @@ export function useDeleteNote() {
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['crm-notes', vars.contactId] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      qc.invalidateQueries({ queryKey: ['crm-contact', vars.contactId] });
     },
     onError: (err: Error) => toast.error(err.message),
   });
