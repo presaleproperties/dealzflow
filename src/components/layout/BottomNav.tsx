@@ -140,13 +140,7 @@ export function BottomNav() {
   const moreActive = !tabs.some(t => isActive(location.pathname, t.path)) &&
     visibleMore.some(g => g.items.some(i => isActive(location.pathname, i.path)));
 
-  // Mobile lead detail owns the bottom action bar — hide the global nav so
-  // they don't stack into a doubled bottom strip.
-  const hideOnRoute = /^\/crm\/leads\/[^/]+$/.test(location.pathname);
-
   const initials = user?.email?.slice(0, 2).toUpperCase() || 'U';
-
-  if (hideOnRoute) return null;
 
   function switchMode(target: Mode) {
     if (target === mode) return;
