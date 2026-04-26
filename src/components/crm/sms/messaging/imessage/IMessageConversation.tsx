@@ -390,7 +390,7 @@ function IMessageBubble({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className={cn('flex group', isOutbound ? 'justify-end pr-1' : 'justify-start pl-1', sameAsPrev ? 'mt-[2px]' : 'mt-1.5')}>
+        <div className={cn('flex group', isOutbound ? 'justify-end pr-3' : 'justify-start pl-3', sameAsPrev ? 'mt-[2px]' : 'mt-1.5')}>
           <div className="relative max-w-[75%] sm:max-w-[62%]">
             <div
               className={cn(
