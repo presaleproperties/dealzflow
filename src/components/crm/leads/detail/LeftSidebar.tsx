@@ -500,7 +500,7 @@ export function LeftSidebar({
       </div>
 
       {/* Projects */}
-      <div className="space-y-2.5">
+      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
         <SectionHeader>Projects</SectionHeader>
         {isMobile ? (
           <MobileEditRow
