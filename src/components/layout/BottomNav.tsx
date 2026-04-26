@@ -260,7 +260,7 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 native-chrome"
         aria-label="Primary"
       >
         {/* Premium frosted bar — gradient + blur + hairline */}
