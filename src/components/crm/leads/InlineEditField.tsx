@@ -94,7 +94,7 @@ export function InlineEditField({ value, onSave, placeholder = '—', href, clas
         onClick={() => setEditing(true)}
       >
         <span className={`text-sm truncate min-w-0 ${isMuted ? 'text-muted-foreground' : 'text-foreground'}`} title={value || undefined}>{display}</span>
-        <Pencil className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
+        <Pencil className="w-3 h-3 text-muted-foreground/60 md:text-muted-foreground/0 md:group-hover:text-muted-foreground/60 transition-opacity flex-shrink-0" />
       </span>
     );
   }
