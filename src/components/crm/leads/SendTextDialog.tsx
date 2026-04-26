@@ -26,6 +26,8 @@ interface Props {
   contact: CrmContact;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-select a channel (e.g. 'whatsapp' from the WhatsApp action button). */
+  initialChannel?: MessagingChannel;
 }
 
 function formatPhoneDisplay(phone?: string | null): string {
@@ -40,14 +42,14 @@ function formatPhoneDisplay(phone?: string | null): string {
   return phone;
 }
 
-export function SendTextDialog({ contact, open, onOpenChange }: Props) {
+export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms' }: Props) {
   const { user } = useAuth();
   const sendSms = useSendSms();
   const { data: templates = [] } = useSmsTemplates();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
 
-  const [channel, setChannel] = useState<MessagingChannel>('sms');
+  const [channel, setChannel] = useState<MessagingChannel>(initialChannel);
   const [body, setBody] = useState('');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [scheduled, setScheduled] = useState(false);
@@ -61,16 +63,18 @@ export function SendTextDialog({ contact, open, onOpenChange }: Props) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Reset on close
+  // Reset on close; sync channel with `initialChannel` on open
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setChannel(initialChannel);
+    } else {
       setBody('');
       setMediaUrls([]);
       setScheduled(false);
       setScheduledFor('');
       setFromOverride('');
     }
-  }, [open]);
+  }, [open, initialChannel]);
 
   // Resolve sender display
   const myNumber = useMemo(() => numbers.find(n => n.user_id === user?.id && n.is_active), [numbers, user]);

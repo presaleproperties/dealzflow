@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { Phone, Mail, Send, MessageCircle, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { formatContactName } from '@/lib/format';
 import { EditLeadDetailsSheet } from './EditLeadDetailsSheet';
@@ -33,10 +33,11 @@ interface Props {
   onCall?: () => void;
   onSms?: () => void;
   onEmail?: () => void;
+  onWhatsApp?: () => void;
 }
 
 export function LeftSidebar({
-  contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail,
+  contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail, onWhatsApp,
 }: Props) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
@@ -66,7 +67,7 @@ export function LeftSidebar({
     });
   };
 
-  const showActionRow = !!(onCall || onSms || onEmail);
+  const showActionRow = !!(onCall || onSms || onEmail || onWhatsApp);
   const contactExt = contact as unknown as Record<string, unknown>;
   const leadTypesArr = (contactExt.lead_types as string[] | undefined) ?? [];
   const syncSource = contactExt.sync_source as string | undefined;
@@ -184,7 +185,7 @@ export function LeftSidebar({
       <EditLeadDetailsSheet contact={contact} open={editOpen} onOpenChange={setEditOpen} />
 
       {showActionRow && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
             onClick={onCall}
             disabled={!contact.phone}
@@ -203,6 +204,17 @@ export function LeftSidebar({
             <Send className="w-4 h-4 text-sky-500 group-hover:scale-110 transition-transform" strokeWidth={2} />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-600/80 group-hover:text-sky-600">Text</span>
           </button>
+          {onWhatsApp && (
+            <button
+              onClick={onWhatsApp}
+              disabled={!contact.phone}
+              className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-[#25D366]/10 border border-[#25D366]/40 hover:border-[#25D366]/70 hover:bg-[#25D366]/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4 text-[#1DA851] group-hover:scale-110 transition-transform" strokeWidth={2} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#1DA851]/90 group-hover:text-[#1DA851]">WhatsApp</span>
+            </button>
+          )}
           <button
             onClick={onEmail}
             disabled={!contact.email}

@@ -12,6 +12,8 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
+import type { MessagingChannel } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
 import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
@@ -33,6 +35,8 @@ export default function LeadDetailPage() {
 
   const [showEmail, setShowEmail] = useState(false);
   const [showText, setShowText] = useState(false);
+  const [textChannel, setTextChannel] = useState<MessagingChannel>('sms');
+  const openWhatsAppChat = useOpenWhatsAppChat();
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
 
@@ -166,13 +170,17 @@ export default function LeadDetailPage() {
   // Mobile layout
   if (isMobile) {
     const onCall = () => c.phone && (window.location.href = `tel:${c.phone}`);
+    const onSms = () => { setTextChannel('sms'); setShowText(true); };
+    const onWhatsApp = () => {
+      void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
+    };
     return (
       <>
         <MobileLeadDetail
           contact={c}
           leadScore={leadScore}
           onCall={onCall}
-          onText={() => setShowText(true)}
+          onText={onSms}
           onEmail={() => setShowEmail(true)}
           onTask={() => setShowTask(true)}
           onShowing={() => setShowShowing(true)}
@@ -180,7 +188,7 @@ export default function LeadDetailPage() {
             <CenterColumn
               contact={c}
               onCall={onCall}
-              onText={() => setShowText(true)}
+              onText={onSms}
               onEmail={() => setShowEmail(true)}
               onTask={() => setShowTask(true)}
               onShowing={() => setShowShowing(true)}
@@ -193,8 +201,9 @@ export default function LeadDetailPage() {
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
               onCall={onCall}
-              onSms={() => setShowText(true)}
+              onSms={onSms}
               onEmail={() => setShowEmail(true)}
+              onWhatsApp={onWhatsApp}
             />
           }
           insightsSlot={
@@ -203,7 +212,7 @@ export default function LeadDetailPage() {
               onAddTask={() => setShowTask(true)}
               onAddShowing={() => setShowShowing(true)}
               onCall={onCall}
-              onText={() => setShowText(true)}
+              onText={onSms}
               onEmail={() => setShowEmail(true)}
               leadScore={leadScore}
               lastTouchHours={lastTouchHours}
@@ -212,7 +221,7 @@ export default function LeadDetailPage() {
         />
 
         <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
-        <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
+        <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
         <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
         <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
       </>
@@ -241,8 +250,11 @@ export default function LeadDetailPage() {
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
               onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-              onSms={() => setShowText(true)}
+              onSms={() => { setTextChannel('sms'); setShowText(true); }}
               onEmail={() => setShowEmail(true)}
+              onWhatsApp={() => {
+                void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
+              }}
             />
           </div>
         )}
@@ -287,7 +299,7 @@ export default function LeadDetailPage() {
       </div>
 
       <ComposeEmailDialog contact={c} open={showEmail} onOpenChange={setShowEmail} />
-      <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} />
+      <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
       <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
     </div>
