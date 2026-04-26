@@ -61,7 +61,7 @@ export function MobileLeadDetail({
             Score <span className="text-foreground">{leadScore.score}</span>
           </span>
         </div>
-        <div className="px-3 pb-2 flex items-center gap-3">
+        <div className="px-3 pb-2 flex items-center gap-2.5">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 border"
             style={{ background: `${leadScore.color}15`, borderColor: `${leadScore.color}40`, color: leadScore.color }}
@@ -86,32 +86,28 @@ export function MobileLeadDetail({
                 oldValues: { status: contact.status },
               })
             }
-            className="h-8 max-w-[110px] px-2 rounded-md bg-muted/40 border border-border text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+            className="h-8 max-w-[96px] px-1.5 rounded-md bg-muted/40 border border-border text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
             aria-label="Stage"
           >
             {LEAD_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-        </div>
-
-        {/* Quick add (+) only — Call/Email/Text now live in the Details panel, matching desktop */}
-        <div className="px-3 pb-2 flex items-center justify-end">
+          {/* Inline Quick add — saves a row */}
           <button
             onClick={() => setPlusOpen(true)}
             aria-label="Quick add"
-            className="shrink-0 h-9 px-3 rounded-full flex items-center gap-1.5 active:scale-95 transition-transform shadow-sm"
+            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
             <Plus className="w-4 h-4" strokeWidth={2.6} />
-            <span className="text-[12px] font-semibold">Add</span>
           </button>
         </div>
       </div>
 
       {/* Tabs — Details first */}
       <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[120px] z-20 bg-background">
+        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[88px] z-20 bg-background">
           {(['details','activity','insights'] as const).map(v => (
             <TabsTrigger
               key={v}
