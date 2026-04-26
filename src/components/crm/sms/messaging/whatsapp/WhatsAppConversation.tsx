@@ -787,7 +787,7 @@ function WhatsAppComposer({
 
         <div className="flex items-center justify-between mt-1 px-2 text-[10.5px] text-muted-foreground">
           <span>WhatsApp Business · via Twilio{outsideWaWindow ? ' · outside 24h window' : ''}</span>
-          <span className="opacity-70">⌘ + ↵ to send</span>
+          <span className="opacity-70">↵ send · ⇧↵ newline</span>
         </div>
       </div>
     </div>

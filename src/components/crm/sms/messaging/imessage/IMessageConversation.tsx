@@ -805,7 +805,7 @@ function IMessageComposer({
 
         <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
           <span>{seg.count} segment{seg.count > 1 ? 's' : ''} · {seg.chars} chars{pendingMedia.length > 0 ? ' · MMS' : ''}</span>
-          <span className="opacity-70">⌘ + ↵ to send</span>
+          <span className="opacity-70">↵ send · ⇧↵ newline</span>
         </div>
       </div>
     </div>
