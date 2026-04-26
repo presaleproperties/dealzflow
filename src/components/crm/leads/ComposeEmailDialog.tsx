@@ -868,7 +868,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Subject — supports {{lead.first_name}}"
+                    placeholder="Subject"
                     maxLength={200}
                     className="w-full bg-transparent border-0 outline-none text-[14px] font-semibold tracking-[-0.01em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/50 px-0"
                   />
@@ -876,7 +876,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Mode tabs — flush row, no heavy background block */}
-              <div className="px-4 py-1.5 border-b border-border/60 flex items-center justify-between gap-2 shrink-0">
+              <div className="hidden md:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-0.5">
                   {(() => {
                     /* Detect "rich" template HTML the rich text editor can't represent. */
