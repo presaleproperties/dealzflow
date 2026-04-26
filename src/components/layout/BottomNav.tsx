@@ -5,6 +5,7 @@ import {
   Users, Kanban, Mail, Inbox, BarChart3, Zap, LayoutTemplate, Plug,
   Settings, Settings2, Receipt, TrendingUp, BarChart2, Network,
   DollarSign, GitBranch, ShieldAlert, LogOut, X, Briefcase, Sparkles,
+  MessageCircle, MessageSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -48,10 +49,11 @@ const WORKSPACE_TABS: TabItem[] = [
 ];
 
 // ── CRM tabs (Daily flow set) ────────────────────────────────────
+// ── CRM tabs (Lofty-style: Chats · Leads · Pipeline · Calendar · More) ──
 const CRM_TABS: TabItem[] = [
+  { label: 'Chats',    path: '/crm/chats',    icon: MessageCircle },
   { label: 'Leads',    path: '/crm/leads',    icon: Users },
   { label: 'Pipeline', path: '/crm/pipeline', icon: Kanban },
-  { label: 'Inbox',    path: '/crm/email',    icon: Inbox },
   { label: 'Calendar', path: '/crm/calendar', icon: CalendarDays },
 ];
 
@@ -74,6 +76,13 @@ const WORKSPACE_MORE: MoreGroup[] = [
 ];
 
 const CRM_MORE: MoreGroup[] = [
+  {
+    label: 'Channels',
+    items: [
+      { label: 'Email Center', path: '/crm/email',    icon: Mail },
+      { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare },
+    ],
+  },
   {
     label: 'Outreach',
     items: [
