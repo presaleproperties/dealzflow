@@ -4,29 +4,50 @@ import '@fontsource-variable/plus-jakarta-sans';
 import App from "./App.tsx";
 import "./index.css";
 
-// Kill any service workers that previously cached the old CRM build.
-// If we find a stale SW, unregister + nuke caches + force ONE hard reload
-// so the user lands on the fresh build immediately (no second flash).
+// ── Service worker bootstrap ─────────────────────────────────────────────
+// We register a MINIMAL asset-only SW (public/sw.js) that caches Vite's
+// hashed /assets/* files. It NEVER caches index.html or API responses, so
+// the "old version flashing" bug cannot recur.
+//
+// On boot we also evict any *foreign* SW (different script URL) left over
+// from older deploys, then register ours. The new-version prompt is driven
+// by useServiceWorkerUpdate (waiting-worker lifecycle) + useBuildVersionCheck
+// (index.html hash poll) as a belt-and-braces safety net.
+
+const SW_URL = "/sw.js";
+const RELOAD_FLAG = "__sw_evicted_v2";
+
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  const RELOAD_FLAG = "__sw_evicted_v1";
   (async () => {
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
-      const hadSW = regs.length > 0;
 
-      await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+      // Unregister any SW that isn't ours (legacy / Workbox / etc.)
+      const foreign = regs.filter((r) => {
+        const scriptURL =
+          r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
+        return scriptURL && !scriptURL.endsWith(SW_URL);
+      });
+      const evicted = foreign.length > 0;
+      await Promise.all(foreign.map((r) => r.unregister().catch(() => {})));
 
-      if (typeof caches !== "undefined") {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k).catch(() => {})));
-      }
-
-      // If we just evicted a stale SW for the first time, reload once so
-      // the next paint comes from the network — not the killed cache.
-      if (hadSW && !sessionStorage.getItem(RELOAD_FLAG)) {
+      // If we evicted a stale foreign SW, also nuke caches once and reload.
+      if (evicted && !sessionStorage.getItem(RELOAD_FLAG)) {
+        if (typeof caches !== "undefined") {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k).catch(() => {})));
+        }
         sessionStorage.setItem(RELOAD_FLAG, "1");
         window.location.reload();
+        return;
       }
+
+      // Register our asset-only SW once the page is loaded.
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register(SW_URL).catch(() => {
+          /* registration failures are non-fatal */
+        });
+      });
     } catch {
       /* ignore */
     }
