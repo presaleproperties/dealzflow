@@ -12,6 +12,7 @@ import { PageLoader } from "@/components/ui/page-loader";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
+import { useNativeShell } from "@/hooks/useNativeShell";
 
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -135,6 +136,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function NativeBootstrap({ children }: { children: React.ReactNode }) {
+  useNativeShell();
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -142,6 +148,7 @@ const App = () => (
         <CrmAccessProvider>
           <DealDraftProvider>
             <TooltipProvider>
+              <NativeBootstrap>
               <UpdateBanner />
               <Toaster />
               <Sonner />
