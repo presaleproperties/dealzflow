@@ -876,6 +876,7 @@ export function LeadsTable({
                   <tr key={contact.id}
                     style={{ height: 56 }}
                     className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
+                    onMouseEnter={() => prefetchLead(contact.id)}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
                     <td className="px-3 py-2 align-middle" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
