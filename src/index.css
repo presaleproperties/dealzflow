@@ -163,7 +163,12 @@
   h3 { @apply text-[20px] font-semibold tracking-[-0.022em]; }
   h4, h5, h6 { @apply text-base font-semibold tracking-tight; }
 
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    /* Fill iOS safe-area regions (under status bar + home indicator) with the
+       warm app background so edge-to-edge mode doesn't show white strips. */
+    background-color: hsl(var(--background));
+  }
 
   ::selection {
     background: hsl(var(--primary) / 0.14);
