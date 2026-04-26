@@ -469,7 +469,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         </div>
 
         {/* Footer — pinned, safe-area aware on mobile */}
-        <div className="flex items-center justify-end gap-2 px-5 sm:px-6 h-14 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="flex items-center justify-end gap-2 px-4 sm:px-6 h-12 sm:h-14 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleSend}
