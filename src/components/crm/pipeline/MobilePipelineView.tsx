@@ -85,7 +85,7 @@ export function MobilePipelineView() {
   const list = activeSeg ? byStage[activeSeg.id] || [] : [];
 
   return (
-    <div className="flex flex-col h-full -mx-3 -my-3 sm:-mx-4 sm:-my-4">
+    <div className="flex flex-col h-full -mx-3 -my-3 sm:-mx-4 sm:-my-4 crm-mobile-page">
       {/* Search */}
       <div className="px-3 pt-3 pb-2 flex-shrink-0 bg-background sticky top-0 z-20 border-b border-border">
         <div className="relative mb-2">

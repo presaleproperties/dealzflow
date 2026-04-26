@@ -369,7 +369,7 @@ export default function CrmLeadsPage() {
 
   return (
     <>
-      <div className="flex flex-1 min-h-0 h-full">
+      <div className="flex flex-1 min-h-0 h-full crm-mobile-page">
         {/* Main content */}
         <div ref={mobileScrollRef} className="flex-1 min-w-0 max-w-full space-y-3 sm:space-y-4 overflow-y-auto overflow-x-hidden pr-1">
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}

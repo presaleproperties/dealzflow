@@ -50,7 +50,7 @@ export function MobileLeadDetail({
   const bottomPadClass = 'pb-[calc(72px+env(safe-area-inset-bottom,0px))]';
 
   return (
-    <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col" style={{ minHeight: 'calc(100vh - 60px)' }}>
+    <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
       {/* Slim identity header (sticky) */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0">
         <div className="px-3 pt-2 pb-1 flex items-center justify-between">

@@ -284,7 +284,7 @@ export default function CrmCalendarPage() {
   const viewOptions = isMobile ? MOBILE_VIEWS : DESKTOP_VIEWS;
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 crm-mobile-page">
       {/* Google Calendar Connection Banner */}
       {!isGCalConnected && (
         <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
