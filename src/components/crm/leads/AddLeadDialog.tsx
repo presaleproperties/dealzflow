@@ -135,11 +135,11 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <ResponsiveDialogHeader>
+      <ResponsiveDialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto p-0 sm:p-6">
+        <ResponsiveDialogHeader className="px-4 pt-4 sm:p-0 sm:pb-2">
           <ResponsiveDialogTitle>Add New Lead</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+88px)] sm:px-0 sm:pb-0 pt-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="first_name">First Name *</Label>
@@ -290,9 +290,16 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="hidden sm:flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={addContact.isPending} className="bg-primary text-primary-foreground">
+              {addContact.isPending ? 'Adding...' : 'Add Lead'}
+            </Button>
+          </div>
+          {/* Mobile sticky submit */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] flex gap-2">
+            <Button type="button" variant="outline" className="flex-1 h-11" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={addContact.isPending} className="flex-1 h-11 bg-primary text-primary-foreground font-semibold">
               {addContact.isPending ? 'Adding...' : 'Add Lead'}
             </Button>
           </div>
