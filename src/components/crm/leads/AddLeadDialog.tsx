@@ -15,6 +15,12 @@ import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { CheckboxDropdown } from './CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { supabase } from '@/integrations/supabase/client';
+import { formatContactName } from '@/lib/format';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AddLeadDialogProps {
   open: boolean;
@@ -39,6 +45,13 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   // form feels light, with secondary fields fully optional.
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
   const [showSecondaryEmail, setShowSecondaryEmail] = useState(false);
+
+  // Duplicate detection state — when the email/phone matches existing
+  // crm_contacts rows we surface them in a confirm dialog before inserting.
+  type DupContact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; status: string | null };
+  const [dupes, setDupes] = useState<DupContact[]>([]);
+  const [pendingPayload, setPendingPayload] = useState<Parameters<typeof addContact.mutate>[0] | null>(null);
+  const [checkingDupes, setCheckingDupes] = useState(false);
 
   const handleEmailChange = (email: string) => {
     setForm((prev) => ({ ...prev, email }));
@@ -74,37 +87,78 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     setShowSecondaryEmail(false);
   };
 
-  const handleSubmit = () => {
-    if (!validate()) return;
-    // Snapshot the payload so we can close + reset the form instantly,
-    // then fire the mutation in the background. The mutation does an
-    // optimistic insert into the leads cache so the new lead appears
-    // immediately in lists/Kanban/segments without waiting for the round-trip.
-    const payload = {
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      phone: form.phone.trim() || undefined,
-      phone_secondary: form.phone_secondary.trim() || undefined,
-      email: form.email.trim() || undefined,
-      email_secondary: form.email_secondary.trim() || undefined,
-      status: form.status,
-      assigned_to: form.assigned_to || undefined,
-      source: form.source || undefined,
-      projects: form.projects.length ? form.projects : undefined,
-      project: form.projects[0] || undefined,
-      tags: form.tags.length ? form.tags : undefined,
-      lead_types: form.lead_types.length ? form.lead_types : undefined,
-      city: form.city || undefined,
-      language: form.language || undefined,
-      bedrooms_preferred: form.bedrooms_preferred.trim() || undefined,
-      budget_min: form.budget_min ? Number(form.budget_min) : undefined,
-      budget_max: form.budget_max ? Number(form.budget_max) : undefined,
-      birthday: form.birthday.trim() || undefined,
-      notes: form.notes.trim() || undefined,
-    };
+  const buildPayload = () => ({
+    first_name: form.first_name.trim(),
+    last_name: form.last_name.trim(),
+    phone: form.phone.trim() || undefined,
+    phone_secondary: form.phone_secondary.trim() || undefined,
+    email: form.email.trim() || undefined,
+    email_secondary: form.email_secondary.trim() || undefined,
+    status: form.status,
+    assigned_to: form.assigned_to || undefined,
+    source: form.source || undefined,
+    projects: form.projects.length ? form.projects : undefined,
+    project: form.projects[0] || undefined,
+    tags: form.tags.length ? form.tags : undefined,
+    lead_types: form.lead_types.length ? form.lead_types : undefined,
+    city: form.city || undefined,
+    language: form.language || undefined,
+    bedrooms_preferred: form.bedrooms_preferred.trim() || undefined,
+    budget_min: form.budget_min ? Number(form.budget_min) : undefined,
+    budget_max: form.budget_max ? Number(form.budget_max) : undefined,
+    birthday: form.birthday.trim() || undefined,
+    notes: form.notes.trim() || undefined,
+  });
+
+  const commitInsert = (payload: Parameters<typeof addContact.mutate>[0]) => {
     reset();
+    setPendingPayload(null);
+    setDupes([]);
     onOpenChange(false);
     addContact.mutate(payload); // success/error toasts handled inside the hook
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    const payload = buildPayload();
+    const email = payload.email?.toLowerCase();
+    // Last-10-digits comparison handles formatting differences like
+    // "+1 (778) 231-3592" vs "778-231-3592" vs "17782313592".
+    const phoneLast10 = payload.phone?.replace(/\D/g, '').slice(-10) || '';
+
+    // Build an OR filter against email + phone (substring match on last 10 digits).
+    const filters: string[] = [];
+    if (email) filters.push(`email.ilike.${email}`);
+    if (email) filters.push(`email_secondary.ilike.${email}`);
+    if (phoneLast10) filters.push(`phone.ilike.%${phoneLast10}%`);
+    if (phoneLast10) filters.push(`phone_secondary.ilike.%${phoneLast10}%`);
+
+    if (filters.length === 0) {
+      // No email or phone to compare — skip the check entirely.
+      commitInsert(payload);
+      return;
+    }
+
+    setCheckingDupes(true);
+    try {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .select('id, first_name, last_name, email, phone, status')
+        .or(filters.join(','))
+        .limit(5);
+      if (error) throw error;
+      const matches = (data ?? []) as DupContact[];
+      if (matches.length > 0) {
+        setPendingPayload(payload);
+        setDupes(matches);
+        setCheckingDupes(false);
+        return;
+      }
+    } catch {
+      // Best-effort check — if the lookup fails, fall through to insert.
+    }
+    setCheckingDupes(false);
+    commitInsert(payload);
   };
 
   const handleClose = (next: boolean) => {
@@ -178,6 +232,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
+    <>
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         ref={sheetContentRef}
@@ -204,10 +259,10 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={addContact.isPending}
+            disabled={addContact.isPending || checkingDupes}
             className="px-3.5 h-9 mr-1 rounded-full text-[13.5px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 transition-all active:scale-95 shadow-sm shadow-primary/20"
           >
-            {addContact.isPending ? 'Saving…' : 'Save'}
+            {checkingDupes ? 'Checking…' : addContact.isPending ? 'Saving…' : 'Save'}
           </button>
         </div>
 
@@ -492,6 +547,39 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Duplicate-detection prompt — shown when email or phone matches an existing CRM contact. */}
+    <AlertDialog open={dupes.length > 0} onOpenChange={(o) => { if (!o) { setDupes([]); setPendingPayload(null); } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Possible duplicate lead</AlertDialogTitle>
+          <AlertDialogDescription>
+            We found {dupes.length} existing lead{dupes.length === 1 ? '' : 's'} with a matching email or phone. Create this lead anyway?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="max-h-60 overflow-y-auto -mx-1 px-1 space-y-2">
+          {dupes.map((d) => {
+            const name = formatContactName(d.first_name, d.last_name) || 'Unnamed lead';
+            return (
+              <div key={d.id} className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                <div className="font-medium text-foreground truncate">{name}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {[d.email, d.phone].filter(Boolean).join(' · ') || '—'}
+                </div>
+                {d.status && <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-0.5">{d.status}</div>}
+              </div>
+            );
+          })}
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => pendingPayload && commitInsert(pendingPayload)}>
+            Create anyway
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
