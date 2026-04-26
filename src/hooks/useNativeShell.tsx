@@ -22,8 +22,9 @@ export function useNativeShell() {
     if (platform === 'ios') root.classList.add('is-ios');
     if (platform === 'android') root.classList.add('is-android');
 
-    setStatusBar('dark');
-    setKeyboardResizeNative();
+    // Status bar style is now driven by useStandaloneMode() so it follows
+    // the active theme instead of being hard-coded to dark.
+    setKeyboardResizeNative;
 
     const off1 = onKeyboardShow((h) => root.style.setProperty('--kb-h', `${h}px`));
     const off2 = onKeyboardHide(() => root.style.setProperty('--kb-h', '0px'));
