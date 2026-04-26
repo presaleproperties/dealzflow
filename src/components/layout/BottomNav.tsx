@@ -221,8 +221,9 @@ export function BottomNav() {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="p-0 border-0 rounded-t-2xl max-h-[88vh] flex flex-col"
-              style={{ background: BG, height: '88vh' }}
+              hideClose
+              className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+              style={{ background: BG, height: '90vh' }}
             >
               <MoreSheet
                 mode={mode}
