@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Filter, MoreHorizontal, Plus, Mail, MessageSquare, Phone } from 'lucide-react';
+import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useCrmChats, type ChatChannel } from '@/hooks/useCrmChats';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { formatContactName } from '@/lib/format';
 
 const FILTERS: { id: ChatChannel | 'all'; label: string }[] = [
@@ -23,32 +21,32 @@ function initialsFromName(first?: string | null, last?: string | null, fallback?
   return '?';
 }
 
-// Deterministic color per contact id — matches Lofty's colored avatar grid feel
-function avatarBg(id: string): string {
+// Deterministic gradient per contact id — premium feel vs flat color
+function avatarGradient(id: string): string {
   const palette = [
-    'hsl(38 88% 55%)',   // amber
-    'hsl(355 78% 60%)',  // coral
-    'hsl(155 60% 45%)',  // emerald
-    'hsl(220 75% 60%)',  // blue
-    'hsl(265 65% 60%)',  // violet
-    'hsl(195 75% 50%)',  // cyan
+    ['hsl(38 88% 58%)',  'hsl(28 85% 48%)'],   // amber → bronze
+    ['hsl(355 78% 62%)', 'hsl(345 70% 50%)'],  // coral → rose
+    ['hsl(155 55% 48%)', 'hsl(165 55% 38%)'],  // emerald → teal
+    ['hsl(220 75% 62%)', 'hsl(232 70% 52%)'],  // blue → indigo
+    ['hsl(265 60% 62%)', 'hsl(280 55% 50%)'],  // violet → purple
+    ['hsl(195 75% 52%)', 'hsl(210 70% 44%)'],  // cyan → blue
   ];
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return palette[h % palette.length];
+  const [a, b] = palette[h % palette.length];
+  return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
 }
 
 function channelChip(c: ChatChannel) {
   switch (c) {
-    case 'sms':      return { Icon: MessageSquare, color: 'hsl(var(--primary))' };
-    case 'whatsapp': return { Icon: MessageSquare, color: 'hsl(155 60% 45%)' };
+    case 'sms':      return { Icon: MessageSquare, color: 'hsl(199 89% 48%)', label: 'SMS' };
+    case 'whatsapp': return { Icon: MessageSquare, color: 'hsl(155 60% 45%)', label: 'WhatsApp' };
     case 'email':
-    default:         return { Icon: Mail, color: 'hsl(220 75% 55%)' };
+    default:         return { Icon: Mail,          color: 'hsl(220 75% 55%)', label: 'Email' };
   }
 }
 
 export default function CrmChatsPage() {
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<ChatChannel | 'all'>('all');
   const [search, setSearch] = useState('');
@@ -68,89 +66,129 @@ export default function CrmChatsPage() {
     });
   }, [threads, search]);
 
-  const totalUnread = threads.reduce((sum, t) => sum + (t.unread_count ?? 0), 0);
+  // Per-channel unread counts for segmented control badges
+  const counts = useMemo(() => {
+    const c = { all: 0, email: 0, sms: 0, whatsapp: 0 } as Record<string, number>;
+    for (const t of threads) {
+      const u = t.unread_count ?? 0;
+      c.all += u;
+      c[t.channel] = (c[t.channel] ?? 0) + u;
+    }
+    return c;
+  }, [threads]);
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
-      {/* Mobile header — Lofty-style: title left, search icon right */}
-      <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border">
-        <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-[19px] font-semibold text-foreground tracking-tight">
+      {/* Premium glassmorphic header */}
+      <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60">
+        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+          <div className="min-w-0">
+            <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">
               Chats
             </h1>
-            {totalUnread > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[11px] font-bold bg-primary/15 text-primary">
-                {totalUnread}
-              </Badge>
-            )}
+            <p className="text-[11px] text-muted-foreground mt-1 font-medium">
+              {counts.all > 0
+                ? <><span className="text-primary font-bold">{counts.all}</span> unread · {threads.length} total</>
+                : <>{threads.length} {threads.length === 1 ? 'conversation' : 'conversations'}</>
+              }
+            </p>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setSearchOpen(v => !v)}
-            className={`h-11 w-11 ${searchOpen || search ? 'text-primary' : 'text-foreground'}`}
+            onClick={() => {
+              setSearchOpen(v => !v);
+              if (searchOpen) setSearch('');
+            }}
+            className={`h-10 w-10 rounded-full ${searchOpen || search ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
             aria-label="Search chats"
           >
-            <Search className="w-6 h-6" strokeWidth={2} />
+            {searchOpen ? <X className="w-5 h-5" strokeWidth={2.2} /> : <Search className="w-5 h-5" strokeWidth={2} />}
           </Button>
         </div>
 
         {searchOpen && (
-          <div className="px-4 pb-2">
+          <div className="px-4 pb-2.5">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
               <input
                 type="search"
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, message…"
-                className="w-full h-10 pl-9 pr-3 rounded-lg bg-muted/50 border border-border/60 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/60 focus:border-primary/60"
+                placeholder="Search name, email, or message…"
+                className="w-full h-11 pl-10 pr-3 rounded-xl bg-muted/60 border border-border/40 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
               />
             </div>
           </div>
         )}
 
-        {/* Channel filter pills */}
-        <div className="flex items-center gap-1.5 px-3 pb-2 overflow-x-auto scrollbar-hide">
-          {FILTERS.map(f => {
-            const active = filter === f.id;
-            return (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all border ${
-                  active
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-transparent border-border/60 text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {f.label}
-              </button>
-            );
-          })}
+        {/* Segmented filter — premium pill group */}
+        <div className="px-3 pb-2.5">
+          <div className="flex items-center gap-1 p-1 rounded-full bg-muted/40 border border-border/40 overflow-x-auto scrollbar-hide">
+            {FILTERS.map(f => {
+              const active = filter === f.id;
+              const unread = counts[f.id] ?? 0;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`relative inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all flex-1 justify-center ${
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'bg-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {f.label}
+                  {unread > 0 && (
+                    <span className={`min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                      active ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'
+                    }`}>
+                      {unread > 9 ? '9+' : unread}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Thread list */}
-      <div className="flex-1 -mx-3 sm:-mx-4 bg-card">
+      <div className="flex-1 -mx-3 sm:-mx-4">
         {isLoading ? (
-          <div className="px-4 py-12 text-center text-[13px] text-muted-foreground">Loading conversations…</div>
+          <ul className="divide-y divide-border/40">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li key={i} className="flex items-center gap-3 px-4 py-3.5 animate-pulse">
+                <div className="w-12 h-12 rounded-full bg-muted/60 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-1/3 rounded bg-muted/60" />
+                  <div className="h-3 w-2/3 rounded bg-muted/40" />
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-16 text-center">
-            <div className="text-[14px] font-semibold text-foreground mb-1">No conversations yet</div>
-            <p className="text-[12px] text-muted-foreground mb-4">
-              {search ? 'No threads match your search.' : 'Email and SMS conversations will appear here.'}
+          <div className="px-6 py-20 text-center flex flex-col items-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 flex items-center justify-center mb-4">
+              <Sparkles className="w-7 h-7 text-primary" strokeWidth={1.6} />
+            </div>
+            <div className="text-[15px] font-semibold text-foreground mb-1.5 tracking-tight">
+              {search ? 'No matches found' : 'Your inbox is clear'}
+            </div>
+            <p className="text-[13px] text-muted-foreground mb-5 max-w-[260px] leading-relaxed">
+              {search
+                ? 'Try a different name, email, or keyword.'
+                : 'Start a conversation with a lead to see threads appear here.'}
             </p>
             {!search && (
-              <Button asChild size="sm" variant="outline">
+              <Button asChild variant="outline" size="sm" className="rounded-full">
                 <Link to="/crm/leads">Browse leads</Link>
               </Button>
             )}
           </div>
         ) : (
-          <ul className="divide-y divide-border/50">
+          <ul className="divide-y divide-border/40">
             {filtered.map(t => {
               const { Icon, color } = channelChip(t.channel);
               const name = formatContactName(t.first_name, t.last_name) || t.email || t.phone || 'Unknown';
@@ -160,49 +198,60 @@ export default function CrmChatsPage() {
                 : '';
               const isUnread = (t.unread_count ?? 0) > 0;
               return (
-                <li key={t.id}>
+                <li key={t.id} className="relative">
+                  {/* Subtle gold accent bar for unread */}
+                  {isUnread && (
+                    <span
+                      aria-hidden
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-[3px] rounded-r-full"
+                      style={{ background: 'hsl(var(--primary))' }}
+                    />
+                  )}
                   <button
                     onClick={() => navigate(`/crm/leads/${t.contact_id}`)}
-                    className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-muted/30 active:bg-muted/40 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 active:bg-muted/50 transition-colors"
                   >
-                    {/* Avatar with channel chip */}
+                    {/* Gradient avatar with channel chip */}
                     <div className="relative shrink-0">
                       <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[15px] font-semibold"
-                        style={{ background: avatarBg(t.contact_id) }}
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[15px] font-semibold shadow-sm ring-1 ring-white/10"
+                        style={{ background: avatarGradient(t.contact_id) }}
                       >
                         {initials}
                       </div>
                       <div
-                        className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-background flex items-center justify-center border-2 border-card"
+                        className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background flex items-center justify-center shadow-sm"
+                        style={{ boxShadow: '0 0 0 2px hsl(var(--background))' }}
                       >
-                        <Icon className="w-3 h-3" style={{ color }} strokeWidth={2.4} />
+                        <Icon className="w-[10px] h-[10px]" style={{ color }} strokeWidth={2.6} />
                       </div>
-                      {isUnread && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center border-2 border-card">
-                          {t.unread_count > 9 ? '9+' : t.unread_count}
-                        </span>
-                      )}
                     </div>
 
                     {/* Body */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-2">
-                        <h3 className={`text-[15px] truncate tracking-tight ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground'}`}>
+                        <h3 className={`text-[15px] truncate tracking-[-0.01em] ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
                           {name}
                         </h3>
                         {time && (
-                          <span className={`text-[11px] whitespace-nowrap shrink-0 ${isUnread ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+                          <span className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums ${isUnread ? 'text-primary font-bold' : 'text-muted-foreground/80 font-medium'}`}>
                             {time}
                           </span>
                         )}
                       </div>
-                      <p className={`text-[13px] truncate leading-snug mt-0.5 ${isUnread ? 'text-foreground/80' : 'text-muted-foreground'}`}>
-                        {t.last_message_direction === 'outbound' && (
-                          <span className="text-muted-foreground/70 mr-1">You:</span>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <p className={`text-[13px] truncate leading-snug flex-1 min-w-0 ${isUnread ? 'text-foreground/85' : 'text-muted-foreground'}`}>
+                          {t.last_message_direction === 'outbound' && (
+                            <span className="text-muted-foreground/60 mr-1">You:</span>
+                          )}
+                          {t.last_message_preview || (t.channel === 'email' ? t.email : t.phone) || 'No messages yet'}
+                        </p>
+                        {isUnread && (
+                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30">
+                            {t.unread_count > 99 ? '99+' : t.unread_count}
+                          </span>
                         )}
-                        {t.last_message_preview || (t.channel === 'email' ? t.email : t.phone) || 'No messages yet'}
-                      </p>
+                      </div>
                     </div>
                   </button>
                 </li>
@@ -212,14 +261,18 @@ export default function CrmChatsPage() {
         )}
       </div>
 
-      {/* FAB — start new conversation (routes to leads to pick a contact) */}
+      {/* Premium FAB — gradient gold with glow */}
       <button
         onClick={() => navigate('/crm/leads')}
         aria-label="Start new conversation"
-        className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center"
-        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+        className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full text-primary-foreground shadow-xl active:scale-95 transition-all flex items-center justify-center ring-1 ring-white/10"
+        style={{
+          bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+          background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%)',
+          boxShadow: '0 10px 30px -8px hsl(var(--primary) / 0.5), 0 4px 12px -2px hsl(var(--primary) / 0.3)',
+        }}
       >
-        <Plus className="w-6 h-6" strokeWidth={2.2} />
+        <Plus className="w-6 h-6" strokeWidth={2.4} />
       </button>
     </div>
   );
