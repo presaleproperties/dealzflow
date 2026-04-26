@@ -21,7 +21,6 @@ const MAX_LEN = 1600;
 export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
   const [to, setTo] = useState(contact.phone ?? '');
   const [body, setBody] = useState('');
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (open) {
