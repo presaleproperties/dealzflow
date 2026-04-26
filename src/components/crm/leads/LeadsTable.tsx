@@ -580,11 +580,11 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className={`relative w-full text-left bg-card px-4 py-3 transition-colors hover:bg-muted/20 active:bg-muted/30 focus:outline-none focus-visible:bg-muted/20 ${
-        tier === 'HOT' ? 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary' : ''
+      className={`relative w-full text-left bg-card px-5 py-4 transition-all duration-150 hover:bg-muted/20 active:bg-muted/40 active:scale-[0.998] focus:outline-none focus-visible:bg-muted/20 ${
+        tier === 'HOT' ? 'before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary' : ''
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           {/* Row 1: gold dot (when new) + name */}
           <div className="flex items-center gap-2 min-w-0">
@@ -594,13 +594,13 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
                 className="w-1.5 h-1.5 rounded-full shrink-0 bg-primary"
               />
             )}
-            <h3 className="text-[15px] font-semibold text-foreground tracking-tight leading-tight truncate flex-1 min-w-0">
+            <h3 className="text-[16px] font-semibold text-foreground tracking-[-0.01em] leading-tight truncate flex-1 min-w-0">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h3>
           </div>
 
           {/* Row 2: type · source — editorial dot separator */}
-          <p className="text-[13px] text-muted-foreground mt-1 leading-tight truncate">
+          <p className="text-[13px] text-muted-foreground mt-1.5 leading-tight truncate">
             {typeLabel}
             {sourceText && (
               <>
@@ -612,22 +612,22 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
 
           {/* Row 3: lead email */}
           {emailText && (
-            <p className="text-[12px] text-muted-foreground/80 mt-1.5 leading-tight truncate lowercase">
+            <p className="text-[12.5px] text-muted-foreground/75 mt-2 leading-tight truncate lowercase">
               {emailText}
             </p>
           )}
         </div>
 
         {/* Right column: numeric-only score (color tier-coded) + relative time */}
-        <div className="flex flex-col items-end justify-between gap-1.5 shrink-0 self-stretch min-h-[60px]">
+        <div className="flex flex-col items-end justify-between gap-2 shrink-0 self-stretch min-h-[64px]">
           <span
             aria-label={hasScore ? `Lead score ${score}` : 'No score'}
-            className={`inline-flex items-center justify-center h-7 min-w-[34px] px-2 rounded-md text-[13px] font-bold tabular-nums ${badgeClass}`}
+            className={`inline-flex items-center justify-center h-7 min-w-[36px] px-2 rounded-md text-[13px] font-bold tabular-nums ${badgeClass}`}
           >
             {hasScore ? score : '—'}
           </span>
           {relTime && (
-            <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap">{relTime}</span>
+            <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap tracking-tight">{relTime}</span>
           )}
         </div>
       </div>
