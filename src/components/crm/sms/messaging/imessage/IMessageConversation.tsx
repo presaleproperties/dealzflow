@@ -646,8 +646,8 @@ function IMessageComposer({
   };
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur px-3 sm:px-4 py-3 imsg-font native-safe-bottom native-kb-lift">
-      <div className="max-w-3xl mx-auto space-y-2">
+    <div className="px-3 sm:px-4 pt-2 pb-3 imsg-font native-safe-bottom native-kb-lift">
+      <div className="max-w-3xl mx-auto space-y-2 rounded-2xl bg-background/85 backdrop-blur-md border border-border/60 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.25)] px-3 sm:px-4 py-2.5">
         {quotedRef && (
           <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-2xl bg-muted/50 border-l-2 border-[#007AFF]">
             <Reply className="w-3 h-3 text-[#007AFF] shrink-0" />
