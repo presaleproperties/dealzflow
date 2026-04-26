@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { onHardwareBack, haptic } from '@/lib/native';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,6 +130,18 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
       setActiveKey(filteredThreads[0].key);
     }
   }, [filteredThreads, activeKey, isMobile]);
+
+  // Android hardware back: pop the open conversation back to the inbox list
+  // before the OS gets a chance to exit the app. Returns `true` to mark the
+  // event as handled.
+  useEffect(() => {
+    if (!activeKey && !showNewChat) return;
+    return onHardwareBack(() => {
+      if (showNewChat) { setShowNewChat(false); return true; }
+      if (activeKey)   { setActiveKey(null); haptic('selection'); return true; }
+      return false;
+    });
+  }, [activeKey, showNewChat]);
 
   useEffect(() => {
     setActiveKey(null);
@@ -361,7 +374,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                           pinned
                           muted={threadState.isMuted(channel, t.key)}
                           archived={threadState.isArchived(channel, t.key)}
-                          onClick={() => { setShowNewChat(false); setActiveKey(t.key); }}
+                          onClick={() => { haptic("selection"); setShowNewChat(false); setActiveKey(t.key); }}
                           onTogglePin={() => togglePin(channel, t.key)}
                           onToggleMute={() => threadState.toggleMute(channel, t.key)}
                           onToggleArchive={() => {
@@ -386,7 +399,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                       pinned={false}
                       muted={threadState.isMuted(channel, t.key)}
                       archived={threadState.isArchived(channel, t.key)}
-                      onClick={() => { setShowNewChat(false); setActiveKey(t.key); }}
+                      onClick={() => { haptic("selection"); setShowNewChat(false); setActiveKey(t.key); }}
                       onTogglePin={() => togglePin(channel, t.key)}
                       onToggleMute={() => threadState.toggleMute(channel, t.key)}
                       onToggleArchive={() => {

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { haptic } from '@/lib/native';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -97,7 +98,7 @@ export function WhatsAppConversation(props: Props) {
   return (
     <div className="flex flex-col h-full wa-font">
       {/* ===== Teal header ===== */}
-      <div className="wa-header px-3 py-2 flex items-center gap-2">
+      <div className="wa-header px-3 py-2 flex items-center gap-2 native-safe-top">
         {isMobile ? (
           <Button size="icon" variant="ghost" className="h-9 w-9 text-white hover:bg-white/10 -ml-1" onClick={onBack}>
             <ArrowLeft className="w-5 h-5" />
@@ -599,16 +600,23 @@ function WhatsAppComposer({
     onMediaChange([...pendingMedia, ...arr]);
   };
 
+  // Wraps the parent's onSend with a native haptic so iOS / Android users feel
+  // the same little "thump" they'd get in WhatsApp.
+  const onSendWithHaptic = useCallback(async () => {
+    haptic('light');
+    await onSend();
+  }, [onSend]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     // Enter sends; Shift+Enter inserts a newline (standard chat behavior).
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      onSend();
+      onSendWithHaptic();
     }
   };
 
   return (
-    <div className="wa-composer-bar px-3 py-2 wa-font">
+    <div className="wa-composer-bar px-3 py-2 wa-font native-safe-bottom native-kb-lift">
       <div className="max-w-3xl mx-auto space-y-1.5">
         {quotedRef && (
           <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-white dark:bg-[#202c33] border-l-[3px] border-emerald-600 shadow-sm">
@@ -769,10 +777,10 @@ function WhatsAppComposer({
           {/* Send / Mic */}
           <Button
             size="icon"
-            onClick={canSend ? onSend : undefined}
+            onClick={canSend ? onSendWithHaptic : undefined}
             disabled={sending}
             className={cn(
-              'h-11 w-11 rounded-full shrink-0 transition-all',
+              'h-11 w-11 rounded-full shrink-0 transition-all native-press',
               canSend
                 ? 'wa-send shadow-md hover:shadow-lg active:scale-95'
                 : 'wa-send opacity-90',
@@ -787,7 +795,7 @@ function WhatsAppComposer({
 
         <div className="flex items-center justify-between mt-1 px-2 text-[10.5px] text-muted-foreground">
           <span>WhatsApp Business · via Twilio{outsideWaWindow ? ' · outside 24h window' : ''}</span>
-          <span className="opacity-70">⌘ + ↵ to send</span>
+          <span className="opacity-70">↵ send · ⇧↵ newline</span>
         </div>
       </div>
     </div>

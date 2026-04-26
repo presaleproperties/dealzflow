@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { haptic } from '@/lib/native';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,7 @@ export function IMessageConversation(props: Props) {
   return (
     <div className="flex flex-col h-full imsg-font">
       {/* ===== Frosted header (centered title, iMessage style) ===== */}
-      <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+      <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top">
         {/* Left controls */}
         <div className="flex items-center gap-1">
           {isMobile ? (
@@ -625,16 +626,23 @@ function IMessageComposer({
     onMediaChange([...pendingMedia, ...arr]);
   };
 
+  // Wraps the parent's onSend with a native haptic so iOS / Android users feel
+  // the same little "thump" they'd get in Messages or WhatsApp.
+  const onSendWithHaptic = useCallback(async () => {
+    haptic('light');
+    await onSend();
+  }, [onSend]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     // Enter sends; Shift+Enter inserts a newline (standard chat behavior).
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      onSend();
+      onSendWithHaptic();
     }
   };
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur px-3 sm:px-4 py-3 imsg-font">
+    <div className="border-t border-border bg-background/80 backdrop-blur px-3 sm:px-4 py-3 imsg-font native-safe-bottom native-kb-lift">
       <div className="max-w-3xl mx-auto space-y-2">
         {quotedRef && (
           <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-2xl bg-muted/50 border-l-2 border-[#007AFF]">
@@ -781,10 +789,10 @@ function IMessageComposer({
             />
             <Button
               size="icon"
-              onClick={onSend}
+              onClick={onSendWithHaptic}
               disabled={!canSend}
               className={cn(
-                'h-7 w-7 rounded-full shrink-0 transition-all',
+                'h-7 w-7 rounded-full shrink-0 transition-all native-press',
                 canSend
                   ? 'bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm'
                   : 'bg-muted text-muted-foreground cursor-not-allowed',
@@ -797,7 +805,7 @@ function IMessageComposer({
 
         <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
           <span>{seg.count} segment{seg.count > 1 ? 's' : ''} · {seg.chars} chars{pendingMedia.length > 0 ? ' · MMS' : ''}</span>
-          <span className="opacity-70">⌘ + ↵ to send</span>
+          <span className="opacity-70">↵ send · ⇧↵ newline</span>
         </div>
       </div>
     </div>
