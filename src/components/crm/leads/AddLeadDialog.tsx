@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -120,9 +120,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         hideClose
         className="w-full sm:max-w-md p-0 flex flex-col bg-muted/30 gap-0 border-l border-border"
       >
-        <VisuallyHidden>
-          <SheetTitle>Add Lead</SheetTitle>
-        </VisuallyHidden>
+        <SheetTitle className="sr-only">Add Lead</SheetTitle>
 
         {/* Header */}
         <div className="flex items-center justify-between px-2 h-14 border-b border-border bg-background/95 backdrop-blur shrink-0 sticky top-0 z-10">
