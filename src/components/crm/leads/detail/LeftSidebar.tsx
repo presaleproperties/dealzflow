@@ -279,25 +279,50 @@ export function LeftSidebar({
       <div className="space-y-3">
         <SectionHeader>Details</SectionHeader>
         <div className="space-y-px">
-          <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
-            <span className="text-xs text-muted-foreground shrink-0">Source</span>
-            <div className="flex-1 min-w-0 flex justify-end">
-              <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
-            </div>
-          </div>
-          {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
-          <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
-          <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
+          {isMobile ? (
+            <>
+              <MobileEditRow label="Source" value={contact.source || ''} placeholder="Select source" onClick={() => setDrawer('source')} />
+              <MobileEditRow label="Email 2" value={contact.email_secondary || ''} placeholder="Add" onClick={() => setDrawer('email_secondary')} />
+              <MobileEditRow label="City" value={contact.city || ''} placeholder="Select" onClick={() => setDrawer('city')} />
+              <MobileEditRow label="Language" value={contact.language || ''} placeholder="Select" onClick={() => setDrawer('language')} />
+              <MobileEditRow label="Beds" value={contact.bedrooms_preferred || ''} placeholder="e.g. 2-3" onClick={() => setDrawer('bedrooms')} />
+              <MobileEditRow
+                label="Budget min"
+                value={contact.budget_min != null ? formatCurrency(Number(contact.budget_min)) : ''}
+                placeholder="Add"
+                onClick={() => setDrawer('budget_min')}
+              />
+              <MobileEditRow
+                label="Budget max"
+                value={contact.budget_max != null ? formatCurrency(Number(contact.budget_max)) : ''}
+                placeholder="Add"
+                onClick={() => setDrawer('budget_max')}
+              />
+              <MobileEditRow label="Birthday" value={contact.birthday || ''} placeholder="YYYY-MM-DD" onClick={() => setDrawer('birthday')} />
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
+                <span className="text-xs text-muted-foreground shrink-0">Source</span>
+                <div className="flex-1 min-w-0 flex justify-end">
+                  <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
+                </div>
+              </div>
+              {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
+              <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
+              <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
 
-          {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
+              {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
 
-          {(contact.budget_min != null || contact.budget_max != null) && (
-            <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-              <span className="text-xs text-muted-foreground">Budget</span>
-              <span className="text-[13px] text-foreground font-medium tabular-nums">
-                {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '—'}
-              </span>
-            </div>
+              {(contact.budget_min != null || contact.budget_max != null) && (
+                <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+                  <span className="text-xs text-muted-foreground">Budget</span>
+                  <span className="text-[13px] text-foreground font-medium tabular-nums">
+                    {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '—'}
+                  </span>
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
