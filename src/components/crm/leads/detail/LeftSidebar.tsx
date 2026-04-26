@@ -67,7 +67,7 @@ export function LeftSidebar({
     | 'status' | 'assigned_to' | 'source' | 'city' | 'language'
     | 'lead_type' | 'tags' | 'projects'
     | 'bedrooms' | 'budget_min' | 'budget_max' | 'birthday'
-    | 'email_secondary'
+    | 'email_secondary' | 'phone_secondary' | 'notes'
     | 'co_buyer_name' | 'co_buyer_phone' | 'co_buyer_email'
   >(null);
   const closeDrawer = () => setDrawer(null);
@@ -346,6 +346,7 @@ export function LeftSidebar({
             <>
               <MobileEditRow label="Source" value={contact.source || ''} placeholder="Select source" onClick={() => setDrawer('source')} />
               <MobileEditRow label="Email 2" value={contact.email_secondary || ''} placeholder="Add" onClick={() => setDrawer('email_secondary')} />
+              <MobileEditRow label="Phone 2" value={contact.phone_secondary ? formatPhone(contact.phone_secondary) : ''} placeholder="Add" onClick={() => setDrawer('phone_secondary')} />
               <MobileEditRow label="City" value={contact.city || ''} placeholder="Select" onClick={() => setDrawer('city')} />
               <MobileEditRow label="Language" value={contact.language || ''} placeholder="Select" onClick={() => setDrawer('language')} />
               <MobileEditRow label="Beds" value={contact.bedrooms_preferred || ''} placeholder="e.g. 2-3" onClick={() => setDrawer('bedrooms')} />
@@ -362,6 +363,7 @@ export function LeftSidebar({
                 onClick={() => setDrawer('budget_max')}
               />
               <MobileEditRow label="Birthday" value={contact.birthday || ''} placeholder="YYYY-MM-DD" onClick={() => setDrawer('birthday')} />
+              <MobileEditRow label="Notes" value={contact.notes ? (contact.notes.length > 40 ? contact.notes.slice(0, 40) + '…' : contact.notes) : ''} placeholder="Add notes" onClick={() => setDrawer('notes')} />
             </>
           ) : (
             <>
@@ -371,20 +373,45 @@ export function LeftSidebar({
                   <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
                 </div>
               </div>
-              {contact.email_secondary && <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />}
-              <DetailRow label="City" value={contact.city} field="city" contactId={contact.id} type="select" options={FRASER_VALLEY_CITIES} />
-              <DetailRow label="Language" value={contact.language} field="language" contactId={contact.id} type="select" options={CRM_LANGUAGES} />
+              <DetailRow label="Email 2" value={contact.email_secondary} field="email_secondary" contactId={contact.id} type="email" />
+              <DetailRow label="Phone 2" value={contact.phone_secondary} field="phone_secondary" contactId={contact.id} displayFormatter={formatPhone} />
 
-              {contact.bedrooms_preferred && <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />}
-
-              {(contact.budget_min != null || contact.budget_max != null) && (
-                <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                  <span className="text-xs text-muted-foreground">Budget</span>
-                  <span className="text-[13px] text-foreground font-medium tabular-nums">
-                    {contact.budget_min ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max ? formatCurrency(Number(contact.budget_max)) : '—'}
-                  </span>
+              {/* City + Language — multi-select to match mobile */}
+              <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground shrink-0 pt-1">City</span>
+                <div className="flex-1 min-w-0">
+                  <InlineLibraryPicker
+                    selected={contact.city ? contact.city.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
+                    library={FRASER_VALLEY_CITIES.map((c) => ({ label: c, count: 0 }))}
+                    onChange={(next) => save('city', next.join(' | ') || null)}
+                    placeholder="Search or add city…"
+                    emptyText="No cities"
+                  />
                 </div>
-              )}
+              </div>
+              <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground shrink-0 pt-1">Language</span>
+                <div className="flex-1 min-w-0">
+                  <InlineLibraryPicker
+                    selected={contact.language ? contact.language.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
+                    library={CRM_LANGUAGES.map((l) => ({ label: l, count: 0 }))}
+                    onChange={(next) => save('language', next.join(' | ') || null)}
+                    placeholder="Search or add language…"
+                    emptyText="No languages"
+                  />
+                </div>
+              </div>
+
+              <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />
+
+              <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
+                <span className="text-xs text-muted-foreground">Budget</span>
+                <span className="text-[13px] text-foreground font-medium tabular-nums">
+                  {contact.budget_min != null ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max != null ? formatCurrency(Number(contact.budget_max)) : '—'}
+                </span>
+              </div>
+
+              <DetailRow label="Birthday" value={contact.birthday} field="birthday" contactId={contact.id} />
             </>
           )}
 
@@ -542,14 +569,12 @@ export function LeftSidebar({
                 <MobileEditRow label="Phone" value={contact.co_buyer_phone ? formatPhone(contact.co_buyer_phone) : ''} onClick={() => setDrawer('co_buyer_phone')} />
                 <MobileEditRow label="Email" value={contact.co_buyer_email || ''} onClick={() => setDrawer('co_buyer_email')} />
               </>
-            ) : hasCoBuyer ? (
+            ) : (
               <>
                 <DetailRow label="Name" value={contact.co_buyer_name} field="co_buyer_name" contactId={contact.id} />
                 <DetailRow label="Phone" value={contact.co_buyer_phone} field="co_buyer_phone" contactId={contact.id} displayFormatter={formatPhone} />
                 <DetailRow label="Email" value={contact.co_buyer_email} field="co_buyer_email" contactId={contact.id} type="email" />
               </>
-            ) : (
-              <p className="text-xs text-muted-foreground/70">No co-buyer info</p>
             )}
           </div>
         )}
@@ -642,6 +667,18 @@ export function LeftSidebar({
               title="Email 2" type="email" placeholder="name@example.com"
               value={contact.email_secondary ?? ''}
               onSave={(v) => save('email_secondary', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'phone_secondary'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Phone 2" type="tel" placeholder="+1 …"
+              value={contact.phone_secondary ?? ''}
+              onSave={(v) => save('phone_secondary', v || null)}
+            />
+            <MobileTextEditDrawer
+              open={drawer === 'notes'} onOpenChange={(o) => !o && closeDrawer()}
+              title="Notes" type="textarea" placeholder="Internal notes about this lead…"
+              value={contact.notes ?? ''}
+              onSave={(v) => save('notes', v || null)}
             />
             <MobileTextEditDrawer
               open={drawer === 'bedrooms'} onOpenChange={(o) => !o && closeDrawer()}

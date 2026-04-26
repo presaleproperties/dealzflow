@@ -6,11 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, AlertCircle } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, AGENTS, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { CheckboxDropdown } from '@/components/crm/leads/CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
+import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
+import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
+import { useCrmSources } from '@/hooks/useCrmSources';
+import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
@@ -26,6 +31,13 @@ interface Props {
  */
 export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const updateContact = useUpdateCrmContact();
+  const { data: tagLib = [] } = useCrmTags();
+  const { data: projectLib = [] } = useCrmProjects();
+  const { data: leadTypeLib = [] } = useCrmLeadTypes();
+  const { data: librarySources = [] } = useCrmSources();
+  const createTag = useCreateCrmTag();
+  const createProject = useCreateCrmProject();
+  const createLeadType = useCreateCrmLeadType();
   const [form, setForm] = useState(() => initialForm(contact));
   const [saving, setSaving] = useState(false);
   // Field-level error map. Populated on save attempt and cleared per-field as
@@ -140,6 +152,12 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
         budget_max: form.budget_max ? Number(form.budget_max) : null,
         status: form.status,
         assigned_to: form.assigned_to || null,
+        source: form.source || null,
+        lead_types: form.lead_types,
+        lead_type: form.lead_types[0] ?? null,
+        tags: form.tags,
+        projects: form.projects,
+        project: form.projects[0] ?? null,
         co_buyer_name: form.co_buyer_name.trim() || null,
         co_buyer_phone: form.co_buyer_phone.trim() || null,
         co_buyer_email: form.co_buyer_email.trim() || null,
@@ -300,6 +318,69 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
             )}
           </Group>
 
+          <Group title="Classification">
+            {fieldRow(
+              'Source',
+              (() => {
+                const sourceSet = new Set<string>([...LEAD_SOURCES, ...librarySources.map((s) => s.name)]);
+                if (form.source) sourceSet.add(form.source);
+                const sourceOptions = Array.from(sourceSet).sort();
+                return (
+                  <Select value={form.source || undefined} onValueChange={(v) => update('source', v)}>
+                    <SelectTrigger className={inputCls()}><SelectValue placeholder="Select source" /></SelectTrigger>
+                    <SelectContent>
+                      {sourceOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                );
+              })(),
+            )}
+            {fieldRow(
+              'Lead Type',
+              (() => {
+                const libMap = new Map<string, { label: string; count: number }>();
+                leadTypeLib.forEach((l) => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
+                LEAD_TYPES.forEach((t) => {
+                  if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { label: t, count: 0 });
+                });
+                const merged = Array.from(libMap.values()).sort((a, b) => b.count - a.count);
+                return (
+                  <InlineLibraryPicker
+                    selected={form.lead_types}
+                    library={merged}
+                    onChange={(next) => update('lead_types', next)}
+                    onCreate={(name) => createLeadType.mutate(name)}
+                    renderLabel={(v) => LEAD_TYPE_LABELS[v] ?? v}
+                    placeholder="Search or add lead type…"
+                    emptyText="No lead types yet"
+                  />
+                );
+              })(),
+            )}
+            {fieldRow(
+              'Tags',
+              <InlineLibraryPicker
+                selected={form.tags}
+                library={tagLib.map((t) => ({ label: t.name, count: t.usage_count }))}
+                onChange={(next) => update('tags', next)}
+                onCreate={(name) => createTag.mutate(name)}
+                placeholder="Search or add tag…"
+                emptyText="No tags yet"
+              />,
+            )}
+            {fieldRow(
+              'Projects',
+              <InlineLibraryPicker
+                selected={form.projects}
+                library={projectLib.map((p) => ({ label: p.name, count: p.usage_count }))}
+                onChange={(next) => update('projects', next)}
+                onCreate={(name) => createProject.mutate(name)}
+                placeholder="Search or add project…"
+                emptyText="No projects yet"
+              />,
+            )}
+          </Group>
+
           <Group title="Preferences">
             {fieldRow(
               'City',
@@ -404,6 +485,9 @@ function isValidPhone(value: string): boolean {
 }
 
 function initialForm(contact: CrmContact) {
+  const ext = contact as unknown as Record<string, unknown>;
+  const leadTypes = (ext.lead_types as string[] | undefined) ?? (contact.lead_type ? [contact.lead_type] : []);
+  const projects = contact.projects?.length ? contact.projects : (contact.project ? [contact.project] : []);
   return {
     first_name: contact.first_name ?? '',
     last_name: contact.last_name ?? '',
@@ -419,6 +503,10 @@ function initialForm(contact: CrmContact) {
     budget_max: contact.budget_max != null ? String(contact.budget_max) : '',
     status: contact.status ?? 'New Lead',
     assigned_to: contact.assigned_to ?? '',
+    source: contact.source ?? '',
+    lead_types: leadTypes,
+    tags: (contact.tags ?? []) as string[],
+    projects,
     co_buyer_name: contact.co_buyer_name ?? '',
     co_buyer_phone: contact.co_buyer_phone ?? '',
     co_buyer_email: contact.co_buyer_email ?? '',
