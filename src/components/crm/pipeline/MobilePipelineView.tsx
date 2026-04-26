@@ -131,7 +131,7 @@ export function MobilePipelineView() {
         {list.length === 0 ? (
           <div className="text-center py-16 text-sm text-muted-foreground">No leads in this stage</div>
         ) : (
-          <div className="divide-y divide-border/40">
+          <div className="m-list">
             {list.map(c => <PipelineRow key={c.id} contact={c} onClick={() => navigate(`/crm/leads/${c.id}`)} />)}
           </div>
         )}
