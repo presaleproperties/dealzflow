@@ -243,6 +243,21 @@ export default function CrmSmsCenterPage() {
           <MessagingCenter channel={channel} onChannelChange={setChannel} />
         </TabsContent>
 
+        {/* === STATS === */}
+        <TabsContent value="stats" className="mt-4 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-1">{channel === 'sms' ? 'SMS' : 'WhatsApp'} performance</h3>
+            <p className="text-xs text-muted-foreground">Lifetime totals across this channel.</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <StatPill label="Sent" value={totals.sent} icon={Send} />
+            <StatPill label="Delivered" value={totals.delivered} icon={CheckCircle2} tone="emerald" />
+            <StatPill label="Failed" value={totals.failed} icon={XCircle} tone="red" />
+            <StatPill label="Replies" value={totals.replies} icon={Inbox} tone="primary" />
+            <StatPill label="Opt-outs" value={optOuts.length} icon={ShieldOff} tone="amber" />
+          </div>
+        </TabsContent>
+
         {/* === SYSTEM STATUS === */}
         <TabsContent value="status" className="mt-4">
           <MessagingStatusPanel />
