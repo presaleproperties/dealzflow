@@ -35,6 +35,7 @@ import ClientInventoryPage from "./pages/ClientInventoryPage";
 import NotFound from "./pages/NotFound";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
+import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
 
 // CRM pages
 
@@ -181,6 +182,7 @@ const App = () => (
                   <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                   <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
                   <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
+                  <Route path="/dev/mobile-spacing" element={<ProtectedRoute><MobileSpacingChecklistPage /></ProtectedRoute>} />
 
                   {/* CRM Routes — guarded by CrmRouteGuard inside CrmLayout */}
                   <Route path="/crm/dashboard" element={<Navigate to="/crm/leads" replace />} />
