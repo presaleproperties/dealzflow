@@ -216,10 +216,6 @@ export function BottomNav() {
     ];
   }, [mode, navigate]);
 
-  // Split tabs evenly around the center FAB
-  const halfCount = Math.ceil(tabs.length / 2);
-  const leftTabs = tabs.slice(0, halfCount);
-  const rightTabs = tabs.slice(halfCount);
 
   const renderTab = (tab: TabItem) => {
     const active = isActive(location.pathname, tab.path);
