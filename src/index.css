@@ -907,23 +907,24 @@
     --m-page-pad-y: var(--device-pad-y);          /* page top breathing room */
     --m-section-gap: var(--device-gap);           /* gap between sections */
     --m-row-pad-x: var(--device-pad-x);           /* list row side padding */
-    --m-row-pad-y: calc(16px * var(--device-scale));
-    --m-row-min-h: calc(88px * var(--device-scale));
-    --m-row-divider: hsl(var(--border) / 0.55);
-    --m-title-size: calc(28px * var(--device-scale));
-    --m-title-weight: 700;
-    --m-tab-size: calc(22px * var(--device-scale));
-    --m-name-size: calc(17px * var(--device-scale));
-    --m-meta-size: calc(15px * var(--device-scale));
-    --m-meta-weak-size: calc(14px * var(--device-scale));
-    --m-chip-h: calc(32px * var(--device-scale));
-    --m-chip-pad-x: calc(14px * var(--device-scale));
-    --m-chip-radius: 10px;
-    --m-score-w: calc(44px * var(--device-scale));
-    --m-score-h: calc(34px * var(--device-scale));
-    --m-score-radius: 8px;
-    --m-score-font: calc(18px * var(--device-scale));
-    --m-fab-size: calc(56px * var(--device-scale));
+    --m-row-pad-y: calc(14px * var(--device-scale));
+    --m-row-min-h: calc(72px * var(--device-scale));
+    --m-row-divider: hsl(var(--border) / 0.5);
+    /* Match desktop editorial scale — Plus Jakarta Sans, premium minimalist */
+    --m-title-size: calc(26px * var(--device-scale));   /* ≈ desktop h2 */
+    --m-title-weight: 600;
+    --m-tab-size: calc(13px * var(--device-scale));     /* eyebrow-style tabs */
+    --m-name-size: calc(15px * var(--device-scale));    /* desktop body */
+    --m-meta-size: calc(13px * var(--device-scale));
+    --m-meta-weak-size: calc(12px * var(--device-scale));
+    --m-chip-h: calc(28px * var(--device-scale));
+    --m-chip-pad-x: calc(12px * var(--device-scale));
+    --m-chip-radius: 8px;
+    --m-score-w: calc(40px * var(--device-scale));
+    --m-score-h: calc(30px * var(--device-scale));
+    --m-score-radius: 7px;
+    --m-score-font: calc(15px * var(--device-scale));
+    --m-fab-size: calc(52px * var(--device-scale));
   }
 
   /* Page wrapper — gives every mobile screen the same outer shell. */
