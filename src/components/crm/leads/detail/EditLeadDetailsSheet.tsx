@@ -86,7 +86,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
       <SheetContent
         side="right"
         hideClose
-        className="w-full sm:max-w-md p-0 flex flex-col bg-muted/30 gap-0 border-l border-border"
+        className="w-full sm:max-w-md p-0 flex flex-col bg-muted gap-0 border-l border-border"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-2 h-14 border-b border-border bg-background/95 backdrop-blur shrink-0 sticky top-0 z-10">
