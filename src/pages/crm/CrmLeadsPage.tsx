@@ -579,53 +579,74 @@ export default function CrmLeadsPage() {
           />
         </div>
 
-        {/* Right-side Filter Panel */}
-        <FilterPanel
-          open={filtersExpanded}
-          onClose={() => setFiltersExpanded(false)}
-          filterContactType={filterContactType}
-          setFilterContactType={v => {
-            setFilterContactType(v);
-            // Segments are pipeline stages for leads — clear segment when filtering to realtors/clients
-            if (v && v !== 'lead') setActiveSegmentId(null);
-            setPage(1);
-          }}
-          filterStatus={filterStatus}
-          setFilterStatus={v => { setFilterStatus(v); setPage(1); }}
-          filterSource={filterSource}
-          setFilterSource={v => { setFilterSource(v); setPage(1); }}
-          filterAgent={filterAgent}
-          setFilterAgent={v => { setFilterAgent(v); setPage(1); }}
-          filterProject={filterProject}
-          setFilterProject={v => { setFilterProject(v); setPage(1); }}
-          filterLeadType={filterLeadType}
-          setFilterLeadType={v => { setFilterLeadType(v); setPage(1); }}
-          filterLanguage={filterLanguage}
-          setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
-          filterTags={filterTags}
-          setFilterTags={v => { setFilterTags(v); setPage(1); }}
-          filterExcludeTags={filterExcludeTags}
-          setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
-          filterPropertyType={filterPropertyType}
-          setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
-          filterCity={filterCity}
-          setFilterCity={v => { setFilterCity(v); setPage(1); }}
-          filterPreApproved={filterPreApproved}
-          setFilterPreApproved={v => { setFilterPreApproved(v); setPage(1); }}
-          filterCampaign={filterCampaign}
-          setFilterCampaign={v => { setFilterCampaign(v); setPage(1); }}
-          dynamicProjects={dynamicOpts.projects}
-          dynamicLanguages={dynamicOpts.languages}
-          dynamicTags={dynamicOpts.tags}
-          dynamicCities={dynamicOpts.cities}
-          dynamicCampaigns={dynamicOpts.campaigns}
-          dynamicLeadTypes={dynamicOpts.leadTypes}
-          tagCounts={dynamicOpts.tagCounts}
-          projectCounts={dynamicOpts.projectCounts}
-          leadTypeCounts={dynamicOpts.leadTypeCounts}
-          onClearAll={clearAllFilters}
-          activeFilterCount={activeFilterCount}
-        />
+        {/* Right-side Filter Panel — inline on desktop, bottom sheet on mobile to avoid layout shift */}
+        {(() => {
+          const panel = (
+            <FilterPanel
+              open={isMobile ? true : filtersExpanded}
+              onClose={() => setFiltersExpanded(false)}
+              filterContactType={filterContactType}
+              setFilterContactType={v => {
+                setFilterContactType(v);
+                if (v && v !== 'lead') setActiveSegmentId(null);
+                setPage(1);
+              }}
+              filterStatus={filterStatus}
+              setFilterStatus={v => { setFilterStatus(v); setPage(1); }}
+              filterSource={filterSource}
+              setFilterSource={v => { setFilterSource(v); setPage(1); }}
+              filterAgent={filterAgent}
+              setFilterAgent={v => { setFilterAgent(v); setPage(1); }}
+              filterProject={filterProject}
+              setFilterProject={v => { setFilterProject(v); setPage(1); }}
+              filterLeadType={filterLeadType}
+              setFilterLeadType={v => { setFilterLeadType(v); setPage(1); }}
+              filterLanguage={filterLanguage}
+              setFilterLanguage={v => { setFilterLanguage(v); setPage(1); }}
+              filterTags={filterTags}
+              setFilterTags={v => { setFilterTags(v); setPage(1); }}
+              filterExcludeTags={filterExcludeTags}
+              setFilterExcludeTags={v => { setFilterExcludeTags(v); setPage(1); }}
+              filterPropertyType={filterPropertyType}
+              setFilterPropertyType={v => { setFilterPropertyType(v); setPage(1); }}
+              filterCity={filterCity}
+              setFilterCity={v => { setFilterCity(v); setPage(1); }}
+              filterPreApproved={filterPreApproved}
+              setFilterPreApproved={v => { setFilterPreApproved(v); setPage(1); }}
+              filterCampaign={filterCampaign}
+              setFilterCampaign={v => { setFilterCampaign(v); setPage(1); }}
+              dynamicProjects={dynamicOpts.projects}
+              dynamicLanguages={dynamicOpts.languages}
+              dynamicTags={dynamicOpts.tags}
+              dynamicCities={dynamicOpts.cities}
+              dynamicCampaigns={dynamicOpts.campaigns}
+              dynamicLeadTypes={dynamicOpts.leadTypes}
+              tagCounts={dynamicOpts.tagCounts}
+              projectCounts={dynamicOpts.projectCounts}
+              leadTypeCounts={dynamicOpts.leadTypeCounts}
+              onClearAll={clearAllFilters}
+              activeFilterCount={activeFilterCount}
+            />
+          );
+
+          if (isMobile) {
+            return (
+              <Sheet open={filtersExpanded} onOpenChange={setFiltersExpanded}>
+                <SheetContent
+                  side="bottom"
+                  className="h-[88dvh] p-0 rounded-t-2xl border-t border-border [&>button]:hidden"
+                >
+                  {/* Override panel chrome so it fills the sheet (no left margin / fixed width) */}
+                  <div className="h-full [&>div]:!w-full [&>div]:!ml-0 [&>div]:!rounded-none [&>div]:!border-l-0 [&>div]:!h-full">
+                    {panel}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            );
+          }
+
+          return panel;
+        })()}
       </div>
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} />
