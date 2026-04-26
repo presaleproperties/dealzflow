@@ -219,9 +219,7 @@ export default function CrmChatThreadPage() {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
         {msgsLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-          </div>
+          <MessageBubbleSkeleton />
         ) : messages.length === 0 ? (
           <div className="text-center py-16 px-4">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-3"
