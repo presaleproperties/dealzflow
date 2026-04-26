@@ -366,36 +366,36 @@ export function ComposerSurface({
   return (
     <div className="flex flex-col h-full min-h-0 bg-card">
       {/* Recipient bar — width matches the body composer (max-w-[920px]) */}
-      <div className="px-6 pt-4 pb-3 border-b border-border/70 bg-card shrink-0">
+      <div className="px-6 pt-5 pb-4 border-b border-border/50 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">New Message</h2>
+        <div className="flex items-baseline justify-between mb-3.5">
+          <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-foreground leading-none">New Message</h2>
           <button
             type="button"
-            className="text-[10.5px] uppercase tracking-wider text-muted-foreground hover:text-foreground font-semibold"
+            className="text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground font-semibold transition-colors"
             onClick={() => setShowCcBcc((v) => !v)}
           >
             {showCcBcc ? 'Hide Cc/Bcc' : 'Add Cc/Bcc'}
           </button>
         </div>
 
-        <div className="space-y-0 divide-y divide-border/50 border-y border-border/50">
+        <div className="space-y-0 divide-y divide-border/40 rounded-lg border border-border/40 bg-background/40 px-3.5">
           {/* From */}
-          <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">From</Label>
+          <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+            <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">From</Label>
             <span className="text-[12.5px] text-foreground/90 truncate">
               {emailSettings?.sender_name
-                ? <><span className="font-medium">{emailSettings.sender_name}</span> <span className="text-muted-foreground">&lt;{emailSettings.reply_to ?? user?.email ?? ''}&gt;</span></>
+                ? <><span className="font-medium">{emailSettings.sender_name}</span> <span className="text-muted-foreground/80">&lt;{emailSettings.reply_to ?? user?.email ?? ''}&gt;</span></>
                 : (user?.email ?? '')}
             </span>
           </div>
 
           {/* To */}
-          <div className="grid grid-cols-[64px_1fr] items-start gap-3 py-2">
-            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold pt-1.5">To</Label>
+          <div className="grid grid-cols-[60px_1fr] items-start gap-3 py-2.5">
+            <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold pt-1.5">To</Label>
             <div className="min-h-[28px] flex flex-wrap gap-1.5 items-center">
               {recipients.length === 0 ? (
-                <span className="text-[12px] text-muted-foreground/70 mr-auto">
+                <span className="text-[12px] text-muted-foreground/60 mr-auto italic">
                   Search for a lead or pick from the right panel
                 </span>
               ) : (
@@ -404,9 +404,9 @@ export function ComposerSurface({
                     <span
                       key={r.id}
                       className={cn(
-                        'inline-flex items-center gap-1.5 h-6 pl-2 pr-0.5 rounded-full text-[11.5px] font-medium border',
+                        'inline-flex items-center gap-1.5 h-6 pl-2 pr-0.5 rounded-full text-[11.5px] font-medium border transition-colors',
                         r.email
-                          ? 'bg-muted/60 border-border text-foreground'
+                          ? 'bg-muted/60 border-border/60 text-foreground hover:bg-muted'
                           : 'bg-destructive/8 border-destructive/30 text-destructive',
                       )}
                       title={r.email ?? 'No email — will be skipped'}
@@ -417,7 +417,7 @@ export function ComposerSurface({
                         <button
                           type="button"
                           onClick={() => onRemoveRecipient(r.id)}
-                          className="rounded-full hover:bg-foreground/10 p-0.5"
+                          className="rounded-full hover:bg-foreground/10 p-0.5 transition-colors"
                           aria-label={`Remove ${formatContactName(r.first_name, r.last_name)}`}
                         >
                           <X className="h-2.5 w-2.5" />
@@ -442,7 +442,7 @@ export function ComposerSurface({
                 <button
                   type="button"
                   onClick={onClearRecipients}
-                  className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-1"
+                  className="ml-auto text-[10px] uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground px-1 transition-colors"
                 >
                   Clear
                 </button>
@@ -452,32 +452,32 @@ export function ComposerSurface({
 
           {showCcBcc && (
             <>
-              <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-                <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Cc</Label>
+              <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+                <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Cc</Label>
                 <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
-              <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-                <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Bcc</Label>
+              <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+                <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Bcc</Label>
                 <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
             </>
           )}
 
           {/* Subject */}
-          <div className="grid grid-cols-[64px_1fr] items-center gap-3 py-2">
-            <Label className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">Subject</Label>
+          <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
+            <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Subject</Label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Subject — supports {{lead.first_name}}"
-              className="h-8 text-[13.5px] font-semibold border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent placeholder:font-normal placeholder:text-muted-foreground/60"
+              className="h-8 text-[14px] font-semibold border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent placeholder:font-normal placeholder:text-muted-foreground/55 placeholder:italic tracking-[-0.01em]"
               maxLength={200}
             />
           </div>
         </div>
 
         {unreachable > 0 && (
-          <div className="mt-2 ml-[64px] flex items-center gap-1.5 text-[11px] text-amber-600">
+          <div className="mt-2.5 ml-1 flex items-center gap-1.5 text-[11px] text-amber-600">
             <AlertTriangle className="h-3 w-3" />
             {unreachable} selected lead{unreachable === 1 ? '' : 's'} ha{unreachable === 1 ? 's' : 've'} no email and will be skipped
           </div>
