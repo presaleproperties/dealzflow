@@ -365,9 +365,9 @@ export function ComposerSurface({
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-card">
-      {/* Recipient bar — width matches the body composer (max-w-[760px]) */}
+      {/* Recipient bar — width matches the body composer (max-w-[920px]) */}
       <div className="px-6 pt-4 pb-3 border-b border-border/70 bg-card shrink-0">
-        <div className="max-w-[760px] mx-auto">
+        <div className="max-w-[920px] mx-auto">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">New Message</h2>
           <button
@@ -487,7 +487,7 @@ export function ComposerSurface({
 
       {/* Mode tabs — aligned to body width */}
       <div className="px-6 py-2 border-b border-border/70 bg-card shrink-0">
-        <div className="max-w-[760px] mx-auto flex items-center justify-between gap-2">
+        <div className="max-w-[920px] mx-auto flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {(() => {
             const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
@@ -540,7 +540,7 @@ export function ComposerSurface({
       {/* Body — flex column so the editor stretches edge-to-edge with the header */}
       <div className="flex-1 flex flex-col bg-background min-h-0">
         {mode === 'edit' && (
-          <div className="flex-1 min-h-0 flex flex-col px-6 max-w-[760px] mx-auto w-full">
+          <div className="flex-1 min-h-0 flex flex-col px-6 max-w-[920px] mx-auto w-full">
             <RichTextEditor
               content={bodyHtml}
               onChange={setBodyHtml}
@@ -614,7 +614,7 @@ export function ComposerSurface({
         )}
         {mode === 'html' && (
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
-            <div className="max-w-[760px] mx-auto">
+            <div className="max-w-[920px] mx-auto">
               <textarea
                 ref={htmlTextareaRef}
                 value={bodyHtml}
