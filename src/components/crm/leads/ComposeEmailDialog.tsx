@@ -601,12 +601,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl w-[98vw] h-[92vh] p-0 overflow-hidden flex flex-col">
-          {/* Header */}
-          <DialogHeader className="px-5 py-3 border-b border-border bg-card shrink-0">
-            <DialogTitle className="flex items-center justify-between gap-2">
-              <span className="text-base font-semibold">New Email</span>
-              <span />
+        <DialogContent className="max-w-7xl w-[98vw] h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-2xl border border-border/60 shadow-2xl">
+          {/* Slim title bar — flows into the recipient stack so the composer reads as one continuous surface, not a stack of boxes */}
+          <DialogHeader className="px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
+            <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
+              New Message
             </DialogTitle>
           </DialogHeader>
 
