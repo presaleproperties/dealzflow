@@ -615,8 +615,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl w-screen h-[100dvh] sm:w-[98vw] sm:h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden">
+      <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+        <ResponsiveDialogContent className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-t-2xl sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden">
+          {/* Mobile drag handle — signals "swipe down to dismiss" like the SMS sheet */}
+          <div className="md:hidden flex justify-center pt-2 pb-1 shrink-0">
+            <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+          </div>
           {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
           <DialogHeader className="md:hidden px-3 py-2.5 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
             <button
