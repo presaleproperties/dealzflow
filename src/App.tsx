@@ -145,6 +145,7 @@ const App = () => (
               <UpdateBanner />
               <Toaster />
               <Sonner />
+              <QuietHoursConfirmHost />
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Navigate to="/auth" replace />} />
