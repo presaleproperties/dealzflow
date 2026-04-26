@@ -204,17 +204,8 @@ export default function CrmSmsCenterPage() {
         );
       })()}
 
-      {/* Stat strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        <StatPill label="Sent" value={totals.sent} icon={Send} />
-        <StatPill label="Delivered" value={totals.delivered} icon={CheckCircle2} tone="emerald" />
-        <StatPill label="Failed" value={totals.failed} icon={XCircle} tone="red" />
-        <StatPill label="Replies" value={totals.replies} icon={Inbox} tone="primary" />
-        <StatPill label="Opt-outs" value={optOuts.length} icon={ShieldOff} tone="amber" />
-      </div>
-
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-9 w-full sm:w-auto h-auto">
+        <TabsList className="grid grid-cols-10 w-full sm:w-auto h-auto">
           <TabsTrigger value="inbox" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <Inbox className="w-3.5 h-3.5" /><span>Inbox</span>
           </TabsTrigger>
