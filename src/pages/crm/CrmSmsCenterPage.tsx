@@ -209,6 +209,9 @@ export default function CrmSmsCenterPage() {
           <TabsTrigger value="inbox" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <Inbox className="w-3.5 h-3.5" /><span>Inbox</span>
           </TabsTrigger>
+          <TabsTrigger value="stats" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+            <BarChart3 className="w-3.5 h-3.5" /><span>Stats</span>
+          </TabsTrigger>
           <TabsTrigger value="status" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <ShieldCheck className="w-3.5 h-3.5" /><span>Status</span>
           </TabsTrigger>
