@@ -789,10 +789,10 @@ function IMessageComposer({
             />
             <Button
               size="icon"
-              onClick={onSend}
+              onClick={onSendWithHaptic}
               disabled={!canSend}
               className={cn(
-                'h-7 w-7 rounded-full shrink-0 transition-all',
+                'h-7 w-7 rounded-full shrink-0 transition-all native-press',
                 canSend
                   ? 'bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm'
                   : 'bg-muted text-muted-foreground cursor-not-allowed',
