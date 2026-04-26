@@ -30,6 +30,9 @@ export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
     }
   }, [open, contact.phone]);
 
+  /* Mobile back-button trap — keeps user on the lead detail page. */
+  useComposerBackButton(open, onOpenChange);
+
   const handleSend = async () => {
     if (!to.trim() || !body.trim()) {
       toast.error('Phone number and message are required');
