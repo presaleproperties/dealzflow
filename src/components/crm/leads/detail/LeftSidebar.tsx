@@ -40,6 +40,7 @@ export function LeftSidebar({
 }: Props) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: tagLib = [] } = useCrmTags();
   const { data: projectLib = [] } = useCrmProjects();
