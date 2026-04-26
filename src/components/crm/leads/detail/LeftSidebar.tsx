@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Phone, Mail, Send, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
+import { formatContactName } from '@/lib/format';
+import { EditLeadDetailsSheet } from './EditLeadDetailsSheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, formatPhone } from '@/lib/format';
