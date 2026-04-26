@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, type ComponentType } from 'react';
+import { useState, useMemo, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1219,9 +1219,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
 /**
  * RecipientRow — Apple Mail / Gmail style hairline-separated row.
- * Fixed-width muted label on the left, content fills the rest, optional
- * trailing action (e.g. "Cc Bcc" toggle). Borderless inputs sit inside so
- * the recipient stack reads as one continuous surface — not stacked boxes.
  */
 function RecipientRow({
   label,
@@ -1229,8 +1226,8 @@ function RecipientRow({
   trailing,
 }: {
   label: string;
-  children: React.ReactNode;
-  trailing?: React.ReactNode;
+  children: ReactNode;
+  trailing?: ReactNode;
 }) {
   return (
     <div className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-b-0">
