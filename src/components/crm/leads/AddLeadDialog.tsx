@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, AlertTriangle, Plus, X } from 'lucide-react'
 import { MobilePickerDrawer } from './MobilePickerDrawer';
 import { MobileMultiPickerDrawer } from './MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from './MobileTextEditDrawer';
+import { formatMonthDay } from './MonthDayInput';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
