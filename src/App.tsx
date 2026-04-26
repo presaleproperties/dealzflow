@@ -34,6 +34,7 @@ import ClientInventoryPage from "./pages/ClientInventoryPage";
 
 import NotFound from "./pages/NotFound";
 import ApiDocsPage from "./pages/ApiDocsPage";
+import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
 
 // CRM pages
 
