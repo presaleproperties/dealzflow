@@ -353,38 +353,41 @@ export default function CrmLeadsPage() {
                 </div>
               )}
 
-              {/* Filter chip row — minimal text-forward */}
-              <div className="overflow-x-auto scrollbar-hide">
-                <div className="flex items-center gap-1 px-2 pb-2 min-w-max">
-                  <FilterChip
-                    label="Segments"
-                    active={!!activeSegmentId}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
-                  <FilterChip
-                    label="Pipeline"
-                    active={filterStatus.length > 0}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
-                  <FilterChip
-                    label="Assignee"
-                    active={filterAgent.length > 0}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
-                  <FilterChip
-                    label="Activity"
-                    active={false}
-                    onClick={() => setFiltersExpanded(true)}
-                  />
+              {/* Filter + sort row — single consolidated entry point */}
+              <div className="flex items-center gap-2 px-3 pb-2">
+                <button
+                  onClick={() => setFiltersExpanded(true)}
+                  className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-medium tracking-tight transition-colors border ${
+                    activeFilterCount > 0
+                      ? 'bg-primary/10 text-primary border-primary/40'
+                      : 'bg-transparent text-muted-foreground border-border/60 hover:text-foreground'
+                  }`}
+                  aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+                >
+                  <Filter className="w-[15px] h-[15px]" strokeWidth={1.8} />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tabular-nums">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+                {activeFilterCount > 0 && (
                   <button
-                    onClick={() => handleSort('last_touch_at')}
-                    className="inline-flex items-center justify-center w-9 h-8 text-muted-foreground hover:text-foreground transition-colors ml-auto mr-1"
-                    aria-label="Sort"
-                    title="Sort by last touch"
+                    onClick={clearAllFilters}
+                    className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <ArrowDownNarrowWide className="w-[17px] h-[17px]" strokeWidth={1.8} />
+                    Clear
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={() => handleSort('last_touch_at')}
+                  className="inline-flex items-center justify-center w-9 h-9 text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                  aria-label="Sort by last touch"
+                  title="Sort by last touch"
+                >
+                  <ArrowDownNarrowWide className="w-[17px] h-[17px]" strokeWidth={1.8} />
+                </button>
               </div>
             </div>
           )}
