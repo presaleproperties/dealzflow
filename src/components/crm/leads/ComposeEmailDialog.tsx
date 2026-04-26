@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
+import { useComposerBackButton } from '@/hooks/useComposerBackButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ResponsiveDialog, ResponsiveDialogContent } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
@@ -151,24 +152,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
   }, [open]);
 
-  /* Mobile back-button trap — when the composer opens we push a synthetic
-   * history entry so the iOS/Android back button closes the dialog and stays
-   * on the current page (e.g. lead detail) instead of navigating away. */
-  useEffect(() => {
-    if (!open) return;
-    if (typeof window === 'undefined') return;
-    window.history.pushState({ __composeOpen: true }, '');
-    const handler = () => onOpenChange(false);
-    window.addEventListener('popstate', handler);
-    return () => {
-      window.removeEventListener('popstate', handler);
-      // If the entry is still on top (user closed via Cancel/Send, not Back),
-      // pop it so we don't leak history entries.
-      if (window.history.state && (window.history.state as any).__composeOpen) {
-        window.history.back();
-      }
-    };
-  }, [open, onOpenChange]);
+  /* Mobile back-button trap — keeps user on the lead detail page. */
+  useComposerBackButton(open, onOpenChange);
 
   /* Pick default signature when dialog opens or signatures load */
   useEffect(() => {

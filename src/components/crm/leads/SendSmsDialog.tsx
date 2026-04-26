@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useComposerBackButton } from '@/hooks/useComposerBackButton';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
@@ -28,6 +29,9 @@ export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
       setBody('');
     }
   }, [open, contact.phone]);
+
+  /* Mobile back-button trap — keeps user on the lead detail page. */
+  useComposerBackButton(open, onOpenChange);
 
   const handleSend = async () => {
     if (!to.trim() || !body.trim()) {
