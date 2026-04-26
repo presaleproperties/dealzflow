@@ -35,12 +35,12 @@ export const ResponsiveDialogContent = React.forwardRef<
       <SheetContent
         side="bottom"
         className={cn(
-          'rounded-t-2xl max-h-[92vh] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+10px)]',
+          'rounded-t-2xl max-h-[94vh] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)]',
           className,
         )}
       >
         {/* Subtle drag handle to signal "swipe down to dismiss" */}
-        <div className="flex justify-center -mt-1 mb-1 shrink-0 pointer-events-none">
+        <div className="flex justify-center pt-1 pb-1.5 shrink-0 pointer-events-none">
           <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
         </div>
         {children}

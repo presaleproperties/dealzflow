@@ -261,12 +261,14 @@ export function BottomNav() {
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.6)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          // Tighter home-indicator clearance — keeps the bar from sitting on top
+          // of the iOS gesture pill without leaving a giant dead zone underneath.
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px) - 8px, 0px)',
         }}
       >
         {/* Flush flat tab bar — full width, edge-to-edge, no float, no rounded corners. */}
         <div
-          className="relative flex items-center h-[56px] w-full"
+          className="relative flex items-center h-[50px] w-full"
           style={{ padding: '0 4px' }}
         >
             {/* Left tabs */}
