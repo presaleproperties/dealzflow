@@ -436,7 +436,7 @@ export function LeftSidebar({
       </div>
 
       {/* Lead Type */}
-      <div className="space-y-2">
+      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2' : 'space-y-2'}>
         <SectionHeader>Lead Type</SectionHeader>
         {(() => {
           const selected: string[] = leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : [];
