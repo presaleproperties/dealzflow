@@ -118,71 +118,30 @@ export default function CrmLeadsPage() {
   const segmentCounts = useMemo(() => computeSegmentCounts(allContacts, segments), [allContacts, segments]);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [searchTimeout, setSearchTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [letterFilter, setLetterFilter] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(DEFAULT_VISIBLE);
-
-  const [filterContactType, setFilterContactType] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [filterSource, setFilterSource] = useState<string[]>([]);
-  const [filterAgent, setFilterAgent] = useState<string[]>([]);
-  const [filterProject, setFilterProject] = useState<string[]>([]);
-  const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
-  const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
-  const [filterTags, setFilterTags] = useState<string[]>([]);
-  const [filterExcludeTags, setFilterExcludeTags] = useState<string[]>([]);
-  const [filterPropertyType, setFilterPropertyType] = useState<string[]>([]);
-  const [filterCity, setFilterCity] = useState<string[]>([]);
-  const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
-  const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1);
-  const [pageSize, setPageSize] = useState(50);
-  const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get('sort') as SortKey) || 'last_touch_at');
-  const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
-  const [showAdd, setShowAdd] = useState(false);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-
-  // Mobile-only: collapse the title row on scroll, infinite scroll accumulator, sort sheet
-  const mobileScrollRef = useRef<HTMLDivElement>(null);
-  const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [sortSheetOpen, setSortSheetOpen] = useState(false);
-  const [accumulated, setAccumulated] = useState<any[]>([]);
-  const lastFiltersKeyRef = useRef<string>('');
-
-  // Read initial view from URL
-  useEffect(() => {
-    const viewParam = searchParams.get('view') as QuickViewId | null;
-    if (viewParam && QUICK_VIEWS.some(v => v.id === viewParam) && viewParam !== activeViewId) {
-      setActiveViewId(viewParam);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // URL sync
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (activeViewId !== '__all') params.set('view', activeViewId);
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (sortKey !== 'created_at') params.set('sort', sortKey);
-    if (sortDir !== 'desc') params.set('dir', sortDir);
-    if (page > 1) params.set('page', String(page));
-    if (activeSegmentId) params.set('segment', activeSegmentId);
-    setSearchParams(params, { replace: true });
-  }, [activeViewId, debouncedSearch, sortKey, sortDir, page, activeSegmentId, setSearchParams]);
-
+...
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
-    if (searchTimeout) clearTimeout(searchTimeout);
-    const t = setTimeout(() => {
-      setDebouncedSearch(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    // Empty string → flush immediately (clear button feels instant)
+    if (value.trim() === '') {
+      setDebouncedSearch('');
       setPage(1);
-    }, 300);
-    setSearchTimeoutId(t);
-  }, [searchTimeout]);
+      return;
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(value.trim());
+      setPage(1);
+    }, 250);
+  }, []);
+
+  // Cleanup pending debounce on unmount
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
 
   const { contacts, totalCount, isLoading, isFetching } = usePaginatedCrmContacts({
     page,
