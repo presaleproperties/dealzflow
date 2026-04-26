@@ -33,10 +33,11 @@ interface Props {
   onCall?: () => void;
   onSms?: () => void;
   onEmail?: () => void;
+  onWhatsApp?: () => void;
 }
 
 export function LeftSidebar({
-  contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail,
+  contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail, onWhatsApp,
 }: Props) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
