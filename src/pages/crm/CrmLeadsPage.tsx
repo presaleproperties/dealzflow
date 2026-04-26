@@ -403,41 +403,32 @@ export default function CrmLeadsPage() {
                 </div>
               )}
 
-              {/* Filter + sort row — single consolidated entry point */}
-              <div className="flex items-center gap-2 px-3 pb-2">
-                <button
+              {/* Filter + sort row — discreet, matches desktop ghost-button styling */}
+              <div className="flex items-center gap-1 px-2 pb-1.5">
+                <Button
+                  variant={activeFilterCount > 0 ? 'secondary' : 'ghost'}
+                  size="sm"
                   onClick={() => setFiltersExpanded(true)}
-                  className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-medium tracking-tight transition-colors border ${
-                    activeFilterCount > 0
-                      ? 'bg-primary/10 text-primary border-primary/40'
-                      : 'bg-transparent text-muted-foreground border-border/60 hover:text-foreground'
-                  }`}
-                  aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+                  className="h-9 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
                 >
-                  <Filter className="w-[15px] h-[15px]" strokeWidth={1.8} />
+                  <Filter className="w-4 h-4" />
                   Filters
                   {activeFilterCount > 0 && (
-                    <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tabular-nums">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5 bg-primary/15 text-primary">
                       {activeFilterCount}
-                    </span>
+                    </Badge>
                   )}
-                </button>
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleSort('last_touch_at')}
-                  className="inline-flex items-center justify-center w-9 h-9 text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                  className="h-9 w-9 text-muted-foreground hover:text-foreground ml-auto"
                   aria-label="Sort by last touch"
                   title="Sort by last touch"
                 >
-                  <ArrowDownNarrowWide className="w-[17px] h-[17px]" strokeWidth={1.8} />
-                </button>
+                  <ArrowDownNarrowWide className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           )}
