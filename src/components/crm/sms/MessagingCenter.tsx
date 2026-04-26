@@ -374,7 +374,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                           pinned
                           muted={threadState.isMuted(channel, t.key)}
                           archived={threadState.isArchived(channel, t.key)}
-                          onClick={() => { setShowNewChat(false); setActiveKey(t.key); }}
+                          onClick={() => { haptic("selection"); setShowNewChat(false); setActiveKey(t.key); }}
                           onTogglePin={() => togglePin(channel, t.key)}
                           onToggleMute={() => threadState.toggleMute(channel, t.key)}
                           onToggleArchive={() => {
@@ -399,7 +399,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
                       pinned={false}
                       muted={threadState.isMuted(channel, t.key)}
                       archived={threadState.isArchived(channel, t.key)}
-                      onClick={() => { setShowNewChat(false); setActiveKey(t.key); }}
+                      onClick={() => { haptic("selection"); setShowNewChat(false); setActiveKey(t.key); }}
                       onTogglePin={() => togglePin(channel, t.key)}
                       onToggleMute={() => threadState.toggleMute(channel, t.key)}
                       onToggleArchive={() => {
