@@ -46,9 +46,8 @@ export function MobileLeadDetail({
   const updateContact = useUpdateCrmContact();
   const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || '?';
 
-  // Bottom action bar height (~56px) + global BottomNav (~58 + safe area)
-  // We push tab content past both so the last item is reachable.
-  const bottomPadClass = 'pb-[calc(58px+56px+env(safe-area-inset-bottom,0px))]';
+  // Only the global BottomNav sits at the bottom now — pad once.
+  const bottomPadClass = 'pb-[calc(72px+env(safe-area-inset-bottom,0px))]';
 
   return (
     <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col" style={{ minHeight: 'calc(100vh - 60px)' }}>
