@@ -363,6 +363,7 @@ export function LeftSidebar({
                 onClick={() => setDrawer('budget_max')}
               />
               <MobileEditRow label="Birthday" value={contact.birthday || ''} placeholder="YYYY-MM-DD" onClick={() => setDrawer('birthday')} />
+              <MobileEditRow label="Notes" value={contact.notes ? (contact.notes.length > 40 ? contact.notes.slice(0, 40) + '…' : contact.notes) : ''} placeholder="Add notes" onClick={() => setDrawer('notes')} />
             </>
           ) : (
             <>
