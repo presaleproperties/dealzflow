@@ -75,7 +75,16 @@ export function MobileTextEditDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-[env(safe-area-inset-bottom,0px)]">
-          {type === 'textarea' ? (
+          {type === 'monthday' ? (
+            <>
+              <MonthDayInput value={draft} onChange={setDraft} />
+              {draft && (
+                <p className="mt-3 text-[13px] text-muted-foreground">
+                  Saved as <span className="text-foreground font-medium">{formatMonthDay(draft) || draft}</span>
+                </p>
+              )}
+            </>
+          ) : type === 'textarea' ? (
             <textarea
               ref={(el) => { ref.current = el; }}
               value={draft}
