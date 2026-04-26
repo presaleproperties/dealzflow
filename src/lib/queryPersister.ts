@@ -1,6 +1,6 @@
 import { get, set, del } from 'idb-keyval';
 import {
-  experimental_createPersister,
+  experimental_createQueryPersister,
   type AsyncStorage,
   type PersistedQuery,
 } from '@tanstack/react-query-persist-client';
