@@ -17,7 +17,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
       <div className="h-dvh flex flex-col bg-background overflow-hidden lg:pr-[52px]">
         <TopNav />
         <CrmSubNav />
-        <div className="flex-1 min-h-0 px-3 sm:px-4 lg:px-6 pt-1 sm:pt-2 lg:pt-4 flex flex-col overflow-y-auto overscroll-contain pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-6">
+        <div className="flex-1 min-h-0 px-3 sm:px-4 lg:px-6 pt-1 sm:pt-2 lg:pt-4 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-6">
           {children}
         </div>
       </div>
