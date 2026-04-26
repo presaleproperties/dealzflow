@@ -95,25 +95,23 @@ export function MobileLeadDetail({
           </select>
         </div>
 
-        {/* Inline CTA row — Call · Email · Text · + (no floating bar) */}
-        <div className="px-3 pb-2 flex items-center gap-2">
-          <ActionChip icon={Phone} label="Call" tone="emerald" disabled={!contact.phone} onClick={onCall} />
-          <ActionChip icon={Mail} label="Email" tone="blue" disabled={!contact.email} onClick={onEmail} />
-          <ActionChip icon={MessageSquare} label="Text" tone="sky" disabled={!contact.phone} onClick={onText} />
+        {/* Quick add (+) only — Call/Email/Text now live in the Details panel, matching desktop */}
+        <div className="px-3 pb-2 flex items-center justify-end">
           <button
             onClick={() => setPlusOpen(true)}
             aria-label="Quick add"
-            className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
+            className="shrink-0 h-9 px-3 rounded-full flex items-center gap-1.5 active:scale-95 transition-transform shadow-sm"
             style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
-            <Plus className="w-5 h-5" strokeWidth={2.6} />
+            <Plus className="w-4 h-4" strokeWidth={2.6} />
+            <span className="text-[12px] font-semibold">Add</span>
           </button>
         </div>
       </div>
 
       {/* Tabs — Details first */}
       <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[140px] z-20 bg-background">
+        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[120px] z-20 bg-background">
           {(['details','activity','insights'] as const).map(v => (
             <TabsTrigger
               key={v}
