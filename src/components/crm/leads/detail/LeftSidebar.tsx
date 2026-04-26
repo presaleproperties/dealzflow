@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, MessageCircle, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { Phone, Mail, Send, MessageCircle, ChevronDown, ChevronUp, MoreVertical, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { formatContactName } from '@/lib/format';
 import { EditLeadDetailsSheet } from './EditLeadDetailsSheet';
