@@ -54,21 +54,20 @@ export function MobileLeadDetail({
     : 'none';
 
   return (
-    <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
-      {/* Slim identity header (sticky) */}
+    <div className="flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
+      {/* Slim top bar — back + score only. Identity lives in the card below (matches desktop). */}
       <div
         className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
-          <Link to="/crm/leads" className="inline-flex items-center gap-1 text-[13px] font-medium text-primary active:opacity-60 transition-opacity">
+        <div className="px-4 h-12 flex items-center justify-between">
+          <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary active:opacity-60 transition-opacity">
             <ArrowLeft className="w-4 h-4" /> Leads
           </Link>
-          {/* Compact tier-tinted score chip — no duplicate letter badge */}
           <div
             className="m-score tabular-nums"
             data-tier={tier}
-            style={{ width: 'auto', height: '30px', padding: '0 12px', fontSize: '15px' }}
+            style={{ width: 'auto', height: '28px', padding: '0 10px', fontSize: '14px' }}
             aria-label={`Lead score ${leadScore.score} out of 100 — ${leadScore.label}`}
           >
             {leadScore.score}
@@ -77,44 +76,11 @@ export function MobileLeadDetail({
             </span>
           </div>
         </div>
-        <div className="px-3 pb-2 flex items-center gap-2.5">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 border"
-            style={{ background: `${leadScore.color}15`, borderColor: `${leadScore.color}40`, color: leadScore.color }}
-          >
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[20px] font-bold text-foreground leading-tight tracking-[-0.015em] truncate">
-              {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
-            </h1>
-            <div className="flex items-center gap-1.5 mt-1">
-              <LeadStatusBadge status={contact.status} />
-            </div>
-          </div>
-          {/* Inline stage swap — discreet. The global "+" lives in BottomNav. */}
-          <select
-            value={contact.status || ''}
-            onChange={(e) =>
-              updateContact.mutate({
-                id: contact.id,
-                updates: { status: e.target.value, status_changed_at: new Date().toISOString() },
-                oldValues: { status: contact.status },
-              })
-            }
-            className="h-8 max-w-[120px] px-2 rounded-md bg-muted/40 border border-border text-[12px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
-            aria-label="Stage"
-          >
-            {LEAD_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {/* Tabs — Details first */}
       <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[88px] z-20 bg-background">
+        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-4 gap-0 flex-shrink-0 sticky top-12 z-20 bg-background">
           {(['details','activity','insights'] as const).map(v => (
             <TabsTrigger
               key={v}
