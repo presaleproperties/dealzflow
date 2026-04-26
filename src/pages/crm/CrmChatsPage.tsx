@@ -3,14 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { useCrmChats, type ChatChannel } from '@/hooks/useCrmChats';
+import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { formatContactName } from '@/lib/format';
 
-const FILTERS: { id: ChatChannel | 'all'; label: string }[] = [
-  { id: 'all',      label: 'All' },
-  { id: 'email',    label: 'Email' },
-  { id: 'sms',      label: 'SMS' },
-  { id: 'whatsapp', label: 'WhatsApp' },
+/**
+ * Inbox channel toggle. "Text" is a combined view of SMS + WhatsApp so the
+ * user only has to think in two real-world buckets (Email vs Text). One row
+ * per (client, channel) is preserved by the underlying hook aggregation.
+ */
+const FILTERS: { id: ChatChannelFilter; label: string }[] = [
+  { id: 'all',   label: 'All' },
+  { id: 'email', label: 'Email' },
+  { id: 'text',  label: 'Text' },
 ];
 
 function initialsFromName(first?: string | null, last?: string | null, fallback?: string | null): string {
