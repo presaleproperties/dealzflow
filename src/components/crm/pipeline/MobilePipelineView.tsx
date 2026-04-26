@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Flame, Phone, Mail } from 'lucide-react';
+import { Search, ChevronRight, Flame, Phone, Mail, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
@@ -9,6 +9,7 @@ import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 
 const SEGMENT_DOT: Record<string, string> = {
   'New Leads':      'hsl(var(--primary))',
@@ -29,6 +30,7 @@ export function MobilePipelineView() {
   const { data: segments = [], isLoading: sl } = useCrmLeadSegments();
   const [search, setSearch] = useState('');
   const [activeSegId, setActiveSegId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const pipelineSegments = useMemo(
     () => segments.filter(s => s.filter_config && Object.keys(s.filter_config).length > 0),
@@ -134,26 +136,54 @@ export function MobilePipelineView() {
           </div>
         )}
       </div>
+
+      {/* FAB — Add lead */}
+      <button
+        onClick={() => setAddOpen(true)}
+        aria-label="Add lead"
+        className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 active:scale-95 transition-all flex items-center justify-center"
+        style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <Plus className="w-6 h-6" strokeWidth={2.2} />
+      </button>
+
+      <AddLeadDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
+}
+
+function avatarBg(id: string): string {
+  const palette = [
+    'hsl(38 88% 55%)', 'hsl(355 78% 60%)', 'hsl(155 60% 45%)',
+    'hsl(220 75% 60%)', 'hsl(265 65% 60%)', 'hsl(195 75% 50%)',
+  ];
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
 }
 
 function PipelineRow({ contact, onClick }: { contact: CrmContact; onClick: () => void }) {
   const score = contact.lead_score ?? 0;
   const isHot = score >= 70;
   const rel = contact.last_touch_at ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true }) : 'No activity';
+  const name = formatContactName(contact.first_name, contact.last_name) || 'Unnamed';
+  const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || name.slice(0, 2).toUpperCase();
 
   return (
     <button
       onClick={onClick}
       className="w-full text-left flex items-center gap-3 px-4 py-3 active:bg-muted/40 transition-colors"
     >
+      <div
+        className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-white text-[14px] font-semibold"
+        style={{ background: avatarBg(contact.id) }}
+      >
+        {initials}
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
           {isHot && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" fill="currentColor" />}
-          <h3 className="text-[14.5px] font-semibold text-foreground truncate">
-            {formatContactName(contact.first_name, contact.last_name) || 'Unnamed'}
-          </h3>
+          <h3 className="text-[14.5px] font-semibold text-foreground truncate">{name}</h3>
         </div>
         <div className="flex items-center gap-2 mt-0.5 text-[12px] text-muted-foreground">
           {contact.phone && <Phone className="w-3 h-3 shrink-0" />}
