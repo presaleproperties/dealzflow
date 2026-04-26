@@ -1159,8 +1159,8 @@ html.is-standalone body {
 }
 
 html.is-standalone body {
-  /* Use SF on iOS PWA so type matches every other native app */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Keep Plus Jakarta Sans in the iOS PWA — brand typography stays consistent
+     across web, mobile web and home-screen install. */
   /* Lock the body — only inner scroll containers should ever scroll */
   position: fixed;
   inset: 0;
