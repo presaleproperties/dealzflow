@@ -92,10 +92,6 @@ export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
               placeholder={`Hi ${contact.first_name}, …`}
               rows={6}
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>{segments} segment{segments > 1 ? 's' : ''}</span>
-              <span>{remaining} chars left</span>
-            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
