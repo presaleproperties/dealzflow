@@ -439,7 +439,7 @@ export function LeftSidebar({
                 </span>
               </div>
 
-              <DetailRow label="Birthday" value={contact.birthday} field="birthday" contactId={contact.id} />
+              <BirthdayDesktopRow contactId={contact.id} value={contact.birthday} />
             </>
           )}
 
