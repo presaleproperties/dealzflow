@@ -268,11 +268,16 @@ export function BottomNav() {
             background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0) 100%)',
           }}
         />
-        {/* Edge-to-edge floating pill — flush bottom so Safari's URL bar
-            moves it naturally on scroll. */}
+        {/* Edge-to-edge floating pill — spans the full viewport width minus the
+            device's horizontal safe-area insets, with a bottom offset that
+            respects the home-indicator zone on iPhone Pro Max devices. */}
         <div
-          className="px-2 flex justify-center pointer-events-none"
-          style={{ paddingBottom: 'max(6px, env(safe-area-inset-bottom, 0px))' }}
+          className="flex justify-center pointer-events-none w-full"
+          style={{
+            paddingLeft: 'max(8px, env(safe-area-inset-left, 0px))',
+            paddingRight: 'max(8px, env(safe-area-inset-right, 0px))',
+            paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px))',
+          }}
         >
           <div
             className="pointer-events-auto relative flex items-center h-[56px] rounded-full w-full"
@@ -285,7 +290,7 @@ export function BottomNav() {
               boxShadow:
                 '0 1px 0 hsl(0 0% 100% / 0.08) inset, 0 12px 32px -12px hsl(0 0% 0% / 0.45), 0 2px 8px -2px hsl(0 0% 0% / 0.18)',
               padding: '0 8px',
-              maxWidth: '480px',
+              maxWidth: 'min(640px, 100%)',
             }}
           >
             {/* Center premium "+" action */}
