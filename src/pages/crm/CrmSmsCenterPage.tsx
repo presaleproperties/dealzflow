@@ -140,30 +140,14 @@ export default function CrmSmsCenterPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
-            Messaging Center
-            <Badge variant="outline" className="text-[10px] font-medium">
-              {channel === 'whatsapp' ? 'WhatsApp' : 'SMS / MMS'}
-            </Badge>
-          </h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Messaging Center</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Conversations, blasts, templates & compliance — powered by Twilio
+            Conversations, blasts &amp; templates — powered by Twilio
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <ChannelToggle channel={channel} onChange={setChannel} />
-          {readyForChannel ? (
-            <Badge variant="outline" className="text-emerald-600 border-emerald-600/30 gap-1 justify-center">
-              <CheckCircle2 className="w-3 h-3" /> {isWa ? 'WhatsApp ready' : 'Twilio ready'}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-amber-600 border-amber-600/30 gap-1 justify-center">
-              <Phone className="w-3 h-3" /> {isWa ? 'WhatsApp not configured' : 'Twilio not connected'}
-            </Badge>
-          )}
-        </div>
+        <ChannelToggle channel={channel} onChange={setChannel} />
       </div>
 
       {/* WhatsApp readiness banner */}
