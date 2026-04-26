@@ -798,10 +798,12 @@ export function LeadsTable({
           </div>
         </div>
 
-        <div className="px-3">
-          <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
-            onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
-        </div>
+        {!hidePagination && (
+          <div className="px-3">
+            <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
+              onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
+          </div>
+        )}
         {emailContact && (
           <ComposeEmailDialog
             contact={emailContact}
