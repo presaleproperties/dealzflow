@@ -67,7 +67,7 @@ export function LeftSidebar({
     | 'status' | 'assigned_to' | 'source' | 'city' | 'language'
     | 'lead_type' | 'tags' | 'projects'
     | 'bedrooms' | 'budget_min' | 'budget_max' | 'birthday'
-    | 'email_secondary'
+    | 'email_secondary' | 'phone_secondary' | 'notes'
     | 'co_buyer_name' | 'co_buyer_phone' | 'co_buyer_email'
   >(null);
   const closeDrawer = () => setDrawer(null);
