@@ -16,7 +16,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen bg-background">
       <TopNav />
       <main
-        className="min-h-[calc(100vh-54px)] pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:pr-[52px]"
+        className="min-h-[calc(100vh-54px)] lg:pb-0 lg:pr-[52px]"
         style={{ paddingBottom: `calc(${navOffset}px + env(safe-area-inset-bottom, 0px))` }}
       >
         {children}
