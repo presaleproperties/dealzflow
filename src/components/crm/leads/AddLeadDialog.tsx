@@ -290,9 +290,16 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="hidden sm:flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={addContact.isPending} className="bg-primary text-primary-foreground">
+              {addContact.isPending ? 'Adding...' : 'Add Lead'}
+            </Button>
+          </div>
+          {/* Mobile sticky submit */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] flex gap-2">
+            <Button type="button" variant="outline" className="flex-1 h-11" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={addContact.isPending} className="flex-1 h-11 bg-primary text-primary-foreground font-semibold">
               {addContact.isPending ? 'Adding...' : 'Add Lead'}
             </Button>
           </div>
