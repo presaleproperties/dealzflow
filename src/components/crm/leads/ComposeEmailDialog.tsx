@@ -602,8 +602,36 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-7xl w-screen h-[100dvh] sm:w-[98vw] sm:h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl">
-          {/* Slim title bar — flows into the recipient stack so the composer reads as one continuous surface, not a stack of boxes */}
-          <DialogHeader className="px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
+          {/* Mobile header — Mail-app style: Cancel · title · Send. Desktop keeps the slim title bar. */}
+          <DialogHeader className="md:hidden px-3 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="text-[15px] font-medium text-muted-foreground hover:text-foreground px-1 py-1 -ml-1"
+              disabled={isPending}
+            >
+              Cancel
+            </button>
+            <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
+              New Message
+            </DialogTitle>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!canSend || isPending}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-primary-foreground text-[14px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
+            >
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isPending ? 'Sending' : 'Send'}
+            </button>
+          </DialogHeader>
+
+          {/* Desktop slim title bar */}
+          <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
             <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
               New Message
             </DialogTitle>
