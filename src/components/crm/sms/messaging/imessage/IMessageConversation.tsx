@@ -615,6 +615,92 @@ function IMessageComposer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // ── Dictation (Web Speech API) ─────────────────────────────────────────
+  // Apple-style live voice-to-text: hold-to-talk button replaces the voice icon.
+  // Final results are appended to the textarea; interim results stream in a chip.
+  const [isDictating, setIsDictating] = useState(false);
+  const [interimText, setInterimText] = useState('');
+  const recognitionRef = useRef<any>(null);
+  const baseValueRef = useRef<string>('');
+
+  const dictationSupported = typeof window !== 'undefined' &&
+    !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const stopDictation = useCallback(() => {
+    const r = recognitionRef.current;
+    if (r) {
+      try { r.stop(); } catch { /* noop */ }
+    }
+    setIsDictating(false);
+    setInterimText('');
+  }, []);
+
+  const startDictation = useCallback(() => {
+    if (!dictationSupported) {
+      toast.error('Dictation isn\'t supported on this browser. Try Chrome or Safari.');
+      return;
+    }
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const r = new SR();
+    r.continuous = true;
+    r.interimResults = true;
+    r.lang = navigator.language || 'en-US';
+
+    baseValueRef.current = value;
+
+    r.onresult = (event: any) => {
+      let interim = '';
+      let finalChunk = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        const txt = res[0]?.transcript ?? '';
+        if (res.isFinal) finalChunk += txt;
+        else interim += txt;
+      }
+      if (finalChunk) {
+        const sep = baseValueRef.current && !/\s$/.test(baseValueRef.current) ? ' ' : '';
+        baseValueRef.current = baseValueRef.current + sep + finalChunk.trim();
+        onChange(baseValueRef.current);
+        setInterimText('');
+      } else {
+        setInterimText(interim);
+      }
+    };
+    r.onerror = (e: any) => {
+      if (e?.error === 'not-allowed' || e?.error === 'service-not-allowed') {
+        toast.error('Microphone permission denied');
+      } else if (e?.error && e.error !== 'aborted' && e.error !== 'no-speech') {
+        toast.error(`Dictation error: ${e.error}`);
+      }
+      setIsDictating(false);
+      setInterimText('');
+    };
+    r.onend = () => {
+      setIsDictating(false);
+      setInterimText('');
+    };
+
+    try {
+      r.start();
+      recognitionRef.current = r;
+      setIsDictating(true);
+      haptic('light');
+    } catch {
+      // start() can throw if already started — ignore.
+    }
+  }, [dictationSupported, onChange, value]);
+
+  // Cleanup on unmount
+  useEffect(() => () => {
+    const r = recognitionRef.current;
+    if (r) { try { r.stop(); } catch { /* noop */ } }
+  }, []);
+
+  const toggleDictation = () => {
+    if (isDictating) stopDictation();
+    else startDictation();
+  };
+
   // Auto-resize: grow the textarea up to MAX_LINES (matches iMessage / WhatsApp).
   // The right-side icons stay aligned because the parent row uses items-end and
   // each icon button has a fixed h-9, so they pin to the bottom line of the pill.
