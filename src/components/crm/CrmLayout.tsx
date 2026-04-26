@@ -15,7 +15,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
     <CrmRouteGuard requireRole={requireRole}>
       <CrmSectionScope />
       <div
-        className="h-dvh flex flex-col bg-background overflow-hidden lg:pr-[52px]"
+        className="h-dvh flex flex-col app-ambient-bg overflow-hidden lg:pr-[52px]"
       >
         <TopNav />
         <CrmSubNav />
