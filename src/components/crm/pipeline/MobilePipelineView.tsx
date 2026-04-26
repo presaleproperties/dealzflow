@@ -125,7 +125,7 @@ export function MobilePipelineView() {
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {list.length === 0 ? (
           <div className="text-center py-16 text-sm text-muted-foreground">No leads in this stage</div>
         ) : (
