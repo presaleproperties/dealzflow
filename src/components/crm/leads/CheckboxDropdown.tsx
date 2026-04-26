@@ -25,6 +25,10 @@ export function CheckboxDropdown({
   const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Snapshot of which values were selected when the dropdown opened.
+  // Used to pin those rows to the top so the user can see what's already
+  // selected, without making rows jump while they toggle items.
+  const [initialSelected, setInitialSelected] = useState<string[]>(selected);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -38,10 +42,14 @@ export function CheckboxDropdown({
   }, []);
 
   useEffect(() => {
-    if (open && (searchable || allowCustom)) {
-      setTimeout(() => inputRef.current?.focus(), 50);
+    if (open) {
+      setInitialSelected(selected);
+      if (searchable || allowCustom) {
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }
     }
-  }, [open, searchable, allowCustom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Case-insensitive helpers — needed because legacy data may have selected
   // values with different casing/whitespace than the canonical option list.
@@ -80,11 +88,21 @@ export function CheckboxDropdown({
     );
   }, [options, selected]);
 
+  // Reorder so initially-selected options appear first (alphabetically among
+  // themselves), then the rest. Snapshot prevents rows jumping mid-toggle.
+  const orderedOptions = useMemo(() => {
+    if (initialSelected.length === 0) return allOptions;
+    const selectedKeys = new Set(initialSelected.map(s => s.trim().toLowerCase()));
+    const top = allOptions.filter(o => selectedKeys.has(o.trim().toLowerCase()));
+    const rest = allOptions.filter(o => !selectedKeys.has(o.trim().toLowerCase()));
+    return [...top, ...rest];
+  }, [allOptions, initialSelected]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return allOptions;
-    return allOptions.filter(o => o.toLowerCase().includes(q));
-  }, [allOptions, query]);
+    if (!q) return orderedOptions;
+    return orderedOptions.filter(o => o.toLowerCase().includes(q));
+  }, [orderedOptions, query]);
 
   const exactMatch = useMemo(
     () => allOptions.some(o => o.toLowerCase() === query.trim().toLowerCase()),
