@@ -52,15 +52,23 @@ export type CrmContactInsert = {
   email?: string;
   email_secondary?: string;
   phone?: string;
+  phone_secondary?: string;
   source?: string;
   status?: string;
   project?: string;
   projects?: string[];
   assigned_to?: string;
   tags?: string[];
+  lead_types?: string[];
   contact_type?: string;
   birthday?: string;
   co_buyer_birthday?: string;
+  city?: string;
+  language?: string;
+  bedrooms_preferred?: string;
+  budget_min?: number;
+  budget_max?: number;
+  notes?: string;
 };
 
 export const CONTACT_TYPES = ['lead', 'realtor', 'past_client'] as const;
@@ -295,21 +303,33 @@ export function useAddCrmContact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (contact: CrmContactInsert) => {
-      const row = {
+      const row: Record<string, unknown> = {
         first_name: contact.first_name,
         last_name: contact.last_name,
         email: contact.email || null,
+        email_secondary: contact.email_secondary || null,
         phone: contact.phone || null,
+        phone_secondary: contact.phone_secondary || null,
         source: contact.source || null,
         status: contact.contact_type === 'past_client' ? 'Closed' : (contact.status || 'New Lead'),
         project: contact.project || null,
+        projects: contact.projects?.length ? contact.projects : null,
         assigned_to: contact.assigned_to || null,
         contact_type: contact.contact_type || 'lead',
+        tags: contact.tags?.length ? contact.tags : null,
+        lead_types: contact.lead_types?.length ? contact.lead_types : null,
+        city: contact.city || null,
+        language: contact.language || null,
+        bedrooms_preferred: contact.bedrooms_preferred || null,
+        budget_min: contact.budget_min ?? null,
+        budget_max: contact.budget_max ?? null,
+        birthday: contact.birthday || null,
+        notes: contact.notes || null,
         ...(contact.contact_type === 'past_client' ? { status_changed_at: new Date().toISOString() } : {}),
       };
       const { data, error } = await supabase
         .from('crm_contacts')
-        .insert(row)
+        .insert(row as never)
         .select()
         .single();
       if (error) throw error;
