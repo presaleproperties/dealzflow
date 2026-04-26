@@ -225,23 +225,27 @@ export function BottomNav() {
         key={tab.path}
         to={tab.path}
         onClick={() => triggerHaptic('selection')}
-        className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
+        aria-label={tab.label}
+        aria-current={active ? 'page' : undefined}
+        className="group relative flex h-full min-w-0 flex-col items-center justify-center gap-[3px] px-1 active:scale-[0.94] transition-transform duration-150"
         style={{ color: active ? GOLD : INACTIVE }}
       >
+        {/* Active pill background */}
         <span
+          aria-hidden
           className={cn(
-            'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
-            active ? 'w-6 opacity-100' : 'w-0 opacity-0'
+            'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl transition-all duration-300 ease-out',
+            active ? 'w-[58px] h-[42px] opacity-100' : 'w-[44px] h-[36px] opacity-0',
           )}
-          style={{ background: GOLD }}
+          style={{ background: GOLD_BG }}
         />
         <Icon
-          className="w-[22px] h-[22px] transition-transform"
-          strokeWidth={active ? 2.4 : 1.8}
+          className="relative w-[22px] h-[22px] transition-transform duration-200"
+          strokeWidth={active ? 2.3 : 1.8}
           style={active ? { filter: 'drop-shadow(0 1px 4px hsl(var(--primary) / 0.35))' } : undefined}
         />
         <span
-          className="text-[10.5px] leading-none truncate max-w-full px-1"
+          className="relative text-[10.5px] leading-none tracking-[-0.01em] truncate max-w-full"
           style={{ fontWeight: active ? 700 : 500 }}
         >
           {tab.label}
@@ -249,6 +253,9 @@ export function BottomNav() {
       </Link>
     );
   };
+
+  // All primary destinations (tabs + More) share equal-width grid cells
+  const cellCount = tabs.length + 1;
 
   return (
     <>
@@ -275,29 +282,38 @@ export function BottomNav() {
             }}
           />
 
-          {/* Tabs row — clean 4-tab layout, no center FAB */}
-          <div className="flex items-stretch h-[60px] px-1 relative">
+          {/* Tabs row — equal-width grid for perfect centering */}
+          <div
+            className="grid h-[64px] mx-auto max-w-[520px] px-2"
+            style={{ gridTemplateColumns: `repeat(${cellCount}, minmax(0, 1fr))` }}
+          >
             {tabs.map(renderTab)}
 
             {/* More button */}
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
               <SheetTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => triggerHaptic('selection')}
-                  className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 active:scale-[0.92] transition-all duration-150 relative"
-                  style={{ color: moreActive ? GOLD : INACTIVE }}
                   aria-label="More"
+                  aria-current={moreActive ? 'page' : undefined}
+                  className="group relative flex h-full min-w-0 flex-col items-center justify-center gap-[3px] px-1 active:scale-[0.94] transition-transform duration-150"
+                  style={{ color: moreActive ? GOLD : INACTIVE }}
                 >
                   <span
+                    aria-hidden
                     className={cn(
-                      'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300',
-                      moreActive ? 'w-6 opacity-100' : 'w-0 opacity-0'
+                      'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl transition-all duration-300 ease-out',
+                      moreActive ? 'w-[58px] h-[42px] opacity-100' : 'w-[44px] h-[36px] opacity-0',
                     )}
-                    style={{ background: GOLD }}
+                    style={{ background: GOLD_BG }}
                   />
-                  <MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={moreActive ? 2.4 : 1.8} />
+                  <MoreHorizontal
+                    className="relative w-[22px] h-[22px]"
+                    strokeWidth={moreActive ? 2.3 : 1.8}
+                  />
                   <span
-                    className="text-[10.5px] leading-none"
+                    className="relative text-[10.5px] leading-none tracking-[-0.01em]"
                     style={{ fontWeight: moreActive ? 700 : 500 }}
                   >
                     More
