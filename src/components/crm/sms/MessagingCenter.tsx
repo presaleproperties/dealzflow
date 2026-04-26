@@ -280,7 +280,7 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
 
   return (
     <div className={cn(
-      'flex flex-col h-[calc(100dvh-180px-var(--bottom-nav-pad,0px))] min-h-[480px] lg:min-h-[620px] rounded-2xl overflow-hidden border border-border shadow-sm',
+      'flex flex-col h-[calc(100dvh-260px-var(--bottom-nav-pad,0px))] min-h-[420px] lg:min-h-[480px] rounded-2xl overflow-hidden border border-border shadow-sm',
       isWa ? 'bg-[#efeae2] dark:bg-[#0b141a]' : 'bg-background',
     )}>
       <div className="grid h-full grid-cols-1" style={!isMobile ? { gridTemplateColumns: gridCols } : undefined}>
