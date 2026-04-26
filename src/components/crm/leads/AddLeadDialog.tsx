@@ -110,7 +110,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     notes: form.notes.trim() || undefined,
   });
 
-  const commitInsert = (payload: ReturnType<typeof buildPayload>) => {
+  const commitInsert = (payload: Parameters<typeof addContact.mutate>[0]) => {
     reset();
     setPendingPayload(null);
     setDupes([]);
