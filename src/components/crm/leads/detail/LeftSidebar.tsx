@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { Phone, Mail, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatContactName, formatCurrency, formatPhone } from '@/lib/format';
+import { formatCurrency, formatPhone } from '@/lib/format';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
