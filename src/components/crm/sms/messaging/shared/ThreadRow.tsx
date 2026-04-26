@@ -37,7 +37,7 @@ export function ThreadRow({
         <button
           onClick={onClick}
           className={cn(
-            'group relative w-full text-left px-2.5 py-2.5 rounded-xl flex gap-2.5 transition-colors',
+            'group relative w-full text-left px-2.5 py-2.5 rounded-xl flex gap-2.5 transition-colors native-press',
             active
               ? isWa ? 'bg-emerald-500/10' : 'bg-primary/10'
               : 'hover:bg-muted/60',
