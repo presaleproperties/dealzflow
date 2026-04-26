@@ -281,9 +281,9 @@ export function BottomNav() {
             }}
           />
 
-          {/* Tabs row — 56px equal-width grid */}
+          {/* Tabs row — 52px equal-width grid (slim flush bar, hugs home indicator) */}
           <div
-            className="grid h-[56px] mx-auto max-w-[520px] px-2"
+            className="grid h-[52px] mx-auto max-w-[520px] px-2"
             style={{ gridTemplateColumns: `repeat(${cellCount}, minmax(0, 1fr))` }}
           >
             {tabs.map(renderTab)}
