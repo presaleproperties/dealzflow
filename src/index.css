@@ -939,19 +939,21 @@
   .m-page-title {
     font-size: var(--m-title-size);
     font-weight: var(--m-title-weight);
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+    letter-spacing: -0.028em;       /* desktop h2 tracking */
+    line-height: 1.15;
     color: hsl(var(--foreground));
   }
 
-  /* Tab strip (Leads / Contacts style) */
+  /* Tab strip — eyebrow style (uppercase, tight tracking) to match the
+     editorial desktop pattern instead of Lofty-style chunky tabs. */
   .m-tabs { @apply flex items-end gap-5; }
   .m-tab {
     font-size: var(--m-tab-size);
-    font-weight: 700;
-    letter-spacing: -0.015em;
+    font-weight: 600;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
     line-height: 1.15;
-    padding-bottom: 6px;
+    padding-bottom: 8px;
     color: hsl(var(--muted-foreground));
     border-bottom: 2px solid transparent;
     transition: color 160ms ease, border-color 160ms ease;
