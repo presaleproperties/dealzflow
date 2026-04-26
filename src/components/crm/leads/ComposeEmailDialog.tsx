@@ -1009,6 +1009,58 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
+              {/* Mobile sticky action bar — Templates · Signature · Attach (Send lives in top bar) */}
+              <div className="md:hidden flex items-center gap-1.5 px-2 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 overflow-x-auto pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Template
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                  Attach
+                </button>
+                <select
+                  value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '__none__') {
+                      setAppendSignature(false);
+                    } else {
+                      setAppendSignature(true);
+                      setSelectedSignatureId(v || null);
+                    }
+                  }}
+                  className="shrink-0 h-9 rounded-full border border-border bg-muted/60 px-3 text-[12px] font-medium text-foreground focus:outline-none max-w-[160px]"
+                  aria-label="Signature"
+                >
+                  <option value="__none__">No signature</option>
+                  {signatures.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      ✎ {s.name}{s.is_default ? ' (default)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-muted/60 text-foreground text-[12px] font-medium active:scale-95 transition-transform ml-auto"
+                  title={mode === 'preview' ? 'Back to editor' : 'Preview email'}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  {mode === 'preview' ? 'Edit' : 'Preview'}
+                </button>
+              </div>
+
+              {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
               <div className="hidden md:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
