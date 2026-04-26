@@ -128,7 +128,8 @@
      naturally as the user scrolls. Pages reserve just enough space to clear
      the pill plus 8px breathing room. Disabled on lg+. */
   :root {
-    --bottom-nav-pad: calc(56px + 8px);
+    /* Pill (56px) + 8px breathing room + iOS home-indicator safe area. */
+    --bottom-nav-pad: calc(56px + 8px + env(safe-area-inset-bottom, 0px));
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
