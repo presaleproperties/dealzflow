@@ -451,7 +451,7 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
     case 'reg':
       return (
         <div className="flex flex-col text-[12px] gap-0.5">
-          <span className="text-foreground/80">{formatDistanceToNow(new Date(contact.created_at), { addSuffix: true })}</span>
+          <span className="text-foreground/80 whitespace-nowrap">{formatRegisteredAge(contact.created_at)}</span>
           <span className="text-[11px] text-muted-foreground">{contact.source ?? '—'}</span>
         </div>
       );
