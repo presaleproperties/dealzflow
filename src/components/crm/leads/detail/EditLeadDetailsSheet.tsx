@@ -409,7 +409,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
             )}
             {fieldRow(
               'Birthday',
-              <Input className={inputCls('birthday')} type="text" value={form.birthday} onChange={(e) => update('birthday', e.target.value)} placeholder="YYYY-MM-DD" maxLength={10} />,
+              <MonthDayInput value={form.birthday} onChange={(v) => update('birthday', v)} />,
               { errorKey: 'birthday' },
             )}
             {fieldRow(
