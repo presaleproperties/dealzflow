@@ -1,19 +1,17 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ChevronLeft, AlertTriangle, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, Plus, X, Check } from 'lucide-react';
 import { MobilePickerDrawer, MobilePickerField } from './MobilePickerDrawer';
+import { MobileMultiPickerDrawer } from './MobileMultiPickerDrawer';
+import { MobileTextEditDrawer } from './MobileTextEditDrawer';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
-import { InlineLibraryPicker } from './InlineLibraryPicker';
-import { CheckboxDropdown } from './CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName } from '@/lib/format';
@@ -26,6 +24,13 @@ interface AddLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+type DrawerKey =
+  | null
+  | 'status' | 'assigned_to' | 'source'
+  | 'city' | 'language' | 'tags' | 'projects' | 'lead_types'
+  | 'bedrooms_preferred' | 'budget_min' | 'budget_max' | 'birthday'
+  | 'notes';
 
 export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const addContact = useAddCrmContact();
@@ -41,15 +46,10 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const [emailValidation, setEmailValidation] = useState<EmailValidation>({
     isValid: true, suggestion: null, correctedEmail: null,
   });
-  // Secondary phone/email start hidden — surfaced via "+ Add another" so the
-  // form feels light, with secondary fields fully optional.
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
   const [showSecondaryEmail, setShowSecondaryEmail] = useState(false);
-  // Which dropdown picker is currently open (iOS-style full-screen drawer)
-  const [picker, setPicker] = useState<null | 'status' | 'assigned_to' | 'source'>(null);
+  const [drawer, setDrawer] = useState<DrawerKey>(null);
 
-  // Duplicate detection state — when the email/phone matches existing
-  // crm_contacts rows we surface them in a confirm dialog before inserting.
   type DupContact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; status: string | null };
   const [dupes, setDupes] = useState<DupContact[]>([]);
   const [pendingPayload, setPendingPayload] = useState<Parameters<typeof addContact.mutate>[0] | null>(null);
@@ -68,9 +68,6 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     }
   };
 
-  // Required to match the identity shown on the Lead Detail page.
-  // Keep this list in sync with LeftSidebar's primary fields so we never
-  // create a half-empty lead that looks broken in the detail view.
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.first_name.trim()) errs.first_name = 'First name is required';
@@ -87,8 +84,6 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     return Object.keys(errs).length === 0;
   };
 
-  // Live "is the form ready to save?" check — drives the Save button's
-  // disabled state without surfacing red errors before the user submits.
   const canSubmit =
     !!form.first_name.trim() &&
     !!form.last_name.trim() &&
@@ -134,29 +129,22 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     setPendingPayload(null);
     setDupes([]);
     onOpenChange(false);
-    addContact.mutate(payload); // success/error toasts handled inside the hook
+    addContact.mutate(payload);
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
     const payload = buildPayload();
     const email = payload.email?.toLowerCase();
-    // Last-10-digits comparison handles formatting differences like
-    // "+1 (778) 231-3592" vs "778-231-3592" vs "17782313592".
     const phoneLast10 = payload.phone?.replace(/\D/g, '').slice(-10) || '';
 
-    // Build an OR filter against email + phone (substring match on last 10 digits).
     const filters: string[] = [];
     if (email) filters.push(`email.ilike.${email}`);
     if (email) filters.push(`email_secondary.ilike.${email}`);
     if (phoneLast10) filters.push(`phone.ilike.%${phoneLast10}%`);
     if (phoneLast10) filters.push(`phone_secondary.ilike.%${phoneLast10}%`);
 
-    if (filters.length === 0) {
-      // No email or phone to compare — skip the check entirely.
-      commitInsert(payload);
-      return;
-    }
+    if (filters.length === 0) { commitInsert(payload); return; }
 
     setCheckingDupes(true);
     try {
@@ -173,9 +161,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         setCheckingDupes(false);
         return;
       }
-    } catch {
-      // Best-effort check — if the lookup fails, fall through to insert.
-    }
+    } catch { /* best effort */ }
     setCheckingDupes(false);
     commitInsert(payload);
   };
@@ -193,7 +179,6 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     const t = e.touches[0];
-    // Only start gesture from the left ~24px edge (iOS-like)
     if (t.clientX > 28) return;
     dragStateRef.current = { startX: t.clientX, startY: t.clientY, tracking: true, horizontal: null };
   }, []);
@@ -231,7 +216,6 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     if (!el) return;
     el.style.transition = 'transform 240ms cubic-bezier(0.32, 0.72, 0, 1), opacity 240ms ease';
     if (dx > 90) {
-      // commit close — animate out then fire close
       el.style.transform = 'translate3d(100%, 0, 0)';
       el.style.opacity = '0';
       window.setTimeout(() => {
@@ -250,6 +234,39 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Derived display values ────────────────────────────────────────────────
+  const cityList = useMemo(() => form.city ? form.city.split(/\s*\|\s*/).filter(Boolean) : [], [form.city]);
+  const languageList = useMemo(() => form.language ? form.language.split(/\s*\|\s*/).filter(Boolean) : [], [form.language]);
+
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>([...FRASER_VALLEY_CITIES, ...cityList]);
+    return Array.from(set).map((c) => ({ value: c, label: c }));
+  }, [cityList]);
+  const languageOptions = useMemo(() => {
+    const set = new Set<string>([...CRM_LANGUAGES, ...languageList]);
+    return Array.from(set).map((c) => ({ value: c, label: c }));
+  }, [languageList]);
+
+  const tagOptions = useMemo(() => tagLib.map((t) => ({ value: t.name, label: t.name, count: t.usage_count ?? 0 })), [tagLib]);
+  const projectOptions = useMemo(() => projectLib.map((p) => ({ value: p.name, label: p.name, count: p.usage_count })), [projectLib]);
+  const leadTypeOptions = useMemo(() => {
+    const libMap = new Map<string, { value: string; label: string; count: number }>();
+    leadTypeLib.forEach((l) => libMap.set(l.name.toLowerCase(), { value: l.name, label: l.name, count: l.usage_count }));
+    LEAD_TYPES.forEach((t) => {
+      if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { value: t, label: LEAD_TYPE_LABELS[t] ?? t, count: 0 });
+    });
+    return Array.from(libMap.values()).sort((a, b) => b.count - a.count);
+  }, [leadTypeLib]);
+
+  const budgetDisplay = useMemo(() => {
+    const min = form.budget_min ? `$${Number(form.budget_min).toLocaleString()}` : '';
+    const max = form.budget_max ? `$${Number(form.budget_max).toLocaleString()}` : '';
+    if (min && max) return `${min} – ${max}`;
+    if (min) return `From ${min}`;
+    if (max) return `Up to ${max}`;
+    return '';
+  }, [form.budget_min, form.budget_max]);
+
   return (
     <>
     <Sheet open={open} onOpenChange={handleClose}>
@@ -260,12 +277,12 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l border-border/60 bg-gradient-to-b from-background via-background to-muted/20"
+        className="w-full sm:max-w-md p-0 flex flex-col gap-0 border-l border-border/60 bg-gradient-to-b from-background via-background to-muted/10"
       >
         <SheetTitle className="sr-only">Add Lead</SheetTitle>
 
-        {/* Header — frosted, sticky, premium */}
-        <div className="flex items-center justify-between px-2 h-[52px] border-b border-border/40 bg-background/80 backdrop-blur-xl shrink-0 sticky top-0 z-10">
+        {/* Header */}
+        <div className="flex items-center justify-between px-2 h-[54px] border-b border-border/40 bg-background/85 backdrop-blur-xl shrink-0 sticky top-0 z-10">
           <button
             type="button"
             onClick={() => handleClose(false)}
@@ -279,7 +296,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             type="button"
             onClick={handleSubmit}
             disabled={addContact.isPending || checkingDupes || !canSubmit}
-            className="px-3.5 h-9 mr-1 rounded-full text-[13.5px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 transition-all active:scale-95 shadow-sm shadow-primary/20"
+            className="px-3.5 h-9 mr-1 rounded-full text-[13.5px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm shadow-primary/20"
           >
             {checkingDupes ? 'Checking…' : addContact.isPending ? 'Saving…' : 'Save'}
           </button>
@@ -287,309 +304,327 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom,0px)]">
-          {/* Hero hint */}
-          <div className="px-5 pt-5 pb-2">
-            <div className="text-[22px] font-semibold tracking-[-0.02em] text-foreground leading-tight">Add a new lead</div>
-            <div className="text-[13px] text-muted-foreground mt-0.5">Capture the essentials — refine details later.</div>
-          </div>
 
-          <Group title="Identity">
-            <FieldRow label="First Name" error={errors.first_name}>
-              <Input
-                className={inputCls}
-                value={form.first_name}
-                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                placeholder="Required"
-                maxLength={100}
-              />
-            </FieldRow>
-            <FieldRow label="Last Name" error={errors.last_name}>
-              <Input
-                className={inputCls}
-                value={form.last_name}
-                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-                placeholder="Required"
-                maxLength={100}
-              />
-            </FieldRow>
-          </Group>
+          {/* Identity — text inputs only, label sits above input for fast typing */}
+          <Section title="Identity">
+            <TextField
+              label="First Name"
+              required
+              error={errors.first_name}
+              value={form.first_name}
+              onChange={(v) => { setForm({ ...form, first_name: v }); if (errors.first_name) setErrors((e) => ({ ...e, first_name: '' })); }}
+              placeholder="Jane"
+              maxLength={100}
+            />
+            <TextField
+              label="Last Name"
+              required
+              error={errors.last_name}
+              value={form.last_name}
+              onChange={(v) => { setForm({ ...form, last_name: v }); if (errors.last_name) setErrors((e) => ({ ...e, last_name: '' })); }}
+              placeholder="Doe"
+              maxLength={100}
+            />
+          </Section>
 
-          <Group title="Phone">
-            <FieldRow label="Phone" error={errors.phone}>
-              <Input
-                className={inputCls}
-                type="tel"
-                inputMode="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="Add a number"
-                maxLength={20}
-              />
-            </FieldRow>
+          {/* Contact */}
+          <Section title="Contact">
+            <TextField
+              label="Phone"
+              type="tel"
+              error={errors.phone}
+              value={form.phone}
+              onChange={(v) => { setForm({ ...form, phone: v }); if (errors.phone) setErrors((e) => ({ ...e, phone: '' })); }}
+              placeholder="(778) 555-0123"
+              maxLength={20}
+            />
             {showSecondaryPhone ? (
-              <FieldRow
+              <TextField
                 label="Secondary phone"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSecondaryPhone(false);
-                      setForm((prev) => ({ ...prev, phone_secondary: '' }));
-                    }}
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                    aria-label="Remove secondary phone"
-                  >
-                    <X className="w-3.5 h-3.5" strokeWidth={2.4} />
-                  </button>
-                }
-              >
-                <Input
-                  className={inputCls}
-                  type="tel"
-                  inputMode="tel"
-                  value={form.phone_secondary}
-                  onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })}
-                  placeholder="Optional"
-                  maxLength={20}
-                  autoFocus
-                />
-              </FieldRow>
+                type="tel"
+                value={form.phone_secondary}
+                onChange={(v) => setForm({ ...form, phone_secondary: v })}
+                placeholder="Optional"
+                maxLength={20}
+                autoFocus
+                onRemove={() => { setShowSecondaryPhone(false); setForm((p) => ({ ...p, phone_secondary: '' })); }}
+              />
             ) : (
               <AddRow label="Add another number" onClick={() => setShowSecondaryPhone(true)} />
             )}
-          </Group>
 
-          <Group title="Email">
-            <FieldRow label="Email" error={errors.email}>
-              <div className="space-y-1.5">
-                <Input
-                  className={inputCls}
-                  type="email"
-                  inputMode="email"
-                  autoCapitalize="none"
-                  value={form.email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  placeholder="name@example.com"
-                  maxLength={255}
-                />
-                {emailValidation.suggestion && (
-                  <div className="flex items-center gap-1.5 text-[12px]" style={{ color: 'hsl(38 92% 55%)' }}>
+            <Divider />
+
+            <TextField
+              label="Email"
+              type="email"
+              error={errors.email}
+              value={form.email}
+              onChange={handleEmailChange}
+              placeholder="name@example.com"
+              maxLength={255}
+              hint={
+                emailValidation.suggestion ? (
+                  <span className="inline-flex items-center gap-1.5" style={{ color: 'hsl(38 92% 55%)' }}>
                     <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                     <span>{emailValidation.suggestion}</span>
                     <button type="button" onClick={fixEmail} className="font-semibold underline">Fix it</button>
-                  </div>
-                )}
-              </div>
-            </FieldRow>
+                  </span>
+                ) : null
+              }
+            />
             {showSecondaryEmail ? (
-              <FieldRow
+              <TextField
                 label="Secondary email"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSecondaryEmail(false);
-                      setForm((prev) => ({ ...prev, email_secondary: '' }));
-                    }}
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                    aria-label="Remove secondary email"
-                  >
-                    <X className="w-3.5 h-3.5" strokeWidth={2.4} />
-                  </button>
-                }
-              >
-                <Input
-                  className={inputCls}
-                  type="email"
-                  inputMode="email"
-                  autoCapitalize="none"
-                  value={form.email_secondary}
-                  onChange={(e) => setForm({ ...form, email_secondary: e.target.value })}
-                  placeholder="Optional"
-                  maxLength={255}
-                  autoFocus
-                />
-              </FieldRow>
+                type="email"
+                value={form.email_secondary}
+                onChange={(v) => setForm({ ...form, email_secondary: v })}
+                placeholder="Optional"
+                maxLength={255}
+                autoFocus
+                onRemove={() => { setShowSecondaryEmail(false); setForm((p) => ({ ...p, email_secondary: '' })); }}
+              />
             ) : (
               <AddRow label="Add another email" onClick={() => setShowSecondaryEmail(true)} />
             )}
-          </Group>
+          </Section>
 
-          <Group title="Pipeline">
-            <FieldRow label="Stage" error={errors.status}>
-              <MobilePickerField
-                value={form.status}
-                placeholder="Select stage"
-                onClick={() => setPicker('status')}
-              />
-            </FieldRow>
-            <FieldRow label="Lead Owner" error={errors.assigned_to}>
-              <MobilePickerField
-                value={form.assigned_to}
-                placeholder="Assign an agent"
-                onClick={() => setPicker('assigned_to')}
-              />
-            </FieldRow>
-            <FieldRow label="Source" error={errors.source}>
-              <MobilePickerField
-                value={form.source}
-                placeholder="Select source"
-                onClick={() => setPicker('source')}
-              />
-            </FieldRow>
-          </Group>
+          {/* Pipeline — chevron rows that open drawers */}
+          <Section title="Pipeline">
+            <PickerRow
+              label="Stage"
+              required
+              value={form.status}
+              placeholder="Select stage"
+              error={errors.status}
+              onClick={() => setDrawer('status')}
+            />
+            <PickerRow
+              label="Lead Owner"
+              required
+              value={form.assigned_to}
+              placeholder="Assign an agent"
+              error={errors.assigned_to}
+              onClick={() => setDrawer('assigned_to')}
+            />
+            <PickerRow
+              label="Source"
+              required
+              value={form.source}
+              placeholder="Select source"
+              error={errors.source}
+              onClick={() => setDrawer('source')}
+              last
+            />
+          </Section>
 
-          <Group title="Lead Type">
-            <div className="px-4 py-3.5">
-              {(() => {
-                const libMap = new Map<string, { label: string; count: number }>();
-                leadTypeLib.forEach((l) => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
-                LEAD_TYPES.forEach((t) => {
-                  if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { label: t, count: 0 });
-                });
-                const merged = Array.from(libMap.values()).sort((a, b) => b.count - a.count);
-                return (
-                  <InlineLibraryPicker
-                    selected={form.lead_types}
-                    library={merged}
-                    onChange={(next) => setForm({ ...form, lead_types: next })}
-                    onCreate={(name) => createLeadType.mutate(name)}
-                    renderLabel={(v) => LEAD_TYPE_LABELS[v] ?? v}
-                    variant="primary"
-                    placeholder="Search or add lead type…"
-                    emptyText="No lead types yet"
-                  />
-                );
-              })()}
-            </div>
-          </Group>
+          {/* Classification */}
+          <Section title="Classification">
+            <PickerRow
+              label="Lead Type"
+              value={form.lead_types.map((t) => LEAD_TYPE_LABELS[t] ?? t).join(', ')}
+              placeholder="None"
+              onClick={() => setDrawer('lead_types')}
+            />
+            <PickerRow
+              label="Tags"
+              value={form.tags.join(', ')}
+              placeholder="None"
+              onClick={() => setDrawer('tags')}
+            />
+            <PickerRow
+              label="Projects"
+              value={form.projects.join(', ')}
+              placeholder="None"
+              onClick={() => setDrawer('projects')}
+              last
+            />
+          </Section>
 
-          <Group title="Preferences">
-            <FieldRow label="City">
-              <CheckboxDropdown
-                options={FRASER_VALLEY_CITIES}
-                selected={form.city ? form.city.split(/\s*\|\s*/).filter(Boolean) : []}
-                onChange={(v) => setForm({ ...form, city: v.join(' | ') })}
-                placeholder="Select cities"
-                allowCustom
-              />
-            </FieldRow>
-            <FieldRow label="Language">
-              <CheckboxDropdown
-                options={CRM_LANGUAGES}
-                selected={form.language ? form.language.split(/\s*\|\s*/).filter(Boolean) : []}
-                onChange={(v) => setForm({ ...form, language: v.join(' | ') })}
-                placeholder="Select languages"
-                allowCustom
-              />
-            </FieldRow>
-            <FieldRow label="Bedrooms">
-              <Input
-                className={inputCls}
-                value={form.bedrooms_preferred}
-                onChange={(e) => setForm({ ...form, bedrooms_preferred: e.target.value })}
-                placeholder="e.g. 2-3"
-              />
-            </FieldRow>
-            <FieldRow label="Birthday">
-              <Input
-                className={inputCls}
-                value={form.birthday}
-                onChange={(e) => setForm({ ...form, birthday: e.target.value })}
-                placeholder="YYYY-MM-DD"
-              />
-            </FieldRow>
-            <FieldRow label="Budget">
-              <div className="flex items-center gap-2">
-                <Input
-                  className={inputCls}
-                  type="number"
-                  inputMode="numeric"
-                  value={form.budget_min}
-                  onChange={(e) => setForm({ ...form, budget_min: e.target.value })}
-                  placeholder="Min"
-                />
-                <span className="text-muted-foreground text-[13px]">–</span>
-                <Input
-                  className={inputCls}
-                  type="number"
-                  inputMode="numeric"
-                  value={form.budget_max}
-                  onChange={(e) => setForm({ ...form, budget_max: e.target.value })}
-                  placeholder="Max"
-                />
-              </div>
-            </FieldRow>
-          </Group>
+          {/* Preferences */}
+          <Section title="Preferences">
+            <PickerRow
+              label="City"
+              value={cityList.join(', ')}
+              placeholder="Any"
+              onClick={() => setDrawer('city')}
+            />
+            <PickerRow
+              label="Language"
+              value={languageList.join(', ')}
+              placeholder="Any"
+              onClick={() => setDrawer('language')}
+            />
+            <PickerRow
+              label="Bedrooms"
+              value={form.bedrooms_preferred}
+              placeholder="Any"
+              onClick={() => setDrawer('bedrooms_preferred')}
+            />
+            <PickerRow
+              label="Budget"
+              value={budgetDisplay}
+              placeholder="Any"
+              onClick={() => setDrawer('budget_min')}
+            />
+            <PickerRow
+              label="Birthday"
+              value={form.birthday}
+              placeholder="—"
+              onClick={() => setDrawer('birthday')}
+              last
+            />
+          </Section>
 
-          <Group title="Projects">
-            <div className="px-4 py-3.5">
-              <InlineLibraryPicker
-                selected={form.projects}
-                library={projectLib.map((p) => ({ label: p.name, count: p.usage_count }))}
-                onChange={(next) => setForm({ ...form, projects: next })}
-                onCreate={(name) => createProject.mutate(name)}
-                placeholder="Search or add project…"
-                emptyText="No projects yet"
-              />
-            </div>
-          </Group>
+          {/* Notes */}
+          <Section title="Notes">
+            <button
+              type="button"
+              onClick={() => setDrawer('notes')}
+              className="w-full text-left px-4 py-3.5 active:bg-muted/40 transition-colors"
+            >
+              {form.notes ? (
+                <p className="text-[14px] text-foreground leading-relaxed line-clamp-3 whitespace-pre-wrap">{form.notes}</p>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-[14px] text-muted-foreground/70">Add internal notes…</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/50" strokeWidth={2.2} />
+                </div>
+              )}
+            </button>
+          </Section>
 
-          <Group title="Tags">
-            <div className="px-4 py-3.5">
-              <InlineLibraryPicker
-                selected={form.tags}
-                library={tagLib.map((t) => ({ label: t.name, count: t.usage_count ?? 0 }))}
-                onChange={(next) => setForm({ ...form, tags: next })}
-                onCreate={(name) => createTag.mutate(name)}
-                placeholder="Search or add tag…"
-                emptyText="No tags yet"
-              />
-            </div>
-          </Group>
-
-          <Group title="Notes">
-            <div className="px-4 py-3.5">
-              <Textarea
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Internal notes about this lead…"
-                className="min-h-[110px] text-[14px] bg-background/60 border-border/60 rounded-xl resize-none"
-              />
-            </div>
-          </Group>
-
-          <div className="h-10" />
+          <div className="h-12" />
         </div>
       </SheetContent>
     </Sheet>
-    {/* iOS-style full-screen pickers for the dropdown fields. */}
+
+    {/* ── Drawers ───────────────────────────────────────────────────────── */}
     <MobilePickerDrawer
-      open={picker === 'status'}
-      onOpenChange={(o) => { if (!o) setPicker(null); }}
+      open={drawer === 'status'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
       title="Stage"
       options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))}
       value={form.status}
       onChange={(v) => { setForm((p) => ({ ...p, status: v })); setErrors((p) => ({ ...p, status: '' })); }}
     />
     <MobilePickerDrawer
-      open={picker === 'assigned_to'}
-      onOpenChange={(o) => { if (!o) setPicker(null); }}
+      open={drawer === 'assigned_to'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
       title="Lead Owner"
       options={AGENTS.map((a) => ({ value: a, label: a }))}
       value={form.assigned_to}
       onChange={(v) => { setForm((p) => ({ ...p, assigned_to: v })); setErrors((p) => ({ ...p, assigned_to: '' })); }}
     />
     <MobilePickerDrawer
-      open={picker === 'source'}
-      onOpenChange={(o) => { if (!o) setPicker(null); }}
+      open={drawer === 'source'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
       title="Source"
       options={LEAD_SOURCES.map((s) => ({ value: s, label: s }))}
       value={form.source}
       onChange={(v) => { setForm((p) => ({ ...p, source: v })); setErrors((p) => ({ ...p, source: '' })); }}
     />
 
-    {/* Duplicate-detection prompt — shown when email or phone matches an existing CRM contact. */}
+    <MobileMultiPickerDrawer
+      open={drawer === 'lead_types'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Lead Type"
+      options={leadTypeOptions}
+      value={form.lead_types}
+      onChange={(next) => setForm((p) => ({ ...p, lead_types: next }))}
+      onCreate={(name) => createLeadType.mutate(name)}
+      placeholder="Search or add lead type…"
+    />
+    <MobileMultiPickerDrawer
+      open={drawer === 'tags'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Tags"
+      options={tagOptions}
+      value={form.tags}
+      onChange={(next) => setForm((p) => ({ ...p, tags: next }))}
+      onCreate={(name) => createTag.mutate(name)}
+      placeholder="Search or add tag…"
+    />
+    <MobileMultiPickerDrawer
+      open={drawer === 'projects'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Projects"
+      options={projectOptions}
+      value={form.projects}
+      onChange={(next) => setForm((p) => ({ ...p, projects: next }))}
+      onCreate={(name) => createProject.mutate(name)}
+      placeholder="Search or add project…"
+    />
+    <MobileMultiPickerDrawer
+      open={drawer === 'city'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="City"
+      options={cityOptions}
+      value={cityList}
+      onChange={(next) => setForm((p) => ({ ...p, city: next.join(' | ') }))}
+      onCreate={(name) => setForm((p) => ({ ...p, city: [...cityList, name].join(' | ') }))}
+      placeholder="Search or add city…"
+    />
+    <MobileMultiPickerDrawer
+      open={drawer === 'language'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Language"
+      options={languageOptions}
+      value={languageList}
+      onChange={(next) => setForm((p) => ({ ...p, language: next.join(' | ') }))}
+      onCreate={(name) => setForm((p) => ({ ...p, language: [...languageList, name].join(' | ') }))}
+      placeholder="Search or add language…"
+    />
+
+    <MobileTextEditDrawer
+      open={drawer === 'bedrooms_preferred'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Bedrooms"
+      value={form.bedrooms_preferred}
+      onSave={(v) => setForm((p) => ({ ...p, bedrooms_preferred: v }))}
+      placeholder="e.g. 2-3"
+      description="Range or single number — e.g. “3” or “2-4”."
+    />
+    <MobileTextEditDrawer
+      open={drawer === 'budget_min'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Minimum budget"
+      value={form.budget_min}
+      onSave={(v) => { setForm((p) => ({ ...p, budget_min: v })); setDrawer('budget_max'); }}
+      placeholder="500000"
+      type="number"
+      description="Lowest end of their target price. We'll ask for the maximum next."
+    />
+    <MobileTextEditDrawer
+      open={drawer === 'budget_max'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Maximum budget"
+      value={form.budget_max}
+      onSave={(v) => setForm((p) => ({ ...p, budget_max: v }))}
+      placeholder="900000"
+      type="number"
+      description="Highest end of their target price."
+    />
+    <MobileTextEditDrawer
+      open={drawer === 'birthday'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Birthday"
+      value={form.birthday}
+      onSave={(v) => setForm((p) => ({ ...p, birthday: v }))}
+      placeholder="YYYY-MM-DD"
+      type="date"
+    />
+    <MobileTextEditDrawer
+      open={drawer === 'notes'}
+      onOpenChange={(o) => { if (!o) setDrawer(null); }}
+      title="Notes"
+      value={form.notes}
+      onSave={(v) => setForm((p) => ({ ...p, notes: v }))}
+      placeholder="Internal notes about this lead…"
+      type="textarea"
+    />
+
+    {/* Duplicate-detection prompt */}
     <AlertDialog open={dupes.length > 0} onOpenChange={(o) => { if (!o) { setDupes([]); setPendingPayload(null); } }}>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -631,32 +666,103 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   );
 }
 
-const inputCls = 'h-10 text-[14px] bg-background/60 border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/50 transition-colors';
+// ── Building blocks ─────────────────────────────────────────────────────────
 
-function FieldRow({
-  label,
-  error,
-  action,
-  children,
-}: {
-  label: string;
-  error?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-border/30 last:border-b-0">
-      <div className="px-4 py-2.5">
-        <div className="flex items-center justify-between mb-1.5">
-          <Label className="block text-[11px] uppercase tracking-[0.06em] text-muted-foreground/80 font-medium">
-            {label}
-          </Label>
-          {action}
-        </div>
-        <div className="min-w-0">{children}</div>
-        {error && <div className="mt-1.5 text-[12px] text-destructive">{error}</div>}
+    <div className="mt-5 px-3">
+      <div className="px-2 pb-2 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/55 font-semibold">
+        {title}
+      </div>
+      <div className="bg-card/70 border border-border/40 rounded-2xl overflow-hidden shadow-[0_1px_2px_hsl(var(--foreground)/0.03)]">
+        {children}
       </div>
     </div>
+  );
+}
+
+function Divider() {
+  return <div className="h-px bg-border/30 mx-4" />;
+}
+
+function TextField({
+  label, required, error, value, onChange, placeholder, type = 'text',
+  maxLength, autoFocus, onRemove, hint,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: 'text' | 'tel' | 'email' | 'number';
+  maxLength?: number;
+  autoFocus?: boolean;
+  onRemove?: () => void;
+  hint?: React.ReactNode;
+}) {
+  return (
+    <div className="px-4 py-3 border-b border-border/30 last:border-b-0">
+      <div className="flex items-center justify-between mb-1.5">
+        <Label className="block text-[11px] uppercase tracking-[0.06em] text-muted-foreground/80 font-medium">
+          {label}{required && <span className="text-destructive ml-0.5">*</span>}
+        </Label>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            aria-label={`Remove ${label}`}
+          >
+            <X className="w-3.5 h-3.5" strokeWidth={2.4} />
+          </button>
+        )}
+      </div>
+      <Input
+        className={`h-10 text-[15px] bg-background/60 border-border/50 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/50 transition-colors ${error ? 'border-destructive/50 focus-visible:border-destructive/60 focus-visible:ring-destructive/30' : ''}`}
+        type={type}
+        inputMode={type === 'tel' ? 'tel' : type === 'email' ? 'email' : type === 'number' ? 'numeric' : undefined}
+        autoCapitalize={type === 'email' ? 'none' : undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        autoFocus={autoFocus}
+      />
+      {error && <div className="mt-1.5 text-[12px] text-destructive">{error}</div>}
+      {!error && hint && <div className="mt-1.5 text-[12px]">{hint}</div>}
+    </div>
+  );
+}
+
+function PickerRow({
+  label, value, placeholder, onClick, error, required, last,
+}: {
+  label: string;
+  value?: string;
+  placeholder?: string;
+  onClick: () => void;
+  error?: string;
+  required?: boolean;
+  last?: boolean;
+}) {
+  const empty = !value;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 active:bg-muted/40 transition-colors text-left ${last ? '' : 'border-b border-border/30'}`}
+    >
+      <span className="text-[13px] text-muted-foreground shrink-0 min-w-[88px]">
+        {label}{required && <span className="text-destructive ml-0.5">*</span>}
+      </span>
+      <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
+        <div className={`text-[14px] truncate min-w-0 ${empty ? 'text-muted-foreground/55' : 'text-foreground font-medium'} ${error ? 'text-destructive' : ''}`}>
+          {empty ? (placeholder ?? 'Select') : value}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" strokeWidth={2.2} />
+      </div>
+    </button>
   );
 }
 
@@ -672,17 +778,6 @@ function AddRow({ label, onClick }: { label: string; onClick: () => void }) {
       </span>
       <span className="font-medium">{label}</span>
     </button>
-  );
-}
-
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mt-4 px-3">
-      <div className="px-2 pb-1.5 text-[11px] uppercase tracking-[0.08em] text-muted-foreground/60 font-semibold">{title}</div>
-      <div className="bg-card/80 border border-border/50 rounded-2xl overflow-hidden shadow-[0_1px_2px_hsl(var(--foreground)/0.04)]">
-        {children}
-      </div>
-    </div>
   );
 }
 
