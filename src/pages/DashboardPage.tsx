@@ -189,49 +189,51 @@ export default function DashboardPage() {
     <AppLayout>
       <OnboardingWizard open={showOnboarding} onComplete={completeOnboarding} />
 
-      <Header
-        title="Dashboard"
-        subtitle={format(now, 'EEEE, MMMM d, yyyy')}
-        showAddDeal={false}
-        action={
-          <div className="flex items-center gap-1.5">
-            {activeConnection && (
-              <button
-                onClick={handleResync}
-                disabled={isSyncing}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
-                  "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40",
-                  isSyncing && "opacity-50 pointer-events-none"
-                )}
-              >
-                <RefreshCw className={cn("h-3 w-3", isSyncing && "animate-spin")} />
-                {isSyncing ? 'Syncing...' : 'Sync'}
-              </button>
-            )}
-            <div className="hidden sm:flex items-center gap-1.5">
-              {[
-                { label: 'New Deal', path: '/deals/new', primary: true },
-                { label: 'Expenses', path: '/expenses' },
-                { label: 'Forecast', path: '/forecast' },
-              ].map((action) => (
-                <Link key={action.path} to={action.path}>
-                  <button
-                    className={cn(
-                      "inline-flex items-center px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
-                      action.primary
-                        ? "btn-premium"
-                        : "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40"
-                    )}
-                  >
-                    {action.label}
-                  </button>
-                </Link>
-              ))}
+      <div className="hidden sm:block">
+        <Header
+          title="Dashboard"
+          subtitle={format(now, 'EEEE, MMMM d, yyyy')}
+          showAddDeal={false}
+          action={
+            <div className="flex items-center gap-1.5">
+              {activeConnection && (
+                <button
+                  onClick={handleResync}
+                  disabled={isSyncing}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
+                    "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40",
+                    isSyncing && "opacity-50 pointer-events-none"
+                  )}
+                >
+                  <RefreshCw className={cn("h-3 w-3", isSyncing && "animate-spin")} />
+                  {isSyncing ? 'Syncing...' : 'Sync'}
+                </button>
+              )}
+              <div className="hidden sm:flex items-center gap-1.5">
+                {[
+                  { label: 'New Deal', path: '/deals/new', primary: true },
+                  { label: 'Expenses', path: '/expenses' },
+                  { label: 'Forecast', path: '/forecast' },
+                ].map((action) => (
+                  <Link key={action.path} to={action.path}>
+                    <button
+                      className={cn(
+                        "inline-flex items-center px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
+                        action.primary
+                          ? "btn-premium"
+                          : "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40"
+                      )}
+                    >
+                      {action.label}
+                    </button>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        }
-      />
+          }
+        />
+      </div>
 
       {isEmpty ? (
         <EmptyDashboard />
