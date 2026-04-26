@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCrmChats, type ChatChannel } from '@/hooks/useCrmChats';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { formatContactName } from '@/lib/formatters';
+import { formatContactName } from '@/lib/format';
 
 const FILTERS: { id: ChatChannel | 'all'; label: string }[] = [
   { id: 'all',      label: 'All' },
