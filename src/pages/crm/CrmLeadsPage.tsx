@@ -390,11 +390,11 @@ export default function CrmLeadsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMobileSearchOpen(v => !v)}
-                      className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
+                      className={`h-11 w-11 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-foreground'}`}
                       aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
                       aria-expanded={mobileSearchOpen}
                     >
-                      <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                      <Search className="w-6 h-6" strokeWidth={2} />
                     </Button>
                     {/* Add Lead moved to floating action button (bottom-right) */}
                   </div>
