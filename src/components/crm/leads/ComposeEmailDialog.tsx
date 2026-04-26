@@ -821,7 +821,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
             {/* Main composer column — single continuous surface, mail-app feel */}
             <div className="flex flex-col overflow-hidden min-h-0 bg-background">
               {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail */}
-              <div className="px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
+              <div className="px-3 sm:px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
                 <RecipientRow label="From">
                   <span className="text-[13px] text-foreground/80 truncate">
                     {emailSettings?.sender_name
