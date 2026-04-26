@@ -345,7 +345,6 @@ export function BottomNav() {
                 />
               </SheetContent>
             </Sheet>
-          </div>
         </div>
       </nav>
 
