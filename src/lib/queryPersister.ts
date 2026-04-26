@@ -45,7 +45,7 @@ function shouldPersist(queryKey: readonly unknown[]): boolean {
   return typeof head === 'string' && PERSISTABLE_KEY_PREFIXES.includes(head);
 }
 
-export const idbPersister = experimental_createPersister<PersistedQuery>({
+export const idbPersister = experimental_createQueryPersister<PersistedQuery>({
   storage: idbStorage,
   // Keep persisted entries for 24h on disk, then re-fetch on next open.
   maxAge: 1000 * 60 * 60 * 24,
