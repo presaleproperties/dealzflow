@@ -300,7 +300,7 @@ export default function CrmLeadsPage() {
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
             <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border">
-              <div className="flex items-center justify-between px-4 pt-2 pb-1.5">
+              <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
                 <div className="flex items-baseline gap-6">
                   <button
                     className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
@@ -315,16 +315,25 @@ export default function CrmLeadsPage() {
                     Contacts
                   </Link>
                 </div>
-                <button
-                  onClick={() => setMobileSearchOpen(v => !v)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-                    mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
-                  aria-expanded={mobileSearchOpen}
-                >
-                  <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileSearchOpen(v => !v)}
+                    className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
+                    aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+                    aria-expanded={mobileSearchOpen}
+                  >
+                    <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                  </Button>
+                  <Button
+                    onClick={() => setShowAdd(true)}
+                    size="sm"
+                    className="h-9 px-3.5 bg-primary text-primary-foreground gap-1 font-semibold shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <Plus className="w-4 h-4" /> Add
+                  </Button>
+                </div>
               </div>
 
               {/* Inline search input — filters list as you type */}
