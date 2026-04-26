@@ -593,9 +593,13 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     <AlertDialog open={dupes.length > 0} onOpenChange={(o) => { if (!o) { setDupes([]); setPendingPayload(null); } }}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Possible duplicate lead</AlertDialogTitle>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            Possible duplicate lead
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            We found {dupes.length} existing lead{dupes.length === 1 ? '' : 's'} with a matching email or phone. Create this lead anyway?
+            We found {dupes.length} existing lead{dupes.length === 1 ? '' : 's'} with a matching email or phone.
+            Review before creating a new record.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="max-h-60 overflow-y-auto -mx-1 px-1 space-y-2">
@@ -613,8 +617,11 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           })}
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => pendingPayload && commitInsert(pendingPayload)}>
+          <AlertDialogCancel autoFocus>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => pendingPayload && commitInsert(pendingPayload)}
+            className="bg-amber-600 hover:bg-amber-600/90 text-white"
+          >
             Create anyway
           </AlertDialogAction>
         </AlertDialogFooter>
