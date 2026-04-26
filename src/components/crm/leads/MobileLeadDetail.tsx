@@ -36,10 +36,8 @@ export function MobileLeadDetail({
   detailsSlot,
   insightsSlot,
 }: MobileLeadDetailProps) {
-  const updateContact = useUpdateCrmContact();
-  const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || '?';
-
   // Pad scroll panels to clear the floating bottom-nav (uses global token).
+
   const bottomPadStyle = { paddingBottom: 'var(--bottom-nav-pad)' } as const;
 
   // Score tier for tinted chip.
