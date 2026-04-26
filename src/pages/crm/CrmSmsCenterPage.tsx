@@ -390,6 +390,39 @@ function ChannelBadge({ channel }: { channel: MessagingChannel }) {
 }
 
 // ==================== Stat pill ====================
+// ==================== Sub-tab bar (lightweight pill nav) ====================
+function SubTabBar<T extends string>({
+  value, onChange, options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: Array<{ value: T; label: string; icon: any }>;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-0.5 w-full sm:w-auto overflow-x-auto">
+      {options.map(o => {
+        const Icon = o.icon;
+        const active = value === o.value;
+        return (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 whitespace-nowrap',
+              active
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function StatPill({ label, value, icon: Icon, tone }: { label: string; value: number; icon: any; tone?: 'emerald' | 'red' | 'amber' | 'primary' }) {
   const toneClass = tone === 'emerald' ? 'text-emerald-600' :
                     tone === 'red' ? 'text-red-600' :
