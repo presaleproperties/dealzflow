@@ -1273,8 +1273,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </aside>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <TemplatePicker open={pickerOpen} onOpenChange={setPickerOpen} onSelect={applyTemplate} />
 
