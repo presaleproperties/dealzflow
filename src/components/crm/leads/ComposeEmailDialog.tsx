@@ -997,7 +997,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Mobile sticky action bar — single source of truth for mobile actions */}
-              <div className="md:hidden flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+6px)]">
+              <div className="md:hidden flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+2px)]">
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}
