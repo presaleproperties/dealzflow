@@ -235,7 +235,7 @@ export function BottomNav() {
           aria-hidden
           className={cn(
             'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl transition-all duration-300 ease-out',
-            active ? 'w-[58px] h-[42px] opacity-100' : 'w-[44px] h-[36px] opacity-0',
+            active ? 'w-[54px] h-[36px] opacity-100' : 'w-[44px] h-[32px] opacity-0',
           )}
           style={{ background: GOLD_BG }}
         />
