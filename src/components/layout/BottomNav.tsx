@@ -51,12 +51,10 @@ const WORKSPACE_TABS: TabItem[] = [
   { label: 'Network',  path: '/network',   icon: Network },
 ];
 
-// ── CRM tabs (Daily flow set) ────────────────────────────────────
-// ── CRM tabs (Lofty-style: Chats · Leads · Pipeline · Calendar · More) ──
+// ── CRM tabs (Chats · Leads · [+] · Calendar · More) ─────────────
 const CRM_TABS: TabItem[] = [
   { label: 'Chats',    path: '/crm/chats',    icon: MessageCircle },
   { label: 'Leads',    path: '/crm/leads',    icon: Users },
-  { label: 'Pipeline', path: '/crm/pipeline', icon: Kanban },
   { label: 'Calendar', path: '/crm/calendar', icon: CalendarDays },
 ];
 
