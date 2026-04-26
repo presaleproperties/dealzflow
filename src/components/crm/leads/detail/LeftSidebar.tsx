@@ -270,7 +270,7 @@ export function LeftSidebar({
       )}
 
       {/* Pipeline Stage */}
-      <div className="space-y-2">
+      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2' : 'space-y-2'}>
         <SectionHeader>Pipeline Stage</SectionHeader>
         {isMobile ? (
           <MobileEditRow
@@ -293,7 +293,7 @@ export function LeftSidebar({
 
 
       {/* Insight */}
-      <div className="space-y-2.5">
+      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
         <SectionHeader>Insight</SectionHeader>
         <div className="grid grid-cols-3 gap-1.5">
           <InsightCard
