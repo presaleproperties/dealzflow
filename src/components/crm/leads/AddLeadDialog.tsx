@@ -276,7 +276,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={addContact.isPending || checkingDupes}
+            disabled={addContact.isPending || checkingDupes || !canSubmit}
             className="px-3.5 h-9 mr-1 rounded-full text-[13.5px] font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 transition-all active:scale-95 shadow-sm shadow-primary/20"
           >
             {checkingDupes ? 'Checking…' : addContact.isPending ? 'Saving…' : 'Save'}
