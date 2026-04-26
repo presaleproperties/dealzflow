@@ -11,14 +11,11 @@ const config: CapacitorConfig = {
     cleartext: true,
   },
   ios: {
-    // Edge-to-edge: let the WebView fill the entire screen (under status bar
-    // and home indicator). Our CSS handles safe-area padding via env() insets.
-    contentInset: 'never',
-    backgroundColor: '#FFFFFF',
-    limitsNavigationsToAppBoundDomains: false,
+    contentInset: 'always',
+    backgroundColor: '#0F172A',
   },
   android: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0F172A',
   },
   plugins: {
     Keyboard: {
@@ -29,10 +26,10 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     StatusBar: {
-      // Edge-to-edge: status bar overlays the WebView so the app background
-      // flows behind it. Use light icons on our gold/dark headers.
+      // Match the dark glass header used across CRM screens.
       style: 'DARK',
-      overlaysWebView: true,
+      backgroundColor: '#0F172A',
+      overlaysWebView: false,
     },
   },
 };

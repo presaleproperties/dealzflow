@@ -54,7 +54,7 @@ export function MobileLeadDetail({
         className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="px-4 h-12 flex items-center justify-between">
+        <div className="px-3 h-12 flex items-center justify-between">
           <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary active:opacity-60 transition-opacity">
             <ArrowLeft className="w-4 h-4" /> Leads
           </Link>
@@ -74,7 +74,7 @@ export function MobileLeadDetail({
 
       {/* Tabs — Details first */}
       <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-4 gap-0 flex-shrink-0 sticky top-12 z-20 bg-background">
+        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 sticky top-12 z-20 bg-background">
           {(['details','activity','insights'] as const).map(v => (
             <TabsTrigger
               key={v}
