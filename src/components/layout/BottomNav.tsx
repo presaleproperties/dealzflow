@@ -279,18 +279,9 @@ export function BottomNav() {
             }}
           />
 
-          {/* Tabs row — center notch only when FAB is present (CRM mode) */}
+          {/* Tabs row — clean 4-tab layout, no center FAB */}
           <div className="flex items-stretch h-[60px] px-1 relative">
-            {mode === 'crm' ? (
-              <>
-                {leftTabs.map(renderTab)}
-                {/* Center spacer where the FAB lives */}
-                <div className="w-[68px] shrink-0" aria-hidden />
-                {rightTabs.map(renderTab)}
-              </>
-            ) : (
-              tabs.map(renderTab)
-            )}
+            {tabs.map(renderTab)}
 
             {/* More button */}
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
