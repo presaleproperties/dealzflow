@@ -601,12 +601,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl w-[98vw] h-[92vh] p-0 overflow-hidden flex flex-col">
-          {/* Header */}
-          <DialogHeader className="px-5 py-3 border-b border-border bg-card shrink-0">
-            <DialogTitle className="flex items-center justify-between gap-2">
-              <span className="text-base font-semibold">New Email</span>
-              <span />
+        <DialogContent className="max-w-7xl w-[98vw] h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-2xl border border-border/60 shadow-2xl">
+          {/* Slim title bar — flows into the recipient stack so the composer reads as one continuous surface, not a stack of boxes */}
+          <DialogHeader className="px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
+            <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
+              New Message
             </DialogTitle>
           </DialogHeader>
 
@@ -767,76 +766,70 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </aside>
 
-            {/* Main composer column */}
-            <div className="flex flex-col overflow-hidden min-h-0">
-              {/* Recipient rows */}
-              <div className="px-5 py-3 border-b border-border space-y-2 bg-card shrink-0">
-                <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">From</Label>
-                  <Input
-                    value={emailSettings?.sender_name ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>` : (user?.email ?? '')}
-                    disabled
-                    className="h-9 bg-muted/40 text-xs"
-                  />
-                  <span className="w-[68px]" />
-                </div>
-                <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">To</Label>
-                  <Input
-                    value={contact.email ?? ''}
-                    disabled
-                    className="h-9 bg-muted/40"
-                    placeholder={contact.email ? '' : 'No email on file'}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs text-muted-foreground"
-                    onClick={() => setShowCcBcc((v) => !v)}
-                  >
-                    {showCcBcc ? 'Hide' : 'Cc / Bcc'}
-                  </Button>
-                </div>
+            {/* Main composer column — single continuous surface, mail-app feel */}
+            <div className="flex flex-col overflow-hidden min-h-0 bg-background">
+              {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail */}
+              <div className="px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
+                <RecipientRow label="From">
+                  <span className="text-[13px] text-foreground/80 truncate">
+                    {emailSettings?.sender_name
+                      ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>`
+                      : (user?.email ?? '')}
+                  </span>
+                </RecipientRow>
+                <RecipientRow
+                  label="To"
+                  trailing={
+                    <button
+                      type="button"
+                      onClick={() => setShowCcBcc((v) => !v)}
+                      className="text-[11px] text-muted-foreground/80 hover:text-foreground transition-colors"
+                    >
+                      {showCcBcc ? 'Hide' : 'Cc Bcc'}
+                    </button>
+                  }
+                >
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full">
+                    <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">
+                      {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
+                    </span>
+                    <span className="truncate">{contact.email ?? 'No email on file'}</span>
+                  </span>
+                </RecipientRow>
                 {showCcBcc && (
                   <>
-                    <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">Cc</Label>
-                      <Input
+                    <RecipientRow label="Cc">
+                      <input
                         value={cc}
                         onChange={(e) => setCc(e.target.value)}
                         placeholder="cc@example.com"
-                        className="h-9"
+                        className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground/50 px-0"
                       />
-                      <span className="w-[68px]" />
-                    </div>
-                    <div className="grid grid-cols-[60px_1fr_auto] items-center gap-2">
-                      <Label className="text-xs text-muted-foreground">Bcc</Label>
-                      <Input
+                    </RecipientRow>
+                    <RecipientRow label="Bcc">
+                      <input
                         value={bcc}
                         onChange={(e) => setBcc(e.target.value)}
                         placeholder="bcc@example.com"
-                        className="h-9"
+                        className="w-full bg-transparent border-0 outline-none text-[13px] text-foreground placeholder:text-muted-foreground/50 px-0"
                       />
-                      <span className="w-[68px]" />
-                    </div>
+                    </RecipientRow>
                   </>
                 )}
-                <div className="grid grid-cols-[60px_1fr] items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">Subject</Label>
-                  <Input
+                <RecipientRow label="Subject">
+                  <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Subject line — supports {{lead.first_name}}"
-                    className="h-9 font-medium"
+                    placeholder="Subject — supports {{lead.first_name}}"
                     maxLength={200}
+                    className="w-full bg-transparent border-0 outline-none text-[14px] font-semibold tracking-[-0.01em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/50 px-0"
                   />
-                </div>
+                </RecipientRow>
               </div>
 
-              {/* Mode tabs */}
-              <div className="px-5 py-2 border-b border-border bg-muted/20 flex items-center justify-between gap-2 shrink-0">
-                <div className="flex items-center gap-1">
+              {/* Mode tabs — flush row, no heavy background block */}
+              <div className="px-4 py-1.5 border-b border-border/60 flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-0.5">
                   {(() => {
                     /* Detect "rich" template HTML the rich text editor can't represent. */
                     const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
@@ -851,10 +844,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                         disabled={(t as any).disabled}
                         title={(t as any).hint}
                         className={cn(
-                          'h-7 px-3 text-xs rounded-md font-medium transition-colors flex items-center gap-1.5',
+                          'h-7 px-2.5 text-[11.5px] rounded-md font-medium transition-colors flex items-center gap-1.5',
                           mode === t.v
-                            ? 'bg-background border border-border text-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground',
+                            ? 'bg-muted text-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                           (t as any).disabled && 'opacity-40 cursor-not-allowed',
                         )}
                       >
@@ -865,7 +858,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   })()}
                 </div>
                 {mode === 'preview' && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <Button
                       type="button"
                       size="sm"
@@ -888,21 +881,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Body area */}
-              <div className="flex-1 overflow-y-auto bg-muted/10 min-h-0">
+              {/* Body area — flush, expansive, no inner padding boxes */}
+              <div className="flex-1 overflow-hidden bg-background min-h-0 flex flex-col">
                 {mode === 'edit' && (
-                  <div className="p-5">
+                  <div className="flex-1 min-h-0 flex flex-col">
                     <RichTextEditor
                       content={bodyHtml}
                       onChange={setBodyHtml}
                       placeholder="Write your message... use {{lead.first_name}} for personalization."
                       toolbarSlot={composerActions}
                       flushSignature
-
                       footerSlot={
                         appendSignature && activeSignatureHtml ? (
                           editingSignature ? (
-                            <div className="border-t border-border/60 bg-muted/5">
+                            <div className="border-t border-border/40">
                               <textarea
                                 value={sigDraft}
                                 onChange={(e) => setSigDraft(e.target.value)}
@@ -921,12 +913,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   </div>
                 )}
                 {mode === 'html' && (
-                  <div className="p-5">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     <textarea
                       ref={htmlTextareaRef}
                       value={bodyHtml}
                       onChange={(e) => setBodyHtml(e.target.value)}
-                      className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="w-full h-full font-mono text-xs p-5 bg-background border-0 resize-none focus-visible:outline-none"
                       spellCheck={false}
                     />
                   </div>
@@ -934,7 +926,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 {mode === 'preview' && (
                   <div
                     className={cn(
-                      'h-full w-full flex justify-center',
+                      'flex-1 min-h-0 w-full flex justify-center overflow-hidden',
                       device === 'desktop' ? 'bg-background' : 'bg-muted/20 p-5',
                     )}
                   >
@@ -1222,5 +1214,31 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/**
+ * RecipientRow — Apple Mail / Gmail style hairline-separated row.
+ * Fixed-width muted label on the left, content fills the rest, optional
+ * trailing action (e.g. "Cc Bcc" toggle). Borderless inputs sit inside so
+ * the recipient stack reads as one continuous surface — not stacked boxes.
+ */
+function RecipientRow({
+  label,
+  children,
+  trailing,
+}: {
+  label: string;
+  children: React.ReactNode;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-b-0">
+      <span className="w-[58px] shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+        {label}
+      </span>
+      <div className="flex-1 min-w-0 flex items-center">{children}</div>
+      {trailing && <div className="shrink-0">{trailing}</div>}
+    </div>
   );
 }
