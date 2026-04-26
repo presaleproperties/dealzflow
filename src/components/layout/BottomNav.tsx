@@ -43,12 +43,11 @@ const BORDER = 'hsl(var(--border) / 0.7)';
 const INACTIVE = 'hsl(var(--muted-foreground))';
 const SUBTLE = 'hsl(var(--muted-foreground) / 0.7)';
 
-// ── Workspace tabs (Operations set) ──────────────────────────────
+// ── Workspace tabs (3 + FAB + More) ──────────────────────────────
 const WORKSPACE_TABS: TabItem[] = [
   { label: 'Home',     path: '/dashboard', icon: LayoutDashboard },
   { label: 'Deals',    path: '/deals',     icon: Handshake },
   { label: 'Clients',  path: '/inventory', icon: Building2 },
-  { label: 'Network',  path: '/network',   icon: Network },
 ];
 
 // ── CRM tabs (Chats · Leads · [+] · Calendar · More) ─────────────
