@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, Plus, X } from 'lucide-react';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
@@ -35,6 +35,10 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const [emailValidation, setEmailValidation] = useState<EmailValidation>({
     isValid: true, suggestion: null, correctedEmail: null,
   });
+  // Secondary phone/email start hidden — surfaced via "+ Add another" so the
+  // form feels light, with secondary fields fully optional.
+  const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
+  const [showSecondaryEmail, setShowSecondaryEmail] = useState(false);
 
   const handleEmailChange = (email: string) => {
     setForm((prev) => ({ ...prev, email }));
@@ -66,6 +70,8 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     setForm(initialForm());
     setErrors({});
     setEmailValidation({ isValid: true, suggestion: null, correctedEmail: null });
+    setShowSecondaryPhone(false);
+    setShowSecondaryEmail(false);
   };
 
   const handleSubmit = async () => {
@@ -230,7 +236,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
           </Group>
 
           <Group title="Phone">
-            <FieldRow label="Primary" error={errors.phone}>
+            <FieldRow label="Phone" error={errors.phone}>
               <Input
                 className={inputCls}
                 type="tel"
@@ -241,21 +247,41 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
                 maxLength={20}
               />
             </FieldRow>
-            <FieldRow label="Secondary">
-              <Input
-                className={inputCls}
-                type="tel"
-                inputMode="tel"
-                value={form.phone_secondary}
-                onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })}
-                placeholder="Optional"
-                maxLength={20}
-              />
-            </FieldRow>
+            {showSecondaryPhone ? (
+              <FieldRow
+                label="Secondary phone"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondaryPhone(false);
+                      setForm((prev) => ({ ...prev, phone_secondary: '' }));
+                    }}
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    aria-label="Remove secondary phone"
+                  >
+                    <X className="w-3.5 h-3.5" strokeWidth={2.4} />
+                  </button>
+                }
+              >
+                <Input
+                  className={inputCls}
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone_secondary}
+                  onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })}
+                  placeholder="Optional"
+                  maxLength={20}
+                  autoFocus
+                />
+              </FieldRow>
+            ) : (
+              <AddRow label="Add another number" onClick={() => setShowSecondaryPhone(true)} />
+            )}
           </Group>
 
           <Group title="Email">
-            <FieldRow label="Primary" error={errors.email}>
+            <FieldRow label="Email" error={errors.email}>
               <div className="space-y-1.5">
                 <Input
                   className={inputCls}
@@ -276,18 +302,38 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
                 )}
               </div>
             </FieldRow>
-            <FieldRow label="Secondary">
-              <Input
-                className={inputCls}
-                type="email"
-                inputMode="email"
-                autoCapitalize="none"
-                value={form.email_secondary}
-                onChange={(e) => setForm({ ...form, email_secondary: e.target.value })}
-                placeholder="Optional"
-                maxLength={255}
-              />
-            </FieldRow>
+            {showSecondaryEmail ? (
+              <FieldRow
+                label="Secondary email"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSecondaryEmail(false);
+                      setForm((prev) => ({ ...prev, email_secondary: '' }));
+                    }}
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    aria-label="Remove secondary email"
+                  >
+                    <X className="w-3.5 h-3.5" strokeWidth={2.4} />
+                  </button>
+                }
+              >
+                <Input
+                  className={inputCls}
+                  type="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  value={form.email_secondary}
+                  onChange={(e) => setForm({ ...form, email_secondary: e.target.value })}
+                  placeholder="Optional"
+                  maxLength={255}
+                  autoFocus
+                />
+              </FieldRow>
+            ) : (
+              <AddRow label="Add another email" onClick={() => setShowSecondaryEmail(true)} />
+            )}
           </Group>
 
           <Group title="Pipeline">
@@ -446,17 +492,45 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
 
 const inputCls = 'h-10 text-[14px] bg-background/60 border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/50 transition-colors';
 
-function FieldRow({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FieldRow({
+  label,
+  error,
+  action,
+  children,
+}: {
+  label: string;
+  error?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="border-b border-border/30 last:border-b-0">
       <div className="px-4 py-2.5">
-        <Label className="block text-[11px] uppercase tracking-[0.06em] text-muted-foreground/80 font-medium mb-1.5">
-          {label}
-        </Label>
+        <div className="flex items-center justify-between mb-1.5">
+          <Label className="block text-[11px] uppercase tracking-[0.06em] text-muted-foreground/80 font-medium">
+            {label}
+          </Label>
+          {action}
+        </div>
         <div className="min-w-0">{children}</div>
         {error && <div className="mt-1.5 text-[12px] text-destructive">{error}</div>}
       </div>
     </div>
+  );
+}
+
+function AddRow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-primary hover:bg-muted/30 active:bg-muted/50 transition-colors"
+    >
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary">
+        <Plus className="w-3.5 h-3.5" strokeWidth={2.6} />
+      </span>
+      <span className="font-medium">{label}</span>
+    </button>
   );
 }
 
