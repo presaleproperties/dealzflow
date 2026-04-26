@@ -476,13 +476,14 @@ export default function CrmLeadsPage() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      onClick={() => handleSort('last_touch_at')}
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
-                      aria-label="Sort by last touch"
-                      title="Sort by last touch"
+                      size="sm"
+                      onClick={() => setSortSheetOpen(true)}
+                      className="h-8 px-2.5 gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground shrink-0"
+                      aria-label="Change sort"
                     >
-                      <ArrowDownNarrowWide className="w-4 h-4" />
+                      <ArrowDownNarrowWide className="w-3.5 h-3.5" />
+                      {SORT_OPTIONS.find(o => o.key === sortKey)?.shortLabel ?? 'Sort'}
+                      <ChevronDown className="w-3 h-3 opacity-60" />
                     </Button>
                   </div>
                 </div>
