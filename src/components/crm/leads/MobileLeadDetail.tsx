@@ -88,10 +88,10 @@ export function MobileLeadDetail({
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-[16px] font-semibold text-foreground leading-tight truncate">
+            <h1 className="text-[20px] font-bold text-foreground leading-tight tracking-[-0.015em] truncate">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
-            <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="flex items-center gap-1.5 mt-1">
               <LeadStatusBadge status={contact.status} />
             </div>
           </div>
