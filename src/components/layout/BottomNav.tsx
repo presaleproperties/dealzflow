@@ -712,7 +712,7 @@ function QuickActionsSheet({
             <button
               key={action.label}
               onClick={() => {
-                triggerHaptic('light');
+                triggerHaptic('selection');
                 action.onClick();
               }}
               className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border active:scale-[0.98] transition-all text-left"
