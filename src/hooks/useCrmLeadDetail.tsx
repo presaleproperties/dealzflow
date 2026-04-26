@@ -21,6 +21,30 @@ export function useCrmContact(id: string | undefined) {
       return normalizeCrmContactArrays(data) as CrmContact;
     },
     enabled: !!id,
+    /**
+     * Instant-render placeholder: when the user taps a lead from the list
+     * (or returns to one they've already viewed), reuse the row already in
+     * the React Query cache so the page paints immediately while the full
+     * record is fetched in the background.
+     */
+    placeholderData: () => {
+      if (!id) return undefined;
+      const lists: Array<readonly unknown[]> = [
+        ['crm-contacts'],
+        ['crm-contacts-lite'],
+        ['crm-contacts-paginated'],
+      ];
+      for (const key of lists) {
+        const cached = queryClient.getQueriesData<{ contacts?: CrmContact[] } | CrmContact[]>({ queryKey: key });
+        for (const [, value] of cached) {
+          if (!value) continue;
+          const rows = Array.isArray(value) ? value : (value as { contacts?: CrmContact[] }).contacts;
+          const hit = rows?.find((r) => r?.id === id);
+          if (hit) return normalizeCrmContactArrays(hit) as CrmContact;
+        }
+      }
+      return undefined;
+    },
   });
 
   useEffect(() => {
