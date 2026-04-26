@@ -49,33 +49,33 @@ export function MobileLeadDetail({
   // Pad scroll panels to clear the floating bottom-nav (uses global token).
   const bottomPadStyle = { paddingBottom: 'var(--bottom-nav-pad)' } as const;
 
+  // Score tier for tinted chip.
+  const tier =
+    leadScore.score >= 70 ? 'hot'
+    : leadScore.score >= 40 ? 'warm'
+    : leadScore.score > 0 ? 'cold'
+    : 'none';
+
   return (
     <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100vh - 60px)' }}>
       {/* Slim identity header (sticky) */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0">
+      <div
+        className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
         <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
           <Link to="/crm/leads" className="inline-flex items-center gap-1 text-[13px] font-medium text-primary active:opacity-60 transition-opacity">
             <ArrowLeft className="w-4 h-4" /> Leads
           </Link>
-          {/* Prominent live lead score chip */}
+          {/* Compact tier-tinted score chip — no duplicate letter badge */}
           <div
-            className="inline-flex items-center gap-2 h-9 pl-2.5 pr-3 rounded-full border tabular-nums shadow-sm"
-            style={{
-              background: `${leadScore.color}14`,
-              borderColor: `${leadScore.color}40`,
-            }}
+            className="m-score tabular-nums"
+            data-tier={tier}
+            style={{ width: 'auto', height: '30px', padding: '0 12px', fontSize: '15px' }}
             aria-label={`Lead score ${leadScore.score} out of 100 — ${leadScore.label}`}
           >
-            <span
-              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase tracking-[0.04em]"
-              style={{ background: leadScore.color, color: '#fff' }}
-            >
-              {leadScore.label?.[0] || '·'}
-            </span>
-            <span className="text-[18px] font-bold leading-none" style={{ color: leadScore.color }}>
-              {leadScore.score}
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {leadScore.score}
+            <span className="ml-1 text-[10px] font-semibold uppercase tracking-[0.06em] opacity-70">
               / 100
             </span>
           </div>
@@ -95,7 +95,7 @@ export function MobileLeadDetail({
               <LeadStatusBadge status={contact.status} />
             </div>
           </div>
-          {/* Inline stage swap — discreet */}
+          {/* Inline stage swap — discreet. The global "+" lives in BottomNav. */}
           <select
             value={contact.status || ''}
             onChange={(e) =>
@@ -105,22 +105,13 @@ export function MobileLeadDetail({
                 oldValues: { status: contact.status },
               })
             }
-            className="h-8 max-w-[96px] px-1.5 rounded-md bg-muted/40 border border-border text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+            className="h-8 max-w-[120px] px-2 rounded-md bg-muted/40 border border-border text-[12px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
             aria-label="Stage"
           >
             {LEAD_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          {/* Inline Quick add — saves a row */}
-          <button
-            onClick={() => setPlusOpen(true)}
-            aria-label="Quick add"
-            className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-          >
-            <Plus className="w-4 h-4" strokeWidth={2.6} />
-          </button>
         </div>
       </div>
 
