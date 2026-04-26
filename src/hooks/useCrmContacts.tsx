@@ -52,15 +52,23 @@ export type CrmContactInsert = {
   email?: string;
   email_secondary?: string;
   phone?: string;
+  phone_secondary?: string;
   source?: string;
   status?: string;
   project?: string;
   projects?: string[];
   assigned_to?: string;
   tags?: string[];
+  lead_types?: string[];
   contact_type?: string;
   birthday?: string;
   co_buyer_birthday?: string;
+  city?: string;
+  language?: string;
+  bedrooms_preferred?: string;
+  budget_min?: number;
+  budget_max?: number;
+  notes?: string;
 };
 
 export const CONTACT_TYPES = ['lead', 'realtor', 'past_client'] as const;
