@@ -86,7 +86,7 @@ export function MobileLeadDetail({
           ))}
         </TabsList>
 
-        <TabsContent value="details" style={bottomPadStyle} className="flex-1 min-h-0 mt-0 px-4 pt-4 overflow-y-auto overscroll-contain space-y-4">
+        <TabsContent value="details" style={bottomPadStyle} className="flex-1 min-h-0 mt-0 px-3 pt-3 overflow-y-auto overscroll-contain space-y-3">
           {detailsSlot}
         </TabsContent>
         <TabsContent value="activity" style={bottomPadStyle} className="flex-1 min-h-0 mt-0 px-0 pt-0 overflow-y-auto overscroll-contain bg-background">
@@ -94,7 +94,7 @@ export function MobileLeadDetail({
             {activitySlot}
           </div>
         </TabsContent>
-        <TabsContent value="insights" style={bottomPadStyle} className="flex-1 min-h-0 mt-0 px-4 pt-4 overflow-y-auto overscroll-contain space-y-4">
+        <TabsContent value="insights" style={bottomPadStyle} className="flex-1 min-h-0 mt-0 px-3 pt-3 overflow-y-auto overscroll-contain space-y-3">
           {insightsSlot}
         </TabsContent>
       </Tabs>
