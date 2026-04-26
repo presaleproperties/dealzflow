@@ -5,6 +5,7 @@ import {
   Users, Kanban, Mail, Inbox, BarChart3, Zap, LayoutTemplate, Plug,
   Settings, Settings2, Receipt, TrendingUp, BarChart2, Network,
   DollarSign, GitBranch, ShieldAlert, LogOut, X, Briefcase, Sparkles,
+  MessageCircle, MessageSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
