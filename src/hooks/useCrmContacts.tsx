@@ -336,11 +336,66 @@ export function useAddCrmContact() {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
-      toast.success('Lead added successfully');
+    // Optimistic insert — the new lead shows up in every cached list/board
+    // immediately, before the round-trip to the database completes.
+    onMutate: async (contact) => {
+      await queryClient.cancelQueries({ queryKey: ['crm-contacts'] });
+      const previous = queryClient.getQueriesData<CrmContact[]>({ queryKey: ['crm-contacts'] });
+
+      const nowIso = new Date().toISOString();
+      const optimistic = {
+        id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        email: contact.email || null,
+        email_secondary: contact.email_secondary || null,
+        phone: contact.phone || null,
+        phone_secondary: contact.phone_secondary || null,
+        source: contact.source || null,
+        status: contact.contact_type === 'past_client' ? 'Closed' : (contact.status || 'New Lead'),
+        project: contact.project || null,
+        projects: contact.projects?.length ? contact.projects : null,
+        assigned_to: contact.assigned_to || null,
+        contact_type: contact.contact_type || 'lead',
+        tags: contact.tags?.length ? contact.tags : null,
+        lead_types: contact.lead_types?.length ? contact.lead_types : null,
+        city: contact.city || null,
+        language: contact.language || null,
+        bedrooms_preferred: contact.bedrooms_preferred || null,
+        budget_min: contact.budget_min ?? null,
+        budget_max: contact.budget_max ?? null,
+        birthday: contact.birthday || null,
+        notes: contact.notes || null,
+        created_at: nowIso,
+        updated_at: nowIso,
+        last_touch_at: nowIso,
+      } as unknown as CrmContact;
+
+      queryClient.setQueriesData<CrmContact[]>({ queryKey: ['crm-contacts'] }, (old) =>
+        old ? [optimistic, ...old] : [optimistic],
+      );
+
+      return { previous, optimisticId: optimistic.id };
     },
-    onError: (err: Error) => {
+    onSuccess: (data, _vars, ctx) => {
+      // Replace the optimistic placeholder with the real row so any pages
+      // navigating to /crm/leads/:id (the new lead's detail page) hit a real ID.
+      const realRow = data as unknown as CrmContact;
+      queryClient.setQueriesData<CrmContact[]>({ queryKey: ['crm-contacts'] }, (old) => {
+        if (!old) return [realRow];
+        const idx = old.findIndex(c => c.id === ctx?.optimisticId);
+        if (idx === -1) return [realRow, ...old.filter(c => c.id !== realRow.id)];
+        const next = old.slice();
+        next[idx] = realRow;
+        return next;
+      });
+      // Background reconcile (counts, segments, derived caches).
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Lead added');
+    },
+    onError: (err: Error, _vars, ctx) => {
+      // Roll back the optimistic insert.
+      ctx?.previous?.forEach(([key, value]) => queryClient.setQueryData(key, value));
       toast.error(`Failed to add lead: ${err.message}`);
     },
   });

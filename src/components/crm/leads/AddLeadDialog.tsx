@@ -74,9 +74,13 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
     setShowSecondaryEmail(false);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!validate()) return;
-    await addContact.mutateAsync({
+    // Snapshot the payload so we can close + reset the form instantly,
+    // then fire the mutation in the background. The mutation does an
+    // optimistic insert into the leads cache so the new lead appears
+    // immediately in lists/Kanban/segments without waiting for the round-trip.
+    const payload = {
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       phone: form.phone.trim() || undefined,
@@ -97,9 +101,10 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       budget_max: form.budget_max ? Number(form.budget_max) : undefined,
       birthday: form.birthday.trim() || undefined,
       notes: form.notes.trim() || undefined,
-    });
+    };
     reset();
     onOpenChange(false);
+    addContact.mutate(payload); // success/error toasts handled inside the hook
   };
 
   const handleClose = (next: boolean) => {
