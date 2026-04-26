@@ -202,7 +202,21 @@ export function useSendSms() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: SendSmsArgs) => {
-      const { data, error } = await supabase.functions.invoke('send-sms', { body: args });
+      const invoke = (body: SendSmsArgs) => supabase.functions.invoke('send-sms', { body });
+      let { data, error } = await invoke(args);
+
+      // Edge function may surface QUIET_HOURS as either a thrown error (non-2xx)
+      // or as { error, code } in the JSON body. Detect both, prompt once, retry.
+      const quietMsg = (data?.code === 'QUIET_HOURS' && data?.error)
+        || (error?.message?.includes('QUIET_HOURS') ? 'Quiet hours are in effect.' : '')
+        || (error?.message?.includes('Quiet hours') ? error.message : '');
+
+      if (quietMsg && !args.skip_quiet_hours && typeof window !== 'undefined') {
+        const ok = window.confirm(`${quietMsg}\n\nSend it now anyway?`);
+        if (!ok) throw new Error('Send cancelled (quiet hours).');
+        ({ data, error } = await invoke({ ...args, skip_quiet_hours: true }));
+      }
+
       if (error) throw new Error(error.message || 'Send failed');
       if (data?.error) throw new Error(data.error);
       return data;
