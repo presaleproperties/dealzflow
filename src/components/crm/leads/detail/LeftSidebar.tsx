@@ -105,9 +105,9 @@ export function LeftSidebar({
   const loftySyncedAt = contactExt.lofty_synced_at as string | undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Identity card — read-only display; tap ⋯ menu to edit everything in a side drawer */}
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1 space-y-2">
             <h1 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight truncate">
