@@ -27,6 +27,28 @@ import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 
+/**
+ * Compact relative date for the REG column. The default
+ * `formatDistanceToNow(..., { addSuffix: true })` produces strings like
+ * "over 3 years ago" / "almost 2 years ago" that wrap onto two lines in a
+ * narrow column. We collapse the long modifiers ("over"/"almost"/"about")
+ * into compact suffix forms that always fit on one line.
+ */
+function formatRegisteredAge(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const raw = formatDistanceToNow(new Date(iso), { addSuffix: false });
+  // raw examples: "over 3 years", "almost 2 years", "about 5 months", "24 days", "less than a minute"
+  const overMatch = raw.match(/^over\s+(.+)$/i);
+  if (overMatch) return `${overMatch[1]} +`;
+  const almostMatch = raw.match(/^almost\s+(.+)$/i);
+  if (almostMatch) return `~${almostMatch[1]}`;
+  const aboutMatch = raw.match(/^about\s+(.+)$/i);
+  if (aboutMatch) return `${aboutMatch[1]} ago`;
+  const lessMatch = raw.match(/^less than\s+(.+)$/i);
+  if (lessMatch) return `<${lessMatch[1]}`;
+  return `${raw} ago`;
+}
+
 interface LeadsTableProps {
   contacts: CrmContact[];
   isLoading: boolean;
