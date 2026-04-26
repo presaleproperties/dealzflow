@@ -615,9 +615,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl w-screen h-[100dvh] sm:w-[98vw] sm:h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl">
-          {/* Mobile header — Mail-app style: Cancel · title · Send. Desktop keeps the slim title bar. */}
-          <DialogHeader className="md:hidden px-3 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
+        <DialogContent className="max-w-7xl w-screen h-[100dvh] sm:w-[98vw] sm:h-[92vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden">
+          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
+          <DialogHeader className="md:hidden px-3 py-2.5 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -629,22 +629,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
             <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
               New Message
             </DialogTitle>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!canSend || isPending}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-primary-foreground text-[14px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              {isPending ? 'Sending' : 'Send'}
-            </button>
+            {/* Spacer to keep title centered */}
+            <span className="w-[52px]" aria-hidden />
           </DialogHeader>
 
-          {/* Mobile sub-header: recipient pill + ⌘+Enter hint */}
+          {/* Mobile sub-header: just recipient identity (Templates moved to single bottom bar to remove duplication) */}
           <div className="md:hidden px-3 py-2 border-b border-border/60 bg-background/60 shrink-0 flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-semibold shrink-0">
               {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
@@ -655,15 +644,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </p>
               <p className="text-[11px] text-muted-foreground truncate leading-tight">{contact.email ?? 'No email on file'}</p>
             </div>
-            {recentTemplates.length > 0 && (
-              <button
-                onClick={() => setPickerOpen(true)}
-                className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full border border-border bg-card text-[11px] font-medium text-foreground active:scale-95 transition-transform"
-              >
-                <FileText className="h-3 w-3" />
-                Templates
-              </button>
-            )}
           </div>
 
           {/* Desktop slim title bar */}
