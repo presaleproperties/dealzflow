@@ -62,6 +62,7 @@ const WORKSPACE_MORE: MoreGroup[] = [
     label: 'Production',
     items: [
       { label: 'Pipeline', path: '/pipeline', icon: GitBranch },
+      { label: 'Network',  path: '/network',  icon: Network },
       { label: 'Payouts',  path: '/payouts',  icon: DollarSign },
     ],
   },
