@@ -570,7 +570,7 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
       : 'Lead');
 
   const sourceText = contact.source ?? '';
-  const assignee = contact.assigned_to ?? '';
+  const emailText = contact.email ?? '';
   const relTime = contact.last_touch_at
     ? formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })
     : contact.created_at
@@ -610,10 +610,10 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
             )}
           </p>
 
-          {/* Row 3: assignee */}
-          {assignee && (
-            <p className="text-[12px] text-muted-foreground/80 mt-1.5 leading-tight truncate tracking-wide">
-              {assignee}
+          {/* Row 3: lead email */}
+          {emailText && (
+            <p className="text-[12px] text-muted-foreground/80 mt-1.5 leading-tight truncate lowercase">
+              {emailText}
             </p>
           )}
         </div>
