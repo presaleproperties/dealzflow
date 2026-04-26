@@ -128,8 +128,7 @@
      naturally as the user scrolls. Pages reserve just enough space to clear
      the pill plus 8px breathing room. Disabled on lg+. */
   :root {
-    /* Pill (56px) + 8px breathing room + iOS home-indicator safe area. */
-    --bottom-nav-pad: calc(56px + 8px + env(safe-area-inset-bottom, 0px));
+    --bottom-nav-pad: calc(56px + 8px);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
@@ -163,12 +162,7 @@
   h3 { @apply text-[20px] font-semibold tracking-[-0.022em]; }
   h4, h5, h6 { @apply text-base font-semibold tracking-tight; }
 
-  html {
-    scroll-behavior: smooth;
-    /* Fill iOS safe-area regions (under status bar + home indicator) with the
-       warm app background so edge-to-edge mode doesn't show white strips. */
-    background-color: hsl(var(--background));
-  }
+  html { scroll-behavior: smooth; }
 
   ::selection {
     background: hsl(var(--primary) / 0.14);
@@ -1245,7 +1239,7 @@ html.is-standalone *:focus-visible {
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
 /* Bottom-nav clearance helper (alias kept for backwards compat) */
-:root { --bottom-nav-pad: calc(56px + 8px + env(safe-area-inset-bottom, 0px)); }
+:root { --bottom-nav-pad: calc(56px + 8px); }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */

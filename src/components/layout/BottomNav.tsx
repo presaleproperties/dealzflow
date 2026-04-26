@@ -269,9 +269,9 @@ export function BottomNav() {
           }}
         />
         {/* Edge-to-edge floating pill — flush bottom so Safari's URL bar
-            moves it naturally on scroll. Adds iOS home-indicator safe area. */}
+            moves it naturally on scroll. */}
         <div
-          className="px-3 flex justify-center pointer-events-none"
+          className="px-2 flex justify-center pointer-events-none"
           style={{ paddingBottom: 'max(6px, env(safe-area-inset-bottom, 0px))' }}
         >
           <div

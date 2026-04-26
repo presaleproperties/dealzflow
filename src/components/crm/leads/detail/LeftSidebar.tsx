@@ -105,9 +105,9 @@ export function LeftSidebar({
   const loftySyncedAt = contactExt.lofty_synced_at as string | undefined;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Identity card — read-only display; tap ⋯ menu to edit everything in a side drawer */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5">
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1 space-y-2">
             <h1 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight truncate">
@@ -270,7 +270,7 @@ export function LeftSidebar({
       )}
 
       {/* Pipeline Stage */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2' : 'space-y-2'}>
+      <div className="space-y-2">
         <SectionHeader>Pipeline Stage</SectionHeader>
         {isMobile ? (
           <MobileEditRow
@@ -293,7 +293,7 @@ export function LeftSidebar({
 
 
       {/* Insight */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
+      <div className="space-y-2.5">
         <SectionHeader>Insight</SectionHeader>
         <div className="grid grid-cols-3 gap-1.5">
           <InsightCard
@@ -308,7 +308,7 @@ export function LeftSidebar({
       </div>
 
       {/* Details */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-3'}>
+      <div className="space-y-3">
         <SectionHeader>Details</SectionHeader>
         <div className="space-y-px">
           {isMobile ? (
@@ -411,10 +411,7 @@ export function LeftSidebar({
       {/* Assigned To — placed right after Details so ownership sits with the lead facts.
           Uses a gentle slide-in so it feels smooth when swiping back into the lead detail on mobile. */}
       <div
-        className={
-          (isMobile ? 'rounded-xl border border-border/60 bg-card p-4 ' : '') +
-          'space-y-2 animate-fade-in motion-safe:[animation-duration:420ms] [animation-delay:60ms] [animation-fill-mode:both] will-change-transform'
-        }
+        className="space-y-2 animate-fade-in motion-safe:[animation-duration:420ms] [animation-delay:60ms] [animation-fill-mode:both] will-change-transform"
         style={{ contain: 'layout paint' }}
       >
         <SectionHeader>Assigned To</SectionHeader>
@@ -436,7 +433,7 @@ export function LeftSidebar({
       </div>
 
       {/* Lead Type */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2' : 'space-y-2'}>
+      <div className="space-y-2">
         <SectionHeader>Lead Type</SectionHeader>
         {(() => {
           const selected: string[] = leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : [];
@@ -478,7 +475,7 @@ export function LeftSidebar({
       </div>
 
       {/* Tags */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
+      <div className="space-y-2.5">
         <SectionHeader>Tags</SectionHeader>
         {isMobile ? (
           <MobileEditRow
@@ -500,7 +497,7 @@ export function LeftSidebar({
       </div>
 
       {/* Projects */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
+      <div className="space-y-2.5">
         <SectionHeader>Projects</SectionHeader>
         {isMobile ? (
           <MobileEditRow
@@ -528,7 +525,7 @@ export function LeftSidebar({
       </div>
 
       {/* Co-Buyer */}
-      <div className={isMobile ? 'rounded-xl border border-border/60 bg-card p-4 space-y-2.5' : 'space-y-2.5'}>
+      <div className="space-y-2.5">
         <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
           <SectionHeader>{hasCoBuyer ? 'Co-Buyer' : 'Family Member'}</SectionHeader>
           {coBuyerOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
