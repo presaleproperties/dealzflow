@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { haptic } from '@/lib/native';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -625,16 +626,23 @@ function IMessageComposer({
     onMediaChange([...pendingMedia, ...arr]);
   };
 
+  // Wraps the parent's onSend with a native haptic so iOS / Android users feel
+  // the same little "thump" they'd get in Messages or WhatsApp.
+  const onSendWithHaptic = useCallback(async () => {
+    haptic('light');
+    await onSend();
+  }, [onSend]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     // Enter sends; Shift+Enter inserts a newline (standard chat behavior).
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      onSend();
+      onSendWithHaptic();
     }
   };
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur px-3 sm:px-4 py-3 imsg-font">
+    <div className="border-t border-border bg-background/80 backdrop-blur px-3 sm:px-4 py-3 imsg-font native-safe-bottom native-kb-lift">
       <div className="max-w-3xl mx-auto space-y-2">
         {quotedRef && (
           <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-2xl bg-muted/50 border-l-2 border-[#007AFF]">
