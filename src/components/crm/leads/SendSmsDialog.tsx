@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useComposerBackButton } from '@/hooks/useComposerBackButton';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
