@@ -145,8 +145,29 @@ export function usePaginatedCrmContacts(params: PaginatedParams): PaginatedResul
         .select('*', { count: 'estimated' });
 
       if (filters.search) {
-        const q = `%${filters.search}%`;
-        query = query.or(`first_name.ilike.${q},last_name.ilike.${q},email.ilike.${q},phone.ilike.${q}`);
+        // Tokenize so "john smith" matches first_name=John AND last_name=Smith.
+        // Escape PostgREST reserved chars (, ) . : * ' ") inside ilike values
+        // so names like O'Brien or "Smith, Jr." don't break the .or() string.
+        const escape = (raw: string) =>
+          raw
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/[(),:*]/g, ' ')
+            .trim();
+        const tokens = filters.search
+          .split(/\s+/)
+          .map(escape)
+          .filter(t => t.length > 0)
+          .slice(0, 5); // safety cap
+
+        // Each token must match at least one of the searchable columns
+        // (first_name, last_name, email, phone). Tokens are AND-combined.
+        for (const tok of tokens) {
+          const q = `%${tok}%`;
+          query = query.or(
+            `first_name.ilike."${q}",last_name.ilike."${q}",email.ilike."${q}",phone.ilike."${q}"`
+          );
+        }
       }
 
       if (filters.contactType) {
