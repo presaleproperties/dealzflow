@@ -35,6 +35,10 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const [emailValidation, setEmailValidation] = useState<EmailValidation>({
     isValid: true, suggestion: null, correctedEmail: null,
   });
+  // Secondary phone/email start hidden — surfaced via "+ Add another" so the
+  // form feels light, with secondary fields fully optional.
+  const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
+  const [showSecondaryEmail, setShowSecondaryEmail] = useState(false);
 
   const handleEmailChange = (email: string) => {
     setForm((prev) => ({ ...prev, email }));
