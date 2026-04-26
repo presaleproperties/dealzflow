@@ -419,6 +419,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   const isPending = sendBridge.isPending || addMessage.isPending;
 
+  /* Keyboard shortcut: ⌘+Enter / Ctrl+Enter sends from anywhere in the dialog */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (canSend && !isPending) handleSend();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, canSend, isPending, finalHtml, renderedSubject, logOnly, cc, bcc]);
+
   const previewDoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0a0a0a;background:#fff}img{max-width:100%;height:auto}</style></head><body>${finalHtml}</body></html>`;
 
   /** Upload one or more files to storage and embed them inline in the email body.
