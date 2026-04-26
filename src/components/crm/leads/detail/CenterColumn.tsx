@@ -205,7 +205,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           </div>
         </div>
 
-        <div className="relative space-y-1.5">
+        <div className="relative space-y-1.5 px-3 md:px-0">
           {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
             <div className="hidden md:block absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
