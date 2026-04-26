@@ -138,6 +138,13 @@ export default function CrmLeadsPage() {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
+  // Mobile-only: collapse the title row on scroll, infinite scroll accumulator, sort sheet
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [accumulated, setAccumulated] = useState<typeof contacts>([] as any);
+  const lastFiltersKeyRef = useRef<string>('');
+
   // Read initial view from URL
   useEffect(() => {
     const viewParam = searchParams.get('view') as QuickViewId | null;
