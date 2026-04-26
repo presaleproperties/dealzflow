@@ -785,3 +785,53 @@
   /* Tap-able row chevron */
   .crm-row-chev { @apply text-muted-foreground/50 w-4 h-4 flex-shrink-0; }
 }
+
+/* ==========================================================================
+   Native shell (Capacitor) — applied only when wrapped by useNativeShell().
+   These rules give the app a true native feel: real safe-area padding around
+   the notch / home indicator, no rubber-band scroll on body, sharper system
+   font, and a keyboard-aware composer that lifts with the on-screen keyboard.
+   ========================================================================== */
+:root { --kb-h: 0px; }
+
+html.is-native, html.is-native body {
+  /* Block the rubber-band overscroll the WebView ships with so the page
+     doesn't "peel" from the status bar like a browser. */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.is-ios body {
+  /* San Francisco when running on iOS, fall back to our brand font everywhere
+     else. Matches Messages / WhatsApp typography. */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+html.is-android body {
+  font-family: 'Roboto', 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* Safe-area helper classes — use on any sticky header / floating composer
+   inside a native shell so they clear the notch and home indicator. */
+.native-safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.native-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.native-safe-x {
+  padding-left:  env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Lift the messaging composer above the on-screen keyboard. The --kb-h
+   variable is updated live by useNativeShell() via Capacitor Keyboard. */
+.native-kb-lift {
+  transform: translateY(calc(var(--kb-h) * -1));
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+/* Active-state press feedback that mirrors UIKit / Material ripple feel. */
+html.is-native .native-press {
+  transition: transform 120ms ease, opacity 120ms ease, background-color 120ms ease;
+}
+html.is-native .native-press:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
