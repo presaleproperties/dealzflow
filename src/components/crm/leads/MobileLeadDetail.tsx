@@ -89,9 +89,8 @@ export function MobileLeadDetail({
             <h1 className="text-[20px] font-bold text-foreground leading-tight tracking-[-0.015em] truncate">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
-            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-              <LeadStatusBadge status={contact.status} />
-              {/* Inline stage swap — sits next to the status badge so it never overlaps the name. */}
+            {/* Stage selector doubles as the live status display — no separate badge needed. */}
+            <div className="mt-1">
               <select
                 value={contact.status || ''}
                 onChange={(e) =>
@@ -101,7 +100,7 @@ export function MobileLeadDetail({
                     oldValues: { status: contact.status },
                   })
                 }
-                className="h-7 max-w-[140px] px-2 rounded-md bg-muted/40 border border-border text-[11.5px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+                className="h-7 max-w-[160px] px-2 rounded-md bg-muted/40 border border-border text-[11.5px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
                 aria-label="Change stage"
               >
                 {LEAD_STATUSES.map((s) => (
