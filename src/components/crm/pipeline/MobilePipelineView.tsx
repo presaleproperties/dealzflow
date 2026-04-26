@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Flame, Phone, Mail } from 'lucide-react';
+import { Search, ChevronRight, Flame, Phone, Mail, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
@@ -9,6 +9,7 @@ import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 
 const SEGMENT_DOT: Record<string, string> = {
   'New Leads':      'hsl(var(--primary))',
