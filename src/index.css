@@ -130,7 +130,7 @@
     /* Floating liquid-glass pill bottom-nav.
        Pill height 56px + 12px gap above + iOS home-indicator inset + 6px breathing.
        Pages must reserve this clearance so no content sits beneath the pill. */
-    --bottom-nav-pad: calc(56px + 12px + 6px + env(safe-area-inset-bottom, 0px));
+    --bottom-nav-pad: calc(56px + 24px + 6px + 16px + env(safe-area-inset-bottom, 0px));
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
@@ -1220,7 +1220,7 @@ html.is-standalone *:focus-visible {
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
 /* Bottom-nav clearance helper (alias kept for backwards compat) */
-:root { --bottom-nav-pad: calc(56px + 12px + 6px + env(safe-area-inset-bottom, 0px)); }
+:root { --bottom-nav-pad: calc(56px + 24px + 6px + 16px + env(safe-area-inset-bottom, 0px)); }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */
