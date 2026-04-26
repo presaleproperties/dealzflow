@@ -484,8 +484,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
   };
 
-  /** Compact Templates + Insert variable controls rendered in the editor toolbar. */
+  /* Compact Templates + Insert variable controls rendered in the editor toolbar.
+   * Hidden on mobile — the mobile sticky action bar at the bottom is the
+   * single source of truth for these actions to avoid duplication. */
   const composerActions = (
+    <div className="hidden md:flex items-center gap-1">
     <>
       <input
         ref={fileInputRef}
