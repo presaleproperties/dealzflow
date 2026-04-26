@@ -579,7 +579,7 @@ function LeadCard({ contact, onClick }: { contact: CrmContact; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-transparent px-4 py-4 border-b border-border/40 transition-colors active:bg-muted/30 focus:outline-none focus-visible:bg-muted/20"
+      className="w-full text-left bg-transparent px-3 py-3.5 transition-colors hover:bg-muted/20 active:bg-muted/30 focus:outline-none focus-visible:bg-muted/20"
     >
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
@@ -752,29 +752,31 @@ export function LeadsTable({
 
   if (isMobile) {
     return (
-      <div className="-mx-3 sm:-mx-4">
-        <div className="h-0.5 w-full overflow-hidden bg-transparent">
+      <div>
+        <div className="h-0.5 w-full overflow-hidden rounded-full mb-1 bg-transparent">
           {isFetching && (
-            <div className="h-full w-full bg-primary/20 overflow-hidden">
-              <div className="h-full w-1/3 bg-primary animate-pulse" />
+            <div className="h-full w-full bg-primary/20 rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '40%' }} />
             </div>
           )}
         </div>
-        <div className="bg-card border-t border-border/60">
-          {contacts.map(contact => (
-            <SwipeRow
-              key={contact.id}
-              hasPhone={!!contact.phone}
-              hasEmail={!!contact.email}
-              onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
-              onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
-              onEmail={() => contact.email && setEmailContact(contact)}
-            >
-              <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
-            </SwipeRow>
-          ))}
+        <div className={`overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-opacity ${isFetching ? 'opacity-80' : ''}`}>
+          <div className="divide-y divide-border/50">
+            {contacts.map(contact => (
+              <SwipeRow
+                key={contact.id}
+                hasPhone={!!contact.phone}
+                hasEmail={!!contact.email}
+                onCall={() => contact.phone && (window.location.href = `tel:${contact.phone}`)}
+                onText={() => contact.phone && (window.location.href = `sms:${contact.phone}`)}
+                onEmail={() => contact.email && setEmailContact(contact)}
+              >
+                <LeadCard contact={contact} onClick={() => navigate(`/crm/leads/${contact.id}`)} />
+              </SwipeRow>
+            ))}
+          </div>
         </div>
-        <div className="px-3">
+        <div>
           <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
             onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile />
         </div>
