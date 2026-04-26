@@ -158,7 +158,7 @@ export function LeftSidebar({
           </DropdownMenu>
         </div>
 
-        {isMobile && (contact.phone || contact.email) && (
+        {(contact.phone || contact.email) && (
           <div className="space-y-1.5 pt-3 border-t border-border/60">
             {contact.phone && (
               <div className="flex items-center justify-between gap-2">
