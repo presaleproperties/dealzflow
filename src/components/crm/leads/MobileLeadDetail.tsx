@@ -8,7 +8,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
-import { toast } from 'sonner';
+
 
 interface MobileLeadDetailProps {
   contact: CrmContact;
