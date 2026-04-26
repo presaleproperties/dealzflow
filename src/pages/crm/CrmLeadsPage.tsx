@@ -670,13 +670,27 @@ export default function CrmLeadsPage() {
           {/* Bulk actions */}
           <BulkActionsBar selectedIds={selectedIds} onClearSelection={() => setSelectedIds([])} />
 
-          {/* Table */}
+          {/* Table — mobile uses accumulated infinite-scroll list */}
           <LeadsTable
-            contacts={contacts} isLoading={isLoading} isFetching={isFetching} totalCount={totalCount}
+            contacts={mobileContacts} isLoading={isLoading} isFetching={isFetching} totalCount={totalCount}
             selectedIds={selectedIds} onSelectionChange={setSelectedIds}
             page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={handlePageSizeChange}
             sortKey={sortKey} sortDir={sortDir} onSort={handleSort} visibleColumns={visibleColumns}
+            hidePagination={isMobile}
           />
+
+          {/* Mobile infinite-scroll loader */}
+          {isMobile && hasMoreMobile && (
+            <div className="flex items-center justify-center py-4 text-[12px] text-muted-foreground">
+              <span className="inline-block w-3 h-3 rounded-full border-2 border-primary/40 border-t-primary animate-spin mr-2" />
+              Loading more…
+            </div>
+          )}
+          {isMobile && !hasMoreMobile && accumulated.length > 0 && accumulated.length >= totalCount && (
+            <div className="text-center py-4 text-[11px] text-muted-foreground/60">
+              {totalCount.toLocaleString()} {totalCount === 1 ? 'lead' : 'leads'} total
+            </div>
+          )}
         </div>
 
         {/* Right-side Filter Panel — inline on desktop, bottom sheet on mobile to avoid layout shift */}
