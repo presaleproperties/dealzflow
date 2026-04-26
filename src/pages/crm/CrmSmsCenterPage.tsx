@@ -134,11 +134,7 @@ export default function CrmSmsCenterPage() {
     );
   }, [campaigns]);
 
-  // Twilio readiness
   const isWa = channel === 'whatsapp';
-  const readyForChannel = isWa
-    ? !!(settings?.whatsapp_enabled && (settings?.whatsapp_from || settings?.whatsapp_messaging_service_sid))
-    : !!(numbers.length > 0 || settings?.messaging_service_sid);
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
