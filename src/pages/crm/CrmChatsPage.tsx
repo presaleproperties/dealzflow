@@ -88,8 +88,11 @@ export default function CrmChatsPage() {
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
       {/* Premium glassmorphic header */}
-      <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60">
-        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+      <div
+        className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
           <div className="min-w-0">
             <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">
               Chats
@@ -277,7 +280,7 @@ export default function CrmChatsPage() {
         aria-label="Start new conversation"
         className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full text-primary-foreground shadow-xl active:scale-95 transition-all flex items-center justify-center ring-1 ring-white/10"
         style={{
-          bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+          bottom: 'var(--bottom-nav-pad)',
           background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%)',
           boxShadow: '0 10px 30px -8px hsl(var(--primary) / 0.5), 0 4px 12px -2px hsl(var(--primary) / 0.3)',
         }}
