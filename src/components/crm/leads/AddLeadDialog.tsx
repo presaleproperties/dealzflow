@@ -547,6 +547,39 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Duplicate-detection prompt — shown when email or phone matches an existing CRM contact. */}
+    <AlertDialog open={dupes.length > 0} onOpenChange={(o) => { if (!o) { setDupes([]); setPendingPayload(null); } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Possible duplicate lead</AlertDialogTitle>
+          <AlertDialogDescription>
+            We found {dupes.length} existing lead{dupes.length === 1 ? '' : 's'} with a matching email or phone. Create this lead anyway?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="max-h-60 overflow-y-auto -mx-1 px-1 space-y-2">
+          {dupes.map((d) => {
+            const name = formatContactName(d.first_name, d.last_name) || 'Unnamed lead';
+            return (
+              <div key={d.id} className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                <div className="font-medium text-foreground truncate">{name}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {[d.email, d.phone].filter(Boolean).join(' · ') || '—'}
+                </div>
+                {d.status && <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 mt-0.5">{d.status}</div>}
+              </div>
+            );
+          })}
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => pendingPayload && commitInsert(pendingPayload)}>
+            Create anyway
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
