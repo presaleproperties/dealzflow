@@ -127,9 +127,10 @@
      the OS safe-area inset (no extra spacer). Pages reserve 12px breathing
      room above the bar so the last row never kisses it. Disabled on lg+. */
   :root {
-    /* Slim flush bottom-nav: 50px tab row + iOS home-indicator inset.
-       Bar hugs the home indicator; pages reserve exact bar height as bottom padding. */
-    --bottom-nav-pad: calc(50px + env(safe-area-inset-bottom, 0px));
+    /* Floating liquid-glass pill bottom-nav.
+       Pill height 56px + 12px gap above + iOS home-indicator inset + 6px breathing.
+       Pages must reserve this clearance so no content sits beneath the pill. */
+    --bottom-nav-pad: calc(56px + 12px + 6px + env(safe-area-inset-bottom, 0px));
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
