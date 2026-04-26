@@ -15,6 +15,12 @@ import { validateEmail, type EmailValidation } from '@/lib/emailValidation';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { CheckboxDropdown } from './CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { supabase } from '@/integrations/supabase/client';
+import { formatContactName } from '@/lib/format';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AddLeadDialogProps {
   open: boolean;
