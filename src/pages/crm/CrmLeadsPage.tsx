@@ -357,33 +357,40 @@ export default function CrmLeadsPage() {
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
             <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden">
-              <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
-                <div className="flex items-baseline gap-6">
-                  <button
-                    className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
-                    aria-current="page"
-                  >
-                    Leads
-                  </button>
-                  <Link
-                    to="/crm/contacts"
-                    className="text-[19px] font-semibold text-muted-foreground/60 tracking-tight pb-1.5 hover:text-foreground transition-colors"
-                  >
-                    Contacts
-                  </Link>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileSearchOpen(v => !v)}
-                    className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
-                    aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
-                    aria-expanded={mobileSearchOpen}
-                  >
-                    <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
-                  </Button>
-                  {/* Add Lead moved to floating action button (bottom-right) */}
+              {/* Title row — collapses on scroll to reclaim vertical space */}
+              <div
+                className={`overflow-hidden transition-all duration-200 ease-out ${
+                  headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
+                  <div className="flex items-baseline gap-6">
+                    <button
+                      className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
+                      aria-current="page"
+                    >
+                      Leads
+                    </button>
+                    <Link
+                      to="/crm/contacts"
+                      className="text-[19px] font-semibold text-muted-foreground/60 tracking-tight pb-1.5 hover:text-foreground transition-colors"
+                    >
+                      Contacts
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileSearchOpen(v => !v)}
+                      className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
+                      aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+                      aria-expanded={mobileSearchOpen}
+                    >
+                      <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                    </Button>
+                    {/* Add Lead moved to floating action button (bottom-right) */}
+                  </div>
                 </div>
               </div>
 
