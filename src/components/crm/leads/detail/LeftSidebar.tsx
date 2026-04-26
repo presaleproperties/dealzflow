@@ -466,7 +466,11 @@ export function LeftSidebar({
               <div className="flex items-center justify-between gap-3 py-2">
                 <span className="text-xs text-muted-foreground">Synced</span>
                 <span className="text-[11px] text-muted-foreground/80">
-                  {loftySyncedAt ? format(new Date(loftySyncedAt), 'MMM d, h:mm a') : 'via Lofty'}
+                  {(() => {
+                    if (!loftySyncedAt) return 'via Lofty';
+                    const d = new Date(loftySyncedAt);
+                    return isNaN(d.getTime()) ? 'via Lofty' : format(d, 'MMM d, h:mm a');
+                  })()}
                 </span>
               </div>
             </>
