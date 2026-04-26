@@ -169,6 +169,11 @@ export function useAddCrmTask() {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact-tasks', vars.contact_id] });
+      // Lead score on the list is denormalized — refresh after each new task
+      // so the score badge keeps up.
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contact', vars.contact_id] });
       toast.success('Task created');
     },
     onError: (err: Error) => toast.error(err.message),
@@ -184,6 +189,9 @@ export function useAddCrmShowing() {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact-showings', vars.contact_id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contact', vars.contact_id] });
       toast.success('Showing booked');
     },
     onError: (err: Error) => toast.error(err.message),

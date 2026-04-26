@@ -27,7 +27,9 @@ export default function LeadDetailPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: contact, isLoading } = useCrmContact(id);
-  const { data: allContacts = [] } = useCrmContacts();
+  // Only fetch the full contacts list on desktop (used for prev/next nav).
+  // On mobile this query was loading ~7,500 rows on every detail open and freezing the app.
+  const { data: allContacts = [] } = useCrmContacts(undefined, { enabled: !isMobile });
   const { data: messages = [] } = useCrmContactMessages(id);
   const { data: showings = [] } = useCrmContactShowings(id);
   const { data: tasks = [] } = useCrmContactTasks(id);

@@ -79,6 +79,8 @@ export function useCreateShowing() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crm-showings'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
       toast.success('Showing booked');
     },
     onError: (err: Error) => toast.error(err.message),
@@ -94,6 +96,8 @@ export function useUpdateShowingStatus() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crm-showings'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
       toast.success('Showing updated');
     },
     onError: (err: Error) => toast.error(err.message),
