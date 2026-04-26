@@ -46,6 +46,13 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(false);
   const [showSecondaryEmail, setShowSecondaryEmail] = useState(false);
 
+  // Duplicate detection state — when the email/phone matches existing
+  // crm_contacts rows we surface them in a confirm dialog before inserting.
+  type DupContact = { id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null; status: string | null };
+  const [dupes, setDupes] = useState<DupContact[]>([]);
+  const [pendingPayload, setPendingPayload] = useState<Parameters<typeof addContact.mutate>[0] | null>(null);
+  const [checkingDupes, setCheckingDupes] = useState(false);
+
   const handleEmailChange = (email: string) => {
     setForm((prev) => ({ ...prev, email }));
     if (email.trim()) setEmailValidation(validateEmail(email));
