@@ -158,65 +158,6 @@ export function LeftSidebar({
           </DropdownMenu>
         </div>
 
-        <div className="space-y-1.5 pt-3 border-t border-border/60">
-          {/* Phone — read-only; tap to call */}
-          <div className="flex items-center gap-2 group min-h-[34px]">
-            <Phone className={`w-3.5 h-3.5 shrink-0 ${contact.phone ? 'text-muted-foreground' : 'text-muted-foreground/60'}`} />
-            <div className="flex-1 min-w-0">
-              {contact.phone ? (
-                <a
-                  href={`tel:${contact.phone.replace(/\D/g, '')}`}
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
-                >
-                  {formatPhone(contact.phone)}
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors"
-                >
-                  Add phone
-                </button>
-              )}
-            </div>
-            {contact.phone && <CopyButton value={contact.phone} label="Phone" />}
-          </div>
-
-          {/* Email — read-only; tap to compose */}
-          <div className="flex items-center gap-2 group min-h-[34px]">
-            <Mail className={`w-3.5 h-3.5 shrink-0 ${contact.email ? 'text-muted-foreground' : 'text-muted-foreground/60'}`} />
-            <div className="flex-1 min-w-0">
-              {contact.email ? (
-                onEmail ? (
-                  <button
-                    type="button"
-                    onClick={onEmail}
-                    className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block text-left w-full"
-                  >
-                    {contact.email}
-                  </button>
-                ) : (
-                  <a
-                    href={`mailto:${contact.email}`}
-                    className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
-                  >
-                    {contact.email}
-                  </a>
-                )
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors"
-                >
-                  Add email
-                </button>
-              )}
-            </div>
-            {contact.email && <CopyButton value={contact.email} label="Email" />}
-          </div>
-        </div>
       </div>
 
       <EditLeadDetailsSheet contact={contact} open={editOpen} onOpenChange={setEditOpen} />
