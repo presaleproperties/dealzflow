@@ -122,15 +122,21 @@
 }
 
 @layer base {
-  /* Floating iOS pill bottom-nav clearance.
-     Bar height ~60px + FAB protrudes ~22px above. We pad to 72px so any
-     bottom-pinned content (sticky bars, last list rows) clears the bar
-     without colliding with the floating FAB halo. Disabled on lg+. */
+  /* Slim flush bottom-nav clearance.
+     Bar = 56px tab row, sits flush against the home-indicator using only
+     the OS safe-area inset (no extra spacer). Pages reserve 12px breathing
+     room above the bar so the last row never kisses it. Disabled on lg+. */
   :root {
-    --bottom-nav-pad: calc(72px + env(safe-area-inset-bottom, 0px));
+    --bottom-nav-pad: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
+    /* Mobile top breathing room — sits just below the OS status bar.
+       16px feels native (matches Lofty / Apple Mail). */
+    --m-top-pad: calc(env(safe-area-inset-top, 0px) + 16px);
   }
   @media (min-width: 1024px) {
-    :root { --bottom-nav-pad: 0px; }
+    :root {
+      --bottom-nav-pad: 0px;
+      --m-top-pad: 0px;
+    }
   }
 
   * {
