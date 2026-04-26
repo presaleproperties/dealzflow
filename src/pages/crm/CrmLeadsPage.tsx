@@ -300,7 +300,7 @@ export default function CrmLeadsPage() {
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
             <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border">
-              <div className="flex items-center justify-between px-4 pt-2 pb-1.5">
+              <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
                 <div className="flex items-baseline gap-6">
                   <button
                     className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
@@ -315,16 +315,25 @@ export default function CrmLeadsPage() {
                     Contacts
                   </Link>
                 </div>
-                <button
-                  onClick={() => setMobileSearchOpen(v => !v)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-                    mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
-                  aria-expanded={mobileSearchOpen}
-                >
-                  <Search className="w-[19px] h-[19px]" strokeWidth={1.8} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileSearchOpen(v => !v)}
+                    className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-muted-foreground'}`}
+                    aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+                    aria-expanded={mobileSearchOpen}
+                  >
+                    <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                  </Button>
+                  <Button
+                    onClick={() => setShowAdd(true)}
+                    size="sm"
+                    className="h-9 px-3.5 bg-primary text-primary-foreground gap-1 font-semibold shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <Plus className="w-4 h-4" /> Add
+                  </Button>
+                </div>
               </div>
 
               {/* Inline search input — filters list as you type */}
@@ -394,41 +403,32 @@ export default function CrmLeadsPage() {
                 </div>
               )}
 
-              {/* Filter + sort row — single consolidated entry point */}
-              <div className="flex items-center gap-2 px-3 pb-2">
-                <button
+              {/* Filter + sort row — discreet, matches desktop ghost-button styling */}
+              <div className="flex items-center gap-1 px-2 pb-1.5">
+                <Button
+                  variant={activeFilterCount > 0 ? 'secondary' : 'ghost'}
+                  size="sm"
                   onClick={() => setFiltersExpanded(true)}
-                  className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-medium tracking-tight transition-colors border ${
-                    activeFilterCount > 0
-                      ? 'bg-primary/10 text-primary border-primary/40'
-                      : 'bg-transparent text-muted-foreground border-border/60 hover:text-foreground'
-                  }`}
-                  aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+                  className="h-9 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
                 >
-                  <Filter className="w-[15px] h-[15px]" strokeWidth={1.8} />
+                  <Filter className="w-4 h-4" />
                   Filters
                   {activeFilterCount > 0 && (
-                    <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold tabular-nums">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5 bg-primary/15 text-primary">
                       {activeFilterCount}
-                    </span>
+                    </Badge>
                   )}
-                </button>
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleSort('last_touch_at')}
-                  className="inline-flex items-center justify-center w-9 h-9 text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                  className="h-9 w-9 text-muted-foreground hover:text-foreground ml-auto"
                   aria-label="Sort by last touch"
                   title="Sort by last touch"
                 >
-                  <ArrowDownNarrowWide className="w-[17px] h-[17px]" strokeWidth={1.8} />
-                </button>
+                  <ArrowDownNarrowWide className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           )}
@@ -594,14 +594,7 @@ export default function CrmLeadsPage() {
             </div>
           )}
 
-          {/* Mobile: FAB Add Lead */}
-          <button
-            onClick={() => setShowAdd(true)}
-            className="sm:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-            style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.4)' }}
-          >
-            <Plus className="w-6 h-6" />
-          </button>
+          {/* Add Lead lives in the mobile header (matches desktop button styling) */}
 
           {/* Conversion funnel + untouched alert — temporarily hidden, may bring back later */}
           {/* <ConversionFunnelBanner /> */}
