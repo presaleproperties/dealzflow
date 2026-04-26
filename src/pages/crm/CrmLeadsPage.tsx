@@ -400,7 +400,13 @@ export default function CrmLeadsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setMobileSearchOpen(v => !v)}
+                      onClick={() => {
+                        setMobileSearchOpen(v => {
+                          // Closing the bar: also clear any active search so results aren't silently filtered.
+                          if (v) handleSearchChange('');
+                          return !v;
+                        });
+                      }}
                       className={`h-11 w-11 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-foreground'}`}
                       aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
                       aria-expanded={mobileSearchOpen}
