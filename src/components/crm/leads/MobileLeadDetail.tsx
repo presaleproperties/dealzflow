@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageSquare, Mail, ListTodo, Calendar, StickyNote, Plus, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Phone, MessageSquare, Mail, ListTodo, Calendar, StickyNote, Plus, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadStatusBadge } from './LeadStatusBadge';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
-import { toast } from 'sonner';
+
 
 interface MobileLeadDetailProps {
   contact: CrmContact;
@@ -46,9 +46,8 @@ export function MobileLeadDetail({
   const updateContact = useUpdateCrmContact();
   const initials = ((contact.first_name?.[0] ?? '') + (contact.last_name?.[0] ?? '')).toUpperCase() || '?';
 
-  // Bottom action bar height (~56px) + global BottomNav (~58 + safe area)
-  // We push tab content past both so the last item is reachable.
-  const bottomPadClass = 'pb-[calc(58px+56px+env(safe-area-inset-bottom,0px))]';
+  // Only the global BottomNav sits at the bottom now — pad once.
+  const bottomPadClass = 'pb-[calc(72px+env(safe-area-inset-bottom,0px))]';
 
   return (
     <div className="-mx-3 -my-3 sm:-mx-4 sm:-my-4 flex flex-col" style={{ minHeight: 'calc(100vh - 60px)' }}>
@@ -95,12 +94,27 @@ export function MobileLeadDetail({
             ))}
           </select>
         </div>
+
+        {/* Inline CTA row — Call · Email · Text · + (no floating bar) */}
+        <div className="px-3 pb-2 flex items-center gap-2">
+          <ActionChip icon={Phone} label="Call" tone="emerald" disabled={!contact.phone} onClick={onCall} />
+          <ActionChip icon={Mail} label="Email" tone="blue" disabled={!contact.email} onClick={onEmail} />
+          <ActionChip icon={MessageSquare} label="Text" tone="sky" disabled={!contact.phone} onClick={onText} />
+          <button
+            onClick={() => setPlusOpen(true)}
+            aria-label="Quick add"
+            className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
+            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+          >
+            <Plus className="w-5 h-5" strokeWidth={2.6} />
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="activity" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[88px] z-20 bg-background">
-          {(['activity','details','insights'] as const).map(v => (
+      {/* Tabs — Details first */}
+      <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
+        <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 px-3 gap-0 flex-shrink-0 sticky top-[140px] z-20 bg-background">
+          {(['details','activity','insights'] as const).map(v => (
             <TabsTrigger
               key={v}
               value={v}
@@ -111,47 +125,18 @@ export function MobileLeadDetail({
           ))}
         </TabsList>
 
+        <TabsContent value="details" className={`flex-1 min-h-0 mt-0 px-3 pt-3 ${bottomPadClass} overflow-y-auto overscroll-contain space-y-3`}>
+          {detailsSlot}
+        </TabsContent>
         <TabsContent value="activity" className={`flex-1 min-h-0 mt-0 px-2 pt-3 ${bottomPadClass} overflow-y-auto overscroll-contain`}>
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             {activitySlot}
           </div>
         </TabsContent>
-        <TabsContent value="details" className={`flex-1 min-h-0 mt-0 px-3 pt-3 ${bottomPadClass} overflow-y-auto overscroll-contain space-y-3`}>
-          {detailsSlot}
-        </TabsContent>
         <TabsContent value="insights" className={`flex-1 min-h-0 mt-0 px-3 pt-3 ${bottomPadClass} overflow-y-auto overscroll-contain space-y-3`}>
           {insightsSlot}
         </TabsContent>
       </Tabs>
-
-      {/* Lofty-style sticky action bar — sits ABOVE the global BottomNav */}
-      <div
-        className="fixed left-0 right-0 z-30 px-3 pointer-events-none"
-        style={{ bottom: 'calc(58px + env(safe-area-inset-bottom, 0px))' }}
-      >
-        <div className="pointer-events-auto mx-auto max-w-md flex items-center justify-between gap-2 px-2 py-2 rounded-full bg-background/95 backdrop-blur border border-border shadow-lg">
-          <ActionChip icon={Phone} label="Call" tone="emerald" disabled={!contact.phone} onClick={onCall} />
-          <ActionChip icon={Mail} label="Email" tone="blue" disabled={!contact.email} onClick={onEmail} />
-          <ActionChip icon={MessageSquare} label="Text" tone="sky" disabled={!contact.phone} onClick={onText} />
-          {/* Gold + */}
-          <button
-            onClick={() => setPlusOpen(true)}
-            aria-label="Add"
-            className="shrink-0 h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-md"
-            style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.6} />
-          </button>
-          {/* AI sparkle */}
-          <button
-            onClick={() => toast.info('AI assistant coming soon')}
-            aria-label="AI assistant"
-            className="shrink-0 h-11 w-11 rounded-full flex items-center justify-center bg-muted/60 border border-border active:scale-95 transition-transform"
-          >
-            <Sparkles className="w-[18px] h-[18px] text-foreground" strokeWidth={2} />
-          </button>
-        </div>
-      </div>
 
       {/* + action sheet */}
       <Sheet open={plusOpen} onOpenChange={setPlusOpen}>
