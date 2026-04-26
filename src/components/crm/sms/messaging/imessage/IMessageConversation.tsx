@@ -18,7 +18,7 @@ import {
   Bell, BellOff, Mail, Archive, ArchiveRestore, Trash2,
   Reply, Smile, Sparkles, Paperclip, Calendar as CalendarIcon, X,
   CheckCircle2, Clock, AlertCircle, FileText, Volume2, VolumeX,
-  Camera, ChevronUp,
+  Camera, ChevronUp, Plus, AudioLines,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -704,7 +704,7 @@ function IMessageComposer({
           </div>
         )}
 
-        <div className="flex items-end gap-1.5">
+        <div className="flex items-center gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -714,97 +714,135 @@ function IMessageComposer({
             onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
           />
 
-          {/* Camera */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-9 w-9 rounded-full shrink-0 bg-muted text-muted-foreground hover:text-foreground"
-            onClick={() => fileInputRef.current?.click()}
-            title="Attach photo or file"
-          >
-            <Camera className="w-4 h-4" />
-          </Button>
-
-          {/* Schedule */}
+          {/* Unified [+] menu — attach, schedule, templates */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className={cn('h-9 w-9 rounded-full shrink-0 bg-muted',
-                  scheduledFor ? 'text-blue-600' : 'text-muted-foreground hover:text-foreground')}
-                title="Schedule send"
+                className="h-9 w-9 rounded-full shrink-0 bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                title="More"
               >
-                <CalendarIcon className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-3 space-y-2">
-              <div className="text-xs font-semibold">Schedule send</div>
-              <Input
-                type="datetime-local"
-                value={scheduledFor || defaultScheduled}
-                min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
-                onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
-                className="text-xs h-8"
-              />
-              {scheduledFor && (
-                <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
-                  Clear schedule
-                </Button>
+            <PopoverContent align="start" side="top" className="w-60 p-1.5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted text-left text-[13px]"
+              >
+                <Camera className="w-4 h-4 text-muted-foreground" />
+                <span>Photo or file</span>
+              </button>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted text-left text-[13px]',
+                      scheduledFor && 'text-blue-600',
+                    )}
+                  >
+                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                    <span>Schedule send</span>
+                    {scheduledFor && <span className="ml-auto text-[10px] text-blue-600">on</span>}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" side="right" className="w-72 p-3 space-y-2">
+                  <div className="text-xs font-semibold">Schedule send</div>
+                  <Input
+                    type="datetime-local"
+                    value={scheduledFor || defaultScheduled}
+                    min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
+                    onChange={(e) => onScheduledChange(new Date(e.target.value).toISOString())}
+                    className="text-xs h-8"
+                  />
+                  {scheduledFor && (
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => onScheduledChange('')}>
+                      Clear schedule
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
+
+              {templates.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted text-left text-[13px]"
+                    >
+                      <Sparkles className="w-4 h-4 text-muted-foreground" />
+                      <span>Templates</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" side="right" className="w-72 p-1.5">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Templates</div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {templates.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => onChange(t.body)}
+                          className="w-full text-left px-2 py-2 rounded-md hover:bg-muted text-xs"
+                        >
+                          <div className="font-medium text-foreground">{t.name}</div>
+                          <div className="text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
             </PopoverContent>
           </Popover>
 
-          {/* Templates */}
-          {templates.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full shrink-0 bg-muted text-muted-foreground hover:text-foreground">
-                  <Sparkles className="w-4 h-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-1.5">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Templates</div>
-                <div className="max-h-72 overflow-y-auto">
-                  {templates.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => onChange(t.body)}
-                      className="w-full text-left px-2 py-2 rounded-md hover:bg-muted text-xs"
-                    >
-                      <div className="font-medium text-foreground">{t.name}</div>
-                      <div className="text-muted-foreground line-clamp-2 mt-0.5">{t.body}</div>
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-
-          {/* Pill input + send button (iMessage style: input pill with send arrow inside) */}
-          <div className="imsg-composer-pill flex items-end gap-1 flex-1 px-3 py-1">
+          {/* Pill input */}
+          <div className="imsg-composer-pill flex items-center flex-1 px-4 py-1.5 min-h-[40px]">
             <Textarea
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="iMessage"
+              placeholder="Message"
               rows={1}
-              className="flex-1 min-h-[28px] max-h-40 resize-none border-0 bg-transparent px-0 py-1 text-[15px] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/60"
+              className="flex-1 min-h-[24px] max-h-40 resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55"
             />
+          </div>
+
+          {canSend ? (
+            // Send button appears when there's content
             <Button
               size="icon"
               onClick={onSendWithHaptic}
-              disabled={!canSend}
-              className={cn(
-                'h-7 w-7 rounded-full shrink-0 transition-all native-press',
-                canSend
-                  ? 'bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed',
-              )}
+              className="h-9 w-9 rounded-full shrink-0 bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm transition-all native-press"
             >
-              {scheduledFor ? <CalendarIcon className="w-3.5 h-3.5" /> : <ChevronUp className="w-4 h-4" />}
+              {scheduledFor ? <CalendarIcon className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </Button>
-          </div>
+          ) : (
+            <>
+              {/* Voice / audio */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 rounded-full shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                title="Voice message"
+              >
+                <AudioLines className="w-4 h-4" />
+              </Button>
+
+              {/* Emoji */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 rounded-full shrink-0 bg-muted text-muted-foreground hover:text-foreground"
+                title="Emoji"
+                onClick={() => onChange((value || '') + '😊')}
+              >
+                <Smile className="w-4 h-4" />
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-between mt-1.5 px-2 text-[10.5px] text-muted-foreground">
