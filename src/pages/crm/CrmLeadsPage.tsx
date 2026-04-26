@@ -326,13 +326,7 @@ export default function CrmLeadsPage() {
                   >
                     <Search className="w-[18px] h-[18px]" strokeWidth={1.8} />
                   </Button>
-                  <Button
-                    onClick={() => setShowAdd(true)}
-                    size="sm"
-                    className="h-9 px-3.5 bg-primary text-primary-foreground gap-1 font-semibold shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <Plus className="w-4 h-4" /> Add
-                  </Button>
+                  {/* Add Lead moved to floating action button (bottom-right) */}
                 </div>
               </div>
 
