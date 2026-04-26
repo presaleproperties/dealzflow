@@ -31,6 +31,13 @@ interface Props {
  */
 export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const updateContact = useUpdateCrmContact();
+  const { data: tagLib = [] } = useCrmTags();
+  const { data: projectLib = [] } = useCrmProjects();
+  const { data: leadTypeLib = [] } = useCrmLeadTypes();
+  const { data: librarySources = [] } = useCrmSources();
+  const createTag = useCreateCrmTag();
+  const createProject = useCreateCrmProject();
+  const createLeadType = useCreateCrmLeadType();
   const [form, setForm] = useState(() => initialForm(contact));
   const [saving, setSaving] = useState(false);
   // Field-level error map. Populated on save attempt and cleared per-field as
