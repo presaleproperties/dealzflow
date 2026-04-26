@@ -486,12 +486,12 @@ export default function CrmLeadsPage() {
               {/* Title row — collapses on scroll to reclaim vertical space */}
               <div
                 className={`overflow-hidden transition-all duration-200 ease-out ${
-                  headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[56px] opacity-100'
+                  headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 px-4 pt-1.5 pb-1">
-                  <h1 className="m-page-title leading-none">Leads</h1>
-                  <div className="flex items-center -mr-1.5">
+                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
+                  <h1 className="m-page-title">Leads</h1>
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -502,11 +502,11 @@ export default function CrmLeadsPage() {
                           return !v;
                         });
                       }}
-                      className={`h-9 w-9 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-foreground'}`}
+                      className={`h-11 w-11 ${mobileSearchOpen || debouncedSearch ? 'text-primary' : 'text-foreground'}`}
                       aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
                       aria-expanded={mobileSearchOpen}
                     >
-                      <Search className="w-[22px] h-[22px]" strokeWidth={2} />
+                      <Search className="w-6 h-6" strokeWidth={2} />
                     </Button>
                     {/* Add Lead moved to floating action button (bottom-right) */}
                   </div>
