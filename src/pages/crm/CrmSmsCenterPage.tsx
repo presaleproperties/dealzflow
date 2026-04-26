@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   MessageSquare, Send, Plus, Trash2, Pencil, Users, ShieldOff,
   Calendar, CheckCircle2, XCircle, Clock, Phone, Inbox, Loader2,
-  Sparkles, Search, ArrowRight, Filter, Settings as SettingsIcon, Zap, Activity, ShieldCheck,
+  Sparkles, Search, ArrowRight, Filter, Settings as SettingsIcon, Zap, Activity, ShieldCheck, BarChart3,
 } from 'lucide-react';
 import {
   useSmsTemplates, useSaveSmsTemplate, useDeleteSmsTemplate,
@@ -204,19 +204,13 @@ export default function CrmSmsCenterPage() {
         );
       })()}
 
-      {/* Stat strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        <StatPill label="Sent" value={totals.sent} icon={Send} />
-        <StatPill label="Delivered" value={totals.delivered} icon={CheckCircle2} tone="emerald" />
-        <StatPill label="Failed" value={totals.failed} icon={XCircle} tone="red" />
-        <StatPill label="Replies" value={totals.replies} icon={Inbox} tone="primary" />
-        <StatPill label="Opt-outs" value={optOuts.length} icon={ShieldOff} tone="amber" />
-      </div>
-
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-9 w-full sm:w-auto h-auto">
+        <TabsList className="grid grid-cols-10 w-full sm:w-auto h-auto">
           <TabsTrigger value="inbox" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <Inbox className="w-3.5 h-3.5" /><span>Inbox</span>
+          </TabsTrigger>
+          <TabsTrigger value="stats" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
+            <BarChart3 className="w-3.5 h-3.5" /><span>Stats</span>
           </TabsTrigger>
           <TabsTrigger value="status" className="gap-1 sm:gap-1.5 flex-col sm:flex-row text-[10px] sm:text-sm py-2">
             <ShieldCheck className="w-3.5 h-3.5" /><span>Status</span>
@@ -247,6 +241,21 @@ export default function CrmSmsCenterPage() {
         {/* === INBOX (iMessage-style conversation view) === */}
         <TabsContent value="inbox" className="mt-4">
           <MessagingCenter channel={channel} onChannelChange={setChannel} />
+        </TabsContent>
+
+        {/* === STATS === */}
+        <TabsContent value="stats" className="mt-4 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-1">{channel === 'sms' ? 'SMS' : 'WhatsApp'} performance</h3>
+            <p className="text-xs text-muted-foreground">Lifetime totals across this channel.</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <StatPill label="Sent" value={totals.sent} icon={Send} />
+            <StatPill label="Delivered" value={totals.delivered} icon={CheckCircle2} tone="emerald" />
+            <StatPill label="Failed" value={totals.failed} icon={XCircle} tone="red" />
+            <StatPill label="Replies" value={totals.replies} icon={Inbox} tone="primary" />
+            <StatPill label="Opt-outs" value={optOuts.length} icon={ShieldOff} tone="amber" />
+          </div>
         </TabsContent>
 
         {/* === SYSTEM STATUS === */}
