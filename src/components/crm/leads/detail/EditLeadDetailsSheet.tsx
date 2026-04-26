@@ -16,7 +16,6 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
-import { MonthDayInput } from '@/components/crm/leads/MonthDayInput';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
@@ -91,8 +90,8 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
       e.co_buyer_phone = 'Enter a valid phone number';
     }
 
-    if (state.birthday.trim() && !/^(\d{2}-\d{2}|--\d{2}-\d{2}|\d{4}-\d{2}-\d{2})$/.test(state.birthday.trim())) {
-      e.birthday = 'Pick a month and day';
+    if (state.birthday.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(state.birthday.trim())) {
+      e.birthday = 'Use YYYY-MM-DD format';
     }
 
     const bMin = state.budget_min ? Number(state.budget_min) : null;
@@ -409,7 +408,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
             )}
             {fieldRow(
               'Birthday',
-              <MonthDayInput value={form.birthday} onChange={(v) => update('birthday', v)} />,
+              <Input className={inputCls('birthday')} type="text" value={form.birthday} onChange={(e) => update('birthday', e.target.value)} placeholder="YYYY-MM-DD" maxLength={10} />,
               { errorKey: 'birthday' },
             )}
             {fieldRow(

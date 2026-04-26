@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ChevronLeft } from 'lucide-react';
-import { MonthDayInput, formatMonthDay } from './MonthDayInput';
 
 interface Props {
   open: boolean;
@@ -10,7 +9,7 @@ interface Props {
   value: string;
   onSave: (value: string) => void;
   placeholder?: string;
-  type?: 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'date' | 'monthday';
+  type?: 'text' | 'email' | 'tel' | 'number' | 'textarea' | 'date';
   description?: string;
 }
 
@@ -75,16 +74,7 @@ export function MobileTextEditDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-[env(safe-area-inset-bottom,0px)]">
-          {type === 'monthday' ? (
-            <>
-              <MonthDayInput value={draft} onChange={setDraft} />
-              {draft && (
-                <p className="mt-3 text-[13px] text-muted-foreground">
-                  Saved as <span className="text-foreground font-medium">{formatMonthDay(draft) || draft}</span>
-                </p>
-              )}
-            </>
-          ) : type === 'textarea' ? (
+          {type === 'textarea' ? (
             <textarea
               ref={(el) => { ref.current = el; }}
               value={draft}

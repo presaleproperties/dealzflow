@@ -6,7 +6,6 @@ import { ChevronLeft, ChevronRight, AlertTriangle, Plus, X } from 'lucide-react'
 import { MobilePickerDrawer } from './MobilePickerDrawer';
 import { MobileMultiPickerDrawer } from './MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from './MobileTextEditDrawer';
-import { formatMonthDay } from './MonthDayInput';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
@@ -470,7 +469,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             />
             <PickerRow
               label="Birthday"
-              value={formatMonthDay(form.birthday) || form.birthday}
+              value={form.birthday}
               placeholder="—"
               onClick={() => setDrawer('birthday')}
               last
@@ -612,9 +611,8 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       title="Birthday"
       value={form.birthday}
       onSave={(v) => setForm((p) => ({ ...p, birthday: v }))}
-      placeholder="Pick month & day"
-      type="monthday"
-      description="Just the month and day — we don't need a year."
+      placeholder="YYYY-MM-DD"
+      type="date"
     />
     <MobileTextEditDrawer
       open={drawer === 'notes'}

@@ -254,45 +254,21 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="lg:hidden fixed left-0 right-0 bottom-0 z-40 native-chrome pointer-events-none"
+        className="lg:hidden fixed left-0 right-0 bottom-0 z-40 native-chrome"
         aria-label="Primary"
+        style={{
+          background: 'hsl(var(--card) / 0.96)',
+          backdropFilter: 'blur(28px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          borderTop: '1px solid hsl(var(--border) / 0.6)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
-        {/* Soft fade mask above the pill — hides scroll content cleanly so it
-            doesn't bleed through the translucent surface and look broken. */}
+        {/* Flush flat tab bar — full width, edge-to-edge, no float, no rounded corners. */}
         <div
-          aria-hidden
-          className="absolute left-0 right-0 pointer-events-none"
-          style={{
-            bottom: '100%',
-            height: '20px',
-            background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0) 100%)',
-          }}
-        />
-        {/* Edge-to-edge floating pill — spans the full viewport width minus the
-            device's horizontal safe-area insets, with a bottom offset that
-            respects the home-indicator zone on iPhone Pro Max devices. */}
-        <div
-          className="flex justify-center pointer-events-none w-full"
-          style={{
-            paddingLeft: 'max(8px, env(safe-area-inset-left, 0px))',
-            paddingRight: 'max(8px, env(safe-area-inset-right, 0px))',
-            paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px))',
-          }}
+          className="relative flex items-center h-[56px] w-full"
+          style={{ padding: '0 4px' }}
         >
-          <div
-            className="pointer-events-auto relative flex items-center h-[56px] rounded-full w-full"
-            style={{
-              // True liquid-glass: more opaque so list rows can't bleed through.
-              background: 'hsl(var(--card) / 0.92)',
-              backdropFilter: 'blur(28px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-              border: '1px solid hsl(var(--border) / 0.6)',
-              boxShadow:
-                '0 1px 0 hsl(0 0% 100% / 0.08) inset, 0 12px 32px -12px hsl(0 0% 0% / 0.45), 0 2px 8px -2px hsl(0 0% 0% / 0.18)',
-              padding: '0 8px',
-              maxWidth: 'min(640px, 100%)',
-            }}
-          >
             {/* Left tabs */}
             {leftTabs.map(renderTab)}
 
@@ -372,7 +348,6 @@ export function BottomNav() {
                 />
               </SheetContent>
             </Sheet>
-          </div>
         </div>
       </nav>
 

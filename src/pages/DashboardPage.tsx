@@ -189,49 +189,51 @@ export default function DashboardPage() {
     <AppLayout>
       <OnboardingWizard open={showOnboarding} onComplete={completeOnboarding} />
 
-      <Header
-        title="Dashboard"
-        subtitle={format(now, 'EEEE, MMMM d, yyyy')}
-        showAddDeal={false}
-        action={
-          <div className="flex items-center gap-1.5">
-            {activeConnection && (
-              <button
-                onClick={handleResync}
-                disabled={isSyncing}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
-                  "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40",
-                  isSyncing && "opacity-50 pointer-events-none"
-                )}
-              >
-                <RefreshCw className={cn("h-3 w-3", isSyncing && "animate-spin")} />
-                {isSyncing ? 'Syncing...' : 'Sync'}
-              </button>
-            )}
-            <div className="hidden sm:flex items-center gap-1.5">
-              {[
-                { label: 'New Deal', path: '/deals/new', primary: true },
-                { label: 'Expenses', path: '/expenses' },
-                { label: 'Forecast', path: '/forecast' },
-              ].map((action) => (
-                <Link key={action.path} to={action.path}>
-                  <button
-                    className={cn(
-                      "inline-flex items-center px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
-                      action.primary
-                        ? "btn-premium"
-                        : "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40"
-                    )}
-                  >
-                    {action.label}
-                  </button>
-                </Link>
-              ))}
+      <div className="hidden sm:block">
+        <Header
+          title="Dashboard"
+          subtitle={format(now, 'EEEE, MMMM d, yyyy')}
+          showAddDeal={false}
+          action={
+            <div className="flex items-center gap-1.5">
+              {activeConnection && (
+                <button
+                  onClick={handleResync}
+                  disabled={isSyncing}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
+                    "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40",
+                    isSyncing && "opacity-50 pointer-events-none"
+                  )}
+                >
+                  <RefreshCw className={cn("h-3 w-3", isSyncing && "animate-spin")} />
+                  {isSyncing ? 'Syncing...' : 'Sync'}
+                </button>
+              )}
+              <div className="hidden sm:flex items-center gap-1.5">
+                {[
+                  { label: 'New Deal', path: '/deals/new', primary: true },
+                  { label: 'Expenses', path: '/expenses' },
+                  { label: 'Forecast', path: '/forecast' },
+                ].map((action) => (
+                  <Link key={action.path} to={action.path}>
+                    <button
+                      className={cn(
+                        "inline-flex items-center px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-200 active:scale-[0.97]",
+                        action.primary
+                          ? "btn-premium"
+                          : "bg-secondary/60 text-secondary-foreground hover:bg-secondary border border-border/40"
+                      )}
+                    >
+                      {action.label}
+                    </button>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        }
-      />
+          }
+        />
+      </div>
 
       {isEmpty ? (
         <EmptyDashboard />
@@ -256,7 +258,8 @@ export default function DashboardPage() {
           {/* Mobile Dashboard */}
           <div className="sm:hidden">
             <motion.div
-              className="px-5 pt-3 pb-3"
+              className="px-5 pb-3"
+              style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}

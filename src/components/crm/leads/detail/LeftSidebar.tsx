@@ -33,8 +33,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileMultiPickerDrawer } from '@/components/crm/leads/MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from '@/components/crm/leads/MobileTextEditDrawer';
 import { MobileEditRow } from '@/components/crm/leads/MobileEditRow';
-import { formatMonthDay, MonthDayInput } from '@/components/crm/leads/MonthDayInput';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { SectionHeader, InsightCard, DetailRow } from './shared';
@@ -362,7 +360,7 @@ export function LeftSidebar({
                 placeholder="Add"
                 onClick={() => setDrawer('budget_max')}
               />
-              <MobileEditRow label="Birthday" value={formatMonthDay(contact.birthday) || contact.birthday || ''} placeholder="Add" onClick={() => setDrawer('birthday')} />
+              <MobileEditRow label="Birthday" value={contact.birthday || ''} placeholder="YYYY-MM-DD" onClick={() => setDrawer('birthday')} />
               <MobileEditRow label="Notes" value={contact.notes ? (contact.notes.length > 40 ? contact.notes.slice(0, 40) + '…' : contact.notes) : ''} placeholder="Add notes" onClick={() => setDrawer('notes')} />
             </>
           ) : (
@@ -440,7 +438,7 @@ export function LeftSidebar({
                 </span>
               </div>
 
-              <BirthdayDesktopRow contactId={contact.id} value={contact.birthday} />
+              <DetailRow label="Birthday" value={contact.birthday} field="birthday" contactId={contact.id} />
             </>
           )}
 
@@ -729,9 +727,7 @@ export function LeftSidebar({
             />
             <MobileTextEditDrawer
               open={drawer === 'birthday'} onOpenChange={(o) => !o && closeDrawer()}
-              title="Birthday" placeholder="Pick month & day"
-              type="monthday"
-              description="Just the month and day — we don't need a year."
+              title="Birthday" placeholder="YYYY-MM-DD"
               value={contact.birthday ?? ''}
               onSave={(v) => save('birthday', v || null)}
             />
@@ -759,67 +755,3 @@ export function LeftSidebar({
     </div>
   );
 }
-
-/** Desktop birthday editor — popover with Month + Day selects. */
-function BirthdayDesktopRow({ contactId, value }: { contactId: string; value: string | null | undefined }) {
-  const updateContact = useUpdateCrmContact();
-  const [open, setOpen] = useState(false);
-  const display = formatMonthDay(value) || value || '';
-  return (
-    <div className="flex items-center justify-between gap-2 py-2 border-b border-border/40 group">
-      <span className="text-xs text-muted-foreground shrink-0">Birthday</span>
-      <BirthdayPopover
-        open={open}
-        onOpenChange={setOpen}
-        value={value ?? ''}
-        onSave={(v) => updateContact.mutate({ id: contactId, updates: { birthday: v || null } })}
-        trigger={
-          <button
-            type="button"
-            className="text-[13px] text-right truncate max-w-full hover:text-primary transition-colors"
-          >
-            {display || <span className="text-muted-foreground italic">Add</span>}
-          </button>
-        }
-      />
-    </div>
-  );
-}
-
-function BirthdayPopover({
-  open, onOpenChange, value, onSave, trigger,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  value: string;
-  onSave: (v: string) => void;
-  trigger: React.ReactNode;
-}) {
-  const [draft, setDraft] = useState(value);
-  return (
-    <Popover open={open} onOpenChange={(o: boolean) => { onOpenChange(o); if (o) setDraft(value); }}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent align="end" className="w-[340px] p-3 space-y-3">
-        <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">Birthday</p>
-        <MonthDayInput value={draft} onChange={setDraft} />
-        <div className="flex items-center justify-between pt-1">
-          <button
-            type="button"
-            onClick={() => { setDraft(''); onSave(''); onOpenChange(false); }}
-            className="text-[12px] text-muted-foreground hover:text-foreground"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            onClick={() => { onSave(draft); onOpenChange(false); }}
-            className="px-3 h-8 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90"
-          >
-            Save
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
