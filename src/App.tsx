@@ -54,10 +54,16 @@ import CrmBehaviorDashboardPage from "./pages/crm/CrmBehaviorDashboardPage";
 import CrmSmsCenterPage from "./pages/crm/CrmSmsCenterPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
+import { idbPersister } from "./lib/queryPersister";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000,
+      // IndexedDB persister — only the queries listed in queryPersister.ts
+      // get hydrated from disk on cold open (instant lead detail / chat
+      // thread reopens), then revalidate from the network in the background.
+      persister: idbPersister.persisterFn,
       retry: (failureCount, error: any) => {
         if (error?.message?.includes('authenticated') || error?.message?.includes('Unauthorized')) return false;
         return failureCount < 2;
