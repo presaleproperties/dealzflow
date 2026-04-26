@@ -662,7 +662,7 @@ function InboxTab({
 }
 
 // ==================== Templates Tab ====================
-function TemplatesTab({ channel, templates }: { channel: MessagingChannel; templates: any[] }) {
+export function TemplatesTab({ channel, templates }: { channel: MessagingChannel; templates: any[] }) {
   const save = useSaveSmsTemplate();
   const del = useDeleteSmsTemplate();
   const [editing, setEditing] = useState<{ id?: string; name: string; body: string; category: string; channel: MessagingChannel } | null>(null);
