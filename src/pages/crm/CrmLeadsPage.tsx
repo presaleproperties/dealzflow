@@ -872,17 +872,7 @@ export default function CrmLeadsPage() {
         })()}
       </div>
 
-      {/* Mobile floating Add Lead button — sits above BottomNav with safe-area inset */}
-      {isMobile && (
-        <button
-          onClick={() => setShowAdd(true)}
-          aria-label="Add lead"
-          className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center"
-          style={{ bottom: 'var(--bottom-nav-pad)' }}
-        >
-          <Plus className="w-6 h-6" strokeWidth={2.2} />
-        </button>
-      )}
+      {/* Mobile add-lead is exposed via the global bottom-nav center "+" — no per-page FAB. */}
 
       <AddLeadDialog open={showAdd} onOpenChange={setShowAdd} />
       <ManagePipelinesDialog
