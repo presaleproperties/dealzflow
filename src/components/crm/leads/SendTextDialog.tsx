@@ -463,9 +463,6 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
               )}
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground italic">
-            <span className="text-destructive">*</span> Messages may be sent from a different number. Don't forget to introduce yourself!
-          </p>
         </div>
 
         {/* Footer */}
