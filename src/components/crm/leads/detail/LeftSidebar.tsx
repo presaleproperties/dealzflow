@@ -204,6 +204,17 @@ export function LeftSidebar({
         </Select>
       </div>
 
+      {/* Assigned To — kept right under Pipeline Stage so ownership is always visible */}
+      <div className="space-y-2">
+        <SectionHeader>Assigned To</SectionHeader>
+        <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
+          <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
+          <SelectContent>
+            {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Insight */}
       <div className="space-y-2.5">
         <SectionHeader>Insight</SectionHeader>
@@ -351,17 +362,6 @@ export function LeftSidebar({
             )}
           </div>
         )}
-      </div>
-
-      {/* Assigned To */}
-      <div className="space-y-2">
-        <SectionHeader>Assigned To</SectionHeader>
-        <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
-          <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
-          <SelectContent>
-            {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-          </SelectContent>
-        </Select>
       </div>
     </div>
   );
