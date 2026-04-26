@@ -4445,6 +4445,7 @@ export type Database = {
         Args: { _date: string; _time: string }
         Returns: string
       }
+      recalc_all_lead_scores: { Args: never; Returns: number }
       recalc_lead_score: { Args: { _contact_id: string }; Returns: undefined }
       rename_crm_source: {
         Args: { _from_name: string; _to_name: string }
