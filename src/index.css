@@ -123,14 +123,12 @@
 
 @layer base {
   /* Slim flush bottom-nav clearance.
-     Bar = 56px tab row, sits flush against the home-indicator using only
-     the OS safe-area inset (no extra spacer). Pages reserve 12px breathing
-     room above the bar so the last row never kisses it. Disabled on lg+. */
+     Floating pill is 56px tall and sits flush at the bottom of the viewport
+     (no safe-area inset offset), so Safari's collapsing URL bar moves it
+     naturally as the user scrolls. Pages reserve just enough space to clear
+     the pill plus 8px breathing room. Disabled on lg+. */
   :root {
-    /* Floating liquid-glass pill bottom-nav.
-       Pill height 56px + 12px gap above + iOS home-indicator inset + 6px breathing.
-       Pages must reserve this clearance so no content sits beneath the pill. */
-    --bottom-nav-pad: calc(56px + 24px + 6px + 16px + env(safe-area-inset-bottom, 0px));
+    --bottom-nav-pad: calc(56px + 8px);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
