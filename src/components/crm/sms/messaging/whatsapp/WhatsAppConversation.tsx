@@ -137,24 +137,28 @@ export function WhatsAppConversation(props: Props) {
         </button>
 
         <div className="flex items-center gap-1">
-          <SoundToggle dark />
+          {!isMobile && <SoundToggle dark />}
           <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
-                  <Video className="w-[18px] h-[18px]" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Video call</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
-                  <Phone className="w-[17px] h-[17px]" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Voice call</TooltipContent>
-            </Tooltip>
+            {!isMobile && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
+                      <Video className="w-[18px] h-[18px]" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Video call</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-white/85 hover:bg-white/10 hover:text-white">
+                      <Phone className="w-[17px] h-[17px]" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Voice call</TooltipContent>
+                </Tooltip>
+              </>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -226,14 +230,18 @@ export function WhatsAppConversation(props: Props) {
           <Input
             autoFocus value={convoSearch} onChange={(e) => onConvoSearchChange(e.target.value)}
             placeholder="Search messages…"
-            className="h-7 text-xs border-0 bg-transparent shadow-none focus-visible:ring-0"
+            className="h-7 text-xs border-0 bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0"
           />
           {convoSearch && (
-            <span className="text-[10.5px] text-muted-foreground whitespace-nowrap">
+            <span className="text-[10.5px] text-muted-foreground whitespace-nowrap shrink-0">
               {visibleMessages.length} match{visibleMessages.length === 1 ? '' : 'es'}
             </span>
           )}
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onToggleConvoSearch}>
+          <Button
+            size="icon" variant="ghost" className="h-6 w-6 shrink-0"
+            onClick={() => { if (convoSearch) onConvoSearchChange(''); else onToggleConvoSearch(); }}
+            aria-label={convoSearch ? 'Clear search' : 'Close search'}
+          >
             <X className="w-3.5 h-3.5" />
           </Button>
         </div>
