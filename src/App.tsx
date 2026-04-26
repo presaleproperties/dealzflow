@@ -45,6 +45,7 @@ import CrmChatsPage from "./pages/crm/CrmChatsPage";
 import CrmChatThreadPage from "./pages/crm/CrmChatThreadPage";
 
 import CrmMarketingHubPage from "./pages/crm/CrmMarketingHubPage";
+import CrmTemplatesPage from "./pages/crm/CrmTemplatesPage";
 import CrmEmailBuilderPage from "./pages/crm/CrmEmailBuilderPage";
 // CrmContactsPage removed — merged into CrmLeadsPage
 import CrmAutomationsPage from "./pages/crm/CrmAutomationsPage";
