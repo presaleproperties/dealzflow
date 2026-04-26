@@ -492,17 +492,45 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
 
 const inputCls = 'h-10 text-[14px] bg-background/60 border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/50 transition-colors';
 
-function FieldRow({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FieldRow({
+  label,
+  error,
+  action,
+  children,
+}: {
+  label: string;
+  error?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="border-b border-border/30 last:border-b-0">
       <div className="px-4 py-2.5">
-        <Label className="block text-[11px] uppercase tracking-[0.06em] text-muted-foreground/80 font-medium mb-1.5">
-          {label}
-        </Label>
+        <div className="flex items-center justify-between mb-1.5">
+          <Label className="block text-[11px] uppercase tracking-[0.06em] text-muted-foreground/80 font-medium">
+            {label}
+          </Label>
+          {action}
+        </div>
         <div className="min-w-0">{children}</div>
         {error && <div className="mt-1.5 text-[12px] text-destructive">{error}</div>}
       </div>
     </div>
+  );
+}
+
+function AddRow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-primary hover:bg-muted/30 active:bg-muted/50 transition-colors"
+    >
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary">
+        <Plus className="w-3.5 h-3.5" strokeWidth={2.6} />
+      </span>
+      <span className="font-medium">{label}</span>
+    </button>
   );
 }
 
