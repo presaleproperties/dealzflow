@@ -33,6 +33,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileMultiPickerDrawer } from '@/components/crm/leads/MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from '@/components/crm/leads/MobileTextEditDrawer';
 import { MobileEditRow } from '@/components/crm/leads/MobileEditRow';
+import { formatMonthDay } from '@/components/crm/leads/MonthDayInput';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 import { SectionHeader, InsightCard, DetailRow } from './shared';
