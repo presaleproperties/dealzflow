@@ -155,30 +155,6 @@ export function MobileLeadDetail({
   );
 }
 
-const TONE: Record<string, { bg: string; fg: string; ring: string }> = {
-  emerald: { bg: 'hsl(142 71% 45% / 0.10)', fg: 'hsl(142 71% 38%)', ring: 'hsl(142 71% 45% / 0.25)' },
-  blue:    { bg: 'hsl(220 90% 56% / 0.10)', fg: 'hsl(220 90% 50%)', ring: 'hsl(220 90% 56% / 0.25)' },
-  sky:     { bg: 'hsl(199 89% 48% / 0.10)', fg: 'hsl(199 89% 42%)', ring: 'hsl(199 89% 48% / 0.25)' },
-};
-
-function ActionChip({
-  icon: Icon, label, onClick, disabled, tone,
-}: { icon: any; label: string; onClick: () => void; disabled?: boolean; tone: 'emerald' | 'blue' | 'sky' }) {
-  const t = TONE[tone];
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="flex-1 min-w-0 h-11 rounded-full flex items-center justify-center gap-1.5 active:scale-[0.96] disabled:opacity-40 transition-all border"
-      style={{ background: t.bg, color: t.fg, borderColor: t.ring }}
-    >
-      <Icon className="w-[18px] h-[18px]" strokeWidth={2.2} />
-      <span className="text-[12px] font-semibold">{label}</span>
-    </button>
-  );
-}
-
 function SheetAction({ icon: Icon, label, onClick, disabled }: { icon: any; label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
