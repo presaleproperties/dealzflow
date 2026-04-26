@@ -306,6 +306,17 @@ export function LeftSidebar({
         </div>
       </div>
 
+      {/* Assigned To — placed right after Details so ownership sits with the lead facts */}
+      <div className="space-y-2">
+        <SectionHeader>Assigned To</SectionHeader>
+        <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
+          <SelectTrigger className="h-9 text-sm bg-card"><SelectValue placeholder="Select agent" /></SelectTrigger>
+          <SelectContent>
+            {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Lead Type */}
       <div className="space-y-2">
         <SectionHeader>Lead Type</SectionHeader>
