@@ -479,14 +479,17 @@ export default function CrmLeadsPage() {
         >
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
           {isMobile && (
-            <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden">
+            <div
+              className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background border-b border-border overflow-x-hidden"
+              style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+            >
               {/* Title row — collapses on scroll to reclaim vertical space */}
               <div
                 className={`overflow-hidden transition-all duration-200 ease-out ${
                   headerCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[60px] opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+                <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
                   <h1 className="m-page-title">Leads</h1>
                   <div className="flex items-center gap-1">
                     <Button
