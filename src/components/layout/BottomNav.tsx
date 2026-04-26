@@ -5,7 +5,8 @@ import {
   Users, Kanban, Mail, Inbox, BarChart3, Zap, LayoutTemplate, Plug,
   Settings, Settings2, Receipt, TrendingUp, BarChart2, Network,
   DollarSign, GitBranch, ShieldAlert, LogOut, X, Briefcase, Sparkles,
-  MessageCircle, MessageSquare,
+  MessageCircle, MessageSquare, Plus, UserPlus, CalendarPlus, FileText,
+  PenSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -19,6 +20,8 @@ import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { triggerHaptic } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
+import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
+import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
 
 type Mode = 'workspace' | 'crm';
 
