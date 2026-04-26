@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, AlertCircle } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
 import { CheckboxDropdown } from '@/components/crm/leads/CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -27,13 +28,99 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const updateContact = useUpdateCrmContact();
   const [form, setForm] = useState(() => initialForm(contact));
   const [saving, setSaving] = useState(false);
+  // Field-level error map. Populated on save attempt and cleared per-field as
+  // the user edits, so red highlights disappear the moment a value is fixed.
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  // Tracks whether the user has attempted to save once. Before that, we stay
+  // quiet; after, we re-validate on every keystroke for live feedback.
+  const [submitted, setSubmitted] = useState(false);
 
   // Reset form whenever the sheet is (re)opened with a different contact.
   useEffect(() => {
-    if (open) setForm(initialForm(contact));
+    if (open) {
+      setForm(initialForm(contact));
+      setErrors({});
+      setSubmitted(false);
+    }
   }, [open, contact]);
 
+  // Validation rules — kept colocated so it's obvious what counts as "valid"
+  // for a saved lead. Mirrors the requirements enforced in AddLeadDialog.
+  const validate = (state: ReturnType<typeof initialForm>): Record<string, string> => {
+    const e: Record<string, string> = {};
+    if (!state.first_name.trim()) e.first_name = 'First name is required';
+    if (!state.last_name.trim()) e.last_name = 'Last name is required';
+
+    const hasPhone = !!state.phone.trim();
+    const hasEmail = !!state.email.trim();
+    if (!hasPhone && !hasEmail) {
+      e.phone = 'Add a phone or email';
+      e.email = 'Add a phone or email';
+    }
+
+    if (state.email.trim() && !isValidEmail(state.email.trim())) {
+      e.email = 'Enter a valid email address';
+    }
+    if (state.email_secondary.trim() && !isValidEmail(state.email_secondary.trim())) {
+      e.email_secondary = 'Enter a valid email address';
+    }
+    if (state.co_buyer_email.trim() && !isValidEmail(state.co_buyer_email.trim())) {
+      e.co_buyer_email = 'Enter a valid email address';
+    }
+
+    if (state.phone.trim() && !isValidPhone(state.phone.trim())) {
+      e.phone = 'Enter a valid phone number';
+    }
+    if (state.phone_secondary.trim() && !isValidPhone(state.phone_secondary.trim())) {
+      e.phone_secondary = 'Enter a valid phone number';
+    }
+    if (state.co_buyer_phone.trim() && !isValidPhone(state.co_buyer_phone.trim())) {
+      e.co_buyer_phone = 'Enter a valid phone number';
+    }
+
+    if (state.birthday.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(state.birthday.trim())) {
+      e.birthday = 'Use YYYY-MM-DD format';
+    }
+
+    const bMin = state.budget_min ? Number(state.budget_min) : null;
+    const bMax = state.budget_max ? Number(state.budget_max) : null;
+    if (state.budget_min && Number.isNaN(bMin)) e.budget_min = 'Enter a number';
+    if (state.budget_max && Number.isNaN(bMax)) e.budget_max = 'Enter a number';
+    if (bMin != null && bMin < 0) e.budget_min = 'Cannot be negative';
+    if (bMax != null && bMax < 0) e.budget_max = 'Cannot be negative';
+    if (bMin != null && bMax != null && bMax < bMin) e.budget_max = 'Max must be ≥ min';
+
+    if (!state.status) e.status = 'Pipeline stage is required';
+    return e;
+  };
+
+  // Update one field at a time, and re-validate live once the user has
+  // already submitted once — keeps the form quiet until they ask for a save.
+  const update = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (submitted) setErrors(validate(next));
+      else setErrors((p) => (p[key as string] ? { ...p, [key as string]: '' } : p));
+      return next;
+    });
+  };
+
+  // Live error map — used both for inline highlights AND for the summary banner.
+  const liveErrors = submitted ? errors : {};
+  const errorList = useMemo(
+    () => Object.entries(liveErrors).filter(([, msg]) => !!msg),
+    [liveErrors],
+  );
+
   const handleSave = async () => {
+    setSubmitted(true);
+    const errs = validate(form);
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error(`Please fix ${Object.keys(errs).length} field${Object.keys(errs).length === 1 ? '' : 's'} before saving`);
+      return;
+    }
+
     setSaving(true);
     try {
       const cityNorm = (form.city || '').trim();
@@ -72,14 +159,40 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
     }
   };
 
-  const fieldRow = (label: string, control: React.ReactNode) => (
-    <div className="flex items-start gap-3 px-4 py-3 min-h-[52px] border-b border-border/40 last:border-b-0">
-      <Label className="w-[120px] shrink-0 text-[14px] font-normal text-muted-foreground pt-2">{label}</Label>
-      <div className="flex-1 min-w-0">{control}</div>
-    </div>
-  );
+  // Field row that knows about errors — renders the control + an inline
+  // error message + a red asterisk on required fields.
+  const fieldRow = (
+    label: string,
+    control: React.ReactNode,
+    opts?: { errorKey?: string; required?: boolean },
+  ) => {
+    const errorKey = opts?.errorKey;
+    const errorMsg = errorKey ? liveErrors[errorKey] : undefined;
+    return (
+      <div className="flex items-start gap-3 px-4 py-3 min-h-[52px] border-b border-border/40 last:border-b-0">
+        <Label className="w-[120px] shrink-0 text-[14px] font-normal text-muted-foreground pt-2">
+          {label}
+          {opts?.required && <span className="text-destructive ml-0.5">*</span>}
+        </Label>
+        <div className="flex-1 min-w-0">
+          {control}
+          {errorMsg && (
+            <div className="flex items-center gap-1 mt-1 text-[12px] text-destructive">
+              <AlertCircle className="w-3 h-3 shrink-0" strokeWidth={2.4} />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
-  const inputCls = 'h-9 text-[14px] bg-background border-border';
+  // Helper to apply red border to inputs flagged as invalid.
+  const inputCls = (errorKey?: string) =>
+    cn(
+      'h-9 text-[14px] bg-background border-border',
+      errorKey && liveErrors[errorKey] && 'border-destructive focus-visible:ring-destructive/30 focus-visible:border-destructive',
+    );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -111,35 +224,75 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom,0px)]">
+          {/* Validation summary — only after first save attempt */}
+          {errorList.length > 0 && (
+            <div className="mx-3 mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" strokeWidth={2.4} />
+              <div className="text-[13px] text-destructive">
+                <div className="font-semibold mb-0.5">
+                  {errorList.length} field{errorList.length === 1 ? '' : 's'} need{errorList.length === 1 ? 's' : ''} attention
+                </div>
+                <div className="text-destructive/85 leading-snug">
+                  Fix the highlighted field{errorList.length === 1 ? '' : 's'} below to save your changes.
+                </div>
+              </div>
+            </div>
+          )}
+
           <Group title="Identity">
-            {fieldRow('First Name', <Input className={inputCls} value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />)}
-            {fieldRow('Last Name', <Input className={inputCls} value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />)}
+            {fieldRow(
+              'First Name',
+              <Input className={inputCls('first_name')} value={form.first_name} onChange={(e) => update('first_name', e.target.value)} maxLength={100} />,
+              { errorKey: 'first_name', required: true },
+            )}
+            {fieldRow(
+              'Last Name',
+              <Input className={inputCls('last_name')} value={form.last_name} onChange={(e) => update('last_name', e.target.value)} maxLength={100} />,
+              { errorKey: 'last_name', required: true },
+            )}
           </Group>
 
           <Group title="Phone">
-            {fieldRow('Primary', <Input className={inputCls} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Add a number" />)}
-            {fieldRow('Secondary', <Input className={inputCls} type="tel" value={form.phone_secondary} onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })} placeholder="Optional" />)}
+            {fieldRow(
+              'Primary',
+              <Input className={inputCls('phone')} type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} placeholder="Add a number" maxLength={20} />,
+              { errorKey: 'phone' },
+            )}
+            {fieldRow(
+              'Secondary',
+              <Input className={inputCls('phone_secondary')} type="tel" value={form.phone_secondary} onChange={(e) => update('phone_secondary', e.target.value)} placeholder="Optional" maxLength={20} />,
+              { errorKey: 'phone_secondary' },
+            )}
           </Group>
 
           <Group title="Email">
-            {fieldRow('Primary', <Input className={inputCls} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="name@example.com" />)}
-            {fieldRow('Secondary', <Input className={inputCls} type="email" value={form.email_secondary} onChange={(e) => setForm({ ...form, email_secondary: e.target.value })} placeholder="Optional" />)}
+            {fieldRow(
+              'Primary',
+              <Input className={inputCls('email')} type="email" value={form.email} onChange={(e) => update('email', e.target.value)} placeholder="name@example.com" maxLength={255} />,
+              { errorKey: 'email' },
+            )}
+            {fieldRow(
+              'Secondary',
+              <Input className={inputCls('email_secondary')} type="email" value={form.email_secondary} onChange={(e) => update('email_secondary', e.target.value)} placeholder="Optional" maxLength={255} />,
+              { errorKey: 'email_secondary' },
+            )}
           </Group>
 
           <Group title="Pipeline">
             {fieldRow(
               'Stage',
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger className={inputCls}><SelectValue /></SelectTrigger>
+              <Select value={form.status} onValueChange={(v) => update('status', v)}>
+                <SelectTrigger className={inputCls('status')}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>,
+              { errorKey: 'status', required: true },
             )}
             {fieldRow(
               'Assigned To',
-              <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
-                <SelectTrigger className={inputCls}><SelectValue placeholder="Unassigned" /></SelectTrigger>
+              <Select value={form.assigned_to || undefined} onValueChange={(v) => update('assigned_to', v)}>
+                <SelectTrigger className={inputCls()}><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
                   {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
                 </SelectContent>
@@ -153,7 +306,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
               <CheckboxDropdown
                 options={FRASER_VALLEY_CITIES}
                 selected={form.city ? form.city.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
-                onChange={(v) => setForm({ ...form, city: v.join(' | ') })}
+                onChange={(v) => update('city', v.join(' | '))}
                 placeholder="Select cities"
                 allowCustom
               />,
@@ -163,36 +316,61 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
               <CheckboxDropdown
                 options={CRM_LANGUAGES}
                 selected={form.language ? form.language.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
-                onChange={(v) => setForm({ ...form, language: v.join(' | ') })}
+                onChange={(v) => update('language', v.join(' | '))}
                 placeholder="Select languages"
                 allowCustom
               />,
             )}
-            {fieldRow('Bedrooms', <Input className={inputCls} value={form.bedrooms_preferred} onChange={(e) => setForm({ ...form, bedrooms_preferred: e.target.value })} placeholder="e.g. 2-3" />)}
-            {fieldRow('Birthday', <Input className={inputCls} type="text" value={form.birthday} onChange={(e) => setForm({ ...form, birthday: e.target.value })} placeholder="YYYY-MM-DD" />)}
+            {fieldRow(
+              'Bedrooms',
+              <Input className={inputCls()} value={form.bedrooms_preferred} onChange={(e) => update('bedrooms_preferred', e.target.value)} placeholder="e.g. 2-3" />,
+            )}
+            {fieldRow(
+              'Birthday',
+              <Input className={inputCls('birthday')} type="text" value={form.birthday} onChange={(e) => update('birthday', e.target.value)} placeholder="YYYY-MM-DD" maxLength={10} />,
+              { errorKey: 'birthday' },
+            )}
             {fieldRow(
               'Budget',
-              <div className="flex items-center gap-2">
-                <Input className={inputCls} type="number" value={form.budget_min} onChange={(e) => setForm({ ...form, budget_min: e.target.value })} placeholder="Min" />
-                <span className="text-muted-foreground">–</span>
-                <Input className={inputCls} type="number" value={form.budget_max} onChange={(e) => setForm({ ...form, budget_max: e.target.value })} placeholder="Max" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <Input className={inputCls('budget_min')} type="number" value={form.budget_min} onChange={(e) => update('budget_min', e.target.value)} placeholder="Min" />
+                  <span className="text-muted-foreground">–</span>
+                  <Input className={inputCls('budget_max')} type="number" value={form.budget_max} onChange={(e) => update('budget_max', e.target.value)} placeholder="Max" />
+                </div>
+                {(liveErrors.budget_min || liveErrors.budget_max) && (
+                  <div className="flex items-center gap-1 mt-1 text-[12px] text-destructive">
+                    <AlertCircle className="w-3 h-3 shrink-0" strokeWidth={2.4} />
+                    <span>{liveErrors.budget_min || liveErrors.budget_max}</span>
+                  </div>
+                )}
               </div>,
+              // Error rendered inline above so we don't double-render
             )}
           </Group>
 
           <Group title="Co-Buyer">
-            {fieldRow('Name', <Input className={inputCls} value={form.co_buyer_name} onChange={(e) => setForm({ ...form, co_buyer_name: e.target.value })} placeholder="Optional" />)}
-            {fieldRow('Phone', <Input className={inputCls} type="tel" value={form.co_buyer_phone} onChange={(e) => setForm({ ...form, co_buyer_phone: e.target.value })} placeholder="Optional" />)}
-            {fieldRow('Email', <Input className={inputCls} type="email" value={form.co_buyer_email} onChange={(e) => setForm({ ...form, co_buyer_email: e.target.value })} placeholder="Optional" />)}
+            {fieldRow('Name', <Input className={inputCls()} value={form.co_buyer_name} onChange={(e) => update('co_buyer_name', e.target.value)} placeholder="Optional" maxLength={200} />)}
+            {fieldRow(
+              'Phone',
+              <Input className={inputCls('co_buyer_phone')} type="tel" value={form.co_buyer_phone} onChange={(e) => update('co_buyer_phone', e.target.value)} placeholder="Optional" maxLength={20} />,
+              { errorKey: 'co_buyer_phone' },
+            )}
+            {fieldRow(
+              'Email',
+              <Input className={inputCls('co_buyer_email')} type="email" value={form.co_buyer_email} onChange={(e) => update('co_buyer_email', e.target.value)} placeholder="Optional" maxLength={255} />,
+              { errorKey: 'co_buyer_email' },
+            )}
           </Group>
 
           <Group title="Notes">
             <div className="px-4 py-3">
               <Textarea
                 value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                onChange={(e) => update('notes', e.target.value)}
                 placeholder="Internal notes about this lead…"
                 className="min-h-[100px] text-[14px]"
+                maxLength={5000}
               />
             </div>
           </Group>
@@ -211,6 +389,18 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
       <div className="bg-card border-y border-border/60">{children}</div>
     </div>
   );
+}
+
+// Email + phone validators — intentionally permissive so we don't block
+// legitimate international formats. Phone allows +, digits, spaces, dashes,
+// parens; must contain at least 7 digits.
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+function isValidPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) return false;
+  return /^[+\d][\d\s\-().]*$/.test(value);
 }
 
 function initialForm(contact: CrmContact) {
