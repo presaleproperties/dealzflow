@@ -70,13 +70,15 @@ export default function CrmChatsPage() {
     });
   }, [threads, search]);
 
-  // Per-channel unread counts for segmented control badges
+  // Per-pill unread counts. "text" rolls up SMS + WhatsApp into a single
+  // bucket so the segmented control mirrors the simplified two-channel UX.
   const counts = useMemo(() => {
-    const c = { all: 0, email: 0, sms: 0, whatsapp: 0 } as Record<string, number>;
+    const c: Record<ChatChannelFilter, number> = { all: 0, email: 0, sms: 0, whatsapp: 0, text: 0 };
     for (const t of threads) {
       const u = t.unread_count ?? 0;
       c.all += u;
-      c[t.channel] = (c[t.channel] ?? 0) + u;
+      c[t.channel] += u;
+      if (t.channel === 'sms' || t.channel === 'whatsapp') c.text += u;
     }
     return c;
   }, [threads]);
