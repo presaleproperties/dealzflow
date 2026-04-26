@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Phone, Mail, Send, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
+import { formatContactName } from '@/lib/format';
+import { EditLeadDetailsSheet } from './EditLeadDetailsSheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, formatPhone } from '@/lib/format';
@@ -32,6 +40,7 @@ export function LeftSidebar({
 }: Props) {
   const updateContact = useUpdateCrmContact();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: tagLib = [] } = useCrmTags();
   const { data: projectLib = [] } = useCrmProjects();
@@ -66,98 +75,113 @@ export function LeftSidebar({
 
   return (
     <div className="space-y-6">
-      {/* Identity card — name, phone, and email are all editable inline */}
+      {/* Identity card — read-only display; tap ⋯ menu to edit everything in a side drawer */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <div className="min-w-0 space-y-2">
-          {/* Editable name — split into first / last for clean updates */}
-          <div className="flex items-center gap-2 group/name">
-            <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
-              <InlineEditField
-                value={contact.first_name}
-                placeholder="First name"
-                onSave={(v) => save('first_name', v || null)}
-                className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight"
-              />
-              <InlineEditField
-                value={contact.last_name}
-                placeholder="Last name"
-                onSave={(v) => save('last_name', v || null)}
-                className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight"
-              />
-            </div>
-          </div>
-          {contact.source && (
-            <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground truncate">
-              {contact.source}
-            </p>
-          )}
-          {(() => {
-            const types = (leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : []).slice(0, 3);
-            if (types.length === 0) return null;
-            return (
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {types.map((t) => (
-                  <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1">
-                    {LEAD_TYPE_LABELS[t] || t}
-                  </span>
-                ))}
-              </div>
-            );
-          })()}
-        </div>
-        <div className="space-y-1.5 pt-3 border-t border-border/60">
-          {/* Phone — tap icon to call, tap value to edit */}
-          <div className="flex items-center gap-2 group min-h-[34px]">
-            {contact.phone ? (
-              <a
-                href={`tel:${contact.phone.replace(/\D/g, '')}`}
-                className="text-muted-foreground hover:text-primary transition-colors shrink-0"
-                aria-label="Call"
-              >
-                <Phone className="w-3.5 h-3.5" />
-              </a>
-            ) : (
-              <Phone className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <h1 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight truncate">
+              {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
+            </h1>
+            {contact.source && (
+              <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground truncate">
+                {contact.source}
+              </p>
             )}
+            {(() => {
+              const types = (leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : []).slice(0, 3);
+              if (types.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {types.map((t) => (
+                    <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1">
+                      {LEAD_TYPE_LABELS[t] || t}
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+          {/* ⋯ menu — opens the full edit drawer */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Lead options"
+                className="shrink-0 -mr-1 -mt-1 h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-95 transition-all"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                Edit lead details
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="space-y-1.5 pt-3 border-t border-border/60">
+          {/* Phone — read-only; tap to call */}
+          <div className="flex items-center gap-2 group min-h-[34px]">
+            <Phone className={`w-3.5 h-3.5 shrink-0 ${contact.phone ? 'text-muted-foreground' : 'text-muted-foreground/60'}`} />
             <div className="flex-1 min-w-0">
-              <InlineEditField
-                value={contact.phone}
-                placeholder="Add phone"
-                onSave={(v) => save('phone', v || null)}
-                displayFormatter={formatPhone}
-                className="text-sm font-medium"
-              />
+              {contact.phone ? (
+                <a
+                  href={`tel:${contact.phone.replace(/\D/g, '')}`}
+                  className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
+                >
+                  {formatPhone(contact.phone)}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors"
+                >
+                  Add phone
+                </button>
+              )}
             </div>
             {contact.phone && <CopyButton value={contact.phone} label="Phone" />}
           </div>
 
-          {/* Email — tap icon to compose, tap value to edit */}
+          {/* Email — read-only; tap to compose */}
           <div className="flex items-center gap-2 group min-h-[34px]">
-            {contact.email && onEmail ? (
-              <button
-                type="button"
-                onClick={onEmail}
-                className="text-muted-foreground hover:text-primary transition-colors shrink-0"
-                aria-label="Email"
-              >
-                <Mail className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <Mail className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-            )}
+            <Mail className={`w-3.5 h-3.5 shrink-0 ${contact.email ? 'text-muted-foreground' : 'text-muted-foreground/60'}`} />
             <div className="flex-1 min-w-0">
-              <InlineEditField
-                value={contact.email}
-                placeholder="Add email"
-                type="email"
-                onSave={(v) => save('email', v || null)}
-                className="text-sm font-medium"
-              />
+              {contact.email ? (
+                onEmail ? (
+                  <button
+                    type="button"
+                    onClick={onEmail}
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block text-left w-full"
+                  >
+                    {contact.email}
+                  </button>
+                ) : (
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
+                  >
+                    {contact.email}
+                  </a>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors"
+                >
+                  Add email
+                </button>
+              )}
             </div>
             {contact.email && <CopyButton value={contact.email} label="Email" />}
           </div>
         </div>
       </div>
+
+      <EditLeadDetailsSheet contact={contact} open={editOpen} onOpenChange={setEditOpen} />
 
       {showActionRow && (
         <div className="grid grid-cols-3 gap-2">
