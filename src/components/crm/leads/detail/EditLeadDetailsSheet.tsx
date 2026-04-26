@@ -6,11 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, AlertCircle } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, AGENTS, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
 import { CheckboxDropdown } from '@/components/crm/leads/CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
+import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
+import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
+import { useCrmSources } from '@/hooks/useCrmSources';
+import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
