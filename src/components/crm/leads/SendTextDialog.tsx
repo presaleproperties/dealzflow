@@ -189,9 +189,9 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent className="max-w-2xl p-0 gap-0 overflow-hidden sm:max-h-[88vh] flex flex-col">
         {/* Header — sticky, consistent vertical rhythm */}
-        <div className="flex items-center justify-between gap-3 px-5 sm:px-6 h-14 border-b shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <h2 className="text-base font-bold uppercase tracking-wider truncate">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 h-12 sm:h-14 border-b shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <h2 className="text-[15px] sm:text-base font-bold uppercase tracking-wider truncate">
               Send {channel === 'whatsapp' ? 'WhatsApp' : 'Text'}
             </h2>
             <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted shrink-0">
@@ -225,9 +225,9 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         {/* Scrollable body — keeps the footer pinned on both mobile + desktop */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* From row */}
-          <div className="flex items-center gap-3 px-5 sm:px-6 h-12 border-b">
-            <span className="text-sm font-semibold text-foreground/90 shrink-0">From</span>
-            <span className="text-sm font-mono text-foreground truncate">
+          <div className="flex items-center gap-3 px-4 sm:px-6 h-10 sm:h-12 border-b">
+            <span className="text-xs sm:text-sm font-semibold text-foreground/90 shrink-0">From</span>
+            <span className="text-xs sm:text-sm font-mono text-foreground truncate">
               {formatPhoneDisplay(effectiveSender) || <span className="text-muted-foreground italic">Not configured</span>}
             </span>
             <Badge variant="secondary" className="text-[10px] uppercase tracking-wider px-2 py-0 h-5 shrink-0">
@@ -268,30 +268,30 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           </div>
 
           {/* To row */}
-          <div className="flex items-center gap-3 px-5 sm:px-6 h-12 border-b">
-            <span className="text-sm font-semibold text-foreground/90 shrink-0">To</span>
+          <div className="flex items-center gap-3 px-4 sm:px-6 h-10 sm:h-12 border-b">
+            <span className="text-xs sm:text-sm font-semibold text-foreground/90 shrink-0">To</span>
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
-              <span className="text-sm font-medium tracking-wide truncate">{fullName}</span>
-              {contact.phone && <span className="text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
+              <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
+              {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
             </div>
           </div>
 
           {/* Opt-out / no phone warning */}
           {!contact.phone && (
-            <div className="flex items-start gap-2 px-5 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive">No phone number on file for this lead. Add one to send a text.</p>
             </div>
           )}
           {isOptedOut && (
-            <div className="flex items-start gap-2 px-5 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive font-medium">This contact has opted out (replied STOP). Sending is blocked.</p>
             </div>
           )}
 
           {/* Composer */}
-          <div className="px-5 sm:px-6 py-4 space-y-3">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3">
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground min-w-0 truncate">
