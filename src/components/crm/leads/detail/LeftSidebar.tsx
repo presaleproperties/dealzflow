@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Phone, Mail, Send, MessageCircle, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { Phone, Mail, Send, MessageCircle, ChevronDown, ChevronUp, MoreVertical, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { InlineEditField } from '@/components/crm/leads/InlineEditField';
 import { formatContactName } from '@/lib/format';
 import { EditLeadDetailsSheet } from './EditLeadDetailsSheet';
@@ -45,8 +53,12 @@ export function LeftSidebar({
   contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail, onWhatsApp,
 }: Props) {
   const updateContact = useUpdateCrmContact();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const isMobile = useIsMobile();
   // Mobile drawer router — single state lets us animate one drawer at a time
   // and avoid stacked sheets which feel heavy on phone.
@@ -135,6 +147,13 @@ export function LeftSidebar({
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                 Edit lead details
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); setDeleteOpen(true); }}
+                className="text-destructive focus:text-destructive gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete lead
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -201,6 +220,42 @@ export function LeftSidebar({
       </div>
 
       <EditLeadDetailsSheet contact={contact} open={editOpen} onOpenChange={setEditOpen} />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {formatContactName(contact.first_name, contact.last_name) || 'This lead'} will be permanently removed along with their notes, messages, and activity. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={async (e) => {
+                e.preventDefault();
+                setDeleting(true);
+                try {
+                  const { error } = await supabase.from('crm_contacts').delete().eq('id', contact.id);
+                  if (error) throw error;
+                  toast.success('Lead deleted');
+                  queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+                  setDeleteOpen(false);
+                  navigate('/crm/leads');
+                } catch (err) {
+                  toast.error(`Delete failed: ${(err as Error).message}`);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting…' : 'Delete lead'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {showActionRow && (
         <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
