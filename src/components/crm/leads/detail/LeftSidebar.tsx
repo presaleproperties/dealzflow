@@ -147,6 +147,13 @@ export function LeftSidebar({
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                 Edit lead details
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); setDeleteOpen(true); }}
+                className="text-destructive focus:text-destructive gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete lead
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
