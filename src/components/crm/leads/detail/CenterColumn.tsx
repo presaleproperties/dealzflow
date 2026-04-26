@@ -205,7 +205,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           </div>
         </div>
 
-        <div className="relative space-y-1.5">
+        <div className="relative space-y-1.5 px-3 md:px-0">
           {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
             <div className="hidden md:block absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
@@ -269,7 +269,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           {groupedNotes.map(group => (
             <div key={group.label} className="space-y-2 mb-4 md:mb-5">
               {/* Sticky day divider on mobile so users always know where they are */}
-              <div className="md:pl-9 sticky top-0 md:static z-10 bg-background/95 md:bg-transparent backdrop-blur md:backdrop-blur-none px-3 md:px-0 py-1 md:py-0 border-b md:border-b-0 border-border/40">
+              <div className="md:pl-9 sticky top-0 md:static z-10 bg-background/95 md:bg-transparent backdrop-blur md:backdrop-blur-none -mx-3 md:mx-0 px-3 md:px-0 py-1 md:py-0 border-b md:border-b-0 border-border/40">
                 <span className="text-[10.5px] md:text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
               </div>
               {group.notes.map(note => {
@@ -320,7 +320,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
         {/* Mobile-only Appointments accordion — replaces the desktop inner tab */}
         {showings.length > 0 && (
-          <details className="md:hidden mt-4 group rounded-xl border border-border bg-card/50 overflow-hidden">
+          <details className="md:hidden mt-4 mx-3 md:mx-0 group rounded-xl border border-border bg-card/50 overflow-hidden">
             <summary className="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/80">
               <span className="flex items-center gap-2">
                 Appointments
