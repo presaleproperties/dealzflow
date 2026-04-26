@@ -520,7 +520,7 @@ function InboxTab({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-3 h-[calc(100vh-340px)] min-h-[400px]">
+    <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-3 h-[calc(100dvh-340px-var(--bottom-nav-pad,0px))] min-h-[400px]">
       {/* Thread list */}
       <Card className="flex flex-col overflow-hidden">
         <div className="p-2 border-b border-border">
