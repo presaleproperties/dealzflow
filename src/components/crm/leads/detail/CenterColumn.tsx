@@ -347,14 +347,3 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       />
     </Tabs>
   );
-}
-
-      <EmailPreviewDialog
-        email={previewEmail}
-        open={!!previewEmail}
-        onOpenChange={(o) => !o && setPreviewEmail(null)}
-        contactEmail={contact.email}
-      />
-    </Tabs>
-  );
-}
