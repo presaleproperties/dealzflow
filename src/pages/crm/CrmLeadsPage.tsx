@@ -382,20 +382,9 @@ export default function CrmLeadsPage() {
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1.5">
-                  <div className="flex items-baseline gap-6">
-                    <button
-                      className="text-[19px] font-semibold text-foreground tracking-tight border-b-2 border-primary pb-1.5"
-                      aria-current="page"
-                    >
-                      Leads
-                    </button>
-                    <Link
-                      to="/crm/contacts"
-                      className="text-[19px] font-semibold text-muted-foreground/60 tracking-tight pb-1.5 hover:text-foreground transition-colors"
-                    >
-                      Contacts
-                    </Link>
-                  </div>
+                  <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">
+                    Leads
+                  </h1>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"

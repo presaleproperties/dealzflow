@@ -151,6 +151,25 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
   }, [open]);
 
+  /* Mobile back-button trap — when the composer opens we push a synthetic
+   * history entry so the iOS/Android back button closes the dialog and stays
+   * on the current page (e.g. lead detail) instead of navigating away. */
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === 'undefined') return;
+    window.history.pushState({ __composeOpen: true }, '');
+    const handler = () => onOpenChange(false);
+    window.addEventListener('popstate', handler);
+    return () => {
+      window.removeEventListener('popstate', handler);
+      // If the entry is still on top (user closed via Cancel/Send, not Back),
+      // pop it so we don't leak history entries.
+      if (window.history.state && (window.history.state as any).__composeOpen) {
+        window.history.back();
+      }
+    };
+  }, [open, onOpenChange]);
+
   /* Pick default signature when dialog opens or signatures load */
   useEffect(() => {
     if (!open) return;
@@ -484,9 +503,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
   };
 
-  /** Compact Templates + Insert variable controls rendered in the editor toolbar. */
+  /* Compact Templates + Insert variable controls rendered in the editor toolbar.
+   * Hidden on mobile — the mobile sticky action bar at the bottom is the
+   * single source of truth for these actions to avoid duplication. */
   const composerActions = (
-    <>
+    <div className="hidden md:flex items-center gap-1">
       <input
         ref={fileInputRef}
         type="file"
@@ -610,7 +631,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
           </div>
         </PopoverContent>
       </Popover>
-    </>
+    </div>
   );
 
   return (
@@ -866,7 +887,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Subject — supports {{lead.first_name}}"
+                    placeholder="Subject"
                     maxLength={200}
                     className="w-full bg-transparent border-0 outline-none text-[14px] font-semibold tracking-[-0.01em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/50 px-0"
                   />
@@ -874,7 +895,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
               </div>
 
               {/* Mode tabs — flush row, no heavy background block */}
-              <div className="px-4 py-1.5 border-b border-border/60 flex items-center justify-between gap-2 shrink-0">
+              <div className="hidden md:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-0.5">
                   {(() => {
                     /* Detect "rich" template HTML the rich text editor can't represent. */
@@ -990,7 +1011,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 )}
               </div>
 
-              {/* Mobile sticky action bar — Tools (Templates · Attach · Signature) on the left, Send on the right */}
+              {/* Mobile sticky action bar — single source of truth for mobile actions */}
               <div className="md:hidden flex items-center gap-1.5 px-2.5 py-2 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
                 <button
                   type="button"
