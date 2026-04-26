@@ -903,17 +903,22 @@ function IMessageComposer({
           </Popover>
 
           {/* Pill input — grows up to 3 lines, then scrolls internally */}
-          <div className="imsg-composer-pill flex items-end flex-1 min-w-0 px-4 py-1.5 min-h-[40px]">
+          <div className="imsg-composer-pill flex items-end flex-1 min-w-0 px-4 py-1.5 min-h-[40px] relative">
             <Textarea
               ref={textareaRef}
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Message"
+              placeholder={isDictating ? 'Listening…' : 'Message'}
               rows={1}
               className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
               style={{ maxHeight: MAX_HEIGHT }}
             />
+            {isDictating && interimText && (
+              <span className="pointer-events-none absolute left-4 right-4 bottom-1 text-[13px] leading-tight text-muted-foreground/70 italic truncate">
+                {interimText}
+              </span>
+            )}
           </div>
 
           {canSend ? (
@@ -927,12 +932,18 @@ function IMessageComposer({
             </Button>
           ) : (
             <>
-              {/* Voice / audio */}
+              {/* Dictation — Apple-style live voice-to-text */}
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-9 w-9 rounded-full shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                title="Voice message"
+                onClick={toggleDictation}
+                className={cn(
+                  'h-9 w-9 rounded-full shrink-0 transition-all native-press',
+                  isDictating
+                    ? 'bg-[#FF3B30] text-white hover:bg-[#ff453a] shadow-[0_0_0_4px_rgba(255,59,48,0.18)] animate-pulse'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                )}
+                title={isDictating ? 'Tap to stop dictation' : 'Tap to dictate'}
               >
                 <AudioLines className="w-4 h-4" />
               </Button>
