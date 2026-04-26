@@ -21,7 +21,6 @@ const MAX_LEN = 1600;
 export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
   const [to, setTo] = useState(contact.phone ?? '');
   const [body, setBody] = useState('');
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -33,26 +32,32 @@ export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
   /* Mobile back-button trap — keeps user on the lead detail page. */
   useComposerBackButton(open, onOpenChange);
 
-  const handleSend = async () => {
-    if (!to.trim() || !body.trim()) {
+  const handleSend = () => {
+    const toVal = to.trim();
+    const bodyVal = body.trim();
+    if (!toVal || !bodyVal) {
       toast.error('Phone number and message are required');
       return;
     }
-    setSending(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-sms', {
-        body: { contact_id: contact.id, to: to.trim(), body: body.trim() },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast.success('SMS sent');
-      onOpenChange(false);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to send SMS';
-      toast.error(msg);
-    } finally {
-      setSending(false);
-    }
+    // Optimistic UX: close instantly, fire the request in the background.
+    // The CRM activity log + SMS hooks already handle optimistic insertion,
+    // so the user sees the message immediately and gets a follow-up toast
+    // only if the send actually fails.
+    onOpenChange(false);
+    const t = toast.loading('Sending text…');
+    void (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-sms', {
+          body: { contact_id: contact.id, to: toVal, body: bodyVal },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        toast.success('SMS sent', { id: t });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to send SMS';
+        toast.error(msg, { id: t });
+      }
+    })();
   };
 
   const remaining = MAX_LEN - body.length;
@@ -94,11 +99,11 @@ export function SendSmsDialog({ contact, open, onOpenChange }: Props) {
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSend} disabled={sending || !to.trim() || !body.trim()}>
-              <Send className="w-4 h-4 mr-1.5" /> {sending ? 'Sending…' : 'Send SMS'}
+            <Button onClick={handleSend} disabled={!to.trim() || !body.trim()}>
+              <Send className="w-4 h-4 mr-1.5" /> Send SMS
             </Button>
           </div>
         </div>
