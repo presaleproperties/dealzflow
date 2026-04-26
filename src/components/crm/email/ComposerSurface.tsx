@@ -203,6 +203,27 @@ export function ComposerSurface({
 
   const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
   const canSend = recipientCount > 0 && subject.trim() && bodyText;
+  const isBodyEmpty = !bodyText;
+
+  /* Quick-start openers — fill the empty composer with one tasteful click. */
+  const QUICK_OPENERS: { label: string; html: string }[] = [
+    {
+      label: 'Warm intro',
+      html: `<p>Hi {{lead.first_name}},</p><p>Hope you're having a great week. I wanted to follow up on the units we discussed — happy to share fresh availability whenever you're ready.</p><p>Best,<br/>{{sender.first_name}}</p>`,
+    },
+    {
+      label: 'New listing',
+      html: `<p>Hi {{lead.first_name}},</p><p>A new presale that fits what you're looking for just hit the market. Want me to send the floorplans and price list?</p><p>Talk soon,<br/>{{sender.first_name}}</p>`,
+    },
+    {
+      label: 'Quick check-in',
+      html: `<p>Hi {{lead.first_name}},</p><p>Quick check-in — still on the hunt, or has timing shifted? Either way, I'll keep an eye out for the right fit.</p><p>Cheers,<br/>{{sender.first_name}}</p>`,
+    },
+    {
+      label: 'Book a call',
+      html: `<p>Hi {{lead.first_name}},</p><p>Would a 15-minute call this week help map out next steps? I can send a couple of times that work on my end.</p><p>Best,<br/>{{sender.first_name}}</p>`,
+    },
+  ];
 
   /* Attachments */
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -600,15 +621,51 @@ export function ComposerSurface({
                 </>
               }
               flushSignature
-              footerSlot={appendSignature && activeSignatureHtml ? (
-                editingSignature ? (
-                  <div className="border-t border-border/60 bg-muted/5">
-                    <textarea value={sigDraft} onChange={(e) => setSigDraft(e.target.value)} className="w-full font-mono text-[12px] leading-relaxed px-4 py-3 bg-transparent border-0 resize-y focus-visible:outline-none focus-visible:ring-0 text-foreground" style={{ minHeight: 160 }} spellCheck={false} />
-                  </div>
-                ) : (
-                  <SignatureInlineFrame html={activeSignatureHtml} />
-                )
-              ) : null}
+              footerSlot={
+                <>
+                  {isBodyEmpty && (
+                    <div className="px-4 pb-5 pt-1">
+                      <div className="rounded-2xl border border-border/50 bg-gradient-to-b from-muted/30 to-transparent px-4 py-4">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Quick start</p>
+                            <p className="text-[12px] text-muted-foreground mt-0.5">Pick an opener — you can edit everything before sending.</p>
+                          </div>
+                          <span className="hidden sm:inline-flex text-[10px] uppercase tracking-wider text-muted-foreground/60 px-2 py-1 rounded-full bg-background/60 border border-border/40">
+                            {recipientCount > 0 ? `${recipientCount} recipient${recipientCount === 1 ? '' : 's'}` : 'No recipients yet'}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {QUICK_OPENERS.map((q) => (
+                            <button
+                              key={q.label}
+                              type="button"
+                              onClick={() => setBodyHtml(q.html)}
+                              className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-foreground bg-background/80 border border-border/60 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all shadow-sm"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-primary/60 group-hover:bg-primary transition-colors" />
+                              {q.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-2 text-[11px] text-muted-foreground/80">
+                          <Variable className="h-3 w-3" />
+                          <span>Tip: use <code className="px-1 py-0.5 rounded bg-muted/60 text-[10px] text-foreground/80">{'{{lead.first_name}}'}</code> anywhere to personalize.</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {appendSignature && activeSignatureHtml ? (
+                    editingSignature ? (
+                      <div className="border-t border-border/60 bg-muted/5">
+                        <textarea value={sigDraft} onChange={(e) => setSigDraft(e.target.value)} className="w-full font-mono text-[12px] leading-relaxed px-4 py-3 bg-transparent border-0 resize-y focus-visible:outline-none focus-visible:ring-0 text-foreground" style={{ minHeight: 160 }} spellCheck={false} />
+                      </div>
+                    ) : (
+                      <SignatureInlineFrame html={activeSignatureHtml} />
+                    )
+                  ) : null}
+                </>
+              }
             />
           </div>
         )}
