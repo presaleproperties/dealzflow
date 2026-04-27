@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Mail, Eye, Code, Type, Paintbrush, Library } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Mail, Eye, Code, Type, Paintbrush, Library, Upload, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
 import LiveSignaturePreview from './LiveSignaturePreview';
 import { isRichHtml } from '@/lib/htmlDetect';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
