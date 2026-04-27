@@ -261,14 +261,13 @@ export function BottomNav() {
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.6)',
-          // Cap iOS PWA safe-area clearance so Pro Max devices don't leave a tall blank gutter.
           paddingBottom: 'var(--bottom-nav-safe-pad)',
         }}
       >
         {/* Flush flat tab bar — full width, edge-to-edge, no float, no rounded corners. */}
         <div
-          className="relative flex items-center h-[46px] w-full"
-          style={{ padding: '0 4px' }}
+          className="relative flex items-center h-[42px] w-full"
+          style={{ padding: '0 2px' }}
         >
             {/* Left tabs */}
             {leftTabs.map(renderTab)}
@@ -280,7 +279,7 @@ export function BottomNav() {
                   type="button"
                   onClick={() => triggerHaptic('medium')}
                   aria-label="Quick add"
-                  className="relative mx-1 shrink-0 h-[44px] w-[44px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
+                  className="relative mx-1 shrink-0 h-[40px] w-[40px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
                   style={{
                     background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary) / 0.88))',
                     boxShadow:
@@ -288,7 +287,7 @@ export function BottomNav() {
                     color: 'hsl(var(--primary-foreground))',
                   }}
                 >
-                  <Plus className="w-[22px] h-[22px]" strokeWidth={2.4} />
+                  <Plus className="w-[21px] h-[21px]" strokeWidth={2.4} />
                 </button>
               </SheetTrigger>
               <SheetContent

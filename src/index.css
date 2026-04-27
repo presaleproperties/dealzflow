@@ -132,10 +132,10 @@
        possible without overlapping the home indicator. We subtract 24px from the
        native inset (Pro Max ≈ 34px → 10px → capped at 4px), giving a near-flush
        bottom while leaving a hairline of breathing room above the gesture bar. */
-    /* Bottom nav: aggressively absorb iOS PWA safe-area on Pro Max so the bar
-       sits as flush as possible above the home indicator. */
-    --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 32px, 0px), 2px);
-    --bottom-nav-pad: calc(46px + var(--bottom-nav-safe-pad));
+    /* Bottom nav: no extra iOS safe-area padding. The bar itself is fixed to
+       the physical bottom edge; pages only reserve the visible 42px rail. */
+    --bottom-nav-safe-pad: 0px;
+    --bottom-nav-pad: 42px;
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
     /* Composer top inset — guarantees a minimum 50px clearance even when
@@ -1251,10 +1251,11 @@ html.is-standalone *:focus-visible {
    notch instead of being hidden by it. Works for both PWA and Capacitor. */
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
-/* Bottom-nav clearance helper (alias kept for backwards compat) */
+/* Bottom-nav clearance helper (alias kept for backwards compat). Keep this in
+   sync with the primary token above — do not re-add safe-area padding here. */
 :root {
-  --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 30px, 0px), 4px);
-  --bottom-nav-pad: calc(50px + var(--bottom-nav-safe-pad));
+  --bottom-nav-safe-pad: 0px;
+  --bottom-nav-pad: 42px;
 }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
