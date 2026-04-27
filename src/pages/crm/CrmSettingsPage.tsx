@@ -640,3 +640,75 @@ function TimelinePreferencesSection() {
     </Card>
   );
 }
+
+/* ══════════════════════════════════════════
+   7. Profile (link card → global Profile editor)
+   ══════════════════════════════════════════ */
+function ProfileLinkCard() {
+  const { user } = useAuth();
+  const { data: profile, isLoading } = useProfile();
+  const navigate = useNavigate();
+
+  const fullName = profile?.full_name || user?.user_metadata?.full_name || '';
+  const initials =
+    (fullName || user?.email || '?')
+      .split(/[\s@]/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase())
+      .join('') || '?';
+
+  const isComplete = Boolean(profile?.avatar_url && profile?.full_name && profile?.title && profile?.phone);
+
+  return (
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
+        <User className="h-5 w-5 text-primary" />
+        <CardTitle className="text-base sm:text-lg">Your Profile</CardTitle>
+      </CardHeader>
+      <CardContent className="px-3 sm:px-6">
+        {isLoading ? (
+          <div className="h-16 animate-pulse bg-muted/40 rounded-lg" />
+        ) : (
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14 ring-2 ring-border/60">
+              <AvatarImage src={profile?.avatar_url ?? undefined} alt={fullName || 'Profile'} />
+              <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">
+                {fullName || 'Add your name'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {profile?.title || 'Add your title'}
+              </p>
+              <p className="text-[11px] text-muted-foreground/80 truncate mt-0.5">
+                {user?.email}
+              </p>
+            </div>
+            {!isComplete && (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px]">
+                Incomplete
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/settings?tab=profile')}
+              className="shrink-0"
+            >
+              Edit profile
+              <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground mt-3">
+          Your profile is shared across Dealzflow and the CRM. Edit it once and it appears in
+          your email signatures, lead pages, and team directory.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
