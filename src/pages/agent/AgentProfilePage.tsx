@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, ExternalLink, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { usePresaleAgent } from "@/stores/usePresaleAgent";
+import { usePresaleAgent, usePresaleAgentStore } from "@/stores/usePresaleAgent";
 import { AgentSignatureBlock } from "@/components/agent/AgentSignatureBlock";
 import { toast } from "sonner";
 
@@ -40,14 +40,10 @@ export default function AgentProfilePage() {
 
   const handleRefresh = async () => {
     await refresh({ force: true });
-    const next = usePresaleAgent;
-    // Show toast based on resulting state
-    setTimeout(() => {
-      const s = (next as any).getState?.() ?? null;
-      if (s?.status === "ready") toast.success("Profile refreshed from Presale");
-      else if (s?.status === "error") toast.error(s.error ?? "Refresh failed");
-      else if (s?.status === "unmatched") toast.message("No matching Presale agent");
-    }, 50);
+    const s = usePresaleAgentStore.getState();
+    if (s.status === "ready") toast.success("Profile refreshed from Presale");
+    else if (s.status === "error") toast.error(s.error ?? "Refresh failed");
+    else if (s.status === "unmatched") toast.message("No matching Presale agent");
   };
 
   const initials = (agent?.name ?? agent?.email ?? "?")
