@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { formatContactName } from '@/lib/format';
 
 /**
