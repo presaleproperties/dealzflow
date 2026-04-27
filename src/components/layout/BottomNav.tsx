@@ -281,7 +281,7 @@ export function BottomNav() {
               color: 'hsl(var(--primary-foreground))',
             }}
           >
-            <Plus className="w-[26px] h-[26px]" strokeWidth={2.6} />
+            <Plus className="w-[20px] h-[20px]" strokeWidth={2.6} />
           </button>
         </SheetTrigger>
         <SheetContent
