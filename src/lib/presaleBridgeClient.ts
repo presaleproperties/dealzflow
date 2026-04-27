@@ -7,7 +7,8 @@ type ProxyAction =
   | "get-project"
   | "list-neighborhoods"
   | "list-developers"
-  | "get-lead-behavior";
+  | "get-lead-behavior"
+  | "render-email";
 
 async function callProxy<T = unknown>(
   action: ProxyAction,
@@ -19,6 +20,14 @@ async function callProxy<T = unknown>(
   if (error) throw new Error(error.message);
   if ((data as any)?.error) throw new Error((data as any).error);
   return (data as any).data as T;
+}
+
+export interface BridgeRenderedEmail {
+  subject?: string;
+  html?: string;
+  text?: string;
+  preheader?: string;
+  [k: string]: unknown;
 }
 
 export interface BridgeProjectSummary {
