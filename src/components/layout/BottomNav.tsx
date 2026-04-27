@@ -261,9 +261,8 @@ export function BottomNav() {
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.6)',
-          // Tighter home-indicator clearance — keeps the bar from sitting on top
-          // of the iOS gesture pill without leaving a giant dead zone underneath.
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px) - 8px, 0px)',
+          // Cap iOS PWA safe-area clearance so Pro Max devices don't leave a tall blank gutter.
+          paddingBottom: 'var(--bottom-nav-safe-pad)',
         }}
       >
         {/* Flush flat tab bar — full width, edge-to-edge, no float, no rounded corners. */}
