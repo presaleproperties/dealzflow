@@ -200,6 +200,22 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Apply momentum scroll to ALL scrollable elements — gives every list,
+     panel, sheet, and dialog the same native iOS rubber-band feel. */
+  *[class*="overflow-auto"],
+  *[class*="overflow-y-auto"],
+  *[class*="overflow-x-auto"],
+  *[class*="overflow-scroll"],
+  *[class*="overflow-y-scroll"],
+  *[class*="overflow-x-scroll"],
+  .main-content {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .main-content {
+    overflow-y: auto;
+  }
+
   /* Step 9: hide bottom nav whenever a Radix Dialog/Sheet is open
      (Radix locks the body via data-scroll-locked). The sheet itself
      extends edge-to-edge and owns the safe-area, so the nav must
