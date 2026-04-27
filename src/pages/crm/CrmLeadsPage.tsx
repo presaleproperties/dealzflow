@@ -542,7 +542,7 @@ export default function CrmLeadsPage() {
               {/* Segment pills — same source/active-state logic as desktop */}
               {segments.length > 0 && (
                 <div className="overflow-x-auto overscroll-x-contain scrollbar-hide border-t border-border/40">
-                  <div className="flex items-center gap-1.5 px-3 py-2 min-w-max">
+                  <div className="flex items-center gap-1.5 px-4 py-2 min-w-max">
                     {segments.map(seg => {
                       const isActive = activeSegmentId === seg.id || (isAllSegment && Object.keys(seg.filter_config).length === 0 && !activeSegmentId);
                       const count = segmentCounts[seg.id];
