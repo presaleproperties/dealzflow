@@ -34,6 +34,8 @@ interface MessageRow {
   delivered: boolean | null;
   sent_by: string | null;
   created_at: string;
+  source_table: string | null;
+  source_id: string | null;
 }
 
 function channelMeta(c: Channel) {
