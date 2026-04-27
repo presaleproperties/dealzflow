@@ -335,6 +335,7 @@ Deno.serve(async (req) => {
       price_unit: twilioData?.price_unit ?? null,
       campaign_id,
       channel,
+      client_dedupe_id,
     }).select('id').maybeSingle();
 
     return new Response(JSON.stringify({
