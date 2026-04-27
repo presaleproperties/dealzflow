@@ -612,60 +612,33 @@ function FilterChip({
   );
 }
 
-function CommunicationList({
-  feed,
-  kind,
+/**
+ * Native-mail style conversation list — one row per (contact, channel),
+ * latest message preview, opens the actual chat thread on click.
+ */
+function ConversationList({
+  threads,
   search = '',
+  onOpen,
 }: {
-  feed: { emails: EmailRow[]; messages: MessageRow[] } | undefined;
-  kind: 'all' | 'email' | 'sms';
+  threads: ChatThread[];
   search?: string;
+  onOpen?: () => void;
 }) {
-  if (!feed) return null;
+  const q = search.trim().toLowerCase();
 
-  type Item = {
-    id: string;
-    type: 'email' | 'sms';
-    name: string;
-    preview: string;
-    time: string;
-    unread?: boolean;
-    href: string;
+  const nameOf = (t: ChatThread) => {
+    const n = [t.first_name, t.last_name].filter(Boolean).join(' ').trim();
+    return n || t.email || t.phone || 'Unknown';
   };
 
-  const items: Item[] = [];
-
-  if (kind === 'all' || kind === 'email') {
-    feed.emails.forEach(e => items.push({
-      id: `e-${e.id}`,
-      type: 'email',
-      name: fullName(e.contact) || e.contact?.email || 'Unknown',
-      preview: e.subject || (e.body ?? '').slice(0, 80) || '(no subject)',
-      time: e.sent_at,
-      unread: e.direction === 'inbound',
-      href: `/crm/leads/${e.contact_id}`,
-    }));
-  }
-  if (kind === 'all' || kind === 'sms') {
-    feed.messages.forEach(m => items.push({
-      id: `m-${m.id}`,
-      type: 'sms',
-      name: m.conversation?.lead_name ?? 'Unknown',
-      preview: m.body,
-      time: m.created_at,
-      unread: m.direction === 'inbound',
-      href: `/crm/leads`,
-    }));
-  }
-
-  // sort by time desc
-  items.sort((a, b) => (new Date(b.time).getTime() || 0) - (new Date(a.time).getTime() || 0));
-
-  // search filter
-  const q = search.trim().toLowerCase();
   const filtered = q
-    ? items.filter(i => i.name.toLowerCase().includes(q) || i.preview.toLowerCase().includes(q))
-    : items;
+    ? threads.filter(t => {
+        const name = nameOf(t).toLowerCase();
+        const preview = (t.last_message_preview ?? '').toLowerCase();
+        return name.includes(q) || preview.includes(q);
+      })
+    : threads;
 
   if (filtered.length === 0) {
     return (
@@ -675,34 +648,45 @@ function CommunicationList({
     );
   }
 
-  const TypeIcon = (t: Item['type']) => t === 'email' ? Mail : MessageSquare;
-  const typeColor = (t: Item['type']) => t === 'email' ? 'hsl(28 90% 55%)' : 'hsl(280 60% 60%)';
+  const TypeIcon = (channel: ChatThread['channel']) =>
+    channel === 'email' ? Mail : MessageSquare;
+  const typeColor = (channel: ChatThread['channel']) =>
+    channel === 'email' ? 'hsl(28 90% 55%)' : 'hsl(280 60% 60%)';
+  const channelLabel = (channel: ChatThread['channel']) =>
+    channel === 'email' ? 'Email' : channel === 'whatsapp' ? 'WhatsApp' : 'Text';
 
   return (
     <ul>
-      {filtered.slice(0, 50).map(item => {
-        const Icon = TypeIcon(item.type);
-        const initials = initialsOf(item.name);
+      {filtered.slice(0, 50).map(t => {
+        const Icon = TypeIcon(t.channel);
+        const name = nameOf(t);
+        const initials = initialsOf(name);
+        const unread = (t.unread_count ?? 0) > 0;
+        const preview = t.last_message_preview?.trim() || `(no messages yet)`;
+        const prefix = t.last_message_direction === 'outbound' ? 'You: ' : '';
+
         return (
-          <li key={item.id} className="relative">
-            {item.unread && (
+          <li key={t.id} className="relative">
+            {unread && (
               <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-destructive" />
             )}
             <Link
-              to={item.href}
+              to={`/crm/chats/${t.id}`}
+              onClick={onOpen}
               className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-muted/50 border-b border-border/40"
             >
-              {/* Avatar with type badge */}
+              {/* Avatar with channel badge */}
               <div className="relative shrink-0">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[12px] font-semibold tracking-tight"
-                  style={{ background: avatarGradient(item.name) }}
+                  style={{ background: avatarGradient(name) }}
                 >
                   {initials}
                 </div>
                 <div
                   className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-card"
-                  style={{ background: typeColor(item.type) }}
+                  style={{ background: typeColor(t.channel) }}
+                  title={channelLabel(t.channel)}
                 >
                   <Icon className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
                 </div>
@@ -711,18 +695,32 @@ function CommunicationList({
               {/* Body */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <div className={cn(
-                    'text-[13px] truncate tracking-tight',
-                    item.unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90'
-                  )}>
-                    {item.name}
+                  <div
+                    className={cn(
+                      'text-[13px] truncate tracking-tight',
+                      unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
+                    )}
+                  >
+                    {name}
                   </div>
-                  <div className="text-[10.5px] text-muted-foreground/70 shrink-0 tabular-nums">
-                    {fmtTime(item.time)}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {unread && (
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[9.5px] font-semibold flex items-center justify-center">
+                        {t.unread_count > 99 ? '99+' : t.unread_count}
+                      </span>
+                    )}
+                    <div className="text-[10.5px] text-muted-foreground/70 tabular-nums">
+                      {fmtTime(t.last_message_at)}
+                    </div>
                   </div>
                 </div>
-                <div className="text-[12px] text-muted-foreground line-clamp-1 mt-0.5 leading-snug">
-                  {item.preview}
+                <div
+                  className={cn(
+                    'text-[12px] line-clamp-1 mt-0.5 leading-snug',
+                    unread ? 'text-foreground/85' : 'text-muted-foreground',
+                  )}
+                >
+                  {prefix}{preview}
                 </div>
               </div>
             </Link>
