@@ -101,13 +101,21 @@ export default function CrmChatThreadPage() {
       if (error) throw error;
       return (data ?? []) as MessageRow[];
     },
+    staleTime: 2_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    // Polling fallback when realtime drops (mobile networks, sleep)
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
   });
 
-  // Realtime — refetch on new message in this conversation
+  // Realtime — refetch on new/updated message in this conversation.
+  // Use a unique channel per mount to avoid collisions across navigations.
   useEffect(() => {
     if (!conversationId) return;
+    const channelId = `chat-thread-${conversationId}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`chat-thread-${conversationId}`)
+      .channel(channelId)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'crm_messages',
         filter: `conversation_id=eq.${conversationId}`,
@@ -116,8 +124,28 @@ export default function CrmChatThreadPage() {
         qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
       })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'crm_conversations',
+        filter: `id=eq.${conversationId}`,
+      }, () => {
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] });
+        qc.invalidateQueries({ queryKey: ['crm-chats'] });
+      })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    // Mobile: refresh when returning to the tab/app
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [conversationId, qc]);
 
   // Mark unread → 0 on open (best-effort)
