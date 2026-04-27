@@ -138,12 +138,11 @@ export function BottomNav() {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [bookShowingOpen, setBookShowingOpen] = useState(false);
 
-  // Track Safari's bottom URL bar via visualViewport so the nav rides above
-  // browser chrome. In installed iPhone PWA mode, visualViewport can report
-  // the home-indicator inset as "chrome", so force it to zero there.
+  // Standalone-PWA detection only — no visualViewport offset tracking.
+  // Per native-PWA recipe: the nav is `fixed bottom-0` and owns the
+  // safe-area inset via padding-bottom. No spacer, no offset.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const vv = window.visualViewport;
     const root = document.documentElement;
     const isStandalone =
       root.classList.contains('is-standalone') ||
@@ -151,43 +150,8 @@ export function BottomNav() {
       window.matchMedia('(display-mode: fullscreen)').matches ||
       window.matchMedia('(display-mode: minimal-ui)').matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-
     root.classList.toggle('is-standalone-pwa', isStandalone);
-
-    if (isStandalone || !vv) {
-      root.style.setProperty('--browser-chrome-inset', '0px');
-      return () => {
-        root.classList.remove('is-standalone-pwa');
-        root.style.removeProperty('--browser-chrome-inset');
-      };
-    }
-
-    const update = () => {
-      // Distance from the bottom of the layout viewport to the bottom of the
-      // visual viewport. >0 when the URL bar is showing; 0 when collapsed.
-      if (root.classList.contains('is-standalone')) {
-        root.style.setProperty('--browser-chrome-inset', '0px');
-        root.classList.add('is-standalone-pwa');
-        return;
-      }
-      const raw = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      // Treat anything ≤ 8px as zero — Safari sometimes reports tiny
-      // sub-pixel insets when the URL bar is collapsed, which would
-      // otherwise leave a hairline gap below the nav.
-      const inset = raw <= 8 ? 0 : raw;
-      root.style.setProperty('--browser-chrome-inset', `${Math.round(inset)}px`);
-    };
-    update();
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    window.addEventListener('orientationchange', update);
-    return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
-      window.removeEventListener('orientationchange', update);
-      root.classList.remove('is-standalone-pwa');
-      root.style.removeProperty('--browser-chrome-inset');
-    };
+    return () => { root.classList.remove('is-standalone-pwa'); };
   }, []);
 
   const mode = detectMode(location.pathname);
@@ -320,21 +284,8 @@ export function BottomNav() {
   // Tabs render in order; "+" is a floating FAB above the bar (not inline).
   return (
     <>
-      {/* Safe-area filler — paints the area below the nav (home indicator /
-          in-app browser chrome) with the same surface color so the white page
-          body never bleeds through. */}
-      <div
-        aria-hidden
-        className="lg:hidden fixed inset-x-0 bottom-0 z-30 pointer-events-none"
-        style={{
-          height: 'var(--browser-chrome-inset, 0px)',
-          background: 'hsl(var(--card))',
-          transition: 'height 180ms ease-out',
-        }}
-      />
-
       <nav
-          className="lg:hidden fixed inset-x-0 z-40 native-chrome overflow-hidden"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 native-chrome overflow-hidden"
         aria-label="Primary"
         style={{
           background: 'hsl(var(--card) / 0.98)',
@@ -342,10 +293,8 @@ export function BottomNav() {
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.55)',
           boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
-          paddingBottom: 'var(--bottom-nav-safe-pad)',
-            height: 'var(--bottom-nav-height)',
-            bottom: 'var(--browser-chrome-inset, 0px)',
-            transition: 'bottom 180ms ease-out',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+          height: 'var(--bottom-nav-height)',
         }}
       >
         <div

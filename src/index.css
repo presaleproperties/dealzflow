@@ -142,9 +142,9 @@
   }
   :root.is-standalone,
   :root.is-standalone-pwa {
-    --browser-chrome-inset: 0px !important;
-    /* Standalone/PWA: keep one deterministic native dock geometry. */
-    --bottom-nav-safe-pad: var(--safe-bottom, env(safe-area-inset-bottom, 0px));
+    /* Standalone/PWA: nav is fixed bottom:0 and owns the safe-area inset
+       directly via padding-bottom. No browser-chrome offset needed. */
+    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
     --bottom-nav-icon-lift: 0px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
