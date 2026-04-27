@@ -1233,6 +1233,10 @@ html.is-standalone body {
   /* Native-feel font smoothing */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Paint the very bottom of the viewport (under the floating nav, in the
+     iOS home-indicator zone) with the same surface color as the nav, so the
+     cream page background never shows as a white strip below the pill. */
+  background-color: hsl(var(--card));
 }
 
 html.is-standalone #root {
