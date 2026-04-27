@@ -431,15 +431,15 @@ export function RightRail() {
                 active={inboxFilter === 'email'}
                 onClick={() => setInboxFilter('email')}
                 tone="blue"
-                badge={feed?.emails.filter(e => e.direction === 'inbound').length}
+                badge={chatThreads?.filter(t => t.channel === 'email' && (t.unread_count ?? 0) > 0).length}
               />
               <FilterChip
                 icon={MessageSquare}
-                label="SMS"
-                active={inboxFilter === 'sms'}
-                onClick={() => setInboxFilter('sms')}
+                label="Text"
+                active={inboxFilter === 'text'}
+                onClick={() => setInboxFilter('text')}
                 tone="purple"
-                badge={feed?.messages.filter(m => m.direction === 'inbound').length}
+                badge={chatThreads?.filter(t => (t.channel === 'sms' || t.channel === 'whatsapp') && (t.unread_count ?? 0) > 0).length}
               />
             </div>
           </div>
@@ -452,7 +452,11 @@ export function RightRail() {
               {feedLoading ? (
                 <div className="text-center text-xs text-muted-foreground py-10">Loading…</div>
               ) : (
-                <CommunicationList feed={feed} kind={inboxFilter} search={inboxSearch} />
+                <ConversationList
+                  threads={chatThreads ?? []}
+                  search={inboxSearch}
+                  onOpen={() => setPanel(null)}
+                />
               )}
             </div>
           </ScrollArea>
