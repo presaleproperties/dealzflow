@@ -68,6 +68,8 @@ export default function EmailSettingsSection() {
       sender_name: senderName || undefined,
       reply_to: replyTo || undefined,
       twilio_from_number: twilioFrom.trim() || null,
+      brand_logo_url: brandLogoUrl.trim() || null,
+      brand_logo_alt: brandLogoAlt.trim() || null,
       signature_html: getActiveSignatureHtml() || undefined,
       signature_mode: signatureMode,
       signature_builder_data: signatureMode === 'builder' ? builderData : undefined,
