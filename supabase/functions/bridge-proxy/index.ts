@@ -21,7 +21,8 @@ type Action =
   | "get-project"
   | "list-neighborhoods"
   | "list-developers"
-  | "get-lead-behavior";
+  | "get-lead-behavior"
+  | "render-email";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
