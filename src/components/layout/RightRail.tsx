@@ -96,31 +96,7 @@ function useUnreadNotificationsCount(enabled: boolean) {
   });
 }
 
-function useInboxFeed(open: boolean) {
-  return useQuery({
-    queryKey: ['right-rail', 'inbox-feed'],
-    enabled: open,
-    staleTime: 30_000,
-    queryFn: async () => {
-      const [emailRes, msgRes] = await Promise.all([
-        supabase
-          .from('crm_email_log')
-          .select('id, subject, body, direction, sent_at, contact_id, contact:crm_contacts(first_name, last_name, email)')
-          .order('sent_at', { ascending: false })
-          .limit(20),
-        supabase
-          .from('messages')
-          .select('id, body, direction, created_at, conversation_id, conversation:conversations(lead_name, channel)')
-          .order('created_at', { ascending: false })
-          .limit(20),
-      ]);
-      return {
-        emails: (emailRes.data ?? []) as EmailRow[],
-        messages: (msgRes.data ?? []) as MessageRow[],
-      };
-    },
-  });
-}
+// Inbox feed now provided by useCrmChats() — one row per (contact, channel).
 
 function useNotificationsFeed(open: boolean) {
   return useQuery({
