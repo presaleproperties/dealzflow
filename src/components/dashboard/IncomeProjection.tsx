@@ -193,16 +193,16 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
   if (hasNoCommissions && totalExpenses === 0) {
     return (
       <div className="landing-card h-full">
-        <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-border/50">
+        <div className="flex items-center justify-between p-4 border-b border-border/50">
           <div className="flex items-center gap-3">
             <div className="icon-gradient-primary icon-gradient-sm">
               <TrendingUp className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-[15px] text-slate-800 dark:text-foreground">
+              <h3 className="font-bold text-[15px] text-foreground">
                 {selectedYear} Projection
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-muted-foreground">Income & expense forecast</p>
+              <p className="text-[11px] text-muted-foreground">Income & expense forecast</p>
             </div>
           </div>
         </div>
@@ -222,10 +222,10 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
               <BarChart3 className="w-10 h-10 text-primary" />
             </motion.div>
             
-            <h3 className="text-lg font-bold text-slate-800 dark:text-foreground mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               Your forecast awaits
             </h3>
-            <p className="text-sm text-slate-500 dark:text-muted-foreground mb-6 max-w-[280px]">
+            <p className="text-sm text-muted-foreground mb-6 max-w-[280px]">
               Add deals with expected payout dates to see your {selectedYear} income projection
             </p>
             
@@ -240,7 +240,7 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
               </Link>
               
               <div className="flex items-center justify-center gap-4 pt-4">
-                <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Auto-calculates tax set-asides</span>
                 </div>
@@ -254,16 +254,16 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
 
   return (
     <div className="landing-card">
-      <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-border/50">
+      <div className="flex items-center justify-between p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
           <div className="icon-gradient-primary icon-gradient-sm">
             <TrendingUp className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h3 className="font-bold text-[15px] text-slate-800 dark:text-foreground">
+            <h3 className="font-bold text-[15px] text-foreground">
               {selectedYear} Projection
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-muted-foreground">Click bar for details</p>
+            <p className="text-[11px] text-muted-foreground">Click bar for details</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
