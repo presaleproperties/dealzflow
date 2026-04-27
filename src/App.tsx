@@ -174,6 +174,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+                  <Route path="/pending-approval" element={<PendingApprovalPage />} />
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
                   
