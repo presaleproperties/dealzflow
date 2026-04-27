@@ -252,6 +252,7 @@ Deno.serve(async (req) => {
         campaign_id,
         scheduled_for: when.toISOString(),
         channel,
+        client_dedupe_id,
       }).select('id').maybeSingle();
       if (schedErr) throw schedErr;
       return new Response(JSON.stringify({ ok: true, scheduled: true, log_id: scheduled?.id }), {
