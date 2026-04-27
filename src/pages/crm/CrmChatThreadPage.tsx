@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info, WifiOff, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
@@ -34,6 +34,8 @@ interface MessageRow {
   delivered: boolean | null;
   sent_by: string | null;
   created_at: string;
+  source_table: string | null;
+  source_id: string | null;
 }
 
 function channelMeta(c: Channel) {
@@ -50,6 +52,73 @@ function formatStamp(iso: string): string {
   if (isToday(d))     return format(d, 'h:mm a');
   if (isYesterday(d)) return `Yesterday · ${format(d, 'h:mm a')}`;
   return format(d, 'MMM d · h:mm a');
+}
+
+type DeliveryState = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+
+/** Map a Twilio-style status string to one of our normalized delivery states. */
+function normalizeStatus(raw: string | null | undefined): DeliveryState {
+  switch ((raw ?? '').toLowerCase()) {
+    case 'queued':
+    case 'accepted':
+    case 'scheduled':
+    case 'sending':
+      return 'sending';
+    case 'sent':
+      return 'sent';
+    case 'delivered':
+    case 'received':
+      return 'delivered';
+    case 'read':
+      return 'read';
+    case 'failed':
+    case 'undelivered':
+    case 'canceled':
+      return 'failed';
+    default:
+      return 'sent';
+  }
+}
+
+function DeliveryIndicator({ state, error }: { state: DeliveryState; error?: string | null }) {
+  const cls = 'inline-flex items-center gap-1';
+  switch (state) {
+    case 'sending':
+      return (
+        <span className={`${cls} text-muted-foreground/70`} title="Sending…">
+          <Clock className="w-3 h-3" />
+          <span>Sending</span>
+        </span>
+      );
+    case 'sent':
+      return (
+        <span className={`${cls} text-muted-foreground/80`} title="Sent">
+          <Check className="w-3 h-3" />
+          <span>Sent</span>
+        </span>
+      );
+    case 'delivered':
+      return (
+        <span className={`${cls} text-emerald-600 dark:text-emerald-400`} title="Delivered">
+          <CheckCheck className="w-3 h-3" />
+          <span>Delivered</span>
+        </span>
+      );
+    case 'read':
+      return (
+        <span className={`${cls} text-sky-600 dark:text-sky-400`} title="Read">
+          <CheckCheck className="w-3 h-3" />
+          <span>Read</span>
+        </span>
+      );
+    case 'failed':
+      return (
+        <span className={`${cls} text-destructive`} title={error || 'Failed to deliver'}>
+          <AlertCircle className="w-3 h-3" />
+          <span>Failed</span>
+        </span>
+      );
+  }
 }
 
 /**
@@ -106,10 +175,36 @@ export default function CrmChatThreadPage() {
     },
   });
 
+  // Cross-reference SMS log statuses for outbound SMS/WhatsApp messages
+  // so we can show sending / sent / delivered / failed indicators on bubbles.
+  const channel = thread?.conv.channel;
+  const smsLogIds = useMemo(
+    () => messages
+      .filter((m) => m.direction === 'outbound' && m.source_table === 'crm_sms_log' && m.source_id)
+      .map((m) => m.source_id as string),
+    [messages],
+  );
+  const { data: smsStatuses = {} } = useQuery({
+    queryKey: ['crm-chat-thread-sms-statuses', conversationId, smsLogIds.length, smsLogIds.join('|')],
+    enabled: smsLogIds.length > 0 && (channel === 'sms' || channel === 'whatsapp'),
+    queryFn: async (): Promise<Record<string, { status: string | null; error_message: string | null }>> => {
+      const { data, error } = await supabase
+        .from('crm_sms_log')
+        .select('id, status, error_message')
+        .in('id', smsLogIds);
+      if (error) throw error;
+      const map: Record<string, { status: string | null; error_message: string | null }> = {};
+      for (const r of (data ?? []) as Array<{ id: string; status: string | null; error_message: string | null }>) {
+        map[r.id] = { status: r.status, error_message: r.error_message };
+      }
+      return map;
+    },
+  });
+
   // Realtime — refetch on new message in this conversation
   useEffect(() => {
     if (!conversationId) return;
-    const channel = supabase
+    const ch = supabase
       .channel(`chat-thread-${conversationId}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'crm_messages',
@@ -120,8 +215,27 @@ export default function CrmChatThreadPage() {
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(ch); };
   }, [conversationId, qc]);
+
+  // Realtime — refetch SMS-log status changes (delivered / failed transitions
+  // from Twilio webhooks) so the bubble indicators update live.
+  useEffect(() => {
+    if (smsLogIds.length === 0) return;
+    const ch = supabase
+      .channel(`chat-thread-sms-${conversationId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'crm_sms_log',
+      }, (payload: any) => {
+        const id = payload?.new?.id;
+        if (id && smsLogIds.includes(id)) {
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread-sms-statuses', conversationId] });
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [conversationId, smsLogIds, qc]);
+
 
   // Mark unread → 0 on open (best-effort)
   useEffect(() => {
@@ -280,6 +394,13 @@ export default function CrmChatThreadPage() {
                 <div className={`max-w-[82%] flex flex-col gap-1 ${outbound ? 'items-end' : 'items-start'}`}>
                   {stack.items.map((m, mi) => {
                     const isLast = mi === stack.items.length - 1;
+                    // Resolve delivery state for outbound SMS / WhatsApp bubbles
+                    const isTrackable = outbound && (m.channel === 'sms' || m.channel === 'whatsapp') && m.source_table === 'crm_sms_log' && !!m.source_id;
+                    const logEntry = isTrackable ? smsStatuses[m.source_id as string] : undefined;
+                    const deliveryState: DeliveryState | null = isTrackable
+                      ? normalizeStatus(logEntry?.status)
+                      : (outbound && m.channel === 'email' ? 'sent' : null);
+                    const deliveryError = logEntry?.error_message ?? null;
                     return (
                       <div key={m.id} className="flex flex-col gap-0.5 max-w-full">
                         <div
@@ -287,15 +408,22 @@ export default function CrmChatThreadPage() {
                             outbound
                               ? 'bg-primary text-primary-foreground rounded-br-md'
                               : 'bg-card text-foreground border border-border rounded-bl-md'
-                          }`}
+                          } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''}`}
                         >
                           {/* For email, content can include "Subject: ..." prefix from compose flow */}
                           {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
                         </div>
                         {isLast && (
-                          <span className={`text-[10px] tabular-nums ${outbound ? 'text-muted-foreground text-right pr-1' : 'text-muted-foreground/80 pl-1'}`}>
-                            {formatStamp(m.created_at)}
-                            {outbound && m.sent_by ? <> · {m.sent_by}</> : null}
+                          <span className={`text-[10px] tabular-nums flex items-center gap-1.5 ${outbound ? 'text-muted-foreground justify-end pr-1' : 'text-muted-foreground/80 pl-1'}`}>
+                            <span>{formatStamp(m.created_at)}</span>
+                            {outbound && m.sent_by ? <span aria-hidden>·</span> : null}
+                            {outbound && m.sent_by ? <span>{m.sent_by}</span> : null}
+                            {outbound && deliveryState ? (
+                              <>
+                                <span aria-hidden className="text-muted-foreground/40">·</span>
+                                <DeliveryIndicator state={deliveryState} error={deliveryError} />
+                              </>
+                            ) : null}
                           </span>
                         )}
                       </div>
@@ -306,6 +434,41 @@ export default function CrmChatThreadPage() {
             );
           })
         )}
+
+        {/* Ghost bubbles for offline outbox items not yet on the server */}
+        {(conv.channel === 'sms' || conv.channel === 'whatsapp') &&
+          outbox.items
+            .filter((i) => i.contact_id === contact.id && i.channel === conv.channel)
+            .map((i) => {
+              const state: DeliveryState = i.status === 'failed' ? 'failed' : 'sending';
+              return (
+                <div key={`outbox-${i.id}`} className="flex justify-end">
+                  <div className="max-w-[82%] flex flex-col items-end gap-1">
+                    <div className="flex flex-col gap-0.5 max-w-full">
+                      <div
+                        className={`px-3.5 py-2 rounded-2xl text-[14px] leading-snug whitespace-pre-wrap break-words shadow-sm bg-primary/70 text-primary-foreground rounded-br-md ${
+                          state === 'failed' ? 'ring-1 ring-destructive/60' : ''
+                        }`}
+                      >
+                        {i.body || <span className="italic opacity-60">(empty)</span>}
+                      </div>
+                      <span className="text-[10px] tabular-nums flex items-center gap-1.5 text-muted-foreground justify-end pr-1">
+                        <DeliveryIndicator state={state} error={i.last_error} />
+                        {state === 'failed' && (
+                          <button
+                            type="button"
+                            onClick={() => outbox.retry(i.id)}
+                            className="underline underline-offset-2 text-destructive hover:opacity-80"
+                          >
+                            Retry
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
       </div>
 
       {/* Composer launcher — opens the right dialog for this channel */}
