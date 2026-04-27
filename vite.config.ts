@@ -38,19 +38,10 @@ export default defineConfig(({ mode }) => ({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/~oauth/],
-        // Don't precache the app shell — fetch fresh every time.
+        // Do not cache the app shell or CSS/JS bundles. Installed iPhone web
+        // apps must always fetch the newest safe-area/nav layout code.
         globPatterns: [],
-        // Runtime cache: ONLY static assets (icons, fonts), never HTML/JS bundles.
-        runtimeCaching: [
-          {
-            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp|woff2?)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "static-assets",
-              expiration: { maxAgeSeconds: 60 * 60 * 24 * 7 },
-            },
-          },
-        ],
+        runtimeCaching: [],
       }
     })
   ].filter(Boolean),

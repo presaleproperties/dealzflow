@@ -15,7 +15,7 @@
  *  - Optional: localStorage version markers
  */
 
-export const BUILD_ID = "2025-04-27-bottom-nav-flush-5";
+export const BUILD_ID = "2025-04-27-bottom-nav-native-dock-6";
 const BUILD_ID_KEY = "__app_build_id";
 
 export async function hardRefresh(): Promise<void> {
