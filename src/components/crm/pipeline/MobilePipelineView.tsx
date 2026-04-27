@@ -88,8 +88,7 @@ export function MobilePipelineView() {
     <div className="flex flex-col h-full -mx-3 -my-3 sm:-mx-4 sm:-my-4 crm-mobile-page">
       {/* Search */}
       <div
-        className="px-3 pb-2 flex-shrink-0 bg-background sticky top-0 z-20 border-b border-border"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
+        className="px-3 pt-3 pb-2 flex-shrink-0 bg-background sticky top-0 z-20 border-b border-border"
       >
         <div className="relative mb-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
