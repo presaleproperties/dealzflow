@@ -167,7 +167,8 @@ function InlineTagsCell({
         <button
           type="button"
           onClick={e => e.stopPropagation()}
-          className="flex items-center gap-1 flex-wrap min-h-[28px] px-1.5 py-1 -mx-1.5 rounded-md hover:bg-muted/40 transition-colors w-full text-left"
+          title={tags.join(', ')}
+          className="flex items-center gap-1 flex-nowrap overflow-hidden min-h-[28px] px-1.5 py-1 -mx-1.5 rounded-md hover:bg-muted/40 transition-colors w-full text-left"
         >
           {tags.length === 0 ? (
             <span className="text-muted-foreground text-[12px] inline-flex items-center gap-1">
@@ -178,12 +179,17 @@ function InlineTagsCell({
               {shown.map((tag, i) => {
                 const c = TAG_COLORS[i % TAG_COLORS.length];
                 return (
-                  <Badge key={tag} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: c.bg, color: c.color }}>
-                    {tag}
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
+                    style={{ background: c.bg, color: c.color }}
+                  >
+                    <span className="block truncate">{tag}</span>
                   </Badge>
                 );
               })}
-              {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
+              {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
             </>
           )}
         </button>
