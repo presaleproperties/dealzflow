@@ -3936,6 +3936,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          avatar_position: string
           avatar_url: string | null
           ban_reason: string | null
           banned_at: string | null
@@ -3954,6 +3955,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          avatar_position?: string
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
@@ -3972,6 +3974,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          avatar_position?: string
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
