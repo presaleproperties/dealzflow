@@ -430,7 +430,6 @@ export function BottomNav() {
               className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
               style={{
                 background: BG,
-                height: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
                 maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
               }}
             >
