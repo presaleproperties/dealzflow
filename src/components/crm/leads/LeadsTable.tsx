@@ -705,6 +705,14 @@ export function LeadsTable({
 
   const columns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.key)), [visibleColumns]);
 
+  // Persisted, drag-resizable column widths.
+  const defaultWidths = useMemo(() => {
+    const out: Record<string, number> = {};
+    ALL_COLUMNS.forEach(c => { out[c.key] = parseInt(c.width, 10) || 140; });
+    return out;
+  }, []);
+  const { widths, setWidth, resetWidths } = useColumnWidths('crm:leads:colWidths:v1', defaultWidths);
+
   // Pull from the canonical crm_tags library so this row picker shows EVERY tag
   // in the CRM (not just tags from the 50 contacts on the current page).
   const { data: tagLibRaw = [] } = useCrmTags();
