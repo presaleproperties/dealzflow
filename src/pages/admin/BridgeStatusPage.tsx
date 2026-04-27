@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,11 +85,7 @@ export default function BridgeStatusPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <Helmet>
-        <title>Bridge Status — Presale Properties</title>
-        <meta name="description" content="Diagnostic status for the Presale Properties bridge endpoints." />
-      </Helmet>
-
+      <SeoHead />
       <div className="mx-auto w-full max-w-5xl px-6 py-10 space-y-8">
         <header className="flex items-start justify-between gap-4">
           <div>
