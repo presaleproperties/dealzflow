@@ -49,6 +49,7 @@ class SectionErrorBoundary extends Component<
 import {
   Shield, Lock, UserPlus, GripVertical, Plus, Bell,
   MessageSquare, Mail, Calendar, Megaphone, Database, Link2,
+  User, ArrowUpRight,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior,
@@ -66,11 +67,14 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 
 
@@ -86,13 +90,21 @@ const NOTIFICATION_DEFAULTS = [
   { key: 'email_opened', label: 'Email Opened Alert' },
 ];
 
+// Re-ordered into a logical hierarchy:
+//   Profile → who you are
+//   Team → who else has access
+//   Email → outbound comms
+//   Integrations → external connections
+//   Pipeline data → what flows in (Projects, Import, Data Manager)
+//   Preferences → notifications, timeline behavior
 const SETTINGS_SECTIONS = [
+  { id: 'settings-profile', label: 'Profile', icon: User },
   { id: 'settings-team', label: 'Team', icon: Shield },
+  { id: 'settings-email', label: 'Email', icon: Mail },
+  { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
+  { id: 'settings-projects', label: 'Projects', icon: Link2 },
   { id: 'settings-import', label: 'Import', icon: Database },
   { id: 'settings-data', label: 'Data Manager', icon: Database },
-  { id: 'settings-projects', label: 'Projects', icon: Link2 },
-  { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
-  { id: 'settings-email', label: 'Email', icon: Mail },
   { id: 'settings-notifications', label: 'Notifications', icon: Bell },
   { id: 'settings-timeline', label: 'Timeline', icon: Link2 },
 ] as const;
