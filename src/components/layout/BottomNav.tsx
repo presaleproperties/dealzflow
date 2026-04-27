@@ -227,14 +227,23 @@ export function BottomNav() {
         onClick={() => triggerHaptic('tab')}
         aria-label={tab.label}
         aria-current={active ? 'page' : undefined}
-        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[4px] active:scale-[0.92] transition-transform duration-150"
+        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
         style={{ color: active ? GOLD : INACTIVE }}
       >
+        {/* Top indicator bar for active tab */}
+        <span
+          aria-hidden
+          className={cn(
+            'absolute top-0 left-1/2 -translate-x-1/2 h-[3px] rounded-b-full transition-all duration-300 ease-out',
+            active ? 'w-[28px] opacity-100' : 'w-[10px] opacity-0',
+          )}
+          style={{ background: GOLD }}
+        />
         {/* Organic blob behind active icon */}
         <span
           aria-hidden
           className={cn(
-            'absolute top-[10px] left-1/2 -translate-x-1/2 transition-all duration-300 ease-out',
+            'absolute top-[12px] left-1/2 -translate-x-1/2 transition-all duration-300 ease-out',
             active ? 'opacity-100 scale-100' : 'opacity-0 scale-75',
           )}
           style={{
@@ -247,12 +256,12 @@ export function BottomNav() {
         />
         <Icon
           className="relative w-[22px] h-[22px] transition-all duration-300"
-          strokeWidth={active ? 2.2 : 1.7}
+          strokeWidth={active ? 2.4 : 1.8}
         />
         <span
           className={cn(
-            'relative text-[10.5px] leading-none tracking-[-0.005em] transition-all duration-200',
-            active ? 'font-semibold' : 'font-medium',
+            'relative text-[10.5px] leading-none tracking-[-0.005em] mt-[3px] transition-all duration-200',
+            active ? 'font-bold' : 'font-medium',
           )}
           style={{ color: active ? 'hsl(var(--foreground))' : INACTIVE }}
         >
