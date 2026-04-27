@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Handshake, Building2, CalendarDays, MoreHorizontal,
@@ -137,6 +137,31 @@ export function BottomNav() {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [bookShowingOpen, setBookShowingOpen] = useState(false);
 
+  // Track Safari's bottom URL bar via visualViewport so the nav rides above
+  // the chrome instead of being covered when the bar expands on scroll-up.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    const update = () => {
+      // Distance from the bottom of the layout viewport to the bottom of the
+      // visual viewport. >0 when the URL bar is showing; 0 when collapsed.
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      root.style.setProperty('--browser-chrome-inset', `${Math.round(inset)}px`);
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      window.removeEventListener('orientationchange', update);
+      root.style.removeProperty('--browser-chrome-inset');
+    };
+  }, []);
+
   const mode = detectMode(location.pathname);
 
   const tabs = mode === 'crm' ? CRM_TABS : WORKSPACE_TABS;
@@ -274,7 +299,8 @@ export function BottomNav() {
             aria-label="Quick add"
             className="lg:hidden fixed z-[45] right-4 h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
             style={{
-              bottom: 'calc(var(--bottom-nav-height) + 12px)',
+              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) + 12px)',
+              transition: 'bottom 180ms ease-out',
               right: '14px',
               background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
               boxShadow:
@@ -299,7 +325,7 @@ export function BottomNav() {
       </Sheet>
 
       <nav
-          className="lg:hidden fixed inset-x-0 bottom-0 z-40 native-chrome overflow-hidden"
+          className="lg:hidden fixed inset-x-0 z-40 native-chrome overflow-hidden"
         aria-label="Primary"
         style={{
           background: 'hsl(var(--card) / 0.98)',
@@ -309,6 +335,8 @@ export function BottomNav() {
           boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
           paddingBottom: 'var(--bottom-nav-safe-pad)',
             height: 'var(--bottom-nav-height)',
+            bottom: 'var(--browser-chrome-inset, 0px)',
+            transition: 'bottom 180ms ease-out',
         }}
       >
         <div
