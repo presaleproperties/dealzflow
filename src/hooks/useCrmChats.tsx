@@ -131,6 +131,10 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
     staleTime: 5_000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    // Polling fallback in case realtime drops (mobile networks, sleep, etc.)
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
     select: (threads: ChatThread[]) => {
       // Collapse to one row per (contact_id, channel). When multiple
       // crm_conversations rows exist for the same lead+channel, keep the
