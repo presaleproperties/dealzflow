@@ -227,22 +227,33 @@ export function BottomNav() {
         onClick={() => triggerHaptic('selection')}
         aria-label={tab.label}
         aria-current={active ? 'page' : undefined}
-        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center active:scale-[0.92] transition-transform duration-150"
+        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
         style={{ color: active ? GOLD : INACTIVE }}
       >
-        <Icon
-          className="relative w-[22px] h-[22px] transition-all duration-300"
-          strokeWidth={active ? 2.2 : 1.7}
-        />
-        {/* Active dot — single elegant indicator */}
+        {/* Active pill chip behind icon */}
         <span
           aria-hidden
           className={cn(
-            'absolute bottom-[7px] left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
-            active ? 'w-[4px] h-[4px] opacity-100' : 'w-[4px] h-[4px] opacity-0',
+            'absolute top-[8px] left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
+            active ? 'w-[44px] h-[28px] opacity-100' : 'w-[36px] h-[26px] opacity-0',
           )}
-          style={{ background: GOLD, boxShadow: active ? `0 0 8px ${GOLD}` : 'none' }}
+          style={{
+            background: GOLD_BG,
+            boxShadow: active ? `inset 0 0 0 1px ${GOLD_RING}` : 'none',
+          }}
         />
+        <Icon
+          className="relative w-[22px] h-[22px] transition-all duration-300"
+          strokeWidth={active ? 2.3 : 1.8}
+        />
+        <span
+          className={cn(
+            'relative text-[10.5px] leading-none tracking-[-0.005em] transition-all duration-200',
+            active ? 'font-semibold' : 'font-medium',
+          )}
+        >
+          {tab.label}
+        </span>
       </Link>
     );
   };
@@ -257,37 +268,38 @@ export function BottomNav() {
         className="lg:hidden fixed left-0 right-0 bottom-0 z-40 native-chrome"
         aria-label="Primary"
         style={{
-          background: 'hsl(var(--card) / 0.96)',
-          backdropFilter: 'blur(28px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          background: 'hsl(var(--card) / 0.97)',
+          backdropFilter: 'blur(32px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.6)',
+          boxShadow: '0 -8px 28px -12px rgba(0,0,0,0.18)',
           paddingBottom: 'var(--bottom-nav-safe-pad)',
         }}
       >
-        {/* Flush flat tab bar — full width, edge-to-edge, no float, no rounded corners. */}
+        {/* Premium full-width rail — taller, with icon+label tabs and a halo center FAB. */}
         <div
-          className="relative flex items-center h-[42px] w-full"
-          style={{ padding: '0 2px' }}
+          className="relative flex items-stretch h-[64px] w-full"
+          style={{ padding: '0 4px' }}
         >
             {/* Left tabs */}
             {leftTabs.map(renderTab)}
 
-            {/* Center premium "+" action */}
+            {/* Center premium "+" action — larger with gold halo */}
             <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
               <SheetTrigger asChild>
                 <button
                   type="button"
                   onClick={() => triggerHaptic('medium')}
                   aria-label="Quick add"
-                  className="relative mx-1 shrink-0 h-[40px] w-[40px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
+                  className="relative mx-1.5 shrink-0 self-center h-[52px] w-[52px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
                   style={{
-                    background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary) / 0.88))',
+                    background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.9) 100%)',
                     boxShadow:
-                      '0 6px 16px -4px hsl(var(--primary) / 0.55), 0 2px 6px -2px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.3)',
+                      '0 10px 24px -6px hsl(var(--primary) / 0.55), 0 4px 10px -2px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.35), inset 0 -1px 0 hsl(0 0% 0% / 0.08), 0 0 0 4px hsl(var(--background))',
                     color: 'hsl(var(--primary-foreground))',
                   }}
                 >
-                  <Plus className="w-[21px] h-[21px]" strokeWidth={2.4} />
+                  <Plus className="w-[26px] h-[26px]" strokeWidth={2.5} />
                 </button>
               </SheetTrigger>
               <SheetContent
@@ -314,21 +326,32 @@ export function BottomNav() {
                   onClick={() => triggerHaptic('selection')}
                   aria-label="More"
                   aria-current={moreActive ? 'page' : undefined}
-                  className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center active:scale-[0.92] transition-transform duration-150"
+                  className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
                   style={{ color: moreActive ? GOLD : INACTIVE }}
                 >
-                  <MoreHorizontal
-                    className="relative w-[22px] h-[22px]"
-                    strokeWidth={moreActive ? 2.2 : 1.7}
-                  />
                   <span
                     aria-hidden
                     className={cn(
-                      'absolute bottom-[7px] left-1/2 -translate-x-1/2 rounded-full transition-all duration-300',
-                      moreActive ? 'w-[4px] h-[4px] opacity-100' : 'w-[4px] h-[4px] opacity-0',
+                      'absolute top-[8px] left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
+                      moreActive ? 'w-[44px] h-[28px] opacity-100' : 'w-[36px] h-[26px] opacity-0',
                     )}
-                    style={{ background: GOLD, boxShadow: moreActive ? `0 0 8px ${GOLD}` : 'none' }}
+                    style={{
+                      background: GOLD_BG,
+                      boxShadow: moreActive ? `inset 0 0 0 1px ${GOLD_RING}` : 'none',
+                    }}
                   />
+                  <MoreHorizontal
+                    className="relative w-[22px] h-[22px]"
+                    strokeWidth={moreActive ? 2.3 : 1.8}
+                  />
+                  <span
+                    className={cn(
+                      'relative text-[10.5px] leading-none tracking-[-0.005em] transition-all duration-200',
+                      moreActive ? 'font-semibold' : 'font-medium',
+                    )}
+                  >
+                    More
+                  </span>
                 </button>
               </SheetTrigger>
               <SheetContent
