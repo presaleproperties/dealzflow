@@ -118,13 +118,20 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const authHeader = req.headers.get("Authorization");
-  const admin = await isAdmin(authHeader);
-  if (!admin) {
-    return new Response(JSON.stringify({ error: "forbidden" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  // Allow service-role / cron probe via x-cron-secret header (no JWT).
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const cronHeader = req.headers.get("x-cron-secret");
+  const isCronProbe = !!cronSecret && cronHeader === cronSecret;
+
+  if (!isCronProbe) {
+    const authHeader = req.headers.get("Authorization");
+    const admin = await isAdmin(authHeader);
+    if (!admin) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   let body: { action?: Action; params?: Record<string, string | undefined> } = {};
