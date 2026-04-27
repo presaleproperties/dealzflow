@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import { usePresaleAgent } from "@/stores/usePresaleAgent";
 
