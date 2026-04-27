@@ -2,7 +2,7 @@
   "name": "Dealzflow",
   "short_name": "Dealzflow",
   "description": "Financial clarity for real estate agents — track commissions, project cashflow, know your safe-to-spend",
-  "theme_color": "#10b981",
+  "theme_color": "#0a0a0b",
   "background_color": "#0a0a0b",
   "display": "standalone",
   "orientation": "portrait-primary",
