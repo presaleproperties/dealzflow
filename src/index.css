@@ -144,7 +144,7 @@
   }
   :root.is-standalone,
   :root.is-standalone-pwa {
-    --browser-chrome-inset: 0px;
+    --browser-chrome-inset: 0px !important;
     /* Match Lofty: nav sits flush to the physical bottom edge with the
        full iOS safe-area inset reserved INSIDE the nav. Labels sit above
        the home indicator, the nav's surface paints the entire indicator
