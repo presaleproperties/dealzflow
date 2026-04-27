@@ -200,15 +200,58 @@ export interface SendSmsArgs {
   channel?: MessagingChannel;
 }
 
+function makeDedupeId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  return `obx-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function useSendSms() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: SendSmsArgs) => {
-      const invoke = (body: SendSmsArgs) => supabase.functions.invoke('send-sms', { body });
-      let { data, error } = await invoke(args);
+    mutationFn: async (args: SendSmsArgs & { client_dedupe_id?: string }) => {
+      const dedupeId = args.client_dedupe_id ?? makeDedupeId();
+      const channel: 'sms' | 'whatsapp' = args.channel || 'sms';
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-      // Edge function may surface QUIET_HOURS as either a thrown error (non-2xx)
-      // or as { error, code } in the JSON body. Detect both, prompt once, retry.
+      // Helper: stash the message for later delivery, then return a synthetic
+      // success payload so the optimistic UI sticks.
+      const queueForLater = async (reason: 'offline' | 'network-error', errMsg?: string) => {
+        await enqueueOutbox({
+          id: dedupeId,
+          contact_id: args.contact_id || null,
+          to: args.to,
+          body: args.body,
+          from: args.from,
+          media_urls: args.media_urls,
+          channel,
+        });
+        return {
+          ok: true,
+          queued_offline: true,
+          queue_reason: reason,
+          queue_error: errMsg,
+          log_id: dedupeId,
+        };
+      };
+
+      // Skip the network entirely if we know we're offline.
+      if (offline) {
+        return queueForLater('offline');
+      }
+
+      const invoke = (body: SendSmsArgs & { client_dedupe_id: string }) =>
+        supabase.functions.invoke('send-sms', { body });
+
+      let data: any;
+      let error: any;
+      try {
+        ({ data, error } = await invoke({ ...args, client_dedupe_id: dedupeId }));
+      } catch (networkErr: any) {
+        // True transport failure (fetch threw). Queue and report success.
+        return queueForLater('network-error', networkErr?.message);
+      }
+
+      // QUIET_HOURS prompt path (unchanged behavior)
       const quietMsg = (data?.code === 'QUIET_HOURS' && data?.error)
         || (error?.message?.includes('QUIET_HOURS') ? 'Quiet hours are in effect.' : '')
         || (error?.message?.includes('Quiet hours') ? error.message : '');
@@ -216,10 +259,18 @@ export function useSendSms() {
       if (quietMsg && !args.skip_quiet_hours && typeof window !== 'undefined') {
         const ok = await confirmQuietHours(quietMsg);
         if (!ok) throw new Error('Send cancelled (quiet hours).');
-        ({ data, error } = await invoke({ ...args, skip_quiet_hours: true }));
+        try {
+          ({ data, error } = await invoke({ ...args, skip_quiet_hours: true, client_dedupe_id: dedupeId }));
+        } catch (networkErr: any) {
+          return queueForLater('network-error', networkErr?.message);
+        }
       }
 
-      if (error) throw new Error(error.message || 'Send failed');
+      if (error) {
+        // FunctionsHttpError with a non-2xx body is a real server-side rejection
+        // (validation, opt-out, etc.) — surface it. We do NOT auto-queue these.
+        throw new Error(error.message || 'Send failed');
+      }
       if (data?.error) throw new Error(data.error);
       return data;
     },
@@ -228,6 +279,7 @@ export function useSendSms() {
       await qc.cancelQueries({ queryKey: ['crm-sms-log-all'] });
       const previous = qc.getQueriesData({ queryKey: ['crm-sms-log-all'] });
 
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
       const optimistic: SmsLogRow = {
         id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         user_id: null,
@@ -236,7 +288,7 @@ export function useSendSms() {
         to_number: vars.to,
         from_number: vars.from || null,
         body: vars.body,
-        status: vars.scheduled_for ? 'scheduled' : 'sending',
+        status: vars.scheduled_for ? 'scheduled' : (offline ? 'queued' : 'sending'),
         message_type: (vars.media_urls?.length ?? 0) > 0 ? 'mms' : 'sms',
         media_urls: vars.media_urls || [],
         twilio_message_sid: null,
@@ -245,7 +297,7 @@ export function useSendSms() {
         delivered_at: null,
         num_segments: 1,
         error_code: null,
-        error_message: null,
+        error_message: offline ? 'Waiting for network' : null,
         price: null,
         price_unit: null,
         channel: vars.channel || 'sms',
@@ -273,7 +325,13 @@ export function useSendSms() {
       qc.invalidateQueries({ queryKey: ['crm-chat-thread'] });
       qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages'] });
       qc.invalidateQueries({ queryKey: ['crm-recent-activity'] });
-      if (data?.scheduled) toast.success('Text scheduled');
+      if (data?.queued_offline) {
+        toast.success(
+          data.queue_reason === 'offline'
+            ? 'Saved — will send when you’re back online'
+            : 'Saved — will retry automatically',
+        );
+      } else if (data?.scheduled) toast.success('Text scheduled');
       else if (data?.queued) toast.success('Saved — will send once Twilio is connected');
       else toast.success('Text sent');
     },
