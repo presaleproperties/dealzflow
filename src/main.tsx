@@ -3,6 +3,12 @@ import { createRoot } from "react-dom/client";
 import '@fontsource-variable/plus-jakarta-sans';
 import App from "./App.tsx";
 import "./index.css";
+import { checkBuildIdAndMaybeRefresh } from "./lib/hardRefresh";
+
+// Compare compiled-in BUILD_ID vs. last-seen. On mismatch, purge SW + caches
+// and reload once. Guarantees PWA users pick up new CSS / safe-area fixes
+// after a deploy (or after re-installing to home screen).
+void checkBuildIdAndMaybeRefresh();
 
 // ── Service worker bootstrap ─────────────────────────────────────────────
 // We register a MINIMAL asset-only SW (public/sw.js) that caches Vite's
