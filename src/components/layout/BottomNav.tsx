@@ -38,9 +38,11 @@ interface MoreGroup { label: string; items: MoreItem[] }
 const GOLD = 'hsl(var(--primary))';
 const GOLD_BG = 'hsl(var(--primary) / 0.14)';
 const GOLD_RING = 'hsl(var(--primary) / 0.25)';
-const BG = 'hsl(var(--background))';
+// iOS grouped-inset list palette: outer sheet sits a touch lower than inner cards
+// so the inset rows pop in both light + dark, matching the native iOS Settings feel.
+const BG = 'hsl(var(--muted) / 0.55)';
 const SURFACE = 'hsl(var(--card))';
-const BORDER = 'hsl(var(--border) / 0.7)';
+const BORDER = 'hsl(var(--border) / 0.6)';
 const INACTIVE = 'hsl(var(--muted-foreground))';
 const SUBTLE = 'hsl(var(--muted-foreground) / 0.7)';
 
