@@ -86,6 +86,10 @@ Deno.serve(async (req) => {
     const skip_quiet_hours = !!body?.skip_quiet_hours;
     const ignore_optout = !!body?.ignore_optout;
     const channel: 'sms' | 'whatsapp' = body?.channel === 'whatsapp' ? 'whatsapp' : 'sms';
+    const client_dedupe_id: string | null =
+      typeof body?.client_dedupe_id === 'string' && body.client_dedupe_id.length > 0 && body.client_dedupe_id.length <= 100
+        ? body.client_dedupe_id
+        : null;
 
     if (!to_raw || !message || message.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'to and body are required' }), {
