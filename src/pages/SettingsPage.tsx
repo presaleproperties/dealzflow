@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/format';
 import { PlatformConnectionsManager } from '@/components/settings/PlatformConnectionsManager';
 import { PushNotificationSetup } from '@/components/settings/PushNotificationSetup';
+import ProfileSection from '@/components/settings/ProfileSection';
 
 
 const springConfig = { type: "spring" as const, stiffness: 120, damping: 20 };
@@ -214,6 +215,7 @@ export default function SettingsPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="w-full flex overflow-x-auto no-scrollbar bg-muted/40 border border-border/50 p-1 h-auto gap-0.5 rounded-xl">
             {[
+              { value: 'profile', label: 'Profile' },
               { value: 'general', label: 'General' },
               { value: 'tax', label: 'Tax & Finance' },
               { value: 'subscription', label: 'Plan' },
@@ -226,6 +228,11 @@ export default function SettingsPage() {
               </TabsTrigger>
             ))}
           </TabsList>
+
+          {/* Profile Tab — global identity used across Dealzflow + CRM */}
+          <TabsContent value="profile" className="space-y-6">
+            <ProfileSection />
+          </TabsContent>
 
           {/* General Tab */}
           <TabsContent value="general" className="space-y-6">

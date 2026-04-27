@@ -3934,32 +3934,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           ban_reason: string | null
           banned_at: string | null
           created_at: string
           full_name: string | null
           id: string
           is_banned: boolean
+          phone: string | null
+          title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
           is_banned?: boolean
+          phone?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
           is_banned?: boolean
+          phone?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
         }

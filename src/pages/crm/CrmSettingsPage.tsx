@@ -49,6 +49,7 @@ class SectionErrorBoundary extends Component<
 import {
   Shield, Lock, UserPlus, GripVertical, Plus, Bell,
   MessageSquare, Mail, Calendar, Megaphone, Database, Link2,
+  User, ArrowUpRight,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior,
@@ -66,11 +67,14 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 
 
@@ -86,13 +90,21 @@ const NOTIFICATION_DEFAULTS = [
   { key: 'email_opened', label: 'Email Opened Alert' },
 ];
 
+// Re-ordered into a logical hierarchy:
+//   Profile → who you are
+//   Team → who else has access
+//   Email → outbound comms
+//   Integrations → external connections
+//   Pipeline data → what flows in (Projects, Import, Data Manager)
+//   Preferences → notifications, timeline behavior
 const SETTINGS_SECTIONS = [
+  { id: 'settings-profile', label: 'Profile', icon: User },
   { id: 'settings-team', label: 'Team', icon: Shield },
+  { id: 'settings-email', label: 'Email', icon: Mail },
+  { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
+  { id: 'settings-projects', label: 'Projects', icon: Link2 },
   { id: 'settings-import', label: 'Import', icon: Database },
   { id: 'settings-data', label: 'Data Manager', icon: Database },
-  { id: 'settings-projects', label: 'Projects', icon: Link2 },
-  { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
-  { id: 'settings-email', label: 'Email', icon: Mail },
   { id: 'settings-notifications', label: 'Notifications', icon: Bell },
   { id: 'settings-timeline', label: 'Timeline', icon: Link2 },
 ] as const;
@@ -182,8 +194,24 @@ export default function CrmSettingsPage() {
       <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto space-y-6 sm:space-y-8 max-w-3xl">
         <h1 className="m-page-title lg:hidden">CRM Settings</h1>
 
+        <div id="settings-profile" className="scroll-mt-16">
+          <SectionErrorBoundary name="Profile"><ProfileLinkCard /></SectionErrorBoundary>
+        </div>
+        <Separator />
         <div id="settings-team" className="scroll-mt-16">
           <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-email" className="scroll-mt-16">
+          <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-integrations" className="scroll-mt-16">
+          <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-projects" className="scroll-mt-16">
+          <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-import" className="scroll-mt-16">
@@ -192,18 +220,6 @@ export default function CrmSettingsPage() {
         <Separator />
         <div id="settings-data" className="scroll-mt-16">
           <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-projects" className="scroll-mt-16">
-          <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-integrations" className="scroll-mt-16">
-          <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-email" className="scroll-mt-16">
-          <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-notifications" className="scroll-mt-16">
@@ -619,6 +635,78 @@ function TimelinePreferencesSection() {
         </div>
         <p className="text-[11px] text-muted-foreground/80">
           Saved on this device. Click tracking still records every link you open.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ══════════════════════════════════════════
+   7. Profile (link card → global Profile editor)
+   ══════════════════════════════════════════ */
+function ProfileLinkCard() {
+  const { user } = useAuth();
+  const { data: profile, isLoading } = useProfile();
+  const navigate = useNavigate();
+
+  const fullName = profile?.full_name || user?.user_metadata?.full_name || '';
+  const initials =
+    (fullName || user?.email || '?')
+      .split(/[\s@]/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase())
+      .join('') || '?';
+
+  const isComplete = Boolean(profile?.avatar_url && profile?.full_name && profile?.title && profile?.phone);
+
+  return (
+    <Card className="rounded-[10px] lg:rounded-xl">
+      <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
+        <User className="h-5 w-5 text-primary" />
+        <CardTitle className="text-base sm:text-lg">Your Profile</CardTitle>
+      </CardHeader>
+      <CardContent className="px-3 sm:px-6">
+        {isLoading ? (
+          <div className="h-16 animate-pulse bg-muted/40 rounded-lg" />
+        ) : (
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14 ring-2 ring-border/60">
+              <AvatarImage src={profile?.avatar_url ?? undefined} alt={fullName || 'Profile'} />
+              <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">
+                {fullName || 'Add your name'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {profile?.title || 'Add your title'}
+              </p>
+              <p className="text-[11px] text-muted-foreground/80 truncate mt-0.5">
+                {user?.email}
+              </p>
+            </div>
+            {!isComplete && (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px]">
+                Incomplete
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/settings?tab=profile')}
+              className="shrink-0"
+            >
+              Edit profile
+              <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground mt-3">
+          Your profile is shared across Dealzflow and the CRM. Edit it once and it appears in
+          your email signatures, lead pages, and team directory.
         </p>
       </CardContent>
     </Card>
