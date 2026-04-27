@@ -200,6 +200,7 @@ const App = () => (
                   <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                   <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
                   <Route path="/admin/bridge-status" element={<AdminRoute><BridgeStatusPage /></AdminRoute>} />
+                  <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
                   <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                   <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
                   <Route path="/dev/mobile-spacing" element={<ProtectedRoute><MobileSpacingChecklistPage /></ProtectedRoute>} />
