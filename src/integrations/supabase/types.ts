@@ -470,6 +470,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_cities: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          lead_count: number
+          name: string
+          name_lower: string | null
+          project_count: number
+          province: string | null
+          region: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_count?: number
+          name: string
+          name_lower?: string | null
+          project_count?: number
+          province?: string | null
+          region?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_count?: number
+          name?: string
+          name_lower?: string | null
+          project_count?: number
+          province?: string | null
+          region?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_contacts: {
         Row: {
           address: string | null
@@ -1994,6 +2033,50 @@ export type Database = {
           },
         ]
       }
+      crm_neighborhoods: {
+        Row: {
+          city_id: string | null
+          city_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          lead_count: number
+          name: string
+          project_count: number
+          updated_at: string
+        }
+        Insert: {
+          city_id?: string | null
+          city_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_count?: number
+          name: string
+          project_count?: number
+          updated_at?: string
+        }
+        Update: {
+          city_id?: string | null
+          city_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lead_count?: number
+          name?: string
+          project_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_neighborhoods_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_notes: {
         Row: {
           contact_id: string
@@ -2076,31 +2159,85 @@ export type Database = {
       }
       crm_projects: {
         Row: {
+          aliases: string[] | null
+          bedrooms_offered: number[] | null
+          city: string | null
           color: string | null
+          completion_date: string | null
           created_at: string
+          developer: string | null
           id: string
+          is_active: boolean
+          last_viewed_at: string | null
+          lead_count: number
+          marketing_url: string | null
           name: string
           name_lower: string | null
+          neighborhood: string | null
+          notes: string | null
+          price_from: number | null
+          price_to: number | null
+          property_type: string | null
+          province: string | null
+          status: string | null
           updated_at: string
           usage_count: number
+          view_count: number
+          website_url: string | null
         }
         Insert: {
+          aliases?: string[] | null
+          bedrooms_offered?: number[] | null
+          city?: string | null
           color?: string | null
+          completion_date?: string | null
           created_at?: string
+          developer?: string | null
           id?: string
+          is_active?: boolean
+          last_viewed_at?: string | null
+          lead_count?: number
+          marketing_url?: string | null
           name: string
           name_lower?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          price_from?: number | null
+          price_to?: number | null
+          property_type?: string | null
+          province?: string | null
+          status?: string | null
           updated_at?: string
           usage_count?: number
+          view_count?: number
+          website_url?: string | null
         }
         Update: {
+          aliases?: string[] | null
+          bedrooms_offered?: number[] | null
+          city?: string | null
           color?: string | null
+          completion_date?: string | null
           created_at?: string
+          developer?: string | null
           id?: string
+          is_active?: boolean
+          last_viewed_at?: string | null
+          lead_count?: number
+          marketing_url?: string | null
           name?: string
           name_lower?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          price_from?: number | null
+          price_to?: number | null
+          property_type?: string | null
+          province?: string | null
+          status?: string | null
           updated_at?: string
           usage_count?: number
+          view_count?: number
+          website_url?: string | null
         }
         Relationships: []
       }
