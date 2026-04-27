@@ -30,18 +30,16 @@ export function useProfile() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, avatar_url, phone, title, created_at, updated_at')
+        .select(PROFILE_COLUMNS)
         .eq('user_id', session.user.id)
         .maybeSingle();
       if (error) throw error;
 
-      // Self-heal: handle_new_user trigger should create one, but if a legacy
-      // user is missing a row we materialize it on first read.
       if (!data) {
         const { data: created, error: insertErr } = await supabase
           .from('profiles')
           .insert({ user_id: session.user.id, full_name: session.user.user_metadata?.full_name ?? null })
-          .select('id, user_id, full_name, avatar_url, phone, title, created_at, updated_at')
+          .select(PROFILE_COLUMNS)
           .single();
         if (insertErr) throw insertErr;
         return created as Profile;
