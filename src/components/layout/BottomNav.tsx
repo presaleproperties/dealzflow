@@ -325,7 +325,7 @@ export function BottomNav() {
       </Sheet>
 
       <nav
-          className="lg:hidden fixed inset-x-0 bottom-0 z-40 native-chrome overflow-hidden"
+          className="lg:hidden fixed inset-x-0 z-40 native-chrome overflow-hidden"
         aria-label="Primary"
         style={{
           background: 'hsl(var(--card) / 0.98)',
@@ -335,6 +335,8 @@ export function BottomNav() {
           boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
           paddingBottom: 'var(--bottom-nav-safe-pad)',
             height: 'var(--bottom-nav-height)',
+            bottom: 'var(--browser-chrome-inset, 0px)',
+            transition: 'bottom 180ms ease-out',
         }}
       >
         <div
