@@ -3,6 +3,9 @@ project_id = "svbilqvudkkdhslxebce"
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.receive-presale-activity]
+verify_jwt = false
+
 [functions.ai-assistant]
 verify_jwt = false
 
