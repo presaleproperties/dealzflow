@@ -145,6 +145,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function NativeBootstrap({ children }: { children: React.ReactNode }) {
   useNativeShell();
   useStandaloneMode();
+  useGlobalTapHaptics();
   return <>{children}</>;
 }
 
