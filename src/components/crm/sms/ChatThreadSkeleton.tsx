@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export function ChatThreadSkeleton({ onBack }: { onBack: () => void }) {
   return (
-    <div className="-mx-3 sm:-mx-4 -my-3 sm:-my-4 flex flex-col h-[calc(100vh-60px)]">
+    <div className="-mx-3 sm:-mx-4 -my-3 sm:-my-4 flex flex-col h-[calc(100dvh-60px)]">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
         <button

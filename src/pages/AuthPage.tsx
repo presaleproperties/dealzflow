@@ -213,7 +213,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-dvh flex">
       {/* Left side - premium branding panel */}
       <div className="hidden lg:flex lg:w-[48%] bg-card border-r border-border px-12 py-10 flex-col relative overflow-hidden">
         {/* Subtle background texture */}

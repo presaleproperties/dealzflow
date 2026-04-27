@@ -91,7 +91,7 @@ export default function ApiDocsPage() {
     }
   }, [isAdmin]);
 
-  if (loading || isCheckingAdmin) return <div className="min-h-screen flex items-center justify-center"><PageLoader /></div>;
+  if (loading || isCheckingAdmin) return <div className="min-h-dvh flex items-center justify-center"><PageLoader /></div>;
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 

@@ -23,7 +23,7 @@ export function CrmRouteGuard({ children, requireRole }: CrmRouteGuardProps) {
 
   if (isLoading && !timedOut) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-background">
         <PageLoader />
       </div>
     );

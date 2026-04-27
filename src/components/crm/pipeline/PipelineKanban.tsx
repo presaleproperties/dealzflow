@@ -415,7 +415,7 @@ export function PipelineKanban() {
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200 ${snapshot.isDraggingOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
-                            style={{ maxHeight: 'calc(100vh - 280px)' }}
+                            style={{ maxHeight: 'calc(100dvh - 280px)' }}
                           >
                             {visible.map((contact, idx) => (
                               <LeadCard key={contact.id} contact={contact} index={idx} />

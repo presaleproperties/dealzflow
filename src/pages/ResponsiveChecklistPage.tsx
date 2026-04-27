@@ -61,7 +61,7 @@ export default function ResponsiveChecklistPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 h-14 flex items-center gap-3">
           <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80">

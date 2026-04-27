@@ -1278,10 +1278,10 @@ html.is-standalone *:focus-visible {
   display: none;
 }
 
-/* Force any 100vh layout to use the dynamic viewport on standalone iOS so
+/* Force any 100dvh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */
 html.is-standalone .full-viewport,
-html.is-standalone .min-h-screen { min-height: 100dvh; }
+html.is-standalone .min-h-dvh { min-height: 100dvh; }
 
 /* iOS-style momentum scroll for any opt-in scroll container */
 .native-scroll {
