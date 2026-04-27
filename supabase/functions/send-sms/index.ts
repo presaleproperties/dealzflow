@@ -117,6 +117,22 @@ Deno.serve(async (req) => {
     // Load SMS settings (single-row)
     const { data: settings } = await supabaseAdmin.from('crm_sms_settings').select('*').limit(1).maybeSingle();
 
+    // Idempotency: if this client_dedupe_id was already processed, return the prior result
+    // so retries from the offline outbox never produce duplicate sends.
+    if (client_dedupe_id) {
+      const { data: priorLog } = await supabaseAdmin
+        .from('crm_sms_log')
+        .select('id, status, twilio_message_sid, channel')
+        .eq('client_dedupe_id', client_dedupe_id)
+        .maybeSingle();
+      if (priorLog) {
+        return new Response(JSON.stringify({
+          ok: true, deduped: true, log_id: priorLog.id,
+          sid: priorLog.twilio_message_sid, status: priorLog.status, channel: priorLog.channel,
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // Opt-out check
     if (!ignore_optout) {
       const { data: optOut } = await supabaseAdmin
