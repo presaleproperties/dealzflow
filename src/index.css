@@ -130,10 +130,14 @@
   :root {
     /* Bottom nav tokens — single source of truth.
        The bar reserves the safe-area inset PLUS a 50px icon row
-       (matches Apple's 49pt tab bar — sits flush to the home indicator). */
+       (matches Apple's 49pt tab bar — sits flush to the home indicator).
+       --bottom-nav-icon-lift adds extra breathing room ABOVE the safe-area
+       gutter so the icons sit higher (Lofty-style), not jammed against
+       the iOS home indicator. */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
     --bottom-nav-icon-row: 50px;
-    --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
+    --bottom-nav-icon-lift: 0px;
+    --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
@@ -147,16 +151,18 @@
     --browser-chrome-inset: 0px !important;
     /* Match Lofty: nav sits flush to the physical bottom edge with the
        full iOS safe-area inset reserved INSIDE the nav. Labels sit above
-       the home indicator, the nav's surface paints the entire indicator
-       gutter — no cream body bleed-through, no floating gap. */
+       the home indicator with a 12px lift so they don't crowd the
+       indicator pill — the nav surface still paints the entire gutter. */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
+    --bottom-nav-icon-lift: 12px;
+    --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
   }
   @media (min-width: 1024px) {
     :root {
       --bottom-nav-safe-pad: 0px;
       --bottom-nav-icon-row: 0px;
+      --bottom-nav-icon-lift: 0px;
       --bottom-nav-height: 0px;
       --bottom-nav-pad: 0px;
       --m-top-pad: 0px;

@@ -369,7 +369,7 @@ export function BottomNav() {
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.55)',
           boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
-          paddingBottom: 'var(--bottom-nav-safe-pad)',
+          paddingBottom: 'calc(var(--bottom-nav-safe-pad) + var(--bottom-nav-icon-lift, 0px))',
             height: 'var(--bottom-nav-height)',
             bottom: 'var(--browser-chrome-inset, 0px)',
             transition: 'bottom 180ms ease-out',
