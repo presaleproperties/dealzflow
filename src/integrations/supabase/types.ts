@@ -2479,6 +2479,7 @@ export type Database = {
           body: string
           campaign_id: string | null
           channel: string
+          client_dedupe_id: string | null
           contact_id: string | null
           created_at: string
           delivered_at: string | null
@@ -2503,6 +2504,7 @@ export type Database = {
           body: string
           campaign_id?: string | null
           channel?: string
+          client_dedupe_id?: string | null
           contact_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -2527,6 +2529,7 @@ export type Database = {
           body?: string
           campaign_id?: string | null
           channel?: string
+          client_dedupe_id?: string | null
           contact_id?: string | null
           created_at?: string
           delivered_at?: string | null
