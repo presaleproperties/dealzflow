@@ -1253,21 +1253,8 @@ html.is-standalone *:focus-visible {
    notch instead of being hidden by it. Works for both PWA and Capacitor. */
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
-/* Bottom-nav clearance helper (alias kept for backwards compat). Keep this in
-   sync with the primary token above — do not re-add safe-area padding here. */
-:root {
-  --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-  --bottom-nav-height: calc(72px + env(safe-area-inset-bottom, 0px));
-  --bottom-nav-pad: calc(72px + env(safe-area-inset-bottom, 0px));
-}
-
-@media (min-width: 1024px) {
-  :root {
-    --bottom-nav-safe-pad: 0px;
-    --bottom-nav-height: 0px;
-    --bottom-nav-pad: 0px;
-  }
-}
+/* Bottom-nav tokens are defined once in the :root block at the top of this
+   file (search for --bottom-nav-pad). Do not redefine them here. */
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */
