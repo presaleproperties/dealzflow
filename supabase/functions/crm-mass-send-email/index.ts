@@ -77,9 +77,9 @@ Deno.serve(async (req) => {
       .in("id", body.recipient_ids);
     if (cErr) return json({ error: cErr.message }, 500);
 
-    // Fetch sender info (settings + signature)
+    // Fetch sender info (settings + signature + brand logo)
     const { data: settings } = await supabase
-      .from("crm_email_settings").select("sender_name,reply_to,signature_html")
+      .from("crm_email_settings").select("sender_name,reply_to,signature_html,brand_logo_url,brand_logo_alt")
       .eq("user_id", userId).maybeSingle();
 
     let signatureHtml = "";
@@ -91,6 +91,18 @@ Deno.serve(async (req) => {
     } else if (body.append_signature) {
       signatureHtml = settings?.signature_html ?? "";
     }
+
+    // Build the brand logo banner once (used for every recipient).
+    // Recipients' inboxes load this from the public HTTPS URL — guarantees the
+    // logo is visible inside the message body for everyone, regardless of
+    // BIMI / Workspace / Outlook avatar resolution rules.
+    const rawLogoUrl = (settings?.brand_logo_url ?? "").trim();
+    const safeLogoUrl = /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
+    const safeLogoAlt = ((settings?.brand_logo_alt ?? settings?.sender_name ?? "Logo") || "Logo")
+      .replace(/[<>"']/g, "");
+    const brandBannerHtml = safeLogoUrl
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 20px 0;"><tr><td align="center" style="padding:8px 0 16px 0;border-bottom:1px solid #ececec;"><img src="${safeLogoUrl}" alt="${safeLogoAlt}" style="display:block;max-height:64px;max-width:240px;height:auto;width:auto;border:0;outline:none;text-decoration:none;" /></td></tr></table>`
+      : "";
 
     const senderCtx = {
       full_name: settings?.sender_name ?? "",
@@ -186,6 +198,11 @@ Deno.serve(async (req) => {
         let html = renderForLead(body.body_html, lead, senderCtx);
         if (body.append_signature && signatureHtml) {
           html = `${html}<br/><br/>${signatureHtml}`;
+        }
+        // Prepend brand banner so every recipient sees the logo inside the
+        // message body (independent of inbox-level avatar rules like BIMI).
+        if (brandBannerHtml) {
+          html = `${brandBannerHtml}${html}`;
         }
         try {
           const upstream = await fetch(`${supabaseUrl}/functions/v1/bridge-send-email`, {

@@ -1195,6 +1195,8 @@ export type Database = {
       }
       crm_email_settings: {
         Row: {
+          brand_logo_alt: string | null
+          brand_logo_url: string | null
           created_at: string
           id: string
           reply_to: string | null
@@ -1207,6 +1209,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_logo_alt?: string | null
+          brand_logo_url?: string | null
           created_at?: string
           id?: string
           reply_to?: string | null
@@ -1219,6 +1223,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_logo_alt?: string | null
+          brand_logo_url?: string | null
           created_at?: string
           id?: string
           reply_to?: string | null
