@@ -134,8 +134,8 @@
        bottom while leaving a hairline of breathing room above the gesture bar. */
     /* Bottom nav is now sticky inside the scroll container — no clearance pad needed.
        --bottom-nav-height is kept for the floating FAB offset only. */
-    --bottom-nav-safe-pad: 0px;
-    --bottom-nav-height: 64px;
+    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
+    --bottom-nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
     --bottom-nav-pad: 0px;
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);

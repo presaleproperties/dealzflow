@@ -315,13 +315,13 @@ export function BottomNav() {
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border))',
           boxShadow: '0 -8px 28px -16px rgba(0,0,0,0.22), 0 -1px 0 hsl(var(--border) / 0.4)',
-          paddingBottom: 0,
+          paddingBottom: 'var(--bottom-nav-safe-pad)',
             height: 'var(--bottom-nav-height)',
         }}
       >
         <div
-            className="relative flex items-start w-full h-full"
-            style={{ padding: '6px 4px 0' }}
+            className="relative flex items-start w-full"
+            style={{ padding: '6px 4px 0', height: 'calc(var(--bottom-nav-height) - var(--bottom-nav-safe-pad))' }}
         >
           {tabs.map(renderTab)}
 
