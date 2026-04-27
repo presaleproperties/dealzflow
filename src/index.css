@@ -128,15 +128,12 @@
      Pages reserve exactly bar height + that capped inset.
      Disabled on lg+ where the bar is hidden. */
   :root {
-    /* Aggressively absorb iOS PWA safe-area on Pro Max so the bar sits as low as
-       possible without overlapping the home indicator. We subtract 24px from the
-       native inset (Pro Max ≈ 34px → 10px → capped at 4px), giving a near-flush
-       bottom while leaving a hairline of breathing room above the gesture bar. */
-    /* Bottom nav: no extra iOS safe-area padding. The bar itself is fixed to
-       the physical bottom edge; pages only reserve the visible 42px rail. */
-    --bottom-nav-safe-pad: 0px;
-    --bottom-nav-height: 82px;
-    --bottom-nav-pad: 82px;
+    /* Bottom nav tokens — single source of truth.
+       The bar reserves the safe-area inset PLUS a 56px icon row. */
+    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
+    --bottom-nav-icon-row: 56px;
+    --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
+    --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
     /* Composer top inset — guarantees a minimum 50px clearance even when
@@ -147,6 +144,7 @@
   @media (min-width: 1024px) {
     :root {
       --bottom-nav-safe-pad: 0px;
+      --bottom-nav-icon-row: 0px;
       --bottom-nav-height: 0px;
       --bottom-nav-pad: 0px;
       --m-top-pad: 0px;
@@ -1256,17 +1254,28 @@ html.is-standalone *:focus-visible {
 /* Bottom-nav clearance helper (alias kept for backwards compat). Keep this in
    sync with the primary token above — do not re-add safe-area padding here. */
 :root {
-  --bottom-nav-safe-pad: 0px;
-  --bottom-nav-height: 82px;
-  --bottom-nav-pad: 82px;
+  --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-icon-row: 56px;
+  --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
+  --bottom-nav-pad: var(--bottom-nav-height);
 }
 
 @media (min-width: 1024px) {
   :root {
     --bottom-nav-safe-pad: 0px;
+    --bottom-nav-icon-row: 0px;
     --bottom-nav-height: 0px;
     --bottom-nav-pad: 0px;
   }
+}
+
+/* Hide scrollbar utility for snap-scroll tab strips */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
