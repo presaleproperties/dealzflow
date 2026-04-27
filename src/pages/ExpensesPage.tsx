@@ -286,6 +286,14 @@ export default function ExpensesPage() {
         initial="hidden"
         animate="visible"
       >
+         {/* Mobile-only Add button (desktop uses the Header action slot) */}
+         <motion.div variants={itemVariants} className="sm:hidden">
+           <Button onClick={() => handleOpenAdd()} className="btn-premium w-full h-11">
+             <Plus className="w-4 h-4 mr-2" />
+             Add Expense
+           </Button>
+         </motion.div>
+
          {/* Month Navigator & Total */}
          <motion.div variants={itemVariants} className="card-premium p-4 sm:p-5">
            <div className="flex items-center justify-between mb-4">

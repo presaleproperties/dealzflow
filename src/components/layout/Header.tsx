@@ -24,8 +24,7 @@ export function Header({
 }: HeaderProps) {
   return (
     <header
-      className="sticky top-0 lg:top-[54px] z-30"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      className="hidden lg:block sticky top-0 lg:top-[54px] z-30"
     >
       {/* Glass background */}
       <div

@@ -365,7 +365,7 @@ export default function DealsPage() {
                       <Filter className="h-4 w-4" />
                     </Button>
 
-                    <Link to="/deals/new" className="shrink-0">
+                    <Link to="/deals/new" className="shrink-0 hidden sm:block">
                       <Button
                         size="sm"
                         className="h-10 rounded-lg gap-1.5 px-3 sm:px-4 font-medium shadow-sm"

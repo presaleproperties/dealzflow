@@ -258,8 +258,7 @@ export default function DashboardPage() {
           {/* Mobile Dashboard */}
           <div className="sm:hidden">
             <motion.div
-              className="px-5 pb-3"
-              style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
+              className="px-5 pt-3 pb-3"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}

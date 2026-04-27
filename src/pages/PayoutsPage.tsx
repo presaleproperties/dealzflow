@@ -445,6 +445,13 @@ export default function PayoutsPage() {
           initial="hidden"
           animate="visible"
         >
+           {/* Mobile-only Export (desktop uses the Header action slot) */}
+           <div className="sm:hidden flex justify-end">
+             <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2 rounded-lg h-9">
+               <Download className="w-3.5 h-3.5" />
+               Export CSV
+             </Button>
+           </div>
            {/* Stats Grid */}
            <CollapsibleSection icon={Wallet} title="Overview" badge={`${stats.all.count} payouts`} defaultOpen={true}>
              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
