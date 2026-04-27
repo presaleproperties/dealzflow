@@ -578,10 +578,9 @@ function MoreSheet({
         </div>
       </div>
 
-      {/* Scrollable groups */}
+      {/* Scrollable groups — no safe-area here per iOS PWA spec; nav owns it */}
       <div
-        className="flex-1 overflow-y-auto px-5 pt-1 space-y-5"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+        className="flex-1 overflow-y-auto px-5 pt-1 pb-6 space-y-5"
       >
         {groups.map(group => (
           <div key={group.label}>
@@ -750,10 +749,9 @@ function QuickActionsSheet({
         </button>
       </div>
 
-      {/* Actions */}
+      {/* Actions — no safe-area here per iOS PWA spec; nav owns it */}
       <div
-        className="px-5 pb-4 space-y-2"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+        className="px-5 pb-5 space-y-2"
       >
         {actions.map((action) => {
           const Icon = action.icon;
