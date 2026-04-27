@@ -855,21 +855,22 @@ export function LeadsTable({
             <colgroup>
               <col style={{ width: '40px' }} />
               {columns.map(col => (
-                <col key={col.key} style={{ width: col.width }} />
+                <col key={col.key} style={{ width: `${widths[col.key] ?? parseInt(col.width, 10)}px` }} />
               ))}
             </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/20">
                 <th className="w-10 px-3 py-3.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
                 {columns.map(col => (
-                  <th key={col.key}
-                    className="px-3 py-3.5 text-left text-[12px] font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
-                    onClick={() => col.sortKey && onSort(col.sortKey)}>
-                    <span className="inline-flex items-center gap-1.5">
-                      {col.label}
-                      {col.sortKey && <SortIcon col={col.sortKey} />}
-                    </span>
-                  </th>
+                  <ResizableHeaderCell
+                    key={col.key}
+                    col={col}
+                    width={widths[col.key] ?? parseInt(col.width, 10)}
+                    onResize={(w) => setWidth(col.key, w)}
+                    onResetAll={resetWidths}
+                    onSort={onSort}
+                    SortIcon={SortIcon}
+                  />
                 ))}
               </tr>
             </thead>
