@@ -33,6 +33,61 @@ export default function EmailSettingsSection() {
   const [simpleHtml, setSimpleHtml] = useState('');
   const [builderData, setBuilderData] = useState<SignatureBuilderData | null>(null);
   const [showHtmlPreview, setShowHtmlPreview] = useState(true);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file (PNG, JPG, SVG, etc.)');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Logo must be smaller than 2 MB');
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not signed in');
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      // One file per user — overwrite on each upload so the URL stays stable.
+      const path = `${session.user.id}/logo.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('brand-logos')
+        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from('brand-logos').getPublicUrl(path);
+      // Cache-bust so a re-uploaded logo shows immediately.
+      const url = `${data.publicUrl}?v=${Date.now()}`;
+      setBrandLogoUrl(url);
+      // Persist immediately so the next email send picks it up without an extra Save click.
+      upsert.mutate({ brand_logo_url: url } as any);
+      toast.success('Logo uploaded');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    setBrandLogoUrl('');
+    upsert.mutate({ brand_logo_url: null } as any);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: list } = await supabase.storage
+          .from('brand-logos')
+          .list(session.user.id);
+        if (list && list.length > 0) {
+          await supabase.storage
+            .from('brand-logos')
+            .remove(list.map((f) => `${session.user.id}/${f.name}`));
+        }
+      }
+    } catch { /* non-fatal */ }
+  };
 
   useEffect(() => {
     if (settings) {
