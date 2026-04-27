@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_position text NOT NULL DEFAULT '50% 50%';
