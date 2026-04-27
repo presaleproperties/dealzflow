@@ -40,6 +40,7 @@ import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import BridgeStatusPage from "./pages/admin/BridgeStatusPage";
+import AdminProjectsPage from "./pages/admin/AdminProjectsPage";
 import AgentProfilePage from "./pages/agent/AgentProfilePage";
 import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
 import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
