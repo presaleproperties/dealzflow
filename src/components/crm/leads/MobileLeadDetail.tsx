@@ -48,11 +48,10 @@ export function MobileLeadDetail({
     : 'none';
 
   return (
-    <div className="flex flex-col crm-mobile-page" style={{ minHeight: 'calc(100dvh - 60px)' }}>
+    <div className="flex flex-col crm-mobile-page flex-1 min-h-0">
       {/* Slim top bar — back + score only. Identity lives in the card below (matches desktop). */}
       <div
         className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="px-3 h-12 flex items-center justify-between">
           <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary active:opacity-60 transition-opacity">
