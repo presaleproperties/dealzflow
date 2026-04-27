@@ -224,7 +224,7 @@ export function BottomNav() {
       <Link
         key={tab.path}
         to={tab.path}
-        onClick={() => triggerHaptic('selection')}
+        onClick={() => triggerHaptic('tab')}
         aria-label={tab.label}
         aria-current={active ? 'page' : undefined}
         className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[4px] active:scale-[0.92] transition-transform duration-150"
@@ -270,7 +270,7 @@ export function BottomNav() {
         <SheetTrigger asChild>
           <button
             type="button"
-            onClick={() => triggerHaptic('medium')}
+            onClick={() => triggerHaptic('fab')}
             aria-label="Quick add"
             className="lg:hidden fixed z-[45] right-4 h-[56px] w-[56px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
             style={{
