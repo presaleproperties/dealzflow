@@ -434,6 +434,41 @@ export default function CrmChatThreadPage() {
             );
           })
         )}
+
+        {/* Ghost bubbles for offline outbox items not yet on the server */}
+        {(conv.channel === 'sms' || conv.channel === 'whatsapp') &&
+          outbox.items
+            .filter((i) => i.contact_id === contact.id && i.channel === conv.channel)
+            .map((i) => {
+              const state: DeliveryState = i.status === 'failed' ? 'failed' : 'sending';
+              return (
+                <div key={`outbox-${i.id}`} className="flex justify-end">
+                  <div className="max-w-[82%] flex flex-col items-end gap-1">
+                    <div className="flex flex-col gap-0.5 max-w-full">
+                      <div
+                        className={`px-3.5 py-2 rounded-2xl text-[14px] leading-snug whitespace-pre-wrap break-words shadow-sm bg-primary/70 text-primary-foreground rounded-br-md ${
+                          state === 'failed' ? 'ring-1 ring-destructive/60' : ''
+                        }`}
+                      >
+                        {i.body || <span className="italic opacity-60">(empty)</span>}
+                      </div>
+                      <span className="text-[10px] tabular-nums flex items-center gap-1.5 text-muted-foreground justify-end pr-1">
+                        <DeliveryIndicator state={state} error={i.last_error} />
+                        {state === 'failed' && (
+                          <button
+                            type="button"
+                            onClick={() => outbox.retry(i.id)}
+                            className="underline underline-offset-2 text-destructive hover:opacity-80"
+                          >
+                            Retry
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
       </div>
 
       {/* Composer launcher — opens the right dialog for this channel */}
