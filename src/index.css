@@ -1256,7 +1256,7 @@ html.is-standalone *:focus-visible {
    sync with the primary token above — do not re-add safe-area padding here. */
 :root {
   --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-  --bottom-nav-icon-row: 56px;
+  --bottom-nav-icon-row: 50px;
   --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
   --bottom-nav-pad: var(--bottom-nav-height);
 }
