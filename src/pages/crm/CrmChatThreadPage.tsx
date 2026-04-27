@@ -168,6 +168,20 @@ export default function CrmChatThreadPage() {
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
+  // Pull-to-refresh — bound to the messages scroll container. The thread
+  // auto-scrolls to the bottom on new messages, so the gesture is only
+  // available when the user has scrolled up to view earlier history.
+  const { pullDistance, isRefreshing } = usePullToRefresh({
+    scrollRef,
+    onRefresh: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] }),
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] }),
+        qc.invalidateQueries({ queryKey: ['crm-chats'] }),
+      ]);
+    },
+  });
+
   const contact = thread?.contact;
   const conv = thread?.conv;
   const meta = useMemo(() => channelMeta((conv?.channel ?? 'email') as Channel), [conv?.channel]);
