@@ -132,10 +132,11 @@
        possible without overlapping the home indicator. We subtract 24px from the
        native inset (Pro Max ≈ 34px → 10px → capped at 4px), giving a near-flush
        bottom while leaving a hairline of breathing room above the gesture bar. */
-    /* Bottom nav: flush to the physical bottom edge, no safe-area padding. */
+    /* Bottom nav is now sticky inside the scroll container — no clearance pad needed.
+       --bottom-nav-height is kept for the floating FAB offset only. */
     --bottom-nav-safe-pad: 0px;
     --bottom-nav-height: 64px;
-    --bottom-nav-pad: 64px;
+    --bottom-nav-pad: 0px;
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
     /* Composer top inset — guarantees a minimum 50px clearance even when
