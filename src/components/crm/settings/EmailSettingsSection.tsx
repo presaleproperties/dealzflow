@@ -129,6 +129,47 @@ export default function EmailSettingsSection() {
           </p>
         </div>
 
+        {/* Brand Logo Banner — shown at top of bulk emails */}
+        <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
+          <div>
+            <Label className="text-sm font-semibold">Brand Logo Banner</Label>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              When set, this logo is added to the top of every <span className="font-medium">bulk / mass</span> email
+              you send. Use a public HTTPS image URL — recipients' inboxes can't load images from your computer.
+              Recommended: 600px wide max, transparent or white background.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Logo URL</Label>
+            <Input
+              type="url"
+              value={brandLogoUrl}
+              onChange={e => setBrandLogoUrl(e.target.value)}
+              placeholder="https://yourdomain.com/logo.png"
+              className="min-h-[44px] sm:min-h-0"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Alt text (for accessibility)</Label>
+            <Input
+              value={brandLogoAlt}
+              onChange={e => setBrandLogoAlt(e.target.value)}
+              placeholder="Presale Properties"
+              className="min-h-[44px] sm:min-h-0"
+            />
+          </div>
+          {brandLogoUrl.trim() && (
+            <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
+              <img
+                src={brandLogoUrl.trim()}
+                alt={brandLogoAlt.trim() || 'Logo preview'}
+                style={{ maxHeight: 64, maxWidth: '100%' }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Signature Editor — 3 Modes */}
         <div className="space-y-3">
           <Label>Email Signature</Label>
