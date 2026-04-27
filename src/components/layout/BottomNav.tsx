@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSwipeToClose } from './SwipeDismiss';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Handshake, Building2, CalendarDays, MoreHorizontal,
@@ -492,13 +493,17 @@ function MoreSheet({
   onSwitchMode: (m: Mode) => void;
   isCrmMember: boolean;
 }) {
+  const { containerStyle, handleProps } = useSwipeToClose(onClose);
   return (
-    <div className="flex flex-col max-h-[inherit]" style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)' }}>
-      {/* Drag handle */}
-      <div className="shrink-0 pt-2.5 pb-1.5">
+    <div
+      className="flex flex-col max-h-[inherit]"
+      style={{ ...containerStyle, maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)' }}
+    >
+      {/* Drag handle — swipe down to dismiss */}
+      <div className="shrink-0 pt-2.5 pb-1.5" {...handleProps}>
         <div
-          className="mx-auto w-9 h-[3px] rounded-full"
-          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
+          className="mx-auto w-9 h-[5px] rounded-full"
+          style={{ background: 'hsl(var(--muted-foreground) / 0.32)' }}
         />
       </div>
 
@@ -719,13 +724,14 @@ function QuickActionsSheet({
   actions: QuickAction[];
   onClose: () => void;
 }) {
+  const { containerStyle, handleProps } = useSwipeToClose(onClose);
   return (
-    <div className="flex flex-col">
-      {/* Drag handle */}
-      <div className="shrink-0 pt-2.5 pb-1.5">
+    <div className="flex flex-col" style={containerStyle}>
+      {/* Drag handle — swipe down to dismiss */}
+      <div className="shrink-0 pt-2.5 pb-1.5" {...handleProps}>
         <div
-          className="mx-auto w-9 h-[3px] rounded-full"
-          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
+          className="mx-auto w-9 h-[5px] rounded-full"
+          style={{ background: 'hsl(var(--muted-foreground) / 0.32)' }}
         />
       </div>
 
