@@ -302,7 +302,7 @@ export default function CrmCalendarPage() {
       )}
 
       {/* Header — sticky on mobile for easy navigation */}
-      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-2 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
+      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-2 pt-2 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
         {/* Row 1: Title + add */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
