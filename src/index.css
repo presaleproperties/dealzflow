@@ -142,8 +142,14 @@
        like "SEND TEXT" / "New Message" never collide with the iOS time/notch. */
     --composer-top-pad: max(env(safe-area-inset-top, 0px), 50px);
   }
+  :root.is-standalone,
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px;
+    /* Home-screen PWAs already own the full screen; do not turn the
+       home-indicator inset into a second visual spacer under the nav. */
+    --bottom-nav-safe-pad: 0px;
+    --bottom-nav-height: var(--bottom-nav-icon-row);
+    --bottom-nav-pad: var(--bottom-nav-height);
   }
   @media (min-width: 1024px) {
     :root {
@@ -158,6 +164,20 @@
 
   * {
     @apply border-border;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: hsl(var(--background));
+  }
+
+  #root {
+    min-height: 100%;
+    min-height: 100dvh;
+    background: hsl(var(--background));
   }
 
   html {
