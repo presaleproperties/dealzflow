@@ -72,11 +72,11 @@ function useUnreadInboxCount(enabled: boolean) {
     enabled,
     refetchInterval: 60_000,
     queryFn: async () => {
-      const { count } = await supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('direction', 'inbound');
-      return count ?? 0;
+      const { data } = await supabase
+        .from('crm_conversations')
+        .select('unread_count')
+        .gt('unread_count', 0);
+      return (data ?? []).reduce((sum: number, r: any) => sum + (r.unread_count ?? 0), 0);
     },
   });
 }
