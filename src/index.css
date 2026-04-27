@@ -1264,10 +1264,6 @@ html.is-standalone *:focus-visible {
   --bottom-nav-pad: var(--bottom-nav-height);
 }
 
-:root.is-standalone-pwa {
-  --bottom-nav-safe-pad: 6px;
-}
-
 @media (min-width: 1024px) {
   :root {
     --bottom-nav-safe-pad: 0px;
