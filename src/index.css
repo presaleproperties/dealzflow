@@ -144,6 +144,11 @@
   }
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px;
+    /* In standalone PWA mode, collapse the iOS home-indicator gutter so the
+       tab labels sit flush to the bottom edge instead of floating above a
+       tall white strip. We keep a tiny 6px breathing room so labels don't
+       physically touch the home indicator. */
+    --bottom-nav-safe-pad: 6px;
   }
   @media (min-width: 1024px) {
     :root {
@@ -1262,6 +1267,10 @@ html.is-standalone *:focus-visible {
   --bottom-nav-icon-row: 50px;
   --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
   --bottom-nav-pad: var(--bottom-nav-height);
+}
+
+:root.is-standalone-pwa {
+  --bottom-nav-safe-pad: 6px;
 }
 
 @media (min-width: 1024px) {
