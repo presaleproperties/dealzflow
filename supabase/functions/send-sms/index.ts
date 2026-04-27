@@ -274,6 +274,7 @@ Deno.serve(async (req) => {
         status: 'queued',
         campaign_id,
         channel,
+        client_dedupe_id,
         error_message: 'Twilio not yet connected — message recorded for later delivery.',
       }).select('id').maybeSingle();
       return new Response(JSON.stringify({
