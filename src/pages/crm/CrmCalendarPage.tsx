@@ -514,7 +514,7 @@ export default function CrmCalendarPage() {
               <div key={format(group.date, 'yyyy-MM-dd')}>
                 <div
                   className={cn(
-                    'sticky top-[96px] z-10 -mx-3 px-3 py-1 bg-background/95 backdrop-blur',
+                    'sticky top-[88px] z-10 -mx-4 px-4 py-1 bg-background/95 backdrop-blur',
                     isToday(group.date) && 'text-primary',
                   )}
                 >
