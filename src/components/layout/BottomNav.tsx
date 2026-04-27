@@ -227,7 +227,7 @@ export function BottomNav() {
         onClick={() => triggerHaptic('tab')}
         aria-label={tab.label}
         aria-current={active ? 'page' : undefined}
-        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
+        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-[3px] active:scale-[0.92] transition-transform duration-150"
         style={{ color: active ? GOLD : INACTIVE }}
       >
         {/* Top indicator bar for active tab */}
@@ -307,7 +307,7 @@ export function BottomNav() {
       </Sheet>
 
       <nav
-          className="lg:hidden sticky bottom-0 inset-x-0 z-40 native-chrome overflow-hidden shrink-0"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 native-chrome overflow-hidden"
         aria-label="Primary"
         style={{
           background: 'hsl(var(--card) / 0.98)',
@@ -316,12 +316,13 @@ export function BottomNav() {
           borderTop: '1px solid hsl(var(--border))',
           boxShadow: '0 -8px 28px -16px rgba(0,0,0,0.22), 0 -1px 0 hsl(var(--border) / 0.4)',
           paddingBottom: 'var(--bottom-nav-safe-pad)',
-            height: 'var(--bottom-nav-height)',
+          height: 'var(--bottom-nav-height)',
+          width: '100vw',
         }}
       >
         <div
-            className="relative flex items-start w-full"
-            style={{ padding: '6px 4px 0', height: 'calc(var(--bottom-nav-height) - var(--bottom-nav-safe-pad))' }}
+          className="relative flex items-start w-full"
+          style={{ padding: '0 4px', height: 'calc(var(--bottom-nav-height) - var(--bottom-nav-safe-pad))' }}
         >
           {tabs.map(renderTab)}
 
@@ -333,7 +334,7 @@ export function BottomNav() {
                 onClick={() => triggerHaptic('selection')}
                 aria-label="More"
                 aria-current={moreActive ? 'page' : undefined}
-                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
+                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-[3px] active:scale-[0.92] transition-transform duration-150"
                 style={{ color: moreActive ? GOLD : INACTIVE }}
               >
                 <span

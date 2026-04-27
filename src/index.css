@@ -122,21 +122,12 @@
 }
 
 @layer base {
-  /* Flush flat bottom-nav clearance.
-     The bar is 50px tall, sits flush at the bottom of the viewport, and caps
-     iOS standalone safe-area clearance so Pro Max PWAs don't get a tall gutter.
-     Pages reserve exactly bar height + that capped inset.
-     Disabled on lg+ where the bar is hidden. */
+  /* Flush fixed bottom-nav clearance.
+     The bar is fixed to the viewport edge with no internal bottom safe-area padding. */
   :root {
-    /* Aggressively absorb iOS PWA safe-area on Pro Max so the bar sits as low as
-       possible without overlapping the home indicator. We subtract 24px from the
-       native inset (Pro Max ≈ 34px → 10px → capped at 4px), giving a near-flush
-       bottom while leaving a hairline of breathing room above the gesture bar. */
-    /* Bottom nav is now sticky inside the scroll container — no clearance pad needed.
-       --bottom-nav-height is kept for the floating FAB offset only. */
-    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
-    --bottom-nav-pad: 0px;
+    --bottom-nav-safe-pad: 0px;
+    --bottom-nav-height: 64px;
+    --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
     /* Composer top inset — guarantees a minimum 50px clearance even when
