@@ -495,7 +495,7 @@ export default function CrmCalendarPage() {
         <div className="h-[400px] sm:h-[600px] rounded-xl bg-muted/30 animate-pulse" />
       ) : isMobile && showAgenda ? (
         // Custom mobile agenda — Apple Calendar style grouped list.
-        <div className="space-y-4">
+        <div className="space-y-3">
           {agendaItems.length === 0 ? (
             <div className="text-center py-16">
               <CalendarDays className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
@@ -514,15 +514,15 @@ export default function CrmCalendarPage() {
               <div key={format(group.date, 'yyyy-MM-dd')}>
                 <div
                   className={cn(
-                    'sticky top-[112px] z-10 -mx-3 px-3 py-1.5 bg-background/95 backdrop-blur',
+                    'sticky top-[96px] z-10 -mx-3 px-3 py-1 bg-background/95 backdrop-blur',
                     isToday(group.date) && 'text-primary',
                   )}
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-wider">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {dayLabel(group.date)}
                   </p>
                 </div>
-                <div className="space-y-2 mt-1.5">
+                <div className="space-y-1.5 mt-1">
                   {group.items.map((it) => (
                     <button
                       key={it.id}
