@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContactTasks, useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
+import { PresaleLeadBehaviorTimeline } from '@/components/presale/PresaleLeadBehaviorTimeline';
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
 import { BehaviorIngestionStatus } from '@/components/crm/leads/BehaviorIngestionStatus';
 import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
@@ -159,6 +160,13 @@ export function RightSidebar({
 
       <WidgetSection title="Behavior Ingestion">
         <BehaviorIngestionStatus contactId={contact?.id} />
+      </WidgetSection>
+
+      <WidgetSection title="Presale Activity (live)">
+        <PresaleLeadBehaviorTimeline
+          lead={{ email: contact?.email, phone: contact?.phone, name: contact?.first_name }}
+          compact
+        />
       </WidgetSection>
 
       <WidgetSection title="Web Behavior">
