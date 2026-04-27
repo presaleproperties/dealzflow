@@ -129,7 +129,7 @@ export default function LeadDetailPage() {
     if (isMobile) {
       // Mobile-tuned skeleton matching MobileLeadDetail rhythm.
       return (
-        <div className="flex flex-col gap-4 px-4 pt-3 pb-[var(--bottom-nav-pad,7rem)]">
+        <div className="flex flex-col gap-4 px-4 pt-3 pb-[var(--bottom-nav-pad,0px)]">
           {/* Top bar (back chevron + name) */}
           <div className="flex items-center gap-3">
             <Skeleton className="h-9 w-9 rounded-full" />
