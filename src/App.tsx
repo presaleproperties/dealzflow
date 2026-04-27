@@ -87,19 +87,25 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  
-  if (loading) {
+  const { data: profile, isLoading: profileLoading } = useProfile();
+
+  if (loading || (user && profileLoading)) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
         <PageLoader />
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
+
+  // Gate: only approved users can use the workspace
+  if (profile && profile.workspace_status !== 'approved') {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
   return <>{children}</>;
 }
 
