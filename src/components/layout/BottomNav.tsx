@@ -169,7 +169,11 @@ export function BottomNav() {
         root.classList.add('is-standalone-pwa');
         return;
       }
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      const raw = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      // Treat anything ≤ 8px as zero — Safari sometimes reports tiny
+      // sub-pixel insets when the URL bar is collapsed, which would
+      // otherwise leave a hairline gap below the nav.
+      const inset = raw <= 8 ? 0 : raw;
       root.style.setProperty('--browser-chrome-inset', `${Math.round(inset)}px`);
     };
     update();
@@ -322,7 +326,7 @@ export function BottomNav() {
             aria-label="Quick add"
             className="lg:hidden fixed z-[45] right-4 h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
             style={{
-              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) - 6px)',
+              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) + 10px)',
               transition: 'bottom 180ms ease-out',
               right: '14px',
               background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
