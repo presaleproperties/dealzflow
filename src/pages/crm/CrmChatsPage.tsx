@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { formatContactName } from '@/lib/format';
 
 /**
@@ -53,12 +56,31 @@ function channelChip(c: ChatChannel) {
 
 export default function CrmChatsPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const prefetchThread = usePrefetchChatThread();
   const [filter, setFilter] = useState<ChatChannelFilter>('all');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const { data: threads = [], isLoading } = useCrmChats(filter);
+  const { data: threads = [], isLoading, refetch } = useCrmChats(filter);
+
+  // Pull-to-refresh — bind to the CRM layout's scroll root so the gesture
+  // works whether the user is on top of the list or just below the header.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = document.querySelector<HTMLDivElement>('[data-route-scroll-root="true"]');
+    scrollRef.current = el;
+  }, []);
+  const { pullDistance, isRefreshing } = usePullToRefresh({
+    scrollRef,
+    onRefresh: async () => {
+      await Promise.all([
+        refetch(),
+        qc.invalidateQueries({ queryKey: ['crm-chats'] }),
+        qc.invalidateQueries({ queryKey: ['right-rail', 'inbox-unread'] }),
+      ]);
+    },
+  });
 
   const filtered = useMemo(() => {
     if (!search.trim()) return threads;
@@ -86,7 +108,8 @@ export default function CrmChatsPage() {
   }, [threads]);
 
   return (
-    <div className="flex flex-1 min-h-0 h-full flex-col">
+    <div className="relative flex flex-1 min-h-0 h-full flex-col">
+      <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} />
       {/* Premium glassmorphic header */}
       <div
         className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60"

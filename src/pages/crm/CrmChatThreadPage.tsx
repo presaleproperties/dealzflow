@@ -9,6 +9,8 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/ChatThreadSkeleton';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
 
@@ -166,6 +168,20 @@ export default function CrmChatThreadPage() {
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
+  // Pull-to-refresh — bound to the messages scroll container. The thread
+  // auto-scrolls to the bottom on new messages, so the gesture is only
+  // available when the user has scrolled up to view earlier history.
+  const { pullDistance, isRefreshing } = usePullToRefresh({
+    scrollRef,
+    onRefresh: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] }),
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] }),
+        qc.invalidateQueries({ queryKey: ['crm-chats'] }),
+      ]);
+    },
+  });
+
   const contact = thread?.contact;
   const conv = thread?.conv;
   const meta = useMemo(() => channelMeta((conv?.channel ?? 'email') as Channel), [conv?.channel]);
@@ -247,7 +263,8 @@ export default function CrmChatThreadPage() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
+      <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
+        <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} />
         {msgsLoading ? (
           <MessageBubbleSkeleton />
         ) : messages.length === 0 ? (
