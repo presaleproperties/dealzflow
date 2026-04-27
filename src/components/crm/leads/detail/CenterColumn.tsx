@@ -180,12 +180,12 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       </TabsList>
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-3 md:p-6 space-y-3 md:space-y-5">
-        <div className="px-3 md:px-0">
+        <div className="px-4 md:px-0">
           <QuickActionBar contact={contact} />
         </div>
 
         {/* Filter strip — single horizontal scroll row on mobile, wrap on desktop */}
-        <div className="px-3 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none">
+        <div className="px-4 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none">
           <div className="flex items-center gap-1.5 md:flex-wrap min-w-max md:min-w-0">
             {filters.map(f => (
               <button
@@ -205,7 +205,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           </div>
         </div>
 
-        <div className="relative space-y-1.5 px-3 md:px-0">
+        <div className="relative space-y-1.5 px-4 md:px-0">
           {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
             <div className="hidden md:block absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
