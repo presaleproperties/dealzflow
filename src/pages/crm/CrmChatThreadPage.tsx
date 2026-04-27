@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info, WifiOff, Clock, AlertTriangle } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
@@ -9,6 +9,7 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/ChatThreadSkeleton';
+import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
 
