@@ -23,13 +23,14 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
         <CrmSubNav />
         <div
           data-route-scroll-root="true"
-          className="flex-1 min-h-0 px-0 lg:px-6 pt-0 lg:pt-4 overflow-y-auto overflow-x-hidden overscroll-contain lg:pb-6"
+          className="flex-1 min-h-0 px-0 lg:px-6 pt-0 lg:pt-4 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain lg:pb-6"
+          style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
         >
           {children}
         </div>
-        <BottomNav />
       </div>
       <RightRail />
+      <BottomNav />
     </CrmRouteGuard>
   );
 }

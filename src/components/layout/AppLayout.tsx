@@ -17,11 +17,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main
         data-route-scroll-root="true"
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain lg:pr-[52px]"
+        style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
       >
         {children}
       </main>
-      <BottomNav />
       <RightRail />
+      <BottomNav />
     </div>
   );
 }
