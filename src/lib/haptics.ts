@@ -1,7 +1,7 @@
 // iOS-style haptic feedback utilities
 // Uses the Vibration API with patterns that mimic iOS haptics
 
-type HapticStyle = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection';
+type HapticStyle = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection' | 'tab' | 'fab';
 
 const hapticPatterns: Record<HapticStyle, number | number[]> = {
   light: 10,
@@ -11,6 +11,10 @@ const hapticPatterns: Record<HapticStyle, number | number[]> = {
   warning: [20, 100, 20],
   error: [30, 100, 30, 100, 30],
   selection: 5,
+  // Tab switch — crisp iOS-style "tick-tick" double pulse
+  tab: [6, 22, 9],
+  // Center "+" FAB — firmer "thump-pop" with a subtle echo for premium feel
+  fab: [14, 18, 22, 30, 8],
 };
 
 export function triggerHaptic(style: HapticStyle = 'light'): void {
