@@ -189,16 +189,15 @@ function InlineTagsCell({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-72 p-0"
+        className="w-[320px] p-0 text-[13px] leading-normal"
         align="start"
         onClick={e => e.stopPropagation()}
       >
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} className="[&_[cmdk-input]]:!h-9 [&_[cmdk-input]]:!text-[13px] [&_[cmdk-item]]:!py-1.5 [&_[cmdk-item]]:!text-[13px] [&_[cmdk-group-heading]]:!text-[10px] [&_[cmdk-group-heading]]:!uppercase [&_[cmdk-group-heading]]:!tracking-wider [&_[cmdk-group-heading]]:!text-muted-foreground [&_[cmdk-group-heading]]:!px-2 [&_[cmdk-group-heading]]:!py-1.5">
           <CommandInput
             placeholder="Search or create tag…"
             value={search}
             onValueChange={setSearch}
-            className="text-sm"
           />
           <CommandList className="max-h-72">
             <CommandEmpty>
@@ -206,7 +205,7 @@ function InlineTagsCell({
                 <button
                   type="button"
                   onClick={() => { toggleTag(trimmed); setSearch(''); }}
-                  className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted/50 rounded-sm flex items-center gap-2"
+                  className="w-full text-left px-2 py-1.5 text-[13px] hover:bg-muted/50 rounded-sm flex items-center gap-2"
                 >
                   <Plus className="w-3.5 h-3.5" /> Create "{trimmed}"
                 </button>
@@ -217,8 +216,8 @@ function InlineTagsCell({
             {tags.length > 0 && (
               <CommandGroup heading="Applied">
                 {tags.map(tag => (
-                  <CommandItem key={`applied-${tag}`} value={`applied-${tag}`} onSelect={() => toggleTag(tag)} className="text-sm">
-                    <Check className="w-3.5 h-3.5 mr-2 text-primary" />
+                  <CommandItem key={`applied-${tag}`} value={`applied-${tag}`} onSelect={() => toggleTag(tag)}>
+                    <Check className="w-3.5 h-3.5 mr-2 text-primary shrink-0" />
                     <span className="flex-1 truncate">{tag}</span>
                   </CommandItem>
                 ))}
@@ -229,10 +228,9 @@ function InlineTagsCell({
                 <CommandItem
                   value={`__create__${trimmed}`}
                   onSelect={() => { toggleTag(trimmed); setSearch(''); }}
-                  className="text-sm"
                 >
-                  <Plus className="w-3.5 h-3.5 mr-2 text-primary" />
-                  <span className="flex-1">Create "<span className="font-semibold">{trimmed}</span>"</span>
+                  <Plus className="w-3.5 h-3.5 mr-2 text-primary shrink-0" />
+                  <span className="flex-1 truncate">Create "<span className="font-semibold">{trimmed}</span>"</span>
                 </CommandItem>
               )}
               {availableSorted.slice(0, 200).map(item => (
@@ -240,11 +238,10 @@ function InlineTagsCell({
                   key={item.label}
                   value={item.label}
                   onSelect={() => toggleTag(item.label)}
-                  className="text-sm"
                 >
-                  <span className="w-3.5 h-3.5 mr-2" />
+                  <span className="w-3.5 h-3.5 mr-2 shrink-0" />
                   <span className="flex-1 truncate">{item.label}</span>
-                  <span className="text-[10px] text-muted-foreground tabular-nums ml-2">{item.count}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums ml-2 shrink-0">{item.count}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
