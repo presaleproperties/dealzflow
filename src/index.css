@@ -129,13 +129,11 @@
      Disabled on lg+ where the bar is hidden. */
   :root {
     /* Bottom nav tokens — single source of truth.
-       The bar reserves the safe-area inset PLUS a 50px icon row
-       (matches Apple's 49pt tab bar — sits flush to the home indicator).
-       --bottom-nav-icon-lift adds extra breathing room ABOVE the safe-area
-       gutter so the icons sit higher (Lofty-style), not jammed against
-       the iOS home indicator. */
+       Slim 42px icon row + safe-area gutter. Icons sit LOW (near the
+       home indicator, Lofty-style), nav bar height is minimal so the
+       viewer gets maximum vertical room. */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-icon-row: 50px;
+    --bottom-nav-icon-row: 42px;
     --bottom-nav-icon-lift: 0px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
@@ -149,12 +147,11 @@
   :root.is-standalone,
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px !important;
-    /* Match Lofty: nav sits flush to the physical bottom edge with the
-       full iOS safe-area inset reserved INSIDE the nav. Labels sit above
-       the home indicator with a 12px lift so they don't crowd the
-       indicator pill — the nav surface still paints the entire gutter. */
+    /* Standalone/PWA: keep icons LOW — no extra lift. Slim 42px row sits
+       directly above the iOS safe-area gutter, nav surface paints flush
+       to the bottom edge. Maximum viewer real-estate. */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-icon-lift: 12px;
+    --bottom-nav-icon-lift: 0px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
   }

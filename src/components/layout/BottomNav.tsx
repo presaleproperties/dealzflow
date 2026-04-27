@@ -322,7 +322,7 @@ export function BottomNav() {
             aria-label="Quick add"
             className="lg:hidden fixed z-[45] right-4 h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
             style={{
-              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) + 8px)',
+              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) - 6px)',
               transition: 'bottom 180ms ease-out',
               right: '14px',
               background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
@@ -369,7 +369,7 @@ export function BottomNav() {
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.55)',
           boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
-          paddingBottom: 'calc(var(--bottom-nav-safe-pad) + var(--bottom-nav-icon-lift, 0px))',
+          paddingBottom: 'var(--bottom-nav-safe-pad)',
             height: 'var(--bottom-nav-height)',
             bottom: 'var(--browser-chrome-inset, 0px)',
             transition: 'bottom 180ms ease-out',
