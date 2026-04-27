@@ -1989,6 +1989,8 @@ export type Database = {
           message_type: string | null
           read: boolean | null
           sent_by: string | null
+          source_id: string | null
+          source_table: string | null
         }
         Insert: {
           channel?: string | null
@@ -2002,6 +2004,8 @@ export type Database = {
           message_type?: string | null
           read?: boolean | null
           sent_by?: string | null
+          source_id?: string | null
+          source_table?: string | null
         }
         Update: {
           channel?: string | null
@@ -2015,6 +2019,8 @@ export type Database = {
           message_type?: string | null
           read?: boolean | null
           sent_by?: string | null
+          source_id?: string | null
+          source_table?: string | null
         }
         Relationships: [
           {
@@ -4466,6 +4472,10 @@ export type Database = {
         }[]
       }
       crm_funnel_snapshot: { Args: never; Returns: Json }
+      crm_get_or_create_conversation: {
+        Args: { _channel: string; _contact_id: string; _message_at?: string }
+        Returns: string
+      }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
