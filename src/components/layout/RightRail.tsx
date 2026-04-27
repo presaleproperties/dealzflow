@@ -37,24 +37,7 @@ const SURFACE_BG = 'hsl(var(--card))';
 
 type CommsPanel = null | 'inbox' | 'notifications';
 
-interface EmailRow {
-  id: string;
-  subject: string;
-  body: string | null;
-  direction: string;
-  sent_at: string;
-  contact_id: string;
-  contact?: { first_name: string; last_name: string; email: string | null } | null;
-}
-
-interface MessageRow {
-  id: string;
-  body: string;
-  direction: string;
-  created_at: string;
-  conversation_id: string;
-  conversation?: { lead_name: string; channel: string } | null;
-}
+// EmailRow / MessageRow removed — RightRail inbox uses ChatThread from useCrmChats.
 
 interface CrmNotificationRow {
   id: string;
