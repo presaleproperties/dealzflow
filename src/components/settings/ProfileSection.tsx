@@ -77,8 +77,11 @@ export default function ProfileSection() {
       if (upErr) throw upErr;
       const { data } = supabase.storage.from('avatars').getPublicUrl(path);
       const url = `${data.publicUrl}?v=${Date.now()}`;
-      await update.mutateAsync({ avatar_url: url });
-      toast.success('Headshot updated');
+      // Reset focal point to center on a fresh upload
+      await update.mutateAsync({ avatar_url: url, avatar_position: '50% 50%' });
+      setDraftPos({ x: 50, y: 50 });
+      setAdjustOpen(true);
+      toast.success('Headshot updated — drag to recenter');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Upload failed');
     } finally {
