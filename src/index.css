@@ -1241,7 +1241,10 @@ html.is-standalone *:focus-visible {
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
 /* Bottom-nav clearance helper (alias kept for backwards compat) */
-:root { --bottom-nav-pad: calc(50px + max(env(safe-area-inset-bottom, 0px) - 8px, 0px)); }
+:root {
+  --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 18px, 0px), 10px);
+  --bottom-nav-pad: calc(50px + var(--bottom-nav-safe-pad));
+}
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */
