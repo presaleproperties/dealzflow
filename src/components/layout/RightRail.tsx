@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
+import { useCrmChats, type ChatThread, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
