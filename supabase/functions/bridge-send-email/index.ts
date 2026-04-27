@@ -137,11 +137,28 @@ Deno.serve(async (req) => {
     }
 
     // ── Immediate send via Presale bridge ──
+    // Fetch sender's brand logo settings so 1:1 emails carry the same banner
+    // as bulk sends (visible in body regardless of BIMI/Workspace avatars).
+    const { data: settings } = await supabase
+      .from("crm_email_settings")
+      .select("sender_name,brand_logo_url,brand_logo_alt")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const rawLogoUrl = (settings?.brand_logo_url ?? "").trim();
+    const safeLogoUrl = /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
+    const safeLogoAlt = ((settings?.brand_logo_alt ?? settings?.sender_name ?? "Logo") || "Logo")
+      .replace(/[<>"']/g, "");
+    const brandBannerHtml = safeLogoUrl
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 20px 0;"><tr><td align="center" style="padding:8px 0 16px 0;border-bottom:1px solid #ececec;"><img src="${safeLogoUrl}" alt="${safeLogoAlt}" style="display:block;max-height:64px;max-width:240px;height:auto;width:auto;border:0;outline:none;text-decoration:none;" /></td></tr></table>`
+      : "";
+
     // Generate a tracking_id up-front, inject the open-tracking pixel into
     // the HTML, and persist the same id on crm_email_log so crm-email-track
     // can correlate inbox opens back to this send.
     const trackingId = crypto.randomUUID();
-    const linkedHtml = rewriteLinks(body.html, trackingId);
+    const bodyWithBanner = brandBannerHtml ? `${brandBannerHtml}${body.html}` : body.html;
+    const linkedHtml = rewriteLinks(bodyWithBanner, trackingId);
     const trackedHtml = injectTrackingPixel(linkedHtml, trackingId);
 
     const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
