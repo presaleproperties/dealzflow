@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type ChatChannel = 'email' | 'sms' | 'whatsapp';
@@ -28,6 +29,24 @@ export interface ChatThread {
 export type ChatChannelFilter = ChatChannel | 'text' | 'all';
 
 export function useCrmChats(channelFilter?: ChatChannelFilter) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('crm-chats-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_conversations' }, () => {
+        qc.invalidateQueries({ queryKey: ['crm-chats'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_messages' }, () => {
+        qc.invalidateQueries({ queryKey: ['crm-chats'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   return useQuery({
     queryKey: ['crm-chats', channelFilter ?? 'all'],
     queryFn: async (): Promise<ChatThread[]> => {
@@ -87,7 +106,9 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
         };
       });
     },
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     select: (threads: ChatThread[]) => {
       // Collapse to one row per (contact_id, channel). When multiple
       // crm_conversations rows exist for the same lead+channel, keep the
