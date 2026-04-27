@@ -72,11 +72,11 @@ const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Rec
   { id: '__closed', label: 'Closed',    emoji: '✅', filters: { status: ['Closed'] } },
 ];
 
-// Mobile sort options — keys must match SortKey
+// Sort options shared by mobile sheet + desktop dropdown — keys must match SortKey
 const SORT_OPTIONS: { key: SortKey; shortLabel: string; label: string; defaultDir: SortDir }[] = [
-  { key: 'last_touch_at', shortLabel: 'Recent',    label: 'Recent activity',  defaultDir: 'desc' },
-  { key: 'created_at',    shortLabel: 'Newest',    label: 'Newest added',     defaultDir: 'desc' },
-  { key: 'name',          shortLabel: 'Name',      label: 'Name (A–Z)',       defaultDir: 'asc'  },
+  { key: 'created_at',    shortLabel: 'Reg Date',      label: 'Reg Date',       defaultDir: 'desc' },
+  { key: 'last_touch_at', shortLabel: 'Last Activity', label: 'Last Activity',  defaultDir: 'desc' },
+  { key: 'lead_score',    shortLabel: 'Lead Score',    label: 'Lead Score',     defaultDir: 'desc' },
 ];
 
 export default function CrmLeadsPage() {
