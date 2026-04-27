@@ -430,10 +430,10 @@ export function BottomNav() {
             <SheetContent
               side="bottom"
               hideClose
-              className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+              className="p-0 border-0 rounded-t-[22px] flex flex-col overflow-hidden shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.55)] backdrop-blur-2xl backdrop-saturate-150"
               style={{
                 background: BG,
-                maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
+                maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 10px)',
               }}
             >
               <MoreSheet
