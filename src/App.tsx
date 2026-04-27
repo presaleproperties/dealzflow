@@ -40,6 +40,7 @@ import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import BridgeStatusPage from "./pages/admin/BridgeStatusPage";
+import AdminProjectsPage from "./pages/admin/AdminProjectsPage";
 import AgentProfilePage from "./pages/agent/AgentProfilePage";
 import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
 import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
@@ -199,6 +200,7 @@ const App = () => (
                   <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                   <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
                   <Route path="/admin/bridge-status" element={<AdminRoute><BridgeStatusPage /></AdminRoute>} />
+                  <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
                   <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                   <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
                   <Route path="/dev/mobile-spacing" element={<ProtectedRoute><MobileSpacingChecklistPage /></ProtectedRoute>} />
