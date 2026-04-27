@@ -315,6 +315,53 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_activity_events: {
+        Row: {
+          agent_slug: string | null
+          contact_id: string | null
+          id: string
+          lead_email: string | null
+          lead_phone: string | null
+          metadata: Json
+          occurred_at: string
+          project_slug: string | null
+          received_at: string
+          type: string
+        }
+        Insert: {
+          agent_slug?: string | null
+          contact_id?: string | null
+          id?: string
+          lead_email?: string | null
+          lead_phone?: string | null
+          metadata?: Json
+          occurred_at?: string
+          project_slug?: string | null
+          received_at?: string
+          type: string
+        }
+        Update: {
+          agent_slug?: string | null
+          contact_id?: string | null
+          id?: string
+          lead_email?: string | null
+          lead_phone?: string | null
+          metadata?: Json
+          occurred_at?: string
+          project_slug?: string | null
+          received_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activity_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_ad_spend: {
         Row: {
           amount: number
@@ -536,6 +583,7 @@ export type Database = {
           intent: string | null
           is_pre_approved: boolean | null
           language: string | null
+          last_activity_at: string | null
           last_contact_at: string | null
           last_name: string
           last_touch_at: string | null
@@ -597,6 +645,7 @@ export type Database = {
           intent?: string | null
           is_pre_approved?: boolean | null
           language?: string | null
+          last_activity_at?: string | null
           last_contact_at?: string | null
           last_name: string
           last_touch_at?: string | null
@@ -658,6 +707,7 @@ export type Database = {
           intent?: string | null
           is_pre_approved?: boolean | null
           language?: string | null
+          last_activity_at?: string | null
           last_contact_at?: string | null
           last_name?: string
           last_touch_at?: string | null
