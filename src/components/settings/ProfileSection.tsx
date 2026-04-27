@@ -117,8 +117,12 @@ export default function ProfileSection() {
       <CardContent className="space-y-6 px-3 sm:px-6">
         {/* Headshot */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <Avatar className="h-20 w-20 ring-2 ring-border/60">
-            <AvatarImage src={profile?.avatar_url ?? undefined} alt={fullName || 'Profile'} />
+          <Avatar className="h-24 w-24 ring-2 ring-border/60">
+            <AvatarImage
+              src={profile?.avatar_url ?? undefined}
+              alt={fullName || 'Profile'}
+              className="object-cover object-center"
+            />
             <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
               {initials}
             </AvatarFallback>
