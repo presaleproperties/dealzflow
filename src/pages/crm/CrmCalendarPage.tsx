@@ -284,17 +284,17 @@ export default function CrmCalendarPage() {
   const viewOptions = isMobile ? MOBILE_VIEWS : DESKTOP_VIEWS;
 
   return (
-    <div className="space-y-3 sm:space-y-4 crm-mobile-page">
+    <div className="space-y-2 sm:space-y-4 crm-mobile-page">
       {/* Google Calendar Connection Banner */}
       {!isGCalConnected && (
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-          <Link2 className="w-4 h-4 text-muted-foreground shrink-0" />
-          <p className="text-xs sm:text-sm text-muted-foreground flex-1">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30">
+          <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <p className="text-[12px] sm:text-sm text-muted-foreground flex-1 leading-tight">
             Connect Google Calendar to see all your events here.
           </p>
           <Link
             to="/settings"
-            className="text-xs font-semibold text-primary hover:underline shrink-0"
+            className="text-[12px] font-semibold text-primary hover:underline shrink-0"
           >
             Connect
           </Link>
@@ -302,31 +302,31 @@ export default function CrmCalendarPage() {
       )}
 
       {/* Header — sticky on mobile for easy navigation */}
-      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-2 pt-2 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
+      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-1.5 pt-1 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
         {/* Row 1: Title + add */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <CalendarDays className="h-5 w-5 text-primary shrink-0" />
-            <div className="min-w-0">
-              <h1 className="m-page-title sm:!text-xl truncate">
+            <CalendarDays className="h-4 w-4 text-primary shrink-0 sm:h-5 sm:w-5" />
+            <div className="min-w-0 flex items-baseline gap-2">
+              <h1 className="m-page-title !text-[22px] sm:!text-xl truncate leading-tight">
                 {titleText}
               </h1>
-              <p className="text-[11px] text-muted-foreground sm:hidden">Showings & Calendar</p>
+              <p className="text-[11px] text-muted-foreground hidden sm:inline">Showings & Calendar</p>
             </div>
           </div>
           <Button
             onClick={() => setBookOpen(true)}
-            className="gap-1.5 h-9 min-h-[40px]"
+            className="gap-1 h-8 min-h-0 px-2.5 text-xs sm:h-9 sm:px-3"
             size="sm"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Book Showing</span>
             <span className="sm:hidden">Book</span>
           </Button>
         </div>
 
         {/* Row 2: Navigation + view switcher */}
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-1.5 flex items-center gap-1.5">
           {/* Prev / Today / Next */}
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card/60 p-0.5">
             <button
@@ -495,7 +495,7 @@ export default function CrmCalendarPage() {
         <div className="h-[400px] sm:h-[600px] rounded-xl bg-muted/30 animate-pulse" />
       ) : isMobile && showAgenda ? (
         // Custom mobile agenda — Apple Calendar style grouped list.
-        <div className="space-y-4">
+        <div className="space-y-3">
           {agendaItems.length === 0 ? (
             <div className="text-center py-16">
               <CalendarDays className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
@@ -514,15 +514,15 @@ export default function CrmCalendarPage() {
               <div key={format(group.date, 'yyyy-MM-dd')}>
                 <div
                   className={cn(
-                    'sticky top-[112px] z-10 -mx-3 px-3 py-1.5 bg-background/95 backdrop-blur',
+                    'sticky top-[96px] z-10 -mx-3 px-3 py-1 bg-background/95 backdrop-blur',
                     isToday(group.date) && 'text-primary',
                   )}
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-wider">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {dayLabel(group.date)}
                   </p>
                 </div>
-                <div className="space-y-2 mt-1.5">
+                <div className="space-y-1.5 mt-1">
                   {group.items.map((it) => (
                     <button
                       key={it.id}
