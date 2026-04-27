@@ -114,6 +114,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   // Inline signature editor state
   const [editingSignature, setEditingSignature] = useState(false);
   const [sigDraft, setSigDraft] = useState('');
+  // Mobile-only: collapse the inline signature preview by default so the
+  // typing area dominates the screen. Tap "Show signature" to reveal.
+  const [showSignaturePreviewMobile, setShowSignaturePreviewMobile] = useState(false);
 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -961,7 +964,36 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                               />
                             </div>
                           ) : (
-                            <SignatureInlineFrame html={activeSignatureHtml} />
+                            <>
+                              {/* Desktop: always show inline signature preview */}
+                              <div className="hidden md:block">
+                                <SignatureInlineFrame html={activeSignatureHtml} />
+                              </div>
+                              {/* Mobile: collapsed by default to maximize typing area */}
+                              <div className="md:hidden border-t border-border/40">
+                                {showSignaturePreviewMobile ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowSignaturePreviewMobile(false)}
+                                      className="w-full text-left px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground active:opacity-60"
+                                    >
+                                      Hide signature
+                                    </button>
+                                    <SignatureInlineFrame html={activeSignatureHtml} />
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowSignaturePreviewMobile(true)}
+                                    className="w-full text-left px-4 py-2.5 text-[12px] text-muted-foreground active:opacity-60 flex items-center justify-between"
+                                  >
+                                    <span>Signature attached</span>
+                                    <span className="text-[11px] uppercase tracking-wider text-primary">Show</span>
+                                  </button>
+                                )}
+                              </div>
+                            </>
                           )
                         ) : null
                       }

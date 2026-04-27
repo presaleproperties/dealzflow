@@ -296,11 +296,11 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           {/* Composer */}
           <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3">
             {/* Toolbar */}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground min-w-0 truncate">
+            <div className="flex flex-wrap items-center justify-between gap-y-1.5 gap-x-3">
+              <p className="text-xs text-muted-foreground min-w-0 truncate order-2 sm:order-1 basis-full sm:basis-auto">
                 Will be delivered as <strong className="text-foreground">{segs.count} message{segs.count !== 1 ? 's' : ''}</strong>.
               </p>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 shrink-0 order-1 sm:order-2 ml-auto">
                 {/* Templates */}
                 <Popover open={tplOpen} onOpenChange={setTplOpen}>
                   <PopoverTrigger asChild>
