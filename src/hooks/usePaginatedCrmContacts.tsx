@@ -77,7 +77,7 @@ function applyJsonFilters(query: any, filters: Record<string, unknown>) {
   return query;
 }
 
-export type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'last_touch_at' | 'created_at';
+export type SortKey = 'name' | 'phone' | 'email' | 'project' | 'source' | 'status' | 'assigned_to' | 'last_touch_at' | 'created_at' | 'lead_score';
 export type SortDir = 'asc' | 'desc';
 
 const SORT_COLUMN_MAP: Record<SortKey, string> = {
@@ -90,6 +90,7 @@ const SORT_COLUMN_MAP: Record<SortKey, string> = {
   assigned_to: 'assigned_to',
   last_touch_at: 'last_touch_at',
   created_at: 'created_at',
+  lead_score: 'lead_score',
 };
 
 interface PaginatedFilters {

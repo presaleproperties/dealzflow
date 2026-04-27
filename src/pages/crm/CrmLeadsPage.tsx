@@ -72,11 +72,11 @@ const QUICK_VIEWS: { id: QuickViewId; label: string; emoji: string; filters: Rec
   { id: '__closed', label: 'Closed',    emoji: '✅', filters: { status: ['Closed'] } },
 ];
 
-// Mobile sort options — keys must match SortKey
+// Sort options shared by mobile sheet + desktop dropdown — keys must match SortKey
 const SORT_OPTIONS: { key: SortKey; shortLabel: string; label: string; defaultDir: SortDir }[] = [
-  { key: 'last_touch_at', shortLabel: 'Recent',    label: 'Recent activity',  defaultDir: 'desc' },
-  { key: 'created_at',    shortLabel: 'Newest',    label: 'Newest added',     defaultDir: 'desc' },
-  { key: 'name',          shortLabel: 'Name',      label: 'Name (A–Z)',       defaultDir: 'asc'  },
+  { key: 'created_at',    shortLabel: 'Reg Date',      label: 'Reg Date',       defaultDir: 'desc' },
+  { key: 'last_touch_at', shortLabel: 'Last Activity', label: 'Last Activity',  defaultDir: 'desc' },
+  { key: 'lead_score',    shortLabel: 'Lead Score',    label: 'Lead Score',     defaultDir: 'desc' },
 ];
 
 export default function CrmLeadsPage() {
@@ -697,6 +697,55 @@ export default function CrmLeadsPage() {
               </Button>
               <div className="hidden sm:flex items-center flex-shrink-0 ml-2">
                 <div className="flex items-center gap-1 pr-2 mr-2 border-r border-border/60">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
+                        title="Sort by"
+                        aria-label="Sort by"
+                      >
+                        <ArrowDownNarrowWide className="w-4 h-4" />
+                        <span className="hidden lg:inline">
+                          {SORT_OPTIONS.find(o => o.key === sortKey)?.shortLabel ?? 'Sort'}
+                        </span>
+                        <ChevronDown className="w-3 h-3 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Sort by
+                      </div>
+                      <DropdownMenuSeparator />
+                      {SORT_OPTIONS.map(opt => {
+                        const isActive = sortKey === opt.key;
+                        return (
+                          <DropdownMenuItem
+                            key={opt.key}
+                            onClick={() => {
+                              if (sortKey === opt.key) {
+                                setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSortKey(opt.key);
+                                setSortDir(opt.defaultDir);
+                              }
+                              setPage(1);
+                            }}
+                            className="flex items-center justify-between gap-2 text-[13px]"
+                          >
+                            <span className={isActive ? 'font-semibold text-foreground' : ''}>{opt.label}</span>
+                            {isActive && (
+                              <span className="flex items-center gap-1.5 text-[10px] text-primary uppercase tracking-wider font-semibold">
+                                {sortDir === 'asc' ? 'Asc' : 'Desc'}
+                                <Check className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button
                     variant={filtersExpanded ? 'secondary' : 'ghost'}
                     size="sm"
