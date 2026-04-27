@@ -749,10 +749,9 @@ function QuickActionsSheet({
         </button>
       </div>
 
-      {/* Actions */}
+      {/* Actions — no safe-area here per iOS PWA spec; nav owns it */}
       <div
-        className="px-5 pb-4 space-y-2"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+        className="px-5 pb-5 space-y-2"
       >
         {actions.map((action) => {
           const Icon = action.icon;
