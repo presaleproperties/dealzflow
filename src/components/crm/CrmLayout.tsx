@@ -5,6 +5,7 @@ import { MobileAppHeader } from '@/components/layout/MobileAppHeader';
 import { CrmRouteGuard } from './CrmRouteGuard';
 import { CrmSubNav } from './CrmSubNav';
 import { CrmSectionScope } from './CrmSectionScope';
+import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
 
 interface CrmLayoutProps {
   requireRole?: ('owner' | 'admin')[];
@@ -31,6 +32,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
       </div>
       <RightRail />
       <BottomNav />
+      <SafeAreaPreview />
     </CrmRouteGuard>
   );
 }
