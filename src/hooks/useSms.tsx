@@ -269,6 +269,8 @@ export function useSendSms() {
       }
       qc.invalidateQueries({ queryKey: ['crm-sms-log-all'] });
       qc.invalidateQueries({ queryKey: ['crm-chats'] });
+      qc.invalidateQueries({ queryKey: ['crm-chat-thread'] });
+      qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages'] });
       qc.invalidateQueries({ queryKey: ['crm-recent-activity'] });
       if (data?.scheduled) toast.success('Text scheduled');
       else if (data?.queued) toast.success('Saved — will send once Twilio is connected');
