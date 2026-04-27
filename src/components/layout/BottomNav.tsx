@@ -307,7 +307,7 @@ export function BottomNav() {
       </Sheet>
 
       <nav
-          className="lg:hidden fixed inset-x-0 bottom-0 z-40 native-chrome overflow-hidden"
+          className="lg:hidden sticky bottom-0 inset-x-0 z-40 native-chrome overflow-hidden shrink-0"
         aria-label="Primary"
         style={{
           background: 'hsl(var(--card) / 0.98)',
@@ -315,13 +315,13 @@ export function BottomNav() {
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border))',
           boxShadow: '0 -8px 28px -16px rgba(0,0,0,0.22), 0 -1px 0 hsl(var(--border) / 0.4)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingBottom: 0,
             height: 'var(--bottom-nav-height)',
         }}
       >
         <div
-            className="relative flex items-start w-full"
-            style={{ height: '72px', padding: '8px 4px 0' }}
+            className="relative flex items-start w-full h-full"
+            style={{ padding: '6px 4px 0' }}
         >
           {tabs.map(renderTab)}
 
