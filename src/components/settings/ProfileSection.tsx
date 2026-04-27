@@ -181,7 +181,8 @@ export default function ProfileSection() {
             <AvatarImage
               src={profile?.avatar_url ?? undefined}
               alt={fullName || 'Profile'}
-              className="object-cover object-center"
+              className="object-cover"
+              style={{ objectPosition: savedPosition }}
             />
             <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
               {initials}
@@ -191,7 +192,7 @@ export default function ProfileSection() {
             <div>
               <Label className="text-sm font-medium">Headshot</Label>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Square image works best. Max 3 MB.
+                Square image works best. Max 3 MB. Use Adjust to recenter the crop.
               </p>
             </div>
             <input
@@ -221,6 +222,18 @@ export default function ProfileSection() {
               {profile?.avatar_url && (
                 <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAdjustOpen((v) => !v)}
+                  disabled={uploading}
+                >
+                  <Move className="h-3.5 w-3.5 mr-1.5" />
+                  {adjustOpen ? 'Close adjuster' : 'Adjust'}
+                </Button>
+              )}
+              {profile?.avatar_url && (
+                <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleRemoveAvatar}
@@ -233,6 +246,63 @@ export default function ProfileSection() {
             </div>
           </div>
         </div>
+
+        {/* Cropper / focal-point picker */}
+        {adjustOpen && profile?.avatar_url && (
+          <div className="rounded-lg border bg-muted/30 p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row gap-5 items-start">
+              <div
+                className="relative h-[240px] w-[240px] shrink-0 select-none touch-none overflow-hidden rounded-full ring-2 ring-primary/40 cursor-grab active:cursor-grabbing bg-background"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+              >
+                <img
+                  src={profile.avatar_url}
+                  alt="Adjust headshot"
+                  draggable={false}
+                  className="h-full w-full object-cover pointer-events-none"
+                  style={{ objectPosition: `${draftPos.x}% ${draftPos.y}%` }}
+                />
+                {/* Crosshair indicator */}
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-full border-2 border-white/80 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]" />
+                </div>
+              </div>
+              <div className="flex-1 space-y-3 text-sm">
+                <div>
+                  <p className="font-medium">Drag to recenter</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Move the photo until your face sits inside the circle. Position is saved
+                    everywhere your headshot appears.
+                  </p>
+                </div>
+                <div className="text-[11px] text-muted-foreground font-mono">
+                  Focal point: {Math.round(draftPos.x)}% × {Math.round(draftPos.y)}%
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={commitPosition} disabled={update.isPending}>
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Save position
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDraftPos({ x: 50, y: 50 })}
+                  >
+                    Reset to center
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={cancelAdjust}>
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Separator />
 
