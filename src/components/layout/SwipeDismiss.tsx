@@ -1,23 +1,16 @@
-import { useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 
 /**
- * iOS-style swipe-down-to-close wrapper for bottom sheets.
- * Drags content vertically with finger, dismisses if pulled > 120px or
- * flicked with velocity, otherwise springs back.
+ * iOS-style swipe-down-to-close for bottom sheets.
  *
- * Drag is initiated only from the grab handle area to avoid conflicting
- * with inner scrollable content.
+ * Returns:
+ *  - containerStyle: apply to the outer sheet content wrapper (handles transform)
+ *  - handleProps: spread onto the visible grab-handle element (initiates drag)
+ *
+ * The drag is intentionally only initiated from the handle so that inner
+ * scrollable content keeps native momentum scrolling.
  */
-interface SwipeDismissProps {
-  onClose: () => void;
-  children: ReactNode;
-  /** Optional extra classes for the outer wrapper */
-  className?: string;
-  /** Show the iOS-style grab handle (default true) */
-  showHandle?: boolean;
-}
-
-export function SwipeDismiss({ onClose, children, className, showHandle = true }: SwipeDismissProps) {
+export function useSwipeToClose(onClose: () => void, threshold = 120) {
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const startY = useRef(0);
@@ -35,53 +28,34 @@ export function SwipeDismiss({ onClose, children, className, showHandle = true }
     const y = e.touches[0].clientY;
     lastY.current = y;
     const diff = y - startY.current;
-    // Only allow downward drag, with mild rubber-banding upward
     setDragY(diff > 0 ? diff : diff * 0.15);
   };
 
   const onTouchEnd = () => {
     const diff = lastY.current - startY.current;
     const dt = Math.max(1, Date.now() - startT.current);
-    const velocity = diff / dt; // px / ms
+    const velocity = diff / dt;
     setDragging(false);
-    if (diff > 120 || velocity > 0.6) {
-      // animate out then close
+    if (diff > threshold || velocity > 0.6) {
       setDragY(window.innerHeight);
-      setTimeout(onClose, 180);
+      window.setTimeout(onClose, 180);
     } else {
       setDragY(0);
     }
   };
 
-  const style: CSSProperties = {
+  const containerStyle: CSSProperties = {
     transform: `translateY(${dragY}px)`,
     transition: dragging ? 'none' : 'transform 280ms cubic-bezier(0.32, 0.72, 0, 1)',
     willChange: 'transform',
-    touchAction: 'pan-y',
   };
 
-  return (
-    <div className={className} style={style}>
-      {showHandle && (
-        <div
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          className="flex w-full items-center justify-center pt-[8px] pb-[6px] cursor-grab active:cursor-grabbing"
-          style={{ touchAction: 'none' }}
-        >
-          <span
-            aria-hidden
-            className="block rounded-full"
-            style={{
-              width: 38,
-              height: 5,
-              background: 'hsl(var(--foreground) / 0.22)',
-            }}
-          />
-        </div>
-      )}
-      {children}
-    </div>
-  );
+  const handleProps = {
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    style: { touchAction: 'none' as const },
+  };
+
+  return { containerStyle, handleProps };
 }
