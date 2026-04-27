@@ -177,7 +177,7 @@ export function RightRail() {
   const { isMember: isCrmMember } = useCrmAccess();
   const [panel, setPanel] = useState<CommsPanel>(null);
   const [inboxSearch, setInboxSearch] = useState('');
-  const [inboxFilter, setInboxFilter] = useState<'all' | 'email' | 'sms'>('all');
+  const [inboxFilter, setInboxFilter] = useState<'all' | 'email' | 'text'>('all');
   const [signOutOpen, setSignOutOpen] = useState(false);
 
   const { theme, setTheme } = useTheme();
