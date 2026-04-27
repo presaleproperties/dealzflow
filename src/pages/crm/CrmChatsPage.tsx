@@ -274,8 +274,6 @@ export default function CrmChatsPage() {
       </div>
 
       {/* No per-page FAB — conversations start from Leads / Lead Detail. */}
-        <Plus className="w-6 h-6" strokeWidth={2.4} />
-      </button>
     </div>
   );
 }
