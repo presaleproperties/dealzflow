@@ -298,6 +298,45 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'quick_actions', label: 'Actions', width: '120px' },
 ];
 
+/**
+ * Resizable column header. The whole header is clickable for sorting; the
+ * 6px right-edge handle is a separate drag zone that captures pointer events
+ * and adjusts column width via the useColumnResizer hook. Double-click on
+ * the handle resets ALL column widths to defaults (faster than menu hunt).
+ */
+function ResizableHeaderCell({
+  col, width, onResize, onResetAll, onSort, SortIcon,
+}: {
+  col: ColumnDef;
+  width: number;
+  onResize: (next: number) => void;
+  onResetAll: () => void;
+  onSort: (key: SortKey) => void;
+  SortIcon: React.ComponentType<{ col: SortKey }>;
+}) {
+  const { onPointerDown } = useColumnResizer(() => width, onResize);
+  return (
+    <th
+      className="relative px-3 py-3.5 text-left text-[12px] font-semibold text-muted-foreground uppercase tracking-wider select-none hover:text-foreground transition-colors group"
+    >
+      <span
+        onClick={() => col.sortKey && onSort(col.sortKey)}
+        className={`inline-flex items-center gap-1.5 ${col.sortKey ? 'cursor-pointer' : ''}`}
+      >
+        {col.label}
+        {col.sortKey && <SortIcon col={col.sortKey} />}
+      </span>
+      <div
+        onPointerDown={onPointerDown}
+        onDoubleClick={onResetAll}
+        title="Drag to resize · double-click to reset all columns"
+        className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-primary/40 active:bg-primary transition-colors"
+        style={{ touchAction: 'none' }}
+      />
+    </th>
+  );
+}
+
 /* ── Inline Pipeline Editor ──
  * Options come from crm_lead_segments so the in-row dropdown, the pill bar
  * above the table, and the Pipeline Kanban board always show the same set.
