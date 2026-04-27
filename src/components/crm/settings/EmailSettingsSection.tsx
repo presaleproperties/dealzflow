@@ -38,6 +38,8 @@ export default function EmailSettingsSection() {
       setSenderName(settings.sender_name || '');
       setReplyTo(settings.reply_to || '');
       setTwilioFrom((settings as any).twilio_from_number || '');
+      setBrandLogoUrl((settings as any).brand_logo_url || '');
+      setBrandLogoAlt((settings as any).brand_logo_alt || '');
       const mode = ((settings as any).signature_mode as SignatureMode) || 'builder';
       setSignatureMode(mode);
       setBuilderData((settings as any).signature_builder_data || null);
