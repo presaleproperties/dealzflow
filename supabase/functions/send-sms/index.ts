@@ -315,6 +315,7 @@ Deno.serve(async (req) => {
         to_number: to, from_number: fromNumber, body: finalBody, media_urls,
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
         status: 'failed', campaign_id, channel,
+        client_dedupe_id,
         error_message: friendlyError ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
       });
