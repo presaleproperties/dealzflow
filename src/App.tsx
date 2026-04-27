@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
+import { useProfile } from "@/hooks/useProfile";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PageLoader } from "@/components/ui/page-loader";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
@@ -35,6 +36,7 @@ import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
 
 import NotFound from "./pages/NotFound";
+import PendingApprovalPage from "./pages/PendingApprovalPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
 import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
