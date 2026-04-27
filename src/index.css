@@ -973,6 +973,23 @@
     100% { background-position: -200% 0; }
   }
 
+  /* Global theme-aware skeleton — works in dark + light modes via tokens.
+     Use anywhere outside the CRM where you want a shimmering placeholder. */
+  .skeleton {
+    @apply rounded-lg bg-muted/60;
+    background-image: linear-gradient(
+      90deg,
+      hsl(var(--muted) / 0) 0%,
+      hsl(var(--foreground) / 0.06) 50%,
+      hsl(var(--muted) / 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: crmShimmer 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton, .crm-skeleton { animation: none; }
+  }
+
   /* Premium FAB — gold gradient floating action used by Leads /
      Pipeline / Email / Showings for primary "+ New" action. */
   .crm-fab {
