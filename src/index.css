@@ -122,18 +122,14 @@
 }
 
 @layer base {
-  /* Flush flat bottom-nav clearance.
-     The bar is 50px tall, sits flush at the bottom of the viewport, and caps
-     iOS standalone safe-area clearance so Pro Max PWAs don't get a tall gutter.
-     Pages reserve exactly bar height + that capped inset.
-     Disabled on lg+ where the bar is hidden. */
+  /* Native iPhone bottom-nav clearance.
+     The interactive row stays stable and low, while the nav surface owns the
+     home-indicator safe-area so installed PWAs do not float or overlap. */
   :root {
     /* Bottom nav tokens — single source of truth.
-       Slim 42px icon row + safe-area gutter. Icons sit LOW (near the
-       home indicator, Lofty-style), nav bar height is minimal so the
-       viewer gets maximum vertical room. */
+       A compact 54px touch row plus the real iOS safe-area gutter. */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-icon-row: 42px;
+    --bottom-nav-icon-row: 54px;
     --bottom-nav-icon-lift: 0px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
@@ -147,9 +143,7 @@
   :root.is-standalone,
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px !important;
-    /* Standalone/PWA: keep icons LOW — no extra lift. Slim 42px row sits
-       directly above the iOS safe-area gutter, nav surface paints flush
-       to the bottom edge. Maximum viewer real-estate. */
+    /* Standalone/PWA: keep one deterministic native dock geometry. */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
     --bottom-nav-icon-lift: 0px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
