@@ -14,6 +14,7 @@ import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
+import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
 import AuthPage from "./pages/AuthPage";
