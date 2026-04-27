@@ -3934,43 +3934,58 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           avatar_url: string | null
           ban_reason: string | null
           banned_at: string | null
           created_at: string
+          denial_reason: string | null
           full_name: string | null
           id: string
           is_banned: boolean
           phone: string | null
+          requested_at: string
           title: string | null
           updated_at: string
           user_id: string
+          workspace_status: Database["public"]["Enums"]["workspace_status"]
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           created_at?: string
+          denial_reason?: string | null
           full_name?: string | null
           id?: string
           is_banned?: boolean
           phone?: string | null
+          requested_at?: string
           title?: string | null
           updated_at?: string
           user_id: string
+          workspace_status?: Database["public"]["Enums"]["workspace_status"]
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           created_at?: string
+          denial_reason?: string | null
           full_name?: string | null
           id?: string
           is_banned?: boolean
           phone?: string | null
+          requested_at?: string
           title?: string | null
           updated_at?: string
           user_id?: string
+          workspace_status?: Database["public"]["Enums"]["workspace_status"]
         }
         Relationships: []
       }
@@ -4459,6 +4474,14 @@ export type Database = {
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
       _touch_skip_enabled: { Args: never; Returns: boolean }
+      admin_set_workspace_status: {
+        Args: {
+          _reason?: string
+          _status: Database["public"]["Enums"]["workspace_status"]
+          _target_user_id: string
+        }
+        Returns: Json
+      }
       backfill_behavior_notes: { Args: never; Returns: Json }
       bulk_reformat_crm_notes: { Args: never; Returns: Json }
       contact_related_counts: {
@@ -4541,6 +4564,7 @@ export type Database = {
       is_crm_member: { Args: { _user_id: string }; Returns: boolean }
       is_crm_owner: { Args: { _user_id: string }; Returns: boolean }
       is_phone_opted_out: { Args: { _phone: string }; Returns: boolean }
+      is_workspace_approved: { Args: { _user_id: string }; Returns: boolean }
       list_potential_duplicates: {
         Args: { _limit?: number }
         Returns: {
@@ -4648,6 +4672,7 @@ export type Database = {
         | "Completion"
         | "Custom"
       property_type: "PRESALE" | "RESALE"
+      workspace_status: "pending" | "approved" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4788,6 +4813,7 @@ export const Constants = {
         "Custom",
       ],
       property_type: ["PRESALE", "RESALE"],
+      workspace_status: ["pending", "approved", "suspended"],
     },
   },
 } as const

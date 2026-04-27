@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
+import { useProfile } from "@/hooks/useProfile";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PageLoader } from "@/components/ui/page-loader";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
@@ -35,6 +36,7 @@ import PipelinePage from "./pages/PipelinePage";
 import ClientInventoryPage from "./pages/ClientInventoryPage";
 
 import NotFound from "./pages/NotFound";
+import PendingApprovalPage from "./pages/PendingApprovalPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
 import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
@@ -85,19 +87,25 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  
-  if (loading) {
+  const { data: profile, isLoading: profileLoading } = useProfile();
+
+  if (loading || (user && profileLoading)) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
         <PageLoader />
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
+
+  // Gate: only approved users can use the workspace
+  if (profile && profile.workspace_status !== 'approved') {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -166,6 +174,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+                  <Route path="/pending-approval" element={<PendingApprovalPage />} />
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
                   

@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type WorkspaceStatus = 'pending' | 'approved' | 'suspended';
+
 export type Profile = {
   id: string;
   user_id: string;
@@ -9,9 +11,15 @@ export type Profile = {
   avatar_url: string | null;
   phone: string | null;
   title: string | null;
+  workspace_status: WorkspaceStatus;
+  approved_at: string | null;
+  denial_reason: string | null;
+  requested_at: string | null;
   created_at: string;
   updated_at: string;
 };
+
+const PROFILE_COLUMNS = 'id, user_id, full_name, avatar_url, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at';
 
 export function useProfile() {
   return useQuery({
@@ -22,18 +30,16 @@ export function useProfile() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, avatar_url, phone, title, created_at, updated_at')
+        .select(PROFILE_COLUMNS)
         .eq('user_id', session.user.id)
         .maybeSingle();
       if (error) throw error;
 
-      // Self-heal: handle_new_user trigger should create one, but if a legacy
-      // user is missing a row we materialize it on first read.
       if (!data) {
         const { data: created, error: insertErr } = await supabase
           .from('profiles')
           .insert({ user_id: session.user.id, full_name: session.user.user_metadata?.full_name ?? null })
-          .select('id, user_id, full_name, avatar_url, phone, title, created_at, updated_at')
+          .select(PROFILE_COLUMNS)
           .single();
         if (insertErr) throw insertErr;
         return created as Profile;
