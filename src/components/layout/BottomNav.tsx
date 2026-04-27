@@ -137,6 +137,31 @@ export function BottomNav() {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [bookShowingOpen, setBookShowingOpen] = useState(false);
 
+  // Track Safari's bottom URL bar via visualViewport so the nav rides above
+  // the chrome instead of being covered when the bar expands on scroll-up.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    const update = () => {
+      // Distance from the bottom of the layout viewport to the bottom of the
+      // visual viewport. >0 when the URL bar is showing; 0 when collapsed.
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      root.style.setProperty('--browser-chrome-inset', `${Math.round(inset)}px`);
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      window.removeEventListener('orientationchange', update);
+      root.style.removeProperty('--browser-chrome-inset');
+    };
+  }, []);
+
   const mode = detectMode(location.pathname);
 
   const tabs = mode === 'crm' ? CRM_TABS : WORKSPACE_TABS;
