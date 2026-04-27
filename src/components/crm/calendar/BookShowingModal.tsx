@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCrmContacts, AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts, AGENTS } from '@/hooks/useCrmContacts';
 import { useCreateShowing } from '@/hooks/useCrmShowings';
+import { ProjectPicker } from '@/components/crm/projects/ProjectPicker';
 
 interface Props {
   open: boolean;
@@ -76,12 +77,7 @@ export function BookShowingModal({ open, onOpenChange }: Props) {
 
           <div className="space-y-2">
             <Label>Project</Label>
-            <Select value={project} onValueChange={setProject}>
-              <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
-              <SelectContent>
-                {PROJECTS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ProjectPicker value={project} onChange={(name) => setProject(name)} />
           </div>
 
           <div className="space-y-2">
