@@ -145,12 +145,11 @@
   :root.is-standalone,
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px;
-    /* In standalone PWA: the nav must extend its blurred surface DOWN
-       through the iOS home-indicator gutter, otherwise the body bg
-       (cream/off-white) bleeds through below the icon row.
-       So we keep the safe-area inset inside the nav as paint-only padding,
-       but cap it so Pro Max doesn't get a giant gutter. */
-    --bottom-nav-safe-pad: min(env(safe-area-inset-bottom, 0px), 22px);
+    /* Match Lofty: nav sits flush to the physical bottom edge with the
+       full iOS safe-area inset reserved INSIDE the nav. Labels sit above
+       the home indicator, the nav's surface paints the entire indicator
+       gutter — no cream body bleed-through, no floating gap. */
+    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
   }
