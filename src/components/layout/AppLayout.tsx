@@ -16,11 +16,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <MobileAppHeader />
       <main
         data-route-scroll-root="true"
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain lg:pr-[52px] flex flex-col"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain lg:pr-[52px]"
       >
-        <div className="flex-1">{children}</div>
-        <BottomNav />
+        {children}
       </main>
+      <BottomNav />
       <RightRail />
     </div>
   );
