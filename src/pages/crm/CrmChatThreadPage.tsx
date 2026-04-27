@@ -106,10 +106,36 @@ export default function CrmChatThreadPage() {
     },
   });
 
+  // Cross-reference SMS log statuses for outbound SMS/WhatsApp messages
+  // so we can show sending / sent / delivered / failed indicators on bubbles.
+  const channel = thread?.conv.channel;
+  const smsLogIds = useMemo(
+    () => messages
+      .filter((m) => m.direction === 'outbound' && m.source_table === 'crm_sms_log' && m.source_id)
+      .map((m) => m.source_id as string),
+    [messages],
+  );
+  const { data: smsStatuses = {} } = useQuery({
+    queryKey: ['crm-chat-thread-sms-statuses', conversationId, smsLogIds.length, smsLogIds.join('|')],
+    enabled: smsLogIds.length > 0 && (channel === 'sms' || channel === 'whatsapp'),
+    queryFn: async (): Promise<Record<string, { status: string | null; error_message: string | null }>> => {
+      const { data, error } = await supabase
+        .from('crm_sms_log')
+        .select('id, status, error_message')
+        .in('id', smsLogIds);
+      if (error) throw error;
+      const map: Record<string, { status: string | null; error_message: string | null }> = {};
+      for (const r of (data ?? []) as Array<{ id: string; status: string | null; error_message: string | null }>) {
+        map[r.id] = { status: r.status, error_message: r.error_message };
+      }
+      return map;
+    },
+  });
+
   // Realtime — refetch on new message in this conversation
   useEffect(() => {
     if (!conversationId) return;
-    const channel = supabase
+    const ch = supabase
       .channel(`chat-thread-${conversationId}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'crm_messages',
@@ -120,8 +146,27 @@ export default function CrmChatThreadPage() {
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(ch); };
   }, [conversationId, qc]);
+
+  // Realtime — refetch SMS-log status changes (delivered / failed transitions
+  // from Twilio webhooks) so the bubble indicators update live.
+  useEffect(() => {
+    if (smsLogIds.length === 0) return;
+    const ch = supabase
+      .channel(`chat-thread-sms-${conversationId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'crm_sms_log',
+      }, (payload: any) => {
+        const id = payload?.new?.id;
+        if (id && smsLogIds.includes(id)) {
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread-sms-statuses', conversationId] });
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [conversationId, smsLogIds, qc]);
+
 
   // Mark unread → 0 on open (best-effort)
   useEffect(() => {
