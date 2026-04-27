@@ -272,7 +272,7 @@ export function BottomNav() {
             type="button"
             onClick={() => triggerHaptic('fab')}
             aria-label="Quick add"
-            className="lg:hidden fixed z-[45] right-4 h-[56px] w-[56px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
+            className="lg:hidden fixed z-[45] right-4 h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
             style={{
               bottom: 'calc(var(--bottom-nav-height) + 16px)',
               background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
