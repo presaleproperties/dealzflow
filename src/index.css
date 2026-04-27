@@ -185,12 +185,27 @@
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.
      Modals/sheets/main content must NOT add this again. */
   :root {
+    --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   @supports (padding: max(0px)) {
     :root {
+      --safe-top: max(env(safe-area-inset-top, 0px), 0px);
       --safe-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
     }
+  }
+
+  /* Native momentum scroll on every scrollable surface (iOS PWA). */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Step 9: hide bottom nav whenever a Radix Dialog/Sheet is open
+     (Radix locks the body via data-scroll-locked). The sheet itself
+     extends edge-to-edge and owns the safe-area, so the nav must
+     not double up underneath it. */
+  body[data-scroll-locked] nav[aria-label="Primary"] {
+    visibility: hidden;
   }
 
   html {
