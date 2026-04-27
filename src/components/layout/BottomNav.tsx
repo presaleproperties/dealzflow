@@ -304,15 +304,15 @@ export function BottomNav() {
           background: 'hsl(var(--card) / 0.98)',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          borderTop: '1px solid hsl(var(--border) / 0.55)',
-          boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
-          paddingBottom: 0,
+          borderTop: '1px solid hsl(var(--border))',
+          boxShadow: '0 -8px 28px -16px rgba(0,0,0,0.22), 0 -1px 0 hsl(var(--border) / 0.4)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             height: 'var(--bottom-nav-height)',
         }}
       >
         <div
             className="relative flex items-start w-full"
-            style={{ height: 'var(--bottom-nav-height)', padding: '7px 4px 0' }}
+            style={{ height: '72px', padding: '8px 4px 0' }}
         >
           {tabs.map(renderTab)}
 
