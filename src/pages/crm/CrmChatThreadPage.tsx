@@ -263,7 +263,8 @@ export default function CrmChatThreadPage() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
+      <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
+        <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} />
         {msgsLoading ? (
           <MessageBubbleSkeleton />
         ) : messages.length === 0 ? (
