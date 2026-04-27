@@ -284,17 +284,17 @@ export default function CrmCalendarPage() {
   const viewOptions = isMobile ? MOBILE_VIEWS : DESKTOP_VIEWS;
 
   return (
-    <div className="space-y-3 sm:space-y-4 crm-mobile-page">
+    <div className="space-y-2 sm:space-y-4 crm-mobile-page">
       {/* Google Calendar Connection Banner */}
       {!isGCalConnected && (
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-          <Link2 className="w-4 h-4 text-muted-foreground shrink-0" />
-          <p className="text-xs sm:text-sm text-muted-foreground flex-1">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30">
+          <Link2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <p className="text-[12px] sm:text-sm text-muted-foreground flex-1 leading-tight">
             Connect Google Calendar to see all your events here.
           </p>
           <Link
             to="/settings"
-            className="text-xs font-semibold text-primary hover:underline shrink-0"
+            className="text-[12px] font-semibold text-primary hover:underline shrink-0"
           >
             Connect
           </Link>
@@ -302,31 +302,31 @@ export default function CrmCalendarPage() {
       )}
 
       {/* Header — sticky on mobile for easy navigation */}
-      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-2 pt-2 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
+      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-1.5 pt-1 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
         {/* Row 1: Title + add */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <CalendarDays className="h-5 w-5 text-primary shrink-0" />
-            <div className="min-w-0">
-              <h1 className="m-page-title sm:!text-xl truncate">
+            <CalendarDays className="h-4 w-4 text-primary shrink-0 sm:h-5 sm:w-5" />
+            <div className="min-w-0 flex items-baseline gap-2">
+              <h1 className="m-page-title !text-[22px] sm:!text-xl truncate leading-tight">
                 {titleText}
               </h1>
-              <p className="text-[11px] text-muted-foreground sm:hidden">Showings & Calendar</p>
+              <p className="text-[11px] text-muted-foreground hidden sm:inline">Showings & Calendar</p>
             </div>
           </div>
           <Button
             onClick={() => setBookOpen(true)}
-            className="gap-1.5 h-9 min-h-[40px]"
+            className="gap-1 h-8 min-h-0 px-2.5 text-xs sm:h-9 sm:px-3"
             size="sm"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Book Showing</span>
             <span className="sm:hidden">Book</span>
           </Button>
         </div>
 
         {/* Row 2: Navigation + view switcher */}
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-1.5 flex items-center gap-1.5">
           {/* Prev / Today / Next */}
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card/60 p-0.5">
             <button
