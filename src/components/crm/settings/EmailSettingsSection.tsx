@@ -185,26 +185,76 @@ export default function EmailSettingsSection() {
           </p>
         </div>
 
-        {/* Brand Logo Banner — shown at top of bulk emails */}
+        {/* Brand Logo Banner — shown at top of bulk & 1:1 emails */}
         <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
           <div>
             <Label className="text-sm font-semibold">Brand Logo Banner</Label>
             <p className="text-[11px] text-muted-foreground mt-1">
-              When set, this logo is added to the top of every <span className="font-medium">bulk / mass</span> email
-              you send. Use a public HTTPS image URL — recipients' inboxes can't load images from your computer.
-              Recommended: 600px wide max, transparent or white background.
+              Added to the top of every email you send (bulk and 1:1). Upload a logo and we'll
+              host it for you — no public URL needed. Recommended: 600px wide max, transparent
+              or white background, under 2 MB.
             </p>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Logo URL</Label>
-            <Input
-              type="url"
-              value={brandLogoUrl}
-              onChange={e => setBrandLogoUrl(e.target.value)}
-              placeholder="https://yourdomain.com/logo.png"
-              className="min-h-[44px] sm:min-h-0"
-            />
-          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleLogoUpload(f);
+            }}
+          />
+
+          {brandLogoUrl.trim() ? (
+            <>
+              <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
+                <img
+                  src={brandLogoUrl.trim()}
+                  alt={brandLogoAlt.trim() || 'Logo preview'}
+                  style={{ maxHeight: 64, maxWidth: '100%' }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo
+                    ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                    : <><Upload className="h-3.5 w-3.5 mr-1.5" /> Replace logo</>}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveLogo}
+                  disabled={uploadingLogo}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remove
+                </Button>
+              </div>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingLogo}
+              className="w-full min-h-[44px] sm:min-h-0 border-dashed"
+            >
+              {uploadingLogo
+                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading…</>
+                : <><Upload className="h-4 w-4 mr-2" /> Upload logo</>}
+            </Button>
+          )}
+
           <div className="space-y-1.5">
             <Label className="text-xs">Alt text (for accessibility)</Label>
             <Input
@@ -214,16 +264,17 @@ export default function EmailSettingsSection() {
               className="min-h-[44px] sm:min-h-0"
             />
           </div>
-          {brandLogoUrl.trim() && (
-            <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
-              <img
-                src={brandLogoUrl.trim()}
-                alt={brandLogoAlt.trim() || 'Logo preview'}
-                style={{ maxHeight: 64, maxWidth: '100%' }}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
-              />
-            </div>
-          )}
+
+          <details className="text-[11px] text-muted-foreground">
+            <summary className="cursor-pointer hover:text-foreground">Use an external URL instead</summary>
+            <Input
+              type="url"
+              value={brandLogoUrl}
+              onChange={e => setBrandLogoUrl(e.target.value)}
+              placeholder="https://yourdomain.com/logo.png"
+              className="mt-2 min-h-[44px] sm:min-h-0"
+            />
+          </details>
         </div>
 
         {/* Signature Editor — 3 Modes */}
