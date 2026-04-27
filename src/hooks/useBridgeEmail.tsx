@@ -117,6 +117,8 @@ export function useBridgeSendEmail() {
       }
       qc.invalidateQueries({ queryKey: ['crm-email-log'] });
       qc.invalidateQueries({ queryKey: ['crm-chats'] });
+      qc.invalidateQueries({ queryKey: ['crm-chat-thread'] });
+      qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages'] });
       qc.invalidateQueries({ queryKey: ['crm-recent-activity'] });
       qc.invalidateQueries({ queryKey: ['cmd-activity-feed'] });
       qc.invalidateQueries({ queryKey: ['crm-kpi-cards'] });
