@@ -65,6 +65,8 @@ export default function CrmChatThreadPage() {
   const qc = useQueryClient();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  // Offline outbox state (filtered by contact later, once thread loads)
+  const outbox = useOfflineOutbox();
 
   // Conversation + joined contact
   const { data: thread, isLoading: threadLoading } = useQuery({
