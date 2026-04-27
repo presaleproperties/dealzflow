@@ -4,7 +4,9 @@
 // NEVER caches: index.html, API calls, Supabase requests, anything else.
 // This avoids the "old version flashing" bug that full SW response caching caused.
 
-const VERSION = "v1";
+// Bump VERSION on any deploy that ships safe-area / layout fixes that
+// must invalidate the cached /assets/* CSS chunks.
+const VERSION = "v2-2025-04-27-bottom-nav";
 const CACHE_NAME = `dealzflow-assets-${VERSION}`;
 
 self.addEventListener("install", (event) => {
