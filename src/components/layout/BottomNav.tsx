@@ -294,8 +294,11 @@ export function BottomNav() {
               <SheetContent
                 side="bottom"
                 hideClose
-                className="p-0 border-0 rounded-t-[28px] max-h-[80vh] overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-                style={{ background: BG }}
+                className="p-0 border-0 rounded-t-[28px] max-h-[82vh] overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+                style={{
+                  background: BG,
+                  maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
+                }}
               >
                 <QuickActionsSheet mode={mode} actions={quickActions} onClose={() => setQuickOpen(false)} />
               </SheetContent>
@@ -332,8 +335,12 @@ export function BottomNav() {
               <SheetContent
                 side="bottom"
                 hideClose
-                className="p-0 border-0 rounded-t-[24px] max-h-[90vh] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-                style={{ background: BG, height: '90vh' }}
+                className="p-0 border-0 rounded-t-[24px] flex flex-col overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+                style={{
+                  background: BG,
+                  height: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
+                  maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
+                }}
               >
                 <MoreSheet
                   mode={mode}
