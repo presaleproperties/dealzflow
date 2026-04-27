@@ -493,7 +493,7 @@ function MoreSheet({
   isCrmMember: boolean;
 }) {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col max-h-[inherit]" style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)' }}>
       {/* Drag handle */}
       <div className="shrink-0 pt-2.5 pb-1.5">
         <div
