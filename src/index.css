@@ -132,16 +132,23 @@
        possible without overlapping the home indicator. We subtract 24px from the
        native inset (Pro Max ≈ 34px → 10px → capped at 4px), giving a near-flush
        bottom while leaving a hairline of breathing room above the gesture bar. */
-    --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 30px, 0px), 4px);
-    --bottom-nav-pad: calc(50px + var(--bottom-nav-safe-pad));
+    /* Bottom nav: aggressively absorb iOS PWA safe-area on Pro Max so the bar
+       sits as flush as possible above the home indicator. */
+    --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 32px, 0px), 2px);
+    --bottom-nav-pad: calc(46px + var(--bottom-nav-safe-pad));
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
+    /* Composer top inset — guarantees a minimum 50px clearance even when
+       env(safe-area-inset-top) reports 0 in standalone PWA mode, so headers
+       like "SEND TEXT" / "New Message" never collide with the iOS time/notch. */
+    --composer-top-pad: max(env(safe-area-inset-top, 0px), 50px);
   }
   @media (min-width: 1024px) {
     :root {
       --bottom-nav-safe-pad: 0px;
       --bottom-nav-pad: 0px;
       --m-top-pad: 0px;
+      --composer-top-pad: 0px;
     }
   }
 
