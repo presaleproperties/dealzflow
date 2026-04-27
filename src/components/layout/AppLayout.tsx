@@ -3,6 +3,7 @@ import { TopNav } from './TopNav';
 import { BottomNav } from './BottomNav';
 import { RightRail } from './RightRail';
 import { MobileAppHeader } from './MobileAppHeader';
+import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
 
 
 interface AppLayoutProps {
@@ -23,6 +24,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
       <RightRail />
       <BottomNav />
+      <SafeAreaPreview />
     </div>
   );
 }
