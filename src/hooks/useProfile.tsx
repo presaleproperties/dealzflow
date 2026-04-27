@@ -9,6 +9,7 @@ export type Profile = {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
+  avatar_position: string;
   phone: string | null;
   title: string | null;
   workspace_status: WorkspaceStatus;
@@ -19,7 +20,7 @@ export type Profile = {
   updated_at: string;
 };
 
-const PROFILE_COLUMNS = 'id, user_id, full_name, avatar_url, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at';
+const PROFILE_COLUMNS = 'id, user_id, full_name, avatar_url, avatar_position, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at';
 
 export function useProfile() {
   return useQuery({
@@ -53,7 +54,7 @@ export function useProfile() {
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: Partial<Pick<Profile, 'full_name' | 'avatar_url' | 'phone' | 'title'>>) => {
+    mutationFn: async (updates: Partial<Pick<Profile, 'full_name' | 'avatar_url' | 'avatar_position' | 'phone' | 'title'>>) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
       const { error } = await supabase

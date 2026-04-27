@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { User, Upload, Trash2, Loader2, Mail } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { User, Upload, Trash2, Loader2, Mail, Move, Check, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,13 +28,24 @@ export default function ProfileSection() {
   const [title, setTitle] = useState('');
   const [phone, setPhone] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  // Working position while dragging in the cropper (committed to DB on Save)
+  const [draftPos, setDraftPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragStateRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name ?? '');
       setTitle(profile.title ?? '');
       setPhone(profile.phone ?? '');
+      const [px, py] = (profile.avatar_position ?? '50% 50%')
+        .split(' ')
+        .map((v) => parseFloat(v));
+      setDraftPos({
+        x: Number.isFinite(px) ? px : 50,
+        y: Number.isFinite(py) ? py : 50,
+      });
     }
   }, [profile]);
 
@@ -66,8 +77,11 @@ export default function ProfileSection() {
       if (upErr) throw upErr;
       const { data } = supabase.storage.from('avatars').getPublicUrl(path);
       const url = `${data.publicUrl}?v=${Date.now()}`;
-      await update.mutateAsync({ avatar_url: url });
-      toast.success('Headshot updated');
+      // Reset focal point to center on a fresh upload
+      await update.mutateAsync({ avatar_url: url, avatar_position: '50% 50%' });
+      setDraftPos({ x: 50, y: 50 });
+      setAdjustOpen(true);
+      toast.success('Headshot updated — drag to recenter');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Upload failed');
     } finally {
@@ -100,8 +114,54 @@ export default function ProfileSection() {
     );
   };
 
+  // Drag-to-reposition: dragging RIGHT shifts the focal point LEFT (so the photo
+  // appears to move right under the circle). We invert deltas to feel natural.
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: draftPos.x,
+      baseY: draftPos.y,
+    };
+  }, [draftPos.x, draftPos.y]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const s = dragStateRef.current;
+    if (!s) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // 1 px of cursor movement maps to ~0.4% of focal-point shift, so a full
+    // drag across the 240px circle gives roughly the full 0–100% range.
+    const dx = ((e.clientX - s.startX) / rect.width) * 100;
+    const dy = ((e.clientY - s.startY) / rect.height) * 100;
+    const next = {
+      x: Math.max(0, Math.min(100, s.baseX - dx)),
+      y: Math.max(0, Math.min(100, s.baseY - dy)),
+    };
+    setDraftPos(next);
+  }, []);
+
+  const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    dragStateRef.current = null;
+  }, []);
+
+  const commitPosition = async () => {
+    const value = `${Math.round(draftPos.x)}% ${Math.round(draftPos.y)}%`;
+    await update.mutateAsync({ avatar_position: value });
+    setAdjustOpen(false);
+    toast.success('Headshot position saved');
+  };
+
+  const cancelAdjust = () => {
+    const [px, py] = (profile?.avatar_position ?? '50% 50%').split(' ').map(parseFloat);
+    setDraftPos({ x: Number.isFinite(px) ? px : 50, y: Number.isFinite(py) ? py : 50 });
+    setAdjustOpen(false);
+  };
+
   if (isLoading) return null;
 
+  const savedPosition = profile?.avatar_position ?? '50% 50%';
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
       <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
@@ -121,7 +181,8 @@ export default function ProfileSection() {
             <AvatarImage
               src={profile?.avatar_url ?? undefined}
               alt={fullName || 'Profile'}
-              className="object-cover object-center"
+              className="object-cover"
+              style={{ objectPosition: savedPosition }}
             />
             <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
               {initials}
@@ -131,7 +192,7 @@ export default function ProfileSection() {
             <div>
               <Label className="text-sm font-medium">Headshot</Label>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Square image works best. Max 3 MB.
+                Square image works best. Max 3 MB. Use Adjust to recenter the crop.
               </p>
             </div>
             <input
@@ -161,6 +222,18 @@ export default function ProfileSection() {
               {profile?.avatar_url && (
                 <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAdjustOpen((v) => !v)}
+                  disabled={uploading}
+                >
+                  <Move className="h-3.5 w-3.5 mr-1.5" />
+                  {adjustOpen ? 'Close adjuster' : 'Adjust'}
+                </Button>
+              )}
+              {profile?.avatar_url && (
+                <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleRemoveAvatar}
@@ -173,6 +246,63 @@ export default function ProfileSection() {
             </div>
           </div>
         </div>
+
+        {/* Cropper / focal-point picker */}
+        {adjustOpen && profile?.avatar_url && (
+          <div className="rounded-lg border bg-muted/30 p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row gap-5 items-start">
+              <div
+                className="relative h-[240px] w-[240px] shrink-0 select-none touch-none overflow-hidden rounded-full ring-2 ring-primary/40 cursor-grab active:cursor-grabbing bg-background"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+              >
+                <img
+                  src={profile.avatar_url}
+                  alt="Adjust headshot"
+                  draggable={false}
+                  className="h-full w-full object-cover pointer-events-none"
+                  style={{ objectPosition: `${draftPos.x}% ${draftPos.y}%` }}
+                />
+                {/* Crosshair indicator */}
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-full border-2 border-white/80 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]" />
+                </div>
+              </div>
+              <div className="flex-1 space-y-3 text-sm">
+                <div>
+                  <p className="font-medium">Drag to recenter</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Move the photo until your face sits inside the circle. Position is saved
+                    everywhere your headshot appears.
+                  </p>
+                </div>
+                <div className="text-[11px] text-muted-foreground font-mono">
+                  Focal point: {Math.round(draftPos.x)}% × {Math.round(draftPos.y)}%
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={commitPosition} disabled={update.isPending}>
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Save position
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDraftPos({ x: 50, y: 50 })}
+                  >
+                    Reset to center
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={cancelAdjust}>
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Separator />
 
