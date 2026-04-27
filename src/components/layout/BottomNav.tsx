@@ -578,10 +578,9 @@ function MoreSheet({
         </div>
       </div>
 
-      {/* Scrollable groups */}
+      {/* Scrollable groups — no safe-area here per iOS PWA spec; nav owns it */}
       <div
-        className="flex-1 overflow-y-auto px-5 pt-1 space-y-5"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+        className="flex-1 overflow-y-auto px-5 pt-1 pb-6 space-y-5"
       >
         {groups.map(group => (
           <div key={group.label}>
