@@ -142,8 +142,14 @@
        like "SEND TEXT" / "New Message" never collide with the iOS time/notch. */
     --composer-top-pad: max(env(safe-area-inset-top, 0px), 50px);
   }
+  :root.is-standalone,
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px;
+    /* Home-screen PWAs already own the full screen; do not turn the
+       home-indicator inset into a second visual spacer under the nav. */
+    --bottom-nav-safe-pad: 0px;
+    --bottom-nav-height: var(--bottom-nav-icon-row);
+    --bottom-nav-pad: var(--bottom-nav-height);
   }
   @media (min-width: 1024px) {
     :root {
@@ -158,6 +164,20 @@
 
   * {
     @apply border-border;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: hsl(var(--background));
+  }
+
+  #root {
+    min-height: 100%;
+    min-height: 100dvh;
+    background: hsl(var(--background));
   }
 
   html {
@@ -1254,24 +1274,6 @@ html.is-standalone *:focus-visible {
 /* Status bar spacer — use INSIDE a sticky/fixed bar so it grows under the
    notch instead of being hidden by it. Works for both PWA and Capacitor. */
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
-
-/* Bottom-nav clearance helper (alias kept for backwards compat). Keep this in
-   sync with the primary token above — do not re-add safe-area padding here. */
-:root {
-  --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-  --bottom-nav-icon-row: 50px;
-  --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
-  --bottom-nav-pad: var(--bottom-nav-height);
-}
-
-@media (min-width: 1024px) {
-  :root {
-    --bottom-nav-safe-pad: 0px;
-    --bottom-nav-icon-row: 0px;
-    --bottom-nav-height: 0px;
-    --bottom-nav-pad: 0px;
-  }
-}
 
 /* Hide scrollbar utility for snap-scroll tab strips */
 .scrollbar-hide {
