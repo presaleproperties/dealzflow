@@ -109,9 +109,10 @@ export default function CrmChatThreadPage() {
     const channel = supabase
       .channel(`chat-thread-${conversationId}`)
       .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'crm_messages',
+        event: '*', schema: 'public', table: 'crm_messages',
         filter: `conversation_id=eq.${conversationId}`,
       }, () => {
+        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] });
         qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
       })
