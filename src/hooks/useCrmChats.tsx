@@ -31,21 +31,43 @@ export type ChatChannelFilter = ChatChannel | 'text' | 'all';
 export function useCrmChats(channelFilter?: ChatChannelFilter) {
   const qc = useQueryClient();
 
+  // Realtime — subscribe to conversation + message changes.
+  // Use a unique channel per hook instance to avoid collisions when multiple
+  // surfaces (RightRail inbox, /crm/chats page) mount the hook simultaneously.
   useEffect(() => {
+    const channelId = `crm-chats-live-${Math.random().toString(36).slice(2, 10)}`;
     const channel = supabase
-      .channel('crm-chats-live')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_conversations' }, () => {
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
+        qc.invalidateQueries({ queryKey: ['right-rail', 'inbox-unread'] });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_messages' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_messages' }, (payload: any) => {
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
+        qc.invalidateQueries({ queryKey: ['right-rail', 'inbox-unread'] });
+        // Also refresh the open thread, if any
+        const convId = payload?.new?.conversation_id ?? payload?.old?.conversation_id;
+        if (convId) {
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread', convId] });
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', convId] });
+        }
       })
       .subscribe();
 
+    // Mobile fallback — refresh when the tab/app becomes visible again.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        qc.invalidateQueries({ queryKey: ['crm-chats'] });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
       supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [qc]);
+
 
   return useQuery({
     queryKey: ['crm-chats', channelFilter ?? 'all'],
