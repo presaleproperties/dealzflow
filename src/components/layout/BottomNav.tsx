@@ -192,6 +192,8 @@ export function BottomNav() {
   const mode = detectMode(location.pathname);
 
   const tabs = mode === 'crm' ? CRM_TABS : WORKSPACE_TABS;
+  const leftTabs = tabs.slice(0, 2);
+  const rightTabs = tabs.slice(2);
   const moreGroups = mode === 'crm' ? CRM_MORE : WORKSPACE_MORE;
 
   // Filter admin-only items
@@ -317,40 +319,6 @@ export function BottomNav() {
   // Tabs render in order; "+" is a floating FAB above the bar (not inline).
   return (
     <>
-      {/* Floating "+" FAB — sits above the rail, premium gold halo */}
-      <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
-        <SheetTrigger asChild>
-          <button
-            type="button"
-            onClick={() => triggerHaptic('fab')}
-            aria-label="Quick add"
-            className="lg:hidden fixed z-[45] right-4 h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
-            style={{
-              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) + 10px)',
-              transition: 'bottom 180ms ease-out',
-              right: '14px',
-              background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
-              boxShadow:
-                '0 12px 28px -6px hsl(var(--primary) / 0.55), 0 4px 12px -2px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.35), inset 0 -1px 0 hsl(0 0% 0% / 0.08)',
-              color: 'hsl(var(--primary-foreground))',
-            }}
-          >
-            <Plus className="w-[20px] h-[20px]" strokeWidth={2.6} />
-          </button>
-        </SheetTrigger>
-        <SheetContent
-          side="bottom"
-          hideClose
-          className="p-0 border-0 rounded-t-[28px] max-h-[82vh] overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
-          style={{
-            background: BG,
-            maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
-          }}
-        >
-          <QuickActionsSheet mode={mode} actions={quickActions} onClose={() => setQuickOpen(false)} />
-        </SheetContent>
-      </Sheet>
-
       {/* Safe-area filler — paints the area below the nav (home indicator /
           in-app browser chrome) with the same surface color so the white page
           body never bleeds through. */}
@@ -380,10 +348,42 @@ export function BottomNav() {
         }}
       >
         <div
-            className="relative flex items-center w-full"
+            className="relative grid grid-cols-5 items-center w-full"
             style={{ height: 'var(--bottom-nav-icon-row)', padding: '0 4px' }}
         >
-          {tabs.map(renderTab)}
+          {leftTabs.map(renderTab)}
+
+          <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                onClick={() => triggerHaptic('fab')}
+                aria-label="Quick add"
+                className="relative z-10 mx-auto h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150 touch-manipulation"
+                style={{
+                  background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
+                  boxShadow:
+                    '0 12px 28px -6px hsl(var(--primary) / 0.55), 0 4px 12px -2px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.35), inset 0 -1px 0 hsl(0 0% 0% / 0.08)',
+                  color: 'hsl(var(--primary-foreground))',
+                }}
+              >
+                <Plus className="w-[20px] h-[20px]" strokeWidth={2.6} />
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              hideClose
+              className="p-0 border-0 rounded-t-[28px] max-h-[82vh] overflow-hidden shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.4)]"
+              style={{
+                background: BG,
+                maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)',
+              }}
+            >
+              <QuickActionsSheet mode={mode} actions={quickActions} onClose={() => setQuickOpen(false)} />
+            </SheetContent>
+          </Sheet>
+
+          {rightTabs.map(renderTab)}
 
           {/* More button */}
           <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
