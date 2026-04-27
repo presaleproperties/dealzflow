@@ -145,10 +145,13 @@
   :root.is-standalone,
   :root.is-standalone-pwa {
     --browser-chrome-inset: 0px;
-    /* Home-screen PWAs already own the full screen; do not turn the
-       home-indicator inset into a second visual spacer under the nav. */
-    --bottom-nav-safe-pad: 0px;
-    --bottom-nav-height: var(--bottom-nav-icon-row);
+    /* In standalone PWA: the nav must extend its blurred surface DOWN
+       through the iOS home-indicator gutter, otherwise the body bg
+       (cream/off-white) bleeds through below the icon row.
+       So we keep the safe-area inset inside the nav as paint-only padding,
+       but cap it so Pro Max doesn't get a giant gutter. */
+    --bottom-nav-safe-pad: min(env(safe-area-inset-bottom, 0px), 22px);
+    --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
   }
   @media (min-width: 1024px) {
@@ -1230,6 +1233,10 @@ html.is-standalone body {
   /* Native-feel font smoothing */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Paint the very bottom of the viewport (under the floating nav, in the
+     iOS home-indicator zone) with the same surface color as the nav, so the
+     cream page background never shows as a white strip below the pill. */
+  background-color: hsl(var(--card));
 }
 
 html.is-standalone #root {
