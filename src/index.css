@@ -135,7 +135,8 @@
     /* Bottom nav: no extra iOS safe-area padding. The bar itself is fixed to
        the physical bottom edge; pages only reserve the visible 42px rail. */
     --bottom-nav-safe-pad: 0px;
-    --bottom-nav-pad: 70px;
+    --bottom-nav-height: 82px;
+    --bottom-nav-pad: 82px;
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
     /* Composer top inset — guarantees a minimum 50px clearance even when
@@ -146,6 +147,7 @@
   @media (min-width: 1024px) {
     :root {
       --bottom-nav-safe-pad: 0px;
+      --bottom-nav-height: 0px;
       --bottom-nav-pad: 0px;
       --m-top-pad: 0px;
       --composer-top-pad: 0px;
