@@ -724,13 +724,14 @@ function QuickActionsSheet({
   actions: QuickAction[];
   onClose: () => void;
 }) {
+  const { containerStyle, handleProps } = useSwipeToClose(onClose);
   return (
-    <div className="flex flex-col">
-      {/* Drag handle */}
-      <div className="shrink-0 pt-2.5 pb-1.5">
+    <div className="flex flex-col" style={containerStyle}>
+      {/* Drag handle — swipe down to dismiss */}
+      <div className="shrink-0 pt-2.5 pb-1.5" {...handleProps}>
         <div
-          className="mx-auto w-9 h-[3px] rounded-full"
-          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
+          className="mx-auto w-9 h-[5px] rounded-full"
+          style={{ background: 'hsl(var(--muted-foreground) / 0.32)' }}
         />
       </div>
 
