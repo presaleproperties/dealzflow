@@ -481,7 +481,6 @@ export default function CrmLeadsPage() {
           {isMobile && (
             <div
               className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/60 overflow-x-hidden"
-              style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
               {/* Title row — collapses on scroll to reclaim vertical space */}
               <div
