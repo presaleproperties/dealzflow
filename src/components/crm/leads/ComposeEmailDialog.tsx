@@ -625,20 +625,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         <ResponsiveDialogContent className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-t-2xl sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden">
           {/* (Drag handle is rendered by ResponsiveDialogContent on mobile.) */}
           {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
-          <DialogHeader className="md:hidden px-3 py-2.5 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
+          <DialogHeader className="md:hidden px-2 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="text-[15px] font-medium text-muted-foreground hover:text-foreground px-1 py-1 -ml-1"
+              className="text-[15px] font-semibold text-primary hover:opacity-80 active:opacity-60 px-3 py-2 -ml-1 rounded-md min-h-[40px] min-w-[64px] text-left"
               disabled={isPending}
+              aria-label="Close composer"
             >
               Cancel
             </button>
             <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
               New Message
             </DialogTitle>
-            {/* Spacer to keep title centered */}
-            <span className="w-[52px]" aria-hidden />
+            {/* Spacer to keep title centered (matches Cancel min-width) */}
+            <span className="w-[64px] shrink-0" aria-hidden />
           </DialogHeader>
 
           {/* Mobile sub-header: just recipient identity (Templates moved to single bottom bar to remove duplication) */}
