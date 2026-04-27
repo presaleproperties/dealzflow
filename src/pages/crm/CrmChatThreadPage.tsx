@@ -54,6 +54,73 @@ function formatStamp(iso: string): string {
   return format(d, 'MMM d · h:mm a');
 }
 
+type DeliveryState = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+
+/** Map a Twilio-style status string to one of our normalized delivery states. */
+function normalizeStatus(raw: string | null | undefined): DeliveryState {
+  switch ((raw ?? '').toLowerCase()) {
+    case 'queued':
+    case 'accepted':
+    case 'scheduled':
+    case 'sending':
+      return 'sending';
+    case 'sent':
+      return 'sent';
+    case 'delivered':
+    case 'received':
+      return 'delivered';
+    case 'read':
+      return 'read';
+    case 'failed':
+    case 'undelivered':
+    case 'canceled':
+      return 'failed';
+    default:
+      return 'sent';
+  }
+}
+
+function DeliveryIndicator({ state, error }: { state: DeliveryState; error?: string | null }) {
+  const cls = 'inline-flex items-center gap-1';
+  switch (state) {
+    case 'sending':
+      return (
+        <span className={`${cls} text-muted-foreground/70`} title="Sending…">
+          <Clock className="w-3 h-3" />
+          <span>Sending</span>
+        </span>
+      );
+    case 'sent':
+      return (
+        <span className={`${cls} text-muted-foreground/80`} title="Sent">
+          <Check className="w-3 h-3" />
+          <span>Sent</span>
+        </span>
+      );
+    case 'delivered':
+      return (
+        <span className={`${cls} text-emerald-600 dark:text-emerald-400`} title="Delivered">
+          <CheckCheck className="w-3 h-3" />
+          <span>Delivered</span>
+        </span>
+      );
+    case 'read':
+      return (
+        <span className={`${cls} text-sky-600 dark:text-sky-400`} title="Read">
+          <CheckCheck className="w-3 h-3" />
+          <span>Read</span>
+        </span>
+      );
+    case 'failed':
+      return (
+        <span className={`${cls} text-destructive`} title={error || 'Failed to deliver'}>
+          <AlertCircle className="w-3 h-3" />
+          <span>Failed</span>
+        </span>
+      );
+  }
+}
+
 /**
  * Per-thread chat view — one conversation = one channel for one lead.
  * Email and SMS for the same contact appear as **separate** threads.
