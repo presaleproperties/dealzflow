@@ -129,9 +129,10 @@
      Disabled on lg+ where the bar is hidden. */
   :root {
     /* Bottom nav tokens — single source of truth.
-       The bar reserves the safe-area inset PLUS a 56px icon row. */
+       The bar reserves the safe-area inset PLUS a 50px icon row
+       (matches Apple's 49pt tab bar — sits flush to the home indicator). */
     --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-icon-row: 56px;
+    --bottom-nav-icon-row: 50px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
     --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
@@ -1255,7 +1256,7 @@ html.is-standalone *:focus-visible {
    sync with the primary token above — do not re-add safe-area padding here. */
 :root {
   --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-  --bottom-nav-icon-row: 56px;
+  --bottom-nav-icon-row: 50px;
   --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
   --bottom-nav-pad: var(--bottom-nav-height);
 }
