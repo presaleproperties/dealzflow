@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSwipeToClose } from './SwipeDismiss';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Handshake, Building2, CalendarDays, MoreHorizontal,
