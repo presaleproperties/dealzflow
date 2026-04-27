@@ -114,8 +114,54 @@ export default function ProfileSection() {
     );
   };
 
+  // Drag-to-reposition: dragging RIGHT shifts the focal point LEFT (so the photo
+  // appears to move right under the circle). We invert deltas to feel natural.
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: draftPos.x,
+      baseY: draftPos.y,
+    };
+  }, [draftPos.x, draftPos.y]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const s = dragStateRef.current;
+    if (!s) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // 1 px of cursor movement maps to ~0.4% of focal-point shift, so a full
+    // drag across the 240px circle gives roughly the full 0–100% range.
+    const dx = ((e.clientX - s.startX) / rect.width) * 100;
+    const dy = ((e.clientY - s.startY) / rect.height) * 100;
+    const next = {
+      x: Math.max(0, Math.min(100, s.baseX - dx)),
+      y: Math.max(0, Math.min(100, s.baseY - dy)),
+    };
+    setDraftPos(next);
+  }, []);
+
+  const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    dragStateRef.current = null;
+  }, []);
+
+  const commitPosition = async () => {
+    const value = `${Math.round(draftPos.x)}% ${Math.round(draftPos.y)}%`;
+    await update.mutateAsync({ avatar_position: value });
+    setAdjustOpen(false);
+    toast.success('Headshot position saved');
+  };
+
+  const cancelAdjust = () => {
+    const [px, py] = (profile?.avatar_position ?? '50% 50%').split(' ').map(parseFloat);
+    setDraftPos({ x: Number.isFinite(px) ? px : 50, y: Number.isFinite(py) ? py : 50 });
+    setAdjustOpen(false);
+  };
+
   if (isLoading) return null;
 
+  const savedPosition = profile?.avatar_position ?? '50% 50%';
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
       <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
