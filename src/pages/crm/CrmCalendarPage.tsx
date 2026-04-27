@@ -284,7 +284,7 @@ export default function CrmCalendarPage() {
   const viewOptions = isMobile ? MOBILE_VIEWS : DESKTOP_VIEWS;
 
   return (
-    <div className="space-y-2 sm:space-y-4 crm-mobile-page">
+    <div className="space-y-2 sm:space-y-4 crm-mobile-page px-4 pt-2 sm:px-0 sm:pt-0">
       {/* Google Calendar Connection Banner */}
       {!isGCalConnected && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30">
@@ -302,7 +302,7 @@ export default function CrmCalendarPage() {
       )}
 
       {/* Header — sticky on mobile for easy navigation */}
-      <div className="sticky top-0 z-20 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-1.5 pt-1 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
+      <div className="sticky top-0 z-20 -mx-4 px-4 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 pb-1.5 pt-1 sm:static sm:bg-transparent sm:backdrop-blur-0 sm:pb-0 sm:pt-0">
         {/* Row 1: Title + add */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -514,7 +514,7 @@ export default function CrmCalendarPage() {
               <div key={format(group.date, 'yyyy-MM-dd')}>
                 <div
                   className={cn(
-                    'sticky top-[96px] z-10 -mx-3 px-3 py-1 bg-background/95 backdrop-blur',
+                    'sticky top-[88px] z-10 -mx-4 px-4 py-1 bg-background/95 backdrop-blur',
                     isToday(group.date) && 'text-primary',
                   )}
                 >
