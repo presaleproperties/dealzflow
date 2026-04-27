@@ -145,7 +145,10 @@ export function BottomNav() {
     const vv = window.visualViewport;
     const root = document.documentElement;
     const isStandalone =
+      root.classList.contains('is-standalone') ||
       window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
     root.classList.toggle('is-standalone-pwa', isStandalone);
@@ -161,6 +164,11 @@ export function BottomNav() {
     const update = () => {
       // Distance from the bottom of the layout viewport to the bottom of the
       // visual viewport. >0 when the URL bar is showing; 0 when collapsed.
+      if (root.classList.contains('is-standalone')) {
+        root.style.setProperty('--browser-chrome-inset', '0px');
+        root.classList.add('is-standalone-pwa');
+        return;
+      }
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       root.style.setProperty('--browser-chrome-inset', `${Math.round(inset)}px`);
     };
