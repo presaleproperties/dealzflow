@@ -114,6 +114,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   // Inline signature editor state
   const [editingSignature, setEditingSignature] = useState(false);
   const [sigDraft, setSigDraft] = useState('');
+  // Mobile-only: collapse the inline signature preview by default so the
+  // typing area dominates the screen. Tap "Show signature" to reveal.
+  const [showSignaturePreviewMobile, setShowSignaturePreviewMobile] = useState(false);
 
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
