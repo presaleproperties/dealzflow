@@ -33,15 +33,15 @@ function unwrapList(value: any): any[] {
 
 function normalize(raw: any) {
   if (!raw) return null;
+  const name =
+    pick<string>(raw, ["name", "full_name", "display_name"]) ??
+    ([pick<string>(raw, ["first_name"]), pick<string>(raw, ["last_name"])]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || undefined);
   return {
     slug: pick<string>(raw, ["slug", "id", "agent_slug"]) ?? "",
-    name:
-      pick<string>(raw, ["name", "full_name", "display_name"]) ??
-      [pick<string>(raw, ["first_name"]), pick<string>(raw, ["last_name"])]
-        .filter(Boolean)
-        .join(" ")
-        .trim() ||
-      undefined,
+    name,
     email: pick<string>(raw, ["email", "contact_email"]),
     phone: pick<string>(raw, ["phone", "phone_number", "mobile"]),
     headshotUrl: pick<string>(raw, [
