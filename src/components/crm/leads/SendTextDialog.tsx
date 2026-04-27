@@ -187,7 +187,10 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-2xl p-0 gap-0 overflow-hidden sm:max-h-[88vh] flex flex-col [&>button]:hidden">
+      <ResponsiveDialogContent
+        hideMobileHandle
+        className="max-w-2xl w-screen sm:w-auto h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
+      >
         {/* Header — sticky, consistent vertical rhythm */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">

@@ -622,8 +622,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
   return (
     <>
       <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-        <ResponsiveDialogContent className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-t-2xl sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden">
-          {/* (Drag handle is rendered by ResponsiveDialogContent on mobile.) */}
+        <ResponsiveDialogContent
+          hideMobileHandle
+          className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
+        >
+          {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
           {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
           <DialogHeader className="md:hidden px-2 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
             <button

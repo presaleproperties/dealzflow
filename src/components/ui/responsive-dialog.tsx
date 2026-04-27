@@ -25,10 +25,15 @@ export function ResponsiveDialog(props: React.ComponentProps<typeof Dialog>) {
   return isMobile ? <Sheet {...props} /> : <Dialog {...props} />;
 }
 
+type ResponsiveDialogContentProps = React.ComponentPropsWithoutRef<typeof DialogContent> & {
+  /** Hide the swipe-to-dismiss drag handle on mobile (use for full-screen composers). */
+  hideMobileHandle?: boolean;
+};
+
 export const ResponsiveDialogContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof DialogContent>
->(({ className, children, ...rest }, ref) => {
+  ResponsiveDialogContentProps
+>(({ className, children, hideMobileHandle, ...rest }, ref) => {
   const isMobile = useIsMobile();
   if (isMobile) {
     return (
@@ -39,10 +44,11 @@ export const ResponsiveDialogContent = React.forwardRef<
           className,
         )}
       >
-        {/* Subtle drag handle to signal "swipe down to dismiss" */}
-        <div className="flex justify-center pt-1 pb-1.5 shrink-0 pointer-events-none">
-          <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
-        </div>
+        {!hideMobileHandle && (
+          <div className="flex justify-center pt-1 pb-1.5 shrink-0 pointer-events-none">
+            <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
         {children}
       </SheetContent>
     );

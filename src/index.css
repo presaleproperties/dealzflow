@@ -128,7 +128,11 @@
      Pages reserve exactly bar height + that capped inset.
      Disabled on lg+ where the bar is hidden. */
   :root {
-    --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 18px, 0px), 10px);
+    /* Aggressively absorb iOS PWA safe-area on Pro Max so the bar sits as low as
+       possible without overlapping the home indicator. We subtract 24px from the
+       native inset (Pro Max ≈ 34px → 10px → capped at 4px), giving a near-flush
+       bottom while leaving a hairline of breathing room above the gesture bar. */
+    --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 30px, 0px), 4px);
     --bottom-nav-pad: calc(50px + var(--bottom-nav-safe-pad));
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
@@ -1242,7 +1246,7 @@ html.is-standalone *:focus-visible {
 
 /* Bottom-nav clearance helper (alias kept for backwards compat) */
 :root {
-  --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 18px, 0px), 10px);
+  --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 30px, 0px), 4px);
   --bottom-nav-pad: calc(50px + var(--bottom-nav-safe-pad));
 }
 
