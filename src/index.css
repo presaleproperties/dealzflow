@@ -123,11 +123,10 @@
 
 @layer base {
   /* Flush fixed bottom-nav clearance.
-     The bar is fixed to the viewport edge and paints through the iOS home-indicator
-     safe area. Pages reserve the same height so content clears it without a gap. */
+     The bar is fixed to the viewport edge with no internal bottom safe-area padding. */
   :root {
-    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
+    --bottom-nav-safe-pad: 0px;
+    --bottom-nav-height: 64px;
     --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
