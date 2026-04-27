@@ -1257,7 +1257,8 @@ html.is-standalone *:focus-visible {
    sync with the primary token above — do not re-add safe-area padding here. */
 :root {
   --bottom-nav-safe-pad: 0px;
-  --bottom-nav-pad: 70px;
+  --bottom-nav-height: 82px;
+  --bottom-nav-pad: 82px;
 }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
