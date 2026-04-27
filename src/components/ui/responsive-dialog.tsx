@@ -40,9 +40,10 @@ export const ResponsiveDialogContent = React.forwardRef<
       <SheetContent
         side="bottom"
         className={cn(
-          'rounded-t-2xl max-h-[94vh] flex flex-col pt-[calc(env(safe-area-inset-top,0px)+4px)]',
+          'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
+        style={{ paddingTop: 'var(--composer-top-pad)' }}
       >
         {!hideMobileHandle && (
           <div className="flex justify-center pt-1 pb-1.5 shrink-0 pointer-events-none">

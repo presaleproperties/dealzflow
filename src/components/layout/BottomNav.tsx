@@ -267,7 +267,7 @@ export function BottomNav() {
       >
         {/* Flush flat tab bar — full width, edge-to-edge, no float, no rounded corners. */}
         <div
-          className="relative flex items-center h-[50px] w-full"
+          className="relative flex items-center h-[46px] w-full"
           style={{ padding: '0 4px' }}
         >
             {/* Left tabs */}
