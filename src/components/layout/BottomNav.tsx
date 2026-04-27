@@ -324,6 +324,19 @@ export function BottomNav() {
         </SheetContent>
       </Sheet>
 
+      {/* Safe-area filler — paints the area below the nav (home indicator /
+          in-app browser chrome) with the same surface color so the white page
+          body never bleeds through. */}
+      <div
+        aria-hidden
+        className="lg:hidden fixed inset-x-0 bottom-0 z-30 pointer-events-none"
+        style={{
+          height: 'calc(var(--browser-chrome-inset, 0px) + env(safe-area-inset-bottom, 0px))',
+          background: 'hsl(var(--card))',
+          transition: 'height 180ms ease-out',
+        }}
+      />
+
       <nav
           className="lg:hidden fixed inset-x-0 z-40 native-chrome overflow-hidden"
         aria-label="Primary"
