@@ -38,13 +38,14 @@ interface MoreGroup { label: string; items: MoreItem[] }
 const GOLD = 'hsl(var(--primary))';
 const GOLD_BG = 'hsl(var(--primary) / 0.14)';
 const GOLD_RING = 'hsl(var(--primary) / 0.25)';
-// iOS grouped-inset list palette: outer sheet sits a touch lower than inner cards
-// so the inset rows pop in both light + dark, matching the native iOS Settings feel.
-const BG = 'hsl(var(--muted) / 0.55)';
-const SURFACE = 'hsl(var(--card))';
-const BORDER = 'hsl(var(--border) / 0.6)';
+// iOS grouped-inset list palette — themed to the Gold/Dark editorial system.
+// Outer sheet uses --popover (solid, theme-aware); inner cards use a subtle
+// muted tint so the inset rows pop in both light + dark, matching native iOS feel.
+const BG = 'hsl(var(--popover))';
+const SURFACE = 'hsl(var(--muted) / 0.45)';
+const BORDER = 'hsl(var(--border) / 0.7)';
 const INACTIVE = 'hsl(var(--muted-foreground))';
-const SUBTLE = 'hsl(var(--muted-foreground) / 0.7)';
+const SUBTLE = 'hsl(var(--muted-foreground) / 0.75)';
 
 // ── Workspace tabs (3 + FAB + More) ──────────────────────────────
 const WORKSPACE_TABS: TabItem[] = [
