@@ -138,12 +138,26 @@ export function BottomNav() {
   const [bookShowingOpen, setBookShowingOpen] = useState(false);
 
   // Track Safari's bottom URL bar via visualViewport so the nav rides above
-  // the chrome instead of being covered when the bar expands on scroll-up.
+  // browser chrome. In installed iPhone PWA mode, visualViewport can report
+  // the home-indicator inset as "chrome", so force it to zero there.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const vv = window.visualViewport;
-    if (!vv) return;
     const root = document.documentElement;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    root.classList.toggle('is-standalone-pwa', isStandalone);
+
+    if (isStandalone || !vv) {
+      root.style.setProperty('--browser-chrome-inset', '0px');
+      return () => {
+        root.classList.remove('is-standalone-pwa');
+        root.style.removeProperty('--browser-chrome-inset');
+      };
+    }
+
     const update = () => {
       // Distance from the bottom of the layout viewport to the bottom of the
       // visual viewport. >0 when the URL bar is showing; 0 when collapsed.
@@ -158,6 +172,7 @@ export function BottomNav() {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
       window.removeEventListener('orientationchange', update);
+      root.classList.remove('is-standalone-pwa');
       root.style.removeProperty('--browser-chrome-inset');
     };
   }, []);
@@ -331,7 +346,7 @@ export function BottomNav() {
         aria-hidden
         className="lg:hidden fixed inset-x-0 bottom-0 z-30 pointer-events-none"
         style={{
-          height: 'calc(var(--browser-chrome-inset, 0px) + env(safe-area-inset-bottom, 0px))',
+          height: 'var(--browser-chrome-inset, 0px)',
           background: 'hsl(var(--card))',
           transition: 'height 180ms ease-out',
         }}
