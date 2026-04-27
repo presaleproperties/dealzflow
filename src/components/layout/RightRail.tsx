@@ -263,7 +263,7 @@ export function RightRail() {
     <>
       {/* Right rail — desktop only */}
       <aside
-        className="hidden lg:flex fixed top-0 right-0 h-screen w-[52px] z-30 flex-col items-center"
+        className="hidden lg:flex fixed top-0 right-0 h-dvh w-[52px] z-30 flex-col items-center"
         style={{
           background: RAIL_BG,
           borderLeft: `1px solid ${RAIL_BORDER}`,
@@ -485,7 +485,7 @@ export function RightRail() {
           <div className="h-px bg-border" />
 
           {/* List */}
-          <ScrollArea className="h-[calc(100vh-260px)]">
+          <ScrollArea className="h-[calc(100dvh-260px)]">
             <div className="py-1">
               {feedLoading ? (
                 <div className="text-center text-xs text-muted-foreground py-10">Loading…</div>
@@ -525,7 +525,7 @@ export function RightRail() {
             </div>
           </SheetHeader>
 
-          <ScrollArea className="h-[calc(100vh-92px)]">
+          <ScrollArea className="h-[calc(100dvh-92px)]">
             <div className="px-3 py-3 space-y-1">
               {notifLoading && (
                 <div className="text-center text-xs text-muted-foreground py-8">Loading…</div>

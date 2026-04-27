@@ -564,7 +564,7 @@ function BoardColumn({ status, label, items, total, dealType, onMoveStatus, onAd
         {total > 0 && <span className="text-[11px] font-bold text-primary tabular-nums">{formatCurrency(total)}</span>}
       </div>
 
-      <div className="flex-1 p-2.5 space-y-1.5 min-h-[120px] overflow-y-auto max-h-[calc(100vh-280px)]">
+      <div className="flex-1 p-2.5 space-y-1.5 min-h-[120px] overflow-y-auto max-h-[calc(100dvh-280px)]">
         {orderedItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/10 p-6 text-center">
             <p className="text-[10px] text-muted-foreground/20">Drop leads here</p>
