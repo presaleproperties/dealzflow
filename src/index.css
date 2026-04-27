@@ -165,18 +165,32 @@
     @apply border-border;
   }
 
-  html,
+  html {
+    height: 100%;
+    background: hsl(var(--background));
+  }
+
   body {
     margin: 0;
     padding: 0;
-    min-height: 100%;
+    min-height: 100dvh;
     background: hsl(var(--background));
   }
 
   #root {
-    min-height: 100%;
     min-height: 100dvh;
     background: hsl(var(--background));
+  }
+
+  /* iOS PWA safe-area token — applied ONLY to the bottom nav.
+     Modals/sheets/main content must NOT add this again. */
+  :root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @supports (padding: max(0px)) {
+    :root {
+      --safe-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+    }
   }
 
   html {
