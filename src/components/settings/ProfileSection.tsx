@@ -28,13 +28,24 @@ export default function ProfileSection() {
   const [title, setTitle] = useState('');
   const [phone, setPhone] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  // Working position while dragging in the cropper (committed to DB on Save)
+  const [draftPos, setDraftPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragStateRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name ?? '');
       setTitle(profile.title ?? '');
       setPhone(profile.phone ?? '');
+      const [px, py] = (profile.avatar_position ?? '50% 50%')
+        .split(' ')
+        .map((v) => parseFloat(v));
+      setDraftPos({
+        x: Number.isFinite(px) ? px : 50,
+        y: Number.isFinite(py) ? py : 50,
+      });
     }
   }, [profile]);
 
