@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type WorkspaceStatus = 'pending' | 'approved' | 'suspended';
+
 export type Profile = {
   id: string;
   user_id: string;
@@ -9,9 +11,15 @@ export type Profile = {
   avatar_url: string | null;
   phone: string | null;
   title: string | null;
+  workspace_status: WorkspaceStatus;
+  approved_at: string | null;
+  denial_reason: string | null;
+  requested_at: string | null;
   created_at: string;
   updated_at: string;
 };
+
+const PROFILE_COLUMNS = 'id, user_id, full_name, avatar_url, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at';
 
 export function useProfile() {
   return useQuery({
