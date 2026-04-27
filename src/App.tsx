@@ -161,6 +161,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   useStandaloneMode();
   useGlobalTapHaptics();
   usePresaleAgentSync();
+  useHotLeadActivityToasts();
   return <>{children}</>;
 }
 
