@@ -227,7 +227,7 @@ export function BottomNav() {
         onClick={() => triggerHaptic('tab')}
         aria-label={tab.label}
         aria-current={active ? 'page' : undefined}
-        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
+        className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-[3px] pb-1 active:scale-[0.92] transition-transform duration-150"
         style={{ color: active ? GOLD : INACTIVE }}
       >
         {/* Top indicator bar for active tab */}
@@ -322,7 +322,7 @@ export function BottomNav() {
       >
         <div
           className="relative flex items-start w-full"
-          style={{ padding: '6px 4px 0', height: 'calc(var(--bottom-nav-height) - var(--bottom-nav-safe-pad))' }}
+          style={{ padding: '0 4px', height: 'calc(var(--bottom-nav-height) - var(--bottom-nav-safe-pad))' }}
         >
           {tabs.map(renderTab)}
 
@@ -334,7 +334,7 @@ export function BottomNav() {
                 onClick={() => triggerHaptic('selection')}
                 aria-label="More"
                 aria-current={moreActive ? 'page' : undefined}
-                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-[3px] active:scale-[0.92] transition-transform duration-150"
+                className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-[3px] pb-1 active:scale-[0.92] transition-transform duration-150"
                 style={{ color: moreActive ? GOLD : INACTIVE }}
               >
                 <span
