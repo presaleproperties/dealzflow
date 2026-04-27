@@ -118,6 +118,14 @@ export const bridgeClient = {
   getLeadBehavior(params: { email?: string; phone?: string }): Promise<BridgeBehavior> {
     return callProxy<BridgeBehavior>("get-lead-behavior", params);
   },
+  renderEmail(params: {
+    projectSlug: string;
+    agentSlug: string;
+    templateStyle: string;
+    leadName?: string;
+  }): Promise<BridgeRenderedEmail> {
+    return callProxy<BridgeRenderedEmail>("render-email", params);
+  },
 };
 
 export function projectThumbnail(p: BridgeProjectSummary | undefined | null) {
