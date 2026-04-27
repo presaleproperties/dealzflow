@@ -394,6 +394,13 @@ export default function CrmChatThreadPage() {
                 <div className={`max-w-[82%] flex flex-col gap-1 ${outbound ? 'items-end' : 'items-start'}`}>
                   {stack.items.map((m, mi) => {
                     const isLast = mi === stack.items.length - 1;
+                    // Resolve delivery state for outbound SMS / WhatsApp bubbles
+                    const isTrackable = outbound && (m.channel === 'sms' || m.channel === 'whatsapp') && m.source_table === 'crm_sms_log' && !!m.source_id;
+                    const logEntry = isTrackable ? smsStatuses[m.source_id as string] : undefined;
+                    const deliveryState: DeliveryState | null = isTrackable
+                      ? normalizeStatus(logEntry?.status)
+                      : (outbound && m.channel === 'email' ? 'sent' : null);
+                    const deliveryError = logEntry?.error_message ?? null;
                     return (
                       <div key={m.id} className="flex flex-col gap-0.5 max-w-full">
                         <div
@@ -401,15 +408,22 @@ export default function CrmChatThreadPage() {
                             outbound
                               ? 'bg-primary text-primary-foreground rounded-br-md'
                               : 'bg-card text-foreground border border-border rounded-bl-md'
-                          }`}
+                          } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''}`}
                         >
                           {/* For email, content can include "Subject: ..." prefix from compose flow */}
                           {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
                         </div>
                         {isLast && (
-                          <span className={`text-[10px] tabular-nums ${outbound ? 'text-muted-foreground text-right pr-1' : 'text-muted-foreground/80 pl-1'}`}>
-                            {formatStamp(m.created_at)}
-                            {outbound && m.sent_by ? <> · {m.sent_by}</> : null}
+                          <span className={`text-[10px] tabular-nums flex items-center gap-1.5 ${outbound ? 'text-muted-foreground justify-end pr-1' : 'text-muted-foreground/80 pl-1'}`}>
+                            <span>{formatStamp(m.created_at)}</span>
+                            {outbound && m.sent_by ? <span aria-hidden>·</span> : null}
+                            {outbound && m.sent_by ? <span>{m.sent_by}</span> : null}
+                            {outbound && deliveryState ? (
+                              <>
+                                <span aria-hidden className="text-muted-foreground/40">·</span>
+                                <DeliveryIndicator state={deliveryState} error={deliveryError} />
+                              </>
+                            ) : null}
                           </span>
                         )}
                       </div>
