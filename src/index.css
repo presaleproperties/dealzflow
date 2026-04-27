@@ -1261,6 +1261,14 @@ html.is-standalone *:focus-visible {
   --bottom-nav-pad: 82px;
 }
 
+@media (min-width: 1024px) {
+  :root {
+    --bottom-nav-safe-pad: 0px;
+    --bottom-nav-height: 0px;
+    --bottom-nav-pad: 0px;
+  }
+}
+
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
    the page can't be cropped under the home indicator on rotation. */
 html.is-standalone .full-viewport,
