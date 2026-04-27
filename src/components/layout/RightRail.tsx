@@ -203,7 +203,9 @@ export function RightRail() {
   const { data: inboxUnread = 0 } = useUnreadInboxCount(!!user);
   const { data: notifUnread = 0 } = useUnreadNotificationsCount(!!user);
 
-  const { data: feed, isLoading: feedLoading } = useInboxFeed(panel === 'inbox');
+  const { data: chatThreads, isLoading: feedLoading } = useCrmChats(
+    panel === 'inbox' ? (inboxFilter as ChatChannelFilter) : undefined,
+  );
   const { data: notifications, isLoading: notifLoading } = useNotificationsFeed(panel === 'notifications');
 
   // Profile initials
