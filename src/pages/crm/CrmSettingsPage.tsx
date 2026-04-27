@@ -194,8 +194,24 @@ export default function CrmSettingsPage() {
       <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto space-y-6 sm:space-y-8 max-w-3xl">
         <h1 className="m-page-title lg:hidden">CRM Settings</h1>
 
+        <div id="settings-profile" className="scroll-mt-16">
+          <SectionErrorBoundary name="Profile"><ProfileLinkCard /></SectionErrorBoundary>
+        </div>
+        <Separator />
         <div id="settings-team" className="scroll-mt-16">
           <SectionErrorBoundary name="Team Management"><TeamManagement /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-email" className="scroll-mt-16">
+          <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-integrations" className="scroll-mt-16">
+          <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-projects" className="scroll-mt-16">
+          <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-import" className="scroll-mt-16">
@@ -204,18 +220,6 @@ export default function CrmSettingsPage() {
         <Separator />
         <div id="settings-data" className="scroll-mt-16">
           <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-projects" className="scroll-mt-16">
-          <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-integrations" className="scroll-mt-16">
-          <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>
-        </div>
-        <Separator />
-        <div id="settings-email" className="scroll-mt-16">
-          <SectionErrorBoundary name="Email Settings"><EmailSettingsSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-notifications" className="scroll-mt-16">
