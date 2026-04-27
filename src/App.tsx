@@ -18,6 +18,7 @@ import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
+import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
