@@ -54,7 +54,7 @@ export function useProfile() {
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: Partial<Pick<Profile, 'full_name' | 'avatar_url' | 'phone' | 'title'>>) => {
+    mutationFn: async (updates: Partial<Pick<Profile, 'full_name' | 'avatar_url' | 'avatar_position' | 'phone' | 'title'>>) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
       const { error } = await supabase
