@@ -135,7 +135,7 @@
     /* Bottom nav: no extra iOS safe-area padding. The bar itself is fixed to
        the physical bottom edge; pages only reserve the visible 42px rail. */
     --bottom-nav-safe-pad: 0px;
-    --bottom-nav-pad: 64px;
+    --bottom-nav-pad: 70px;
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
     /* Composer top inset — guarantees a minimum 50px clearance even when
@@ -1255,7 +1255,7 @@ html.is-standalone *:focus-visible {
    sync with the primary token above — do not re-add safe-area padding here. */
 :root {
   --bottom-nav-safe-pad: 0px;
-  --bottom-nav-pad: 64px;
+  --bottom-nav-pad: 70px;
 }
 
 /* Force any 100vh layout to use the dynamic viewport on standalone iOS so
