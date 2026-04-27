@@ -32,6 +32,7 @@ import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { AccessRequestsCard } from '@/components/admin/AccessRequestsCard';
 
 // ─── Compact stat pill ─────────────────────────────────────────────────────────
 function StatPill({ label, value, accent }: { label: string; value: string | number; accent: string }) {
@@ -187,6 +188,9 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* ── Workspace Access Requests ──────────────────── */}
+        <AccessRequestsCard />
 
         {/* ── Users Table (collapsible) ──────────────────── */}
         <Card>
