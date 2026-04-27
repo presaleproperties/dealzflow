@@ -199,6 +199,11 @@ Deno.serve(async (req) => {
         if (body.append_signature && signatureHtml) {
           html = `${html}<br/><br/>${signatureHtml}`;
         }
+        // Prepend brand banner so every recipient sees the logo inside the
+        // message body (independent of inbox-level avatar rules like BIMI).
+        if (brandBannerHtml) {
+          html = `${brandBannerHtml}${html}`;
+        }
         try {
           const upstream = await fetch(`${supabaseUrl}/functions/v1/bridge-send-email`, {
             method: "POST",
