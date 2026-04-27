@@ -1275,24 +1275,6 @@ html.is-standalone *:focus-visible {
    notch instead of being hidden by it. Works for both PWA and Capacitor. */
 .native-status-spacer { height: env(safe-area-inset-top, 0px); }
 
-/* Bottom-nav clearance helper (alias kept for backwards compat). Keep this in
-   sync with the primary token above — do not re-add safe-area padding here. */
-:root {
-  --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
-  --bottom-nav-icon-row: 50px;
-  --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-safe-pad));
-  --bottom-nav-pad: var(--bottom-nav-height);
-}
-
-@media (min-width: 1024px) {
-  :root {
-    --bottom-nav-safe-pad: 0px;
-    --bottom-nav-icon-row: 0px;
-    --bottom-nav-height: 0px;
-    --bottom-nav-pad: 0px;
-  }
-}
-
 /* Hide scrollbar utility for snap-scroll tab strips */
 .scrollbar-hide {
   -ms-overflow-style: none;
