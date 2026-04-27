@@ -293,22 +293,24 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
               >
-                <TabsList className="w-full grid grid-cols-4 h-9 bg-muted/40 rounded-xl p-0.5 border border-border/30">
-                  {[
-                    { value: 'insights', label: 'Insights' },
-                    { value: 'cashflow', label: 'Cashflow' },
-                    { value: 'taxes', label: 'Taxes' },
-                    { value: 'analytics', label: 'Analytics' },
-                  ].map((tab) => (
-                    <TabsTrigger
-                      key={tab.value}
-                      value={tab.value}
-                      className="text-[11px] font-semibold rounded-[10px] tracking-tight data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground"
-                    >
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide pr-16 -mx-5 px-5">
+                  <TabsList className="inline-flex w-max h-9 bg-muted/40 rounded-xl p-0.5 border border-border/30">
+                    {[
+                      { value: 'insights', label: 'Insights' },
+                      { value: 'cashflow', label: 'Cashflow' },
+                      { value: 'taxes', label: 'Taxes' },
+                      { value: 'analytics', label: 'Analytics' },
+                    ].map((tab) => (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        className="snap-start text-[11px] font-semibold rounded-[10px] tracking-tight px-3 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground"
+                      >
+                        {tab.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
               </motion.div>
 
               <TabsContent value="insights" className="px-5 space-y-3 mt-0">
