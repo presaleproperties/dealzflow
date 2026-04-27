@@ -299,7 +299,8 @@ export function BottomNav() {
             aria-label="Quick add"
             className="lg:hidden fixed z-[45] right-4 h-[46px] w-[46px] rounded-full flex items-center justify-center active:scale-[0.92] transition-transform duration-150"
             style={{
-              bottom: 'calc(var(--bottom-nav-height) + 12px)',
+              bottom: 'calc(var(--bottom-nav-height) + var(--browser-chrome-inset, 0px) + 12px)',
+              transition: 'bottom 180ms ease-out',
               right: '14px',
               background: 'linear-gradient(150deg, hsl(var(--primary-glow)) 0%, hsl(var(--primary)) 55%, hsl(var(--primary) / 0.92) 100%)',
               boxShadow:
