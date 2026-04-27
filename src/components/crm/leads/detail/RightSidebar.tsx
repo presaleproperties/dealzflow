@@ -8,6 +8,7 @@ import { useCrmContactTasks, useCrmContactShowings } from '@/hooks/useCrmLeadDet
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
 import { PresaleLeadBehaviorTimeline } from '@/components/presale/PresaleLeadBehaviorTimeline';
+import { LiveActivityTimeline } from '@/components/presale/LiveActivityTimeline';
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
 import { BehaviorIngestionStatus } from '@/components/crm/leads/BehaviorIngestionStatus';
 import { LeadEmailAttribution } from '@/components/crm/leads/LeadEmailAttribution';
