@@ -17,6 +17,10 @@ export function useRealtimeSmsLog() {
         () => {
           qc.invalidateQueries({ queryKey: ['crm-sms-log-all'] });
           qc.invalidateQueries({ queryKey: ['crm-sms-log'] });
+          qc.invalidateQueries({ queryKey: ['crm-chats'] });
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread'] });
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages'] });
+          qc.invalidateQueries({ queryKey: ['crm-contact-messages'] });
           qc.invalidateQueries({ queryKey: ['crm-recent-activity'] });
         },
       )
