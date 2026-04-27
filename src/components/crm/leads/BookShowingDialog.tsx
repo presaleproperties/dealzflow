@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddCrmShowing } from '@/hooks/useCrmLeadDetail';
-import { PROJECTS, AGENTS } from '@/hooks/useCrmContacts';
+import { AGENTS } from '@/hooks/useCrmContacts';
+import { ProjectPicker } from '@/components/crm/projects/ProjectPicker';
 
 interface Props {
   contactId: string;
@@ -55,10 +56,10 @@ export function BookShowingDialog({ contactId, project, open, onOpenChange }: Pr
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Project *</Label>
-              <Select value={form.project} onValueChange={(v) => setForm({ ...form, project: v })}>
-                <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue placeholder="Select project" /></SelectTrigger>
-                <SelectContent>{PROJECTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-              </Select>
+              <ProjectPicker
+                value={form.project}
+                onChange={(name) => setForm({ ...form, project: name })}
+              />
             </div>
 
             <div className="space-y-1.5">
