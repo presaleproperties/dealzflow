@@ -14,6 +14,7 @@ import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
 import { useNativeShell } from "@/hooks/useNativeShell";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -159,6 +160,7 @@ const App = () => (
               <Sonner />
               <QuietHoursConfirmHost />
               <BrowserRouter>
+                <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
