@@ -123,18 +123,19 @@
 
 @layer base {
   /* Flush flat bottom-nav clearance.
-     The bar is 50px tall, sits flush at the bottom of the viewport, and
-     adds a tightened iOS home-indicator inset (safe-area minus 8px so the
-     bar hugs the gesture pill instead of leaving a giant dead zone).
-     Pages reserve exactly bar height + that tightened inset.
+     The bar is 50px tall, sits flush at the bottom of the viewport, and caps
+     iOS standalone safe-area clearance so Pro Max PWAs don't get a tall gutter.
+     Pages reserve exactly bar height + that capped inset.
      Disabled on lg+ where the bar is hidden. */
   :root {
-    --bottom-nav-pad: calc(50px + max(env(safe-area-inset-bottom, 0px) - 8px, 0px));
+    --bottom-nav-safe-pad: min(max(env(safe-area-inset-bottom, 0px) - 18px, 0px), 10px);
+    --bottom-nav-pad: calc(50px + var(--bottom-nav-safe-pad));
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
   }
   @media (min-width: 1024px) {
     :root {
+      --bottom-nav-safe-pad: 0px;
       --bottom-nav-pad: 0px;
       --m-top-pad: 0px;
     }
