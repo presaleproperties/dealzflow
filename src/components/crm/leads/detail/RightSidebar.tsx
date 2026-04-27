@@ -163,6 +163,12 @@ export function RightSidebar({
         <BehaviorIngestionStatus contactId={contact?.id} />
       </WidgetSection>
 
+      <WidgetSection title="Live Engagement">
+        {contact?.id ? (
+          <LiveActivityTimeline contactId={contact.id} limit={15} />
+        ) : null}
+      </WidgetSection>
+
       <WidgetSection title="Presale Activity (live)">
         <PresaleLeadBehaviorTimeline
           lead={{ email: contact?.email, phone: contact?.phone, name: contact?.first_name }}
