@@ -273,17 +273,7 @@ export default function CrmChatsPage() {
         )}
       </div>
 
-      {/* Premium FAB — gradient gold with glow */}
-      <button
-        onClick={() => navigate('/crm/leads')}
-        aria-label="Start new conversation"
-        className="lg:hidden fixed right-4 z-40 h-14 w-14 rounded-full text-primary-foreground shadow-xl active:scale-95 transition-all flex items-center justify-center ring-1 ring-white/10"
-        style={{
-          bottom: 'var(--bottom-nav-pad)',
-          background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%)',
-          boxShadow: '0 10px 30px -8px hsl(var(--primary) / 0.5), 0 4px 12px -2px hsl(var(--primary) / 0.3)',
-        }}
-      >
+      {/* No per-page FAB — conversations start from Leads / Lead Detail. */}
         <Plus className="w-6 h-6" strokeWidth={2.4} />
       </button>
     </div>
