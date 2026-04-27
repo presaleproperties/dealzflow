@@ -58,6 +58,7 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
+import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
 import GmailConnectCard from '@/components/crm/email/GmailConnectCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-team', label: 'Team', icon: Shield },
   { id: 'settings-import', label: 'Import', icon: Database },
   { id: 'settings-data', label: 'Data Manager', icon: Database },
+  { id: 'settings-projects', label: 'Projects', icon: Link2 },
   { id: 'settings-integrations', label: 'Integrations', icon: MessageSquare },
   { id: 'settings-email', label: 'Email', icon: Mail },
   { id: 'settings-notifications', label: 'Notifications', icon: Bell },
@@ -190,6 +192,10 @@ export default function CrmSettingsPage() {
         <Separator />
         <div id="settings-data" className="scroll-mt-16">
           <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>
+        </div>
+        <Separator />
+        <div id="settings-projects" className="scroll-mt-16">
+          <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>
         </div>
         <Separator />
         <div id="settings-integrations" className="scroll-mt-16">
