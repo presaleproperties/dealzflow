@@ -128,7 +128,7 @@
   :root {
     /* Bottom nav tokens — single source of truth.
        A compact 54px touch row plus the real iOS safe-area gutter. */
-    --bottom-nav-safe-pad: env(safe-area-inset-bottom, 0px);
+    --bottom-nav-safe-pad: var(--safe-bottom, env(safe-area-inset-bottom, 0px));
     --bottom-nav-icon-row: 54px;
     --bottom-nav-icon-lift: 0px;
     --bottom-nav-height: calc(var(--bottom-nav-icon-row) + var(--bottom-nav-icon-lift) + var(--bottom-nav-safe-pad));
