@@ -1,2 +1,0 @@
-ALTER TABLE public.crm_conversations REPLICA IDENTITY FULL;
-ALTER TABLE public.crm_messages REPLICA IDENTITY FULL;

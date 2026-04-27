@@ -86,6 +86,10 @@ Deno.serve(async (req) => {
     const skip_quiet_hours = !!body?.skip_quiet_hours;
     const ignore_optout = !!body?.ignore_optout;
     const channel: 'sms' | 'whatsapp' = body?.channel === 'whatsapp' ? 'whatsapp' : 'sms';
+    const client_dedupe_id: string | null =
+      typeof body?.client_dedupe_id === 'string' && body.client_dedupe_id.length > 0 && body.client_dedupe_id.length <= 100
+        ? body.client_dedupe_id
+        : null;
 
     if (!to_raw || !message || message.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'to and body are required' }), {
@@ -112,6 +116,22 @@ Deno.serve(async (req) => {
 
     // Load SMS settings (single-row)
     const { data: settings } = await supabaseAdmin.from('crm_sms_settings').select('*').limit(1).maybeSingle();
+
+    // Idempotency: if this client_dedupe_id was already processed, return the prior result
+    // so retries from the offline outbox never produce duplicate sends.
+    if (client_dedupe_id) {
+      const { data: priorLog } = await supabaseAdmin
+        .from('crm_sms_log')
+        .select('id, status, twilio_message_sid, channel')
+        .eq('client_dedupe_id', client_dedupe_id)
+        .maybeSingle();
+      if (priorLog) {
+        return new Response(JSON.stringify({
+          ok: true, deduped: true, log_id: priorLog.id,
+          sid: priorLog.twilio_message_sid, status: priorLog.status, channel: priorLog.channel,
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
 
     // Opt-out check
     if (!ignore_optout) {
@@ -232,6 +252,7 @@ Deno.serve(async (req) => {
         campaign_id,
         scheduled_for: when.toISOString(),
         channel,
+        client_dedupe_id,
       }).select('id').maybeSingle();
       if (schedErr) throw schedErr;
       return new Response(JSON.stringify({ ok: true, scheduled: true, log_id: scheduled?.id }), {
@@ -253,6 +274,7 @@ Deno.serve(async (req) => {
         status: 'queued',
         campaign_id,
         channel,
+        client_dedupe_id,
         error_message: 'Twilio not yet connected — message recorded for later delivery.',
       }).select('id').maybeSingle();
       return new Response(JSON.stringify({
@@ -293,6 +315,7 @@ Deno.serve(async (req) => {
         to_number: to, from_number: fromNumber, body: finalBody, media_urls,
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
         status: 'failed', campaign_id, channel,
+        client_dedupe_id,
         error_message: friendlyError ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
       });
@@ -312,6 +335,7 @@ Deno.serve(async (req) => {
       price_unit: twilioData?.price_unit ?? null,
       campaign_id,
       channel,
+      client_dedupe_id,
     }).select('id').maybeSingle();
 
     return new Response(JSON.stringify({

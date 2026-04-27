@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info, WifiOff, Clock, AlertTriangle } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
@@ -9,8 +9,7 @@ import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/ChatThreadSkeleton';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
 
@@ -66,6 +65,8 @@ export default function CrmChatThreadPage() {
   const qc = useQueryClient();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  // Offline outbox state (filtered by contact later, once thread loads)
+  const outbox = useOfflineOutbox();
 
   // Conversation + joined contact
   const { data: thread, isLoading: threadLoading } = useQuery({
@@ -103,21 +104,13 @@ export default function CrmChatThreadPage() {
       if (error) throw error;
       return (data ?? []) as MessageRow[];
     },
-    staleTime: 2_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    // Polling fallback when realtime drops (mobile networks, sleep)
-    refetchInterval: 15_000,
-    refetchIntervalInBackground: false,
   });
 
-  // Realtime — refetch on new/updated message in this conversation.
-  // Use a unique channel per mount to avoid collisions across navigations.
+  // Realtime — refetch on new message in this conversation
   useEffect(() => {
     if (!conversationId) return;
-    const channelId = `chat-thread-${conversationId}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(channelId)
+      .channel(`chat-thread-${conversationId}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'crm_messages',
         filter: `conversation_id=eq.${conversationId}`,
@@ -126,28 +119,8 @@ export default function CrmChatThreadPage() {
         qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
       })
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'crm_conversations',
-        filter: `id=eq.${conversationId}`,
-      }, () => {
-        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] });
-        qc.invalidateQueries({ queryKey: ['crm-chats'] });
-      })
       .subscribe();
-
-    // Mobile: refresh when returning to the tab/app
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
-        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] });
-      }
-    };
-    document.addEventListener('visibilitychange', onVisible);
-
-    return () => {
-      supabase.removeChannel(channel);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [conversationId, qc]);
 
   // Mark unread → 0 on open (best-effort)
@@ -167,20 +140,6 @@ export default function CrmChatThreadPage() {
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
-
-  // Pull-to-refresh — bound to the messages scroll container. The thread
-  // auto-scrolls to the bottom on new messages, so the gesture is only
-  // available when the user has scrolled up to view earlier history.
-  const { pullDistance, isRefreshing } = usePullToRefresh({
-    scrollRef,
-    onRefresh: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ['crm-chat-thread', conversationId] }),
-        qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] }),
-        qc.invalidateQueries({ queryKey: ['crm-chats'] }),
-      ]);
-    },
-  });
 
   const contact = thread?.contact;
   const conv = thread?.conv;
@@ -262,9 +221,44 @@ export default function CrmChatThreadPage() {
         </Link>
       </div>
 
+      {/* Offline / queued banner — only relevant for SMS/WhatsApp threads */}
+      {conv.channel !== 'email' && (() => {
+        const mine = outbox.items.filter((i) => i.contact_id === contact.id);
+        const pending = mine.filter((i) => i.status === 'pending').length;
+        const failed = mine.filter((i) => i.status === 'failed').length;
+        if (!outbox.online) {
+          return (
+            <div className="px-3 py-1.5 text-[12px] flex items-center gap-2 bg-amber-500/10 border-b border-amber-500/30 text-amber-900 dark:text-amber-200">
+              <WifiOff className="w-3.5 h-3.5 shrink-0" />
+              <span>Offline — messages will send automatically when you reconnect.</span>
+            </div>
+          );
+        }
+        if (failed > 0) {
+          return (
+            <div className="px-3 py-1.5 text-[12px] flex items-center gap-2 bg-destructive/10 border-b border-destructive/30 text-destructive">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              <span>{failed} message{failed === 1 ? '' : 's'} failed to send.</span>
+              <button
+                className="ml-auto underline underline-offset-2 font-medium"
+                onClick={() => mine.filter((i) => i.status === 'failed').forEach((i) => outbox.retry(i.id))}
+              >Retry all</button>
+            </div>
+          );
+        }
+        if (pending > 0) {
+          return (
+            <div className="px-3 py-1.5 text-[12px] flex items-center gap-2 bg-muted/40 border-b border-border text-muted-foreground">
+              <Clock className="w-3.5 h-3.5 shrink-0" />
+              <span>Sending {pending} queued message{pending === 1 ? '' : 's'}…</span>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       {/* Messages */}
-      <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
-        <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} />
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
         {msgsLoading ? (
           <MessageBubbleSkeleton />
         ) : messages.length === 0 ? (

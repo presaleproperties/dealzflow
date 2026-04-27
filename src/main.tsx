@@ -4,6 +4,11 @@ import '@fontsource-variable/plus-jakarta-sans';
 import App from "./App.tsx";
 import "./index.css";
 import { checkBuildIdAndMaybeRefresh } from "./lib/hardRefresh";
+import { startOutboxEngine } from "./lib/offlineOutbox";
+
+// Boot the offline SMS outbox sync engine. Drains queued messages on
+// online/visibility/focus events and at startup.
+startOutboxEngine();
 
 // Compare compiled-in BUILD_ID vs. last-seen. On mismatch, purge SW + caches
 // and reload once. Guarantees PWA users pick up new CSS / safe-area fixes
