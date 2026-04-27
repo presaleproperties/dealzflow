@@ -21,7 +21,8 @@ type Action =
   | "get-project"
   | "list-neighborhoods"
   | "list-developers"
-  | "get-lead-behavior";
+  | "get-lead-behavior"
+  | "render-email";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -73,6 +74,14 @@ Deno.serve(async (req) => {
         result = await presaleBridge.getLeadBehavior({
           email: params.email,
           phone: params.phone,
+        });
+        break;
+      case "render-email":
+        result = await presaleBridge.renderEmail({
+          projectSlug: params.projectSlug ?? "",
+          agentSlug: params.agentSlug ?? "",
+          templateStyle: params.templateStyle ?? "modern",
+          leadName: params.leadName,
         });
         break;
       default:
