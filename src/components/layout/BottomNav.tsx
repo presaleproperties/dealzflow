@@ -287,7 +287,7 @@ export function BottomNav() {
   return (
     <>
       <nav
-          className="lg:hidden fixed inset-x-0 bottom-0 z-40 native-chrome overflow-hidden"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 native-chrome"
         aria-label="Primary"
         style={{
           background: 'hsl(var(--card) / 0.98)',
@@ -295,7 +295,8 @@ export function BottomNav() {
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           borderTop: '1px solid hsl(var(--border) / 0.55)',
           boxShadow: '0 -6px 24px -14px rgba(0,0,0,0.18)',
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+          // Outer div paints to bottom:0; inner padding lifts content above the home indicator.
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           height: 'var(--bottom-nav-height)',
         }}
       >
