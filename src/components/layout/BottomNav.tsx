@@ -499,36 +499,36 @@ function MoreSheet({
   return (
     <div
       className="flex flex-col max-h-[inherit]"
-      style={{ ...containerStyle, maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 24px)' }}
+      style={{ ...containerStyle, maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 10px)' }}
     >
       {/* Drag handle — swipe down to dismiss */}
-      <div className="shrink-0 pt-2.5 pb-1.5" {...handleProps}>
+      <div className="shrink-0 pt-2 pb-1" {...handleProps}>
         <div
           className="mx-auto w-9 h-[5px] rounded-full"
-          style={{ background: 'hsl(var(--muted-foreground) / 0.32)' }}
+          style={{ background: 'hsl(var(--muted-foreground) / 0.28)' }}
         />
       </div>
 
       {/* Header — single close button only */}
-      <div className="shrink-0 flex items-center justify-between px-5 pt-1 pb-3">
+      <div className="shrink-0 flex items-center justify-between px-5 pt-2 pb-3">
         <div className="flex items-center gap-2.5">
-          <img src={logoMark} alt="Dealzflow" className="w-[26px] h-[26px] rounded-[7px]" />
+          <img src={logoMark} alt="Dealzflow" className="w-[24px] h-[24px] rounded-[6px]" />
           <div className="flex flex-col leading-none">
             <span className="font-semibold text-[15px] tracking-[-0.02em] text-foreground">
               Dealz<span style={{ color: GOLD }}>flow</span>
             </span>
-            <span className="text-[10px] mt-0.5 font-medium uppercase tracking-[0.16em]" style={{ color: SUBTLE }}>
+            <span className="text-[9.5px] mt-1 font-semibold uppercase tracking-[0.18em]" style={{ color: SUBTLE }}>
               {mode === 'crm' ? 'CRM Workspace' : 'Operations'}
             </span>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="h-9 w-9 flex items-center justify-center rounded-full active:scale-95 transition-transform border"
-          style={{ background: SURFACE, color: 'hsl(var(--foreground))', borderColor: BORDER }}
+          className="h-8 w-8 flex items-center justify-center rounded-full active:scale-95 transition-transform"
+          style={{ background: 'hsl(var(--muted) / 0.9)', color: 'hsl(var(--muted-foreground))' }}
           aria-label="Close"
         >
-          <X className="w-[16px] h-[16px]" strokeWidth={2.2} />
+          <X className="w-[15px] h-[15px]" strokeWidth={2.4} />
         </button>
       </div>
 
