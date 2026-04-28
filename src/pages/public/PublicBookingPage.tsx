@@ -27,6 +27,7 @@ export default function PublicBookingPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<any>(null);
 
