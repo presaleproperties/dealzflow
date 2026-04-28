@@ -11,7 +11,7 @@ import {
   AlertTriangle, Shield, Lock, UserPlus, Bell, Mail, Calendar, MessageSquare,
   Database, Link2, User, RefreshCw, Loader2, Phone, CheckCircle2, AlertCircle,
   Sparkles, ArrowRight, Circle, ChevronRight, Briefcase, FileText, Inbox,
-  Building2, FolderKanban,
+  Building2, FolderKanban, Crown, GitBranch, Layers, CreditCard, ExternalLink, Eye,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior, setTimelineLinkBehavior, type TimelineLinkBehavior,
@@ -20,6 +20,8 @@ import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
+import SourceManagerSection from '@/components/crm/settings/SourceManagerSection';
+import { LeadSourcesPanel } from '@/components/crm/integrations/LeadSourcesPanel';
 import ProfileSection from '@/components/settings/ProfileSection';
 import GmailConnectCard from '@/components/crm/email/GmailConnectCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,45 +82,57 @@ class SectionErrorBoundary extends Component<
 type TabId =
   | 'setup'
   | 'profile' | 'email' | 'notifications' | 'timeline'
-  | 'team' | 'integrations' | 'projects' | 'import' | 'data';
+  | 'team' | 'integrations' | 'projects' | 'import' | 'data'
+  | 'leadflow' | 'sources' | 'plan';
 
 interface TabDef {
   id: TabId;
   label: string;
   icon: typeof User;
-  group: 'personal' | 'workspace';
-  adminOnly?: boolean;
+  group: 'personal' | 'workspace' | 'owner';
+  // 'owner'  → role === 'owner' only
+  // 'admin'  → role in (owner, admin)
+  // 'member' → any active CRM member
+  audience: 'owner' | 'admin' | 'member';
   description?: string;
 }
 
 const TABS: TabDef[] = [
   // Personal — every CRM member can access these
-  { id: 'setup',         label: 'Setup',          icon: Sparkles, group: 'personal', description: 'Get started checklist' },
-  { id: 'profile',       label: 'My Profile',     icon: User,     group: 'personal', description: 'Headshot, name, title, phone' },
-  { id: 'email',         label: 'Email & Signature', icon: Mail,  group: 'personal', description: 'Sender, signature, branding' },
-  { id: 'notifications', label: 'Notifications',  icon: Bell,     group: 'personal', description: 'What you get pinged about' },
-  { id: 'timeline',      label: 'Timeline Links', icon: Link2,    group: 'personal', description: 'Link click behavior' },
-  // Workspace — admins only
-  { id: 'team',          label: 'Team',           icon: Shield,        group: 'workspace', adminOnly: true, description: 'Members, roles, permissions' },
-  { id: 'integrations',  label: 'Integrations',   icon: MessageSquare, group: 'workspace', adminOnly: true, description: 'Calendar, Gmail, etc.' },
-  { id: 'projects',      label: 'Projects',       icon: FolderKanban,  group: 'workspace', adminOnly: true, description: 'Knowledge base & cities' },
-  { id: 'import',        label: 'Data Import',    icon: Database,      group: 'workspace', adminOnly: true, description: 'CSV uploads' },
-  { id: 'data',          label: 'Data Manager',   icon: FileText,      group: 'workspace', adminOnly: true, description: 'Cleanup & exports' },
+  { id: 'setup',         label: 'Setup',             icon: Sparkles,      group: 'personal',  audience: 'member', description: 'Get started checklist' },
+  { id: 'profile',       label: 'My Profile',        icon: User,          group: 'personal',  audience: 'member', description: 'Headshot, name, title, phone' },
+  { id: 'email',         label: 'Email & Signature', icon: Mail,          group: 'personal',  audience: 'member', description: 'Sender, signature, branding' },
+  { id: 'notifications', label: 'Notifications',     icon: Bell,          group: 'personal',  audience: 'member', description: 'What you get pinged about' },
+  { id: 'timeline',      label: 'Timeline Links',    icon: Link2,         group: 'personal',  audience: 'member', description: 'Link click behavior' },
+  // Workspace — owner + admin
+  { id: 'team',          label: 'Team',              icon: Shield,        group: 'workspace', audience: 'admin',  description: 'Members, roles, permissions' },
+  { id: 'integrations',  label: 'Integrations',      icon: MessageSquare, group: 'workspace', audience: 'admin',  description: 'Calendar, Gmail, etc.' },
+  { id: 'projects',      label: 'Projects',          icon: FolderKanban,  group: 'workspace', audience: 'admin',  description: 'Knowledge base & cities' },
+  { id: 'import',        label: 'Data Import',       icon: Database,      group: 'workspace', audience: 'admin',  description: 'CSV uploads' },
+  { id: 'data',          label: 'Data Manager',      icon: FileText,      group: 'workspace', audience: 'admin',  description: 'Cleanup & exports' },
+  // Owner controls — only the workspace owner sees these
+  { id: 'leadflow',      label: 'Lead Flow',         icon: GitBranch,     group: 'owner',     audience: 'owner',  description: 'Sources, ingestion, errors' },
+  { id: 'sources',       label: 'Source Library',    icon: Layers,        group: 'owner',     audience: 'owner',  description: 'Rename & merge lead sources' },
+  { id: 'plan',          label: 'Plan & Billing',    icon: CreditCard,    group: 'owner',     audience: 'owner',  description: 'Subscription, ownership' },
 ];
 
 /* ─────────────────────────────────────────────────────────────
    Page
    ───────────────────────────────────────────────────────────── */
 export default function CrmSettingsPage() {
-  const { isOwnerOrAdmin, isMember, isLoading: accessLoading } = useCrmAccess();
+  const { isOwnerOrAdmin, isMember, role, isLoading: accessLoading } = useCrmAccess();
+  const isOwner = role === 'owner';
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Visible tabs depend on role
-  const visibleTabs = useMemo(
-    () => TABS.filter((t) => !t.adminOnly || isOwnerOrAdmin),
-    [isOwnerOrAdmin],
-  );
+  const visibleTabs = useMemo(() => {
+    return TABS.filter((t) => {
+      if (t.audience === 'owner')  return isOwner;
+      if (t.audience === 'admin')  return isOwnerOrAdmin;
+      return true; // member
+    });
+  }, [isOwner, isOwnerOrAdmin]);
 
   const requestedTab = (searchParams.get('tab') as TabId | null) ?? 'setup';
   const activeTab: TabId = visibleTabs.some((t) => t.id === requestedTab)
@@ -130,7 +144,7 @@ export default function CrmSettingsPage() {
     if (!accessLoading && !isMember) navigate('/crm', { replace: true });
   }, [accessLoading, isMember, navigate]);
 
-  // If admin landed on a tab they can't see, snap back
+  // If user landed on a tab they can't see, snap back
   useEffect(() => {
     if (requestedTab !== activeTab) {
       const next = new URLSearchParams(searchParams);
@@ -144,15 +158,22 @@ export default function CrmSettingsPage() {
     const next = new URLSearchParams(searchParams);
     next.set('tab', id);
     setSearchParams(next);
-    // Scroll the content pane to top on tab change
     document.getElementById('crm-settings-content')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (accessLoading || !isMember) return null;
 
-  const personalTabs = visibleTabs.filter((t) => t.group === 'personal');
+  const personalTabs  = visibleTabs.filter((t) => t.group === 'personal');
   const workspaceTabs = visibleTabs.filter((t) => t.group === 'workspace');
+  const ownerTabs     = visibleTabs.filter((t) => t.group === 'owner');
   const activeMeta = visibleTabs.find((t) => t.id === activeTab)!;
+
+  // Role pill copy
+  const roleMeta = isOwner
+    ? { label: 'Owner', tone: 'bg-primary/15 text-primary border-primary/30',  blurb: 'You manage the workspace, lead flow, billing & admins.' }
+    : role === 'admin'
+    ? { label: 'Admin', tone: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30', blurb: 'You manage team, integrations, and data.' }
+    : { label: role === 'viewer' ? 'Viewer' : 'Agent', tone: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30', blurb: 'These are your personal CRM preferences.' };
 
   return (
     <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 h-full min-h-0 crm-mobile-page">
@@ -180,19 +201,30 @@ export default function CrmSettingsPage() {
 
       {/* Desktop sidebar nav — grouped */}
       <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-1">
-        <h1 className="text-lg font-bold text-foreground mb-1 tracking-[-0.01em]">CRM Settings</h1>
-        <p className="text-[11.5px] text-muted-foreground mb-5">
-          {isOwnerOrAdmin ? 'Workspace · admin access' : 'Personal · agent access'}
-        </p>
+        <h1 className="text-lg font-bold text-foreground mb-2 tracking-[-0.01em]">CRM Settings</h1>
+        <div className="mb-5">
+          <span className={cn(
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold border tracking-wide uppercase',
+            roleMeta.tone,
+          )}>
+            {isOwner && <Crown className="h-3 w-3" />}
+            {roleMeta.label}
+          </span>
+          <p className="text-[11.5px] text-muted-foreground mt-1.5 leading-snug">{roleMeta.blurb}</p>
+        </div>
 
         <SidebarGroup label="My Settings" tabs={personalTabs} activeTab={activeTab} onSelect={setTab} />
         {workspaceTabs.length > 0 && (
+          <SidebarGroup label="Workspace" tabs={workspaceTabs} activeTab={activeTab} onSelect={setTab} className="mt-5" />
+        )}
+        {ownerTabs.length > 0 && (
           <SidebarGroup
-            label="Workspace"
-            tabs={workspaceTabs}
+            label="Owner Controls"
+            tabs={ownerTabs}
             activeTab={activeTab}
             onSelect={setTab}
             className="mt-5"
+            accent
           />
         )}
       </nav>
@@ -202,7 +234,7 @@ export default function CrmSettingsPage() {
         id="crm-settings-content"
         className="flex-1 min-h-0 overflow-y-auto space-y-5 max-w-3xl pb-12"
       >
-        {/* Mobile h1 + active section heading */}
+        {/* Mobile h1 */}
         <div className="lg:hidden">
           <h1 className="m-page-title">CRM Settings</h1>
         </div>
@@ -214,7 +246,7 @@ export default function CrmSettingsPage() {
           )}
         </div>
 
-        {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} onJump={setTab} /></SectionErrorBoundary>}
+        {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} isOwner={isOwner} onJump={setTab} /></SectionErrorBoundary>}
         {activeTab === 'profile'       && <SectionErrorBoundary name="Profile"><ProfileSection /></SectionErrorBoundary>}
         {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
         {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
@@ -224,6 +256,9 @@ export default function CrmSettingsPage() {
         {activeTab === 'projects'      && <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>}
         {activeTab === 'import'        && <SectionErrorBoundary name="Import"><DataImportSection /></SectionErrorBoundary>}
         {activeTab === 'data'          && <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>}
+        {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
+        {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
+        {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
       </div>
     </div>
   );
@@ -233,17 +268,22 @@ export default function CrmSettingsPage() {
    Sidebar group
    ───────────────────────────────────────────────────────────── */
 function SidebarGroup({
-  label, tabs, activeTab, onSelect, className,
+  label, tabs, activeTab, onSelect, className, accent,
 }: {
   label: string;
   tabs: TabDef[];
   activeTab: TabId;
   onSelect: (id: TabId) => void;
   className?: string;
+  accent?: boolean;
 }) {
   return (
     <div className={className}>
-      <div className="px-2.5 mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+      <div className={cn(
+        'px-2.5 mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] flex items-center gap-1.5',
+        accent ? 'text-primary' : 'text-muted-foreground/80',
+      )}>
+        {accent && <Crown className="h-2.5 w-2.5" />}
         {label}
       </div>
       <div className="space-y-0.5">
@@ -274,8 +314,8 @@ function SidebarGroup({
    Setup Checklist — adapts to role
    ───────────────────────────────────────────────────────────── */
 function SetupChecklist({
-  isAdmin, onJump,
-}: { isAdmin: boolean; onJump: (id: TabId) => void }) {
+  isAdmin, isOwner, onJump,
+}: { isAdmin: boolean; isOwner?: boolean; onJump: (id: TabId) => void }) {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: emailSettings } = useEmailSettings();
@@ -1018,6 +1058,75 @@ function TimelinePreferencesSection() {
               </button>
             );
           })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Lead Flow (owner only) — wraps the full LeadSourcesPanel
+   ───────────────────────────────────────────────────────────── */
+function LeadFlowSection() {
+  return (
+    <div className="space-y-5">
+      <Card className="rounded-xl border-primary/20 bg-primary/5">
+        <CardContent className="p-4 sm:p-5 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+            <GitBranch className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0 text-[12.5px] text-foreground/80 leading-relaxed">
+            <span className="font-semibold text-foreground">Lead Flow</span> is the live view of every channel sending leads into your CRM —
+            webhooks, ads, manual entries. Toggle a source off to stop ingesting from it without losing history.
+          </div>
+        </CardContent>
+      </Card>
+      <LeadSourcesPanel />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Plan & Billing (owner only) — pointer to /settings?tab=plan
+   ───────────────────────────────────────────────────────────── */
+function PlanBillingSection() {
+  return (
+    <Card className="rounded-xl">
+      <CardHeader className="px-3 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CreditCard className="h-5 w-5 text-primary" />
+          Plan & Billing
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-3 sm:px-6 space-y-4">
+        <p className="text-[13px] text-muted-foreground">
+          Subscription, payment method, and account ownership live in your main account settings.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button asChild variant="outline" className="justify-between h-auto py-3 px-4">
+            <a href="/settings?tab=plan">
+              <span className="flex items-center gap-2">
+                <Crown className="h-4 w-4 text-primary" />
+                <span className="text-left">
+                  <span className="block text-[13px] font-semibold">Manage Plan</span>
+                  <span className="block text-[11px] text-muted-foreground">Upgrade, cancel, billing portal</span>
+                </span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
+          </Button>
+          <Button asChild variant="outline" className="justify-between h-auto py-3 px-4">
+            <a href="/admin">
+              <span className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-left">
+                  <span className="block text-[13px] font-semibold">Admin Console</span>
+                  <span className="block text-[11px] text-muted-foreground">Workspace-wide audit & access</span>
+                </span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
+          </Button>
         </div>
       </CardContent>
     </Card>
