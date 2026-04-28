@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 
-import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check, CreditCard } from 'lucide-react';
 import { addDays, format, startOfDay, isSameDay, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore } from 'date-fns';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -9,6 +9,8 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export default function PublicBookingPage() {
   const { teamSlug, eventSlug } = useParams<{ teamSlug: string; eventSlug: string }>();
+  const [searchParams] = useSearchParams();
+  const rescheduleId = searchParams.get('reschedule');
   const navigate = useNavigate();
   const [resolved, setResolved] = useState<any>(null);
   const [loading, setLoading] = useState(true);
