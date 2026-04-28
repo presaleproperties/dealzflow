@@ -12,6 +12,7 @@ import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
+import { SendProjectDialog } from '@/components/crm/leads/SendProjectDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
@@ -43,6 +44,7 @@ export default function LeadDetailPage() {
   const openWhatsAppChat = useOpenWhatsAppChat();
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
+  const [showSendProject, setShowSendProject] = useState(false);
 
   const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;

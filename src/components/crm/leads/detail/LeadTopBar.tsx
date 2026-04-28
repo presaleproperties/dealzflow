@@ -19,7 +19,7 @@ interface Props {
 }
 
 /** Top bar — Lead identity, navigation, and primary CTAs. */
-export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, showTaskCta, showShowingCta }: Props) {
+export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, onSendProject, showTaskCta, showShowingCta }: Props) {
   const typeLabel = TYPE_LABELS[contact.contact_type] ?? 'LEAD';
   return (
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
@@ -39,6 +39,9 @@ export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, sh
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        <Button size="sm" className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90" onClick={onSendProject}>
+          <Send className="w-3.5 h-3.5" /> Send Project
+        </Button>
         {showTaskCta && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
             <ListTodo className="w-3.5 h-3.5" /> Task
