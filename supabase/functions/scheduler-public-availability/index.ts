@@ -1,7 +1,8 @@
 // Public endpoint: returns available slots for an agent + event_type within a date range.
-// Computes slots from weekly availability, subtracts overrides + existing bookings.
-// Google Calendar busy-time integration is wired in a later phase.
+// Computes slots from weekly availability, subtracts overrides, existing bookings,
+// and (best-effort) Google Calendar busy ranges from the agent's primary calendar.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { fetchGoogleBusy } from '../_shared/google-calendar-busy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,6 +111,22 @@ Deno.serve(async (req) => {
       new Date(b.start_at).getTime() - bufBefore * 60_000,
       new Date(b.end_at).getTime() + bufAfter * 60_000,
     ]);
+
+    // Best-effort: subtract Google Calendar busy ranges for this agent.
+    // Silently skipped if agent hasn't connected Google Calendar.
+    try {
+      const gcalBusy = await fetchGoogleBusy(
+        supabase,
+        agent.user_id,
+        fromDate.toISOString(),
+        toDate.toISOString(),
+      );
+      for (const r of gcalBusy) {
+        busyRanges.push([r.startMs - bufBefore * 60_000, r.endMs + bufAfter * 60_000]);
+      }
+    } catch (e) {
+      console.warn('gcal busy fetch failed (non-fatal)', e);
+    }
 
     const slots: Slot[] = [];
     const stepMs = duration * 60_000;
