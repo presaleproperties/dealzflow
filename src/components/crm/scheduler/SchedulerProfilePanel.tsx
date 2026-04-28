@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { useAgentSchedulerProfile, useUpdateAgentSchedulerProfile } from '@/hooks/useScheduler';
 import { usePresaleAgent, usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { toast } from 'sonner';
@@ -43,6 +44,7 @@ export function SchedulerProfilePanel() {
     if (a.headshotUrl) patch.headshot_url = a.headshotUrl;
     if (a.brokerage) patch.brokerage = a.brokerage;
     if (a.licenseNumber) patch.license_no = a.licenseNumber;
+    if ((a as any).title) patch.title = (a as any).title;
     setForm({ ...form, ...patch });
     toast.success('Imported from Presale Properties — review then click Save');
   };
@@ -51,8 +53,10 @@ export function SchedulerProfilePanel() {
     const patch = {
       slug: slugify(form.slug || ''),
       headshot_url: form.headshot_url || null,
+      headshot_focal_y: Math.round(Number(form.headshot_focal_y ?? 30)),
       brokerage: form.brokerage || null,
       license_no: form.license_no || null,
+      title: form.title || null,
       timezone: form.timezone || 'America/Vancouver',
       bio: form.bio || null,
       default_buffer_min: parseInt(form.default_buffer_min) || 0,
@@ -64,9 +68,12 @@ export function SchedulerProfilePanel() {
   };
 
   const publicHost = window.location.origin.replace(/^https?:\/\//, '');
+  const focalY = Number(form.headshot_focal_y ?? 30);
+  const initials = (form.display_name || profile.display_name || 'A')
+    .split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <div className="space-y-4 max-w-[680px]">
+    <div className="space-y-5 max-w-[760px]">
       {/* Presale import banner */}
       <Card className="p-4 flex items-start gap-3 bg-[hsl(var(--accent))]/40 border-[hsl(var(--accent))]">
         <Sparkles className="w-4 h-4 text-[#D7A542] mt-0.5 shrink-0" />
@@ -75,7 +82,7 @@ export function SchedulerProfilePanel() {
             Import from Presale Properties
           </div>
           <p className="text-[12px] text-muted-foreground mt-0.5">
-            Pull your headshot, brokerage, and license # from your Presale agent profile.
+            Pull your headshot, brokerage, title, and license # from your Presale agent profile.
             {presaleStatus === 'ready' && presaleAgent && (
               <> Matched: <span className="text-foreground font-medium">{presaleAgent.name || presaleAgent.email}</span></>
             )}
@@ -95,6 +102,49 @@ export function SchedulerProfilePanel() {
         </Button>
       </Card>
 
+      {/* Identity card with live headshot crop preview */}
+      <Card className="p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-5 items-start">
+          <div className="flex flex-col items-center gap-2">
+            {form.headshot_url ? (
+              <img src={form.headshot_url} alt="Headshot"
+                className="w-[120px] h-[120px] rounded-full object-cover border border-border shadow-sm"
+                style={{ objectPosition: `center ${focalY}%` }} />
+            ) : (
+              <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center text-3xl font-medium border border-border"
+                style={{ background: '#D7A542', color: 'white', fontFamily: 'Georgia, serif' }}>
+                {initials}
+              </div>
+            )}
+            <span className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">Public preview</span>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-[12px]">Headshot URL</Label>
+              <Input value={form.headshot_url || ''} onChange={(e) => u({ headshot_url: e.target.value })} placeholder="https://…" className="mt-1" />
+            </div>
+            {form.headshot_url && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-[12px]">Vertical focus</Label>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{focalY}%</span>
+                </div>
+                <Slider
+                  value={[focalY]}
+                  min={0} max={100} step={5}
+                  onValueChange={(v) => u({ headshot_focal_y: v[0] })}
+                  className="mt-2"
+                />
+                <p className="text-[10.5px] text-muted-foreground mt-1.5">
+                  Default 30% centers most faces. Drop higher (toward 0%) if face is at the top, higher % if low.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Identity fields */}
       <Card className="p-5 space-y-4">
         <div>
           <Label className="text-[12px]">Public booking URL</Label>
@@ -114,23 +164,29 @@ export function SchedulerProfilePanel() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
+            <Label className="text-[12px]">Title</Label>
+            <Input value={form.title || ''} onChange={(e) => u({ title: e.target.value })} placeholder="Realtor · PREC Licensed Realtor" />
+          </div>
+          <div>
             <Label className="text-[12px]">Brokerage</Label>
             <Input value={form.brokerage || ''} onChange={(e) => u({ brokerage: e.target.value })} placeholder="Real Broker BC" />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-[12px]">License #</Label>
             <Input value={form.license_no || ''} onChange={(e) => u({ license_no: e.target.value })} />
           </div>
-        </div>
-
-        <div>
-          <Label className="text-[12px]">Headshot URL</Label>
-          <div className="flex items-center gap-3 mt-1">
-            {form.headshot_url && (
-              <img src={form.headshot_url} alt="Headshot preview"
-                className="w-12 h-12 rounded-full object-cover border border-border shrink-0" />
-            )}
-            <Input value={form.headshot_url || ''} onChange={(e) => u({ headshot_url: e.target.value })} placeholder="https://…" />
+          <div>
+            <Label className="text-[12px]">Timezone</Label>
+            <select
+              value={form.timezone || 'America/Vancouver'}
+              onChange={(e) => u({ timezone: e.target.value })}
+              className="w-full h-9 px-3 rounded-md border border-input bg-background text-[13px]"
+            >
+              {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
+            </select>
           </div>
         </div>
 
@@ -138,17 +194,6 @@ export function SchedulerProfilePanel() {
           <Label className="text-[12px]">Bio (shown on booking page)</Label>
           <Textarea rows={3} value={form.bio || ''} onChange={(e) => u({ bio: e.target.value })}
             placeholder="A short intro shown beneath your name on the public booking page." />
-        </div>
-
-        <div>
-          <Label className="text-[12px]">Timezone</Label>
-          <select
-            value={form.timezone || 'America/Vancouver'}
-            onChange={(e) => u({ timezone: e.target.value })}
-            className="w-full h-9 px-3 rounded-md border border-input bg-background text-[13px]"
-          >
-            {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
-          </select>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

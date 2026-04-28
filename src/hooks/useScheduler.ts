@@ -192,8 +192,10 @@ export interface AgentSchedulerProfile {
   display_name: string | null;
   email: string | null;
   headshot_url: string | null;
+  headshot_focal_y: number | null;
   brokerage: string | null;
   license_no: string | null;
+  title: string | null;
   timezone: string | null;
   bio: string | null;
   scheduler_onboarded_at: string | null;
@@ -209,7 +211,7 @@ export function useAgentSchedulerProfile() {
       if (!user) return null;
       const { data, error } = await supabase
         .from('crm_team' as any)
-        .select('user_id, slug, display_name, email, headshot_url, brokerage, license_no, timezone, bio, scheduler_onboarded_at, default_buffer_min, default_min_notice_min')
+        .select('user_id, slug, display_name, email, headshot_url, headshot_focal_y, brokerage, license_no, title, timezone, bio, scheduler_onboarded_at, default_buffer_min, default_min_notice_min')
         .eq('user_id', user.id).maybeSingle();
       if (error) throw error;
       return (data || null) as unknown as AgentSchedulerProfile | null;

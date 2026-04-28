@@ -260,14 +260,19 @@ export default function PublicBookingPage() {
             <div className="flex items-center gap-3 mb-4">
               {agent.headshot_url ? (
                 <img src={agent.headshot_url} alt={agent.display_name}
-                  className="w-12 h-12 rounded-full object-cover" style={{ background: '#e7e2d6' }} />
+                  className="w-12 h-12 rounded-full object-cover"
+                  style={{ background: '#e7e2d6', objectPosition: `center ${agent.headshot_focal_y ?? 30}%` }} />
               ) : (
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[14px] font-medium"
                   style={{ background: GOLD, fontFamily: SERIF }}>{initials}</div>
               )}
               <div className="min-w-0">
-                <div className="text-[12px] text-stone-500">{agent.display_name}</div>
-                {agent.brokerage && <div className="text-[11px] text-stone-400 truncate">{agent.brokerage}</div>}
+                <div className="text-[12px] text-stone-500 truncate">{agent.display_name}</div>
+                {agent.title ? (
+                  <div className="text-[10.5px] uppercase tracking-[0.16em] text-stone-400 truncate">{agent.title}</div>
+                ) : agent.brokerage && (
+                  <div className="text-[11px] text-stone-400 truncate">{agent.brokerage}</div>
+                )}
               </div>
             </div>
 
