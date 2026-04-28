@@ -1063,3 +1063,72 @@ function TimelinePreferencesSection() {
     </Card>
   );
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Lead Flow (owner only) — wraps the full LeadSourcesPanel
+   ───────────────────────────────────────────────────────────── */
+function LeadFlowSection() {
+  return (
+    <div className="space-y-5">
+      <Card className="rounded-xl border-primary/20 bg-primary/5">
+        <CardContent className="p-4 sm:p-5 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+            <GitBranch className="h-4 w-4 text-primary" />
+          </div>
+          <div className="min-w-0 text-[12.5px] text-foreground/80 leading-relaxed">
+            <span className="font-semibold text-foreground">Lead Flow</span> is the live view of every channel sending leads into your CRM —
+            webhooks, ads, manual entries. Toggle a source off to stop ingesting from it without losing history.
+          </div>
+        </CardContent>
+      </Card>
+      <LeadSourcesPanel />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Plan & Billing (owner only) — pointer to /settings?tab=plan
+   ───────────────────────────────────────────────────────────── */
+function PlanBillingSection() {
+  return (
+    <Card className="rounded-xl">
+      <CardHeader className="px-3 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CreditCard className="h-5 w-5 text-primary" />
+          Plan & Billing
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-3 sm:px-6 space-y-4">
+        <p className="text-[13px] text-muted-foreground">
+          Subscription, payment method, and account ownership live in your main account settings.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button asChild variant="outline" className="justify-between h-auto py-3 px-4">
+            <a href="/settings?tab=plan">
+              <span className="flex items-center gap-2">
+                <Crown className="h-4 w-4 text-primary" />
+                <span className="text-left">
+                  <span className="block text-[13px] font-semibold">Manage Plan</span>
+                  <span className="block text-[11px] text-muted-foreground">Upgrade, cancel, billing portal</span>
+                </span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
+          </Button>
+          <Button asChild variant="outline" className="justify-between h-auto py-3 px-4">
+            <a href="/admin">
+              <span className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-left">
+                  <span className="block text-[13px] font-semibold">Admin Console</span>
+                  <span className="block text-[11px] text-muted-foreground">Workspace-wide audit & access</span>
+                </span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
