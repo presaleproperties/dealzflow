@@ -48,7 +48,6 @@ export default function PublicAgentLandingPage() {
       document.head.appendChild(link);
     }
     if (agent?.display_name) {
-      document.title = `Book with ${agent.display_name}`;
       // neutral favicon — agent's initial
       const initial = (agent.display_name || 'B').trim().charAt(0).toUpperCase();
       const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='32' fill='%23D7A542'/><text x='50%' y='50%' text-anchor='middle' dominant-baseline='central' font-family='Georgia,serif' font-size='34' fill='white'>${initial}</text></svg>`;
@@ -59,6 +58,16 @@ export default function PublicAgentLandingPage() {
       }
     }
   }, [agent?.display_name]);
+
+  // OG / Twitter meta — link previews in iMessage, WhatsApp, Slack, etc.
+  useOgMeta({
+    title: agent?.display_name ? `Book with ${agent.display_name}` : 'Book a meeting',
+    description: agent?.brokerage
+      ? `Schedule a meeting with ${agent.display_name} · ${agent.brokerage}`
+      : agent?.display_name ? `Schedule a meeting with ${agent.display_name}` : undefined,
+    image: teamSlug ? `${SUPABASE_URL}/functions/v1/scheduler-og-image?team=${encodeURIComponent(teamSlug)}` : undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+  });
 
   if (loading) {
     return <div className="min-h-dvh flex items-center justify-center" style={{ background: '#faf8f3', color: '#888' }}>Loading…</div>;
