@@ -21,8 +21,8 @@ interface Props {
 }
 
 export function TemplatesRail({ onApply, activeTemplateId }: Props) {
-  const { data: bridge = [], isLoading: bridgeLoading } = useBridgeTemplates();
-  const { data: local = [], isLoading: localLoading } = useCrmEmailTemplates();
+  const { data: bridge = [], isLoading: bridgeLoading, isFetching: bridgeFetching, refetch: refetchBridge, dataUpdatedAt: bridgeUpdatedAt } = useBridgeTemplates();
+  const { data: local = [], isLoading: localLoading, refetch: refetchLocal } = useCrmEmailTemplates();
   const [search, setSearch] = useState('');
   const [activeTags, setActiveTags] = useState<Set<TemplateTag>>(new Set());
 
