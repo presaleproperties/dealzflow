@@ -1,8 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Smartphone, Tablet, Monitor, RefreshCw, ExternalLink } from 'lucide-react';
-import { useAgentSchedulerProfile } from '@/hooks/useScheduler';
+import {
+  useAgentSchedulerProfile,
+  useSchedulerEventTypes,
+  useSchedulerAvailability,
+} from '@/hooks/useScheduler';
 
 type Device = 'mobile' | 'tablet' | 'desktop';
 
@@ -14,13 +18,25 @@ const SIZES: Record<Device, { w: number; label: string }> = {
 
 export function SchedulerPreviewPanel() {
   const { data: profile, isLoading } = useAgentSchedulerProfile();
+  const { data: eventTypes = [], dataUpdatedAt: etUpdatedAt } = useSchedulerEventTypes();
+  const { dataUpdatedAt: availUpdatedAt } = useSchedulerAvailability();
+
   const [device, setDevice] = useState<Device>('mobile');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedEventSlug, setSelectedEventSlug] = useState<string | 'landing'>('landing');
 
-  const previewUrl = useMemo(
-    () => profile?.slug ? `${window.location.origin}/r/${profile.slug}` : null,
-    [profile?.slug],
-  );
+  // Auto-refresh the iframe when availability or event types change.
+  // `dataUpdatedAt` ticks every time the cache resolves a fresh value
+  // (mutation invalidations included), so the preview always mirrors current settings.
+  useEffect(() => {
+    setRefreshKey((k) => k + 1);
+  }, [etUpdatedAt, availUpdatedAt, profile?.slug]);
+
+  const previewUrl = useMemo(() => {
+    if (!profile?.slug) return null;
+    const base = `${window.location.origin}/r/${profile.slug}`;
+    return selectedEventSlug === 'landing' ? base : `${base}/${selectedEventSlug}`;
+  }, [profile?.slug, selectedEventSlug]);
 
   if (isLoading) return <div className="text-muted-foreground text-sm">Loading…</div>;
   if (!previewUrl) {
@@ -32,13 +48,13 @@ export function SchedulerPreviewPanel() {
   }
 
   const w = SIZES[device].w;
+  const activeEventTypes = eventTypes.filter((et) => et.is_active);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-[13px] text-muted-foreground">
-          Live preview of <span className="text-foreground font-medium">your public booking page</span>.
-          What invitees see, exactly.
+          Live preview — auto-refreshes when you change availability or event types.
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-muted rounded-md p-0.5">
@@ -57,7 +73,7 @@ export function SchedulerPreviewPanel() {
               );
             })}
           </div>
-          <Button variant="outline" size="sm" onClick={() => setRefreshKey(k => k + 1)}>
+          <Button variant="outline" size="sm" onClick={() => setRefreshKey((k) => k + 1)}>
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.open(previewUrl, '_blank')}>
@@ -65,6 +81,36 @@ export function SchedulerPreviewPanel() {
           </Button>
         </div>
       </div>
+
+      {/* Event-type chip switcher */}
+      {activeEventTypes.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedEventSlug('landing')}
+            className={`text-[11.5px] px-2.5 py-1 rounded-md border transition-colors ${
+              selectedEventSlug === 'landing'
+                ? 'bg-foreground text-background border-foreground'
+                : 'bg-background text-muted-foreground border-border hover:text-foreground'
+            }`}
+          >
+            Landing
+          </button>
+          {activeEventTypes.map((et) => (
+            <button
+              key={et.id}
+              onClick={() => setSelectedEventSlug(et.slug)}
+              className={`text-[11.5px] px-2.5 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${
+                selectedEventSlug === et.slug
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: et.color || '#D7A542' }} />
+              {et.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-muted/30 rounded-xl p-4 sm:p-6 flex justify-center overflow-x-auto">
         <div
