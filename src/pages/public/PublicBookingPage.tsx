@@ -106,6 +106,59 @@ export default function PublicBookingPage() {
         .map((q) => ({ key: q.key, text: q.text, answer: answers[q.key] || null }))
         .filter((a) => a.answer);
 
+      // Reschedule path
+      if (rescheduleId) {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-reschedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
+          body: JSON.stringify({
+            booking_id: rescheduleId,
+            new_start_at: selectedSlot,
+            timezone: inviteeTz,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          alert(json.error === 'slot_taken' ? 'That slot was just taken. Please pick another.' :
+                json.error === 'already_cancelled' ? 'This booking has already been cancelled.' :
+                'Could not reschedule. Please try again.');
+          if (json.error === 'slot_taken') { setSelectedSlot(null); setStep(1); }
+          setSubmitting(false);
+          return;
+        }
+        setConfirmation(json.confirmation);
+        setStep(3);
+        setSubmitting(false);
+        return;
+      }
+
+      // Paid event: kick off Stripe Checkout
+      if (resolved?.event_type?.requires_payment && resolved?.event_type?.price_cents) {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-create-checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
+          body: JSON.stringify({
+            team_slug: teamSlug, event_slug: eventSlug, start_at: selectedSlot,
+            timezone: inviteeTz,
+            invitee: { name, email, phone, notes },
+            answers: answerPayload,
+            referrer: document.referrer,
+            origin: window.location.origin,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.url) {
+          alert(json.error === 'stripe_not_configured'
+            ? 'Payments are not yet set up for this account. Please contact the agent.'
+            : 'Could not start checkout. Please try again.');
+          setSubmitting(false);
+          return;
+        }
+        window.location.href = json.url;
+        return;
+      }
+
+      // Free event: book directly
       const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-public-book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
