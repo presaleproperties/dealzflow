@@ -13,6 +13,7 @@ import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
 import { usePresaleAgent } from '@/stores/usePresaleAgent';
+import { useProfile } from '@/hooks/useProfile';
 import { useCrmChats, type ChatThread, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
