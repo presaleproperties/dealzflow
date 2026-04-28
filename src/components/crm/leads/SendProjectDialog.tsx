@@ -119,8 +119,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
 
   useEffect(() => {
     if (!open || templates.length === 0 || templateSlug) return;
-    const showcase = templates.find(t => t.slug === 'project-showcase');
-    setTemplateSlug(showcase?.slug ?? templates[0].slug);
+    const preferred =
+      templates.find(t => t.slug === 'project-info-package') ||
+      templates.find(t => t.slug === 'project-showcase') ||
+      templates.find(t => t.slug === 'project-welcome-email');
+    setTemplateSlug(preferred?.slug ?? templates[0].slug);
   }, [open, templates, templateSlug]);
 
   // ─── Debounced live preview ──────────────────────────────────────────────
