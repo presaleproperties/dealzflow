@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo, Send } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
