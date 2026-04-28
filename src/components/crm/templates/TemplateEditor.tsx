@@ -41,17 +41,32 @@ function detectMergeTags(html: string): string[] {
   return matches ? [...new Set(matches)] : [];
 }
 
+interface TemplateDraft {
+  name?: string;
+  subject?: string | null;
+  preview_text?: string | null;
+  html_content?: string;
+  category?: string;
+  project_tags?: string[];
+  area_tags?: string[];
+}
+
 interface Props {
   template: EmailTemplate | null;
+  /** Optional starting values when creating a new template (e.g. cloning a Presale asset). */
+  initialDraft?: TemplateDraft;
   onClose: () => void;
   onSendCampaign?: (tpl: EmailTemplate) => void;
 }
 
-export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
+export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign }: Props) {
   const createTemplate = useCreateEmailTemplate();
   const updateTemplate = useUpdateEmailTemplate();
   const softDelete = useSoftDeleteEmailTemplate();
   const isEdit = !!template;
+  const { agent } = usePresaleAgent();
+  const { data: emailSettings } = useEmailSettings();
+  const signatureHtml = (agent?.signatureHtml || emailSettings?.signature_html || '').trim();
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
