@@ -5,7 +5,7 @@ import { Smartphone, Tablet, Monitor, RefreshCw, ExternalLink } from 'lucide-rea
 import {
   useAgentSchedulerProfile,
   useSchedulerEventTypes,
-  useSchedulerAvailability,
+  useAvailability,
 } from '@/hooks/useScheduler';
 
 type Device = 'mobile' | 'tablet' | 'desktop';
@@ -19,7 +19,7 @@ const SIZES: Record<Device, { w: number; label: string }> = {
 export function SchedulerPreviewPanel() {
   const { data: profile, isLoading } = useAgentSchedulerProfile();
   const { data: eventTypes = [], dataUpdatedAt: etUpdatedAt } = useSchedulerEventTypes();
-  const { dataUpdatedAt: availUpdatedAt } = useSchedulerAvailability();
+  const { dataUpdatedAt: availUpdatedAt } = useAvailability();
 
   const [device, setDevice] = useState<Device>('mobile');
   const [refreshKey, setRefreshKey] = useState(0);
