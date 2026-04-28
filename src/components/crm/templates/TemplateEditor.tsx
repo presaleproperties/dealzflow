@@ -360,6 +360,31 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             />
           </div>
 
+          {/* Brand signature — keeps every saved template on-brand */}
+          <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <Label className="text-xs font-semibold text-foreground">Append my signature</Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {signatureHtml
+                    ? 'Stamps your headshot, name, brokerage and contact details below the email body when saved or sent.'
+                    : 'Set up your signature in Settings → Signature to enable this.'}
+                </p>
+              </div>
+              <Switch
+                checked={appendSignature && !!signatureHtml}
+                disabled={!signatureHtml}
+                onCheckedChange={setAppendSignature}
+              />
+            </div>
+            {appendSignature && signatureHtml && (
+              <div
+                className="rounded border border-border/40 bg-background p-2 max-h-[120px] overflow-auto text-[11px]"
+                dangerouslySetInnerHTML={{ __html: signatureHtml }}
+              />
+            )}
+          </div>
+
           {/* Merge tags */}
           {mergeTags.length > 0 && (
             <div className="space-y-1">
