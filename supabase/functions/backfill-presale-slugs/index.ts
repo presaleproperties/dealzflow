@@ -51,7 +51,9 @@ Deno.serve(async (req) => {
   let matched = 0, ambiguous = 0, none = 0, errors = 0;
   const errorSamples: any[] = [];
 
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   for (const p of projects ?? []) {
+    await sleep(600); // throttle to avoid bridge rate limit
     try {
       const raw = await presaleBridge.searchProjects(p.name);
       const arr: any[] = Array.isArray(raw) ? raw : ((raw as any)?.projects ?? (raw as any)?.results ?? (raw as any)?.data ?? []);
