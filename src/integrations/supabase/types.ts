@@ -3524,6 +3524,7 @@ export type Database = {
           default_min_notice_min: number | null
           display_name: string | null
           email: string | null
+          headshot_focal_y: number | null
           headshot_url: string | null
           id: string
           invited_at: string | null
@@ -3532,10 +3533,13 @@ export type Database = {
           license_no: string | null
           name_aliases: string[]
           permissions: Json
+          presale_snapshot: Json | null
+          presale_synced_at: string | null
           role: string
           scheduler_onboarded_at: string | null
           slug: string | null
           timezone: string | null
+          title: string | null
           user_id: string | null
         }
         Insert: {
@@ -3546,6 +3550,7 @@ export type Database = {
           default_min_notice_min?: number | null
           display_name?: string | null
           email?: string | null
+          headshot_focal_y?: number | null
           headshot_url?: string | null
           id?: string
           invited_at?: string | null
@@ -3554,10 +3559,13 @@ export type Database = {
           license_no?: string | null
           name_aliases?: string[]
           permissions?: Json
+          presale_snapshot?: Json | null
+          presale_synced_at?: string | null
           role?: string
           scheduler_onboarded_at?: string | null
           slug?: string | null
           timezone?: string | null
+          title?: string | null
           user_id?: string | null
         }
         Update: {
@@ -3568,6 +3576,7 @@ export type Database = {
           default_min_notice_min?: number | null
           display_name?: string | null
           email?: string | null
+          headshot_focal_y?: number | null
           headshot_url?: string | null
           id?: string
           invited_at?: string | null
@@ -3576,10 +3585,13 @@ export type Database = {
           license_no?: string | null
           name_aliases?: string[]
           permissions?: Json
+          presale_snapshot?: Json | null
+          presale_synced_at?: string | null
           role?: string
           scheduler_onboarded_at?: string | null
           slug?: string | null
           timezone?: string | null
+          title?: string | null
           user_id?: string | null
         }
         Relationships: []
