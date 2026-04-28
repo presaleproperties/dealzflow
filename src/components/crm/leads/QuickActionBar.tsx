@@ -16,6 +16,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
+import { useLeadQuickReplies } from '@/hooks/useLeadQuickReplies';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
