@@ -1334,6 +1334,7 @@ export type Database = {
           merge_tags: string[] | null
           name: string
           project: string | null
+          slug: string | null
           source: string
           subject: string
           sync_hash: string | null
@@ -1352,6 +1353,7 @@ export type Database = {
           merge_tags?: string[] | null
           name: string
           project?: string | null
+          slug?: string | null
           source?: string
           subject: string
           sync_hash?: string | null
@@ -1370,6 +1372,7 @@ export type Database = {
           merge_tags?: string[] | null
           name?: string
           project?: string | null
+          slug?: string | null
           source?: string
           subject?: string
           sync_hash?: string | null
@@ -2237,10 +2240,12 @@ export type Database = {
           name_lower: string | null
           neighborhood: string | null
           notes: string | null
+          presale_slug: string | null
           price_from: number | null
           price_to: number | null
           property_type: string | null
           province: string | null
+          slug: string | null
           status: string | null
           updated_at: string
           usage_count: number
@@ -2264,10 +2269,12 @@ export type Database = {
           name_lower?: string | null
           neighborhood?: string | null
           notes?: string | null
+          presale_slug?: string | null
           price_from?: number | null
           price_to?: number | null
           property_type?: string | null
           province?: string | null
+          slug?: string | null
           status?: string | null
           updated_at?: string
           usage_count?: number
@@ -2291,10 +2298,12 @@ export type Database = {
           name_lower?: string | null
           neighborhood?: string | null
           notes?: string | null
+          presale_slug?: string | null
           price_from?: number | null
           price_to?: number | null
           property_type?: string | null
           province?: string | null
+          slug?: string | null
           status?: string | null
           updated_at?: string
           usage_count?: number
@@ -2302,6 +2311,41 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      crm_projects_presale_match_review: {
+        Row: {
+          candidates: Json | null
+          created_at: string
+          id: string
+          project_id: string
+          project_name: string
+          reason: string | null
+        }
+        Insert: {
+          candidates?: Json | null
+          created_at?: string
+          id?: string
+          project_id: string
+          project_name: string
+          reason?: string | null
+        }
+        Update: {
+          candidates?: Json | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          project_name?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_projects_presale_match_review_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "crm_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_saved_views: {
         Row: {
