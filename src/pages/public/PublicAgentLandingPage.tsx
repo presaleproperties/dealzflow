@@ -52,13 +52,10 @@ export default function PublicAgentLandingPage() {
     );
   }
 
+  if (typeof document !== 'undefined') document.title = `Book a meeting with ${agent.display_name}`;
+
   return (
     <>
-      <Helmet>
-        <title>{`Book a meeting with ${agent.display_name}`}</title>
-        <meta name="description" content={`Schedule a meeting with ${agent.display_name}${agent.brokerage ? ' · ' + agent.brokerage : ''}.`} />
-        <meta property="og:title" content={`Book ${agent.display_name}`} />
-      </Helmet>
 
       <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
         <div className="max-w-[760px] mx-auto px-6 py-12 sm:py-16">
