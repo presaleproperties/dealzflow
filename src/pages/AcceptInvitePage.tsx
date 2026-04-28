@@ -42,7 +42,7 @@ export default function AcceptInvitePage() {
         setError('Could not validate this invite. Please try again later.');
         return;
       }
-      const result = data as InviteInfo;
+      const result = data as unknown as InviteInfo;
       if (!result?.valid) {
         setStatus('invalid');
         const reasonCopy: Record<string, string> = {
