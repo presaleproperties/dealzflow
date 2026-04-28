@@ -1,6 +1,6 @@
 // CRM proxy → Presale Properties' bridge-list-templates.
 // Returns the live list of campaign_templates from Presale,
-// authenticated end-to-end with BRIDGE_SECRET.
+// authenticated with PRESALE_BRIDGE_SECRET + PRESALE_ANON_KEY.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,8 +8,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PRESALE_FUNCTIONS_URL =
+// Prefer the canonical Presale env names; fall back to legacy names so we
+// don't regress if only one set is provisioned.
+const BRIDGE_URL =
+  Deno.env.get("PRESALE_BRIDGE_URL") ??
   "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1";
+const BRIDGE_SECRET =
+  Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET") ?? "";
+const ANON_KEY = Deno.env.get("PRESALE_ANON_KEY") ?? "";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,9 +23,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const bridgeSecret = Deno.env.get("BRIDGE_SECRET");
-    if (!bridgeSecret) {
-      return json({ error: "BRIDGE_SECRET not configured" }, 500);
+    const missing: string[] = [];
+    if (!BRIDGE_SECRET) missing.push("PRESALE_BRIDGE_SECRET");
+    if (!ANON_KEY) missing.push("PRESALE_ANON_KEY");
+    if (missing.length) {
+      return json({ error: `Missing env: ${missing.join(", ")}`, templates: [] }, 500);
     }
 
     // Upstream (Presale) edge functions can cold-boot or briefly return 503.
@@ -28,11 +36,13 @@ Deno.serve(async (req) => {
     let text = "";
     let lastStatus = 0;
     for (let attempt = 0; attempt < 3; attempt++) {
-      res = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-list-templates`, {
+      res = await fetch(`${BRIDGE_URL}/bridge-list-templates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-bridge-secret": bridgeSecret,
+          "x-bridge-secret": BRIDGE_SECRET,
+          "Authorization": `Bearer ${ANON_KEY}`,
+          "apikey": ANON_KEY,
         },
         body: JSON.stringify({}),
       });
@@ -48,17 +58,24 @@ Deno.serve(async (req) => {
       console.error("bridge-list-templates upstream error", lastStatus, text);
       // Graceful fallback so the UI doesn't blank — return empty list w/ 200.
       return json(
-        { templates: [], upstream_error: true, status: lastStatus, body: text.slice(0, 200) },
+        { templates: [], upstream_error: true, status: lastStatus, body: text.slice(0, 300) },
         200,
       );
     }
 
-    let data: any;
-    try { data = JSON.parse(text); } catch { data = { templates: [] }; }
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { templates: [] };
+    }
     return json(data, 200);
   } catch (e) {
     console.error("bridge-templates error", e);
-    return json({ error: e instanceof Error ? e.message : "Internal error" }, 500);
+    return json(
+      { error: e instanceof Error ? e.message : "Internal error", templates: [] },
+      500,
+    );
   }
 });
 
