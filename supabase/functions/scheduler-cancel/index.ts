@@ -1,7 +1,9 @@
 // Public endpoint: cancel a booking (token-based, no auth required for invitee).
 // Token = booking id; we accept it because guessing a UUID is infeasible AND
-// status changes are reversible/auditable.
+// status changes are reversible/auditable. Best-effort: also delete the
+// linked Google Calendar event and send cancellation emails.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { deleteGoogleEvent } from '../_shared/google-calendar-busy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +29,7 @@ Deno.serve(async (req) => {
 
     const { data: existing, error: fetchErr } = await supabase
       .from('crm_scheduler_bookings')
-      .select('id, status, agent_user_id, contact_id, start_at, event_type_id')
+      .select('id, status, agent_user_id, contact_id, start_at, event_type_id, google_event_id, google_calendar_id')
       .eq('id', booking_id).maybeSingle();
     if (fetchErr) throw fetchErr;
     if (!existing) {
@@ -52,7 +54,14 @@ Deno.serve(async (req) => {
       .eq('id', booking_id);
     if (updErr) throw updErr;
 
-    // Notify agent in-app
+    // Best-effort: delete from Google Calendar
+    if (existing.google_event_id && existing.google_calendar_id) {
+      try {
+        await deleteGoogleEvent(supabase, existing.agent_user_id, existing.google_calendar_id, existing.google_event_id);
+      } catch (e) { console.warn('gcal delete failed', e); }
+    }
+
+    // In-app notification for agent
     try {
       await supabase.from('crm_notifications').insert({
         user_id: existing.agent_user_id,
@@ -63,6 +72,23 @@ Deno.serve(async (req) => {
         is_read: false,
       });
     } catch (e) { console.warn('notify failed', e); }
+
+    // Best-effort: cancellation emails to both sides
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const targets: string[] = by === 'agent'
+      ? ['invitee_cancellation']
+      : ['invitee_cancellation', 'agent_cancellation'];
+    for (const kind of targets) {
+      fetch(`${SUPABASE_URL}/functions/v1/scheduler-send-emails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
+        body: JSON.stringify({ kind, booking_id, reason: reason || null }),
+      }).catch((e) => console.warn(`cancel email ${kind} dispatch failed`, e));
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

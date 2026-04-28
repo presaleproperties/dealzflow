@@ -27,6 +27,7 @@ export default function PublicBookingPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<any>(null);
 
@@ -88,10 +89,21 @@ export default function PublicBookingPage() {
     return eachDayOfInterval({ start, end });
   }, [monthStart]);
 
+  const customQuestions: { key: string; text: string; required?: boolean; type?: 'text' | 'textarea' }[] =
+    Array.isArray(resolved?.event_type?.custom_questions) ? resolved.event_type.custom_questions : [];
+
+  const missingRequiredAnswers = customQuestions
+    .filter((q) => q.required)
+    .some((q) => !((answers[q.key] || '').trim()));
+
   const submit = async () => {
-    if (!selectedSlot || !name || (!email && !phone)) return;
+    if (!selectedSlot || !name || (!email && !phone) || missingRequiredAnswers) return;
     setSubmitting(true);
     try {
+      const answerPayload = customQuestions
+        .map((q) => ({ key: q.key, text: q.text, answer: answers[q.key] || null }))
+        .filter((a) => a.answer);
+
       const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-public-book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
@@ -99,6 +111,7 @@ export default function PublicBookingPage() {
           team_slug: teamSlug, event_slug: eventSlug, start_at: selectedSlot,
           timezone: inviteeTz,
           invitee: { name, email, phone, notes },
+          answers: answerPayload,
           referrer: document.referrer,
         }),
       });
@@ -282,9 +295,36 @@ export default function PublicBookingPage() {
                         placeholder="What would you like to discuss?"
                         className="w-full px-3 py-2 border border-neutral-200 rounded-md text-[14px] focus:outline-none focus:border-[#D7A542]" />
                     </div>
+
+                    {customQuestions.length > 0 && (
+                      <div className="space-y-3 pt-2 border-t border-neutral-200">
+                        {customQuestions.map((q) => (
+                          <div key={q.key}>
+                            <label className="text-[12px] text-neutral-600">
+                              {q.text}{q.required && <span className="text-[#D7A542]"> *</span>}
+                            </label>
+                            {q.type === 'textarea' ? (
+                              <textarea
+                                value={answers[q.key] || ''}
+                                onChange={(e) => setAnswers((a) => ({ ...a, [q.key]: e.target.value }))}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-neutral-200 rounded-md text-[14px] focus:outline-none focus:border-[#D7A542]"
+                              />
+                            ) : (
+                              <input
+                                value={answers[q.key] || ''}
+                                onChange={(e) => setAnswers((a) => ({ ...a, [q.key]: e.target.value }))}
+                                className="w-full px-3 py-2 border border-neutral-200 rounded-md text-[14px] focus:outline-none focus:border-[#D7A542]"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <button
                       onClick={submit}
-                      disabled={submitting || !name || (!email && !phone)}
+                      disabled={submitting || !name || (!email && !phone) || missingRequiredAnswers}
                       className="w-full py-3 bg-[#D7A542] hover:bg-[#c69537] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[14px] rounded-md transition-colors">
                       {submitting ? 'Booking…' : 'Confirm booking'}
                     </button>

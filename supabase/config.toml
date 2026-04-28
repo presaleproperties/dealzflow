@@ -80,3 +80,24 @@ verify_jwt = false
 
 [functions.backfill-presale-slugs]
 verify_jwt = false
+
+[functions.scheduler-public-agent]
+verify_jwt = false
+
+[functions.scheduler-public-resolve]
+verify_jwt = false
+
+[functions.scheduler-public-availability]
+verify_jwt = false
+
+[functions.scheduler-public-book]
+verify_jwt = false
+
+[functions.scheduler-cancel]
+verify_jwt = false
+
+[functions.scheduler-send-emails]
+verify_jwt = false
+
+[functions.scheduler-reminders]
+verify_jwt = false

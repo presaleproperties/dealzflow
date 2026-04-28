@@ -18,6 +18,8 @@ interface Props {
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+type Question = { key: string; text: string; required?: boolean; type?: 'text' | 'textarea' };
+
 export function SchedulerEventTypeEditor({ eventType, onClose, onCreate, onUpdate }: Props) {
   const isNew = !eventType;
   const [form, setForm] = useState<Partial<SchedulerEventType>>(
@@ -29,11 +31,14 @@ export function SchedulerEventTypeEditor({ eventType, onClose, onCreate, onUpdat
       creates_showing: false, requires_payment: false,
       price_cents: 0, currency: 'CAD', is_active: true,
       color: '#D7A542',
+      custom_questions: [],
     }
   );
   const [saving, setSaving] = useState(false);
 
   const update = (patch: Partial<SchedulerEventType>) => setForm(f => ({ ...f, ...patch }));
+  const questions: Question[] = (form.custom_questions as Question[]) || [];
+  const setQuestions = (qs: Question[]) => update({ custom_questions: qs });
 
   const submit = async () => {
     if (!form.title?.trim()) return;
@@ -176,6 +181,69 @@ export function SchedulerEventTypeEditor({ eventType, onClose, onCreate, onUpdat
               </div>
             </div>
           )}
+
+          {/* Custom questions */}
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-[13px]">Custom questions for invitees</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setQuestions([
+                  ...questions,
+                  { key: `q${questions.length + 1}`, text: '', required: false, type: 'text' },
+                ])}
+              >
+                + Add question
+              </Button>
+            </div>
+            {questions.length === 0 && (
+              <p className="text-[11.5px] text-muted-foreground">No custom questions. Invitees will only see name, email, phone, and notes.</p>
+            )}
+            <div className="space-y-2">
+              {questions.map((q, i) => (
+                <div key={i} className="grid grid-cols-[1fr_120px_90px_28px] gap-2 items-center">
+                  <Input
+                    value={q.text}
+                    placeholder="Question text"
+                    onChange={(e) => {
+                      const next = [...questions]; next[i] = { ...q, text: e.target.value };
+                      setQuestions(next);
+                    }}
+                  />
+                  <Select
+                    value={q.type || 'text'}
+                    onValueChange={(v: any) => {
+                      const next = [...questions]; next[i] = { ...q, type: v };
+                      setQuestions(next);
+                    }}
+                  >
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Short text</SelectItem>
+                      <SelectItem value="textarea">Long text</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <label className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={!!q.required}
+                      onChange={(e) => {
+                        const next = [...questions]; next[i] = { ...q, required: e.target.checked };
+                        setQuestions(next);
+                      }}
+                    />
+                    Required
+                  </label>
+                  <button
+                    aria-label="Remove question"
+                    onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
+                    className="text-muted-foreground hover:text-destructive text-[18px] leading-none"
+                  >×</button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
