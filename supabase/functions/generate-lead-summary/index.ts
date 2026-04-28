@@ -39,7 +39,7 @@ async function buildContext(supa: any, contactId: string) {
 
   const { data: showings } = await supa
     .from("crm_showings")
-    .select("property_name, showing_date, status")
+    .select("project, unit, showing_date, status")
     .eq("contact_id", contactId)
     .order("showing_date", { ascending: false })
     .limit(5);
