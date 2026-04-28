@@ -30,26 +30,25 @@ function HeroIdentity({ profile, onCopy, publicUrl }: { profile: any; onCopy: ()
   const focalY = profile?.headshot_focal_y ?? 30;
 
   return (
-    <Card className="relative overflow-hidden border-border bg-gradient-to-br from-card via-card to-[hsl(var(--accent))]/30">
+    <Card className="relative overflow-hidden border-border bg-gradient-to-br from-card via-card to-primary/5">
       {/* Editorial gold accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D7A542] to-transparent opacity-60" />
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70" />
       <div className="px-5 sm:px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-5">
         {profile?.headshot_url ? (
           <img src={profile.headshot_url} alt={profile.display_name}
-            className="w-[72px] h-[72px] rounded-full object-cover border border-border shadow-sm shrink-0"
+            className="w-[72px] h-[72px] rounded-full object-cover border border-border shadow-sm shrink-0 ring-1 ring-primary/20"
             style={{ objectPosition: `center ${focalY}%` }} />
         ) : (
-          <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-xl font-medium border border-border shrink-0"
-            style={{ background: '#D7A542', color: 'white', fontFamily: 'Georgia, serif' }}>
+          <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-xl font-semibold border border-border shrink-0 bg-primary text-primary-foreground tracking-tight">
             {initials}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-[24px] sm:text-[28px] font-semibold tracking-tight text-foreground leading-tight">
+          <h1 className="text-[24px] sm:text-[28px] font-bold tracking-[-0.028em] text-foreground leading-tight">
             {profile?.display_name || 'Your scheduler'}
           </h1>
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mt-1 text-[13px] text-muted-foreground">
-            {profile?.title && <span className="text-foreground/80">{profile.title}</span>}
+            {profile?.title && <span className="text-foreground/85 font-medium">{profile.title}</span>}
             {profile?.title && profile?.brokerage && <span className="text-muted-foreground/50">·</span>}
             {profile?.brokerage && <span>{profile.brokerage}</span>}
             {!profile?.title && !profile?.brokerage && (
@@ -65,8 +64,8 @@ function HeroIdentity({ profile, onCopy, publicUrl }: { profile: any; onCopy: ()
             <Button variant="outline" size="sm" onClick={onCopy} className="flex-1 sm:flex-none">
               <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy link
             </Button>
-            <Button variant="default" size="sm" onClick={() => window.open(publicUrl, '_blank')}
-              className="bg-[#D7A542] hover:bg-[#c69833] text-white border-0">
+            <Button size="sm" onClick={() => window.open(publicUrl, '_blank')}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-sm">
               <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Preview live
             </Button>
           </div>
