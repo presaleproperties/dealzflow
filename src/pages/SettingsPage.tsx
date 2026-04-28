@@ -57,11 +57,19 @@ export default function SettingsPage() {
   const updateSettings = useUpdateSettings();
   const refreshData = useRefreshData();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'general');
-  const [zapierWebhookUrl, setZapierWebhookUrl] = useState('');
-  const [notificationPhone, setNotificationPhone] = useState('');
-  const [testSending, setTestSending] = useState(false);
-  const [testSent, setTestSent] = useState(false);
+  const initialSection = (() => {
+    const tab = searchParams.get('tab');
+    const map: Record<string, string> = {
+      profile: 'settings-profile',
+      general: 'settings-goals',
+      tax: 'settings-tax',
+      subscription: 'settings-subscription',
+      integrations: 'settings-integrations',
+      notifications: 'settings-notifications',
+      data: 'settings-data',
+    };
+    return (tab && map[tab]) || 'settings-profile';
+  })();
   const [hasChanges, setHasChanges] = useState(false);
 
 
