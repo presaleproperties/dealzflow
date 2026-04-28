@@ -3094,30 +3094,39 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          invited_at: string | null
           invited_by: string | null
           is_active: boolean
+          name_aliases: string[]
+          permissions: Json
           role: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           email?: string | null
           id?: string
+          invited_at?: string | null
           invited_by?: string | null
           is_active?: boolean
+          name_aliases?: string[]
+          permissions?: Json
           role?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
           email?: string | null
           id?: string
+          invited_at?: string | null
           invited_by?: string | null
           is_active?: boolean
+          name_aliases?: string[]
+          permissions?: Json
           role?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -4635,6 +4644,14 @@ export type Database = {
         }[]
       }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
+      crm_can_see_contact: {
+        Args: { _assigned_to: string; _user_id: string }
+        Returns: boolean
+      }
+      crm_can_see_contact_id: {
+        Args: { _contact_id: string; _user_id: string }
+        Returns: boolean
+      }
       crm_distinct_sources: {
         Args: never
         Returns: {
@@ -4647,9 +4664,32 @@ export type Database = {
         Args: { _channel: string; _contact_id: string; _message_at?: string }
         Returns: string
       }
+      crm_has_perm: {
+        Args: { _perm: string; _user_id: string }
+        Returns: boolean
+      }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
+      }
+      crm_team_invite: {
+        Args: {
+          _display_name: string
+          _email: string
+          _permissions?: Json
+          _role?: string
+        }
+        Returns: Json
+      }
+      crm_team_update: {
+        Args: {
+          _is_active: boolean
+          _name_aliases: string[]
+          _permissions: Json
+          _role: string
+          _team_id: string
+        }
+        Returns: undefined
       }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }

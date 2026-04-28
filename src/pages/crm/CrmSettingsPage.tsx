@@ -237,12 +237,34 @@ export default function CrmSettingsPage() {
 /* ══════════════════════════════════════════
    1. Team Management
    ══════════════════════════════════════════ */
+type TeamPerms = {
+  see_all_leads?: boolean;
+  delete_leads?: boolean;
+  export_leads?: boolean;
+  reassign_leads?: boolean;
+  manage_templates?: boolean;
+  manage_routing?: boolean;
+  manage_team?: boolean;
+};
+
+const PERMISSION_LIST: { key: keyof TeamPerms; label: string; desc: string }[] = [
+  { key: 'see_all_leads', label: 'See all leads', desc: 'View every lead in the workspace, not just assigned ones.' },
+  { key: 'reassign_leads', label: 'Reassign leads', desc: 'Change which agent a lead belongs to.' },
+  { key: 'delete_leads', label: 'Delete leads', desc: 'Permanently remove leads from the CRM.' },
+  { key: 'export_leads', label: 'Export leads', desc: 'Download lead lists as CSV.' },
+  { key: 'manage_templates', label: 'Manage templates', desc: 'Create and edit shared email/SMS templates.' },
+  { key: 'manage_routing', label: 'Manage routing', desc: 'Configure lead routing rules and assignments.' },
+  { key: 'manage_team', label: 'Manage team', desc: 'Invite and manage other team members.' },
+];
+
 function TeamManagement() {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('agent');
   const [inviteName, setInviteName] = useState('');
+  const [permsEditId, setPermsEditId] = useState<string | null>(null);
+  const [permsDraft, setPermsDraft] = useState<TeamPerms>({});
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['crm-team-members'],
@@ -258,7 +280,9 @@ function TeamManagement() {
 
   const updateRole = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const { error } = await supabase.from('crm_team').update({ role }).eq('id', id);
+      const { error } = await supabase.rpc('crm_team_update', {
+        _team_id: id, _role: role, _permissions: null, _is_active: null, _name_aliases: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -270,7 +294,9 @@ function TeamManagement() {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from('crm_team').update({ is_active }).eq('id', id);
+      const { error } = await supabase.rpc('crm_team_update', {
+        _team_id: id, _role: null, _permissions: null, _is_active: is_active, _name_aliases: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -292,19 +318,34 @@ function TeamManagement() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const inviteMember = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('crm_team').insert({
-        user_id: crypto.randomUUID(),
-        email: inviteEmail,
-        display_name: inviteName || null,
-        role: inviteRole,
+  const savePerms = useMutation({
+    mutationFn: async ({ id, perms }: { id: string; perms: TeamPerms }) => {
+      const { error } = await supabase.rpc('crm_team_update', {
+        _team_id: id, _role: null, _permissions: perms as any, _is_active: null, _name_aliases: null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
-      toast.success('Team member added');
+      toast.success('Permissions updated');
+      setPermsEditId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const inviteMember = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('crm_team_invite', {
+        _email: inviteEmail.trim(),
+        _display_name: inviteName.trim(),
+        _role: inviteRole,
+        _permissions: {} as any,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
+      toast.success('Team member invited. They will be linked when they sign up.');
       setInviteOpen(false);
       setInviteEmail('');
       setInviteName('');
@@ -392,32 +433,49 @@ function TeamManagement() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
-                      {format(new Date(m.created_at), 'MMM d, yyyy')}
+                      {m.user_id
+                        ? format(new Date(m.created_at), 'MMM d, yyyy')
+                        : <span className="text-amber-600 dark:text-amber-500">Awaiting signup</span>}
                     </TableCell>
                     <TableCell className="text-right">
-                      {!isOwner && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive min-h-[44px] sm:min-h-0">
-                              Remove
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {m.display_name || m.email} will lose access to the CRM.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
+                      <div className="flex items-center justify-end gap-1">
+                        {!isOwner && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-xs"
+                            onClick={() => {
+                              setPermsEditId(m.id);
+                              setPermsDraft((m.permissions ?? {}) as TeamPerms);
+                            }}
+                          >
+                            Permissions
+                          </Button>
+                        )}
+                        {!isOwner && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-8 px-2 text-xs">
                                 Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {m.display_name || m.email} will lose access to the CRM.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -426,6 +484,38 @@ function TeamManagement() {
           </Table>
         </div>
       </CardContent>
+
+      {/* Permissions Dialog */}
+      <Dialog open={!!permsEditId} onOpenChange={(o) => !o && setPermsEditId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Permissions</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2 max-h-[60vh] overflow-y-auto">
+            {PERMISSION_LIST.map(p => (
+              <div key={p.key} className="flex items-start justify-between gap-3 py-1">
+                <div className="space-y-0.5 flex-1 min-w-0">
+                  <div className="text-sm font-medium">{p.label}</div>
+                  <div className="text-xs text-muted-foreground">{p.desc}</div>
+                </div>
+                <Switch
+                  checked={!!permsDraft[p.key]}
+                  onCheckedChange={(v) => setPermsDraft((d) => ({ ...d, [p.key]: v }))}
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setPermsEditId(null)}>Cancel</Button>
+            <Button
+              disabled={savePerms.isPending}
+              onClick={() => permsEditId && savePerms.mutate({ id: permsEditId, perms: permsDraft })}
+            >
+              {savePerms.isPending ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
@@ -465,7 +555,7 @@ function TeamManagement() {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              This person needs an account first. Ask them to sign up with this email.
+              They'll be auto-linked when they sign up with this email. Their Presale headshot &amp; signature pull automatically on first login.
             </p>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
