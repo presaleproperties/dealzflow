@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import {
-  Send, Phone, StickyNote, Clock, Mail, MessageSquare, Settings2, Loader2,
+  Send, Phone, StickyNote, Clock, Mail, MessageSquare, Settings2, Loader2, Sparkles, RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
