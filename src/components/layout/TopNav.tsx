@@ -343,7 +343,7 @@ export function TopNav() {
 
           {/* Right-aligned global CRM search */}
           <div className="flex-1 flex justify-end">
-            {isCrmMember && (
+            {isCrmMember && location.pathname.startsWith('/crm') && (
               <div className="hidden md:block">
                 <GlobalLeadSearch />
               </div>
