@@ -237,12 +237,34 @@ export default function CrmSettingsPage() {
 /* ══════════════════════════════════════════
    1. Team Management
    ══════════════════════════════════════════ */
+type TeamPerms = {
+  see_all_leads?: boolean;
+  delete_leads?: boolean;
+  export_leads?: boolean;
+  reassign_leads?: boolean;
+  manage_templates?: boolean;
+  manage_routing?: boolean;
+  manage_team?: boolean;
+};
+
+const PERMISSION_LIST: { key: keyof TeamPerms; label: string; desc: string }[] = [
+  { key: 'see_all_leads', label: 'See all leads', desc: 'View every lead in the workspace, not just assigned ones.' },
+  { key: 'reassign_leads', label: 'Reassign leads', desc: 'Change which agent a lead belongs to.' },
+  { key: 'delete_leads', label: 'Delete leads', desc: 'Permanently remove leads from the CRM.' },
+  { key: 'export_leads', label: 'Export leads', desc: 'Download lead lists as CSV.' },
+  { key: 'manage_templates', label: 'Manage templates', desc: 'Create and edit shared email/SMS templates.' },
+  { key: 'manage_routing', label: 'Manage routing', desc: 'Configure lead routing rules and assignments.' },
+  { key: 'manage_team', label: 'Manage team', desc: 'Invite and manage other team members.' },
+];
+
 function TeamManagement() {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<string>('agent');
   const [inviteName, setInviteName] = useState('');
+  const [permsEditId, setPermsEditId] = useState<string | null>(null);
+  const [permsDraft, setPermsDraft] = useState<TeamPerms>({});
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['crm-team-members'],
@@ -258,7 +280,9 @@ function TeamManagement() {
 
   const updateRole = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const { error } = await supabase.from('crm_team').update({ role }).eq('id', id);
+      const { error } = await supabase.rpc('crm_team_update', {
+        _team_id: id, _role: role, _permissions: null, _is_active: null, _name_aliases: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -270,7 +294,9 @@ function TeamManagement() {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from('crm_team').update({ is_active }).eq('id', id);
+      const { error } = await supabase.rpc('crm_team_update', {
+        _team_id: id, _role: null, _permissions: null, _is_active: is_active, _name_aliases: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -292,19 +318,34 @@ function TeamManagement() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const inviteMember = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('crm_team').insert({
-        user_id: crypto.randomUUID(),
-        email: inviteEmail,
-        display_name: inviteName || null,
-        role: inviteRole,
+  const savePerms = useMutation({
+    mutationFn: async ({ id, perms }: { id: string; perms: TeamPerms }) => {
+      const { error } = await supabase.rpc('crm_team_update', {
+        _team_id: id, _role: null, _permissions: perms as any, _is_active: null, _name_aliases: null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
-      toast.success('Team member added');
+      toast.success('Permissions updated');
+      setPermsEditId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const inviteMember = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('crm_team_invite', {
+        _email: inviteEmail.trim(),
+        _display_name: inviteName.trim(),
+        _role: inviteRole,
+        _permissions: {} as any,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
+      toast.success('Team member invited. They will be linked when they sign up.');
       setInviteOpen(false);
       setInviteEmail('');
       setInviteName('');
