@@ -223,12 +223,12 @@ export function SchedulerTeamPrefillCard() {
             return (
               <Card key={s.label} className="px-3 py-2">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{s.label}</span>
+                  <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">{s.label}</span>
                   <span className="text-[11px] tabular-nums text-muted-foreground">{s.value}/{s.total}</span>
                 </div>
                 <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full bg-[#D7A542] transition-all"
+                    className="h-full bg-primary transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
