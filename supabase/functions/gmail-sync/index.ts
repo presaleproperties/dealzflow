@@ -136,12 +136,12 @@ serve(async (req) => {
     // 4. Build a contact-email lookup once
     const { data: contacts } = await supabase
       .from("crm_contacts")
-      .select("id, email, secondary_email, first_name, last_name")
-      .or("email.not.is.null,secondary_email.not.is.null");
+      .select("id, email, email_secondary, first_name, last_name")
+      .or("email.not.is.null,email_secondary.not.is.null");
     const emailToContact = new Map<string, string>();
     for (const c of contacts ?? []) {
       if (c.email) emailToContact.set(c.email.toLowerCase(), c.id);
-      if (c.secondary_email) emailToContact.set(c.secondary_email.toLowerCase(), c.id);
+      if (c.email_secondary) emailToContact.set(c.email_secondary.toLowerCase(), c.id);
     }
 
     // 5. Fetch + insert in batches
