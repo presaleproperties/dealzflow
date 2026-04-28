@@ -97,7 +97,7 @@ function CompletenessChecklist({ profile, eventTypes, availability }: { profile:
         <span className="text-[12px] text-muted-foreground tabular-nums">{done}/{items.length}</span>
       </div>
       <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
-        <div className="h-full bg-[#D7A542] transition-all duration-500" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
         {items.map((i) => (
