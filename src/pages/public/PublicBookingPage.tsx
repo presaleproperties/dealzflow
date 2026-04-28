@@ -392,7 +392,7 @@ export default function PublicBookingPage() {
                       onClick={submit}
                       disabled={submitting || !name || (!email && !phone) || missingRequiredAnswers}
                       className="w-full py-3 bg-[#D7A542] hover:bg-[#c69537] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[14px] rounded-md transition-colors">
-                      {submitting ? 'Booking…' : 'Confirm booking'}
+                      {submitting ? (rescheduleId ? 'Rescheduling…' : (evt.requires_payment ? 'Redirecting to payment…' : 'Booking…')) : (rescheduleId ? 'Confirm new time' : (evt.requires_payment ? `Continue to payment · ${(evt.price_cents/100).toLocaleString('en-US',{style:'currency',currency:evt.currency||'CAD'})}` : 'Confirm booking'))}
                     </button>
                   </div>
                 </>
