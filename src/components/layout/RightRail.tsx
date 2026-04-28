@@ -239,11 +239,13 @@ export function RightRail() {
     <>
       {/* Right rail — desktop only */}
       <aside
-        className="hidden lg:flex fixed top-0 right-0 h-dvh w-[52px] z-30 flex-col items-center"
+        className="hidden lg:flex fixed right-0 w-[52px] z-30 flex-col items-center"
         style={{
+          top: 54,
+          height: 'calc(100dvh - 54px)',
           background: RAIL_BG,
           borderLeft: `1px solid ${RAIL_BORDER}`,
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+          paddingTop: 14,
         }}
       >
         {/* Account dropdown */}
