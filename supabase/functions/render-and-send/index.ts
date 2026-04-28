@@ -137,8 +137,11 @@ Deno.serve(async (req) => {
           phone: contact.phone,
         },
         project_slug,
+        // Bridge requires one of agent_id / agent_email / agent_auth_user_id
+        agent_auth_user_id: user.id,
+        agent_email: user.email ?? null,
         agent: {
-          display_name: contact.assigned_to ||
+          display_name:
             (user.user_metadata as { full_name?: string } | null)?.full_name ||
             user.email || "",
         },
