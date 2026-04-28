@@ -7,7 +7,6 @@ import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/u
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
-import { ConversationHealthStrip } from '@/components/crm/leads/ConversationHealthStrip';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
