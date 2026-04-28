@@ -279,6 +279,7 @@ export default function LeadDetailPage() {
               onCall={onCall}
               onText={onSms}
               onEmail={() => setShowEmail(true)}
+              onSendProject={() => setShowSendProject(true)}
               leadScore={leadScore}
               lastTouchHours={lastTouchHours}
             />
