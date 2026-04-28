@@ -49,22 +49,22 @@ export function RightSidebar({
         />
       </div>
 
-      {/* ② At-a-glance — Score, Stage, Days in stage, Sends, Open rate, Last touch */}
+      {/* ② Upcoming — next task + next showing only (moved above KPIs) */}
+      <UpcomingMini
+        contactId={contact.id}
+        onAddTask={onAddTask}
+        onAddShowing={onAddShowing}
+      />
+
+      {/* ③ At-a-glance — Score, Stage, Days in stage, Sends, Open rate, Last touch */}
       <AtAGlanceCard
         contact={contact}
         leadScore={leadScore}
         lastTouchHours={lastTouchHours}
       />
 
-      {/* ③ Unified engagement (replaces 5 widgets) */}
+      {/* ④ Unified engagement (replaces 5 widgets) */}
       <EngagementTabs contact={contact} />
-
-      {/* ④ Upcoming — next task + next showing only */}
-      <UpcomingMini
-        contactId={contact.id}
-        onAddTask={onAddTask}
-        onAddShowing={onAddShowing}
-      />
 
       {/* ⑤ Debug — collapsed by default, hidden noise */}
       <details className="rounded-xl border border-border/60 bg-card/50 group">
