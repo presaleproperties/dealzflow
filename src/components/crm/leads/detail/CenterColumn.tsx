@@ -182,6 +182,9 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-3 md:p-6 space-y-3 md:space-y-5">
         <div className="px-4 md:px-0">
+          <ConversationHealthStrip contactId={contact.id} />
+        </div>
+        <div className="px-4 md:px-0">
           <QuickActionBar contact={contact} />
         </div>
 
