@@ -87,6 +87,31 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  const { data: teamAgent } = await supabase
+    .from("crm_team")
+    .select("slug, email, gmail_address, display_name, presale_snapshot")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  const presaleSnapshot = (teamAgent?.presale_snapshot ?? {}) as Record<string, unknown>;
+  const agentSlug =
+    (typeof presaleSnapshot.slug === "string" && presaleSnapshot.slug) ||
+    teamAgent?.slug ||
+    null;
+  const agentEmail =
+    (typeof presaleSnapshot.email === "string" && presaleSnapshot.email) ||
+    teamAgent?.email ||
+    teamAgent?.gmail_address ||
+    user.email ||
+    null;
+  const agentName =
+    (typeof presaleSnapshot.name === "string" && presaleSnapshot.name) ||
+    teamAgent?.display_name ||
+    (user.user_metadata as { full_name?: string } | null)?.full_name ||
+    user.email ||
+    "";
+
   // (a) contact
   const { data: contact, error: contactErr } = await supabase
     .from("crm_contacts")
@@ -137,13 +162,16 @@ Deno.serve(async (req) => {
           phone: contact.phone,
         },
         project_slug,
-        // Bridge requires one of agent_id / agent_email / agent_auth_user_id
+        // Prefer the Presale agent identity synced into crm_team; auth email/id
+        // often differs from the Presale agent record and causes 404s.
+        agent_slug: agentSlug,
+        agent_id: agentSlug,
         agent_auth_user_id: user.id,
-        agent_email: user.email ?? null,
+        agent_email: agentEmail,
         agent: {
-          display_name:
-            (user.user_metadata as { full_name?: string } | null)?.full_name ||
-            user.email || "",
+          slug: agentSlug,
+          email: agentEmail,
+          display_name: agentName,
         },
       }),
     });
