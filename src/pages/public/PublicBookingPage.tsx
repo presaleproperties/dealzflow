@@ -89,10 +89,21 @@ export default function PublicBookingPage() {
     return eachDayOfInterval({ start, end });
   }, [monthStart]);
 
+  const customQuestions: { key: string; text: string; required?: boolean; type?: 'text' | 'textarea' }[] =
+    Array.isArray(resolved?.event_type?.custom_questions) ? resolved.event_type.custom_questions : [];
+
+  const missingRequiredAnswers = customQuestions
+    .filter((q) => q.required)
+    .some((q) => !((answers[q.key] || '').trim()));
+
   const submit = async () => {
-    if (!selectedSlot || !name || (!email && !phone)) return;
+    if (!selectedSlot || !name || (!email && !phone) || missingRequiredAnswers) return;
     setSubmitting(true);
     try {
+      const answerPayload = customQuestions
+        .map((q) => ({ key: q.key, text: q.text, answer: answers[q.key] || null }))
+        .filter((a) => a.answer);
+
       const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-public-book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
@@ -100,6 +111,7 @@ export default function PublicBookingPage() {
           team_slug: teamSlug, event_slug: eventSlug, start_at: selectedSlot,
           timezone: inviteeTz,
           invitee: { name, email, phone, notes },
+          answers: answerPayload,
           referrer: document.referrer,
         }),
       });
