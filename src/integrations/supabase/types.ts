@@ -401,8 +401,15 @@ export type Database = {
           automation_id: string
           contact_id: string | null
           created_at: string
+          current_step_order: number
+          enrolled_at: string
           error_message: string | null
+          exit_reason: string | null
+          exited_at: string | null
           id: string
+          next_step_due_at: string | null
+          project_slug: string | null
+          status: string
           trigger_data: Json | null
         }
         Insert: {
@@ -410,8 +417,15 @@ export type Database = {
           automation_id: string
           contact_id?: string | null
           created_at?: string
+          current_step_order?: number
+          enrolled_at?: string
           error_message?: string | null
+          exit_reason?: string | null
+          exited_at?: string | null
           id?: string
+          next_step_due_at?: string | null
+          project_slug?: string | null
+          status?: string
           trigger_data?: Json | null
         }
         Update: {
@@ -419,8 +433,15 @@ export type Database = {
           automation_id?: string
           contact_id?: string | null
           created_at?: string
+          current_step_order?: number
+          enrolled_at?: string
           error_message?: string | null
+          exit_reason?: string | null
+          exited_at?: string | null
           id?: string
+          next_step_due_at?: string | null
+          project_slug?: string | null
+          status?: string
           trigger_data?: Json | null
         }
         Relationships: [
@@ -446,6 +467,8 @@ export type Database = {
           action_type: string
           automation_id: string
           created_at: string | null
+          delay_hours: number
+          exit_condition: string | null
           id: string
           step_order: number
         }
@@ -454,6 +477,8 @@ export type Database = {
           action_type: string
           automation_id: string
           created_at?: string | null
+          delay_hours?: number
+          exit_condition?: string | null
           id?: string
           step_order: number
         }
@@ -462,6 +487,8 @@ export type Database = {
           action_type?: string
           automation_id?: string
           created_at?: string | null
+          delay_hours?: number
+          exit_condition?: string | null
           id?: string
           step_order?: number
         }
@@ -484,10 +511,12 @@ export type Database = {
           last_run_at: string | null
           name: string
           runs_count: number
+          slug: string | null
           total_converted: number | null
           total_enrolled: number | null
           trigger_config: Json | null
           trigger_type: string
+          updated_at: string
         }
         Insert: {
           created_at?: string | null
@@ -497,10 +526,12 @@ export type Database = {
           last_run_at?: string | null
           name: string
           runs_count?: number
+          slug?: string | null
           total_converted?: number | null
           total_enrolled?: number | null
           trigger_config?: Json | null
           trigger_type: string
+          updated_at?: string
         }
         Update: {
           created_at?: string | null
@@ -510,10 +541,12 @@ export type Database = {
           last_run_at?: string | null
           name?: string
           runs_count?: number
+          slug?: string | null
           total_converted?: number | null
           total_enrolled?: number | null
           trigger_config?: Json | null
           trigger_type?: string
+          updated_at?: string
         }
         Relationships: []
       }
