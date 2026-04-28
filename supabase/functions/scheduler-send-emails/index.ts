@@ -84,21 +84,21 @@ Deno.serve(async (req) => {
     const evtRow = evt || {} as any;
     const agentRow = agent || {} as any;
     const inviteeName = `${booking.invitee_first_name} ${booking.invitee_last_name === "(unknown)" ? "" : booking.invitee_last_name}`.trim();
-    const agentName = agent.display_name || agent.email || "Your agent";
-    const teamSlug = agent.slug;
+    const agentName = agentRow.display_name || agentRow.email || "Your agent";
+    const teamSlug = agentRow.slug;
 
     const cancelUrl = teamSlug ? `${PUBLIC_BASE}/book/${teamSlug}/cancel?b=${booking.id}` : null;
-    const rescheduleUrl = teamSlug && evt.slug ? `${PUBLIC_BASE}/book/${teamSlug}/${evt.slug}?reschedule=${booking.id}` : null;
+    const rescheduleUrl = teamSlug && evtRow.slug ? `${PUBLIC_BASE}/book/${teamSlug}/${evtRow.slug}?reschedule=${booking.id}` : null;
 
     const ctx = {
       agentName,
-      agentEmail: agent.email,
-      agentPhone: agent.phone,
+      agentEmail: agentRow.email,
+      agentPhone: null,
       inviteeName: inviteeName || "there",
-      eventTitle: evt.title || "Meeting",
+      eventTitle: evtRow.title || "Meeting",
       startAt: booking.start_at,
       durationMin: booking.duration_min,
-      timezone: booking.invitee_timezone || agent.timezone || "America/Vancouver",
+      timezone: booking.invitee_timezone || agentRow.timezone || "America/Vancouver",
       locationType: booking.location_type,
       locationValue: booking.location_value,
       meetingLink: booking.meeting_link,
@@ -113,21 +113,21 @@ Deno.serve(async (req) => {
       const { subject, html } = buildInviteeConfirmation(ctx);
       sends.push(sendSchedulerEmail({ to: booking.invitee_email, subject, html }));
     }
-    if (kind === "agent_notification" && agent.email) {
+    if (kind === "agent_notification" && agentRow.email) {
       const { subject, html } = buildAgentNotification({
         ...ctx,
         inviteeEmail: booking.invitee_email,
         inviteePhone: booking.invitee_phone,
       });
-      sends.push(sendSchedulerEmail({ to: agent.email, subject, html }));
+      sends.push(sendSchedulerEmail({ to: agentRow.email, subject, html }));
     }
     if (kind === "invitee_cancellation" && booking.invitee_email) {
       const { subject, html } = buildCancellationEmail({ ...ctx, audience: "invitee", reason: reason ?? booking.cancellation_reason });
       sends.push(sendSchedulerEmail({ to: booking.invitee_email, subject, html }));
     }
-    if (kind === "agent_cancellation" && agent.email) {
+    if (kind === "agent_cancellation" && agentRow.email) {
       const { subject, html } = buildCancellationEmail({ ...ctx, audience: "agent", reason: reason ?? booking.cancellation_reason });
-      sends.push(sendSchedulerEmail({ to: agent.email, subject, html }));
+      sends.push(sendSchedulerEmail({ to: agentRow.email, subject, html }));
     }
     if (kind === "reminder" && booking.invitee_email) {
       const { subject, html } = buildReminderEmail({ ...ctx, reminderLabel: reminder_label || "Upcoming meeting" });
