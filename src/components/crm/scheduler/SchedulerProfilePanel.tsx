@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useAgentSchedulerProfile, useUpdateAgentSchedulerProfile } from '@/hooks/useScheduler';
-import { usePresaleAgent } from '@/stores/usePresaleAgent';
+import { usePresaleAgent, usePresaleAgentStore } from '@/stores/usePresaleAgent';
 import { toast } from 'sonner';
 import { Sparkles, Check, Loader2 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ export function SchedulerProfilePanel() {
     if (presaleStatus !== 'ready' || !presaleAgent) {
       await refreshPresale({ force: true });
     }
-    const a = usePresaleAgentStoreRead();
+    const a = usePresaleAgentStore.getState().agent;
     if (!a) {
       toast.error('No matching Presale agent found for your email');
       return;
@@ -43,7 +43,6 @@ export function SchedulerProfilePanel() {
     if (a.headshotUrl) patch.headshot_url = a.headshotUrl;
     if (a.brokerage) patch.brokerage = a.brokerage;
     if (a.licenseNumber) patch.license_no = a.licenseNumber;
-    if (a.name && !form.display_name) patch.display_name = a.name;
     setForm({ ...form, ...patch });
     toast.success('Imported from Presale Properties — review then click Save');
   };
