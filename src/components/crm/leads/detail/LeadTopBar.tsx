@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -11,6 +11,7 @@ interface Props {
   onNavigate: (dir: 'prev' | 'next') => void;
   onTask: () => void;
   onShowing: () => void;
+  onSendProject: () => void;
   /** Show "Task" CTA only when the left details panel is collapsed. */
   showTaskCta?: boolean;
   /** Show "Book Showing" CTA only when the right insights panel is collapsed. */
