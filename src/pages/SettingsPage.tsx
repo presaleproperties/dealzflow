@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Save, MapPin, Building2, User, Info, Moon, Sun, Monitor, 
-  Download, Trash2, AlertTriangle, PiggyBank, Crown, Check, Sparkles, 
-  Target, Palette, CreditCard, Database, Settings2, 
+import {
+  Save, MapPin, Building2, User, Info, Moon, Sun, Monitor,
+  Download, Trash2, AlertTriangle, PiggyBank, Crown, Check, Sparkles,
+  Target, Palette, CreditCard, Database, Settings2,
   DollarSign, Percent, Calendar, Shield, TrendingUp, Wallet, Plug, Bell, BellRing,
-  ExternalLink, Send, CheckCircle2, Phone
+  ExternalLink, Send, CheckCircle2, Phone, UserCircle2,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useNavigate } from 'react-router-dom';
@@ -18,8 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useDataExport } from '@/hooks/useDataExport';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -40,6 +40,17 @@ import ProfileSection from '@/components/settings/ProfileSection';
 
 
 const springConfig = { type: "spring" as const, stiffness: 120, damping: 20 };
+
+// Sticky left-nav sections — same pattern as CrmSettingsPage
+const SETTINGS_SECTIONS = [
+  { id: 'settings-profile',       label: 'Profile',       icon: UserCircle2 },
+  { id: 'settings-goals',         label: 'Goals',         icon: Target },
+  { id: 'settings-tax',           label: 'Tax & Finance', icon: Shield },
+  { id: 'settings-subscription',  label: 'Plan',          icon: Crown },
+  { id: 'settings-integrations',  label: 'Integrations',  icon: Plug },
+  { id: 'settings-notifications', label: 'Notifications', icon: BellRing },
+  { id: 'settings-data',          label: 'Data',          icon: Database },
+] as const;
 
 export default function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
