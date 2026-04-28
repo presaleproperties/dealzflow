@@ -625,7 +625,7 @@ function TemplatesTab({ templates }: { templates: any[] }) {
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
   const sample = useMemo(() => Object.fromEntries(SMS_VARIABLES.map(v => [v.tag.replace(/[{}]/g, '').trim(), v.sample])), []);
-  const myPhone = settings?.test_phone || numbers.find((n: any) => n.is_active)?.phone;
+  const myPhone = (settings as any)?.test_phone || numbers.find((n: any) => n.is_active)?.phone;
 
   const installStarterPack = async () => {
     let installed = 0;
