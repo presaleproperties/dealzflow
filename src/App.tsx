@@ -72,6 +72,7 @@ import LeadDetailPage from "./pages/crm/LeadDetailPage";
 import CrmSchedulerPage from "./pages/crm/CrmSchedulerPage";
 import PublicAgentLandingPage from "./pages/public/PublicAgentLandingPage";
 import PublicBookingPage from "./pages/public/PublicBookingPage";
+import PublicBookingPaidPage from "./pages/public/PublicBookingPaidPage";
 
 import { idbPersister } from "./lib/queryPersister";
 
@@ -239,6 +240,7 @@ const App = () => (
                   {/* Public booking pages — no auth */}
                   <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
                   <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
+                  <Route path="/book/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

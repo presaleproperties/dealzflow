@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 
-import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check, CreditCard } from 'lucide-react';
 import { addDays, format, startOfDay, isSameDay, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore } from 'date-fns';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -9,6 +9,8 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export default function PublicBookingPage() {
   const { teamSlug, eventSlug } = useParams<{ teamSlug: string; eventSlug: string }>();
+  const [searchParams] = useSearchParams();
+  const rescheduleId = searchParams.get('reschedule');
   const navigate = useNavigate();
   const [resolved, setResolved] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -104,6 +106,59 @@ export default function PublicBookingPage() {
         .map((q) => ({ key: q.key, text: q.text, answer: answers[q.key] || null }))
         .filter((a) => a.answer);
 
+      // Reschedule path
+      if (rescheduleId) {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-reschedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
+          body: JSON.stringify({
+            booking_id: rescheduleId,
+            new_start_at: selectedSlot,
+            timezone: inviteeTz,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          alert(json.error === 'slot_taken' ? 'That slot was just taken. Please pick another.' :
+                json.error === 'already_cancelled' ? 'This booking has already been cancelled.' :
+                'Could not reschedule. Please try again.');
+          if (json.error === 'slot_taken') { setSelectedSlot(null); setStep(1); }
+          setSubmitting(false);
+          return;
+        }
+        setConfirmation(json.confirmation);
+        setStep(3);
+        setSubmitting(false);
+        return;
+      }
+
+      // Paid event: kick off Stripe Checkout
+      if (resolved?.event_type?.requires_payment && resolved?.event_type?.price_cents) {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-create-checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
+          body: JSON.stringify({
+            team_slug: teamSlug, event_slug: eventSlug, start_at: selectedSlot,
+            timezone: inviteeTz,
+            invitee: { name, email, phone, notes },
+            answers: answerPayload,
+            referrer: document.referrer,
+            origin: window.location.origin,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.url) {
+          alert(json.error === 'stripe_not_configured'
+            ? 'Payments are not yet set up for this account. Please contact the agent.'
+            : 'Could not start checkout. Please try again.');
+          setSubmitting(false);
+          return;
+        }
+        window.location.href = json.url;
+        return;
+      }
+
+      // Free event: book directly
       const res = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-public-book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY },
@@ -194,7 +249,18 @@ export default function PublicBookingPage() {
                    evt.location_type === 'in_person' ? 'In person' :
                    evt.location_type === 'phone' ? 'Phone call' : 'Custom'}
                 </div>
+                {evt.requires_payment && evt.price_cents > 0 && (
+                  <div className="flex items-center gap-2 text-[#D7A542] font-medium">
+                    <CreditCard className="w-3.5 h-3.5" />
+                    {(evt.price_cents / 100).toLocaleString('en-US', { style: 'currency', currency: evt.currency || 'CAD' })}
+                  </div>
+                )}
               </div>
+              {rescheduleId && (
+                <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-md text-[12px] text-amber-900">
+                  Rescheduling — your original time will be cancelled when you confirm a new slot.
+                </div>
+              )}
               {evt.description && <p className="text-[13px] text-neutral-600 mt-4 leading-relaxed">{evt.description}</p>}
             </div>
 
@@ -326,7 +392,7 @@ export default function PublicBookingPage() {
                       onClick={submit}
                       disabled={submitting || !name || (!email && !phone) || missingRequiredAnswers}
                       className="w-full py-3 bg-[#D7A542] hover:bg-[#c69537] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[14px] rounded-md transition-colors">
-                      {submitting ? 'Booking…' : 'Confirm booking'}
+                      {submitting ? (rescheduleId ? 'Rescheduling…' : (evt.requires_payment ? 'Redirecting to payment…' : 'Booking…')) : (rescheduleId ? 'Confirm new time' : (evt.requires_payment ? `Continue to payment · ${(evt.price_cents/100).toLocaleString('en-US',{style:'currency',currency:evt.currency||'CAD'})}` : 'Confirm booking'))}
                     </button>
                   </div>
                 </>

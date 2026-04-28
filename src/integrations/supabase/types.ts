@@ -2538,9 +2538,11 @@ export type Database = {
           payment_status: string | null
           referrer: string | null
           rescheduled_from_id: string | null
+          rescheduled_to_booking_id: string | null
           start_at: string
           status: string
           stripe_payment_id: string | null
+          stripe_payment_intent: string | null
           stripe_session_id: string | null
           updated_at: string
           user_agent: string | null
@@ -2575,9 +2577,11 @@ export type Database = {
           payment_status?: string | null
           referrer?: string | null
           rescheduled_from_id?: string | null
+          rescheduled_to_booking_id?: string | null
           start_at: string
           status?: string
           stripe_payment_id?: string | null
+          stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           updated_at?: string
           user_agent?: string | null
@@ -2612,9 +2616,11 @@ export type Database = {
           payment_status?: string | null
           referrer?: string | null
           rescheduled_from_id?: string | null
+          rescheduled_to_booking_id?: string | null
           start_at?: string
           status?: string
           stripe_payment_id?: string | null
+          stripe_payment_intent?: string | null
           stripe_session_id?: string | null
           updated_at?: string
           user_agent?: string | null
@@ -2631,6 +2637,13 @@ export type Database = {
           {
             foreignKeyName: "crm_scheduler_bookings_rescheduled_from_id_fkey"
             columns: ["rescheduled_from_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduler_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_scheduler_bookings_rescheduled_to_booking_id_fkey"
+            columns: ["rescheduled_to_booking_id"]
             isOneToOne: false
             referencedRelation: "crm_scheduler_bookings"
             referencedColumns: ["id"]
@@ -2717,6 +2730,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      crm_scheduler_payment_intents: {
+        Row: {
+          amount_cents: number
+          answers_payload: Json
+          booking_id: string | null
+          created_at: string
+          currency: string
+          event_slug: string
+          id: string
+          invitee_payload: Json
+          last_error: string | null
+          referrer: string | null
+          start_at: string
+          status: string
+          stripe_session_id: string | null
+          team_slug: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          answers_payload?: Json
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          event_slug: string
+          id?: string
+          invitee_payload: Json
+          last_error?: string | null
+          referrer?: string | null
+          start_at: string
+          status?: string
+          stripe_session_id?: string | null
+          team_slug: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          answers_payload?: Json
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          event_slug?: string
+          id?: string
+          invitee_payload?: Json
+          last_error?: string | null
+          referrer?: string | null
+          start_at?: string
+          status?: string
+          stripe_session_id?: string | null
+          team_slug?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_scheduler_payment_intents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduler_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_scheduler_reminder_log: {
         Row: {

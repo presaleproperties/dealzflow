@@ -101,3 +101,15 @@ verify_jwt = false
 
 [functions.scheduler-reminders]
 verify_jwt = false
+
+[functions.scheduler-create-checkout]
+verify_jwt = false
+
+[functions.scheduler-confirm-paid]
+verify_jwt = false
+
+[functions.scheduler-reschedule]
+verify_jwt = false
+
+[functions.scheduler-daily-digest]
+verify_jwt = false
