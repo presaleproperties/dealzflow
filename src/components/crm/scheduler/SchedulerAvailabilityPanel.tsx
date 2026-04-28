@@ -77,26 +77,27 @@ export function SchedulerAvailabilityPanel() {
             .map((w, idx) => ({ ...w, idx }))
             .filter(w => w.day_of_week === d);
           return (
-            <div key={d} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-              <div className="flex items-center gap-2 w-[110px] pt-1.5">
+            <div key={d} className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 py-3 border-b border-border last:border-0">
+              <div className="flex items-center gap-2.5 sm:w-[120px] sm:pt-1.5 shrink-0">
                 <Switch checked={enabled} onCheckedChange={() => toggleDay(d)} />
-                <span className="text-[13px] font-medium">{day}</span>
+                <span className="text-[13px] font-medium text-foreground">{day}</span>
+                {!enabled && <span className="text-[11.5px] text-muted-foreground italic sm:hidden">Unavailable</span>}
               </div>
-              <div className="flex-1 space-y-1.5">
+              <div className="flex-1 min-w-0 space-y-1.5">
                 {items.length === 0 ? (
-                  <span className="text-[12px] text-muted-foreground italic">Unavailable</span>
+                  <span className="hidden sm:inline text-[12px] text-muted-foreground italic">Unavailable</span>
                 ) : items.map((w) => (
-                  <div key={w.idx} className="flex items-center gap-2">
-                    <Input type="time" value={w.start_time} onChange={(e) => updateWindow(w.idx, { start_time: e.target.value })} className="w-[110px] h-8 text-[12px]" />
+                  <div key={w.idx} className="flex items-center gap-2 flex-wrap">
+                    <Input type="time" value={w.start_time} onChange={(e) => updateWindow(w.idx, { start_time: e.target.value })} className="w-[120px] h-9 text-[13px]" />
                     <span className="text-[12px] text-muted-foreground">–</span>
-                    <Input type="time" value={w.end_time} onChange={(e) => updateWindow(w.idx, { end_time: e.target.value })} className="w-[110px] h-8 text-[12px]" />
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => removeWindow(w.idx)}>
+                    <Input type="time" value={w.end_time} onChange={(e) => updateWindow(w.idx, { end_time: e.target.value })} className="w-[120px] h-9 text-[13px]" />
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => removeWindow(w.idx)}>
                       <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
                     </Button>
                   </div>
                 ))}
                 {enabled && (
-                  <Button variant="ghost" size="sm" className="h-7 px-2 text-[11.5px]" onClick={() => addWindow(d)}>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-[11.5px] text-muted-foreground" onClick={() => addWindow(d)}>
                     <Plus className="w-3 h-3 mr-1" /> Add window
                   </Button>
                 )}
