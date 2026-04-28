@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.scheduler-og-image]
 verify_jwt = false
+
+[functions.scheduler-prefill-team]
+verify_jwt = false
