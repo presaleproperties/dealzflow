@@ -246,7 +246,9 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             <>
               {template && <TemplateVersionHistory templateId={template.id} onRestore={(v) => {
                 setName(v.name); setSubject(v.subject ?? ''); setPreviewText(v.preview_text ?? '');
-                setHtmlContent(v.html_content); setCategory(v.category ?? 'custom');
+                setHtmlContent(stripSignatureBlock(v.html_content || ''));
+                setAppendSignature(hasSignatureBlock(v.html_content || ''));
+                setCategory(v.category ?? 'custom');
                 setProjectTags(v.project_tags ?? []); setAreaTags(v.area_tags ?? []);
               }} />}
               {onSendCampaign && template && (
@@ -257,7 +259,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDuplicate}>
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={handleDelete}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="w-3.5 h-3.5" /> Archive
               </Button>
             </>
