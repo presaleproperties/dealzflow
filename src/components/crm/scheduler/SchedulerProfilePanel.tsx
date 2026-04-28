@@ -75,8 +75,8 @@ export function SchedulerProfilePanel() {
   return (
     <div className="space-y-5 max-w-[760px]">
       {/* Presale import banner */}
-      <Card className="p-4 flex items-start gap-3 bg-[hsl(var(--accent))]/40 border-[hsl(var(--accent))]">
-        <Sparkles className="w-4 h-4 text-[#D7A542] mt-0.5 shrink-0" />
+      <Card className="p-4 flex items-start gap-3 bg-primary/5 border-primary/20">
+        <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="text-[13.5px] font-medium text-foreground">
             Import from Presale Properties
