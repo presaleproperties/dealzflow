@@ -6,6 +6,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
