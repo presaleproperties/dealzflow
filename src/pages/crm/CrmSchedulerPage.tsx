@@ -5,6 +5,8 @@ import { SchedulerEventTypesPanel } from '@/components/crm/scheduler/SchedulerEv
 import { SchedulerAvailabilityPanel } from '@/components/crm/scheduler/SchedulerAvailabilityPanel';
 import { SchedulerBookingsPanel } from '@/components/crm/scheduler/SchedulerBookingsPanel';
 import { SchedulerProfilePanel } from '@/components/crm/scheduler/SchedulerProfilePanel';
+import { SchedulerPreviewPanel } from '@/components/crm/scheduler/SchedulerPreviewPanel';
+import { SchedulerCalendarPanel } from '@/components/crm/scheduler/SchedulerCalendarPanel';
 import { SchedulerOnboardingDialog } from '@/components/crm/scheduler/SchedulerOnboardingDialog';
 import { useAgentSchedulerProfile } from '@/hooks/useScheduler';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +23,7 @@ export default function CrmSchedulerPage() {
   const needsOnboarding = !isLoading && profile && !profile.scheduler_onboarded_at;
 
   const publicUrl = profile?.slug
-    ? `${window.location.origin}/book/${profile.slug}`
+    ? `${window.location.origin}/r/${profile.slug}`
     : null;
 
   return (
@@ -60,15 +62,19 @@ export default function CrmSchedulerPage() {
         <Skeleton className="h-[400px] w-full" />
       ) : (
         <Tabs value={tab} onValueChange={(v) => setParams({ tab: v })}>
-          <TabsList className="mb-5">
+          <TabsList className="mb-5 flex-wrap h-auto">
             <TabsTrigger value="event-types">Event Types</TabsTrigger>
             <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
           <TabsContent value="event-types"><SchedulerEventTypesPanel agentSlug={profile?.slug || null} /></TabsContent>
           <TabsContent value="availability"><SchedulerAvailabilityPanel /></TabsContent>
+          <TabsContent value="calendar"><SchedulerCalendarPanel /></TabsContent>
           <TabsContent value="bookings"><SchedulerBookingsPanel /></TabsContent>
+          <TabsContent value="preview"><SchedulerPreviewPanel /></TabsContent>
           <TabsContent value="profile"><SchedulerProfilePanel /></TabsContent>
         </Tabs>
       )}
