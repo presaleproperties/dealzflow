@@ -186,6 +186,7 @@ export function RightRail() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings({ silent: true });
   const { agent: presaleAgent, refresh: refreshPresaleAgent } = usePresaleAgent();
+  const { data: profile } = useProfile();
 
   // Pull headshot/signature from Presale on login
   useEffect(() => {
