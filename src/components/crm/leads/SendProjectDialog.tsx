@@ -55,7 +55,14 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         .eq('is_active', true)
         .not('slug', 'is', null)
         .order('name');
-      return (data ?? []) as Template[];
+      // Only show templates relevant to "Send Project" — the bridge composes
+      // the actual project card; we filter out booking/welcome/SMS noise so the
+      // picker matches Presale Properties' project-send flow.
+      const PROJECT_TEMPLATE_RX = /(project|property|showcase|info-package|recommendation|the-mason)/i;
+      const allowed = (data ?? []).filter((t) =>
+        PROJECT_TEMPLATE_RX.test(t.slug) || PROJECT_TEMPLATE_RX.test(t.name),
+      );
+      return (allowed.length > 0 ? allowed : (data ?? [])) as Template[];
     },
     staleTime: 5 * 60 * 1000,
     enabled: open,
