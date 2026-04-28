@@ -376,13 +376,15 @@ Deno.serve(async (req) => {
       completed++;
     }
 
-    // Bump automation counters (separate row — append-only audit log)
-    await supabase.rpc("noop" as never, {} as never).catch(() => {});
+    // Bump automation counters
+    const { data: aRow } = await supabase
+      .from("crm_automations")
+      .select("runs_count")
+      .eq("id", automationId)
+      .maybeSingle();
     await supabase.from("crm_automations")
       .update({
-        runs_count: (await supabase.from("crm_automations").select("runs_count").eq("id", automationId).maybeSingle()).data?.runs_count != null
-          ? ((await supabase.from("crm_automations").select("runs_count").eq("id", automationId).maybeSingle()).data!.runs_count as number) + 1
-          : 1,
+        runs_count: (aRow?.runs_count ?? 0) + 1,
         last_run_at: nowIso,
       })
       .eq("id", automationId);
