@@ -379,49 +379,120 @@ function TeamManagement() {
     return 'bg-muted text-muted-foreground border-border';
   };
 
+  const initialsOf = (name?: string | null, email?: string | null) =>
+    ((name || email || '?')
+      .split(/[\s@]/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase())
+      .join('') || '?');
+
+  const relativeSync = (iso?: string | null) => {
+    if (!iso) return null;
+    const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 sm:px-6">
-        <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-primary" />
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-6 py-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <Shield className="h-4.5 w-4.5 text-primary shrink-0" />
           <CardTitle className="text-base sm:text-lg">Team Management</CardTitle>
-          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2">
-            {members.length} members
-          </span>
+          <span className="text-xs sm:text-sm text-muted-foreground ml-1">· {members.length} {members.length === 1 ? 'member' : 'members'}</span>
         </div>
-        <Button size="sm" onClick={() => setInviteOpen(true)} className="min-h-[44px] sm:min-h-0 w-full sm:w-auto">
-          <UserPlus className="h-4 w-4 mr-1.5" /> Invite
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={syncFromPresale}
+            disabled={syncing}
+            className="flex-1 sm:flex-none"
+          >
+            {syncing
+              ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Syncing</>
+              : <><RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Sync from Presale</>}
+          </Button>
+          <Button size="sm" onClick={() => setInviteOpen(true)} className="flex-1 sm:flex-none">
+            <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Invite
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="px-2 sm:px-6">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden sm:table-cell">Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Added</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
-              )}
-              {members.map(m => {
-                const isOwner = m.role === 'owner';
-                return (
-                  <TableRow key={m.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-1.5">
-                        {isOwner && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                        <span className="truncate">{m.display_name || '—'}</span>
+      <CardContent className="px-3 sm:px-6 pb-5">
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-[150px] rounded-lg bg-muted/40 animate-pulse" />
+            ))}
+          </div>
+        ) : members.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8 text-sm">No team members yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {members.map((m: any) => {
+              const isOwner = m.role === 'owner';
+              const focalY = m.headshot_focal_y ?? 30;
+              const missing: string[] = [];
+              if (!m.headshot_url) missing.push('headshot');
+              if (!m.title)        missing.push('title');
+              if (!m.phone)        missing.push('phone');
+              const synced = relativeSync(m.presale_synced_at);
+
+              return (
+                <div
+                  key={m.id}
+                  className="group relative rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-start gap-3.5">
+                    {m.headshot_url ? (
+                      <img
+                        src={m.headshot_url}
+                        alt={m.display_name || ''}
+                        className="w-14 h-14 rounded-full object-cover border border-border shrink-0"
+                        style={{ objectPosition: `center ${focalY}%` }}
+                      />
+                    ) : (
+                      <Avatar className="w-14 h-14 shrink-0 border border-border">
+                        <AvatarFallback
+                          className="text-sm font-medium text-white"
+                          style={{ background: 'hsl(var(--primary))', fontFamily: 'Georgia, serif' }}
+                        >
+                          {initialsOf(m.display_name, m.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {isOwner && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                        <h4 className="text-[14px] font-semibold text-foreground leading-tight truncate">
+                          {m.display_name || '—'}
+                        </h4>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground hidden sm:table-cell">{m.email || '—'}</TableCell>
-                    <TableCell>
+                      {m.title ? (
+                        <div className="text-[12px] text-foreground/70 truncate mt-0.5">{m.title}</div>
+                      ) : (
+                        <div className="text-[12px] italic text-muted-foreground/70 mt-0.5">No title</div>
+                      )}
+                      <div className="mt-1.5 space-y-0.5">
+                        {m.email && (
+                          <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                            <Mail className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{m.email}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                          <Phone className="w-3 h-3 shrink-0" />
+                          {m.phone ? <span>{m.phone}</span> : <span className="italic">No phone</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 flex flex-col items-end gap-1.5">
                       {isOwner ? (
                         <Badge variant="outline" className={roleBadgeColor('owner')}>owner</Badge>
                       ) : (
@@ -429,7 +500,7 @@ function TeamManagement() {
                           value={m.role}
                           onValueChange={(v) => updateRole.mutate({ id: m.id, role: v })}
                         >
-                          <SelectTrigger className="w-24 sm:w-28 h-7 text-xs">
+                          <SelectTrigger className="w-[92px] h-7 text-[11px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -439,68 +510,73 @@ function TeamManagement() {
                           </SelectContent>
                         </Select>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {isOwner ? (
-                        <Badge variant="outline" className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Active</Badge>
-                      ) : (
+                      {!isOwner && (
                         <Switch
                           checked={m.is_active}
                           onCheckedChange={(v) => toggleActive.mutate({ id: m.id, is_active: v })}
                         />
                       )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
-                      {m.user_id
-                        ? format(new Date(m.created_at), 'MMM d, yyyy')
-                        : <span className="text-amber-600 dark:text-amber-500">Awaiting signup</span>}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {!isOwner && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-xs"
-                            onClick={() => {
-                              setPermsEditId(m.id);
-                              setPermsDraft((m.permissions ?? {}) as TeamPerms);
-                            }}
-                          >
-                            Permissions
-                          </Button>
-                        )}
-                        {!isOwner && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-8 px-2 text-xs">
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 text-[10.5px] flex-wrap">
+                      {missing.length === 0 ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="w-3 h-3" /> Complete
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="w-3 h-3" /> Missing {missing.join(', ')}
+                        </span>
+                      )}
+                      {synced && <span className="text-muted-foreground">· Synced {synced}</span>}
+                      {!m.user_id && <span className="text-amber-600 dark:text-amber-500">· Awaiting signup</span>}
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      {!isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => {
+                            setPermsEditId(m.id);
+                            setPermsDraft((m.permissions ?? {}) as TeamPerms);
+                          }}
+                        >
+                          Permissions
+                        </Button>
+                      )}
+                      {!isOwner && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-7 px-2 text-[11px]">
+                              Remove
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {m.display_name || m.email} will lose access to the CRM.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
                                 Remove
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {m.display_name || m.email} will lose access to the CRM.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
-                                  Remove
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
 
       {/* Permissions Dialog */}
