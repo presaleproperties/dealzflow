@@ -55,12 +55,11 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Hydrate booking + event + agent
+    // Hydrate booking + event + agent (no FK between bookings.agent_user_id
+    // and crm_team.user_id, so we fetch separately).
     const { data: booking, error: bErr } = await supabase
       .from("crm_scheduler_bookings")
-      .select(`*,
-        event_type:crm_scheduler_event_types(slug,title,location_type,location_value),
-        agent:crm_team!agent_user_id(slug,display_name,email,phone,timezone)`)
+      .select("*")
       .eq("id", booking_id)
       .maybeSingle();
     if (bErr) throw bErr;
@@ -70,8 +69,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const evt = (booking as any).event_type || {};
-    const agent = (booking as any).agent || {};
+    const [{ data: evt }, { data: agent }] = await Promise.all([
+      supabase
+        .from("crm_scheduler_event_types")
+        .select("slug,title,location_type,location_value")
+        .eq("id", booking.event_type_id)
+        .maybeSingle(),
+      supabase
+        .from("crm_team")
+        .select("slug,display_name,email,timezone")
+        .eq("user_id", booking.agent_user_id)
+        .maybeSingle(),
+    ]);
+    const evtRow = evt || {} as any;
+    const agentRow = agent || {} as any;
     const inviteeName = `${booking.invitee_first_name} ${booking.invitee_last_name === "(unknown)" ? "" : booking.invitee_last_name}`.trim();
     const agentName = agent.display_name || agent.email || "Your agent";
     const teamSlug = agent.slug;
