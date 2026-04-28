@@ -158,7 +158,7 @@ export default function PublicBookingPage() {
 
   return (
     <>
-      <Helmet><title>{`Book ${evt.title} with ${agent.display_name}`}</title></Helmet>
+      {(() => { if (typeof document !== 'undefined') document.title = `Book ${evt.title} with ${agent.display_name}`; return null; })()}
       <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
         <div className="max-w-[920px] mx-auto px-6 py-10">
           <Link to={`/book/${teamSlug}`} className="inline-flex items-center gap-1.5 text-[13px] text-neutral-500 hover:text-neutral-800 mb-6">
