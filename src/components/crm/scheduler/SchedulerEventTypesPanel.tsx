@@ -52,7 +52,7 @@ export function SchedulerEventTypesPanel({ agentSlug }: { agentSlug: string | nu
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ background: et.color || '#D7A542' }} />
+                  <span className="w-2 h-2 rounded-full" style={{ background: et.color || 'hsl(var(--primary))' }} />
                   <h3 className="font-semibold text-[14.5px] text-foreground truncate">{et.title}</h3>
                 </div>
                 <p className="text-[12px] text-muted-foreground mt-1 line-clamp-2">

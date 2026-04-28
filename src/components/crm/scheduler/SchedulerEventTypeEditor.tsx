@@ -30,7 +30,7 @@ export function SchedulerEventTypeEditor({ eventType, onClose, onCreate, onUpdat
       location_type: 'phone', location_value: '',
       creates_showing: false, requires_payment: false,
       price_cents: 0, currency: 'CAD', is_active: true,
-      color: '#D7A542',
+      color: 'hsl(var(--primary))',
       custom_questions: [],
     }
   );

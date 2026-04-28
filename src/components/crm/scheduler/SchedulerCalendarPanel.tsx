@@ -11,7 +11,7 @@ import { useGoogleCalendarEvents, useGoogleCalendarConnection } from '@/hooks/us
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { CalendarOff } from 'lucide-react';
 
-const GOLD = '#D7A542';
+const GOLD = 'hsl(var(--primary))';
 const GCAL = 'hsl(214 89% 52%)';
 
 export function SchedulerCalendarPanel() {

@@ -67,23 +67,20 @@ function MemberCard({ member, onResync, syncing }: {
   if (!member.headshot_url) missing.push('headshot');
 
   return (
-    <Card className="group relative overflow-hidden p-4 transition-shadow hover:shadow-md">
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D7A542]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <Card className="group relative overflow-hidden p-4 transition-all hover:shadow-md hover:border-primary/30 border-border/70">
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-80 transition-opacity" />
 
       <div className="flex items-start gap-3.5">
         {member.headshot_url ? (
           <img
             src={member.headshot_url}
             alt={member.display_name || ''}
-            className="w-14 h-14 rounded-full object-cover border border-border shrink-0"
+            className="w-14 h-14 rounded-full object-cover border border-border ring-1 ring-primary/15 shrink-0"
             style={{ objectPosition: `center ${focalY}%` }}
           />
         ) : (
           <Avatar className="w-14 h-14 shrink-0 border border-border">
-            <AvatarFallback
-              className="text-sm font-medium text-white"
-              style={{ background: '#D7A542', fontFamily: 'Georgia, serif' }}
-            >
+            <AvatarFallback className="text-sm font-semibold bg-primary text-primary-foreground tracking-tight">
               {initialsOf(member.display_name, member.email)}
             </AvatarFallback>
           </Avatar>
@@ -226,12 +223,12 @@ export function SchedulerTeamPrefillCard() {
             return (
               <Card key={s.label} className="px-3 py-2">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{s.label}</span>
+                  <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">{s.label}</span>
                   <span className="text-[11px] tabular-nums text-muted-foreground">{s.value}/{s.total}</span>
                 </div>
                 <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full bg-[#D7A542] transition-all"
+                    className="h-full bg-primary transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -264,7 +261,7 @@ export function SchedulerTeamPrefillCard() {
       {lastResults && lastResults.length > 0 && (
         <details className="group">
           <summary className="cursor-pointer text-[11.5px] text-muted-foreground hover:text-foreground transition-colors list-none flex items-center gap-1.5">
-            <span className="inline-block w-1 h-1 rounded-full bg-[#D7A542]" />
+            <span className="inline-block w-1 h-1 rounded-full bg-primary" />
             View last sync details ({lastResults.filter((r) => r.status === 'synced').length}/{lastResults.length} synced)
           </summary>
           <div className="mt-2 space-y-1 pl-3 border-l border-border">

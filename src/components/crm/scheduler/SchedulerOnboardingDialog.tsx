@@ -83,7 +83,7 @@ export function SchedulerOnboardingDialog({ profile }: { profile: AgentScheduler
   const StepDot = ({ active, done, label, idx }: { active: boolean; done: boolean; label: string; idx: number }) => (
     <div className="flex items-center gap-2 flex-1">
       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold ${
-        done ? 'bg-[#D7A542] text-white' : active ? 'bg-[#14181F] text-white' : 'bg-neutral-200 text-neutral-500'
+        done ? 'bg-primary text-primary-foreground' : active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
       }`}>{done ? <Check className="w-3.5 h-3.5" /> : idx}</div>
       <span className={`text-[12px] ${active ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{label}</span>
     </div>
@@ -94,7 +94,7 @@ export function SchedulerOnboardingDialog({ profile }: { profile: AgentScheduler
       <DialogContent className="max-w-[540px]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#D7A542]" />
+            <Sparkles className="w-4 h-4 text-primary" />
             Set up your Scheduler
           </DialogTitle>
         </DialogHeader>
@@ -143,7 +143,7 @@ export function SchedulerOnboardingDialog({ profile }: { profile: AgentScheduler
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/40 border border-border">
-                <Calendar className="w-4 h-4 text-[#D7A542] mt-0.5 shrink-0" />
+                <Calendar className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                 <div>
                   <div className="text-[13.5px] font-medium text-foreground">23 project preview templates available</div>
                   <p className="text-[12px] text-muted-foreground mt-1">
