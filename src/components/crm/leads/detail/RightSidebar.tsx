@@ -1,3 +1,5 @@
+import { Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BehaviorIngestionStatus } from '@/components/crm/leads/BehaviorIngestionStatus';
 import { LeadActivityDiagnostics } from '@/components/crm/leads/LeadActivityDiagnostics';
 import { NextBestActionCard } from '@/components/crm/leads/NextBestActionCard';
@@ -14,25 +16,37 @@ interface Props {
   onCall: () => void;
   onText: () => void;
   onEmail: () => void;
+  onSendProject?: () => void;
   leadScore: LeadScore;
   lastTouchHours: number | null;
 }
 
 /**
  * Reorganized right sidebar — 4 zones + 1 collapsible debug accordion.
+ *  ⓪ Send Project — primary green CTA (most-used action)
  *  ① Next Best Action  (sticky)
- *  ② At-a-glance KPIs
- *  ③ Engagement (tabs: Emails / Behavior / Source)
- *  ④ Upcoming (next task + next showing, mini)
+ *  ② Upcoming (next task + next showing, mini)
+ *  ③ At-a-glance KPIs
+ *  ④ Engagement (tabs: Emails / Behavior / Source)
  *  ⑤ Debug ▾ (collapsed by default)
  */
 export function RightSidebar({
-  contact, onAddTask, onAddShowing, onCall, onText, onEmail, leadScore, lastTouchHours,
+  contact, onAddTask, onAddShowing, onCall, onText, onEmail, onSendProject, leadScore, lastTouchHours,
 }: Props) {
   const presaleUserId = (contact as unknown as Record<string, unknown>).presale_user_id as string | undefined;
 
   return (
     <div className="space-y-4">
+      {/* ⓪ Send Project — green primary CTA (highest-frequency action) */}
+      {onSendProject && (
+        <Button
+          onClick={onSendProject}
+          className="w-full h-11 gap-2 font-semibold tracking-tight bg-emerald-600 text-white hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-sm shadow-emerald-900/20 border border-emerald-700/40"
+        >
+          <Send className="w-4 h-4" /> Send Project
+        </Button>
+      )}
+
       {/* ① Next Best Action — sticky so it stays visible while scrolling */}
       <div className="sticky top-0 z-10 -mx-1 px-1 pt-1 pb-1 bg-muted/30 backdrop-blur-sm">
         <NextBestActionCard
