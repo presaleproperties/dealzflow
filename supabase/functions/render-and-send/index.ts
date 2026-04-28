@@ -108,40 +108,55 @@ Deno.serve(async (req) => {
 
   // (c) bridge-render-email (POST)
   if (!BRIDGE_URL || !BRIDGE_SECRET || !PRESALE_ANON_KEY) {
+    console.error("[render-and-send] bridge env missing", {
+      hasUrl: !!BRIDGE_URL, hasSecret: !!BRIDGE_SECRET, hasAnon: !!PRESALE_ANON_KEY,
+    });
     return json({ error: "bridge_env_missing" }, 500);
   }
-  const renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-bridge-secret": BRIDGE_SECRET,
-      "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
-      "apikey": PRESALE_ANON_KEY,
-    },
-    body: JSON.stringify({
-      template: {
-        name: template.name,
-        subject: template.subject,
-        body_html: template.body_html,
+  let renderRes: Response;
+  let renderText = "";
+  try {
+    renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-bridge-secret": BRIDGE_SECRET,
+        "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
+        "apikey": PRESALE_ANON_KEY,
       },
-      contact: {
-        first_name: contact.first_name,
-        last_name: contact.last_name,
-        email: contact.email,
-        phone: contact.phone,
-      },
-      project_slug,
-      agent: {
-        display_name: contact.assigned_to ||
-          (user.user_metadata as { full_name?: string } | null)?.full_name ||
-          user.email || "",
-      },
-    }),
-  });
-  const renderText = await renderRes.text();
+      body: JSON.stringify({
+        template: {
+          name: template.name,
+          subject: template.subject,
+          body_html: template.body_html,
+        },
+        contact: {
+          first_name: contact.first_name,
+          last_name: contact.last_name,
+          email: contact.email,
+          phone: contact.phone,
+        },
+        project_slug,
+        agent: {
+          display_name: contact.assigned_to ||
+            (user.user_metadata as { full_name?: string } | null)?.full_name ||
+            user.email || "",
+        },
+      }),
+    });
+    renderText = await renderRes.text();
+  } catch (e) {
+    console.error("[render-and-send] bridge fetch threw", e);
+    return json({
+      error: "bridge_unreachable",
+      detail: (e as Error).message,
+      bridge_url: BRIDGE_URL,
+    }, 502);
+  }
   let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; error?: string } = {};
   try { rendered = renderText ? JSON.parse(renderText) : {}; } catch { /* */ }
   if (!renderRes.ok || !rendered.html_rendered) {
+    console.error("[render-and-send] bridge render failed", { status: renderRes.status, body: renderText.slice(0, 500) });
     return json({
       error: "bridge_render_failed",
       status: renderRes.status,
