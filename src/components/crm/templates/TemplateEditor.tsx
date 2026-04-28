@@ -17,6 +17,11 @@ import {
 import { VariablePicker } from './VariablePicker';
 import { TemplateVersionHistory } from './TemplateVersionHistory';
 import { renderWithSampleData, findUnknownTokens } from '@/lib/emailVariables';
+import { applySignatureBlock, hasSignatureBlock, stripSignatureBlock } from '@/lib/templateSignature';
+import { usePresaleAgent } from '@/stores/usePresaleAgent';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { Switch } from '@/components/ui/switch';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const CATEGORIES = [
   { value: 'project_launch', label: 'Project Launch' },
@@ -36,17 +41,32 @@ function detectMergeTags(html: string): string[] {
   return matches ? [...new Set(matches)] : [];
 }
 
+interface TemplateDraft {
+  name?: string;
+  subject?: string | null;
+  preview_text?: string | null;
+  html_content?: string;
+  category?: string;
+  project_tags?: string[];
+  area_tags?: string[];
+}
+
 interface Props {
   template: EmailTemplate | null;
+  /** Optional starting values when creating a new template (e.g. cloning a Presale asset). */
+  initialDraft?: TemplateDraft;
   onClose: () => void;
   onSendCampaign?: (tpl: EmailTemplate) => void;
 }
 
-export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
+export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign }: Props) {
   const createTemplate = useCreateEmailTemplate();
   const updateTemplate = useUpdateEmailTemplate();
   const softDelete = useSoftDeleteEmailTemplate();
   const isEdit = !!template;
+  const { agent } = usePresaleAgent();
+  const { data: emailSettings } = useEmailSettings();
+  const signatureHtml = (agent?.signatureHtml || emailSettings?.signature_html || '').trim();
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
@@ -58,6 +78,11 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const [fullPreview, setFullPreview] = useState(false);
   const [withSampleData, setWithSampleData] = useState(true);
+  // ON by default for new drafts; for an existing template, ON only if it
+  // already has a stamped signature block (so we never silently mutate
+  // legacy templates that have a manually-pasted signature).
+  const [appendSignature, setAppendSignature] = useState<boolean>(true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
@@ -70,15 +95,28 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
 
   useEffect(() => {
     if (template) {
+      const tplHtml = template.html_content ?? '';
       setName(template.name);
       setSubject(template.subject ?? '');
       setPreviewText(template.preview_text ?? '');
-      setHtmlContent(template.html_content ?? '');
+      // Strip any stamped block while editing so the textarea stays clean;
+      // it gets re-applied at save time when the toggle is on.
+      setHtmlContent(stripSignatureBlock(tplHtml));
       setCategory(template.category ?? 'custom');
       setProjectTags(template.project_tags ?? []);
       setAreaTags(template.area_tags ?? []);
+      setAppendSignature(hasSignatureBlock(tplHtml));
+    } else if (initialDraft) {
+      setName(initialDraft.name ?? '');
+      setSubject(initialDraft.subject ?? '');
+      setPreviewText(initialDraft.preview_text ?? '');
+      setHtmlContent(stripSignatureBlock(initialDraft.html_content ?? ''));
+      setCategory(initialDraft.category ?? 'custom');
+      setProjectTags(initialDraft.project_tags ?? []);
+      setAreaTags(initialDraft.area_tags ?? []);
+      setAppendSignature(true);
     }
-  }, [template]);
+  }, [template, initialDraft]);
 
   const updateIframe = useCallback((ref: React.RefObject<HTMLIFrameElement | null>, html: string) => {
     if (ref.current) {
@@ -91,9 +129,14 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
     }
   }, []);
 
+  // Compose preview = body + (optional) signature, then render sample data
+  const composedHtml = useMemo(
+    () => (appendSignature && signatureHtml ? applySignatureBlock(htmlContent, signatureHtml) : htmlContent),
+    [htmlContent, appendSignature, signatureHtml],
+  );
   const renderedHtml = useMemo(
-    () => (withSampleData ? renderWithSampleData(htmlContent) : htmlContent),
-    [htmlContent, withSampleData],
+    () => (withSampleData ? renderWithSampleData(composedHtml) : composedHtml),
+    [composedHtml, withSampleData],
   );
 
   useEffect(() => { updateIframe(iframeRef, renderedHtml); }, [renderedHtml, previewWidth, updateIframe]);
@@ -127,13 +170,19 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
   }, [htmlContent, subject]);
 
 
+  // What we actually persist (signature stamped or stripped)
+  const persistableHtml = useMemo(
+    () => (appendSignature && signatureHtml ? applySignatureBlock(htmlContent, signatureHtml) : stripSignatureBlock(htmlContent)),
+    [htmlContent, appendSignature, signatureHtml],
+  );
+
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Name is required'); return; }
     const payload = {
       name: name.trim(),
       subject: subject.trim() || null,
       preview_text: previewText.trim() || null,
-      html_content: htmlContent,
+      html_content: persistableHtml,
       category,
       project_tags: projectTags,
       area_tags: areaTags,
@@ -150,11 +199,12 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
   const handleDelete = async () => {
     if (!template) return;
     await softDelete.mutateAsync(template.id);
+    setConfirmDelete(false);
     onClose();
   };
 
   const handleCopyHtml = () => {
-    navigator.clipboard.writeText(htmlContent);
+    navigator.clipboard.writeText(persistableHtml);
     toast.success('HTML copied to clipboard');
   };
 
@@ -163,7 +213,7 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
       name: `${name} (Copy)`,
       subject,
       preview_text: previewText,
-      html_content: htmlContent,
+      html_content: persistableHtml,
       category,
       project_tags: projectTags,
       area_tags: areaTags,
@@ -196,7 +246,9 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
             <>
               {template && <TemplateVersionHistory templateId={template.id} onRestore={(v) => {
                 setName(v.name); setSubject(v.subject ?? ''); setPreviewText(v.preview_text ?? '');
-                setHtmlContent(v.html_content); setCategory(v.category ?? 'custom');
+                setHtmlContent(stripSignatureBlock(v.html_content || ''));
+                setAppendSignature(hasSignatureBlock(v.html_content || ''));
+                setCategory(v.category ?? 'custom');
                 setProjectTags(v.project_tags ?? []); setAreaTags(v.area_tags ?? []);
               }} />}
               {onSendCampaign && template && (
@@ -207,7 +259,7 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDuplicate}>
                 <Copy className="w-3.5 h-3.5" /> Duplicate
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={handleDelete}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="w-3.5 h-3.5" /> Archive
               </Button>
             </>
@@ -306,6 +358,31 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
               className="min-h-[300px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40 leading-relaxed"
               spellCheck={false}
             />
+          </div>
+
+          {/* Brand signature — keeps every saved template on-brand */}
+          <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <Label className="text-xs font-semibold text-foreground">Append my signature</Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {signatureHtml
+                    ? 'Stamps your headshot, name, brokerage and contact details below the email body when saved or sent.'
+                    : 'Set up your signature in Settings → Signature to enable this.'}
+                </p>
+              </div>
+              <Switch
+                checked={appendSignature && !!signatureHtml}
+                disabled={!signatureHtml}
+                onCheckedChange={setAppendSignature}
+              />
+            </div>
+            {appendSignature && signatureHtml && (
+              <div
+                className="rounded border border-border/40 bg-background p-2 max-h-[120px] overflow-auto text-[11px]"
+                dangerouslySetInnerHTML={{ __html: signatureHtml }}
+              />
+            )}
           </div>
 
           {/* Merge tags */}
@@ -426,6 +503,24 @@ export function TemplateEditor({ template, onClose, onSendCampaign }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Archive confirmation */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{name || 'Untitled'}" will be hidden from the library. You can restore it later from the database. Sent emails are not affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
