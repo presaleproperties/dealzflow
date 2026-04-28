@@ -11,7 +11,7 @@ import {
   AlertTriangle, Shield, Lock, UserPlus, Bell, Mail, Calendar, MessageSquare,
   Database, Link2, User, RefreshCw, Loader2, Phone, CheckCircle2, AlertCircle,
   Sparkles, ArrowRight, Circle, ChevronRight, Briefcase, FileText, Inbox,
-  Building2, FolderKanban,
+  Building2, FolderKanban, Crown, GitBranch, Layers, CreditCard, ExternalLink, Eye,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior, setTimelineLinkBehavior, type TimelineLinkBehavior,
@@ -20,6 +20,8 @@ import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
 import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
+import SourceManagerSection from '@/components/crm/settings/SourceManagerSection';
+import { LeadSourcesPanel } from '@/components/crm/integrations/LeadSourcesPanel';
 import ProfileSection from '@/components/settings/ProfileSection';
 import GmailConnectCard from '@/components/crm/email/GmailConnectCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
