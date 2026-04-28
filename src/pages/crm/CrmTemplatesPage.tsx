@@ -26,7 +26,7 @@ import {
 import { useBridgeTemplates, type BridgeTemplate } from '@/hooks/useBridgeEmail';
 import { TemplateEditor } from '@/components/crm/templates/TemplateEditor';
 import { useSmsTemplates, type MessagingChannel } from '@/hooks/useSms';
-import { TemplatesTab as MessagingTemplatesTab } from './CrmSmsCenterPage';
+import { Link } from 'react-router-dom';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { stripSignatureBlock } from '@/lib/templateSignature';
@@ -494,5 +494,13 @@ function MessagingPanel() {
   if (isLoading) {
     return <Card className="p-8 text-center text-sm text-muted-foreground">Loading templates…</Card>;
   }
-  return <MessagingTemplatesTab channel={'sms' as MessagingChannel} templates={smsTemplates} />;
+  return (
+    <Card className="p-6 text-center text-sm text-muted-foreground space-y-3">
+      <div>SMS templates now live in the Messages workspace, with live preview, merge-tag picker, and "Send to me" testing.</div>
+      <Button asChild size="sm" variant="outline">
+        <Link to="/crm/sms">Open SMS templates →</Link>
+      </Button>
+      <div className="text-[11px]">{smsTemplates.length} template{smsTemplates.length === 1 ? '' : 's'} available</div>
+    </Card>
+  );
 }
