@@ -1,5 +1,8 @@
 // Public endpoint: create a booking. Match-or-create contact, validate slot, persist.
+// Best-effort: insert event into agent's Google Calendar; trigger confirmation
+// + agent-notification emails. None of these block the booking.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { insertGoogleEvent } from '../_shared/google-calendar-busy.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -188,6 +191,43 @@ Deno.serve(async (req) => {
           notes: `Auto-created from scheduler booking ${booking.id}`,
         });
       } catch (e) { console.warn('showing insert failed', e); }
+    }
+
+    // Best-effort: insert into agent's Google Calendar primary calendar
+    try {
+      const gcal = await insertGoogleEvent(supabase, agent.user_id, {
+        summary: `${evt.title} — ${firstName} ${lastName === '(unknown)' ? '' : lastName}`.trim(),
+        description: [
+          invitee.notes ? `Notes: ${invitee.notes}` : null,
+          email ? `Email: ${email}` : null,
+          phone ? `Phone: ${phone}` : null,
+          `Booked via DealzFlow Scheduler`,
+        ].filter(Boolean).join('\n'),
+        startIso: startDate.toISOString(),
+        endIso: endDate.toISOString(),
+        timezone: agent.timezone || 'America/Vancouver',
+        attendees: email ? [{ email, displayName: `${firstName} ${lastName}`.trim() }] : undefined,
+        location: evt.location_value || undefined,
+      });
+      if (gcal) {
+        await supabase.from('crm_scheduler_bookings')
+          .update({ google_event_id: gcal.eventId, google_calendar_id: gcal.calendarId })
+          .eq('id', booking.id);
+      }
+    } catch (e) { console.warn('gcal insert failed (non-fatal)', e); }
+
+    // Best-effort: send confirmation + agent notification emails. Fire-and-forget.
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    for (const kind of ['invitee_confirmation', 'agent_notification'] as const) {
+      fetch(`${SUPABASE_URL}/functions/v1/scheduler-send-emails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
+        body: JSON.stringify({ kind, booking_id: booking.id }),
+      }).catch((e) => console.warn(`email ${kind} dispatch failed`, e));
     }
 
     return new Response(JSON.stringify({
