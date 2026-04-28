@@ -305,16 +305,21 @@ export function RightRail() {
 
         {/* Primary actions */}
         <div className="flex flex-col items-center gap-1 mt-1">
-          
-          <RailButton icon={Sparkles} label="AI Assistant" to="/dashboard" />
-          <RailButton
-            icon={Inbox}
-            label="Inbox & Conversations"
-            onClick={() => setPanel('inbox')}
-            badge={inboxUnread}
-            active={panel === 'inbox'}
-            accent="red"
-          />
+          {/* CRM-only: Inbox & Calls. Available on both sides only if user has CRM access. */}
+          {isCrmMember && (
+            <>
+              <RailButton
+                icon={Inbox}
+                label="Inbox & Conversations"
+                onClick={() => setPanel('inbox')}
+                badge={inboxUnread}
+                active={panel === 'inbox'}
+                accent="red"
+              />
+              <RailButton icon={Phone} label="Calls" to="/crm/leads" />
+            </>
+          )}
+          {/* Notifications: available everywhere (system + CRM events) */}
           <RailButton
             icon={Bell}
             label="Notifications"
@@ -323,7 +328,6 @@ export function RightRail() {
             active={panel === 'notifications'}
             accent="red"
           />
-          <RailButton icon={Phone} label="Calls" to={isCrmMember ? '/crm/leads' : '/dashboard'} />
         </div>
 
         <div className="flex-1" />
