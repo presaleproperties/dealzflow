@@ -217,8 +217,13 @@ export function RightRail() {
   );
   const { data: notifications, isLoading: notifLoading } = useNotificationsFeed(panel === 'notifications');
 
-  // Profile initials
-  const initials = useMemo(() => (user?.email?.slice(0, 2).toUpperCase() || 'U'), [user]);
+  // Profile initials — prefer full_name → presale name → email
+  const initials = useMemo(() => {
+    const src = profile?.full_name || presaleAgent?.name || user?.email || 'U';
+    return src.split(/[\s@]/).filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join('') || 'U';
+  }, [profile?.full_name, presaleAgent?.name, user]);
+  const avatarUrl = profile?.avatar_url || presaleAgent?.headshotUrl || null;
+  const avatarPos = profile?.avatar_position || '50% 50%';
 
   // Close panel on Esc
   useEffect(() => {
