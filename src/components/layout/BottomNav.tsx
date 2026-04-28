@@ -187,7 +187,7 @@ export function BottomNav() {
   const quickActions: QuickAction[] = useMemo(() => {
     const close = () => setQuickOpen(false);
     if (mode === 'crm') {
-      return [
+      const actions: QuickAction[] = [
         {
           label: 'Add Lead',
           description: 'Create a new contact in the CRM',
@@ -207,13 +207,16 @@ export function BottomNav() {
           icon: Mail,
           onClick: () => { close(); navigate('/crm/email'); },
         },
-        {
+      ];
+      if (isCrmAdmin) {
+        actions.push({
           label: 'Send Text',
           description: 'SMS or WhatsApp',
           icon: MessageSquare,
           onClick: () => { close(); navigate('/crm/sms'); },
-        },
-      ];
+        });
+      }
+      return actions;
     }
     return [
       {
