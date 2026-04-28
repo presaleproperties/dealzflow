@@ -16,7 +16,7 @@ const SIZES: Record<Device, { w: number; label: string }> = {
   desktop: { w: 1100, label: 'Desktop' },
 };
 
-export function SchedulerPreviewPanel() {
+export function SchedulerPreviewPanel({ compact = false }: { compact?: boolean } = {}) {
   const { data: profile, isLoading } = useAgentSchedulerProfile();
   const { data: eventTypes = [], dataUpdatedAt: etUpdatedAt } = useSchedulerEventTypes();
   const { dataUpdatedAt: availUpdatedAt } = useAvailability();
