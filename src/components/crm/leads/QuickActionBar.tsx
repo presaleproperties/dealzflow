@@ -301,7 +301,59 @@ export function QuickActionBar({ contact }: Props) {
           </div>
         )}
 
-        <Textarea
+        {(mode === 'email' || mode === 'text') && (
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none -mx-0.5 px-0.5">
+            <div className="inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground/80 font-semibold shrink-0 pr-1">
+              <Sparkles className="w-3 h-3" />
+              AI
+            </div>
+            {quickReplies.isLoading ? (
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-7 w-28 rounded-full bg-muted/50 animate-pulse shrink-0" />
+                ))}
+              </div>
+            ) : quickReplies.data && quickReplies.data.length > 0 ? (
+              <>
+                {quickReplies.data.slice(0, 3).map((r, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setBody(r.body);
+                      setTimeout(() => taRef.current?.focus(), 0);
+                    }}
+                    title={r.body}
+                    className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-border/60 bg-muted/30 hover:bg-muted hover:border-border text-foreground/90 transition-colors"
+                  >
+                    {r.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => quickReplies.refetch()}
+                  disabled={quickReplies.isFetching}
+                  className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-50"
+                  title="Regenerate"
+                >
+                  <RefreshCw className={cn('w-3 h-3', quickReplies.isFetching && 'animate-spin')} />
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => quickReplies.refetch()}
+                disabled={quickReplies.isFetching}
+                className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-dashed border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors disabled:opacity-50"
+              >
+                {quickReplies.isFetching
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <Sparkles className="w-3 h-3" />}
+                Suggest replies
+              </button>
+            )}
+          </div>
+        )}
           ref={taRef}
           value={body}
           onChange={(e) => setBody(e.target.value)}
