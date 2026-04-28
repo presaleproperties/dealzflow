@@ -171,9 +171,3 @@ export function SchedulerProfilePanel() {
     </div>
   );
 }
-
-// helper — read store snapshot synchronously for the import handler
-import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
-function usePresaleAgentStoreRead() {
-  return usePresaleAgentStore.getState().agent;
-}
