@@ -82,45 +82,57 @@ class SectionErrorBoundary extends Component<
 type TabId =
   | 'setup'
   | 'profile' | 'email' | 'notifications' | 'timeline'
-  | 'team' | 'integrations' | 'projects' | 'import' | 'data';
+  | 'team' | 'integrations' | 'projects' | 'import' | 'data'
+  | 'leadflow' | 'sources' | 'plan';
 
 interface TabDef {
   id: TabId;
   label: string;
   icon: typeof User;
-  group: 'personal' | 'workspace';
-  adminOnly?: boolean;
+  group: 'personal' | 'workspace' | 'owner';
+  // 'owner'  → role === 'owner' only
+  // 'admin'  → role in (owner, admin)
+  // 'member' → any active CRM member
+  audience: 'owner' | 'admin' | 'member';
   description?: string;
 }
 
 const TABS: TabDef[] = [
   // Personal — every CRM member can access these
-  { id: 'setup',         label: 'Setup',          icon: Sparkles, group: 'personal', description: 'Get started checklist' },
-  { id: 'profile',       label: 'My Profile',     icon: User,     group: 'personal', description: 'Headshot, name, title, phone' },
-  { id: 'email',         label: 'Email & Signature', icon: Mail,  group: 'personal', description: 'Sender, signature, branding' },
-  { id: 'notifications', label: 'Notifications',  icon: Bell,     group: 'personal', description: 'What you get pinged about' },
-  { id: 'timeline',      label: 'Timeline Links', icon: Link2,    group: 'personal', description: 'Link click behavior' },
-  // Workspace — admins only
-  { id: 'team',          label: 'Team',           icon: Shield,        group: 'workspace', adminOnly: true, description: 'Members, roles, permissions' },
-  { id: 'integrations',  label: 'Integrations',   icon: MessageSquare, group: 'workspace', adminOnly: true, description: 'Calendar, Gmail, etc.' },
-  { id: 'projects',      label: 'Projects',       icon: FolderKanban,  group: 'workspace', adminOnly: true, description: 'Knowledge base & cities' },
-  { id: 'import',        label: 'Data Import',    icon: Database,      group: 'workspace', adminOnly: true, description: 'CSV uploads' },
-  { id: 'data',          label: 'Data Manager',   icon: FileText,      group: 'workspace', adminOnly: true, description: 'Cleanup & exports' },
+  { id: 'setup',         label: 'Setup',             icon: Sparkles,      group: 'personal',  audience: 'member', description: 'Get started checklist' },
+  { id: 'profile',       label: 'My Profile',        icon: User,          group: 'personal',  audience: 'member', description: 'Headshot, name, title, phone' },
+  { id: 'email',         label: 'Email & Signature', icon: Mail,          group: 'personal',  audience: 'member', description: 'Sender, signature, branding' },
+  { id: 'notifications', label: 'Notifications',     icon: Bell,          group: 'personal',  audience: 'member', description: 'What you get pinged about' },
+  { id: 'timeline',      label: 'Timeline Links',    icon: Link2,         group: 'personal',  audience: 'member', description: 'Link click behavior' },
+  // Workspace — owner + admin
+  { id: 'team',          label: 'Team',              icon: Shield,        group: 'workspace', audience: 'admin',  description: 'Members, roles, permissions' },
+  { id: 'integrations',  label: 'Integrations',      icon: MessageSquare, group: 'workspace', audience: 'admin',  description: 'Calendar, Gmail, etc.' },
+  { id: 'projects',      label: 'Projects',          icon: FolderKanban,  group: 'workspace', audience: 'admin',  description: 'Knowledge base & cities' },
+  { id: 'import',        label: 'Data Import',       icon: Database,      group: 'workspace', audience: 'admin',  description: 'CSV uploads' },
+  { id: 'data',          label: 'Data Manager',      icon: FileText,      group: 'workspace', audience: 'admin',  description: 'Cleanup & exports' },
+  // Owner controls — only the workspace owner sees these
+  { id: 'leadflow',      label: 'Lead Flow',         icon: GitBranch,     group: 'owner',     audience: 'owner',  description: 'Sources, ingestion, errors' },
+  { id: 'sources',       label: 'Source Library',    icon: Layers,        group: 'owner',     audience: 'owner',  description: 'Rename & merge lead sources' },
+  { id: 'plan',          label: 'Plan & Billing',    icon: CreditCard,    group: 'owner',     audience: 'owner',  description: 'Subscription, ownership' },
 ];
 
 /* ─────────────────────────────────────────────────────────────
    Page
    ───────────────────────────────────────────────────────────── */
 export default function CrmSettingsPage() {
-  const { isOwnerOrAdmin, isMember, isLoading: accessLoading } = useCrmAccess();
+  const { isOwnerOrAdmin, isMember, role, isLoading: accessLoading } = useCrmAccess();
+  const isOwner = role === 'owner';
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Visible tabs depend on role
-  const visibleTabs = useMemo(
-    () => TABS.filter((t) => !t.adminOnly || isOwnerOrAdmin),
-    [isOwnerOrAdmin],
-  );
+  const visibleTabs = useMemo(() => {
+    return TABS.filter((t) => {
+      if (t.audience === 'owner')  return isOwner;
+      if (t.audience === 'admin')  return isOwnerOrAdmin;
+      return true; // member
+    });
+  }, [isOwner, isOwnerOrAdmin]);
 
   const requestedTab = (searchParams.get('tab') as TabId | null) ?? 'setup';
   const activeTab: TabId = visibleTabs.some((t) => t.id === requestedTab)
@@ -132,7 +144,7 @@ export default function CrmSettingsPage() {
     if (!accessLoading && !isMember) navigate('/crm', { replace: true });
   }, [accessLoading, isMember, navigate]);
 
-  // If admin landed on a tab they can't see, snap back
+  // If user landed on a tab they can't see, snap back
   useEffect(() => {
     if (requestedTab !== activeTab) {
       const next = new URLSearchParams(searchParams);
@@ -146,15 +158,22 @@ export default function CrmSettingsPage() {
     const next = new URLSearchParams(searchParams);
     next.set('tab', id);
     setSearchParams(next);
-    // Scroll the content pane to top on tab change
     document.getElementById('crm-settings-content')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (accessLoading || !isMember) return null;
 
-  const personalTabs = visibleTabs.filter((t) => t.group === 'personal');
+  const personalTabs  = visibleTabs.filter((t) => t.group === 'personal');
   const workspaceTabs = visibleTabs.filter((t) => t.group === 'workspace');
+  const ownerTabs     = visibleTabs.filter((t) => t.group === 'owner');
   const activeMeta = visibleTabs.find((t) => t.id === activeTab)!;
+
+  // Role pill copy
+  const roleMeta = isOwner
+    ? { label: 'Owner', tone: 'bg-primary/15 text-primary border-primary/30',  blurb: 'You manage the workspace, lead flow, billing & admins.' }
+    : role === 'admin'
+    ? { label: 'Admin', tone: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30', blurb: 'You manage team, integrations, and data.' }
+    : { label: role === 'viewer' ? 'Viewer' : 'Agent', tone: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30', blurb: 'These are your personal CRM preferences.' };
 
   return (
     <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 h-full min-h-0 crm-mobile-page">
@@ -182,19 +201,30 @@ export default function CrmSettingsPage() {
 
       {/* Desktop sidebar nav — grouped */}
       <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-1">
-        <h1 className="text-lg font-bold text-foreground mb-1 tracking-[-0.01em]">CRM Settings</h1>
-        <p className="text-[11.5px] text-muted-foreground mb-5">
-          {isOwnerOrAdmin ? 'Workspace · admin access' : 'Personal · agent access'}
-        </p>
+        <h1 className="text-lg font-bold text-foreground mb-2 tracking-[-0.01em]">CRM Settings</h1>
+        <div className="mb-5">
+          <span className={cn(
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold border tracking-wide uppercase',
+            roleMeta.tone,
+          )}>
+            {isOwner && <Crown className="h-3 w-3" />}
+            {roleMeta.label}
+          </span>
+          <p className="text-[11.5px] text-muted-foreground mt-1.5 leading-snug">{roleMeta.blurb}</p>
+        </div>
 
         <SidebarGroup label="My Settings" tabs={personalTabs} activeTab={activeTab} onSelect={setTab} />
         {workspaceTabs.length > 0 && (
+          <SidebarGroup label="Workspace" tabs={workspaceTabs} activeTab={activeTab} onSelect={setTab} className="mt-5" />
+        )}
+        {ownerTabs.length > 0 && (
           <SidebarGroup
-            label="Workspace"
-            tabs={workspaceTabs}
+            label="Owner Controls"
+            tabs={ownerTabs}
             activeTab={activeTab}
             onSelect={setTab}
             className="mt-5"
+            accent
           />
         )}
       </nav>
@@ -204,7 +234,7 @@ export default function CrmSettingsPage() {
         id="crm-settings-content"
         className="flex-1 min-h-0 overflow-y-auto space-y-5 max-w-3xl pb-12"
       >
-        {/* Mobile h1 + active section heading */}
+        {/* Mobile h1 */}
         <div className="lg:hidden">
           <h1 className="m-page-title">CRM Settings</h1>
         </div>
@@ -216,7 +246,7 @@ export default function CrmSettingsPage() {
           )}
         </div>
 
-        {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} onJump={setTab} /></SectionErrorBoundary>}
+        {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} isOwner={isOwner} onJump={setTab} /></SectionErrorBoundary>}
         {activeTab === 'profile'       && <SectionErrorBoundary name="Profile"><ProfileSection /></SectionErrorBoundary>}
         {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
         {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
@@ -226,6 +256,9 @@ export default function CrmSettingsPage() {
         {activeTab === 'projects'      && <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>}
         {activeTab === 'import'        && <SectionErrorBoundary name="Import"><DataImportSection /></SectionErrorBoundary>}
         {activeTab === 'data'          && <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>}
+        {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
+        {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
+        {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
       </div>
     </div>
   );
