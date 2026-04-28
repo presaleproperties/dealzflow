@@ -17,6 +17,11 @@ import {
 import { VariablePicker } from './VariablePicker';
 import { TemplateVersionHistory } from './TemplateVersionHistory';
 import { renderWithSampleData, findUnknownTokens } from '@/lib/emailVariables';
+import { applySignatureBlock, hasSignatureBlock, stripSignatureBlock } from '@/lib/templateSignature';
+import { usePresaleAgent } from '@/stores/usePresaleAgent';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { Switch } from '@/components/ui/switch';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const CATEGORIES = [
   { value: 'project_launch', label: 'Project Launch' },
