@@ -283,12 +283,31 @@ export function RightRail() {
               <div className="text-[11px] text-muted-foreground">Signed in as</div>
               <div className="text-[12.5px] font-medium truncate text-foreground">{user.email}</div>
             </div>
+            {isCrmMember && (
+              <>
+                <Link
+                  to="/crm/settings?tab=profile"
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-foreground hover:bg-muted transition-colors"
+                >
+                  <User className="w-4 h-4" strokeWidth={1.8} />
+                  My Profile
+                </Link>
+                <Link
+                  to="/crm/settings?tab=notifications"
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-foreground hover:bg-muted transition-colors"
+                >
+                  <Bell className="w-4 h-4" strokeWidth={1.8} />
+                  Notifications
+                </Link>
+                <div className="h-px my-1 bg-border" />
+              </>
+            )}
             <Link
               to="/settings"
               className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-foreground hover:bg-muted transition-colors"
             >
               <Cog className="w-4 h-4" strokeWidth={1.8} />
-              Settings
+              Account Settings
             </Link>
             {isAdmin && (
               <Link
