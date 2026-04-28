@@ -239,7 +239,7 @@ export function BottomNav() {
         onClick: () => { close(); navigate('/dashboard'); },
       },
     ];
-  }, [mode, navigate]);
+  }, [mode, navigate, isCrmAdmin]);
 
 
   const renderTab = (tab: TabItem) => {
