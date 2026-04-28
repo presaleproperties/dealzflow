@@ -2410,6 +2410,355 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_scheduler_availability: {
+        Row: {
+          agent_user_id: string
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+        }
+        Insert: {
+          agent_user_id: string
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+        }
+        Update: {
+          agent_user_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+        }
+        Relationships: []
+      }
+      crm_scheduler_availability_overrides: {
+        Row: {
+          agent_user_id: string
+          created_at: string
+          date: string
+          end_time: string | null
+          id: string
+          is_unavailable: boolean
+          reason: string | null
+          start_time: string | null
+        }
+        Insert: {
+          agent_user_id: string
+          created_at?: string
+          date: string
+          end_time?: string | null
+          id?: string
+          is_unavailable?: boolean
+          reason?: string | null
+          start_time?: string | null
+        }
+        Update: {
+          agent_user_id?: string
+          created_at?: string
+          date?: string
+          end_time?: string | null
+          id?: string
+          is_unavailable?: boolean
+          reason?: string | null
+          start_time?: string | null
+        }
+        Relationships: []
+      }
+      crm_scheduler_booking_questions: {
+        Row: {
+          answer: string | null
+          booking_id: string
+          created_at: string
+          id: string
+          question_key: string
+          question_text: string
+        }
+        Insert: {
+          answer?: string | null
+          booking_id: string
+          created_at?: string
+          id?: string
+          question_key: string
+          question_text: string
+        }
+        Update: {
+          answer?: string | null
+          booking_id?: string
+          created_at?: string
+          id?: string
+          question_key?: string
+          question_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_scheduler_booking_questions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduler_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_scheduler_bookings: {
+        Row: {
+          agent_user_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          contact_id: string | null
+          created_at: string
+          duration_min: number
+          end_at: string
+          event_type_id: string
+          google_calendar_id: string | null
+          google_event_id: string | null
+          id: string
+          invitee_email: string | null
+          invitee_first_name: string
+          invitee_last_name: string
+          invitee_phone: string | null
+          invitee_timezone: string
+          ip_address: string | null
+          location_type: string
+          location_value: string | null
+          meeting_link: string | null
+          notes_for_agent: string | null
+          payment_amount_cents: number | null
+          payment_currency: string | null
+          payment_required: boolean
+          payment_status: string | null
+          referrer: string | null
+          rescheduled_from_id: string | null
+          start_at: string
+          status: string
+          stripe_payment_id: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          user_agent: string | null
+          utm: Json | null
+        }
+        Insert: {
+          agent_user_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          contact_id?: string | null
+          created_at?: string
+          duration_min: number
+          end_at: string
+          event_type_id: string
+          google_calendar_id?: string | null
+          google_event_id?: string | null
+          id?: string
+          invitee_email?: string | null
+          invitee_first_name: string
+          invitee_last_name?: string
+          invitee_phone?: string | null
+          invitee_timezone?: string
+          ip_address?: string | null
+          location_type: string
+          location_value?: string | null
+          meeting_link?: string | null
+          notes_for_agent?: string | null
+          payment_amount_cents?: number | null
+          payment_currency?: string | null
+          payment_required?: boolean
+          payment_status?: string | null
+          referrer?: string | null
+          rescheduled_from_id?: string | null
+          start_at: string
+          status?: string
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          utm?: Json | null
+        }
+        Update: {
+          agent_user_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          contact_id?: string | null
+          created_at?: string
+          duration_min?: number
+          end_at?: string
+          event_type_id?: string
+          google_calendar_id?: string | null
+          google_event_id?: string | null
+          id?: string
+          invitee_email?: string | null
+          invitee_first_name?: string
+          invitee_last_name?: string
+          invitee_phone?: string | null
+          invitee_timezone?: string
+          ip_address?: string | null
+          location_type?: string
+          location_value?: string | null
+          meeting_link?: string | null
+          notes_for_agent?: string | null
+          payment_amount_cents?: number | null
+          payment_currency?: string | null
+          payment_required?: boolean
+          payment_status?: string | null
+          referrer?: string | null
+          rescheduled_from_id?: string | null
+          start_at?: string
+          status?: string
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          utm?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_scheduler_bookings_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduler_event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_scheduler_bookings_rescheduled_from_id_fkey"
+            columns: ["rescheduled_from_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduler_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_scheduler_event_types: {
+        Row: {
+          agent_user_id: string
+          buffer_after_min: number
+          buffer_before_min: number
+          color: string | null
+          created_at: string
+          creates_showing: boolean
+          currency: string
+          custom_questions: Json
+          description: string | null
+          duration_min: number
+          id: string
+          is_active: boolean
+          is_template: boolean
+          location_type: string
+          location_value: string | null
+          max_advance_days: number
+          min_notice_min: number
+          price_cents: number
+          project_slug: string | null
+          requires_payment: boolean
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agent_user_id: string
+          buffer_after_min?: number
+          buffer_before_min?: number
+          color?: string | null
+          created_at?: string
+          creates_showing?: boolean
+          currency?: string
+          custom_questions?: Json
+          description?: string | null
+          duration_min?: number
+          id?: string
+          is_active?: boolean
+          is_template?: boolean
+          location_type?: string
+          location_value?: string | null
+          max_advance_days?: number
+          min_notice_min?: number
+          price_cents?: number
+          project_slug?: string | null
+          requires_payment?: boolean
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agent_user_id?: string
+          buffer_after_min?: number
+          buffer_before_min?: number
+          color?: string | null
+          created_at?: string
+          creates_showing?: boolean
+          currency?: string
+          custom_questions?: Json
+          description?: string | null
+          duration_min?: number
+          id?: string
+          is_active?: boolean
+          is_template?: boolean
+          location_type?: string
+          location_value?: string | null
+          max_advance_days?: number
+          min_notice_min?: number
+          price_cents?: number
+          project_slug?: string | null
+          requires_payment?: boolean
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_scheduler_reminder_log: {
+        Row: {
+          booking_id: string
+          channel: string
+          error: string | null
+          id: string
+          recipient: string
+          reminder_kind: string
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          channel: string
+          error?: string | null
+          id?: string
+          recipient: string
+          reminder_kind: string
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          channel?: string
+          error?: string | null
+          id?: string
+          recipient?: string
+          reminder_kind?: string
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_scheduler_reminder_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduler_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_showings: {
         Row: {
           assigned_agent: string | null
@@ -3090,42 +3439,69 @@ export type Database = {
       }
       crm_team: {
         Row: {
+          bio: string | null
+          brokerage: string | null
           created_at: string
+          default_buffer_min: number | null
+          default_min_notice_min: number | null
           display_name: string | null
           email: string | null
+          headshot_url: string | null
           id: string
           invited_at: string | null
           invited_by: string | null
           is_active: boolean
+          license_no: string | null
           name_aliases: string[]
           permissions: Json
           role: string
+          scheduler_onboarded_at: string | null
+          slug: string | null
+          timezone: string | null
           user_id: string | null
         }
         Insert: {
+          bio?: string | null
+          brokerage?: string | null
           created_at?: string
+          default_buffer_min?: number | null
+          default_min_notice_min?: number | null
           display_name?: string | null
           email?: string | null
+          headshot_url?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
           is_active?: boolean
+          license_no?: string | null
           name_aliases?: string[]
           permissions?: Json
           role?: string
+          scheduler_onboarded_at?: string | null
+          slug?: string | null
+          timezone?: string | null
           user_id?: string | null
         }
         Update: {
+          bio?: string | null
+          brokerage?: string | null
           created_at?: string
+          default_buffer_min?: number | null
+          default_min_notice_min?: number | null
           display_name?: string | null
           email?: string | null
+          headshot_url?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
           is_active?: boolean
+          license_no?: string | null
           name_aliases?: string[]
           permissions?: Json
           role?: string
+          scheduler_onboarded_at?: string | null
+          slug?: string | null
+          timezone?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -4671,6 +5047,14 @@ export type Database = {
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
+      }
+      crm_scheduler_resolve_slug: {
+        Args: { _event_slug: string; _team_slug: string }
+        Returns: Json
+      }
+      crm_scheduler_seed_defaults: {
+        Args: { _agent_user_id: string }
+        Returns: undefined
       }
       crm_team_invite: {
         Args: {
