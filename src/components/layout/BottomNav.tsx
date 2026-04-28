@@ -86,7 +86,7 @@ const CRM_MORE: MoreGroup[] = [
     items: [
       { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
       { label: 'Email Center', path: '/crm/email',    icon: Mail },
-      { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare },
+      { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare, ownerAdminOnly: true },
     ],
   },
   {
@@ -187,7 +187,7 @@ export function BottomNav() {
   const quickActions: QuickAction[] = useMemo(() => {
     const close = () => setQuickOpen(false);
     if (mode === 'crm') {
-      return [
+      const actions: QuickAction[] = [
         {
           label: 'Add Lead',
           description: 'Create a new contact in the CRM',
@@ -207,13 +207,16 @@ export function BottomNav() {
           icon: Mail,
           onClick: () => { close(); navigate('/crm/email'); },
         },
-        {
+      ];
+      if (isCrmAdmin) {
+        actions.push({
           label: 'Send Text',
           description: 'SMS or WhatsApp',
           icon: MessageSquare,
           onClick: () => { close(); navigate('/crm/sms'); },
-        },
-      ];
+        });
+      }
+      return actions;
     }
     return [
       {
@@ -236,7 +239,7 @@ export function BottomNav() {
         onClick: () => { close(); navigate('/dashboard'); },
       },
     ];
-  }, [mode, navigate]);
+  }, [mode, navigate, isCrmAdmin]);
 
 
   const renderTab = (tab: TabItem) => {

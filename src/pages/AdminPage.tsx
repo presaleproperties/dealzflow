@@ -33,6 +33,7 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { AccessRequestsCard } from '@/components/admin/AccessRequestsCard';
+import { AgentOnboardingCard } from '@/components/admin/AgentOnboardingCard';
 
 // ─── Compact stat pill ─────────────────────────────────────────────────────────
 function StatPill({ label, value, accent }: { label: string; value: string | number; accent: string }) {
@@ -191,6 +192,9 @@ export default function AdminPage() {
 
         {/* ── Workspace Access Requests ──────────────────── */}
         <AccessRequestsCard />
+
+        {/* ── Agent Onboarding (link logins, set passwords) ── */}
+        <AgentOnboardingCard />
 
         {/* ── Users Table (collapsible) ──────────────────── */}
         <Card>
