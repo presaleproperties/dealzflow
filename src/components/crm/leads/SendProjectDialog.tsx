@@ -55,7 +55,14 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         .eq('is_active', true)
         .not('slug', 'is', null)
         .order('name');
-      return (data ?? []) as Template[];
+      // Only show templates relevant to "Send Project" — the bridge composes
+      // the actual project card; we filter out booking/welcome/SMS noise so the
+      // picker matches Presale Properties' project-send flow.
+      const PROJECT_TEMPLATE_RX = /(project|property|showcase|info-package|recommendation|the-mason)/i;
+      const allowed = (data ?? []).filter((t) =>
+        PROJECT_TEMPLATE_RX.test(t.slug) || PROJECT_TEMPLATE_RX.test(t.name),
+      );
+      return (allowed.length > 0 ? allowed : (data ?? [])) as Template[];
     },
     staleTime: 5 * 60 * 1000,
     enabled: open,
@@ -112,8 +119,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
 
   useEffect(() => {
     if (!open || templates.length === 0 || templateSlug) return;
-    const showcase = templates.find(t => t.slug === 'project-showcase');
-    setTemplateSlug(showcase?.slug ?? templates[0].slug);
+    const preferred =
+      templates.find(t => t.slug === 'project-info-package') ||
+      templates.find(t => t.slug === 'project-showcase') ||
+      templates.find(t => t.slug === 'project-welcome-email');
+    setTemplateSlug(preferred?.slug ?? templates[0].slug);
   }, [open, templates, templateSlug]);
 
   // ─── Debounced live preview ──────────────────────────────────────────────
@@ -220,15 +230,18 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               />
             </Field>
 
-            {/* Template picker */}
-            <Field label="Template">
+            {/* Template picker — Presale-styled email is auto-composed by the bridge */}
+            <Field label="Email style">
               <Combobox
                 value={templateSlug}
                 onChange={setTemplateSlug}
                 items={templates.map(t => ({ value: t.slug, label: t.name }))}
-                placeholder="Select template…"
-                emptyText="No active templates."
+                placeholder="Select email style…"
+                emptyText="No project email styles."
               />
+              <div className="text-[11px] text-muted-foreground mt-1.5">
+                Branded layout, signature, and project card are rendered by Presale Properties — pixel-identical to what you'd send from there.
+              </div>
             </Field>
 
             {/* Channel tabs */}

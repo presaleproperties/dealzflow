@@ -37,11 +37,11 @@ export function RightSidebar({
 
   return (
     <div className="space-y-4">
-      {/* ⓪ Send Project — themed success CTA (highest-frequency action) */}
+      {/* ⓪ Send Project — themed gold CTA (highest-frequency action) */}
       {onSendProject && (
         <Button
           onClick={onSendProject}
-          className="w-full h-11 gap-2 font-semibold tracking-tight bg-success text-success-foreground hover:bg-success/90 border border-success/40 shadow-sm glow-success"
+          className="w-full h-11 gap-2 font-semibold tracking-tight bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/40 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)]"
         >
           <Send className="w-4 h-4" /> Send Project
         </Button>
