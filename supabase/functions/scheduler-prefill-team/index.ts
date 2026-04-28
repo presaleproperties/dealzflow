@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
 
       let full: any = match;
       try {
-        full = await presaleBridge.getAgent(match.slug);
+        full = await presaleBridge.getAgent(matchSlug);
       } catch { /* fall back to listing record */ }
 
       const normalized = normalize(full ?? match);
