@@ -84,7 +84,7 @@ export function AtAGlanceCard({ contact, leadScore, lastTouchHours }: Props) {
     <div className="rounded-xl border border-border bg-card px-3 py-3 shadow-sm">
       <div className="grid grid-cols-3 gap-x-3 gap-y-3">
         <Cell label="Score" value={`${leadScore.score}`} sub={leadScore.label} tone={scoreTone} />
-        <Cell label="Stage" value={contact.pipeline_stage || '—'} sub={null} compact />
+        <Cell label="Stage" value={contact.status || '—'} sub={null} compact />
         <Cell
           label="In stage"
           value={daysInStage == null ? '—' : `${daysInStage}d`}
