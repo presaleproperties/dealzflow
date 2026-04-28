@@ -271,12 +271,30 @@ function TeamManagement() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_team')
-        .select('*')
+        .select('id,user_id,display_name,email,phone,title,brokerage,headshot_url,headshot_focal_y,role,is_active,permissions,created_at,presale_synced_at')
         .order('created_at', { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const [syncing, setSyncing] = useState(false);
+  const syncFromPresale = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scheduler-prefill-team', { body: {} });
+      if (error) throw error;
+      const results = (data?.results || []) as Array<{ status: string }>;
+      const synced  = results.filter((r) => r.status === 'synced').length;
+      const missing = results.filter((r) => r.status === 'no_presale_match').length;
+      toast.success(`Synced ${synced} of ${results.length} from Presale${missing ? ` · ${missing} unmatched` : ''}`);
+      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const updateRole = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
