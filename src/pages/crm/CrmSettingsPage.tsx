@@ -49,7 +49,7 @@ class SectionErrorBoundary extends Component<
 import {
   Shield, Lock, UserPlus, GripVertical, Plus, Bell,
   MessageSquare, Mail, Calendar, Megaphone, Database, Link2,
-  User, ArrowUpRight,
+  User, ArrowUpRight, RefreshCw, Loader2, Phone, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior,
