@@ -39,9 +39,6 @@ export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, on
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90" onClick={onSendProject}>
-          <Send className="w-3.5 h-3.5" /> Send Project
-        </Button>
         {showTaskCta && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
             <ListTodo className="w-3.5 h-3.5" /> Task
