@@ -295,9 +295,36 @@ export default function PublicBookingPage() {
                         placeholder="What would you like to discuss?"
                         className="w-full px-3 py-2 border border-neutral-200 rounded-md text-[14px] focus:outline-none focus:border-[#D7A542]" />
                     </div>
+
+                    {customQuestions.length > 0 && (
+                      <div className="space-y-3 pt-2 border-t border-neutral-200">
+                        {customQuestions.map((q) => (
+                          <div key={q.key}>
+                            <label className="text-[12px] text-neutral-600">
+                              {q.text}{q.required && <span className="text-[#D7A542]"> *</span>}
+                            </label>
+                            {q.type === 'textarea' ? (
+                              <textarea
+                                value={answers[q.key] || ''}
+                                onChange={(e) => setAnswers((a) => ({ ...a, [q.key]: e.target.value }))}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-neutral-200 rounded-md text-[14px] focus:outline-none focus:border-[#D7A542]"
+                              />
+                            ) : (
+                              <input
+                                value={answers[q.key] || ''}
+                                onChange={(e) => setAnswers((a) => ({ ...a, [q.key]: e.target.value }))}
+                                className="w-full px-3 py-2 border border-neutral-200 rounded-md text-[14px] focus:outline-none focus:border-[#D7A542]"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <button
                       onClick={submit}
-                      disabled={submitting || !name || (!email && !phone)}
+                      disabled={submitting || !name || (!email && !phone) || missingRequiredAnswers}
                       className="w-full py-3 bg-[#D7A542] hover:bg-[#c69537] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[14px] rounded-md transition-colors">
                       {submitting ? 'Booking…' : 'Confirm booking'}
                     </button>
