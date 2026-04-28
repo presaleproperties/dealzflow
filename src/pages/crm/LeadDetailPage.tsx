@@ -358,6 +358,7 @@ export default function LeadDetailPage() {
               onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
               onText={() => setShowText(true)}
               onEmail={() => setShowEmail(true)}
+              onSendProject={() => setShowSendProject(true)}
               leadScore={leadScore}
               lastTouchHours={lastTouchHours}
             />
