@@ -78,6 +78,11 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const [fullPreview, setFullPreview] = useState(false);
   const [withSampleData, setWithSampleData] = useState(true);
+  // ON by default for new drafts; for an existing template, ON only if it
+  // already has a stamped signature block (so we never silently mutate
+  // legacy templates that have a manually-pasted signature).
+  const [appendSignature, setAppendSignature] = useState<boolean>(true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
@@ -90,15 +95,28 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
 
   useEffect(() => {
     if (template) {
+      const tplHtml = template.html_content ?? '';
       setName(template.name);
       setSubject(template.subject ?? '');
       setPreviewText(template.preview_text ?? '');
-      setHtmlContent(template.html_content ?? '');
+      // Strip any stamped block while editing so the textarea stays clean;
+      // it gets re-applied at save time when the toggle is on.
+      setHtmlContent(stripSignatureBlock(tplHtml));
       setCategory(template.category ?? 'custom');
       setProjectTags(template.project_tags ?? []);
       setAreaTags(template.area_tags ?? []);
+      setAppendSignature(hasSignatureBlock(tplHtml));
+    } else if (initialDraft) {
+      setName(initialDraft.name ?? '');
+      setSubject(initialDraft.subject ?? '');
+      setPreviewText(initialDraft.preview_text ?? '');
+      setHtmlContent(stripSignatureBlock(initialDraft.html_content ?? ''));
+      setCategory(initialDraft.category ?? 'custom');
+      setProjectTags(initialDraft.project_tags ?? []);
+      setAreaTags(initialDraft.area_tags ?? []);
+      setAppendSignature(true);
     }
-  }, [template]);
+  }, [template, initialDraft]);
 
   const updateIframe = useCallback((ref: React.RefObject<HTMLIFrameElement | null>, html: string) => {
     if (ref.current) {
