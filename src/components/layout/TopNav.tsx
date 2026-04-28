@@ -160,7 +160,7 @@ export function TopNav() {
     <>
       <header
         className="hidden lg:block sticky top-0 z-40 backdrop-blur-xl native-chrome"
-        style={{ background: NAV_BG, borderBottom: `1px solid ${NAV_BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{ background: NAV_BG, borderBottom: `1px solid ${NAV_BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)', paddingRight: '52px' }}
       >
         <div className="flex items-center h-[54px] px-3 sm:px-4 lg:px-6 gap-2 sm:gap-4">
           {/* Mobile hamburger removed — bottom tab bar handles primary nav on mobile/tablet */}
