@@ -12,6 +12,7 @@ import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
+import { SendProjectDialog } from '@/components/crm/leads/SendProjectDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
@@ -43,6 +44,7 @@ export default function LeadDetailPage() {
   const openWhatsAppChat = useOpenWhatsAppChat();
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
+  const [showSendProject, setShowSendProject] = useState(false);
 
   const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -287,6 +289,7 @@ export default function LeadDetailPage() {
         <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
         <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
         <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
+        <SendProjectDialog contact={c} open={showSendProject} onOpenChange={setShowSendProject} />
       </>
     );
   }
@@ -300,6 +303,7 @@ export default function LeadDetailPage() {
         onNavigate={handleNavigate}
         onTask={() => setShowTask(true)}
         onShowing={() => setShowShowing(true)}
+        onSendProject={() => setShowSendProject(true)}
         showTaskCta={leftCollapsed}
         showShowingCta={rightCollapsed}
       />
@@ -365,6 +369,7 @@ export default function LeadDetailPage() {
       <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
       <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
+      <SendProjectDialog contact={c} open={showSendProject} onOpenChange={setShowSendProject} />
     </div>
   );
 }
