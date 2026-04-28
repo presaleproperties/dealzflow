@@ -110,18 +110,24 @@ Deno.serve(async (req) => {
       }, null, 2), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const normName = (s: string) => String(s || "").toLowerCase().replace(/[^a-z]/g, "");
+    const normName = (s: string) => String(s || "").toLowerCase().replace(/prec\b/g, "").replace(/[^a-z]/g, "");
+    const tokens = (s: string) => normName(s).match(/.{1,}/g) ? [normName(s)] : [];
+    const nameMatches = (a: string, b: string) => {
+      const na = normName(a), nb = normName(b);
+      if (!na || !nb) return false;
+      return na === nb || na.includes(nb) || nb.includes(na);
+    };
     const results: any[] = [];
 
     for (const t of team || []) {
       const teamEmail = (t.email || "").toLowerCase();
-      const teamName = normName(t.display_name || "");
-      let match = agents.find((a) => (a.email ?? "").toLowerCase() === teamEmail);
+      let match: any = agents.find((a: any) => (a.email ?? "").toLowerCase() === teamEmail);
       if (!match) {
-        match = agents.find((a) => normName(a.name ?? "") === teamName);
+        match = agents.find((a: any) => nameMatches(a.full_name ?? a.name ?? "", t.display_name ?? ""));
       }
 
-      if (!match?.slug) {
+      const matchSlug = match?.slug ?? match?.id;
+      if (!match || !matchSlug) {
         results.push({ id: t.id, name: t.display_name, email: t.email, status: "no_presale_match" });
         continue;
       }
