@@ -317,7 +317,7 @@ function SetupChecklist({
       cta: 'Open email settings', tab: 'email' as TabId,
     },
     {
-      done: !!emailSettings?.from_name,
+      done: !!emailSettings?.sender_name,
       title: 'Confirm your sender name',
       desc: 'How recipients see your name in their inbox.',
       cta: 'Open email settings', tab: 'email' as TabId,
