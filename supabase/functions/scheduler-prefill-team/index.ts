@@ -83,29 +83,58 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    let force = url.searchParams.get("force") === "1";
+    const debug = url.searchParams.get("debug") === "1";
+    try {
+      const body = req.method === "POST" ? await req.json().catch(() => null) : null;
+      if (body && body.force === true) force = true;
+    } catch { /* ignore */ }
+
     const { data: team, error: tErr } = await admin
       .from("crm_team")
-      .select("id,user_id,display_name,email,slug,headshot_url,brokerage,license_no,title,bio")
+      .select("id,user_id,display_name,email,slug,headshot_url,brokerage,license_no,title,bio,phone")
       .eq("is_active", true);
     if (tErr) throw tErr;
 
     const listed = await presaleBridge.listAgents();
     const agents = unwrap(listed) as BridgeAgent[];
 
+    if (debug) {
+      return new Response(JSON.stringify({
+        ok: true,
+        agent_count: agents.length,
+        sample: agents.slice(0, 5),
+        keys: agents[0] ? Object.keys(agents[0]) : [],
+        team: (team || []).map(t => ({ name: t.display_name, email: t.email })),
+      }, null, 2), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const normName = (s: string) => String(s || "").toLowerCase().replace(/prec\b/g, "").replace(/[^a-z]/g, "");
+    const tokens = (s: string) => normName(s).match(/.{1,}/g) ? [normName(s)] : [];
+    const nameMatches = (a: string, b: string) => {
+      const na = normName(a), nb = normName(b);
+      if (!na || !nb) return false;
+      return na === nb || na.includes(nb) || nb.includes(na);
+    };
     const results: any[] = [];
 
     for (const t of team || []) {
       const teamEmail = (t.email || "").toLowerCase();
-      const match = agents.find((a) => (a.email ?? "").toLowerCase() === teamEmail);
+      let match: any = agents.find((a: any) => (a.email ?? "").toLowerCase() === teamEmail);
+      if (!match) {
+        match = agents.find((a: any) => nameMatches(a.full_name ?? a.name ?? "", t.display_name ?? ""));
+      }
 
-      if (!match?.slug) {
+      const matchSlug = match?.slug ?? match?.id;
+      if (!match || !matchSlug) {
         results.push({ id: t.id, name: t.display_name, email: t.email, status: "no_presale_match" });
         continue;
       }
 
       let full: any = match;
       try {
-        full = await presaleBridge.getAgent(match.slug);
+        full = await presaleBridge.getAgent(matchSlug);
       } catch { /* fall back to listing record */ }
 
       const normalized = normalize(full ?? match);
@@ -114,17 +143,23 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Only fill blanks; never overwrite existing values
+      // Presale is source of truth. Overwrite when Presale has a value.
+      // (force=true also overwrites slug/email; otherwise we keep existing slug.)
       const patch: Record<string, any> = {
         presale_snapshot: normalized,
         presale_synced_at: new Date().toISOString(),
       };
-      if (!t.slug && normalized.slug) patch.slug = slugify(normalized.slug);
-      if (!t.headshot_url && normalized.headshotUrl) patch.headshot_url = normalized.headshotUrl;
-      if (!t.brokerage && normalized.brokerage) patch.brokerage = normalized.brokerage;
-      if (!t.license_no && normalized.licenseNumber) patch.license_no = normalized.licenseNumber;
-      if (!t.title && normalized.title) patch.title = normalized.title;
-      if (!t.bio && normalized.bio) patch.bio = normalized.bio;
+      const setIfPresale = (col: string, val: any) => {
+        if (val !== undefined && val !== null && val !== "") patch[col] = val;
+      };
+      const slugSrc = normalized.slug || matchSlug;
+      if ((!t.slug || force) && slugSrc) patch.slug = slugify(String(slugSrc));
+      setIfPresale("headshot_url", normalized.headshotUrl);
+      setIfPresale("brokerage",    normalized.brokerage);
+      setIfPresale("license_no",   normalized.licenseNumber);
+      setIfPresale("title",        normalized.title);
+      setIfPresale("phone",        normalized.phone);
+      if (!t.bio || force) setIfPresale("bio", normalized.bio);
 
       const { error: uErr } = await admin.from("crm_team").update(patch).eq("id", t.id);
       if (uErr) {

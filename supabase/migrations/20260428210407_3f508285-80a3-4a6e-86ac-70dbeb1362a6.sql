@@ -1,0 +1,1 @@
+ALTER TABLE public.crm_team ADD COLUMN IF NOT EXISTS phone text;

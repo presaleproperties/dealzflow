@@ -606,7 +606,7 @@ function SettingsLayout({
       </div>
 
       {/* Desktop — sticky sidebar */}
-      <nav className="hidden lg:flex flex-col w-44 shrink-0 sticky top-4 self-start pt-1">
+      <nav className="hidden lg:flex flex-col w-44 shrink-0 sticky top-4 self-start pt-2 pb-3 px-2 -mx-2 rounded-xl bg-background/85 backdrop-blur-md ring-1 ring-border/50 z-20">
         <div className="space-y-0.5">
           {sections.map(({ id, label, icon: Icon }) => (
             <button
