@@ -72,6 +72,7 @@ import LeadDetailPage from "./pages/crm/LeadDetailPage";
 import CrmSchedulerPage from "./pages/crm/CrmSchedulerPage";
 import PublicAgentLandingPage from "./pages/public/PublicAgentLandingPage";
 import PublicBookingPage from "./pages/public/PublicBookingPage";
+import PublicBookingPaidPage from "./pages/public/PublicBookingPaidPage";
 
 import { idbPersister } from "./lib/queryPersister";
 
