@@ -21,7 +21,7 @@ const TABS: Tab[] = [
   { label: 'Reports',      path: '/crm/reports',      icon: BarChart3 },
   { label: 'Automations',  path: '/crm/automations',  icon: Zap,      ownerAdminOnly: true },
   { label: 'Integrations', path: '/crm/integrations', icon: Plug,     ownerAdminOnly: true },
-  { label: 'Settings',     path: '/crm/settings',     icon: Settings, ownerAdminOnly: true },
+  { label: 'Settings',     path: '/crm/settings',     icon: Settings },
 ];
 
 const TEAL = 'hsl(var(--primary))';

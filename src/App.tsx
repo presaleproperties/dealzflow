@@ -231,7 +231,7 @@ const App = () => (
                   <Route path="/crm/automations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmAutomationsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/behavior" element={<ProtectedRoute><CrmLayout><CrmBehaviorDashboardPage /></CrmLayout></ProtectedRoute>} />
