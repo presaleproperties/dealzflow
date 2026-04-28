@@ -279,10 +279,18 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({
-    ok: true,
-    message_id: logRow?.id ?? null,
-    external_id: gmail_message_id,
-    enrolled,
-  });
+    return json({
+      ok: true,
+      message_id: logRow?.id ?? null,
+      external_id: gmail_message_id,
+      enrolled,
+    });
+  } catch (e) {
+    console.error("[render-and-send] unhandled error", e);
+    return json({
+      error: "internal_error",
+      detail: (e as Error).message,
+      stack: (e as Error).stack?.slice(0, 800),
+    }, 500);
+  }
 });
