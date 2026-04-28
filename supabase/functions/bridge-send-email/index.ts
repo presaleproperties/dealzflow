@@ -94,9 +94,12 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const bridgeSecret = Deno.env.get("BRIDGE_SECRET");
+    const bridgeSecret =
+      Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET");
+    const presaleAnonKey = Deno.env.get("PRESALE_ANON_KEY");
 
     if (!bridgeSecret) return json({ error: "BRIDGE_SECRET not configured" }, 500);
+    if (!presaleAnonKey) return json({ error: "PRESALE_ANON_KEY not configured" }, 500);
 
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return json({ error: "Unauthorized" }, 401);
@@ -166,6 +169,8 @@ Deno.serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         "x-bridge-secret": bridgeSecret,
+        "Authorization": `Bearer ${presaleAnonKey}`,
+        "apikey": presaleAnonKey,
       },
       body: JSON.stringify({
         to: toArr,
