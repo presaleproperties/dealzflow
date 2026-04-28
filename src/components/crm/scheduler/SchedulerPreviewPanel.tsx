@@ -164,7 +164,7 @@ export function SchedulerPreviewPanel({ compact = false }: { compact?: boolean }
                   : 'bg-background text-muted-foreground border-border hover:text-foreground'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: et.color || '#D7A542' }} />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: et.color || 'hsl(var(--primary))' }} />
               {et.title}
             </button>
           ))}
