@@ -87,6 +87,31 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  const { data: teamAgent } = await supabase
+    .from("crm_team")
+    .select("slug, email, gmail_address, display_name, presale_snapshot")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  const presaleSnapshot = (teamAgent?.presale_snapshot ?? {}) as Record<string, unknown>;
+  const agentSlug =
+    (typeof presaleSnapshot.slug === "string" && presaleSnapshot.slug) ||
+    teamAgent?.slug ||
+    null;
+  const agentEmail =
+    (typeof presaleSnapshot.email === "string" && presaleSnapshot.email) ||
+    teamAgent?.email ||
+    teamAgent?.gmail_address ||
+    user.email ||
+    null;
+  const agentName =
+    (typeof presaleSnapshot.name === "string" && presaleSnapshot.name) ||
+    teamAgent?.display_name ||
+    (user.user_metadata as { full_name?: string } | null)?.full_name ||
+    user.email ||
+    "";
+
   // (a) contact
   const { data: contact, error: contactErr } = await supabase
     .from("crm_contacts")
@@ -105,6 +130,16 @@ Deno.serve(async (req) => {
     .eq("slug", template_slug)
     .maybeSingle();
   if (templateErr || !template) return json({ error: "template_not_found" }, 404);
+
+  let bridgeProjectSlug = project_slug;
+  const { data: projectBySlug } = await supabase
+    .from("crm_projects")
+    .select("presale_slug")
+    .eq("slug", project_slug)
+    .maybeSingle();
+  if (projectBySlug?.presale_slug) {
+    bridgeProjectSlug = projectBySlug.presale_slug;
+  }
 
   // (c) bridge-render-email (POST)
   if (!BRIDGE_URL || !BRIDGE_SECRET || !PRESALE_ANON_KEY) {
@@ -136,14 +171,17 @@ Deno.serve(async (req) => {
           email: contact.email,
           phone: contact.phone,
         },
-        project_slug,
-        // Bridge requires one of agent_id / agent_email / agent_auth_user_id
+        project_slug: bridgeProjectSlug,
+        // Prefer the Presale agent identity synced into crm_team; auth email/id
+        // often differs from the Presale agent record and causes 404s.
+        agent_slug: agentSlug,
+        agent_id: agentSlug,
         agent_auth_user_id: user.id,
-        agent_email: user.email ?? null,
+        agent_email: agentEmail,
         agent: {
-          display_name:
-            (user.user_metadata as { full_name?: string } | null)?.full_name ||
-            user.email || "",
+          slug: agentSlug,
+          email: agentEmail,
+          display_name: agentName,
         },
       }),
     });
@@ -156,9 +194,12 @@ Deno.serve(async (req) => {
       bridge_url: BRIDGE_URL,
     }, 502);
   }
-  let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; error?: string } = {};
+  let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; subject?: string; html?: string; text?: string; error?: string } = {};
   try { rendered = renderText ? JSON.parse(renderText) : {}; } catch { /* */ }
-  if (!renderRes.ok || !rendered.html_rendered) {
+  const subject_rendered = rendered.subject_rendered || rendered.subject || template.subject || "";
+  const html_rendered = rendered.html_rendered || rendered.html || "";
+  const text_rendered = rendered.text_rendered ?? rendered.text ?? "";
+  if (!renderRes.ok || !html_rendered) {
     console.error("[render-and-send] bridge render failed", { status: renderRes.status, body: renderText.slice(0, 500) });
     return json({
       error: "bridge_render_failed",
@@ -166,10 +207,6 @@ Deno.serve(async (req) => {
       body: rendered.error ?? renderText.slice(0, 500),
     }, 502);
   }
-
-  const subject_rendered = rendered.subject_rendered || template.subject || "";
-  const html_rendered = rendered.html_rendered;
-  const text_rendered = rendered.text_rendered ?? "";
 
   // (d) dry run — preview only
   if (dry_run) {
