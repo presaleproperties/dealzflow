@@ -69,6 +69,9 @@ import CrmBehaviorLeadsPage from "./pages/crm/CrmBehaviorLeadsPage";
 import CrmBehaviorDashboardPage from "./pages/crm/CrmBehaviorDashboardPage";
 import CrmSmsCenterPage from "./pages/crm/CrmSmsCenterPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
+import CrmSchedulerPage from "./pages/crm/CrmSchedulerPage";
+import PublicAgentLandingPage from "./pages/public/PublicAgentLandingPage";
+import PublicBookingPage from "./pages/public/PublicBookingPage";
 
 import { idbPersister } from "./lib/queryPersister";
 
@@ -231,6 +234,11 @@ const App = () => (
                   <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/behavior" element={<ProtectedRoute><CrmLayout><CrmBehaviorDashboardPage /></CrmLayout></ProtectedRoute>} />
+                  <Route path="/crm/scheduler" element={<ProtectedRoute><CrmLayout><CrmSchedulerPage /></CrmLayout></ProtectedRoute>} />
+
+                  {/* Public booking pages — no auth */}
+                  <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
+                  <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
