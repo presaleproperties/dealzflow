@@ -178,37 +178,37 @@ export default function CrmSchedulerPage() {
         <HeroIdentity profile={profile} onCopy={handleCopy} publicUrl={publicUrl} />
       </div>
 
-      {/* At-a-glance stats */}
+      {/* At-a-glance stats — editorial KPI strip */}
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <Card className="px-4 py-3">
-          <div className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">Active events</div>
-          <div className="text-[22px] font-semibold tabular-nums mt-0.5 text-foreground">
+        <Card className="px-4 py-3.5 border-border/70">
+          <div className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Active events</div>
+          <div className="text-[24px] font-bold tabular-nums mt-1 text-foreground tracking-[-0.02em]">
             {eventTypes.filter((e) => e.is_active).length}
             <span className="text-[12px] text-muted-foreground/60 font-normal ml-1">/ {eventTypes.length}</span>
           </div>
         </Card>
-        <Card className="px-4 py-3">
-          <div className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">Available days/wk</div>
-          <div className="text-[22px] font-semibold tabular-nums mt-0.5 text-foreground">
+        <Card className="px-4 py-3.5 border-border/70">
+          <div className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Available days/wk</div>
+          <div className="text-[24px] font-bold tabular-nums mt-1 text-foreground tracking-[-0.02em]">
             {new Set(availability.filter((a) => a.is_active).map((a) => a.day_of_week)).size}
           </div>
         </Card>
-        <Card className="px-4 py-3">
-          <div className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">Upcoming bookings</div>
-          <div className="text-[22px] font-semibold tabular-nums mt-0.5 text-foreground">{upcoming.length}</div>
+        <Card className="px-4 py-3.5 border-border/70">
+          <div className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Upcoming bookings</div>
+          <div className="text-[24px] font-bold tabular-nums mt-1 text-foreground tracking-[-0.02em]">{upcoming.length}</div>
         </Card>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-          <TabsList className="h-auto p-0.5">
-            <TabsTrigger value="setup" className="gap-1.5 data-[state=active]:shadow-sm">
+          <TabsList className="h-auto p-1 bg-muted/60 border border-border/60">
+            <TabsTrigger value="setup" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground text-[12.5px] font-medium px-3.5 py-1.5">
               <SettingsIcon className="w-3.5 h-3.5" /> Setup
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-1.5">
+            <TabsTrigger value="calendar" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm text-[12.5px] font-medium px-3.5 py-1.5">
               <CalendarIcon className="w-3.5 h-3.5" /> Calendar
             </TabsTrigger>
-            <TabsTrigger value="bookings" className="gap-1.5">
+            <TabsTrigger value="bookings" className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm text-[12.5px] font-medium px-3.5 py-1.5">
               <ListChecks className="w-3.5 h-3.5" /> Bookings
             </TabsTrigger>
           </TabsList>
@@ -228,22 +228,23 @@ export default function CrmSchedulerPage() {
         <TabsContent value="setup" className="mt-0">
           <div className={`grid gap-5 ${showPreview && publicUrl ? 'grid-cols-1 xl:grid-cols-[260px_1fr_minmax(360px,420px)]' : 'grid-cols-1 lg:grid-cols-[240px_1fr]'}`}>
             {/* Left rail — section nav */}
-            <aside className="space-y-1.5">
+            <aside className="space-y-3">
               <CompletenessChecklist profile={profile} eventTypes={eventTypes} availability={availability} />
-              <Card className="p-1.5 mt-3">
+              <Card className="p-1.5">
                 {SETUP_SECTIONS.map((s) => {
                   const active = setupSection === s.id;
                   return (
                     <button
                       key={s.id}
                       onClick={() => setSetupSection(s.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-md transition-colors ${
+                      className={`w-full text-left px-3 py-2.5 rounded-md transition-all relative ${
                         active
-                          ? 'bg-[hsl(var(--accent))]/60 text-foreground'
+                          ? 'bg-primary/10 text-foreground'
                           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                       }`}
                     >
-                      <div className="text-[13px] font-medium">{s.label}</div>
+                      {active && <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-r bg-primary" />}
+                      <div className={`text-[13px] ${active ? 'font-semibold' : 'font-medium'}`}>{s.label}</div>
                       <div className="text-[11px] text-muted-foreground/80 mt-0.5">{s.hint}</div>
                     </button>
                   );
