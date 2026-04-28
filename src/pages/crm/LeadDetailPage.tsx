@@ -289,6 +289,7 @@ export default function LeadDetailPage() {
         <SendTextDialog contact={c} open={showText} onOpenChange={setShowText} initialChannel={textChannel} />
         <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
         <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
+        <SendProjectDialog contact={c} open={showSendProject} onOpenChange={setShowSendProject} />
       </>
     );
   }
