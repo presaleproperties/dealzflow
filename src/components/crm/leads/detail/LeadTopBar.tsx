@@ -11,7 +11,7 @@ interface Props {
   onNavigate: (dir: 'prev' | 'next') => void;
   onTask: () => void;
   onShowing: () => void;
-  onSendProject: () => void;
+  onSendProject?: () => void;
   /** Show "Task" CTA only when the left details panel is collapsed. */
   showTaskCta?: boolean;
   /** Show "Book Showing" CTA only when the right insights panel is collapsed. */
@@ -19,7 +19,7 @@ interface Props {
 }
 
 /** Top bar — Lead identity, navigation, and primary CTAs. */
-export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, onSendProject, showTaskCta, showShowingCta }: Props) {
+export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, showTaskCta, showShowingCta }: Props) {
   const typeLabel = TYPE_LABELS[contact.contact_type] ?? 'LEAD';
   return (
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
