@@ -154,24 +154,40 @@ Deno.serve(async (req) => {
     }
 
     // Activity event (Realtime → assigned agent toast)
-    await supabase.from('crm_activity_events').insert({
-      contact_id: contactId,
-      agent_user_id: agent.user_id,
-      event_type: 'scheduler_booking',
-      summary: `Booked ${evt.title} on ${startDate.toLocaleString('en-US', { timeZone: agent.timezone || 'America/Vancouver' })}`,
-      payload: { booking_id: booking.id, event_slug: evt.slug, start_at: startDate.toISOString() },
-    }).then(() => {}, () => {}); // best-effort
+    try {
+      await supabase.from('crm_activity_events').insert({
+        type: 'scheduler_booking',
+        contact_id: contactId,
+        lead_email: email,
+        lead_phone: phone,
+        project_slug: evt.project_slug || null,
+        agent_slug: agent.slug || null,
+        metadata: {
+          booking_id: booking.id,
+          event_slug: evt.slug,
+          event_title: evt.title,
+          start_at: startDate.toISOString(),
+          duration_min: evt.duration_min,
+        },
+        occurred_at: new Date().toISOString(),
+      });
+    } catch (e) { console.warn('activity insert failed', e); }
 
     // Showing record for project events
-    if (evt.creates_showing && evt.project_slug) {
-      await supabase.from('crm_showings').insert({
-        contact_id: contactId,
-        project: evt.project_slug,
-        scheduled_at: startDate.toISOString(),
-        assigned_agent: agent.display_name || agent.email,
-        status: 'scheduled',
-        notes: `Auto-created from scheduler booking ${booking.id}`,
-      }).then(() => {}, () => {});
+    if (evt.creates_showing) {
+      try {
+        const localDate = startDate.toISOString().slice(0, 10);
+        const localTime = startDate.toISOString().slice(11, 19);
+        await supabase.from('crm_showings').insert({
+          contact_id: contactId,
+          project: evt.project_slug || evt.title,
+          showing_date: localDate,
+          showing_time: localTime,
+          assigned_agent: agent.display_name || agent.email,
+          status: 'scheduled',
+          notes: `Auto-created from scheduler booking ${booking.id}`,
+        });
+      } catch (e) { console.warn('showing insert failed', e); }
     }
 
     return new Response(JSON.stringify({
