@@ -71,7 +71,10 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (searchParams.get('mode') === 'reset') {
+    // Supabase recovery links arrive as #access_token=...&type=recovery
+    const hash = window.location.hash || '';
+    const isRecovery = hash.includes('type=recovery') || searchParams.get('mode') === 'reset';
+    if (isRecovery) {
       setMode('reset');
       setShowEmailForm(true);
     }
