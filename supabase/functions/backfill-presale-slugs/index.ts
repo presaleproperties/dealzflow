@@ -1,5 +1,5 @@
 // One-shot backfill: maps crm_projects.name -> presale slug via bridge.
-// Service-role only; protected by CRON_SECRET header.
+// Auth: requires a signed-in CRM admin OR matching x-cron-secret header.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { presaleBridge } from "../_shared/presale-bridge.ts";
 
@@ -9,23 +9,47 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
   const cronSecret = req.headers.get("x-cron-secret");
-  if (cronSecret !== Deno.env.get("CRON_SECRET")) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...cors, "Content-Type":"application/json" } });
+  let allowed = false;
+
+  if (cronSecret && cronSecret === Deno.env.get("CRON_SECRET")) {
+    allowed = true;
+  } else {
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const userClient = createClient(SUPABASE_URL, SERVICE_ROLE, { global: { headers: { Authorization: authHeader } } });
+      const { data: u } = await userClient.auth.getUser();
+      if (u?.user?.id) {
+        const { data: row } = await userClient
+          .from("crm_team")
+          .select("role,is_active")
+          .eq("user_id", u.user.id)
+          .maybeSingle();
+        if (row?.is_active && (row.role === "owner" || row.role === "admin")) allowed = true;
+      }
+    }
   }
 
-  const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+  }
+
+  const supa = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   const { data: projects, error } = await supa
     .from("crm_projects")
     .select("id,name,slug")
     .is("presale_slug", null);
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...cors, "Content-Type":"application/json" } });
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
 
   let matched = 0, ambiguous = 0, none = 0, errors = 0;
-  const details: any[] = [];
+  const errorSamples: any[] = [];
 
   for (const p of projects ?? []) {
     try {
@@ -54,11 +78,11 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       errors++;
-      details.push({ id: p.id, name: p.name, err: (e as Error).message });
+      if (errorSamples.length < 5) errorSamples.push({ id: p.id, name: p.name, err: (e as Error).message });
     }
   }
 
-  return new Response(JSON.stringify({ total: projects?.length ?? 0, matched, ambiguous, none, errors, errorSamples: details.slice(0,5) }, null, 2), {
+  return new Response(JSON.stringify({ total: projects?.length ?? 0, matched, ambiguous, none, errors, errorSamples }, null, 2), {
     headers: { ...cors, "Content-Type": "application/json" },
   });
 });
