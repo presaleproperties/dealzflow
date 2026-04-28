@@ -369,9 +369,6 @@ export function QuickActionBar({ contact }: Props) {
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">
-              ⌘ + Enter to send
-            </span>
             {mode === 'text' && segInfo && body && (
               <span className="text-[10.5px] tabular-nums text-muted-foreground/70 font-medium">
                 {segInfo.chars}ch · {segInfo.count} seg
