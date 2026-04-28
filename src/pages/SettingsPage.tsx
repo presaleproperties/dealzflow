@@ -538,6 +538,110 @@ export default function SettingsPage() {
   );
 }
 
+// ──────────────────────────────────────────────
+// SettingsLayout — sticky left-nav + scroll-spy
+// (mirrors CrmSettingsPage pattern)
+// ──────────────────────────────────────────────
+function SettingsLayout({
+  sections,
+  initialActive,
+  children,
+}: {
+  sections: ReadonlyArray<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }>;
+  initialActive?: string;
+  children: React.ReactNode;
+}) {
+  const [activeSection, setActiveSection] = useState<string>(initialActive ?? sections[0].id);
+
+  // Initial scroll if linked with ?tab=
+  useEffect(() => {
+    if (initialActive && initialActive !== sections[0].id) {
+      const el = document.getElementById(initialActive);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'auto', block: 'start' }), 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Scroll-spy
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        }
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+    );
+    sections.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [sections]);
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-0 lg:gap-8">
+      {/* Mobile/Tablet — horizontal pill bar */}
+      <div className="lg:hidden overflow-x-auto border-b border-border bg-background/95 backdrop-blur sticky top-0 z-10 -mx-4 px-4 mb-4">
+        <div className="flex gap-1 py-2 min-w-max">
+          {sections.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                activeSection === id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop — sticky sidebar */}
+      <nav className="hidden lg:flex flex-col w-44 shrink-0 sticky top-4 self-start pt-1">
+        <div className="space-y-0.5">
+          {sections.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={cn(
+                'flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors text-left',
+                activeSection === id
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0 space-y-6 sm:space-y-8 max-w-3xl">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SettingsSectionAnchor({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <div id={id} className="scroll-mt-20 space-y-6">
+      {children}
+    </div>
+  );
+}
+
 // Reusable Settings Card
 function SettingsCard({ 
   icon: Icon, 
