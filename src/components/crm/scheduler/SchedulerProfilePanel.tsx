@@ -108,15 +108,14 @@ export function SchedulerProfilePanel() {
           <div className="flex flex-col items-center gap-2">
             {form.headshot_url ? (
               <img src={form.headshot_url} alt="Headshot"
-                className="w-[120px] h-[120px] rounded-full object-cover border border-border shadow-sm"
+                className="w-[120px] h-[120px] rounded-full object-cover border border-border shadow-sm ring-1 ring-primary/20"
                 style={{ objectPosition: `center ${focalY}%` }} />
             ) : (
-              <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center text-3xl font-medium border border-border"
-                style={{ background: '#D7A542', color: 'white', fontFamily: 'Georgia, serif' }}>
+              <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center text-3xl font-bold border border-border bg-primary text-primary-foreground tracking-tight">
                 {initials}
               </div>
             )}
-            <span className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">Public preview</span>
+            <span className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Public preview</span>
           </div>
           <div className="space-y-3">
             <div>
