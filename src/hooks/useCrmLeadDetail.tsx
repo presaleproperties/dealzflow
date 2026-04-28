@@ -127,7 +127,20 @@ export function useUpdateCrmContact() {
         }
       }
       const { error } = await supabase.from('crm_contacts').update(finalUpdates).eq('id', id);
-      if (error) throw error;
+      if (error) {
+        // Friendly message for the most common write failure: another lead
+        // already owns this email/phone. Postgres surfaces a cryptic
+        // "duplicate key value violates unique constraint" message that
+        // looks like the whole update is broken — translate it.
+        const msg = error.message || '';
+        if (msg.includes('uniq_crm_contacts_email_lower') || (msg.includes('duplicate key') && msg.includes('email'))) {
+          throw new Error('Another lead already uses this email address. Edit the other lead or use a different email.');
+        }
+        if (msg.includes('duplicate key') && msg.includes('phone')) {
+          throw new Error('Another lead already uses this phone number.');
+        }
+        throw error;
+      }
 
       // Log system notes for key changes
       const { data: { session } } = await supabase.auth.getSession();
