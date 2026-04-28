@@ -69,7 +69,11 @@ export function useBridgeTemplates() {
         };
       });
     },
-    staleTime: 60_000,
+    // Keep templates fresh: refetch every 60s in background, on focus, and on reconnect.
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   });
 }
