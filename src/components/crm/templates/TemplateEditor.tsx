@@ -503,6 +503,24 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Archive confirmation */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{name || 'Untitled'}" will be hidden from the library. You can restore it later from the database. Sent emails are not affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
