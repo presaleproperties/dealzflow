@@ -10,16 +10,29 @@ export function useCrmContactEmailSendLog(contactId: string | undefined) {
     queryKey: ['crm-email-send-log', contactId],
     queryFn: async () => {
       if (!contactId) return [];
+      // Read from crm_email_log — the source of truth for the email bridge
+      // (inline composer + tracked sends). Shape it to match what the widget expects.
       const { data, error } = await supabase
-        .from('crm_email_send_log')
+        .from('crm_email_log')
         .select(
-          'id, subject, sent_at, status, template_id, template_type, campaign_id, open_count, click_count, last_opened_at, last_clicked_at, clicked_url',
+          'id, subject, sent_at, direction, open_count, click_count, last_opened_at, last_clicked_at, opened_at, clicked_at, tracking_id',
         )
         .eq('contact_id', contactId)
+        .eq('direction', 'outbound')
         .order('sent_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        subject: r.subject,
+        sent_at: r.sent_at,
+        status: r.tracking_id ? 'sent' : 'sent',
+        open_count: r.open_count ?? 0,
+        click_count: r.click_count ?? 0,
+        last_opened_at: r.last_opened_at ?? r.opened_at ?? null,
+        last_clicked_at: r.last_clicked_at ?? r.clicked_at ?? null,
+        clicked_url: null,
+      }));
     },
     enabled: !!contactId,
     refetchInterval: 30_000,
