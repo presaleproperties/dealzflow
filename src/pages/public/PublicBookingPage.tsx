@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check, CreditCard } from 'lucide-react';
 import { addDays, format, startOfDay, isSameDay, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore } from 'date-fns';
+import { useOgMeta } from '@/lib/useOgMeta';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -49,6 +50,20 @@ export default function PublicBookingPage() {
       document.head.appendChild(link);
     }
   }, []);
+
+  // OG / Twitter meta — link previews
+  useOgMeta({
+    title: resolved?.agent?.display_name && resolved?.event_type?.title
+      ? `${resolved.event_type.title} with ${resolved.agent.display_name}`
+      : 'Book a meeting',
+    description: resolved?.event_type?.description
+      || (resolved?.agent?.display_name ? `Schedule a meeting with ${resolved.agent.display_name}` : undefined),
+    image: teamSlug
+      ? `${SUPABASE_URL}/functions/v1/scheduler-og-image?team=${encodeURIComponent(teamSlug)}${eventSlug ? `&event=${encodeURIComponent(eventSlug)}` : ''}`
+      : undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+  });
+
 
   useEffect(() => {
     if (!teamSlug || !eventSlug) return;
