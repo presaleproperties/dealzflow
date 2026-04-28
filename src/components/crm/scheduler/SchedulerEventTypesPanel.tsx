@@ -28,7 +28,7 @@ export function SchedulerEventTypesPanel({ agentSlug }: { agentSlug: string | nu
       toast.error('Set your slug in Profile first');
       return;
     }
-    const url = `${window.location.origin}/book/${agentSlug}/${slug}`;
+    const url = `${window.location.origin}/r/${agentSlug}/${slug}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copied');
   };
@@ -78,7 +78,7 @@ export function SchedulerEventTypesPanel({ agentSlug }: { agentSlug: string | nu
                 <Copy className="w-3 h-3 mr-1" /> Copy link
               </Button>
               <Button variant="ghost" size="sm" className="h-7 px-2 text-[11.5px]"
-                onClick={() => agentSlug && window.open(`/book/${agentSlug}/${et.slug}`, '_blank')}>
+                onClick={() => agentSlug && window.open(`/r/${agentSlug}/${et.slug}`, '_blank')}>
                 <ExternalLink className="w-3 h-3" />
               </Button>
               <div className="flex-1" />

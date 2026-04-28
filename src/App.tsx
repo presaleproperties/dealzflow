@@ -237,7 +237,10 @@ const App = () => (
                   <Route path="/crm/behavior" element={<ProtectedRoute><CrmLayout><CrmBehaviorDashboardPage /></CrmLayout></ProtectedRoute>} />
                   <Route path="/crm/scheduler" element={<ProtectedRoute><CrmLayout><CrmSchedulerPage /></CrmLayout></ProtectedRoute>} />
 
-                  {/* Public booking pages — no auth */}
+                  {/* Public booking pages — no auth. /r/ is the neutral short URL; /book/ kept as alias. */}
+                  <Route path="/r/:teamSlug" element={<PublicAgentLandingPage />} />
+                  <Route path="/r/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
+                  <Route path="/r/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
                   <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
                   <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
                   <Route path="/book/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />

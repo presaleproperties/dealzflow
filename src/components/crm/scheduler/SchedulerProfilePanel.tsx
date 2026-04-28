@@ -5,7 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useAgentSchedulerProfile, useUpdateAgentSchedulerProfile } from '@/hooks/useScheduler';
+import { usePresaleAgent } from '@/stores/usePresaleAgent';
 import { toast } from 'sonner';
+import { Sparkles, Check, Loader2 } from 'lucide-react';
 
 const TIMEZONES = [
   'America/Vancouver', 'America/Edmonton', 'America/Winnipeg',
@@ -19,6 +21,7 @@ const slugify = (s: string) =>
 export function SchedulerProfilePanel() {
   const { data: profile, isLoading } = useAgentSchedulerProfile();
   const updateMut = useUpdateAgentSchedulerProfile();
+  const { agent: presaleAgent, status: presaleStatus, refresh: refreshPresale } = usePresaleAgent();
   const [form, setForm] = useState<any>({});
 
   useEffect(() => { if (profile) setForm(profile); }, [profile]);
@@ -26,6 +29,24 @@ export function SchedulerProfilePanel() {
   if (isLoading || !profile) return <div className="text-muted-foreground text-sm">Loading…</div>;
 
   const u = (patch: any) => setForm({ ...form, ...patch });
+
+  const importFromPresale = async () => {
+    if (presaleStatus !== 'ready' || !presaleAgent) {
+      await refreshPresale({ force: true });
+    }
+    const a = usePresaleAgentStoreRead();
+    if (!a) {
+      toast.error('No matching Presale agent found for your email');
+      return;
+    }
+    const patch: any = {};
+    if (a.headshotUrl) patch.headshot_url = a.headshotUrl;
+    if (a.brokerage) patch.brokerage = a.brokerage;
+    if (a.licenseNumber) patch.license_no = a.licenseNumber;
+    if (a.name && !form.display_name) patch.display_name = a.name;
+    setForm({ ...form, ...patch });
+    toast.success('Imported from Presale Properties — review then click Save');
+  };
 
   const save = async () => {
     const patch = {
@@ -43,26 +64,56 @@ export function SchedulerProfilePanel() {
     toast.success('Profile saved');
   };
 
+  const publicHost = window.location.origin.replace(/^https?:\/\//, '');
+
   return (
-    <div className="space-y-4 max-w-[640px]">
+    <div className="space-y-4 max-w-[680px]">
+      {/* Presale import banner */}
+      <Card className="p-4 flex items-start gap-3 bg-[hsl(var(--accent))]/40 border-[hsl(var(--accent))]">
+        <Sparkles className="w-4 h-4 text-[#D7A542] mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="text-[13.5px] font-medium text-foreground">
+            Import from Presale Properties
+          </div>
+          <p className="text-[12px] text-muted-foreground mt-0.5">
+            Pull your headshot, brokerage, and license # from your Presale agent profile.
+            {presaleStatus === 'ready' && presaleAgent && (
+              <> Matched: <span className="text-foreground font-medium">{presaleAgent.name || presaleAgent.email}</span></>
+            )}
+            {presaleStatus === 'unmatched' && <> No matching Presale agent found for your email.</>}
+          </p>
+        </div>
+        <Button
+          size="sm" variant="outline"
+          onClick={importFromPresale}
+          disabled={presaleStatus === 'loading' || presaleStatus === 'unmatched'}
+        >
+          {presaleStatus === 'loading' ? (
+            <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Loading</>
+          ) : presaleStatus === 'ready' ? (
+            <><Check className="w-3 h-3 mr-1.5" /> Import</>
+          ) : 'Import'}
+        </Button>
+      </Card>
+
       <Card className="p-5 space-y-4">
         <div>
-          <Label className="text-[12px]">URL slug</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-[12.5px] text-muted-foreground">{window.location.origin}/book/</span>
+          <Label className="text-[12px]">Public booking URL</Label>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span className="text-[12.5px] text-muted-foreground whitespace-nowrap">{publicHost}/r/</span>
             <Input
               value={form.slug || ''}
               onChange={(e) => u({ slug: slugify(e.target.value) })}
               placeholder="your-name"
-              className="flex-1"
+              className="flex-1 min-w-[180px]"
             />
           </div>
-          <p className="text-[11.5px] text-muted-foreground mt-1">
-            Lowercase letters, numbers, and dashes only.
+          <p className="text-[11.5px] text-muted-foreground mt-1.5">
+            Short, neutral URL — no DealzFlow branding shown to invitees.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-[12px]">Brokerage</Label>
             <Input value={form.brokerage || ''} onChange={(e) => u({ brokerage: e.target.value })} placeholder="Real Broker BC" />
@@ -75,12 +126,19 @@ export function SchedulerProfilePanel() {
 
         <div>
           <Label className="text-[12px]">Headshot URL</Label>
-          <Input value={form.headshot_url || ''} onChange={(e) => u({ headshot_url: e.target.value })} placeholder="https://…" />
+          <div className="flex items-center gap-3 mt-1">
+            {form.headshot_url && (
+              <img src={form.headshot_url} alt="Headshot preview"
+                className="w-12 h-12 rounded-full object-cover border border-border shrink-0" />
+            )}
+            <Input value={form.headshot_url || ''} onChange={(e) => u({ headshot_url: e.target.value })} placeholder="https://…" />
+          </div>
         </div>
 
         <div>
           <Label className="text-[12px]">Bio (shown on booking page)</Label>
-          <Textarea rows={3} value={form.bio || ''} onChange={(e) => u({ bio: e.target.value })} />
+          <Textarea rows={3} value={form.bio || ''} onChange={(e) => u({ bio: e.target.value })}
+            placeholder="A short intro shown beneath your name on the public booking page." />
         </div>
 
         <div>
@@ -94,7 +152,7 @@ export function SchedulerProfilePanel() {
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-[12px]">Default buffer (min)</Label>
             <Input type="number" min={0} value={form.default_buffer_min ?? 0} onChange={(e) => u({ default_buffer_min: e.target.value })} />
@@ -113,4 +171,10 @@ export function SchedulerProfilePanel() {
       </div>
     </div>
   );
+}
+
+// helper — read store snapshot synchronously for the import handler
+import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
+function usePresaleAgentStoreRead() {
+  return usePresaleAgentStore.getState().agent;
 }

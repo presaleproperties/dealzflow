@@ -116,7 +116,7 @@ export function SchedulerOnboardingDialog({ profile }: { profile: AgentScheduler
               <div>
                 <Label className="text-[12px]">Your URL</Label>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[12.5px] text-muted-foreground whitespace-nowrap">{window.location.origin}/book/</span>
+                  <span className="text-[12.5px] text-muted-foreground whitespace-nowrap">{window.location.origin.replace(/^https?:\/\//, '')}/r/</span>
                   <Input
                     value={slug}
                     onChange={(e) => setSlug(slugify(e.target.value))}
