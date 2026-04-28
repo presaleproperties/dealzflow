@@ -86,7 +86,7 @@ const CRM_MORE: MoreGroup[] = [
     items: [
       { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
       { label: 'Email Center', path: '/crm/email',    icon: Mail },
-      { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare },
+      { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare, ownerAdminOnly: true },
     ],
   },
   {

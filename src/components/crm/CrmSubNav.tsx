@@ -13,7 +13,7 @@ const TABS: Tab[] = [
   { label: 'Leads',        path: '/crm/leads',        icon: Users },
   { label: 'Pipeline',     path: '/crm/pipeline',     icon: Kanban },
   { label: 'Email',        path: '/crm/email',        icon: Mail },
-  { label: 'SMS',          path: '/crm/sms',          icon: MessageCircle },
+  { label: 'SMS',          path: '/crm/sms',          icon: MessageCircle, ownerAdminOnly: true },
   { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate },
   { label: 'Calendar',     path: '/crm/calendar',     icon: CalendarDays },
   { label: 'Scheduler',    path: '/crm/scheduler',    icon: CalendarClock },
