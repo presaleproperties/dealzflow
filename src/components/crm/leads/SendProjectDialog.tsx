@@ -230,15 +230,18 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               />
             </Field>
 
-            {/* Template picker */}
-            <Field label="Template">
+            {/* Template picker — Presale-styled email is auto-composed by the bridge */}
+            <Field label="Email style">
               <Combobox
                 value={templateSlug}
                 onChange={setTemplateSlug}
                 items={templates.map(t => ({ value: t.slug, label: t.name }))}
-                placeholder="Select template…"
-                emptyText="No active templates."
+                placeholder="Select email style…"
+                emptyText="No project email styles."
               />
+              <div className="text-[11px] text-muted-foreground mt-1.5">
+                Branded layout, signature, and project card are rendered by Presale Properties — pixel-identical to what you'd send from there.
+              </div>
             </Field>
 
             {/* Channel tabs */}
