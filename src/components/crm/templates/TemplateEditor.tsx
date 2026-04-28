@@ -170,13 +170,19 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   }, [htmlContent, subject]);
 
 
+  // What we actually persist (signature stamped or stripped)
+  const persistableHtml = useMemo(
+    () => (appendSignature && signatureHtml ? applySignatureBlock(htmlContent, signatureHtml) : stripSignatureBlock(htmlContent)),
+    [htmlContent, appendSignature, signatureHtml],
+  );
+
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Name is required'); return; }
     const payload = {
       name: name.trim(),
       subject: subject.trim() || null,
       preview_text: previewText.trim() || null,
-      html_content: htmlContent,
+      html_content: persistableHtml,
       category,
       project_tags: projectTags,
       area_tags: areaTags,
@@ -193,11 +199,12 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   const handleDelete = async () => {
     if (!template) return;
     await softDelete.mutateAsync(template.id);
+    setConfirmDelete(false);
     onClose();
   };
 
   const handleCopyHtml = () => {
-    navigator.clipboard.writeText(htmlContent);
+    navigator.clipboard.writeText(persistableHtml);
     toast.success('HTML copied to clipboard');
   };
 
@@ -206,7 +213,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
       name: `${name} (Copy)`,
       subject,
       preview_text: previewText,
-      html_content: htmlContent,
+      html_content: persistableHtml,
       category,
       project_tags: projectTags,
       area_tags: areaTags,
