@@ -268,17 +268,22 @@ export default function CrmSettingsPage() {
    Sidebar group
    ───────────────────────────────────────────────────────────── */
 function SidebarGroup({
-  label, tabs, activeTab, onSelect, className,
+  label, tabs, activeTab, onSelect, className, accent,
 }: {
   label: string;
   tabs: TabDef[];
   activeTab: TabId;
   onSelect: (id: TabId) => void;
   className?: string;
+  accent?: boolean;
 }) {
   return (
     <div className={className}>
-      <div className="px-2.5 mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+      <div className={cn(
+        'px-2.5 mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] flex items-center gap-1.5',
+        accent ? 'text-primary' : 'text-muted-foreground/80',
+      )}>
+        {accent && <Crown className="h-2.5 w-2.5" />}
         {label}
       </div>
       <div className="space-y-0.5">
@@ -309,8 +314,8 @@ function SidebarGroup({
    Setup Checklist — adapts to role
    ───────────────────────────────────────────────────────────── */
 function SetupChecklist({
-  isAdmin, onJump,
-}: { isAdmin: boolean; onJump: (id: TabId) => void }) {
+  isAdmin, isOwner, onJump,
+}: { isAdmin: boolean; isOwner?: boolean; onJump: (id: TabId) => void }) {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: emailSettings } = useEmailSettings();
