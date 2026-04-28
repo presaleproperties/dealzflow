@@ -256,11 +256,12 @@ export function RightRail() {
                     className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white border transition-transform hover:scale-105 overflow-hidden"
                     style={{ background: GOLD, borderColor: 'hsl(var(--border))' }}
                   >
-                    {presaleAgent?.headshotUrl ? (
+                    {avatarUrl ? (
                       <img
-                        src={presaleAgent.headshotUrl}
-                        alt={presaleAgent.name || user.email || 'Account'}
+                        src={avatarUrl}
+                        alt={profile?.full_name || presaleAgent?.name || user.email || 'Account'}
                         className="w-full h-full object-cover"
+                        style={{ objectPosition: avatarPos }}
                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                       />
                     ) : (
@@ -270,7 +271,7 @@ export function RightRail() {
                 </button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
-            <TooltipContent side="left" className="text-xs font-medium">{presaleAgent?.name || user.email}</TooltipContent>
+            <TooltipContent side="left" className="text-xs font-medium">{profile?.full_name || presaleAgent?.name || user.email}</TooltipContent>
           </Tooltip>
           <DropdownMenuContent
             side="left"
