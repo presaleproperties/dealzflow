@@ -3517,6 +3517,7 @@ export type Database = {
       }
       crm_team: {
         Row: {
+          agent_onboarded_at: string | null
           bio: string | null
           brokerage: string | null
           created_at: string
@@ -3524,6 +3525,7 @@ export type Database = {
           default_min_notice_min: number | null
           display_name: string | null
           email: string | null
+          gmail_address: string | null
           headshot_focal_y: number | null
           headshot_url: string | null
           id: string
@@ -3544,6 +3546,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          agent_onboarded_at?: string | null
           bio?: string | null
           brokerage?: string | null
           created_at?: string
@@ -3551,6 +3554,7 @@ export type Database = {
           default_min_notice_min?: number | null
           display_name?: string | null
           email?: string | null
+          gmail_address?: string | null
           headshot_focal_y?: number | null
           headshot_url?: string | null
           id?: string
@@ -3571,6 +3575,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          agent_onboarded_at?: string | null
           bio?: string | null
           brokerage?: string | null
           created_at?: string
@@ -3578,6 +3583,7 @@ export type Database = {
           default_min_notice_min?: number | null
           display_name?: string | null
           email?: string | null
+          gmail_address?: string | null
           headshot_focal_y?: number | null
           headshot_url?: string | null
           id?: string
@@ -5082,6 +5088,14 @@ export type Database = {
     Functions: {
       _backfill_behavior_notes_internal: { Args: never; Returns: Json }
       _touch_skip_enabled: { Args: never; Returns: boolean }
+      admin_link_crm_team_to_user: {
+        Args: { _email: string; _team_id: string }
+        Returns: Json
+      }
+      admin_set_user_password: {
+        Args: { _new_password: string; _target_user_id: string }
+        Returns: Json
+      }
       admin_set_workspace_status: {
         Args: {
           _reason?: string
