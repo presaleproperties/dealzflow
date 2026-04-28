@@ -43,16 +43,21 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return json({ error: "unauthorized" }, 401);
-  }
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "unauthorized" }, 401);
+    }
 
-  const supabaseUser = createClient(SUPABASE_URL, ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: { user } } = await supabaseUser.auth.getUser();
-  if (!user) return json({ error: "unauthorized" }, 401);
+    const supabaseUser = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await supabaseUser.auth.getUser();
+    if (userErr || !userData?.user) {
+      console.error("[render-and-send] auth error", userErr);
+      return json({ error: "unauthorized", detail: userErr?.message }, 401);
+    }
+    const user = userData.user;
 
   let body: {
     contact_id?: string;
