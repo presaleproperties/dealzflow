@@ -50,6 +50,65 @@ export function SchedulerPreviewPanel({ compact = false }: { compact?: boolean }
   const w = SIZES[device].w;
   const activeEventTypes = eventTypes.filter((et) => et.is_active);
 
+  // Compact mode: stripped-down side-panel preview (always mobile width)
+  if (compact) {
+    return (
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">Live preview</span>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setRefreshKey((k) => k + 1)}>
+              <RefreshCw className="w-3 h-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => window.open(previewUrl, '_blank')}>
+              <ExternalLink className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+
+        {activeEventTypes.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => setSelectedEventSlug('landing')}
+              className={`text-[10.5px] px-2 py-0.5 rounded border transition-colors ${
+                selectedEventSlug === 'landing'
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
+              }`}
+            >
+              Landing
+            </button>
+            {activeEventTypes.slice(0, 4).map((et) => (
+              <button
+                key={et.id}
+                onClick={() => setSelectedEventSlug(et.slug)}
+                className={`text-[10.5px] px-2 py-0.5 rounded border transition-colors max-w-[120px] truncate ${
+                  selectedEventSlug === et.slug
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                }`}
+                title={et.title}
+              >
+                {et.title}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-border overflow-hidden bg-background shadow-sm" style={{ aspectRatio: '390 / 720' }}>
+          <iframe
+            key={refreshKey}
+            src={previewUrl}
+            title="Booking page preview"
+            className="w-full h-full"
+            style={{ border: 0 }}
+          />
+        </div>
+        <p className="text-[10.5px] text-muted-foreground text-center">Updates as you save</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
