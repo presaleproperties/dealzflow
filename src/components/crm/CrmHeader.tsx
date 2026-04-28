@@ -316,12 +316,24 @@ export function CrmHeader() {
             </button>
           </div>
 
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-2 ring-background shadow-sm"
+          <Link
+            to="/settings"
+            aria-label={profile?.full_name || 'Account'}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-primary-foreground shrink-0 ring-2 ring-background shadow-sm overflow-hidden border border-border/40 hover:ring-primary/40 transition-all"
             style={{ background: GOLD }}
           >
-            {initials}
-          </div>
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.full_name || 'You'}
+                className="w-full h-full object-cover"
+                style={{ objectPosition: profile.avatar_position || '50% 50%' }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : (
+              initials
+            )}
+          </Link>
         </div>
       </div>
     </header>
