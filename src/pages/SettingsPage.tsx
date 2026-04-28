@@ -217,42 +217,24 @@ export default function SettingsPage() {
       />
 
       <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
-      <motion.div 
-        className="p-4 md:p-6 lg:p-6 max-w-5xl"
+      <motion.div
+        className="p-4 md:p-6 lg:p-6 max-w-6xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={springConfig}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="w-full flex overflow-x-auto no-scrollbar bg-muted/40 border border-border/50 p-1 h-auto gap-0.5 rounded-xl">
-            {[
-              { value: 'profile', label: 'Profile' },
-              { value: 'general', label: 'General' },
-              { value: 'tax', label: 'Tax & Finance' },
-              { value: 'subscription', label: 'Plan' },
-              { value: 'data', label: 'Data' },
-              { value: 'integrations', label: 'Integrations' },
-              { value: 'notifications', label: 'Reminders' },
-            ].map(({ value, label }) => (
-              <TabsTrigger key={value} value={value} className="flex-1 min-w-fit py-2 px-2.5 whitespace-nowrap text-[11.5px] sm:text-xs font-semibold rounded-[10px] tracking-[-0.01em]">
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {/* Profile Tab — global identity used across Dealzflow + CRM */}
-          <TabsContent value="profile" className="space-y-6">
+        <SettingsLayout sections={SETTINGS_SECTIONS}>
+          {/* Profile */}
+          <SettingsSectionAnchor id="settings-profile">
             <ProfileSection />
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-          {/* General Tab */}
-          <TabsContent value="general" className="space-y-6">
-            <AppearanceSection />
-            
-            {/* Goals Section */}
-            <SettingsCard 
-              icon={Target} 
-              title="Goals" 
+          {/* Goals */}
+          <SettingsSectionAnchor id="settings-goals">
+            <SettingsCard
+              icon={Target}
+              title="Goals"
               description="Set your financial targets"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
@@ -313,64 +295,41 @@ export default function SettingsPage() {
                 </div>
               </div>
             </SettingsCard>
+          </SettingsSectionAnchor>
+          <Separator />
 
-            {/* Currency */}
-            <SettingsCard 
-              icon={DollarSign} 
-              title="Currency" 
-              description="Your display currency"
-              iconColor="text-success"
-              gradient="from-success/10 to-success/5"
-            >
-              <p className="text-muted-foreground">
-                All amounts are displayed in <strong className="text-foreground">CAD (Canadian Dollars)</strong>
-              </p>
-            </SettingsCard>
-          </TabsContent>
-
-          {/* Tax & Finance Tab */}
-          <TabsContent value="tax" className="space-y-6">
-            {/* Tax Jurisdiction */}
-            <SettingsCard 
-              icon={MapPin} 
-              title="Tax Jurisdiction" 
+          {/* Tax & Finance */}
+          <SettingsSectionAnchor id="settings-tax">
+            <SettingsCard
+              icon={MapPin}
+              title="Tax Jurisdiction"
               description="Select your location for accurate CRA tax brackets"
               iconColor="text-accent"
               gradient="from-accent/10 to-accent/5"
             >
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Country */}
                 <div className="space-y-2">
                   <Label>Country</Label>
                   <Select value={country} onValueChange={setCountry}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="CA">🇨🇦 Canada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Province */}
                 <div className="space-y-2">
                   <Label>Province / Territory</Label>
                   <Select value={province} onValueChange={(v) => setProvince(v as Province)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {PROVINCES.map((prov) => (
-                        <SelectItem key={prov} value={prov}>
-                          {PROVINCE_NAMES[prov]}
-                        </SelectItem>
+                        <SelectItem key={prov} value={prov}>{PROVINCE_NAMES[prov]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Tax Type Toggle */}
               <div className="space-y-3 pt-4 border-t border-border/50 mt-4">
                 <Label>Tax Filing Type</Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -393,7 +352,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Tax Bracket Preview */}
               <div className="p-4 rounded-xl bg-muted/50 border border-border mt-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Info className="w-4 h-4 text-muted-foreground" />
@@ -401,7 +359,6 @@ export default function SettingsPage() {
                     {taxType === 'corporation' ? 'Corporate Tax Rates' : 'Tax Brackets'} - {PROVINCE_NAMES[province]}
                   </span>
                 </div>
-                
                 {taxType === 'corporation' && taxBrackets.corporateRates ? (
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -442,15 +399,13 @@ export default function SettingsPage() {
               </div>
             </SettingsCard>
 
-            {/* Tax Safety Settings */}
-            <SettingsCard 
-              icon={Shield} 
-              title="Tax Safety Configuration" 
+            <SettingsCard
+              icon={Shield}
+              title="Tax Safety Configuration"
               description="Configure how taxes are calculated and tracked"
               iconColor="text-warning"
               gradient="from-warning/10 to-warning/5"
             >
-              {/* Tax Calculation Method */}
               <div className="space-y-3">
                 <Label>Calculation Method</Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -473,7 +428,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Flat Tax Rate */}
               <AnimatePresence>
                 {taxCalculationMethod === 'flat' && (
                   <motion.div
@@ -488,35 +442,21 @@ export default function SettingsPage() {
                         <span className="text-sm text-muted-foreground">Set-aside percentage</span>
                         <span className="text-xl font-bold">{taxPercent}<span className="text-sm text-muted-foreground ml-0.5">%</span></span>
                       </div>
-                      <Slider
-                        value={[taxPercent]}
-                        onValueChange={([v]) => setTaxPercent(v)}
-                        max={50}
-                        step={0.5}
-                        className="w-full"
-                      />
+                      <Slider value={[taxPercent]} onValueChange={([v]) => setTaxPercent(v)} max={50} step={0.5} className="w-full" />
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Conservative Buffer */}
               <div className="space-y-3 pt-4 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <Label>Conservative Buffer</Label>
                   <span className="text-sm font-bold">{taxBuffer}%</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Extra safety margin on top of calculated tax</p>
-                <Slider
-                  value={[taxBuffer]}
-                  onValueChange={([v]) => setTaxBuffer(v)}
-                  max={25}
-                  step={1}
-                  className="w-full"
-                />
+                <Slider value={[taxBuffer]} onValueChange={([v]) => setTaxBuffer(v)} max={25} step={1} className="w-full" />
               </div>
 
-              {/* GST Settings */}
               <div className="space-y-4 pt-4 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <div>
@@ -557,12 +497,9 @@ export default function SettingsPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Tax Already Saved */}
               <div className="space-y-3 pt-4 border-t border-border/50">
                 <Label>Tax Already Saved (YTD)</Label>
-                <p className="text-sm text-muted-foreground">
-                  How much have you set aside for taxes this year?
-                </p>
+                <p className="text-sm text-muted-foreground">How much have you set aside for taxes this year?</p>
                 <Input
                   type="number"
                   min="0"
@@ -574,7 +511,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Apply to Forecasts */}
               <div className="flex items-center justify-between pt-4 border-t border-border/50">
                 <div>
                   <Label>Apply Tax to Forecasts</Label>
@@ -583,151 +519,49 @@ export default function SettingsPage() {
                 <Switch checked={applyTaxToForecasts} onCheckedChange={setApplyTaxToForecasts} />
               </div>
             </SettingsCard>
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-
-
-          {/* Subscription Tab */}
-          <TabsContent value="subscription" className="space-y-6">
+          {/* Subscription / Plan */}
+          <SettingsSectionAnchor id="settings-subscription">
             <SubscriptionSection />
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-          {/* Data Tab */}
-          <TabsContent value="data" className="space-y-6">
-            <DataExportSection />
-            <DeleteAccountSection />
-          </TabsContent>
-
-          {/* Integrations Tab */}
-          <TabsContent value="integrations" className="space-y-6">
+          {/* Integrations */}
+          <SettingsSectionAnchor id="settings-integrations">
             <SettingsCard
               icon={Plug}
               title="Platform Integrations"
-              description="Connect your CRM, brokerage, and transaction management platforms"
+              description="Connect ReZen, brokerage, and transaction-management platforms"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
             >
               <PlatformConnectionsManager />
             </SettingsCard>
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-          {/* Notifications / Reminders Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-
-            {/* In-App Push Notifications */}
+          {/* Notifications */}
+          <SettingsSectionAnchor id="settings-notifications">
             <SettingsCard
               icon={BellRing}
               title="Push Notifications"
-              description="Get alerts directly on your phone — works when the app is installed"
+              description="Get alerts on your phone — works when the app is installed"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
             >
               <PushNotificationSetup />
             </SettingsCard>
+          </SettingsSectionAnchor>
+          <Separator />
 
-            <SettingsCard
-              icon={Bell}
-              title="Pipeline Follow-Up Reminders"
-              description="Get SMS reminders via Zapier when it's time to follow up"
-              iconColor="text-primary"
-              gradient="from-primary/10 to-primary/5"
-            >
-              <div className="space-y-5">
-                {/* How it works */}
-                <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-2">
-                  <p className="text-sm font-semibold text-foreground">How it works</p>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2"><span className="text-primary mt-0.5">🔥</span><span><strong className="text-foreground">Hot clients</strong> — Daily reminder at 9 AM</span></li>
-                    <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5">☀️</span><span><strong className="text-foreground">Warm clients</strong> — Weekly reminder every Monday at 9 AM</span></li>
-                    <li className="flex items-start gap-2"><span className="text-muted-foreground mt-0.5">📲</span><span>Your Zapier Zap receives client data and sends you a text message</span></li>
-                  </ul>
-                </div>
-
-                {/* Setup steps */}
-                <div className="p-4 rounded-xl border border-border/50 space-y-3">
-                  <p className="text-sm font-semibold">Setup in Zapier (3 steps)</p>
-                  <ol className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                      <span>Create a new Zap with a <strong className="text-foreground">Webhooks by Zapier</strong> trigger (Catch Hook)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                      <span>Add an action: <strong className="text-foreground">SMS by Zapier</strong> — map the <code className="bg-muted px-1 rounded text-xs">message</code> and <code className="bg-muted px-1 rounded text-xs">phone</code> fields</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                      <span>Copy the webhook URL from Zapier and paste it below</span>
-                    </li>
-                  </ol>
-                  <a
-                    href="https://zapier.com/apps/webhook/integrations"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline mt-1"
-                  >
-                    Open Zapier <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-
-                {/* Phone number */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    Your Phone Number
-                  </Label>
-                  <p className="text-xs text-muted-foreground">Include country code (e.g., +16041234567). Passed to Zapier so it can send to the right number.</p>
-                  <Input
-                    type="tel"
-                    value={notificationPhone}
-                    onChange={(e) => setNotificationPhone(e.target.value)}
-                    placeholder="+16041234567"
-                    className="max-w-xs"
-                  />
-                </div>
-
-                {/* Webhook URL */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-muted-foreground" />
-                    Zapier Webhook URL
-                  </Label>
-                  <p className="text-xs text-muted-foreground">Paste the "Catch Hook" URL from your Zapier trigger step.</p>
-                  <Input
-                    type="url"
-                    value={zapierWebhookUrl}
-                    onChange={(e) => setZapierWebhookUrl(e.target.value)}
-                    placeholder="https://hooks.zapier.com/hooks/catch/..."
-                    className="font-mono text-xs"
-                  />
-                </div>
-
-                {/* Test button */}
-                {zapierWebhookUrl && (
-                  <div className="pt-2 border-t border-border/50">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleTestReminder}
-                      disabled={testSending}
-                      className="gap-2"
-                    >
-                      {testSent ? (
-                        <><CheckCircle2 className="w-4 h-4 text-success" /> Test sent to Zapier!</>
-                      ) : testSending ? (
-                        <><div className="w-3.5 h-3.5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" /> Sending...</>
-                      ) : (
-                        <><Send className="w-4 h-4" /> Send Test Reminder</>
-                      )}
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">Sends a sample payload to your Zapier webhook. Check your Zap history to confirm it fired.</p>
-                  </div>
-                )}
-              </div>
-            </SettingsCard>
-          </TabsContent>
-        </Tabs>
+          {/* Data */}
+          <SettingsSectionAnchor id="settings-data">
+            <DataExportSection />
+            <DeleteAccountSection />
+          </SettingsSectionAnchor>
+        </SettingsLayout>
       </motion.div>
       </PullToRefresh>
     </AppLayout>
