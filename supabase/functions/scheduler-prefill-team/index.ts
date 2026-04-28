@@ -83,9 +83,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    let force = url.searchParams.get("force") === "1";
+    try {
+      const body = req.method === "POST" ? await req.json().catch(() => null) : null;
+      if (body && body.force === true) force = true;
+    } catch { /* ignore */ }
+
     const { data: team, error: tErr } = await admin
       .from("crm_team")
-      .select("id,user_id,display_name,email,slug,headshot_url,brokerage,license_no,title,bio")
+      .select("id,user_id,display_name,email,slug,headshot_url,brokerage,license_no,title,bio,phone")
       .eq("is_active", true);
     if (tErr) throw tErr;
 
@@ -114,17 +121,22 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Only fill blanks; never overwrite existing values
+      // Presale is source of truth. Overwrite when Presale has a value.
+      // (force=true also overwrites slug/email; otherwise we keep existing slug.)
       const patch: Record<string, any> = {
         presale_snapshot: normalized,
         presale_synced_at: new Date().toISOString(),
       };
-      if (!t.slug && normalized.slug) patch.slug = slugify(normalized.slug);
-      if (!t.headshot_url && normalized.headshotUrl) patch.headshot_url = normalized.headshotUrl;
-      if (!t.brokerage && normalized.brokerage) patch.brokerage = normalized.brokerage;
-      if (!t.license_no && normalized.licenseNumber) patch.license_no = normalized.licenseNumber;
-      if (!t.title && normalized.title) patch.title = normalized.title;
-      if (!t.bio && normalized.bio) patch.bio = normalized.bio;
+      const setIfPresale = (col: string, val: any) => {
+        if (val !== undefined && val !== null && val !== "") patch[col] = val;
+      };
+      if ((!t.slug || force) && normalized.slug) patch.slug = slugify(normalized.slug);
+      setIfPresale("headshot_url", normalized.headshotUrl);
+      setIfPresale("brokerage",    normalized.brokerage);
+      setIfPresale("license_no",   normalized.licenseNumber);
+      setIfPresale("title",        normalized.title);
+      setIfPresale("phone",        normalized.phone);
+      if (!t.bio || force) setIfPresale("bio", normalized.bio);
 
       const { error: uErr } = await admin.from("crm_team").update(patch).eq("id", t.id);
       if (uErr) {
