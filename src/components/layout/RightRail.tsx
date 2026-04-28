@@ -184,6 +184,12 @@ export function RightRail() {
   const { theme, setTheme } = useTheme();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings({ silent: true });
+  const { agent: presaleAgent, refresh: refreshPresaleAgent } = usePresaleAgent();
+
+  // Pull headshot/signature from Presale on login
+  useEffect(() => {
+    if (user) refreshPresaleAgent();
+  }, [user?.id, refreshPresaleAgent]);
 
   // Restore theme from DB
   useEffect(() => {
