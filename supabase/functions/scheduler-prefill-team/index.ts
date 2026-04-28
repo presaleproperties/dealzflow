@@ -152,7 +152,8 @@ Deno.serve(async (req) => {
       const setIfPresale = (col: string, val: any) => {
         if (val !== undefined && val !== null && val !== "") patch[col] = val;
       };
-      if ((!t.slug || force) && normalized.slug) patch.slug = slugify(normalized.slug);
+      const slugSrc = normalized.slug || matchSlug;
+      if ((!t.slug || force) && slugSrc) patch.slug = slugify(String(slugSrc));
       setIfPresale("headshot_url", normalized.headshotUrl);
       setIfPresale("brokerage",    normalized.brokerage);
       setIfPresale("license_no",   normalized.licenseNumber);
