@@ -119,3 +119,9 @@ verify_jwt = false
 
 [functions.scheduler-prefill-team]
 verify_jwt = false
+
+[functions.crm-invite-agent]
+verify_jwt = false
+
+[functions.crm-accept-invite]
+verify_jwt = false

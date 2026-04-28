@@ -1,0 +1,190 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { UserPlus, Mail, Copy, Check, X, Loader2, Send } from 'lucide-react';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
+
+interface InviteRow {
+  id: string;
+  email: string;
+  display_name: string;
+  role: string;
+  status: 'pending' | 'accepted' | 'revoked' | 'expired';
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+}
+
+const STATUS_LABEL: Record<string, { text: string; tone: string }> = {
+  pending:  { text: 'Pending',  tone: 'text-amber-500' },
+  accepted: { text: 'Accepted', tone: 'text-emerald-500' },
+  revoked:  { text: 'Revoked',  tone: 'text-muted-foreground' },
+  expired:  { text: 'Expired',  tone: 'text-muted-foreground' },
+};
+
+export function InviteAgentCard() {
+  const qc = useQueryClient();
+  const { isOwnerOrAdmin } = useCrmAccess();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [note, setNote] = useState('');
+  const [lastUrl, setLastUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const { data: invites = [], isLoading } = useQuery({
+    queryKey: ['crm_team_invites'],
+    enabled: isOwnerOrAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('crm_team_list_invites');
+      if (error) throw error;
+      return (data ?? []) as InviteRow[];
+    },
+  });
+
+  const sendMut = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('crm-invite-agent', {
+        body: {
+          email: email.trim(),
+          display_name: name.trim(),
+          role: 'agent',
+          app_origin: window.location.origin,
+          personal_note: note.trim() || null,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Could not send invite');
+      return data as { accept_url: string; email_sent: boolean; warning?: string };
+    },
+    onSuccess: (data) => {
+      setLastUrl(data.accept_url);
+      setName(''); setEmail(''); setNote('');
+      qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
+      if (data.email_sent) {
+        toast.success('Invite sent', { description: 'They\'ll get an email with a link to set their password.' });
+      } else {
+        toast.warning('Invite created — email not sent', { description: data.warning ?? 'Copy the link below to share manually.' });
+      }
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not send invite'),
+  });
+
+  const revokeMut = useMutation({
+    mutationFn: async (inviteId: string) => {
+      const { error } = await supabase.rpc('crm_team_revoke_invite', { _invite_id: inviteId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Invite revoked');
+      qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not revoke'),
+  });
+
+  if (!isOwnerOrAdmin) return null;
+
+  function copyUrl() {
+    if (!lastUrl) return;
+    navigator.clipboard.writeText(lastUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <UserPlus className="w-4 h-4 text-muted-foreground" />
+          Invite an agent
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Send a branded email so they can set their own password and join your team. They'll only see leads you assign to them.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="invite-name" className="text-xs">Full name</Label>
+            <Input id="invite-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Zara Malik" className="mt-1.5" />
+          </div>
+          <div>
+            <Label htmlFor="invite-email" className="text-xs">Email</Label>
+            <Input id="invite-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="zara@example.com" className="mt-1.5" />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="invite-note" className="text-xs">Personal note (optional)</Label>
+          <Textarea id="invite-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Excited to have you on the team!" rows={2} className="mt-1.5 resize-none" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => sendMut.mutate()}
+            disabled={!name.trim() || !email.trim() || sendMut.isPending}
+          >
+            {sendMut.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+            Send invite
+          </Button>
+          {lastUrl && (
+            <Button variant="outline" onClick={copyUrl} size="sm">
+              {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
+              {copied ? 'Copied' : 'Copy link'}
+            </Button>
+          )}
+        </div>
+        {lastUrl && (
+          <div className="text-[11px] text-muted-foreground break-all p-2 rounded-md bg-muted/40 border border-border">
+            {lastUrl}
+          </div>
+        )}
+
+        {/* Recent invites */}
+        <div className="pt-2 border-t border-border">
+          <div className="text-xs font-semibold text-foreground mb-2">Recent invites</div>
+          {isLoading && <div className="text-xs text-muted-foreground">Loading…</div>}
+          {!isLoading && invites.length === 0 && (
+            <div className="text-xs text-muted-foreground">No invites yet.</div>
+          )}
+          <div className="space-y-1.5">
+            {invites.slice(0, 8).map((inv) => {
+              const meta = STATUS_LABEL[inv.status] ?? STATUS_LABEL.pending;
+              return (
+                <div key={inv.id} className="flex items-center gap-3 text-xs px-2.5 py-2 rounded-md hover:bg-muted/40 transition-colors">
+                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-foreground truncate">
+                      <span className="font-medium">{inv.display_name}</span>
+                      <span className="text-muted-foreground"> · {inv.email}</span>
+                    </div>
+                    <div className="text-[10.5px] text-muted-foreground mt-0.5">
+                      <span className={meta.tone}>{meta.text}</span>
+                      <span> · sent {formatDistanceToNow(new Date(inv.created_at), { addSuffix: true })}</span>
+                      {inv.status === 'pending' && (
+                        <span> · expires {new Date(inv.expires_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                  {inv.status === 'pending' && (
+                    <button
+                      onClick={() => revokeMut.mutate(inv.id)}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Revoke invite"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -39,6 +39,7 @@ import ClientInventoryPage from "./pages/ClientInventoryPage";
 
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import BridgeStatusPage from "./pages/admin/BridgeStatusPage";
 import AdminProjectsPage from "./pages/admin/AdminProjectsPage";
@@ -187,6 +188,7 @@ const App = () => (
                   <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
                   <Route path="/pending-approval" element={<PendingApprovalPage />} />
+                  <Route path="/accept-invite" element={<AcceptInvitePage />} />
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
                   
