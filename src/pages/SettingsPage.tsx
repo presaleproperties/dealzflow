@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Save, MapPin, Building2, User, Info, Moon, Sun, Monitor, 
-  Download, Trash2, AlertTriangle, PiggyBank, Crown, Check, Sparkles, 
-  Target, Palette, CreditCard, Database, Settings2, 
+import {
+  Save, MapPin, Building2, User, Info, Moon, Sun, Monitor,
+  Download, Trash2, AlertTriangle, PiggyBank, Crown, Check, Sparkles,
+  Target, Palette, CreditCard, Database, Settings2,
   DollarSign, Percent, Calendar, Shield, TrendingUp, Wallet, Plug, Bell, BellRing,
-  ExternalLink, Send, CheckCircle2, Phone
+  ExternalLink, Send, CheckCircle2, Phone, UserCircle2,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useNavigate } from 'react-router-dom';
@@ -18,8 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useDataExport } from '@/hooks/useDataExport';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -41,16 +41,35 @@ import ProfileSection from '@/components/settings/ProfileSection';
 
 const springConfig = { type: "spring" as const, stiffness: 120, damping: 20 };
 
+// Sticky left-nav sections — same pattern as CrmSettingsPage
+const SETTINGS_SECTIONS = [
+  { id: 'settings-profile',       label: 'Profile',       icon: UserCircle2 },
+  { id: 'settings-goals',         label: 'Goals',         icon: Target },
+  { id: 'settings-tax',           label: 'Tax & Finance', icon: Shield },
+  { id: 'settings-subscription',  label: 'Plan',          icon: Crown },
+  { id: 'settings-integrations',  label: 'Integrations',  icon: Plug },
+  { id: 'settings-notifications', label: 'Notifications', icon: BellRing },
+  { id: 'settings-data',          label: 'Data',          icon: Database },
+] as const;
+
 export default function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
   const refreshData = useRefreshData();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'general');
-  const [zapierWebhookUrl, setZapierWebhookUrl] = useState('');
-  const [notificationPhone, setNotificationPhone] = useState('');
-  const [testSending, setTestSending] = useState(false);
-  const [testSent, setTestSent] = useState(false);
+  const initialSection = (() => {
+    const tab = searchParams.get('tab');
+    const map: Record<string, string> = {
+      profile: 'settings-profile',
+      general: 'settings-goals',
+      tax: 'settings-tax',
+      subscription: 'settings-subscription',
+      integrations: 'settings-integrations',
+      notifications: 'settings-notifications',
+      data: 'settings-data',
+    };
+    return (tab && map[tab]) || 'settings-profile';
+  })();
   const [hasChanges, setHasChanges] = useState(false);
 
 
@@ -90,15 +109,13 @@ export default function SettingsPage() {
       setMonthlyIncomeGoal((settings as any).monthly_income_goal || 0);
       setYearlyGciGoal((settings as any).yearly_gci_goal || 0);
       setYearlyRevshareGoal((settings as any).yearly_revshare_goal || 0);
-      setZapierWebhookUrl((settings as any).zapier_webhook_url || '');
-      setNotificationPhone((settings as any).notification_phone || '');
     }
   }, [settings]);
 
   // Track changes
   useEffect(() => {
     if (settings) {
-      const changed = 
+      const changed =
         taxPercent !== (settings.tax_set_aside_percent || 0) ||
         applyTaxToForecasts !== (settings.apply_tax_to_forecasts || false) ||
         country !== ((settings as any).country || 'CA') ||
@@ -111,14 +128,12 @@ export default function SettingsPage() {
         taxSavedAmount !== ((settings as any).tax_saved_amount || 0) ||
         monthlyIncomeGoal !== ((settings as any).monthly_income_goal || 0) ||
         yearlyGciGoal !== ((settings as any).yearly_gci_goal || 0) ||
-        yearlyRevshareGoal !== ((settings as any).yearly_revshare_goal || 0) ||
-        zapierWebhookUrl !== ((settings as any).zapier_webhook_url || '') ||
-        notificationPhone !== ((settings as any).notification_phone || '');
+        yearlyRevshareGoal !== ((settings as any).yearly_revshare_goal || 0);
       setHasChanges(changed);
     }
-  }, [settings, taxPercent, applyTaxToForecasts, country, province, taxType, 
+  }, [settings, taxPercent, applyTaxToForecasts, country, province, taxType,
       gstRegistered, gstRate, taxBuffer, taxCalculationMethod, taxSavedAmount,
-      monthlyIncomeGoal, yearlyGciGoal, yearlyRevshareGoal, zapierWebhookUrl, notificationPhone]);
+      monthlyIncomeGoal, yearlyGciGoal, yearlyRevshareGoal]);
 
   const handleSave = async () => {
     await updateSettings.mutateAsync({
@@ -135,42 +150,8 @@ export default function SettingsPage() {
       monthly_income_goal: monthlyIncomeGoal,
       yearly_gci_goal: yearlyGciGoal,
       yearly_revshare_goal: yearlyRevshareGoal,
-      zapier_webhook_url: zapierWebhookUrl || null,
-      notification_phone: notificationPhone || null,
     } as any);
     setHasChanges(false);
-  };
-
-  const handleTestReminder = async () => {
-    if (!zapierWebhookUrl) return;
-    setTestSending(true);
-    setTestSent(false);
-    try {
-      await fetch(zapierWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'no-cors',
-        body: JSON.stringify({
-          type: 'pipeline_reminder_test',
-          date: new Date().toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' }),
-          message: '🔥 HOT CLIENTS (1) — Follow up today:\n  • Test Client — Condo ($25,000)',
-          phone: notificationPhone || '',
-          hot_count: 1,
-          warm_count: 0,
-          total_count: 1,
-          hot_clients: [{ name: 'Test Client', home_type: 'Condo', deal_type: 'buyer', potential_commission: 25000, notes: 'This is a test reminder' }],
-          warm_clients: [],
-        }),
-      });
-      setTestSent(true);
-      setTimeout(() => setTestSent(false), 4000);
-    } catch {
-      // no-cors mode won't throw on success
-      setTestSent(true);
-      setTimeout(() => setTestSent(false), 4000);
-    } finally {
-      setTestSending(false);
-    }
   };
 
 
@@ -206,42 +187,24 @@ export default function SettingsPage() {
       />
 
       <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
-      <motion.div 
-        className="p-4 md:p-6 lg:p-6 max-w-5xl"
+      <motion.div
+        className="p-4 md:p-6 lg:p-6 max-w-6xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={springConfig}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="w-full flex overflow-x-auto no-scrollbar bg-muted/40 border border-border/50 p-1 h-auto gap-0.5 rounded-xl">
-            {[
-              { value: 'profile', label: 'Profile' },
-              { value: 'general', label: 'General' },
-              { value: 'tax', label: 'Tax & Finance' },
-              { value: 'subscription', label: 'Plan' },
-              { value: 'data', label: 'Data' },
-              { value: 'integrations', label: 'Integrations' },
-              { value: 'notifications', label: 'Reminders' },
-            ].map(({ value, label }) => (
-              <TabsTrigger key={value} value={value} className="flex-1 min-w-fit py-2 px-2.5 whitespace-nowrap text-[11.5px] sm:text-xs font-semibold rounded-[10px] tracking-[-0.01em]">
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {/* Profile Tab — global identity used across Dealzflow + CRM */}
-          <TabsContent value="profile" className="space-y-6">
+        <SettingsLayout sections={SETTINGS_SECTIONS} initialActive={initialSection}>
+          {/* Profile */}
+          <SettingsSectionAnchor id="settings-profile">
             <ProfileSection />
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-          {/* General Tab */}
-          <TabsContent value="general" className="space-y-6">
-            <AppearanceSection />
-            
-            {/* Goals Section */}
-            <SettingsCard 
-              icon={Target} 
-              title="Goals" 
+          {/* Goals */}
+          <SettingsSectionAnchor id="settings-goals">
+            <SettingsCard
+              icon={Target}
+              title="Goals"
               description="Set your financial targets"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
@@ -302,64 +265,41 @@ export default function SettingsPage() {
                 </div>
               </div>
             </SettingsCard>
+          </SettingsSectionAnchor>
+          <Separator />
 
-            {/* Currency */}
-            <SettingsCard 
-              icon={DollarSign} 
-              title="Currency" 
-              description="Your display currency"
-              iconColor="text-success"
-              gradient="from-success/10 to-success/5"
-            >
-              <p className="text-muted-foreground">
-                All amounts are displayed in <strong className="text-foreground">CAD (Canadian Dollars)</strong>
-              </p>
-            </SettingsCard>
-          </TabsContent>
-
-          {/* Tax & Finance Tab */}
-          <TabsContent value="tax" className="space-y-6">
-            {/* Tax Jurisdiction */}
-            <SettingsCard 
-              icon={MapPin} 
-              title="Tax Jurisdiction" 
+          {/* Tax & Finance */}
+          <SettingsSectionAnchor id="settings-tax">
+            <SettingsCard
+              icon={MapPin}
+              title="Tax Jurisdiction"
               description="Select your location for accurate CRA tax brackets"
               iconColor="text-accent"
               gradient="from-accent/10 to-accent/5"
             >
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Country */}
                 <div className="space-y-2">
                   <Label>Country</Label>
                   <Select value={country} onValueChange={setCountry}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="CA">🇨🇦 Canada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Province */}
                 <div className="space-y-2">
                   <Label>Province / Territory</Label>
                   <Select value={province} onValueChange={(v) => setProvince(v as Province)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {PROVINCES.map((prov) => (
-                        <SelectItem key={prov} value={prov}>
-                          {PROVINCE_NAMES[prov]}
-                        </SelectItem>
+                        <SelectItem key={prov} value={prov}>{PROVINCE_NAMES[prov]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Tax Type Toggle */}
               <div className="space-y-3 pt-4 border-t border-border/50 mt-4">
                 <Label>Tax Filing Type</Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -382,7 +322,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Tax Bracket Preview */}
               <div className="p-4 rounded-xl bg-muted/50 border border-border mt-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Info className="w-4 h-4 text-muted-foreground" />
@@ -390,7 +329,6 @@ export default function SettingsPage() {
                     {taxType === 'corporation' ? 'Corporate Tax Rates' : 'Tax Brackets'} - {PROVINCE_NAMES[province]}
                   </span>
                 </div>
-                
                 {taxType === 'corporation' && taxBrackets.corporateRates ? (
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -431,15 +369,13 @@ export default function SettingsPage() {
               </div>
             </SettingsCard>
 
-            {/* Tax Safety Settings */}
-            <SettingsCard 
-              icon={Shield} 
-              title="Tax Safety Configuration" 
+            <SettingsCard
+              icon={Shield}
+              title="Tax Safety Configuration"
               description="Configure how taxes are calculated and tracked"
               iconColor="text-warning"
               gradient="from-warning/10 to-warning/5"
             >
-              {/* Tax Calculation Method */}
               <div className="space-y-3">
                 <Label>Calculation Method</Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -462,7 +398,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Flat Tax Rate */}
               <AnimatePresence>
                 {taxCalculationMethod === 'flat' && (
                   <motion.div
@@ -477,35 +412,21 @@ export default function SettingsPage() {
                         <span className="text-sm text-muted-foreground">Set-aside percentage</span>
                         <span className="text-xl font-bold">{taxPercent}<span className="text-sm text-muted-foreground ml-0.5">%</span></span>
                       </div>
-                      <Slider
-                        value={[taxPercent]}
-                        onValueChange={([v]) => setTaxPercent(v)}
-                        max={50}
-                        step={0.5}
-                        className="w-full"
-                      />
+                      <Slider value={[taxPercent]} onValueChange={([v]) => setTaxPercent(v)} max={50} step={0.5} className="w-full" />
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Conservative Buffer */}
               <div className="space-y-3 pt-4 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <Label>Conservative Buffer</Label>
                   <span className="text-sm font-bold">{taxBuffer}%</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Extra safety margin on top of calculated tax</p>
-                <Slider
-                  value={[taxBuffer]}
-                  onValueChange={([v]) => setTaxBuffer(v)}
-                  max={25}
-                  step={1}
-                  className="w-full"
-                />
+                <Slider value={[taxBuffer]} onValueChange={([v]) => setTaxBuffer(v)} max={25} step={1} className="w-full" />
               </div>
 
-              {/* GST Settings */}
               <div className="space-y-4 pt-4 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <div>
@@ -546,12 +467,9 @@ export default function SettingsPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Tax Already Saved */}
               <div className="space-y-3 pt-4 border-t border-border/50">
                 <Label>Tax Already Saved (YTD)</Label>
-                <p className="text-sm text-muted-foreground">
-                  How much have you set aside for taxes this year?
-                </p>
+                <p className="text-sm text-muted-foreground">How much have you set aside for taxes this year?</p>
                 <Input
                   type="number"
                   min="0"
@@ -563,7 +481,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Apply to Forecasts */}
               <div className="flex items-center justify-between pt-4 border-t border-border/50">
                 <div>
                   <Label>Apply Tax to Forecasts</Label>
@@ -572,154 +489,156 @@ export default function SettingsPage() {
                 <Switch checked={applyTaxToForecasts} onCheckedChange={setApplyTaxToForecasts} />
               </div>
             </SettingsCard>
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-
-
-          {/* Subscription Tab */}
-          <TabsContent value="subscription" className="space-y-6">
+          {/* Subscription / Plan */}
+          <SettingsSectionAnchor id="settings-subscription">
             <SubscriptionSection />
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-          {/* Data Tab */}
-          <TabsContent value="data" className="space-y-6">
-            <DataExportSection />
-            <DeleteAccountSection />
-          </TabsContent>
-
-          {/* Integrations Tab */}
-          <TabsContent value="integrations" className="space-y-6">
+          {/* Integrations */}
+          <SettingsSectionAnchor id="settings-integrations">
             <SettingsCard
               icon={Plug}
               title="Platform Integrations"
-              description="Connect your CRM, brokerage, and transaction management platforms"
+              description="Connect ReZen, brokerage, and transaction-management platforms"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
             >
               <PlatformConnectionsManager />
             </SettingsCard>
-          </TabsContent>
+          </SettingsSectionAnchor>
+          <Separator />
 
-          {/* Notifications / Reminders Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-
-            {/* In-App Push Notifications */}
+          {/* Notifications */}
+          <SettingsSectionAnchor id="settings-notifications">
             <SettingsCard
               icon={BellRing}
               title="Push Notifications"
-              description="Get alerts directly on your phone — works when the app is installed"
+              description="Get alerts on your phone — works when the app is installed"
               iconColor="text-primary"
               gradient="from-primary/10 to-primary/5"
             >
               <PushNotificationSetup />
             </SettingsCard>
+          </SettingsSectionAnchor>
+          <Separator />
 
-            <SettingsCard
-              icon={Bell}
-              title="Pipeline Follow-Up Reminders"
-              description="Get SMS reminders via Zapier when it's time to follow up"
-              iconColor="text-primary"
-              gradient="from-primary/10 to-primary/5"
-            >
-              <div className="space-y-5">
-                {/* How it works */}
-                <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-2">
-                  <p className="text-sm font-semibold text-foreground">How it works</p>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2"><span className="text-primary mt-0.5">🔥</span><span><strong className="text-foreground">Hot clients</strong> — Daily reminder at 9 AM</span></li>
-                    <li className="flex items-start gap-2"><span className="text-amber-500 mt-0.5">☀️</span><span><strong className="text-foreground">Warm clients</strong> — Weekly reminder every Monday at 9 AM</span></li>
-                    <li className="flex items-start gap-2"><span className="text-muted-foreground mt-0.5">📲</span><span>Your Zapier Zap receives client data and sends you a text message</span></li>
-                  </ul>
-                </div>
-
-                {/* Setup steps */}
-                <div className="p-4 rounded-xl border border-border/50 space-y-3">
-                  <p className="text-sm font-semibold">Setup in Zapier (3 steps)</p>
-                  <ol className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                      <span>Create a new Zap with a <strong className="text-foreground">Webhooks by Zapier</strong> trigger (Catch Hook)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                      <span>Add an action: <strong className="text-foreground">SMS by Zapier</strong> — map the <code className="bg-muted px-1 rounded text-xs">message</code> and <code className="bg-muted px-1 rounded text-xs">phone</code> fields</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                      <span>Copy the webhook URL from Zapier and paste it below</span>
-                    </li>
-                  </ol>
-                  <a
-                    href="https://zapier.com/apps/webhook/integrations"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline mt-1"
-                  >
-                    Open Zapier <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-
-                {/* Phone number */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    Your Phone Number
-                  </Label>
-                  <p className="text-xs text-muted-foreground">Include country code (e.g., +16041234567). Passed to Zapier so it can send to the right number.</p>
-                  <Input
-                    type="tel"
-                    value={notificationPhone}
-                    onChange={(e) => setNotificationPhone(e.target.value)}
-                    placeholder="+16041234567"
-                    className="max-w-xs"
-                  />
-                </div>
-
-                {/* Webhook URL */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-muted-foreground" />
-                    Zapier Webhook URL
-                  </Label>
-                  <p className="text-xs text-muted-foreground">Paste the "Catch Hook" URL from your Zapier trigger step.</p>
-                  <Input
-                    type="url"
-                    value={zapierWebhookUrl}
-                    onChange={(e) => setZapierWebhookUrl(e.target.value)}
-                    placeholder="https://hooks.zapier.com/hooks/catch/..."
-                    className="font-mono text-xs"
-                  />
-                </div>
-
-                {/* Test button */}
-                {zapierWebhookUrl && (
-                  <div className="pt-2 border-t border-border/50">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleTestReminder}
-                      disabled={testSending}
-                      className="gap-2"
-                    >
-                      {testSent ? (
-                        <><CheckCircle2 className="w-4 h-4 text-success" /> Test sent to Zapier!</>
-                      ) : testSending ? (
-                        <><div className="w-3.5 h-3.5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" /> Sending...</>
-                      ) : (
-                        <><Send className="w-4 h-4" /> Send Test Reminder</>
-                      )}
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">Sends a sample payload to your Zapier webhook. Check your Zap history to confirm it fired.</p>
-                  </div>
-                )}
-              </div>
-            </SettingsCard>
-          </TabsContent>
-        </Tabs>
+          {/* Data */}
+          <SettingsSectionAnchor id="settings-data">
+            <DataExportSection />
+            <DeleteAccountSection />
+          </SettingsSectionAnchor>
+        </SettingsLayout>
       </motion.div>
       </PullToRefresh>
     </AppLayout>
+  );
+}
+
+// ──────────────────────────────────────────────
+// SettingsLayout — sticky left-nav + scroll-spy
+// (mirrors CrmSettingsPage pattern)
+// ──────────────────────────────────────────────
+function SettingsLayout({
+  sections,
+  initialActive,
+  children,
+}: {
+  sections: ReadonlyArray<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }>;
+  initialActive?: string;
+  children: React.ReactNode;
+}) {
+  const [activeSection, setActiveSection] = useState<string>(initialActive ?? sections[0].id);
+
+  // Initial scroll if linked with ?tab=
+  useEffect(() => {
+    if (initialActive && initialActive !== sections[0].id) {
+      const el = document.getElementById(initialActive);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'auto', block: 'start' }), 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Scroll-spy
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        }
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+    );
+    sections.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [sections]);
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-0 lg:gap-8">
+      {/* Mobile/Tablet — horizontal pill bar */}
+      <div className="lg:hidden overflow-x-auto border-b border-border bg-background/95 backdrop-blur sticky top-0 z-10 -mx-4 px-4 mb-4">
+        <div className="flex gap-1 py-2 min-w-max">
+          {sections.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                activeSection === id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop — sticky sidebar */}
+      <nav className="hidden lg:flex flex-col w-44 shrink-0 sticky top-4 self-start pt-1">
+        <div className="space-y-0.5">
+          {sections.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={cn(
+                'flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors text-left',
+                activeSection === id
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0 space-y-6 sm:space-y-8 max-w-3xl">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SettingsSectionAnchor({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <div id={id} className="scroll-mt-20 space-y-6">
+      {children}
+    </div>
   );
 }
 
