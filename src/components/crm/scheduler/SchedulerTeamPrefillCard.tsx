@@ -67,23 +67,20 @@ function MemberCard({ member, onResync, syncing }: {
   if (!member.headshot_url) missing.push('headshot');
 
   return (
-    <Card className="group relative overflow-hidden p-4 transition-shadow hover:shadow-md">
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D7A542]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <Card className="group relative overflow-hidden p-4 transition-all hover:shadow-md hover:border-primary/30 border-border/70">
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-0 group-hover:opacity-80 transition-opacity" />
 
       <div className="flex items-start gap-3.5">
         {member.headshot_url ? (
           <img
             src={member.headshot_url}
             alt={member.display_name || ''}
-            className="w-14 h-14 rounded-full object-cover border border-border shrink-0"
+            className="w-14 h-14 rounded-full object-cover border border-border ring-1 ring-primary/15 shrink-0"
             style={{ objectPosition: `center ${focalY}%` }}
           />
         ) : (
           <Avatar className="w-14 h-14 shrink-0 border border-border">
-            <AvatarFallback
-              className="text-sm font-medium text-white"
-              style={{ background: '#D7A542', fontFamily: 'Georgia, serif' }}
-            >
+            <AvatarFallback className="text-sm font-semibold bg-primary text-primary-foreground tracking-tight">
               {initialsOf(member.display_name, member.email)}
             </AvatarFallback>
           </Avatar>
