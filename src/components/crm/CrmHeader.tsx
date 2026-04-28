@@ -64,9 +64,11 @@ const ROUTE_TITLES: { match: string; title: string }[] = [
 
 export function CrmHeader() {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
   const { isOwnerOrAdmin } = useCrmAccess();
   const location = useLocation();
-  const initials = user?.email?.slice(0, 2).toUpperCase() || 'U';
+  const initials = (profile?.full_name || user?.email || 'U')
+    .split(/[\s@]/).filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join('') || 'U';
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
