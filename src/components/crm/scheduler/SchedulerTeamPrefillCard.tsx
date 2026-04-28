@@ -261,7 +261,7 @@ export function SchedulerTeamPrefillCard() {
       {lastResults && lastResults.length > 0 && (
         <details className="group">
           <summary className="cursor-pointer text-[11.5px] text-muted-foreground hover:text-foreground transition-colors list-none flex items-center gap-1.5">
-            <span className="inline-block w-1 h-1 rounded-full bg-[#D7A542]" />
+            <span className="inline-block w-1 h-1 rounded-full bg-primary" />
             View last sync details ({lastResults.filter((r) => r.status === 'synced').length}/{lastResults.length} synced)
           </summary>
           <div className="mt-2 space-y-1 pl-3 border-l border-border">
