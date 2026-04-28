@@ -7,7 +7,6 @@ import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/u
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
-import { ConversationHealthStrip } from '@/components/crm/leads/ConversationHealthStrip';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
@@ -181,9 +180,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       </TabsList>
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-3 md:p-6 space-y-3 md:space-y-5">
-        <div className="px-4 md:px-0">
-          <ConversationHealthStrip contactId={contact.id} />
-        </div>
         <div className="px-4 md:px-0">
           <QuickActionBar contact={contact} />
         </div>
