@@ -129,9 +129,14 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
     }
   }, []);
 
+  // Compose preview = body + (optional) signature, then render sample data
+  const composedHtml = useMemo(
+    () => (appendSignature && signatureHtml ? applySignatureBlock(htmlContent, signatureHtml) : htmlContent),
+    [htmlContent, appendSignature, signatureHtml],
+  );
   const renderedHtml = useMemo(
-    () => (withSampleData ? renderWithSampleData(htmlContent) : htmlContent),
-    [htmlContent, withSampleData],
+    () => (withSampleData ? renderWithSampleData(composedHtml) : composedHtml),
+    [composedHtml, withSampleData],
   );
 
   useEffect(() => { updateIframe(iframeRef, renderedHtml); }, [renderedHtml, previewWidth, updateIframe]);
