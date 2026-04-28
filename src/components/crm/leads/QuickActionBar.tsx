@@ -122,8 +122,8 @@ export function QuickActionBar({ contact }: Props) {
         ? `<div style="margin-top:1.5em">${sender.signature}</div>`
         : '';
       const rawHtml = `${paragraphs}${sigBlock}`;
-      const html = renderForRecipient(rawHtml, contact, sender);
-      const renderedSubject = renderForRecipient(subject, contact, sender);
+      const html = renderForRecipient(rawHtml, { lead: contact as any, sender });
+      const renderedSubject = renderForRecipient(subject, { lead: contact as any, sender });
       try {
         await sendEmail.mutateAsync({
           to: contact.email,
@@ -311,7 +311,7 @@ export function QuickActionBar({ contact }: Props) {
             </span>
             {mode === 'text' && segInfo && body && (
               <span className="text-[10.5px] tabular-nums text-muted-foreground/70 font-medium">
-                {segInfo.length}ch · {segInfo.segments} seg
+                {segInfo.chars}ch · {segInfo.count} seg
               </span>
             )}
           </div>
