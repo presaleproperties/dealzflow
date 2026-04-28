@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
 
     const { data: agent, error: agentErr } = await supabase
       .from('crm_team')
-      .select('user_id, slug, display_name, email, headshot_url, brokerage, license_no, timezone, bio')
+      .select('user_id, slug, display_name, email, headshot_url, headshot_focal_y, brokerage, license_no, title, timezone, bio')
       .ilike('slug', teamSlug)
       .eq('is_active', true)
       .maybeSingle();

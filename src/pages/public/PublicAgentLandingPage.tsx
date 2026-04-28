@@ -93,7 +93,7 @@ export default function PublicAgentLandingPage() {
           {agent.headshot_url ? (
             <img src={agent.headshot_url} alt={agent.display_name}
               className="w-32 h-32 sm:w-36 sm:h-36 rounded-full object-cover shadow-md"
-              style={{ background: '#e7e2d6' }} />
+              style={{ background: '#e7e2d6', objectPosition: `center ${agent.headshot_focal_y ?? 30}%` }} />
           ) : (
             <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full flex items-center justify-center text-3xl font-medium shadow-md"
               style={{ background: '#D7A542', color: 'white', fontFamily: 'Playfair Display, Georgia, serif' }}>
@@ -105,6 +105,9 @@ export default function PublicAgentLandingPage() {
               style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
               {agent.display_name}
             </h1>
+            {agent.title && (
+              <p className="text-[13px] uppercase tracking-[0.18em] text-stone-500 mt-2">{agent.title}</p>
+            )}
             {agent.brokerage && (
               <p className="text-[15px] sm:text-[16px] text-stone-500 mt-1">{agent.brokerage}</p>
             )}
