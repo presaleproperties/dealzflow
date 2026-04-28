@@ -555,7 +555,7 @@ function TeamManagement() {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              This person needs an account first. Ask them to sign up with this email.
+              They'll be auto-linked when they sign up with this email. Their Presale headshot &amp; signature pull automatically on first login.
             </p>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
