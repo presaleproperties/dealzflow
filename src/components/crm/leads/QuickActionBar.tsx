@@ -354,6 +354,8 @@ export function QuickActionBar({ contact }: Props) {
             )}
           </div>
         )}
+
+        <Textarea
           ref={taRef}
           value={body}
           onChange={(e) => setBody(e.target.value)}
