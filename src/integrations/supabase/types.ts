@@ -3605,6 +3605,62 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_team_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          display_name: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          status: Database["public"]["Enums"]["crm_invite_status"]
+          team_id: string | null
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          display_name: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          status?: Database["public"]["Enums"]["crm_invite_status"]
+          team_id?: string | null
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          status?: Database["public"]["Enums"]["crm_invite_status"]
+          team_id?: string | null
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_team_invites_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "crm_team"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_timeline_link_clicks: {
         Row: {
           clicked_at: string
@@ -5163,6 +5219,10 @@ export type Database = {
         Args: { _agent_user_id: string }
         Returns: undefined
       }
+      crm_team_create_invite: {
+        Args: { _display_name: string; _email: string; _role?: string }
+        Returns: Json
+      }
       crm_team_invite: {
         Args: {
           _display_name: string
@@ -5171,6 +5231,24 @@ export type Database = {
           _role?: string
         }
         Returns: Json
+      }
+      crm_team_list_invites: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          created_at: string
+          display_name: string
+          email: string
+          expires_at: string
+          id: string
+          role: string
+          status: Database["public"]["Enums"]["crm_invite_status"]
+        }[]
+      }
+      crm_team_redeem_invite: { Args: { _token: string }; Returns: Json }
+      crm_team_revoke_invite: {
+        Args: { _invite_id: string }
+        Returns: undefined
       }
       crm_team_update: {
         Args: {
@@ -5182,6 +5260,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      crm_team_validate_invite: { Args: { _token: string }; Returns: Json }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }
         Returns: string
@@ -5322,6 +5401,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      crm_invite_status: "pending" | "accepted" | "revoked" | "expired"
       deal_status: "PENDING" | "CLOSED"
       deal_type: "BUY" | "SELL"
       payout_status: "PROJECTED" | "INVOICED" | "PAID"
@@ -5462,6 +5542,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      crm_invite_status: ["pending", "accepted", "revoked", "expired"],
       deal_status: ["PENDING", "CLOSED"],
       deal_type: ["BUY", "SELL"],
       payout_status: ["PROJECTED", "INVOICED", "PAID"],
