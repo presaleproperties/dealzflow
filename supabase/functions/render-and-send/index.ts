@@ -131,6 +131,16 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (templateErr || !template) return json({ error: "template_not_found" }, 404);
 
+  let bridgeProjectSlug = project_slug;
+  const { data: projectBySlug } = await supabase
+    .from("crm_projects")
+    .select("presale_slug")
+    .eq("slug", project_slug)
+    .maybeSingle();
+  if (projectBySlug?.presale_slug) {
+    bridgeProjectSlug = projectBySlug.presale_slug;
+  }
+
   // (c) bridge-render-email (POST)
   if (!BRIDGE_URL || !BRIDGE_SECRET || !PRESALE_ANON_KEY) {
     console.error("[render-and-send] bridge env missing", {
@@ -161,7 +171,7 @@ Deno.serve(async (req) => {
           email: contact.email,
           phone: contact.phone,
         },
-        project_slug,
+        project_slug: bridgeProjectSlug,
         // Prefer the Presale agent identity synced into crm_team; auth email/id
         // often differs from the Presale agent record and causes 404s.
         agent_slug: agentSlug,
@@ -184,9 +194,12 @@ Deno.serve(async (req) => {
       bridge_url: BRIDGE_URL,
     }, 502);
   }
-  let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; error?: string } = {};
+  let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; subject?: string; html?: string; text?: string; error?: string } = {};
   try { rendered = renderText ? JSON.parse(renderText) : {}; } catch { /* */ }
-  if (!renderRes.ok || !rendered.html_rendered) {
+  const subject_rendered = rendered.subject_rendered || rendered.subject || template.subject || "";
+  const html_rendered = rendered.html_rendered || rendered.html || "";
+  const text_rendered = rendered.text_rendered ?? rendered.text ?? "";
+  if (!renderRes.ok || !html_rendered) {
     console.error("[render-and-send] bridge render failed", { status: renderRes.status, body: renderText.slice(0, 500) });
     return json({
       error: "bridge_render_failed",
@@ -194,10 +207,6 @@ Deno.serve(async (req) => {
       body: rendered.error ?? renderText.slice(0, 500),
     }, 502);
   }
-
-  const subject_rendered = rendered.subject_rendered || template.subject || "";
-  const html_rendered = rendered.html_rendered;
-  const text_rendered = rendered.text_rendered ?? "";
 
   // (d) dry run — preview only
   if (dry_run) {
