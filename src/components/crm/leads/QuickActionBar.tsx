@@ -58,17 +58,17 @@ export function QuickActionBar({ contact }: Props) {
   const sendSms = useSendSms();
   const sendEmail = useBridgeSendEmail();
 
-  const sender = useMemo(() => ({
-    first_name: profile?.first_name || presaleAgent?.first_name || '',
-    last_name: profile?.last_name || presaleAgent?.last_name || '',
-    full_name: [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')
-      || presaleAgent?.full_name
-      || user?.email
-      || '',
-    email: user?.email || presaleAgent?.email || '',
-    phone: profile?.phone || presaleAgent?.phone || '',
-    signature: presaleAgent?.signature_html || '',
-  }), [profile, presaleAgent, user]);
+  const sender = useMemo(() => {
+    const fullName = profile?.full_name || presaleAgent?.name || user?.email || '';
+    const firstName = fullName.split(' ')[0] || '';
+    return {
+      first_name: firstName,
+      full_name: fullName,
+      email: user?.email || presaleAgent?.email || '',
+      phone: profile?.phone || presaleAgent?.phone || '',
+      signature: presaleAgent?.signatureHtml || '',
+    };
+  }, [profile, presaleAgent, user]);
 
   const switchMode = (next: Mode) => {
     setMode(next);
