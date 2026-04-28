@@ -249,7 +249,18 @@ export default function PublicBookingPage() {
                    evt.location_type === 'in_person' ? 'In person' :
                    evt.location_type === 'phone' ? 'Phone call' : 'Custom'}
                 </div>
+                {evt.requires_payment && evt.price_cents > 0 && (
+                  <div className="flex items-center gap-2 text-[#D7A542] font-medium">
+                    <CreditCard className="w-3.5 h-3.5" />
+                    {(evt.price_cents / 100).toLocaleString('en-US', { style: 'currency', currency: evt.currency || 'CAD' })}
+                  </div>
+                )}
               </div>
+              {rescheduleId && (
+                <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-md text-[12px] text-amber-900">
+                  Rescheduling — your original time will be cancelled when you confirm a new slot.
+                </div>
+              )}
               {evt.description && <p className="text-[13px] text-neutral-600 mt-4 leading-relaxed">{evt.description}</p>}
             </div>
 
