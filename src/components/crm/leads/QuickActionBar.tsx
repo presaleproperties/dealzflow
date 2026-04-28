@@ -59,6 +59,14 @@ export function QuickActionBar({ contact }: Props) {
   const sendSms = useSendSms();
   const sendEmail = useBridgeSendEmail();
 
+  // AI quick-reply chips — only fetched when user is in email/text mode
+  const quickReplyMode: 'email' | 'text' = mode === 'email' ? 'email' : 'text';
+  const quickReplies = useLeadQuickReplies(
+    contact.id,
+    quickReplyMode,
+    mode === 'email' || mode === 'text',
+  );
+
   const sender = useMemo(() => {
     const fullName = profile?.full_name || presaleAgent?.name || user?.email || '';
     const firstName = fullName.split(' ')[0] || '';
