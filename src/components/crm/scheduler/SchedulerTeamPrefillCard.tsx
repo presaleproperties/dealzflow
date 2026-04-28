@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentTeamRole } from '@/hooks/useCurrentTeamRole';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { Loader2, Sparkles, Check, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,11 +30,11 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 export function SchedulerTeamPrefillCard() {
-  const { isAdmin } = useCurrentTeamRole();
+  const { isOwnerOrAdmin } = useCrmAccess();
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<SyncResult[] | null>(null);
 
-  if (!isAdmin) return null;
+  if (!isOwnerOrAdmin) return null;
 
   const run = async () => {
     setRunning(true);
