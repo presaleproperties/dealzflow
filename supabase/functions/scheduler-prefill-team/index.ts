@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     let force = url.searchParams.get("force") === "1";
+    const debug = url.searchParams.get("debug") === "1";
     try {
       const body = req.method === "POST" ? await req.json().catch(() => null) : null;
       if (body && body.force === true) force = true;
@@ -99,11 +100,26 @@ Deno.serve(async (req) => {
     const listed = await presaleBridge.listAgents();
     const agents = unwrap(listed) as BridgeAgent[];
 
+    if (debug) {
+      return new Response(JSON.stringify({
+        ok: true,
+        agent_count: agents.length,
+        sample: agents.slice(0, 5),
+        keys: agents[0] ? Object.keys(agents[0]) : [],
+        team: (team || []).map(t => ({ name: t.display_name, email: t.email })),
+      }, null, 2), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const normName = (s: string) => String(s || "").toLowerCase().replace(/[^a-z]/g, "");
     const results: any[] = [];
 
     for (const t of team || []) {
       const teamEmail = (t.email || "").toLowerCase();
-      const match = agents.find((a) => (a.email ?? "").toLowerCase() === teamEmail);
+      const teamName = normName(t.display_name || "");
+      let match = agents.find((a) => (a.email ?? "").toLowerCase() === teamEmail);
+      if (!match) {
+        match = agents.find((a) => normName(a.name ?? "") === teamName);
+      }
 
       if (!match?.slug) {
         results.push({ id: t.id, name: t.display_name, email: t.email, status: "no_presale_match" });
