@@ -71,9 +71,20 @@ export function TemplatesRail({ onApply, activeTemplateId }: Props) {
         <div className="flex items-baseline justify-between">
           <div>
             <h3 className="text-[13px] font-semibold tracking-tight text-foreground leading-none">Templates</h3>
-            <p className="text-[10.5px] text-muted-foreground mt-1">{filtered.length.toLocaleString()} available</p>
+            <p className="text-[10.5px] text-muted-foreground mt-1">
+              {filtered.length.toLocaleString()} available
+              {bridgeUpdatedAt ? ` · live · synced ${formatAgo(bridgeUpdatedAt)}` : ''}
+            </p>
           </div>
-          <Sparkles className="h-3.5 w-3.5 text-primary/70" />
+          <button
+            type="button"
+            onClick={() => { refetchBridge(); refetchLocal(); }}
+            disabled={bridgeFetching}
+            title="Refresh templates from Presale"
+            className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={cn('h-3.5 w-3.5', bridgeFetching && 'animate-spin')} />
+          </button>
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
