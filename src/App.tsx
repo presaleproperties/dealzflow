@@ -240,6 +240,7 @@ const App = () => (
                   {/* Public booking pages — no auth */}
                   <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
                   <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
+                  <Route path="/book/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
