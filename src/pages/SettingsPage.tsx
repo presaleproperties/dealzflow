@@ -193,7 +193,7 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={springConfig}
       >
-        <SettingsLayout sections={SETTINGS_SECTIONS}>
+        <SettingsLayout sections={SETTINGS_SECTIONS} initialActive={initialSection}>
           {/* Profile */}
           <SettingsSectionAnchor id="settings-profile">
             <ProfileSection />
