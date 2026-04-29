@@ -204,23 +204,46 @@ export function renderForRecipient(input: string, ctx: RenderContext): string {
   if (!input) return input;
   const values = buildRecipientValues(ctx);
   const legacy: Record<string, string> = {
+    // Lofty / Presale legacy aliases
+    name: values['lead.first_name'] ?? '',
     first_name: values['lead.first_name'] ?? '',
+    firstname: values['lead.first_name'] ?? '',
     last_name: values['lead.last_name'] ?? '',
+    lastname: values['lead.last_name'] ?? '',
+    full_name: values['lead.full_name'] ?? '',
     lead_name: values['lead.full_name'] ?? '',
+    contact_name: values['lead.full_name'] ?? '',
+    email: values['lead.email'] ?? '',
+    phone: values['lead.phone'] ?? '',
     agent_name: values['sender.full_name'] ?? '',
+    agent_first_name: values['sender.first_name'] ?? '',
     agent_email: values['sender.email'] ?? '',
     agent_phone: values['sender.phone'] ?? '',
+    sender_name: values['sender.full_name'] ?? '',
+    sender_email: values['sender.email'] ?? '',
     company_name: 'The Presale Properties Group',
+    unsubscribe: values['link.unsubscribe'] ?? '',
+    unsubscribe_link: values['link.unsubscribe'] ?? '',
   };
-  return input.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, raw) => {
+  const resolve = (raw: string): string => {
     const tok = String(raw);
     if (tok in values) return values[tok];
     const lower = tok.toLowerCase();
     if (lower in legacy) return legacy[lower];
-    // Unknown token → strip rather than expose raw syntax to the recipient.
     return '';
-  });
+  };
+  // Run replacements in order so a later pattern doesn't accidentally re-match
+  // an already-substituted value:
+  //   1. {{token}}              — canonical Lovable syntax
+  //   2. {{ lead.first_name }}  — same, with whitespace
+  //   3. {$token}               — Lofty / Presale syntax (e.g. {$name}, {$unsubscribe})
+  //   4. ${token}               — JS template-literal style
+  return input
+    .replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, raw) => resolve(raw))
+    .replace(/\{\s*\$\s*([a-zA-Z0-9_.]+)\s*\}/g, (_, raw) => resolve(raw))
+    .replace(/\$\{\s*([a-zA-Z0-9_.]+)\s*\}/g, (_, raw) => resolve(raw));
 }
+
 
 /** Find all merge tokens used in a string (deduped). */
 export function extractTokens(input: string): string[] {
