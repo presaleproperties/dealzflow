@@ -31,6 +31,7 @@ export function usePresaleSignatureAutoImport() {
     if (status !== 'ready' || !agent) return;
     if (sigsLoading || settingsLoading) return;
 
+    const existingSettingsSignature = settings?.signature_html?.trim() || '';
     const hasSignatureToImport = !!agent.signatureHtml?.trim();
     const hasNoSavedSignatures = (signatures?.length ?? 0) === 0;
 
@@ -39,11 +40,15 @@ export function usePresaleSignatureAutoImport() {
     const settingsNeedsReplyTo = !settings?.reply_to && !!agent.email;
     const settingsNeedsLogo = !settings?.brand_logo_url && !!agent.headshotUrl;
 
-    const shouldImportSignature = hasSignatureToImport && hasNoSavedSignatures;
+    // If the user already has a manually saved legacy/settings signature, use
+    // that to seed the signatures table. Never let Presale defaults outrank a
+    // saved CRM signature just because the newer signatures table is empty.
+    const shouldBackfillSignatureRow = hasNoSavedSignatures && !!existingSettingsSignature;
+    const shouldImportSignature = hasNoSavedSignatures && !existingSettingsSignature && hasSignatureToImport;
     const shouldSeedSettings =
       settingsNeedsSenderName || settingsNeedsReplyTo || settingsNeedsLogo;
 
-    if (!shouldImportSignature && !shouldSeedSettings) return;
+    if (!shouldBackfillSignatureRow && !shouldImportSignature && !shouldSeedSettings) return;
 
     ranRef.current = true;
 
@@ -56,11 +61,11 @@ export function usePresaleSignatureAutoImport() {
           return;
         }
 
-        if (shouldImportSignature) {
+        if (shouldBackfillSignatureRow || shouldImportSignature) {
           const row = {
             user_id: userId,
-            name: 'Presale Properties',
-            html: agent.signatureHtml!,
+            name: shouldBackfillSignatureRow ? 'Default signature' : 'Presale Properties',
+            html: shouldBackfillSignatureRow ? existingSettingsSignature : agent.signatureHtml!,
             is_default: true,
             sort_order: 0,
           };

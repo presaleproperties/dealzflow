@@ -61,6 +61,7 @@ interface PresaleSignatureBuilderProps {
   initialData?: {
     fields?: Partial<SignatureBuilderFields>;
     touchedFields?: Record<string, boolean>;
+    layout?: LayoutVariant;
   } | null;
   /** Called with the rendered HTML when the user clicks "Apply to CRM". */
   onApply: (
@@ -234,11 +235,13 @@ function ScaledIframe({
   title,
   naturalWidth,
   naturalHeight,
+  previewWidth,
 }: {
   iframeRef: React.RefObject<HTMLIFrameElement>;
   title: string;
   naturalWidth: number;
   naturalHeight: number;
+  previewWidth?: number;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -249,14 +252,14 @@ function ScaledIframe({
     const el = wrapperRef.current;
     if (!el) return;
     const update = () => {
-      const w = el.clientWidth;
+      const w = previewWidth ? Math.min(el.clientWidth, previewWidth) : el.clientWidth;
       if (w > 0) setScale(Math.min(1, w / naturalWidth));
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [naturalWidth]);
+  }, [naturalWidth, previewWidth]);
 
   // After iframe content writes, measure real body height. We tick a bounded
   // number of frames so we catch image loads, but only commit a new height if
@@ -290,8 +293,8 @@ function ScaledIframe({
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full overflow-hidden"
-      style={{ height: Math.ceil(contentHeight * scale) }}
+      className="relative w-full overflow-hidden mx-auto"
+      style={{ height: Math.ceil(contentHeight * scale), maxWidth: previewWidth ?? "100%" }}
     >
       <iframe
         ref={iframeRef}
@@ -317,7 +320,7 @@ export default function PresaleSignatureBuilder({
 }: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
-  const [layout, setLayout] = useState<LayoutVariant>("horizontal");
+  const [layout, setLayout] = useState<LayoutVariant>(initialData?.layout ?? "horizontal");
   const [mode, setMode] = useState<"form" | "html">("form");
   const [fields, setFields] = useState<SignatureBuilderFields>(() => ({
     ...BLANK,
@@ -327,13 +330,18 @@ export default function PresaleSignatureBuilder({
   // Per-field touched + per-field source tracking so user edits never get
   // overwritten by a later prefill, and we can show "from Presale" etc.
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
-    () => initialData?.touchedFields ?? {},
+    () => ({
+      ...Object.fromEntries(Object.keys(initialData?.fields ?? {}).map((key) => [key, true])),
+      ...(initialData?.touchedFields ?? {}),
+    }),
   );
   const [sourceMap, setSourceMap] = useState<Record<string, PrefillSource>>({});
   const [crmProfile, setCrmProfile] = useState<CrmProfileSeed | null>(null);
 
   const iframeHRef = useRef<HTMLIFrameElement>(null);
   const iframeVRef = useRef<HTMLIFrameElement>(null);
+  const iframeHMobileRef = useRef<HTMLIFrameElement>(null);
+  const iframeVMobileRef = useRef<HTMLIFrameElement>(null);
 
   // Auto-fetch Presale agent record on mount.
   useEffect(() => {
@@ -386,7 +394,13 @@ export default function PresaleSignatureBuilder({
 
     const profile = crmProfile ?? {};
 
-    const next: SignatureBuilderFields = { ...BLANK };
+    const baseFields: SignatureBuilderFields = {
+      ...BLANK,
+      ...fallback,
+      ...(initialData?.fields ?? {}),
+      ...fields,
+    };
+    const next: SignatureBuilderFields = { ...baseFields };
     const sources: Record<string, PrefillSource> = {};
 
     const apply = (
@@ -395,7 +409,7 @@ export default function PresaleSignatureBuilder({
     ) => {
       // If user explicitly edited this field, keep it.
       if (touchedFields[key]) {
-        next[key] = fields[key] as never;
+        next[key] = baseFields[key] as never;
         sources[key] = "user";
         return;
       }
@@ -444,20 +458,20 @@ export default function PresaleSignatureBuilder({
     apply("instagram", [[presale.instagram, "presale"]]);
     // Headshot link/shape are user-only choices
     next.headshotLink = touchedFields.headshotLink
-      ? fields.headshotLink
-      : fields.headshotLink || BLANK.headshotLink;
+      ? baseFields.headshotLink
+      : BLANK.headshotLink;
     next.headshotShape = touchedFields.headshotShape
-      ? fields.headshotShape
-      : fields.headshotShape || BLANK.headshotShape;
+      ? baseFields.headshotShape
+      : BLANK.headshotShape;
     next.headshotSize = touchedFields.headshotSize
-      ? fields.headshotSize
-      : fields.headshotSize || BLANK.headshotSize;
+      ? baseFields.headshotSize
+      : BLANK.headshotSize;
     next.headshotPosX = touchedFields.headshotPosX
-      ? fields.headshotPosX
-      : fields.headshotPosX || BLANK.headshotPosX;
+      ? baseFields.headshotPosX
+      : BLANK.headshotPosX;
     next.headshotPosY = touchedFields.headshotPosY
-      ? fields.headshotPosY
-      : fields.headshotPosY || BLANK.headshotPosY;
+      ? baseFields.headshotPosY
+      : BLANK.headshotPosY;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
     sources.headshotSize = touchedFields.headshotSize ? "user" : "fallback";
@@ -492,7 +506,9 @@ export default function PresaleSignatureBuilder({
   useEffect(() => {
     [
       { ref: iframeHRef, html: horizontalHtml },
+      { ref: iframeHMobileRef, html: horizontalHtml },
       { ref: iframeVRef, html: stackedHtml },
+      { ref: iframeVMobileRef, html: stackedHtml },
     ].forEach(({ ref, html }) => {
       if (!ref.current) return;
       const doc = ref.current.contentDocument;
@@ -958,13 +974,26 @@ export default function PresaleSignatureBuilder({
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
-              <ScaledIframe
-                iframeRef={iframeHRef}
-                title="Horizontal Signature"
-                naturalWidth={620}
-                naturalHeight={200}
-              />
+            <div className="bg-muted/20 p-2 space-y-2">
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Desktop preview</p>
+                <ScaledIframe
+                  iframeRef={iframeHRef}
+                  title="Horizontal Signature Desktop"
+                  naturalWidth={620}
+                  naturalHeight={200}
+                />
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mobile preview</p>
+                <ScaledIframe
+                  iframeRef={iframeHMobileRef}
+                  title="Horizontal Signature Mobile"
+                  naturalWidth={620}
+                  naturalHeight={200}
+                  previewWidth={360}
+                />
+              </div>
             </div>
           </div>
 
@@ -1019,13 +1048,26 @@ export default function PresaleSignatureBuilder({
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
-              <ScaledIframe
-                iframeRef={iframeVRef}
-                title="Stacked Signature"
-                naturalWidth={440}
-                naturalHeight={420}
-              />
+            <div className="bg-muted/20 p-2 space-y-2">
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Desktop preview</p>
+                <ScaledIframe
+                  iframeRef={iframeVRef}
+                  title="Stacked Signature Desktop"
+                  naturalWidth={440}
+                  naturalHeight={420}
+                />
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mobile preview</p>
+                <ScaledIframe
+                  iframeRef={iframeVMobileRef}
+                  title="Stacked Signature Mobile"
+                  naturalWidth={440}
+                  naturalHeight={420}
+                  previewWidth={360}
+                />
+              </div>
             </div>
           </div>
         </div>
