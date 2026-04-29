@@ -123,12 +123,15 @@ export function ComposeTab() {
   // Template state
   const [activeTemplate, setActiveTemplate] = useState<CrmEmailTemplate | null>(null);
   const [htmlBody, setHtmlBody] = useState('');
-  const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+  // Editor mode for templates: 'preview' (read-only), 'simple' (edit text inline
+  // on the rendered preview), or 'html' (raw HTML editor).
+  const [editorMode, setEditorMode] = useState<'preview' | 'simple' | 'html'>('preview');
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const isHtmlMode = !!activeTemplate;
+
 
   // From display
   const fromDisplay = useMemo(() => {
