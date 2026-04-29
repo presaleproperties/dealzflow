@@ -203,6 +203,9 @@ export function PipelineKanban() {
   }, [contacts]);
   const updateContact = useUpdateCrmContact();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const handleOpen = useCallback((id: string) => navigate(`/crm/leads/${id}`), [navigate]);
   const [search, setSearch] = useState('');
   const [filterProject, setFilterProject] = useState('all');
   const [filterAgent, setFilterAgent] = useState('all');
