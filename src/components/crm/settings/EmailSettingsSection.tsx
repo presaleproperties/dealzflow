@@ -12,11 +12,10 @@ import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder'
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
 import LiveSignaturePreview from './LiveSignaturePreview';
-import PresalePresetCard from './PresalePresetCard';
+import PresaleSignatureBuilder from './PresaleSignatureBuilder';
 import { isRichHtml } from '@/lib/htmlDetect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { PresaleSignaturePresetId } from '@/lib/presaleSignatures';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
 
@@ -185,18 +184,20 @@ export default function EmailSettingsSection() {
           </div>
         </div>
 
-        {/* ───────── 2. Signature (Presale presets — primary) ───────── */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold">Email Signature</Label>
-          <p className="text-xs text-muted-foreground">
-            Pick one of the Presale Properties signatures below. It's auto-appended to every email you send.
-          </p>
-          <PresalePresetCard
-            fallbackAgent={{
-              full_name: senderName.split('|')[0]?.trim() || senderName,
-              email: replyTo || null,
+        {/* ───────── 2. Signature Builder (1:1 with Presale Properties) ───────── */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-sm font-semibold">Email Signature</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Build your signature with the same editor as the Presale Properties agent portal. Pick "Headshot Left" or "Headshot Top", then Apply to use it on every email you send from this CRM.
+            </p>
+          </div>
+          <PresaleSignatureBuilder
+            fallback={{
+              fullName: senderName.split('|')[0]?.trim() || senderName,
+              email: replyTo || '',
             }}
-            onApply={(preset: PresaleSignaturePresetId, html) => {
+            onApply={(html, layout) => {
               setSignatureMode('html');
               setHtmlImport(html);
               setSignatureHtml(html);
@@ -206,12 +207,9 @@ export default function EmailSettingsSection() {
                 signature_mode: 'html',
                 signature_builder_data: null,
               } as any);
-              const labelByPreset: Record<string, string> = {
-                presale_headshot_left: 'Headshot Left signature applied',
-                presale_card: 'Presale Card signature applied',
-                presale_lofty: 'Lofty / plain signature applied',
-              };
-              toast.success(labelByPreset[preset] ?? 'Signature applied');
+              toast.success(
+                `${layout === 'horizontal' ? 'Headshot Left' : 'Headshot Top'} signature applied`,
+              );
             }}
           />
         </div>
