@@ -3,7 +3,9 @@ import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
