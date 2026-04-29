@@ -3543,6 +3543,7 @@ export type Database = {
           slug: string | null
           timezone: string | null
           title: string | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -3572,6 +3573,7 @@ export type Database = {
           slug?: string | null
           timezone?: string | null
           title?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -3601,6 +3603,7 @@ export type Database = {
           slug?: string | null
           timezone?: string | null
           title?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: []
