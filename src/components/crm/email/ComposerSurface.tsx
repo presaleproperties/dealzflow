@@ -391,47 +391,68 @@ export function ComposerSurface({
   const doSingleSend = () => {
     const c = reachable[0];
     if (!c?.email) return;
-    // Snapshot args so we can clear the composer immediately for instant UX,
-    // then fire the network call in the background. Toasts are surfaced by
-    // the underlying hooks if anything actually fails.
+    // Manual recipients (typed-in emails) carry a synthetic id like
+    // `manual:foo@bar.com` — they have no CRM contact row, so we must NOT
+    // pass contact_id to the bridge and we skip the activity log insert.
+    const isManual = typeof c.id === 'string' && c.id.startsWith('manual:');
     const args = {
       to: c.email,
       cc: cc.trim() || undefined,
       bcc: bcc.trim() || undefined,
       subject: renderedSubject,
       html: finalHtml,
-      contact_id: c.id,
+      contact_id: isManual ? null : c.id,
     };
-    const logArgs = {
-      contact_id: c.id,
-      direction: 'outbound' as const,
-      content: `Subject: ${renderedSubject}\n\n${finalHtml.replace(/<[^>]*>/g, ' ').trim()}`,
-      channel: 'email' as const,
-      sent_by: 'Agent',
-      message_type: 'text' as const,
-    };
+    const logArgs = isManual
+      ? null
+      : {
+          contact_id: c.id,
+          direction: 'outbound' as const,
+          content: `Subject: ${renderedSubject}\n\n${finalHtml.replace(/<[^>]*>/g, ' ').trim()}`,
+          channel: 'email' as const,
+          sent_by: 'Agent',
+          message_type: 'text' as const,
+        };
     resetComposer();
     onClearRecipients?.();
     onSent?.();
     void (async () => {
       try {
         await sendBridge.mutateAsync(args);
-        await addMessage.mutateAsync(logArgs);
+        if (logArgs) await addMessage.mutateAsync(logArgs);
       } catch { /* hook handles toast */ }
     })();
   };
 
   const doMassSend = async () => {
     try {
-      await massSend.mutateAsync({
-        recipient_ids: reachable.map((r) => r.id),
-        subject,
-        body_html: bodyHtml,
-        append_signature: appendSignature,
-        signature_id: selectedSignatureId,
-        cc: cc.trim() || null,
-        bcc: bcc.trim() || null,
-      });
+      // Split CRM recipients (use mass-send for personalization) from
+      // manual typed-email recipients (no CRM row → fan out via bridge).
+      const crmRecipients = reachable.filter((r) => !(typeof r.id === 'string' && r.id.startsWith('manual:')));
+      const manualRecipients = reachable.filter((r) => typeof r.id === 'string' && r.id.startsWith('manual:'));
+
+      if (crmRecipients.length > 0) {
+        await massSend.mutateAsync({
+          recipient_ids: crmRecipients.map((r) => r.id),
+          subject,
+          body_html: bodyHtml,
+          append_signature: appendSignature,
+          signature_id: selectedSignatureId,
+          cc: cc.trim() || null,
+          bcc: bcc.trim() || null,
+        });
+      }
+      for (const m of manualRecipients) {
+        if (!m.email) continue;
+        await sendBridge.mutateAsync({
+          to: m.email,
+          cc: cc.trim() || undefined,
+          bcc: bcc.trim() || undefined,
+          subject: renderedSubject,
+          html: finalHtml,
+          contact_id: null,
+        });
+      }
       resetComposer();
       onClearRecipients?.();
       onSent?.();

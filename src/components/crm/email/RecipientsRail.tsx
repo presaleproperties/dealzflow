@@ -41,6 +41,62 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
 
+  // Allow ad-hoc sends to any typed email — no CRM contact required.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const trimmedSearch = search.trim();
+  const isTypedEmail = EMAIL_RE.test(trimmedSearch);
+  const typedEmailLower = isTypedEmail ? trimmedSearch.toLowerCase() : '';
+  const typedEmailExists = isTypedEmail
+    && (contacts.some((c) => (c.email ?? '').toLowerCase() === typedEmailLower)
+      || selected.some((s) => (s.email ?? '').toLowerCase() === typedEmailLower));
+
+  const addManualRecipient = () => {
+    if (!isTypedEmail || typedEmailExists) return;
+    const synthetic: CrmContact = {
+      id: `manual:${typedEmailLower}`,
+      first_name: '',
+      last_name: typedEmailLower,
+      email: typedEmailLower,
+      email_secondary: null,
+      phone: null,
+      phone_secondary: null,
+      address: null,
+      city: null,
+      province: null,
+      postal_code: null,
+      source: null,
+      status: null,
+      project: null,
+      projects: [],
+      assigned_to: null,
+      tags: [],
+      budget_min: null,
+      budget_max: null,
+      bedrooms_preferred: null,
+      language: null,
+      lead_type: null,
+      lead_score: null,
+      notes: null,
+      contact_type: 'manual',
+      birthday: null,
+      co_buyer_name: null,
+      co_buyer_phone: null,
+      co_buyer_email: null,
+      co_buyer_birthday: null,
+      last_contact_at: null,
+      next_followup_date: null,
+      status_changed_at: null,
+      lofty_id: null,
+      last_touch_at: null,
+      last_touch_type: null,
+      stage_changed_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    onSelectedChange([...selected, synthetic]);
+    setSearch('');
+  };
+
   const [mode, setMode] = useState<Mode>('segments');
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [activeProjects, setActiveProjects] = useState<Set<string>>(new Set());
@@ -149,10 +205,32 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, email, phone…"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && isTypedEmail && !typedEmailExists) {
+                e.preventDefault();
+                addManualRecipient();
+              }
+            }}
+            placeholder="Search name, email, phone… or type a new email"
             className="pl-8 h-9 text-[12.5px] bg-background"
           />
         </div>
+
+        {isTypedEmail && !typedEmailExists && (
+          <button
+            type="button"
+            onClick={addManualRecipient}
+            className="mt-2 w-full inline-flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md border border-primary/40 bg-primary/5 hover:bg-primary/10 text-[11.5px] text-foreground transition-colors"
+          >
+            <span className="truncate">
+              <span className="font-semibold">Send to</span>{' '}
+              <span className="text-muted-foreground">{typedEmailLower}</span>
+            </span>
+            <span className="text-[9.5px] uppercase tracking-wider text-primary font-bold shrink-0">
+              + Add
+            </span>
+          </button>
+        )}
 
         {/* Filter mode tabs */}
         <div className="flex items-center gap-0.5 mt-2.5 p-0.5 bg-muted/40 rounded-lg">
