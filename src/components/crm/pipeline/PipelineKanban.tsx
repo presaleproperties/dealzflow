@@ -452,7 +452,7 @@ export function PipelineKanban() {
                             style={{ maxHeight: 'calc(100dvh - 280px)' }}
                           >
                             {visible.map((contact, idx) => (
-                              <LeadCard key={contact.id} contact={contact} index={idx} />
+                              <LeadCard key={contact.id} contact={contact} index={idx} onOpen={handleOpen} />
                             ))}
                             {provided.placeholder}
                             {remaining > 0 && (
