@@ -96,11 +96,12 @@ export const LEAD_SOURCES = [
   'Manual Entry',
 ] as const;
 
-export const AGENTS = [
-  'Uzair Muhammad',
-  'Sarb Grewal',
-  'Ravish Passy',
-] as const;
+/**
+ * @deprecated Use `useAgentNames()` from '@/hooks/useTeamAgents' instead.
+ * Kept as an empty fallback so legacy imports don't crash; new dropdowns must
+ * source the live team list so newly invited members appear automatically.
+ */
+export const AGENTS: readonly string[] = [];
 
 export const PROJECTS = [
   'Eden by Zenterra',
