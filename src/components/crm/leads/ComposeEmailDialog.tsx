@@ -971,36 +971,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                               />
                             </div>
                           ) : (
-                            <>
-                              {/* Desktop: always show inline signature preview */}
-                              <div className="hidden md:block">
-                                <SignatureInlineFrame html={activeSignatureHtml} />
-                              </div>
-                              {/* Mobile: collapsed by default to maximize typing area */}
-                              <div className="md:hidden border-t border-border/40">
-                                {showSignaturePreviewMobile ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowSignaturePreviewMobile(false)}
-                                      className="w-full text-left px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground active:opacity-60"
-                                    >
-                                      Hide signature
-                                    </button>
-                                    <SignatureInlineFrame html={activeSignatureHtml} />
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowSignaturePreviewMobile(true)}
-                                    className="w-full text-left px-4 py-2.5 text-[12px] text-muted-foreground active:opacity-60 flex items-center justify-between"
-                                  >
-                                    <span>Signature attached</span>
-                                    <span className="text-[11px] uppercase tracking-wider text-primary">Show</span>
-                                  </button>
-                                )}
-                              </div>
-                            </>
+                            // Signature renders inline as a continuation of the body on every
+                            // viewport — no border seam, no "Show signature" gate. Reads as one
+                            // unified message exactly like Apple Mail / Gmail mobile.
+                            <SignatureInlineFrame html={activeSignatureHtml} />
                           )
                         ) : null
                       }
