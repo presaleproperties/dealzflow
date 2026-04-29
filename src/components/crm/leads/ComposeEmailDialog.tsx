@@ -141,11 +141,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   /* Draft autosave — per-contact, survives accidental close / app backgrounding */
   const draftScope = `lead:${contact.id}`;
-  const { savedAt } = useEmailDraftAutosave(
+  const { savedAt, clear: clearDraft } = useEmailDraftAutosave(
     draftScope,
     { subject, bodyHtml, cc, bcc },
     open,
   );
+
+  const discardDraft = () => {
+    clearDraft();
+    setSubject('');
+    setBodyHtml('<p></p>');
+    setCc('');
+    setBcc('');
+    setShowCcBcc(false);
+    toast.success('Draft discarded');
+  };
 
   /* Restore draft on open (if any) */
   useEffect(() => {
