@@ -150,6 +150,17 @@ const BLANK: SignatureBuilderFields = {
   headshotShape: "rounded",
 };
 
+interface CrmProfileSeed {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  title?: string;
+  brokerage?: string;
+  photoUrl?: string;
+}
+
+type PrefillSource = "presale" | "profile" | "fallback" | "user";
+
 export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
@@ -159,7 +170,11 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
     ...BLANK,
     ...fallback,
   }));
-  const [touched, setTouched] = useState(false);
+  // Per-field touched + per-field source tracking so user edits never get
+  // overwritten by a later prefill, and we can show "from Presale" etc.
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [sourceMap, setSourceMap] = useState<Record<string, PrefillSource>>({});
+  const [crmProfile, setCrmProfile] = useState<CrmProfileSeed | null>(null);
 
   const iframeHRef = useRef<HTMLIFrameElement>(null);
   const iframeVRef = useRef<HTMLIFrameElement>(null);
@@ -169,25 +184,110 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
     if (status === "idle") void refresh();
   }, [status, refresh]);
 
-  // Once Presale agent loads, seed the form (don't clobber user edits).
+  // Pull CRM profile (auth user + profiles row) once for fallback prefill.
   useEffect(() => {
-    if (touched || !agent) return;
-    setFields((prev) => ({
-      ...prev,
-      fullName: agent.name ?? prev.fullName,
-      title: (agent as any).title ?? prev.title,
-      phone: agent.phone ?? prev.phone,
-      email: agent.email ?? prev.email,
-      website: agent.websiteUrl ?? prev.website,
-      brokerage: agent.brokerage ?? prev.brokerage,
-      photoUrl: agent.headshotUrl ?? prev.photoUrl,
-      instagram: (agent as any).instagramUrl ?? prev.instagram,
-    }));
-  }, [agent, touched]);
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone, title, brokerage, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setCrmProfile({
+        fullName: profile?.full_name ?? undefined,
+        email: user.email ?? undefined,
+        phone: profile?.phone ?? undefined,
+        title: profile?.title ?? undefined,
+        brokerage: profile?.brokerage ?? undefined,
+        photoUrl: profile?.avatar_url ?? undefined,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Merge sources whenever any input changes. Precedence per field:
+  //   user edit > Presale agent > CRM profile > fallback prop > BLANK default
+  useEffect(() => {
+    const presale = agent
+      ? {
+          fullName: agent.name,
+          title: agent.title,
+          phone: agent.phone,
+          email: agent.email,
+          website: agent.websiteUrl,
+          brokerage: agent.brokerage,
+          photoUrl: agent.headshotUrl,
+          instagram: agent.instagramUrl,
+        }
+      : {};
+
+    const profile = crmProfile ?? {};
+
+    const next: SignatureBuilderFields = { ...BLANK };
+    const sources: Record<string, PrefillSource> = {};
+
+    const apply = (
+      key: keyof SignatureBuilderFields,
+      candidates: Array<[unknown, PrefillSource]>,
+    ) => {
+      // If user explicitly edited this field, keep it.
+      if (touchedFields[key]) {
+        next[key] = fields[key] as never;
+        sources[key] = "user";
+        return;
+      }
+      for (const [val, src] of candidates) {
+        if (typeof val === "string" && val.trim() !== "") {
+          (next as any)[key] = val;
+          sources[key] = src;
+          return;
+        }
+      }
+      // Stick with default from BLANK / fallback
+      const fb = (fallback as any)?.[key];
+      if (typeof fb === "string" && fb.trim() !== "") {
+        (next as any)[key] = fb;
+        sources[key] = "fallback";
+      } else {
+        sources[key] = "fallback";
+      }
+    };
+
+    apply("fullName",  [[presale.fullName, "presale"], [profile.fullName, "profile"]]);
+    apply("title",     [[presale.title, "presale"], [profile.title, "profile"]]);
+    apply("phone",     [[presale.phone, "presale"], [profile.phone, "profile"]]);
+    apply("email",     [[presale.email, "presale"], [profile.email, "profile"]]);
+    apply("website",   [[presale.website, "presale"]]);
+    apply("brokerage", [[presale.brokerage, "presale"], [profile.brokerage, "profile"]]);
+    apply("photoUrl",  [[presale.photoUrl, "presale"], [profile.photoUrl, "profile"]]);
+    apply("instagram", [[presale.instagram, "presale"]]);
+    // Headshot link/shape are user-only choices
+    next.headshotLink = touchedFields.headshotLink ? fields.headshotLink : (fields.headshotLink || BLANK.headshotLink);
+    next.headshotShape = touchedFields.headshotShape ? fields.headshotShape : (fields.headshotShape || BLANK.headshotShape);
+    sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
+    sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
+
+    setFields(next);
+    setSourceMap(sources);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent, crmProfile]);
 
   const update = (field: keyof SignatureBuilderFields, value: string) => {
-    setTouched(true);
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+    setSourceMap((prev) => ({ ...prev, [field]: "user" }));
     setFields((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleResetField = (field: keyof SignatureBuilderFields) => {
+    setTouchedFields((prev) => {
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+    // Trigger re-merge by nudging crmProfile reference
+    setCrmProfile((prev) => (prev ? { ...prev } : prev));
   };
 
   const horizontalHtml = useMemo(() => buildHorizontalHtml(fields), [fields]);
@@ -225,6 +325,39 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
   };
 
   const isLoading = status === "loading";
+
+  // Source badge component — shows where each field came from
+  const SourceBadge = ({ field }: { field: keyof SignatureBuilderFields }) => {
+    const src = sourceMap[field];
+    if (!src || src === "fallback") return null;
+    const config: Record<PrefillSource, { label: string; className: string }> = {
+      presale:  { label: "Presale", className: "bg-primary/10 text-primary border-primary/20" },
+      profile:  { label: "Profile", className: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400" },
+      user:     { label: "Edited",  className: "bg-muted text-muted-foreground border-border" },
+      fallback: { label: "",        className: "" },
+    };
+    const cfg = config[src];
+    return (
+      <button
+        type="button"
+        onClick={() => src === "user" && handleResetField(field)}
+        title={src === "user" ? "Click to reset to auto-filled value" : `Auto-filled from ${cfg.label}`}
+        className={cn(
+          "ml-2 inline-flex items-center gap-0.5 rounded border px-1 py-0 text-[9px] font-semibold uppercase tracking-wide leading-[14px] h-[14px]",
+          cfg.className,
+          src === "user" && "cursor-pointer hover:bg-muted/80",
+        )}
+      >
+        {src !== "user" && <Sparkles className="h-2 w-2" />}
+        {cfg.label}
+      </button>
+    );
+  };
+
+  // Count how many fields were auto-prefilled
+  const prefilledCount = Object.values(sourceMap).filter(
+    (s) => s === "presale" || s === "profile",
+  ).length;
 
   return (
     <div className="space-y-5">
