@@ -34,10 +34,26 @@ interface ResultRow {
 }
 
 function renderForLead(template: string, lead: Record<string, string>, sender: Record<string, string>): string {
+  // Legacy aliases supported by the client renderer (renderForRecipient) — keep
+  // server-side parity so Presale templates with {{first_name}}, {{lead_name}},
+  // {{agent_name}} etc. expand instead of being stripped to empty strings.
+  const legacy: Record<string, string> = {
+    first_name: lead.first_name ?? "",
+    last_name: lead.last_name ?? "",
+    lead_name: [lead.first_name, lead.last_name].filter(Boolean).join(" "),
+    full_name: [lead.first_name, lead.last_name].filter(Boolean).join(" "),
+    agent_name: sender.full_name ?? "",
+    agent_email: sender.email ?? "",
+    agent_phone: sender.phone ?? "",
+    company_name: "The Presale Properties Group",
+  };
   return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
-    const path = String(key).split(".");
+    const tok = String(key);
+    const path = tok.split(".");
     if (path[0] === "lead") return lead[path[1]] ?? "";
     if (path[0] === "sender") return sender[path[1]] ?? "";
+    const lower = tok.toLowerCase();
+    if (lower in legacy) return legacy[lower];
     return "";
   });
 }
