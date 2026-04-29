@@ -26,6 +26,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const bulkDelete = useBulkDeleteContacts();
   const bulkAddTags = useBulkAddTagsToContacts();
   const { data: tagLib = [] } = useCrmTags();
+  const { data: agents = [] } = useTeamAgents();
   const createTag = useCreateCrmTag();
   const [showDelete, setShowDelete] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
