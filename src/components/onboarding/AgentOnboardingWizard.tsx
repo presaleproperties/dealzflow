@@ -10,9 +10,9 @@ import { toast } from 'sonner';
 import type { OnboardingStepKey } from '@/hooks/useProfile';
 
 const SNOOZE_KEY = 'ob-wizard-snoozed-at';
-const FIRST_SEEN_KEY = 'ob-wizard-first-seen';
 // We never auto-pop the wizard over the dashboard. The OnboardingBanner is the
-// single entry point — user must explicitly click "Resume" to open it.
+// single entry point — user must explicitly click "Resume" to open it,
+// which dispatches a `window` 'onboarding:open' event picked up below.
 
 import { StepWelcome } from './steps/StepWelcome';
 import { StepProfile } from './steps/StepProfile';
