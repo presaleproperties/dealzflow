@@ -518,7 +518,13 @@ function SettingsTab({
               <span className="text-xs text-muted-foreground">{numbers.length} configured</span>
             </div>
             {numbers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No numbers added yet. Add one in CRM Settings.</p>
+              <div className="rounded-lg border border-dashed border-border/70 bg-muted/30 p-4">
+                <p className="text-sm font-medium text-foreground mb-1">No SMS line yet</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Your admin needs to provision a Twilio number and link it to your account before you
+                  can send or receive texts. Inbox & campaigns will light up automatically once that's done.
+                </p>
+              </div>
             ) : (
               <div className="divide-y divide-border">
                 {numbers.map((n: any) => (
