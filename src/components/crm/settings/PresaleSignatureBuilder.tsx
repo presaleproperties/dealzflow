@@ -760,12 +760,12 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40">
+            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
               <ScaledIframe
                 iframeRef={iframeVRef}
                 title="Stacked Signature"
-                naturalWidth={420}
-                naturalHeight={360}
+                naturalWidth={440}
+                naturalHeight={420}
               />
             </div>
           </div>
