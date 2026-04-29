@@ -485,6 +485,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
    *  Images are inserted as <img>; other files become a link to the public URL. */
   const composerRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const { dragActive } = useDragAndPasteFiles({
+    targetRef: composerRef,
+    onFiles: (files) => { void handleAttachFiles(files); },
+    enabled: open,
+  });
   const handleAttachFiles = async (files: File[] | FileList | null) => {
     const list = !files ? [] : Array.isArray(files) ? files : Array.from(files);
     if (list.length === 0) return;
