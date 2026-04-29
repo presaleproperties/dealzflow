@@ -150,6 +150,34 @@ Deno.serve(async (req) => {
     });
     return json({ error: "bridge_env_missing" }, 500);
   }
+  // Resolve which docs the user toggled on, and pass their URLs to the
+  // bridge so its native "YOUR REQUESTED DOCUMENTS" card renders the
+  // matching VIEW BROCHURE / VIEW FLOOR PLANS / VIEW PRICING buttons —
+  // identical to what Presale Properties sends from its own auto-emails.
+  const wantedAttachments = (["brochure", "floor_plans", "pricing"] as const).filter((k) => attachments[k]);
+  const resolvedAttachmentsForBridge: Record<string, { url: string; filename: string | null }> = {};
+  if (wantedAttachments.length > 0) {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/presale-project-assets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+          apikey: ANON_KEY,
+        },
+        body: JSON.stringify({ project_slug }),
+      });
+      const j = await r.json();
+      const assets = j?.assets ?? {};
+      for (const k of wantedAttachments) {
+        const a = assets[k];
+        if (a?.url) resolvedAttachmentsForBridge[k] = { url: a.url, filename: a.filename ?? null };
+      }
+    } catch (e) {
+      console.warn("[render-and-send] asset resolve failed", (e as Error).message);
+    }
+  }
+
   let renderRes: Response;
   let renderText = "";
   try {
@@ -173,15 +201,11 @@ Deno.serve(async (req) => {
           email: contact.email,
           phone: contact.phone,
         },
-        // Bridge uses `recipient.name` to render "Hi {first}," in the greeting.
-        // Without this it falls back to "Hi there,".
         recipient: {
           name: [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null,
           email: contact.email,
         },
         project_slug: bridgeProjectSlug,
-        // Prefer the Presale agent identity synced into crm_team; auth email/id
-        // often differs from the Presale agent record and causes 404s.
         agent_slug: agentSlug,
         agent_id: agentSlug,
         agent_auth_user_id: user.id,
@@ -191,6 +215,16 @@ Deno.serve(async (req) => {
           email: agentEmail,
           display_name: agentName,
         },
+        // Tell the bridge which document buttons to render inside its
+        // native "Your Requested Documents" card. Both shapes are sent so
+        // older/newer bridge versions both pick it up.
+        documents: resolvedAttachmentsForBridge,
+        requested_documents: {
+          brochure: !!resolvedAttachmentsForBridge.brochure,
+          floor_plans: !!resolvedAttachmentsForBridge.floor_plans,
+          pricing: !!resolvedAttachmentsForBridge.pricing,
+        },
+        attachments: resolvedAttachmentsForBridge,
       }),
     });
     renderText = await renderRes.text();
