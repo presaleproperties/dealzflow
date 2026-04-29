@@ -445,20 +445,31 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                   </PopoverContent>
                 </Popover>
 
-                {/* Image / Media */}
+                {/* Attachments — unified paperclip (iOS sheet on mobile, file picker on desktop).
+                    Drag/drop + paste-image are wired on the dialog root via useDragAndPasteFiles. */}
+                <div className="relative">
+                  <AttachMenu
+                    variant="icon"
+                    multiple={false}
+                    accept="image/*,video/*"
+                    uploading={uploading}
+                    onFiles={(f) => handleFiles(f)}
+                  />
+                  {mediaUrls.length > 0 && (
+                    <span className="pointer-events-none absolute top-0 right-0 h-3.5 w-3.5 rounded-full bg-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground">
+                      {mediaUrls.length}
+                    </span>
+                  )}
+                </div>
+                {/* Secondary "manage" — only shown when at least 1 attachment exists, or to paste a URL */}
                 <Popover open={mediaOpen} onOpenChange={setMediaOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 relative" title="Attach image">
-                      <ImageIcon className="h-4 w-4" />
-                      {mediaUrls.length > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground">
-                          {mediaUrls.length}
-                        </span>
-                      )}
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-[11px] text-muted-foreground" title="Manage attachments">
+                      {mediaUrls.length > 0 ? `${mediaUrls.length} file${mediaUrls.length > 1 ? 's' : ''}` : 'URL'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-80 p-3 space-y-2">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Add media (MMS)</p>
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Attachments (MMS)</p>
                     {mediaUrls.length > 0 && (
                       <div className="space-y-1">
                         {mediaUrls.map((u, i) => (
@@ -471,19 +482,11 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                         ))}
                       </div>
                     )}
-                    <input
-                      ref={fileRef} type="file" accept="image/*,video/*" className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }}
-                    />
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                      {uploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-                      Upload file
-                    </Button>
                     <div className="flex items-center gap-2">
                       <Input
                         value={pendingMediaUrl}
                         onChange={(e) => setPendingMediaUrl(e.target.value)}
-                        placeholder="…or paste public image URL"
+                        placeholder="Paste public image URL"
                         className="text-xs h-8"
                       />
                       <Button
@@ -498,7 +501,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                         Add
                       </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each</p>
+                    <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each · drag, paste, or tap the paperclip</p>
                   </PopoverContent>
                 </Popover>
 
