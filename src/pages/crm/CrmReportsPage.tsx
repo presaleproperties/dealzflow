@@ -51,6 +51,11 @@ export default function CrmReportsPage() {
     },
   });
 
+  // Owner-only — team members are redirected to the leads list
+  if (!accessLoading && role !== 'owner') {
+    return <Navigate to="/crm/leads" replace />;
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground">Reports</h1>
