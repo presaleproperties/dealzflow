@@ -52,10 +52,15 @@ export function AgentOnboardingWizard() {
   const [activeIdx, setActiveIdx] = useState(0);
 
   // Open automatically when the user is signed in, approved, and not yet done
+  // — but respect a 4-hour snooze when they closed it themselves.
   useEffect(() => {
     if (!user || profileLoading || !profile) return;
     if (profile.workspace_status !== 'approved') return;
     if (isComplete) return;
+    try {
+      const snoozedAt = Number(sessionStorage.getItem(SNOOZE_KEY) || 0);
+      if (snoozedAt && Date.now() - snoozedAt < SNOOZE_MS) return;
+    } catch { /* ignore */ }
     setOpen(true);
   }, [user, profile, profileLoading, isComplete]);
 
@@ -90,13 +95,28 @@ export function AgentOnboardingWizard() {
     setOpen(false);
   };
 
-  const closeForLater = () => setOpen(false);
+  const closeForLater = () => {
+    try { sessionStorage.setItem(SNOOZE_KEY, String(Date.now())); } catch { /* ignore */ }
+    toast.message('Saved your progress', {
+      description: 'Resume anytime from the gold banner on your dashboard.',
+    });
+    setOpen(false);
+  };
 
   if (!open || !activeKey) return null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && closeForLater()}>
       <DialogContent className="max-w-3xl p-0 [&>button]:hidden flex flex-col lg:flex-row max-h-[92dvh] overflow-hidden gap-0">
+        {/* Mobile close affordance — sidebar provides it on desktop */}
+        <button
+          type="button"
+          onClick={closeForLater}
+          aria-label="Close and resume later"
+          className="lg:hidden absolute top-2.5 right-2.5 z-10 w-9 h-9 rounded-full bg-background/80 backdrop-blur border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center"
+        >
+          <X className="w-4 h-4" />
+        </button>
         {/* Stepper sidebar (desktop) */}
         <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-border/60 bg-muted/30 p-5">
           <div className="flex items-center gap-2 mb-5">
