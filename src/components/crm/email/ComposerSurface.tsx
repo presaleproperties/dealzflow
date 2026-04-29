@@ -24,6 +24,7 @@ import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
+import { useEmailDraftAutosave, loadEmailDraft, clearEmailDraft } from '@/hooks/useEmailDraftAutosave';
 import { useMassSendEmail } from '@/hooks/useMassSendEmail';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
