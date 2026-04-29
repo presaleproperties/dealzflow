@@ -51,6 +51,19 @@ export function ComposeTab() {
   const addMessage = useAddCrmMessage();
   const bridgeSend = useBridgeSendEmail();
   const { data: emailSettings } = useEmailSettings();
+  const { data: signatures } = useEmailSignatures();
+  // Single source of truth for the active signature: prefer the user's saved
+  // default in `crm_email_signatures` (edited via Signatures Manager), fall
+  // back to the legacy `crm_email_settings.signature_html` only when no
+  // signatures have been saved. This keeps Compose, Lead Reply, and Mass Send
+  // all rendering the same signature whenever the user updates it.
+  const activeSignatureHtml = useMemo(() => {
+    if (signatures && signatures.length > 0) {
+      const def = signatures.find((s) => s.is_default) ?? signatures[0];
+      return def.html || '';
+    }
+    return emailSettings?.signature_html || '';
+  }, [signatures, emailSettings]);
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
