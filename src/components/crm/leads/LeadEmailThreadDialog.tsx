@@ -250,7 +250,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
 
     const finalHtml = `
       ${replyHtml}
-      ${defaultSig ? `<br/><br/>${defaultSig}` : ''}
+      ${defaultSig ? `<br/>${defaultSig}` : ''}
       <br/><br/>
       <div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:4px 14px;margin:14px 0;">
         <div style="margin-bottom:8px;color:#888;">${escapeHtml(quotedHeader)}</div>
