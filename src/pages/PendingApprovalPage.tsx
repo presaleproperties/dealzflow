@@ -2,11 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Mail, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function PendingApprovalPage() {
   const { data: profile, isLoading } = useProfile();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
