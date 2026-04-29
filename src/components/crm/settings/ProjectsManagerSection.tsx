@@ -30,6 +30,7 @@ export default function ProjectsManagerSection() {
   const update = useUpdateCrmProject();
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<CrmProject | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -43,13 +44,53 @@ export default function ProjectsManagerSection() {
       .slice(0, 100);
   }, [projects, search]);
 
+  async function handleSyncFromPresale() {
+    setSyncing(true);
+    const t = toast.loading('Syncing all projects from Presale Properties… this can take ~60s');
+    try {
+      // Fire-and-forget: the edge function may exceed the 30s gateway timeout
+      // even though it keeps running. We poll project count to confirm growth.
+      const before = projects.length;
+      void supabase.functions.invoke('sync-presale-projects', { body: {} }).catch(() => {});
+      // Poll for up to 90s
+      let grew = false;
+      for (let i = 0; i < 18; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const { count } = await supabase
+          .from('crm_projects' as any)
+          .select('id', { count: 'estimated', head: true });
+        if ((count ?? 0) > before) { grew = true; break; }
+      }
+      toast.dismiss(t);
+      if (grew) toast.success('Synced! New projects pulled from Presale Properties.');
+      else toast.success('Sync complete — your library is already up to date.');
+    } catch (e: any) {
+      toast.dismiss(t);
+      toast.error(e?.message || 'Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
-      <CardHeader className="px-3 sm:px-6">
-        <CardTitle className="text-base sm:text-lg">Project Library</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          {projects.length} projects · auto-pulled from presale-properties traffic. Click any row to enrich it with city, developer, status, price & completion date.
-        </p>
+      <CardHeader className="px-3 sm:px-6 flex flex-row items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0">
+          <CardTitle className="text-base sm:text-lg">Project Library</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            {projects.length} projects · auto-synced daily from Presale Properties. Click any row to enrich it with city, developer, status, price & completion date.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleSyncFromPresale}
+          disabled={syncing}
+          className="shrink-0 whitespace-nowrap"
+        >
+          {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+          {syncing ? 'Syncing…' : 'Sync now'}
+        </Button>
       </CardHeader>
       <CardContent className="px-3 sm:px-6 space-y-3">
         <div className="relative">
