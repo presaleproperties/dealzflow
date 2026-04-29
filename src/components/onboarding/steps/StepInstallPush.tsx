@@ -2,7 +2,6 @@ import { StepShell } from '../StepShell';
 import { Button } from '@/components/ui/button';
 import { Bell, Smartphone, Check } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { toast } from 'sonner';
 
 interface Props {
@@ -15,7 +14,11 @@ interface Props {
 
 export function StepInstallPush({ eyebrow, onBack, onNext, onSkip, primaryLabel = 'Continue' }: Props) {
   const push = usePushNotifications() as any;
-  const isStandalone = useStandaloneMode();
+  const isStandalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia?.('(display-mode: standalone)').matches ||
+      // @ts-ignore - iOS
+      (window.navigator as any)?.standalone === true);
   const isSubscribed = push?.isSubscribed ?? push?.subscribed ?? false;
 
   const handleEnablePush = async () => {
