@@ -426,15 +426,33 @@ export function ComposerSurface({
 
   const doMassSend = async () => {
     try {
-      await massSend.mutateAsync({
-        recipient_ids: reachable.map((r) => r.id),
-        subject,
-        body_html: bodyHtml,
-        append_signature: appendSignature,
-        signature_id: selectedSignatureId,
-        cc: cc.trim() || null,
-        bcc: bcc.trim() || null,
-      });
+      // Split CRM recipients (use mass-send for personalization) from
+      // manual typed-email recipients (no CRM row → fan out via bridge).
+      const crmRecipients = reachable.filter((r) => !(typeof r.id === 'string' && r.id.startsWith('manual:')));
+      const manualRecipients = reachable.filter((r) => typeof r.id === 'string' && r.id.startsWith('manual:'));
+
+      if (crmRecipients.length > 0) {
+        await massSend.mutateAsync({
+          recipient_ids: crmRecipients.map((r) => r.id),
+          subject,
+          body_html: bodyHtml,
+          append_signature: appendSignature,
+          signature_id: selectedSignatureId,
+          cc: cc.trim() || null,
+          bcc: bcc.trim() || null,
+        });
+      }
+      for (const m of manualRecipients) {
+        if (!m.email) continue;
+        await sendBridge.mutateAsync({
+          to: m.email,
+          cc: cc.trim() || undefined,
+          bcc: bcc.trim() || undefined,
+          subject: renderedSubject,
+          html: finalHtml,
+          contact_id: null,
+        });
+      }
       resetComposer();
       onClearRecipients?.();
       onSent?.();
