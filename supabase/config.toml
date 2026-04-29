@@ -1,4 +1,1 @@
 project_id = "svbilqvudkkdhslxebce"
-
-[functions.debug-presale-project]
-verify_jwt = false
