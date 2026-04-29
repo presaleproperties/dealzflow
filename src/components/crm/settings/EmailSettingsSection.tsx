@@ -1,25 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mail, Eye, Code, Type, Paintbrush, Library, Upload, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { Mail, Upload, Trash2, Loader2, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
 import { useEmailSignatures, useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
-import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
-import SignaturesManager from './SignaturesManager';
-import SignatureImportBox from './SignatureImportBox';
-import LiveSignaturePreview from './LiveSignaturePreview';
 import PresaleSignatureBuilder from './PresaleSignatureBuilder';
-import { isRichHtml } from '@/lib/htmlDetect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-type SignatureMode = 'builder' | 'html' | 'simple';
 
 export default function EmailSettingsSection() {
   const { data: settings, isLoading } = useEmailSettings();
@@ -33,12 +23,8 @@ export default function EmailSettingsSection() {
   const [brandLogoUrl, setBrandLogoUrl] = useState('');
   const [brandLogoAlt, setBrandLogoAlt] = useState('');
   const [brandLogoEnabled, setBrandLogoEnabled] = useState(false);
-  const [signatureMode, setSignatureMode] = useState<SignatureMode>('builder');
   const [signatureHtml, setSignatureHtml] = useState('');
-  const [htmlImport, setHtmlImport] = useState('');
-  const [simpleHtml, setSimpleHtml] = useState('');
-  const [builderData, setBuilderData] = useState<SignatureBuilderData | null>(null);
-  const [showHtmlPreview, setShowHtmlPreview] = useState(true);
+  const [builderData, setBuilderData] = useState<any>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,35 +87,13 @@ export default function EmailSettingsSection() {
       setBrandLogoUrl((settings as any).brand_logo_url || '');
       setBrandLogoAlt((settings as any).brand_logo_alt || '');
       setBrandLogoEnabled(Boolean((settings as any).brand_logo_enabled));
-      const mode = ((settings as any).signature_mode as SignatureMode) || 'builder';
-      setSignatureMode(mode);
       setBuilderData((settings as any).signature_builder_data || null);
-      if (mode === 'html') {
-        setHtmlImport(settings.signature_html || '');
-      } else if (mode === 'simple') {
-        setSimpleHtml(settings.signature_html || '');
-      }
       setSignatureHtml(settings.signature_html || '');
     }
   }, [settings]);
 
-  const handleBuilderChange = (html: string, data: SignatureBuilderData) => {
-    setSignatureHtml(html);
-    setBuilderData(data);
-  };
-
-  const getActiveSignatureHtml = (): string => {
-    if (signatureMode === 'builder') return signatureHtml;
-    if (signatureMode === 'html') return htmlImport;
-    return simpleHtml;
-  };
-
-  // Sync the active signature HTML into the `crm_email_signatures` table so
-  // the Compose / Lead Reply / Mass Send composers (which read from that
-  // table, preferring `is_default`) reflect the latest saved version.
-  // Without this, edits made in Settings only landed on
-  // `crm_email_settings.signature_html` and the composers kept showing the
-  // older auto-imported "Default" row.
+  // Keep crm_email_signatures default row in sync so all composers see the
+  // latest signature (composers read from that table, preferring is_default).
   const syncDefaultSignatureRow = (html: string) => {
     if (!html?.trim()) return;
     const def = (storedSignatures ?? []).find((s) => s.is_default)
@@ -143,8 +107,7 @@ export default function EmailSettingsSection() {
     });
   };
 
-  const handleSave = () => {
-    const activeHtml = getActiveSignatureHtml();
+  const handleSaveBasics = () => {
     upsert.mutate({
       sender_name: senderName || undefined,
       reply_to: replyTo || undefined,
@@ -152,11 +115,8 @@ export default function EmailSettingsSection() {
       brand_logo_url: brandLogoUrl.trim() || null,
       brand_logo_alt: brandLogoAlt.trim() || null,
       brand_logo_enabled: brandLogoEnabled,
-      signature_html: activeHtml || undefined,
-      signature_mode: signatureMode,
-      signature_builder_data: signatureMode === 'builder' ? builderData : undefined,
     } as any);
-    syncDefaultSignatureRow(activeHtml);
+    toast.success('Saved');
   };
 
   if (isLoading) return null;
@@ -210,10 +170,21 @@ export default function EmailSettingsSection() {
               E.164 format. Used for outbound SMS from lead pages.
             </p>
           </div>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSaveBasics}
+              disabled={upsert.isPending}
+              variant="outline"
+              size="sm"
+            >
+              {upsert.isPending ? 'Saving…' : 'Save details'}
+            </Button>
+          </div>
         </div>
 
-        {/* ───────── 2. Signature Builder (1:1 with Presale Properties) ───────── */}
-        <div className="space-y-3">
+        {/* ───────── 2. The one signature builder ───────── */}
+        <div className="space-y-3 border-t border-border/50 pt-6">
           <PresaleSignatureBuilder
             fallback={{
               fullName: senderName.split('|')[0]?.trim() || senderName,
@@ -221,10 +192,7 @@ export default function EmailSettingsSection() {
             }}
             initialData={(builderData as any) ?? null}
             onApply={(html, layout, fields, touchedFields) => {
-              setSignatureMode('html');
-              setHtmlImport(html);
               setSignatureHtml(html);
-              setShowHtmlPreview(true);
               const nextBuilder = { fields, touchedFields } as any;
               setBuilderData(nextBuilder);
               upsert.mutate({
@@ -240,18 +208,7 @@ export default function EmailSettingsSection() {
           />
         </div>
 
-        {/* Active signature preview — only shown when user picked a non-Presale custom signature */}
-        {getActiveSignatureHtml() && signatureMode !== 'html' && (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Eye className="h-3.5 w-3.5" />
-              <span>Current signature preview</span>
-            </div>
-            <LiveSignaturePreview html={getActiveSignatureHtml()} withEmailContext />
-          </div>
-        )}
-
-        {/* ───────── 3. Advanced (collapsed) ───────── */}
+        {/* ───────── 3. Advanced — brand logo banner ───────── */}
         <div className="border-t border-border/50 pt-4">
           <button
             type="button"
@@ -259,223 +216,120 @@ export default function EmailSettingsSection() {
             className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? 'rotate-0' : '-rotate-90'}`} />
-            Advanced — brand logo, custom HTML, signature builder
+            Advanced — brand logo banner
           </button>
 
           {showAdvanced && (
-            <div className="mt-4 space-y-6">
-              {/* Brand Logo */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <Label className="text-sm font-semibold">Brand Logo Banner</Label>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Optional logo prepended to the top of bulk &amp; 1:1 emails. Off by default — most agents prefer the logo to live in the signature only. Recommended: 600px wide max, under 2 MB.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      {brandLogoEnabled ? 'On' : 'Off'}
-                    </span>
-                    <Switch
-                      checked={brandLogoEnabled}
-                      onCheckedChange={(v) => {
-                        setBrandLogoEnabled(v);
-                        upsert.mutate({ brand_logo_enabled: v } as any);
-                      }}
-                      aria-label="Enable email header logo"
-                    />
-                  </div>
-                </div>
-
-                {!brandLogoEnabled && (
-                  <p className="text-[11px] text-muted-foreground italic">
-                    Header logo is currently disabled — outgoing emails will have no banner image at the top.
+            <div className="mt-4 space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Label className="text-sm font-semibold">Brand Logo Banner</Label>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Optional logo prepended to the top of bulk &amp; 1:1 emails. Off by default — most agents prefer the logo to live in the signature only. Recommended: 600px wide max, under 2 MB.
                   </p>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleLogoUpload(f);
-                  }}
-                />
-
-                {brandLogoUrl.trim() ? (
-                  <>
-                    <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
-                      <img
-                        src={brandLogoUrl.trim()}
-                        alt={brandLogoAlt.trim() || 'Logo preview'}
-                        style={{ maxHeight: 64, maxWidth: '100%' }}
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingLogo}
-                      >
-                        {uploadingLogo
-                          ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading…</>
-                          : <><Upload className="h-3.5 w-3.5 mr-1.5" /> Replace logo</>}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRemoveLogo}
-                        disabled={uploadingLogo}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remove
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingLogo}
-                    className="w-full min-h-[44px] sm:min-h-0 border-dashed"
-                  >
-                    {uploadingLogo
-                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading…</>
-                      : <><Upload className="h-4 w-4 mr-2" /> Upload logo</>}
-                  </Button>
-                )}
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Alt text (accessibility)</Label>
-                  <Input
-                    value={brandLogoAlt}
-                    onChange={e => setBrandLogoAlt(e.target.value)}
-                    placeholder="Presale Properties"
-                    className="min-h-[44px] sm:min-h-0"
+                </div>
+                <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {brandLogoEnabled ? 'On' : 'Off'}
+                  </span>
+                  <Switch
+                    checked={brandLogoEnabled}
+                    onCheckedChange={(v) => {
+                      setBrandLogoEnabled(v);
+                      upsert.mutate({ brand_logo_enabled: v } as any);
+                    }}
+                    aria-label="Enable email header logo"
                   />
                 </div>
-
-                <details className="text-[11px] text-muted-foreground">
-                  <summary className="cursor-pointer hover:text-foreground">Use an external URL instead</summary>
-                  <Input
-                    type="url"
-                    value={brandLogoUrl}
-                    onChange={e => setBrandLogoUrl(e.target.value)}
-                    placeholder="https://yourdomain.com/logo.png"
-                    className="mt-2 min-h-[44px] sm:min-h-0"
-                  />
-                </details>
               </div>
 
-              {/* Custom signature editor */}
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-sm font-semibold">Custom Signature Editor</Label>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    For one-offs that aren't a Presale preset. Choosing one here overrides the preset above.
-                  </p>
-                </div>
-                <Tabs value={signatureMode} onValueChange={(v) => setSignatureMode(v as SignatureMode)}>
-                  <TabsList className="grid w-full grid-cols-3 h-9">
-                    <TabsTrigger value="builder" className="text-xs gap-1.5">
-                      <Paintbrush className="h-3.5 w-3.5" /> Builder
-                    </TabsTrigger>
-                    <TabsTrigger value="html" className="text-xs gap-1.5">
-                      <Code className="h-3.5 w-3.5" /> HTML
-                    </TabsTrigger>
-                    <TabsTrigger value="simple" className="text-xs gap-1.5">
-                      <Type className="h-3.5 w-3.5" /> Simple
-                    </TabsTrigger>
-                  </TabsList>
+              {!brandLogoEnabled && (
+                <p className="text-[11px] text-muted-foreground italic">
+                  Header logo is currently disabled — outgoing emails will have no banner image at the top.
+                </p>
+              )}
 
-                  <TabsContent value="builder" className="mt-4">
-                    <SignatureBuilder
-                      initialData={builderData}
-                      senderName={senderName}
-                      onChange={handleBuilderChange}
-                    />
-                  </TabsContent>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleLogoUpload(f);
+                }}
+              />
 
-                  <TabsContent value="html" className="mt-4 space-y-3">
-                    <p className="text-xs text-muted-foreground">
-                      Paste HTML — appended verbatim to every email.
-                    </p>
-                    <Textarea
-                      value={htmlImport}
-                      onChange={e => setHtmlImport(e.target.value)}
-                      onPaste={(e) => {
-                        const html = e.clipboardData?.getData('text/html');
-                        if (html && isRichHtml(html)) {
-                          e.preventDefault();
-                          setHtmlImport(html);
-                          setShowHtmlPreview(true);
-                        }
-                      }}
-                      placeholder="<table>...</table>"
-                      className="min-h-[200px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40"
+              {brandLogoUrl.trim() ? (
+                <>
+                  <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
+                    <img
+                      src={brandLogoUrl.trim()}
+                      alt={brandLogoAlt.trim() || 'Logo preview'}
+                      style={{ maxHeight: 64, maxWidth: '100%' }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
                     />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowHtmlPreview(!showHtmlPreview)}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingLogo}
                     >
-                      <Eye className="h-3.5 w-3.5 mr-1.5" />
-                      {showHtmlPreview ? 'Hide preview' : 'Show preview'}
+                      {uploadingLogo
+                        ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                        : <><Upload className="h-3.5 w-3.5 mr-1.5" /> Replace logo</>}
                     </Button>
-                    {showHtmlPreview && <LiveSignaturePreview html={htmlImport} />}
-                  </TabsContent>
-
-                  <TabsContent value="simple" className="mt-4 space-y-2">
-                    <div
-                      onPasteCapture={(e) => {
-                        const html = e.clipboardData?.getData('text/html');
-                        if (html && isRichHtml(html)) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setHtmlImport(html);
-                          setSignatureMode('html');
-                          setShowHtmlPreview(true);
-                          toast.info('Detected rich HTML — switched to HTML to preserve formatting');
-                        }
-                      }}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveLogo}
+                      disabled={uploadingLogo}
+                      className="text-destructive hover:text-destructive"
                     >
-                      <RichTextEditor content={simpleHtml} onChange={setSimpleHtml} />
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remove
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                  className="w-full min-h-[44px] sm:min-h-0 border-dashed"
+                >
+                  {uploadingLogo
+                    ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading…</>
+                    : <><Upload className="h-4 w-4 mr-2" /> Upload logo</>}
+                </Button>
+              )}
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Alt text (accessibility)</Label>
+                <Input
+                  value={brandLogoAlt}
+                  onChange={e => setBrandLogoAlt(e.target.value)}
+                  placeholder="Presale Properties"
+                  className="min-h-[44px] sm:min-h-0"
+                />
               </div>
 
-              {/* Signature library */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Library className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-semibold">Signature Library</Label>
-                </div>
-                <SignatureImportBox />
-                <SignaturesManager />
-              </div>
+              <details className="text-[11px] text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">Use an external URL instead</summary>
+                <Input
+                  type="url"
+                  value={brandLogoUrl}
+                  onChange={e => setBrandLogoUrl(e.target.value)}
+                  placeholder="https://yourdomain.com/logo.png"
+                  className="mt-2 min-h-[44px] sm:min-h-0"
+                />
+              </details>
             </div>
           )}
-        </div>
-
-        {/* Save */}
-        <div className="flex justify-end pt-2">
-          <Button
-            onClick={handleSave}
-            disabled={upsert.isPending}
-            className="min-h-[44px] sm:min-h-0"
-          >
-            {upsert.isPending ? 'Saving…' : 'Save'}
-          </Button>
         </div>
       </CardContent>
     </Card>
