@@ -105,14 +105,11 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
   const radius = d.headshotShape === "circle" ? "50%" : "14px";
   const px = Math.max(0, Math.min(100, parseInt(d.headshotPosX || "50", 10) || 50));
   const py = Math.max(0, Math.min(100, parseInt(d.headshotPosY || "50", 10) || 50));
-  // Premium frame: outer thin gold ring + 3px white gap + inner image with soft layered shadow
-  const innerSize = size; // image size
-  const ringSize = size + 10; // outer ring adds 5px on each side
-  const sharedShadow = "0 1px 2px rgba(20,24,31,0.08), 0 8px 24px rgba(20,24,31,0.12), 0 18px 48px rgba(200,164,94,0.18)";
-  const imgInner = d.photoUrl
-    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${innerSize}" height="${innerSize}" style="width:${innerSize}px;height:${innerSize}px;border-radius:${radius};object-fit:cover;object-position:${px}% ${py}%;display:block;border:0;outline:0;" />`
-    : `<div style="width:${innerSize}px;height:${innerSize}px;border-radius:${radius};background:linear-gradient(135deg,#d7a542 0%,#b8862e 100%);color:#fff;font-size:${Math.round(innerSize * 0.34)}px;font-weight:600;letter-spacing:0.5px;text-align:center;line-height:${innerSize}px;font-family:'Helvetica Neue',Arial,sans-serif;">${initials}</div>`;
-  const img = `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 auto;"><tr><td style="width:${ringSize}px;height:${ringSize}px;padding:4px;background:#ffffff;border:1px solid #d7a542;border-radius:${d.headshotShape === "circle" ? "50%" : "18px"};box-shadow:${sharedShadow};line-height:0;">${imgInner}</td></tr></table>`;
+  // Premium frame: clean crop, single soft shadow, no busy borders
+  const shadow = "0 12px 32px rgba(20,24,31,0.16), 0 2px 6px rgba(20,24,31,0.06)";
+  const img = d.photoUrl
+    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${radius};object-fit:cover;object-position:${px}% ${py}%;display:block;margin:0 auto;border:0;outline:0;box-shadow:${shadow};" />`
+    : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#1a1f29 0%,#14181f 100%);color:#d7a542;font-size:${Math.round(size * 0.36)}px;font-weight:400;letter-spacing:1px;text-align:center;line-height:${size}px;font-family:Georgia,'Times New Roman',serif;font-style:italic;margin:0 auto;box-shadow:${shadow};">${initials}</div>`;
   // Headshot links to: explicit headshotLink → Instagram → website
   const linkRaw = d.headshotLink || d.instagram || d.website;
   const link = d.headshotLink
@@ -130,71 +127,78 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
 function buildInstagramButton(d: SignatureBuilderFields): string {
   if (!d.instagram) return "";
   const href = normalizeInstagram(d.instagram);
-  return `<a href="${escapeAttr(href)}" target="_blank" rel="noopener" style="display: inline-block; padding: 4px 12px; border: 1.5px solid #c8a45e; border-radius: 6px; color: #c8a45e; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; line-height: 18px; vertical-align: middle;">Instagram</a>`;
+  return `<a href="${escapeAttr(href)}" target="_blank" rel="noopener" style="color:#14181f;text-decoration:none;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:500;letter-spacing:1.4px;text-transform:uppercase;border-bottom:1px solid #d7a542;padding-bottom:1px;">Instagram</a>`;
 }
 
-// ── Horizontal layout: headshot on the left with gold divider ────────
+// ── Horizontal layout: editorial with serif name + meta hierarchy ────
 export function buildHorizontalHtml(d: SignatureBuilderFields): string {
   const sz = Math.max(60, Math.min(160, parseInt(d.headshotSize || "100", 10) || 100));
   const headshot = buildHeadshotTag(d, sz);
   const igBtn = buildInstagramButton(d);
+  const cellW = sz + 28;
+  const websiteClean = d.website.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 520px;">
+  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:'Helvetica Neue',Arial,sans-serif;color:#14181f;font-size:13px;line-height:1.55;max-width:560px;border-collapse:collapse;">
   <tr>
-    <td width="118" align="center" style="width:118px; padding:0 18px 0 0; vertical-align: middle; text-align:center; line-height:0;">
+    <td width="${cellW}" align="left" valign="top" style="width:${cellW}px;padding:0 24px 0 0;vertical-align:top;line-height:0;">
       ${headshot}
     </td>
-    <td style="border-left: 3px solid #c8a45e; padding-left: 18px; vertical-align: middle;">
-      <p style="margin: 0 0 1px; font-size: 19px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px;">${d.fullName}</p>
-      <p style="margin: 0 0 10px; font-size: 11px; color: #c8a45e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">${d.title} · ${d.brokerage}</p>
-      <p style="margin: 0; font-size: 13px; color: #333;">
-        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color: #333; text-decoration: none;">${d.phone}</a>
-        <span style="color: #ddd; padding: 0 6px;">|</span>
-        <a href="mailto:${escapeAttr(d.email)}" style="color: #333; text-decoration: none;">${d.email}</a>
-      </p>
-      <p style="margin: 6px 0 0; font-size: 13px;">
-        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>${
-          igBtn
-            ? `
-        <span style="padding: 0 8px;"></span>${igBtn}`
-            : ""
-        }
-      </p>
+    <td valign="top" style="vertical-align:top;padding:2px 0 0 0;border-left:1px solid #e6e3dc;padding-left:24px;">
+      <p style="margin:0 0 2px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:400;color:#14181f;letter-spacing:-0.4px;line-height:1.15;">${d.fullName}</p>
+      <p style="margin:0 0 14px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:500;color:#8a8578;text-transform:uppercase;letter-spacing:2px;">${d.title}<span style="color:#d7a542;padding:0 6px;">·</span>${d.brokerage}</p>
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:'Helvetica Neue',Arial,sans-serif;">
+        <tr>
+          <td style="padding:0 0 4px;font-size:9px;color:#a8a397;text-transform:uppercase;letter-spacing:1.6px;width:48px;vertical-align:middle;">Tel</td>
+          <td style="padding:0 0 4px;font-size:13px;color:#14181f;vertical-align:middle;"><a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color:#14181f;text-decoration:none;">${d.phone}</a></td>
+        </tr>
+        <tr>
+          <td style="padding:0 0 4px;font-size:9px;color:#a8a397;text-transform:uppercase;letter-spacing:1.6px;vertical-align:middle;">Email</td>
+          <td style="padding:0 0 4px;font-size:13px;color:#14181f;vertical-align:middle;"><a href="mailto:${escapeAttr(d.email)}" style="color:#14181f;text-decoration:none;">${d.email}</a></td>
+        </tr>
+        <tr>
+          <td style="padding:0;font-size:9px;color:#a8a397;text-transform:uppercase;letter-spacing:1.6px;vertical-align:middle;">Web</td>
+          <td style="padding:0;font-size:13px;vertical-align:middle;"><a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color:#14181f;text-decoration:none;border-bottom:1px solid #d7a542;padding-bottom:1px;">${websiteClean}</a>${
+            igBtn
+              ? `<span style="color:#d7a542;padding:0 10px;">·</span>${igBtn}`
+              : ""
+          }</td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>`;
 }
 
-// ── Stacked layout: headshot on top, centered ────────────────────────
+// ── Stacked layout: centered editorial card ──────────────────────────
 export function buildStackedHtml(d: SignatureBuilderFields): string {
   const sz = Math.max(60, Math.min(180, (parseInt(d.headshotSize || "110", 10) || 110) + 10));
   const headshot = buildHeadshotTag(d, sz);
   const igBtn = buildInstagramButton(d);
+  const websiteClean = d.website.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 340px; margin: 0 auto;">
+  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:'Helvetica Neue',Arial,sans-serif;color:#14181f;font-size:13px;line-height:1.55;max-width:360px;margin:0 auto;border-collapse:collapse;">
   <tr>
-    <td align="center" style="padding-bottom: 14px;">
+    <td align="center" style="padding-bottom:18px;line-height:0;">
       ${headshot}
     </td>
   </tr>
   <tr>
-    <td align="center" style="text-align: center;">
-      <p style="margin: 0 0 2px; font-size: 20px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px;">${d.fullName}</p>
-      <p style="margin: 0 0 12px; font-size: 11px; color: #c8a45e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">${d.title} · ${d.brokerage}</p>
-      <div style="width: 40px; height: 2px; background: #c8a45e; margin: 0 auto 12px; border-radius: 1px;"></div>
-      <p style="margin: 0 0 3px; font-size: 13px;">
-        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color: #333; text-decoration: none;">${d.phone}</a>
-        <span style="color: #ddd; padding: 0 6px;">|</span>
-        <a href="mailto:${escapeAttr(d.email)}" style="color: #333; text-decoration: none;">${d.email}</a>
+    <td align="center" style="text-align:center;">
+      <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:400;color:#14181f;letter-spacing:-0.4px;line-height:1.15;">${d.fullName}</p>
+      <p style="margin:0 0 14px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:500;color:#8a8578;text-transform:uppercase;letter-spacing:2px;">${d.title}<span style="color:#d7a542;padding:0 6px;">·</span>${d.brokerage}</p>
+      <div style="width:32px;height:1px;background:#d7a542;margin:0 auto 14px;"></div>
+      <p style="margin:0 0 4px;font-size:13px;color:#14181f;">
+        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color:#14181f;text-decoration:none;">${d.phone}</a>
+        <span style="color:#d7a542;padding:0 8px;">·</span>
+        <a href="mailto:${escapeAttr(d.email)}" style="color:#14181f;text-decoration:none;">${d.email}</a>
       </p>
-      <p style="margin: 0 0 8px; font-size: 13px;">
-        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>
-      </p>${
-        igBtn
-          ? `
-      <p style="margin: 0;">${igBtn}</p>`
-          : ""
-      }
+      <p style="margin:0;font-size:13px;">
+        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color:#14181f;text-decoration:none;border-bottom:1px solid #d7a542;padding-bottom:1px;">${websiteClean}</a>${
+          igBtn
+            ? `<span style="color:#d7a542;padding:0 10px;">·</span>${igBtn}`
+            : ""
+        }
+      </p>
     </td>
   </tr>
 </table>`;
