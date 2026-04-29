@@ -41,6 +41,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
+  const AGENTS = useAgentNames();
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
