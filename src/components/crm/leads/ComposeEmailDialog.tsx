@@ -483,7 +483,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   /** Upload one or more files to storage and embed them inline in the email body.
    *  Images are inserted as <img>; other files become a link to the public URL. */
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const handleAttachFiles = async (files: File[] | FileList | null) => {
     const list = !files ? [] : Array.isArray(files) ? files : Array.from(files);
