@@ -558,7 +558,7 @@ export function ComposeTab() {
       {/* Signature preview — only shown when composing a non-template email.
           Templates already contain their own footer/signature, so adding the
           system signature would duplicate it. */}
-      {!isHtmlMode && emailSettings?.signature_html && (
+      {!isHtmlMode && activeSignatureHtml && (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Checkbox id="include-sig" checked={includeSignature} onCheckedChange={(v) => setIncludeSignature(!!v)} />
@@ -570,7 +570,7 @@ export function ComposeTab() {
           {includeSignature && (
             <div className="rounded-lg border border-border/30 bg-muted/10 p-3 opacity-60">
               <div className="text-xs text-muted-foreground mb-1.5">--</div>
-              <div className="prose prose-sm dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: emailSettings.signature_html }} />
+              <div className="prose prose-sm dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: activeSignatureHtml }} />
             </div>
           )}
         </div>
