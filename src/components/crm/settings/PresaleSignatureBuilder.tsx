@@ -50,6 +50,8 @@ export interface SignatureBuilderFields {
   headshotLink: string;
   headshotShape: HeadshotShape;
   headshotSize: string; // px as string, 60-160
+  headshotPosX: string; // 0-100 (%)
+  headshotPosY: string; // 0-100 (%)
 }
 
 interface PresaleSignatureBuilderProps {
@@ -203,6 +205,8 @@ const BLANK: SignatureBuilderFields = {
   headshotLink: "",
   headshotShape: "rounded",
   headshotSize: "100",
+  headshotPosX: "50",
+  headshotPosY: "50",
 };
 
 interface CrmProfileSeed {
