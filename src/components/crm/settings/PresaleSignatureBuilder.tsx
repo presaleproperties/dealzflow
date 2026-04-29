@@ -285,7 +285,7 @@ function ScaledIframe({
   );
 }
 
-export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSignatureBuilderProps) {
+export default function PresaleSignatureBuilder({ fallback, initialData, onApply }: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
   const [layout, setLayout] = useState<LayoutVariant>("horizontal");
