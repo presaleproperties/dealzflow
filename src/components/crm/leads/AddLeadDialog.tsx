@@ -58,6 +58,14 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const [pendingPayload, setPendingPayload] = useState<Parameters<typeof addContact.mutate>[0] | null>(null);
   const [checkingDupes, setCheckingDupes] = useState(false);
 
+  // Auto-assign new leads to the current user's own pool when the dialog
+  // opens. Owners/admins adding on behalf of another agent can still
+  // override via the Assignee picker — we only seed if it's blank.
+  useEffect(() => {
+    if (!open || !myAgentName) return;
+    setForm((prev) => (prev.assigned_to ? prev : { ...prev, assigned_to: myAgentName }));
+  }, [open, myAgentName]);
+
   const handleEmailChange = (email: string) => {
     setForm((prev) => ({ ...prev, email }));
     if (email.trim()) setEmailValidation(validateEmail(email));
