@@ -28,6 +28,7 @@ export interface PresaleSignatureAgent {
   calendly_url?: string | null;
   brokerage?: string | null;
   license_no?: string | null;
+  instagram_url?: string | null;
 }
 
 const LOGO_EMAIL_URL =
