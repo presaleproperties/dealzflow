@@ -19,6 +19,7 @@ interface Props {
 export function BookShowingModal({ open, onOpenChange }: Props) {
   const { data: contacts } = useCrmContacts();
   const createMut = useCreateShowing();
+  const { data: agents = [] } = useTeamAgents();
 
   const [contactId, setContactId] = useState('');
   const [project, setProject] = useState('');
