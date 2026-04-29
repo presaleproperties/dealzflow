@@ -21,6 +21,7 @@ interface Props {
 
 export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: Props) {
   const addTask = useAddCrmTask();
+  const { data: agents = [] } = useTeamAgents();
   const [form, setForm] = useState({
     title: '',
     description: '',
