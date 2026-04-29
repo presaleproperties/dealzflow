@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code, Lock } from 'lucide-react';
+import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code, Lock, Mail } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
