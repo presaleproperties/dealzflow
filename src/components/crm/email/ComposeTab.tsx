@@ -232,8 +232,11 @@ export function ComposeTab() {
       agentEmail,
       agentPhone,
     );
+    // Flush signature: a single line break, no `-- ` separator, so the
+    // signature reads as one continuous block with the message body
+    // (matches the in-composer preview behavior).
     const sig = includeSignature && activeSignatureHtml
-      ? `<br/><br/>--<br/>${activeSignatureHtml}`
+      ? `<br/>${activeSignatureHtml}`
       : '';
     return isHtmlMode ? merged : `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6;">${merged}${sig}</div>`;
   };
