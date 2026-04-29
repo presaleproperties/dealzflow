@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code, Lock } from 'lucide-react';
+import { Send, Search, Users, Filter, ChevronDown, ChevronUp, Eye, FileText, X, Monitor, Smartphone, Code, Lock, Mail } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +93,13 @@ export function ComposeTab() {
   const [searchTo, setSearchTo] = useState('');
   const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [toOpen, setToOpen] = useState(false);
+
+  // Manual recipient — when user types a raw email address (no matching
+  // contact in the CRM). RFC-lite check: local@domain.tld.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const manualEmail = !selectedContact && EMAIL_RE.test(searchTo.trim())
+    ? searchTo.trim().toLowerCase()
+    : null;
 
   // CC/BCC
   const [showCcBcc, setShowCcBcc] = useState(false);
@@ -261,16 +268,21 @@ export function ComposeTab() {
     const bodyContent = isHtmlMode ? htmlBody : body;
 
     if (mode === 'individual') {
-      if (!selectedContact || !selectedContact.email || !subject.trim() || !bodyContent.trim()) return;
+      // Allow either a CRM contact OR a manually-typed email address.
+      const recipientEmail = selectedContact?.email ?? manualEmail;
+      if (!recipientEmail || !subject.trim() || !bodyContent.trim()) return;
+
+      // Merge tags only resolve when we have a real contact; for manual
+      // sends, send the raw subject/body as-typed.
       const html = buildHtml(selectedContact);
       await bridgeSend.mutateAsync({
-        to: selectedContact.email,
+        to: recipientEmail,
         cc: cc || undefined,
         bcc: bcc || undefined,
-        subject: replaceMergeTags(subject, selectedContact),
+        subject: selectedContact ? replaceMergeTags(subject, selectedContact) : subject,
         html,
         template_id: activeTemplate?.id ?? null,
-        contact_id: selectedContact.id,
+        contact_id: selectedContact?.id ?? null,
         send_at: sendAtIso,
       });
       setSelectedContact(null);
@@ -318,7 +330,7 @@ export function ComposeTab() {
   const bodyContent = isHtmlMode ? htmlBody : body;
 
   const canSend = mode === 'individual'
-    ? !!selectedContact && subject.trim() && bodyContent.trim()
+    ? (!!selectedContact || !!manualEmail) && subject.trim() && bodyContent.trim()
     : campaignRecipients.length > 0 && subject.trim() && bodyContent.trim();
 
   return (
@@ -366,20 +378,38 @@ export function ComposeTab() {
                     value={selectedContact ? `${formatContactName(selectedContact.first_name, selectedContact.last_name)} <${selectedContact.email ?? 'no email'}>` : searchTo}
                     onChange={e => { setSearchTo(e.target.value); setSelectedContact(null); setToOpen(true); }}
                     onFocus={() => setToOpen(true)}
-                    placeholder="Search contact..."
+                    placeholder="Search contact or type an email address…"
                     className="pl-9 min-h-[44px] sm:min-h-0"
                   />
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] sm:w-[400px] p-0" align="start">
-                <div className="max-h-[200px] overflow-y-auto">
+                <div className="max-h-[240px] overflow-y-auto">
+                  {/* Manual email row — appears when the typed value is a
+                      valid email and isn't already an exact contact match.
+                      Lets the user send to any address without a CRM lead. */}
+                  {manualEmail && !filteredContacts.some(c => (c.email ?? '').toLowerCase() === manualEmail) && (
+                    <div
+                      className="px-3 py-2.5 sm:py-2 hover:bg-primary/5 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center gap-2 border-b border-border/40"
+                      onClick={() => setToOpen(false)}
+                    >
+                      <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="font-medium text-foreground">Send to</span>
+                      <span className="text-muted-foreground truncate">{manualEmail}</span>
+                      <span className="ml-auto text-[10px] uppercase tracking-wider text-primary font-semibold shrink-0">Manual</span>
+                    </div>
+                  )}
                   {filteredContacts.map(c => (
                     <div key={c.id} className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center" onClick={() => { setSelectedContact(c); setToOpen(false); }}>
                       <span className="font-medium text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
                       {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
                     </div>
                   ))}
-                  {filteredContacts.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">No contacts found</p>}
+                  {filteredContacts.length === 0 && !manualEmail && (
+                    <p className="px-3 py-4 text-sm text-muted-foreground text-center">
+                      No contacts found — type a full email address to send manually.
+                    </p>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>
