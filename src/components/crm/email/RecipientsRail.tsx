@@ -205,10 +205,32 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, email, phone…"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && isTypedEmail && !typedEmailExists) {
+                e.preventDefault();
+                addManualRecipient();
+              }
+            }}
+            placeholder="Search name, email, phone… or type a new email"
             className="pl-8 h-9 text-[12.5px] bg-background"
           />
         </div>
+
+        {isTypedEmail && !typedEmailExists && (
+          <button
+            type="button"
+            onClick={addManualRecipient}
+            className="mt-2 w-full inline-flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md border border-primary/40 bg-primary/5 hover:bg-primary/10 text-[11.5px] text-foreground transition-colors"
+          >
+            <span className="truncate">
+              <span className="font-semibold">Send to</span>{' '}
+              <span className="text-muted-foreground">{typedEmailLower}</span>
+            </span>
+            <span className="text-[9.5px] uppercase tracking-wider text-primary font-bold shrink-0">
+              + Add
+            </span>
+          </button>
+        )}
 
         {/* Filter mode tabs */}
         <div className="flex items-center gap-0.5 mt-2.5 p-0.5 bg-muted/40 rounded-lg">
