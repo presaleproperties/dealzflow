@@ -99,10 +99,16 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
           </span>
         </div>
 
-        {/* Subject */}
+        {/* Subject — styled as a hyperlink so it reads as "tap to open thread" */}
         <div className="flex items-start gap-2">
-          <MailOpen className="w-4 h-4 text-foreground/50 shrink-0 mt-0.5" />
-          <h4 className="text-[14px] font-semibold text-foreground leading-snug break-words line-clamp-2 flex-1">
+          <MailOpen className="w-4 h-4 text-primary/70 shrink-0 mt-0.5" />
+          <h4
+            className={cn(
+              'text-[14px] font-semibold leading-snug break-words line-clamp-2 flex-1',
+              'text-primary underline decoration-primary/30 underline-offset-[3px] decoration-[1.5px]',
+              'group-hover:decoration-primary group-hover:text-primary transition-colors',
+            )}
+          >
             {email.subject || '(no subject)'}
           </h4>
           {(email as any).has_attachments && (
