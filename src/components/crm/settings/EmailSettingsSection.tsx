@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
+import { useEmailSignatures, useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
@@ -23,6 +24,8 @@ type SignatureMode = 'builder' | 'html' | 'simple';
 export default function EmailSettingsSection() {
   const { data: settings, isLoading } = useEmailSettings();
   const upsert = useUpsertEmailSettings();
+  const { data: storedSignatures } = useEmailSignatures();
+  const upsertSignatureRow = useUpsertEmailSignature();
 
   const [senderName, setSenderName] = useState('');
   const [replyTo, setReplyTo] = useState('');
@@ -121,7 +124,27 @@ export default function EmailSettingsSection() {
     return simpleHtml;
   };
 
+  // Sync the active signature HTML into the `crm_email_signatures` table so
+  // the Compose / Lead Reply / Mass Send composers (which read from that
+  // table, preferring `is_default`) reflect the latest saved version.
+  // Without this, edits made in Settings only landed on
+  // `crm_email_settings.signature_html` and the composers kept showing the
+  // older auto-imported "Default" row.
+  const syncDefaultSignatureRow = (html: string) => {
+    if (!html?.trim()) return;
+    const def = (storedSignatures ?? []).find((s) => s.is_default)
+      ?? (storedSignatures ?? [])[0];
+    upsertSignatureRow.mutate({
+      id: def?.id,
+      name: def?.name || 'Default signature',
+      html,
+      is_default: true,
+      sort_order: def?.sort_order ?? 0,
+    });
+  };
+
   const handleSave = () => {
+    const activeHtml = getActiveSignatureHtml();
     upsert.mutate({
       sender_name: senderName || undefined,
       reply_to: replyTo || undefined,
@@ -129,10 +152,11 @@ export default function EmailSettingsSection() {
       brand_logo_url: brandLogoUrl.trim() || null,
       brand_logo_alt: brandLogoAlt.trim() || null,
       brand_logo_enabled: brandLogoEnabled,
-      signature_html: getActiveSignatureHtml() || undefined,
+      signature_html: activeHtml || undefined,
       signature_mode: signatureMode,
       signature_builder_data: signatureMode === 'builder' ? builderData : undefined,
     } as any);
+    syncDefaultSignatureRow(activeHtml);
   };
 
   if (isLoading) return null;
@@ -208,6 +232,7 @@ export default function EmailSettingsSection() {
                 signature_mode: 'html',
                 signature_builder_data: nextBuilder,
               } as any);
+              syncDefaultSignatureRow(html);
               toast.success(
                 `${layout === 'horizontal' ? 'Headshot Left' : 'Headshot Top'} signature applied`,
               );
