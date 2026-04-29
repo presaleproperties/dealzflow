@@ -102,6 +102,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
