@@ -208,6 +208,7 @@ export default function CrmChatsPage() {
                 ? formatDistanceToNowStrict(new Date(t.last_message_at), { addSuffix: false })
                 : '';
               const isUnread = (t.unread_count ?? 0) > 0;
+              const isActive = activeId === t.id;
               return (
                 <li key={t.id} className="relative">
                   {/* Subtle gold accent bar for unread */}
@@ -222,7 +223,9 @@ export default function CrmChatsPage() {
                     onPointerEnter={() => prefetchThread(t.id)}
                     onTouchStart={() => prefetchThread(t.id)}
                     onClick={() => navigate(`/crm/chats/${t.id}`)}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 active:bg-muted/50 transition-colors"
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+                      isActive ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30 active:bg-muted/50'
+                    }`}
                   >
                     {/* Gradient avatar with channel chip */}
                     <div className="relative shrink-0">
