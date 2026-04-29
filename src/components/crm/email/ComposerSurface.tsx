@@ -116,7 +116,7 @@ export function ComposerSurface({
 
   /* Draft autosave — workspace-wide single draft. Survives navigation / reload. */
   const draftScope = 'workspace';
-  useEmailDraftAutosave(draftScope, { subject, bodyHtml, cc, bcc }, true);
+  const { savedAt } = useEmailDraftAutosave(draftScope, { subject, bodyHtml, cc, bcc }, true);
   const draftRestored = useRef(false);
   useEffect(() => {
     if (draftRestored.current) return;
