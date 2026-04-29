@@ -4607,12 +4607,18 @@ export type Database = {
           avatar_url: string | null
           ban_reason: string | null
           banned_at: string | null
+          brokerage: string | null
           created_at: string
           denial_reason: string | null
           full_name: string | null
           id: string
           is_banned: boolean
+          license_no: string | null
+          onboarding_completed_at: string | null
+          onboarding_started_at: string | null
+          onboarding_steps: Json
           phone: string | null
+          province: string | null
           requested_at: string
           title: string | null
           updated_at: string
@@ -4626,12 +4632,18 @@ export type Database = {
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
+          brokerage?: string | null
           created_at?: string
           denial_reason?: string | null
           full_name?: string | null
           id?: string
           is_banned?: boolean
+          license_no?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
+          onboarding_steps?: Json
           phone?: string | null
+          province?: string | null
           requested_at?: string
           title?: string | null
           updated_at?: string
@@ -4645,12 +4657,18 @@ export type Database = {
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
+          brokerage?: string | null
           created_at?: string
           denial_reason?: string | null
           full_name?: string | null
           id?: string
           is_banned?: boolean
+          license_no?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
+          onboarding_steps?: Json
           phone?: string | null
+          province?: string | null
           requested_at?: string
           title?: string | null
           updated_at?: string
@@ -5373,6 +5391,10 @@ export type Database = {
       parse_note_event_ts: {
         Args: { _date: string; _time: string }
         Returns: string
+      }
+      profile_onboarding_progress: {
+        Args: { _user_id: string }
+        Returns: number
       }
       recalc_all_lead_scores: { Args: never; Returns: number }
       recalc_lead_score: { Args: { _contact_id: string }; Returns: undefined }
