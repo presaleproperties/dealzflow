@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { StepShell } from '../StepShell';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ExternalLink, MessageSquare } from 'lucide-react';
+import { ExternalLink, MessageSquare, Mail, Check } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { toast } from 'sonner';
 
 interface Props {
   eyebrow: string;
@@ -10,13 +13,31 @@ interface Props {
   onSkip: () => void;
 }
 
+const STORAGE_KEY = 'ob-sms-requested-at';
+
 export function StepCrmSms({ eyebrow, onBack, onNext, onSkip }: Props) {
+  const { data: profile } = useProfile();
+  const [requested, setRequested] = useState<boolean>(() => {
+    try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
+  });
+
+  const handleRequest = () => {
+    const subject = encodeURIComponent('SMS number request — please provision a Twilio line');
+    const body = encodeURIComponent(
+      `Hi admin,\n\nI'm setting up dealzflow and need a Twilio number assigned to my account.\n\nName: ${profile?.full_name ?? '(set in profile step)'}\nPhone on file: ${profile?.phone ?? '(none)'}\n\nThanks!`,
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    try { localStorage.setItem(STORAGE_KEY, new Date().toISOString()); } catch { /* ignore */ }
+    setRequested(true);
+    toast.success('Email drafted — send it to your team admin');
+  };
+
   return (
     <StepShell
       eyebrow={eyebrow}
       title="SMS / WhatsApp number"
-      subtitle="The team uses Twilio to send and receive text messages from leads. Your admin will provision a number for you and link it to your account."
-      primaryLabel="Got it"
+      subtitle="The team uses Twilio to text leads. Your admin provisions a number and links it to your account."
+      primaryLabel="Continue"
       onBack={onBack}
       onSkip={onSkip}
       skipLabel="Skip"
@@ -37,15 +58,32 @@ export function StepCrmSms({ eyebrow, onBack, onNext, onSkip }: Props) {
             <li>MMS attachments supported — drag images into the composer</li>
           </ul>
         </div>
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-          <strong>Action required:</strong> ask your admin to assign you a Twilio number. Until then, SMS will fall back to the team's main line.
+
+        {requested ? (
+          <div className="p-3.5 rounded-xl bg-success/10 border border-success/30 text-xs text-success leading-relaxed flex items-start gap-2.5">
+            <Check className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              <strong>Request drafted.</strong> Until your number is provisioned, SMS will fall back to the team's main line.
+            </span>
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+            <strong>Action required:</strong> ask your admin to assign you a Twilio number. Until then, SMS will fall back to the team's main line.
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={handleRequest} variant="outline" className="flex-1 h-11">
+            <Mail className="w-3.5 h-3.5 mr-1.5" />
+            {requested ? 'Resend request' : 'Email my admin'}
+          </Button>
+          <Button asChild variant="ghost" className="flex-1 h-11 text-muted-foreground">
+            <Link to="/crm/sms">
+              Open SMS Center
+              <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
+          </Button>
         </div>
-        <Button asChild variant="outline" className="w-full h-11">
-          <Link to="/crm/sms">
-            Open SMS Center
-            <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
-          </Link>
-        </Button>
       </div>
     </StepShell>
   );

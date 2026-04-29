@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserCog, KeyRound, Link2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UserCog, KeyRound, Link2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 type TeamRow = {
@@ -19,6 +19,7 @@ type TeamRow = {
 export function AgentOnboardingCard() {
   const qc = useQueryClient();
   const [pwInputs, setPwInputs] = useState<Record<string, string>>({});
+  const [shownPw, setShownPw] = useState<Record<string, boolean>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const { data: team = [], isLoading } = useQuery({
@@ -119,13 +120,24 @@ export function AgentOnboardingCard() {
                 )}
                 {linked && !isOwner && (
                   <>
-                    <Input
-                      type="text"
-                      placeholder="New password (8+)"
-                      value={pwInputs[row.id] ?? ''}
-                      onChange={(e) => setPwInputs((p) => ({ ...p, [row.id]: e.target.value }))}
-                      className="h-8 w-44 text-xs"
-                    />
+                    <div className="relative">
+                      <Input
+                        type={shownPw[row.id] ? 'text' : 'password'}
+                        placeholder="New password (8+)"
+                        value={pwInputs[row.id] ?? ''}
+                        onChange={(e) => setPwInputs((p) => ({ ...p, [row.id]: e.target.value }))}
+                        autoComplete="new-password"
+                        className="h-8 w-44 text-xs pr-7"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShownPw((s) => ({ ...s, [row.id]: !s[row.id] }))}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                        aria-label={shownPw[row.id] ? 'Hide password' : 'Show password'}
+                      >
+                        {shownPw[row.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      </button>
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"

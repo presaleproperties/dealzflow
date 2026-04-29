@@ -88,8 +88,8 @@ export default function AcceptInvitePage() {
       });
       if (setErr) throw setErr;
       setStatus('success');
-      // Trigger the onboarding wizard via query param
-      setTimeout(() => navigate('/crm/leads?welcome=1', { replace: true }), 900);
+      // Wizard auto-opens once profile loads (workspace is approved by redeem)
+      setTimeout(() => navigate('/crm/leads', { replace: true }), 900);
     } catch (e: any) {
       setStatus('ready');
       setError(e?.message ?? 'Something went wrong. Please try again.');
