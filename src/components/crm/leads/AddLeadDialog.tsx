@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,7 @@ import { MobilePickerDrawer } from './MobilePickerDrawer';
 import { MobileMultiPickerDrawer } from './MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from './MobileTextEditDrawer';
 import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
-import { useAgentNames } from '@/hooks/useTeamAgents';
+import { useAgentNames, useMyAgentName } from '@/hooks/useTeamAgents';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
@@ -42,6 +42,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
   const AGENTS = useAgentNames();
+  const myAgentName = useMyAgentName();
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -56,6 +57,14 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const [dupes, setDupes] = useState<DupContact[]>([]);
   const [pendingPayload, setPendingPayload] = useState<Parameters<typeof addContact.mutate>[0] | null>(null);
   const [checkingDupes, setCheckingDupes] = useState(false);
+
+  // Auto-assign new leads to the current user's own pool when the dialog
+  // opens. Owners/admins adding on behalf of another agent can still
+  // override via the Assignee picker — we only seed if it's blank.
+  useEffect(() => {
+    if (!open || !myAgentName) return;
+    setForm((prev) => (prev.assigned_to ? prev : { ...prev, assigned_to: myAgentName }));
+  }, [open, myAgentName]);
 
   const handleEmailChange = (email: string) => {
     setForm((prev) => ({ ...prev, email }));
