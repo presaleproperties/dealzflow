@@ -11,6 +11,7 @@ import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
+import { useOpenChat } from '@/hooks/useOpenChat';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { getDateGroup, noteTime, type CrmShowing } from './types';
@@ -38,6 +39,12 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const { data: smsLog = [] } = useCrmContactSmsLog(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
+  const openChat = useOpenChat();
+
+  const openSmsThread = (row: CrmSmsLogRow) => {
+    const channel = row.channel === 'whatsapp' ? 'whatsapp' : 'sms';
+    openChat(contact.id, channel, onText);
+  };
 
   // Merge real notes with virtual entries synthesized from the email + SMS
   // logs so every channel shows up in the central activity timeline.
@@ -255,7 +262,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                 }
                 const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
                 if (smsRow) {
-                  return <SmsNoteCard key={note.id} message={smsRow} />;
+                  return <SmsNoteCard key={note.id} message={smsRow} onOpen={() => openSmsThread(smsRow)} />;
                 }
                 return (
                   <NoteCard
@@ -296,7 +303,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                 }
                 const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
                 if (smsRow) {
-                  return <SmsNoteCard key={note.id} message={smsRow} />;
+                  return <SmsNoteCard key={note.id} message={smsRow} onOpen={() => openSmsThread(smsRow)} />;
                 }
                 return (
                   <NoteCard
