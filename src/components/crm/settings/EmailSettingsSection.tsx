@@ -24,6 +24,8 @@ type SignatureMode = 'builder' | 'html' | 'simple';
 export default function EmailSettingsSection() {
   const { data: settings, isLoading } = useEmailSettings();
   const upsert = useUpsertEmailSettings();
+  const { data: storedSignatures } = useEmailSignatures();
+  const upsertSignatureRow = useUpsertEmailSignature();
 
   const [senderName, setSenderName] = useState('');
   const [replyTo, setReplyTo] = useState('');
