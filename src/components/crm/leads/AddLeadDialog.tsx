@@ -137,24 +137,21 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const handleSubmit = async () => {
     if (!validate()) return;
     const payload = buildPayload();
-    const email = payload.email?.toLowerCase();
-    const phoneLast10 = payload.phone?.replace(/\D/g, '').slice(-10) || '';
+    const email = payload.email?.toLowerCase() ?? null;
+    const phone = payload.phone ?? null;
 
-    const filters: string[] = [];
-    if (email) filters.push(`email.ilike.${email}`);
-    if (email) filters.push(`email_secondary.ilike.${email}`);
-    if (phoneLast10) filters.push(`phone.ilike.%${phoneLast10}%`);
-    if (phoneLast10) filters.push(`phone_secondary.ilike.%${phoneLast10}%`);
-
-    if (filters.length === 0) { commitInsert(payload); return; }
+    if (!email && !phone) { commitInsert(payload); return; }
 
     setCheckingDupes(true);
     try {
-      const { data, error } = await supabase
-        .from('crm_contacts')
-        .select('id, first_name, last_name, email, phone, status')
-        .or(filters.join(','))
-        .limit(5);
+      // Per-agent dup check — only flags conflicts in the current user's
+      // own assignment bucket. Leads owned by another agent (even with the
+      // same email/phone) do NOT count as a duplicate for this user.
+      const { data, error } = await supabase.rpc('crm_find_my_duplicates', {
+        _email: email,
+        _phone: phone,
+        _limit: 5,
+      });
       if (error) throw error;
       const matches = (data ?? []) as DupContact[];
       if (matches.length > 0) {
@@ -163,7 +160,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
         setCheckingDupes(false);
         return;
       }
-    } catch { /* best effort */ }
+    } catch { /* best effort — never block lead creation on a dup-check failure */ }
     setCheckingDupes(false);
     commitInsert(payload);
   };
@@ -635,7 +632,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             Possible duplicate lead
           </AlertDialogTitle>
           <AlertDialogDescription>
-            We found {dupes.length} existing lead{dupes.length === 1 ? '' : 's'} with a matching email or phone.
+            You already have {dupes.length} lead{dupes.length === 1 ? '' : 's'} in your list with a matching email or phone.
             Review before creating a new record.
           </AlertDialogDescription>
         </AlertDialogHeader>

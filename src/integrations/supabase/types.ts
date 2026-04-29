@@ -5246,6 +5246,18 @@ export type Database = {
           usage_count: number
         }[]
       }
+      crm_find_my_duplicates: {
+        Args: { _email?: string; _limit?: number; _phone?: string }
+        Returns: {
+          assigned_to: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          status: string
+        }[]
+      }
       crm_funnel_snapshot: { Args: never; Returns: Json }
       crm_get_or_create_conversation: {
         Args: { _channel: string; _contact_id: string; _message_at?: string }
