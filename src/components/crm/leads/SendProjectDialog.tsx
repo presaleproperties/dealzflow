@@ -325,7 +325,46 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 emptyText="No project email styles."
               />
               <div className="text-[11px] text-muted-foreground mt-1.5">
-                Branded layout, signature, and project card are rendered by Presale Properties — pixel-identical to what you'd send from there.
+                Branded layout & project card from Presale Properties · your CRM signature replaces the default footer.
+              </div>
+            </Field>
+
+            {/* Attachments — Brochure / Floor Plans / Pricing */}
+            <Field label="Attachments">
+              <div className="rounded-md border border-border divide-y divide-border">
+                <AttachmentRow
+                  icon={<FileText className="w-3.5 h-3.5" />}
+                  label="Brochure"
+                  asset={assets?.brochure}
+                  loading={assetsLoading}
+                  checked={attachBrochure}
+                  onCheckedChange={setAttachBrochure}
+                  uploading={uploadingKind === 'brochure'}
+                  onPickFile={(file) => handleUpload('brochure', file)}
+                />
+                <AttachmentRow
+                  icon={<Map className="w-3.5 h-3.5" />}
+                  label="Floor Plans"
+                  asset={assets?.floor_plans}
+                  loading={assetsLoading}
+                  checked={attachFloorPlans}
+                  onCheckedChange={setAttachFloorPlans}
+                  uploading={uploadingKind === 'floor_plans'}
+                  onPickFile={(file) => handleUpload('floor_plans', file)}
+                />
+                <AttachmentRow
+                  icon={<DollarSign className="w-3.5 h-3.5" />}
+                  label="Pricing Sheet"
+                  asset={assets?.pricing}
+                  loading={assetsLoading}
+                  checked={attachPricing}
+                  onCheckedChange={setAttachPricing}
+                  uploading={uploadingKind === 'pricing'}
+                  onPickFile={(file) => handleUpload('pricing', file)}
+                />
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1.5">
+                Pulled from Presale Properties when available. Upload a PDF if the project doesn't have one — it's saved per project for everyone.
               </div>
             </Field>
 
