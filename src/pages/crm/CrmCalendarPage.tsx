@@ -39,7 +39,9 @@ import {
   useGoogleCalendarConnection,
   type GoogleCalendarEvent,
 } from '@/hooks/useGoogleCalendarEvents';
-import { AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+import { PROJECTS } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { formatContactName } from '@/lib/format';
 import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
 import { ShowingDetailModal } from '@/components/crm/calendar/ShowingDetailModal';
