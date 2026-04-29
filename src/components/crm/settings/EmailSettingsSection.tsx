@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mail, Eye, Code, Type, Paintbrush, Library, Upload, Trash2, Loader2 } from 'lucide-react';
+import { Mail, Eye, Code, Type, Paintbrush, Library, Upload, Trash2, Loader2, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,7 @@ export default function EmailSettingsSection() {
   const [builderData, setBuilderData] = useState<SignatureBuilderData | null>(null);
   const [showHtmlPreview, setShowHtmlPreview] = useState(true);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogoUpload = async (file: File) => {
@@ -52,17 +53,14 @@ export default function EmailSettingsSection() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
       const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-      // One file per user — overwrite on each upload so the URL stays stable.
       const path = `${session.user.id}/logo.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('brand-logos')
         .upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
       if (upErr) throw upErr;
       const { data } = supabase.storage.from('brand-logos').getPublicUrl(path);
-      // Cache-bust so a re-uploaded logo shows immediately.
       const url = `${data.publicUrl}?v=${Date.now()}`;
       setBrandLogoUrl(url);
-      // Persist immediately so the next email send picks it up without an extra Save click.
       upsert.mutate({ brand_logo_url: url } as any);
       toast.success('Logo uploaded');
     } catch (e) {
@@ -140,282 +138,297 @@ export default function EmailSettingsSection() {
     <Card className="rounded-[10px] lg:rounded-xl">
       <CardHeader className="flex flex-row items-center gap-2 px-3 sm:px-6">
         <Mail className="h-5 w-5 text-primary" />
-        <CardTitle className="text-base sm:text-lg">Email Settings</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Email & Signature</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5 px-3 sm:px-6">
-        {/* Sender Name */}
-        <div className="space-y-1.5">
-          <Label>Sender Name</Label>
-          <Input
-            value={senderName}
-            onChange={e => setSenderName(e.target.value)}
-            placeholder="Uzair Muhammad | Presale Properties"
-            className="min-h-[44px] sm:min-h-0"
-          />
-          <p className="text-xs text-muted-foreground">
-            This name appears in the recipient's inbox (e.g. "From: Your Name")
-          </p>
-        </div>
-
-        {/* Reply-To */}
-        <div className="space-y-1.5">
-          <Label>Reply-To Email</Label>
-          <Input
-            type="email"
-            value={replyTo}
-            onChange={e => setReplyTo(e.target.value)}
-            placeholder="uzair@presaleproperties.com"
-            className="min-h-[44px] sm:min-h-0"
-          />
-          <p className="text-xs text-muted-foreground">
-            Optional — if blank, replies go to your connected Gmail address
-          </p>
-        </div>
-
-        {/* Twilio SMS sender number */}
-        <div className="space-y-1.5">
-          <Label>SMS Sender Number (Twilio)</Label>
-          <Input
-            type="tel"
-            value={twilioFrom}
-            onChange={e => setTwilioFrom(e.target.value)}
-            placeholder="+15551234567"
-            className="min-h-[44px] sm:min-h-0"
-          />
-          <p className="text-xs text-muted-foreground">
-            E.164 format. Outbound SMS sent from lead pages will use this number.
-          </p>
-        </div>
-
-        {/* Brand Logo Banner — shown at top of bulk & 1:1 emails */}
-        <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
-          <div>
-            <Label className="text-sm font-semibold">Brand Logo Banner</Label>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Added to the top of every email you send (bulk and 1:1). Upload a logo and we'll
-              host it for you — no public URL needed. Recommended: 600px wide max, transparent
-              or white background, under 2 MB.
+      <CardContent className="space-y-6 px-3 sm:px-6">
+        {/* ───────── 1. Basics ───────── */}
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Sender Name</Label>
+            <Input
+              value={senderName}
+              onChange={e => setSenderName(e.target.value)}
+              placeholder="Uzair Muhammad | Presale Properties"
+              className="min-h-[44px] sm:min-h-0"
+            />
+            <p className="text-xs text-muted-foreground">
+              Shown in the recipient's inbox as the "From" name.
             </p>
           </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleLogoUpload(f);
-            }}
-          />
-
-          {brandLogoUrl.trim() ? (
-            <>
-              <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
-                <img
-                  src={brandLogoUrl.trim()}
-                  alt={brandLogoAlt.trim() || 'Logo preview'}
-                  style={{ maxHeight: 64, maxWidth: '100%' }}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingLogo}
-                >
-                  {uploadingLogo
-                    ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading…</>
-                    : <><Upload className="h-3.5 w-3.5 mr-1.5" /> Replace logo</>}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRemoveLogo}
-                  disabled={uploadingLogo}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remove
-                </Button>
-              </div>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingLogo}
-              className="w-full min-h-[44px] sm:min-h-0 border-dashed"
-            >
-              {uploadingLogo
-                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading…</>
-                : <><Upload className="h-4 w-4 mr-2" /> Upload logo</>}
-            </Button>
-          )}
-
           <div className="space-y-1.5">
-            <Label className="text-xs">Alt text (for accessibility)</Label>
+            <Label>Reply-To Email</Label>
             <Input
-              value={brandLogoAlt}
-              onChange={e => setBrandLogoAlt(e.target.value)}
-              placeholder="Presale Properties"
+              type="email"
+              value={replyTo}
+              onChange={e => setReplyTo(e.target.value)}
+              placeholder="uzair@presaleproperties.com"
               className="min-h-[44px] sm:min-h-0"
             />
+            <p className="text-xs text-muted-foreground">
+              Optional — leave blank to use your connected Gmail address.
+            </p>
           </div>
 
-          <details className="text-[11px] text-muted-foreground">
-            <summary className="cursor-pointer hover:text-foreground">Use an external URL instead</summary>
+          <div className="space-y-1.5">
+            <Label>SMS Sender Number</Label>
             <Input
-              type="url"
-              value={brandLogoUrl}
-              onChange={e => setBrandLogoUrl(e.target.value)}
-              placeholder="https://yourdomain.com/logo.png"
-              className="mt-2 min-h-[44px] sm:min-h-0"
+              type="tel"
+              value={twilioFrom}
+              onChange={e => setTwilioFrom(e.target.value)}
+              placeholder="+15551234567"
+              className="min-h-[44px] sm:min-h-0"
             />
-          </details>
+            <p className="text-xs text-muted-foreground">
+              E.164 format. Used for outbound SMS from lead pages.
+            </p>
+          </div>
         </div>
 
-        {/* ───────── Presale Properties presets (recommended) ───────── */}
-        <PresalePresetCard
-          fallbackAgent={{
-            full_name: senderName.split('|')[0]?.trim() || senderName,
-            email: replyTo || null,
-          }}
-          onApply={(preset: PresaleSignaturePresetId, html) => {
-            // Flip to HTML Import mode so the preset is auto-appended verbatim.
-            setSignatureMode('html');
-            setHtmlImport(html);
-            setSignatureHtml(html);
-            setShowHtmlPreview(true);
-            // Persist immediately so the user doesn't have to hit Save.
-            upsert.mutate({
-              signature_html: html,
-              signature_mode: 'html',
-              signature_builder_data: null,
-            } as any);
-            toast.success(
-              preset === 'presale_card'
-                ? 'Presale Card signature applied'
-                : 'Lofty / plain signature applied',
-            );
-          }}
-        />
-
-        {/* Signature Editor — 3 Modes (advanced) */}
-        <div className="space-y-3">
-          <Label>Email Signature (advanced)</Label>
-          <Tabs value={signatureMode} onValueChange={(v) => setSignatureMode(v as SignatureMode)}>
-            <TabsList className="grid w-full grid-cols-3 h-9">
-              <TabsTrigger value="builder" className="text-xs gap-1.5">
-                <Paintbrush className="h-3.5 w-3.5" /> Builder
-              </TabsTrigger>
-              <TabsTrigger value="html" className="text-xs gap-1.5">
-                <Code className="h-3.5 w-3.5" /> HTML Import
-              </TabsTrigger>
-              <TabsTrigger value="simple" className="text-xs gap-1.5">
-                <Type className="h-3.5 w-3.5" /> Simple Text
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="builder" className="mt-4">
-              <SignatureBuilder
-                initialData={builderData}
-                senderName={senderName}
-                onChange={handleBuilderChange}
-              />
-            </TabsContent>
-
-            <TabsContent value="html" className="mt-4 space-y-3">
-              <p className="text-xs text-muted-foreground">
-                Paste your HTML email signature below. It will be appended to every outgoing email exactly as written.
-              </p>
-              <Textarea
-                value={htmlImport}
-                onChange={e => setHtmlImport(e.target.value)}
-                onPaste={(e) => {
-                  // Prefer text/html clipboard payload — keeps tables, styles, MSO intact
-                  const html = e.clipboardData?.getData('text/html');
-                  if (html && isRichHtml(html)) {
-                    e.preventDefault();
-                    setHtmlImport(html);
-                    setShowHtmlPreview(true);
-                  }
-                }}
-                placeholder="<table>...</table>"
-                className="min-h-[200px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowHtmlPreview(!showHtmlPreview)}
-              >
-                <Eye className="h-3.5 w-3.5 mr-1.5" />
-                {showHtmlPreview ? 'Hide preview' : 'Show preview'}
-              </Button>
-              {showHtmlPreview && (
-                <LiveSignaturePreview html={htmlImport} />
-              )}
-            </TabsContent>
-
-            <TabsContent value="simple" className="mt-4 space-y-2">
-              {/* Capture-phase paste listener: if rich HTML is on the clipboard,
-                  re-route to HTML Import tab BEFORE Tiptap can strip it. */}
-              <div
-                onPasteCapture={(e) => {
-                  const html = e.clipboardData?.getData('text/html');
-                  if (html && isRichHtml(html)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setHtmlImport(html);
-                    setSignatureMode('html');
-                    setShowHtmlPreview(true);
-                    toast.info('Detected rich HTML signature — switched to HTML Import to preserve formatting');
-                  }
-                }}
-              >
-                <RichTextEditor content={simpleHtml} onChange={setSimpleHtml} />
-              </div>
-            </TabsContent>
-          </Tabs>
+        {/* ───────── 2. Signature (Presale presets — primary) ───────── */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Email Signature</Label>
           <p className="text-xs text-muted-foreground">
-            Auto-appended to every outgoing email, separated by a "--" divider
+            Pick one of the Presale Properties signatures below. It's auto-appended to every email you send.
           </p>
+          <PresalePresetCard
+            fallbackAgent={{
+              full_name: senderName.split('|')[0]?.trim() || senderName,
+              email: replyTo || null,
+            }}
+            onApply={(preset: PresaleSignaturePresetId, html) => {
+              setSignatureMode('html');
+              setHtmlImport(html);
+              setSignatureHtml(html);
+              setShowHtmlPreview(true);
+              upsert.mutate({
+                signature_html: html,
+                signature_mode: 'html',
+                signature_builder_data: null,
+              } as any);
+              toast.success(
+                preset === 'presale_card'
+                  ? 'Presale Card signature applied'
+                  : 'Lofty / plain signature applied',
+              );
+            }}
+          />
         </div>
 
-        {/* Signature Preview (for non-builder modes) — true email-canvas preview */}
-        {signatureMode !== 'builder' && getActiveSignatureHtml() && (
+        {/* Active signature preview (always visible if one is set) */}
+        {getActiveSignatureHtml() && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Eye className="h-3.5 w-3.5" />
-              <span>How it looks at the bottom of an email</span>
+              <span>Current signature preview</span>
             </div>
             <LiveSignaturePreview html={getActiveSignatureHtml()} withEmailContext />
           </div>
         )}
 
-        {/* Multi-signature library */}
-        <div className="space-y-3 pt-4 border-t border-border/50">
-          <div className="flex items-center gap-2">
-            <Library className="h-4 w-4 text-primary" />
-            <Label className="text-sm">Signature Library</Label>
-          </div>
-          <SignatureImportBox />
-          <SignaturesManager />
+        {/* ───────── 3. Advanced (collapsed) ───────── */}
+        <div className="border-t border-border/50 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? 'rotate-0' : '-rotate-90'}`} />
+            Advanced — brand logo, custom HTML, signature builder
+          </button>
+
+          {showAdvanced && (
+            <div className="mt-4 space-y-6">
+              {/* Brand Logo */}
+              <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
+                <div>
+                  <Label className="text-sm font-semibold">Brand Logo Banner</Label>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Added to the top of bulk &amp; 1:1 emails. Recommended: 600px wide max, under 2 MB.
+                  </p>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleLogoUpload(f);
+                  }}
+                />
+
+                {brandLogoUrl.trim() ? (
+                  <>
+                    <div className="rounded-md border border-border/60 bg-background p-3 flex items-center justify-center">
+                      <img
+                        src={brandLogoUrl.trim()}
+                        alt={brandLogoAlt.trim() || 'Logo preview'}
+                        style={{ maxHeight: 64, maxWidth: '100%' }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                      >
+                        {uploadingLogo
+                          ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Uploading…</>
+                          : <><Upload className="h-3.5 w-3.5 mr-1.5" /> Replace logo</>}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                        disabled={uploadingLogo}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remove
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="w-full min-h-[44px] sm:min-h-0 border-dashed"
+                  >
+                    {uploadingLogo
+                      ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading…</>
+                      : <><Upload className="h-4 w-4 mr-2" /> Upload logo</>}
+                  </Button>
+                )}
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Alt text (accessibility)</Label>
+                  <Input
+                    value={brandLogoAlt}
+                    onChange={e => setBrandLogoAlt(e.target.value)}
+                    placeholder="Presale Properties"
+                    className="min-h-[44px] sm:min-h-0"
+                  />
+                </div>
+
+                <details className="text-[11px] text-muted-foreground">
+                  <summary className="cursor-pointer hover:text-foreground">Use an external URL instead</summary>
+                  <Input
+                    type="url"
+                    value={brandLogoUrl}
+                    onChange={e => setBrandLogoUrl(e.target.value)}
+                    placeholder="https://yourdomain.com/logo.png"
+                    className="mt-2 min-h-[44px] sm:min-h-0"
+                  />
+                </details>
+              </div>
+
+              {/* Custom signature editor */}
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm font-semibold">Custom Signature Editor</Label>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    For one-offs that aren't a Presale preset. Choosing one here overrides the preset above.
+                  </p>
+                </div>
+                <Tabs value={signatureMode} onValueChange={(v) => setSignatureMode(v as SignatureMode)}>
+                  <TabsList className="grid w-full grid-cols-3 h-9">
+                    <TabsTrigger value="builder" className="text-xs gap-1.5">
+                      <Paintbrush className="h-3.5 w-3.5" /> Builder
+                    </TabsTrigger>
+                    <TabsTrigger value="html" className="text-xs gap-1.5">
+                      <Code className="h-3.5 w-3.5" /> HTML
+                    </TabsTrigger>
+                    <TabsTrigger value="simple" className="text-xs gap-1.5">
+                      <Type className="h-3.5 w-3.5" /> Simple
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="builder" className="mt-4">
+                    <SignatureBuilder
+                      initialData={builderData}
+                      senderName={senderName}
+                      onChange={handleBuilderChange}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="html" className="mt-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Paste HTML — appended verbatim to every email.
+                    </p>
+                    <Textarea
+                      value={htmlImport}
+                      onChange={e => setHtmlImport(e.target.value)}
+                      onPaste={(e) => {
+                        const html = e.clipboardData?.getData('text/html');
+                        if (html && isRichHtml(html)) {
+                          e.preventDefault();
+                          setHtmlImport(html);
+                          setShowHtmlPreview(true);
+                        }
+                      }}
+                      placeholder="<table>...</table>"
+                      className="min-h-[200px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowHtmlPreview(!showHtmlPreview)}
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1.5" />
+                      {showHtmlPreview ? 'Hide preview' : 'Show preview'}
+                    </Button>
+                    {showHtmlPreview && <LiveSignaturePreview html={htmlImport} />}
+                  </TabsContent>
+
+                  <TabsContent value="simple" className="mt-4 space-y-2">
+                    <div
+                      onPasteCapture={(e) => {
+                        const html = e.clipboardData?.getData('text/html');
+                        if (html && isRichHtml(html)) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setHtmlImport(html);
+                          setSignatureMode('html');
+                          setShowHtmlPreview(true);
+                          toast.info('Detected rich HTML — switched to HTML to preserve formatting');
+                        }
+                      }}
+                    >
+                      <RichTextEditor content={simpleHtml} onChange={setSimpleHtml} />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Signature library */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Library className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-semibold">Signature Library</Label>
+                </div>
+                <SignatureImportBox />
+                <SignaturesManager />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Save button */}
-        <div className="flex justify-end">
+        {/* Save */}
+        <div className="flex justify-end pt-2">
           <Button
             onClick={handleSave}
             disabled={upsert.isPending}
             className="min-h-[44px] sm:min-h-0"
           >
-            {upsert.isPending ? 'Saving…' : 'Save Email Settings'}
+            {upsert.isPending ? 'Saving…' : 'Save'}
           </Button>
         </div>
       </CardContent>
