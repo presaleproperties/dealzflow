@@ -29,7 +29,8 @@ import {
   useSmsCampaigns, useSmsOptOuts, useSmsNumbers, useSmsSettings, useAllSmsLog,
   useSendSms, smsSegments, renderSmsTemplate, SMS_VARIABLES,
 } from '@/hooks/useSms';
-import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { BulkSendTextDialog } from '@/components/crm/leads/BulkSendTextDialog';
 import { MessagingCenter } from '@/components/crm/sms/MessagingCenter';
 import { format, formatDistanceToNow, subDays } from 'date-fns';
