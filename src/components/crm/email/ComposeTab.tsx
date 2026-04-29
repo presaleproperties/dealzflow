@@ -191,7 +191,7 @@ export function ComposeTab() {
     ).slice(0, 5);
   }, [contacts, excludeSearch, excludedIds]);
 
-  // Update iframe when htmlBody changes
+  // Update iframe when htmlBody / editor mode changes
   useEffect(() => {
     if (iframeRef.current && isHtmlMode) {
       const doc = iframeRef.current.contentDocument;
@@ -199,9 +199,24 @@ export function ComposeTab() {
         doc.open();
         doc.write(htmlBody || '<p style="color:#888;font-family:sans-serif;padding:20px;">No content</p>');
         doc.close();
+        // In "simple" mode, make the rendered preview directly editable so the
+        // user can rewrite headlines / paragraphs without touching HTML.
+        if (editorMode === 'simple' && doc.body) {
+          doc.body.contentEditable = 'true';
+          doc.body.style.outline = 'none';
+          doc.body.style.cursor = 'text';
+          const onInput = () => {
+            // Capture full HTML (incl. <head>) so styles/inline images stay intact
+            try {
+              setHtmlBody(`<!DOCTYPE html>\n${doc.documentElement.outerHTML}`);
+            } catch { /* noop */ }
+          };
+          doc.body.addEventListener('input', onInput);
+        }
       }
     }
-  }, [htmlBody, isHtmlMode, previewWidth]);
+    // editorMode in deps so the contentEditable toggle re-applies on switch
+  }, [htmlBody, isHtmlMode, previewWidth, editorMode]);
 
   const handleSelectTemplate = (tpl: CrmEmailTemplate) => {
     setActiveTemplate(tpl);
@@ -211,8 +226,9 @@ export function ComposeTab() {
     // would see "Hi ," instead of their name.
     setHtmlBody(tpl.body_html || '');
     if (tpl.subject && !subject) setSubject(tpl.subject);
-    setShowHtmlEditor(false);
+    setEditorMode('preview');
   };
+
 
   const clearTemplate = () => {
     setActiveTemplate(null);
