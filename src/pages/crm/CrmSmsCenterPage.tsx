@@ -161,32 +161,71 @@ export default function CrmSmsCenterPage() {
     return { items, complete: items.filter(i => i.done).length, total: items.length };
   }, [numbers, settings, channelLogs]);
 
+  const TAB_META: Record<string, { label: string; subtitle: string; icon: typeof Inbox }> = {
+    inbox:    { label: 'Inbox',    subtitle: 'One-on-one conversations with leads.',         icon: Inbox },
+    send:     { label: 'Send',     subtitle: 'Compose a blast, browse templates, view history.', icon: Send },
+    settings: { label: 'Settings', subtitle: 'Numbers, opt-outs, quiet hours, deliverability.',  icon: SettingsIcon },
+  };
+  const active = TAB_META[tab] ?? TAB_META.inbox;
+
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      {/* ============ Header ============ */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Messages</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Text leads one-on-one or send a campaign — powered by Twilio
-          </p>
+      {/* ============ Editorial header ============ */}
+      <div className="space-y-3">
+        <div className="flex items-baseline gap-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 font-semibold">Messages · SMS</p>
+          <span className="h-px flex-1 bg-border/60" aria-hidden />
         </div>
-        <div className="flex items-center gap-2">
-          {failed24h.length > 0 && (
-            <button
-              onClick={() => setFailedDrawerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md border border-destructive/40 bg-destructive/5 text-destructive text-xs font-medium hover:bg-destructive/10 transition-colors"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              {failed24h.length} failed in 24h
-            </button>
-          )}
-          {scheduledQueue.length > 0 && (
-            <Badge variant="outline" className="h-8 gap-1.5 px-2.5 text-xs border-amber-500/40 text-amber-700 dark:text-amber-400">
-              <Clock className="w-3.5 h-3.5" />
-              {scheduledQueue.length} scheduled · next {format(new Date(scheduledQueue[0].scheduled_for!), 'MMM d, h:mm a')}
-            </Badge>
-          )}
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-[22px] sm:text-[24px] font-semibold tracking-tight text-foreground leading-none">
+              {active.label}
+            </h1>
+            <p className="text-[12px] text-muted-foreground mt-1.5">{active.subtitle}</p>
+          </div>
+          {/* Inline status chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {failed24h.length > 0 && (
+              <button
+                onClick={() => setFailedDrawerOpen(true)}
+                className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-destructive/40 bg-destructive/5 text-destructive text-[11px] font-medium hover:bg-destructive/10 transition-colors"
+              >
+                <AlertTriangle className="w-3 h-3" />
+                {failed24h.length} failed · 24h
+              </button>
+            )}
+            {scheduledQueue.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-[11px] font-medium">
+                <Clock className="w-3 h-3" />
+                {scheduledQueue.length} scheduled · {format(new Date(scheduledQueue[0].scheduled_for!), 'MMM d, h:mm a')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Segmented pill tabs — matches /crm/email aesthetic */}
+        <div className="-mx-1 overflow-x-auto no-scrollbar">
+          <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
+            {(['inbox', 'send', 'settings'] as const).map(v => {
+              const meta = TAB_META[v];
+              const isActive = tab === v;
+              return (
+                <button
+                  key={v}
+                  onClick={() => setTab(v)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold whitespace-nowrap transition-all',
+                    isActive
+                      ? 'bg-foreground text-background shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  )}
+                >
+                  <meta.icon className="h-3.5 w-3.5" />
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -203,18 +242,13 @@ export default function CrmSmsCenterPage() {
           </div>
         </div>
       )}
-      {/* ============ Tabs (3 only: Inbox / Send / Settings) ============ */}
+
+      {/* ============ Tab content (controlled by buttons above) ============ */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-3 w-full sm:w-auto h-auto">
-          <TabsTrigger value="inbox" className="gap-1.5 text-xs sm:text-sm py-2">
-            <Inbox className="w-3.5 h-3.5" /><span>Inbox</span>
-          </TabsTrigger>
-          <TabsTrigger value="send" className="gap-1.5 text-xs sm:text-sm py-2">
-            <Send className="w-3.5 h-3.5" /><span>Send</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-1.5 text-xs sm:text-sm py-2">
-            <SettingsIcon className="w-3.5 h-3.5" /><span>Settings</span>
-          </TabsTrigger>
+        <TabsList className="sr-only">
+          <TabsTrigger value="inbox">Inbox</TabsTrigger>
+          <TabsTrigger value="send">Send</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         {/* ============ INBOX ============ */}
