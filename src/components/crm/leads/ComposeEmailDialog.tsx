@@ -24,7 +24,6 @@ import {
   X,
   Search,
   Pencil,
-  Pencil,
   Check,
   MousePointerClick,
 } from 'lucide-react';
