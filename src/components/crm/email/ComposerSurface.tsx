@@ -151,7 +151,9 @@ export function ComposerSurface({
   const finalHtml = useMemo(() => {
     const merged = renderForRecipient(bodyHtml, senderCtx);
     if (appendSignature && activeSignatureHtml) {
-      return `${merged}<br/><br/>${activeSignatureHtml}`;
+      // Single <br/> seam — signature reads flush against the body, no
+      // gratuitous spacing or `-- ` separator.
+      return `${merged}<br/>${activeSignatureHtml}`;
     }
     return merged;
   }, [bodyHtml, senderCtx, appendSignature, activeSignatureHtml]);

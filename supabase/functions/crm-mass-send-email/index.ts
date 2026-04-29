@@ -196,7 +196,9 @@ Deno.serve(async (req) => {
         const subj = renderForLead(body.subject, lead, senderCtx);
         let html = renderForLead(body.body_html, lead, senderCtx);
         if (body.append_signature && signatureHtml) {
-          html = `${html}<br/><br/>${signatureHtml}`;
+          // Single <br/> seam for a flush, no-extra-padding handoff between
+          // body and signature (parity with single-send composers).
+          html = `${html}<br/>${signatureHtml}`;
         }
         // Prepend brand banner so every recipient sees the logo inside the
         // message body (independent of inbox-level avatar rules like BIMI).
