@@ -1,9 +1,10 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Bold, Italic, List, ListOrdered, Heading2 } from 'lucide-react';
+import Link from '@tiptap/extension-link';
+import { Bold, Italic, List, ListOrdered, Heading2, Link2, Link2Off } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useCallback, type ReactNode } from 'react';
 
 interface Props {
   content: string;
@@ -43,8 +44,19 @@ export function RichTextEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer nofollow',
+          target: '_blank',
+          class: 'text-primary underline underline-offset-2 hover:text-primary/80',
+        },
+      }),
     ],
     content,
+    autofocus: 'end',
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
@@ -103,6 +115,19 @@ export function RichTextEditor({
 
   const btnClass = 'h-8 w-8 p-0';
 
+  const handleSetLink = useCallback(() => {
+    const previous = editor.getAttributes('link').href as string | undefined;
+    const url = window.prompt('Link URL', previous ?? 'https://');
+    if (url === null) return; // cancelled
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    // Basic normalisation: prepend https:// if missing scheme.
+    const normalised = /^(https?:|mailto:|tel:)/i.test(url) ? url : `https://${url}`;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: normalised }).run();
+  }, [editor]);
+
   return (
     <div className="flex flex-col h-full min-h-[320px] bg-background">
       {/* Toolbar — sits flush against the composer header above (no border-top, no rounded corners) */}
@@ -122,6 +147,15 @@ export function RichTextEditor({
         <Button type="button" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
           <ListOrdered className="w-4 h-4" />
         </Button>
+        <div className="w-px h-5 bg-border/70 mx-1" />
+        <Button type="button" variant={editor.isActive('link') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={handleSetLink} title="Add or edit link">
+          <Link2 className="w-4 h-4" />
+        </Button>
+        {editor.isActive('link') && (
+          <Button type="button" variant="ghost" size="sm" className={btnClass} onClick={() => editor.chain().focus().unsetLink().run()} title="Remove link">
+            <Link2Off className="w-4 h-4" />
+          </Button>
+        )}
         {toolbarSlot && (
           <>
             <div className="w-px h-5 bg-border/70 mx-1" />
