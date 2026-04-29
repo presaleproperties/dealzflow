@@ -13,7 +13,6 @@
 // nags the same person twice.
 
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Loader2, CheckCircle2, MailQuestion } from "lucide-react";
 
 import {
@@ -44,7 +43,10 @@ export function EmailIdentitySetupDialog() {
   const { user } = useAuth();
   const { agent, status } = usePresaleAgent();
   const refresh = usePresaleAgentStore((s) => s.fetch);
-  const navigate = useNavigate();
+  // Note: cannot use react-router's useNavigate here — this dialog is mounted
+  // in NativeBootstrap, OUTSIDE the <BrowserRouter>. Use window.location for
+  // the one-shot "Edit in settings" jump.
+  const goToSettings = () => window.location.assign("/crm/settings?tab=email");
 
   const [open, setOpen] = useState(false);
   const [presaleEmail, setPresaleEmail] = useState("");
@@ -196,7 +198,7 @@ export function EmailIdentitySetupDialog() {
                 variant="outline"
                 onClick={() => {
                   dismiss();
-                  navigate("/crm/settings?tab=email");
+                  goToSettings();
                 }}
               >
                 Edit in settings
