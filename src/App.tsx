@@ -68,6 +68,7 @@ const CrmPipelinePage = lazy(() => import("./pages/crm/CrmPipelinePage"));
 const CrmEmailWorkspacePage = lazy(() => import("./pages/crm/CrmEmailWorkspacePage"));
 const CrmChatsPage = lazy(() => import("./pages/crm/CrmChatsPage"));
 const CrmChatThreadPage = lazy(() => import("./pages/crm/CrmChatThreadPage"));
+const CrmChatsShell = lazy(() => import("./pages/crm/CrmChatsShell"));
 const CrmMarketingHubPage = lazy(() => import("./pages/crm/CrmMarketingHubPage"));
 const CrmTemplatesPage = lazy(() => import("./pages/crm/CrmTemplatesPage"));
 const CrmEmailBuilderPage = lazy(() => import("./pages/crm/CrmEmailBuilderPage"));
