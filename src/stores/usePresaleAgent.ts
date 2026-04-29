@@ -43,9 +43,18 @@ export const usePresaleAgentStore = create<PresaleAgentState>()(
 
       fetch: async (opts) => {
         const force = opts?.force ?? false;
-        const { lastFetchedAt, status } = get();
+        const { lastFetchedAt, status, matchedEmail } = get();
+
+        // Always check current auth user first — if it differs from the
+        // cached matchedEmail, force a refetch (account switch).
+        const { data: pre } = await supabase.auth.getUser();
+        const currentEmail = pre?.user?.email?.toLowerCase() ?? null;
+        const emailMismatch =
+          !!matchedEmail && !!currentEmail && matchedEmail !== currentEmail;
+
         if (
           !force &&
+          !emailMismatch &&
           status === "ready" &&
           lastFetchedAt &&
           Date.now() - lastFetchedAt < STALE_MS
@@ -53,7 +62,18 @@ export const usePresaleAgentStore = create<PresaleAgentState>()(
           return;
         }
 
-        set({ status: "loading", error: null });
+        // Wipe any stale identity before fetching a fresh one.
+        if (emailMismatch) {
+          set({
+            agent: null,
+            status: "loading",
+            error: null,
+            matchedEmail: null,
+          });
+        } else {
+          set({ status: "loading", error: null });
+        }
+
         try {
           const { data, error } = await supabase.functions.invoke(
             "presale-agent-me",
@@ -68,17 +88,17 @@ export const usePresaleAgentStore = create<PresaleAgentState>()(
               status: "unmatched",
               error: data?.message ?? "No matching Presale agent",
               lastFetchedAt: Date.now(),
+              matchedEmail: currentEmail,
             });
             return;
           }
 
-          const { data: userData } = await supabase.auth.getUser();
           set({
             agent: data.agent as PresaleAgent,
             status: "ready",
             error: null,
             lastFetchedAt: Date.now(),
-            matchedEmail: userData?.user?.email?.toLowerCase() ?? null,
+            matchedEmail: currentEmail,
           });
         } catch (e) {
           set({
