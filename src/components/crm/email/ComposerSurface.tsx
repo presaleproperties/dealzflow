@@ -110,6 +110,34 @@ export function ComposerSurface({
   const [tplCategory, setTplCategory] = useState('general');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [appliedTplId, setAppliedTplId] = useState<string | null>(null);
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
+
+  const filteredProjects = useMemo(() => {
+    const q = projectSearch.trim().toLowerCase();
+    const list = q
+      ? projects.filter((p) =>
+          p.name.toLowerCase().includes(q)
+          || (p.city ?? '').toLowerCase().includes(q)
+          || (p.developer ?? '').toLowerCase().includes(q),
+        )
+      : projects;
+    return list.slice(0, 40);
+  }, [projects, projectSearch]);
+
+  const insertProjectLink = (p: CrmProject) => {
+    const url = projectShareUrl(p);
+    if (!url) {
+      toast.error(`No share URL for ${p.name}. Add one in Settings → Projects.`);
+      return;
+    }
+    const safeName = p.name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const anchor = `<p><a href="${url}" target="_blank" rel="noopener">${safeName}</a></p>`;
+    setBodyHtml((prev) => (!prev || prev === '<p></p>' ? anchor : `${prev}${anchor}`));
+    setProjectOpen(false);
+    setProjectSearch('');
+    toast.success(`Inserted link to ${p.name}`);
+  };
 
   /* Pick default signature on mount / when signatures load */
   useEffect(() => {
