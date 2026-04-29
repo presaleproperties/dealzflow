@@ -241,14 +241,28 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         {/* Import conversation from another CRM (Lofty etc.) */}
-        <div className="px-4 md:px-0 -mt-1">
+        <div className="px-4 md:px-0 -mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <button
+            type="button"
+            onClick={handlePullFromLofty}
+            disabled={pullingLofty}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
+            title="Pulls emails, texts and calls for this lead from the Lofty API"
+          >
+            {pullingLofty
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <Download className="w-3 h-3" />}
+            {pullingLofty ? 'Pulling from Lofty…' : 'Pull from Lofty (API)'}
+          </button>
+          <span className="text-muted-foreground/30 text-[10px]">·</span>
           <button
             type="button"
             onClick={() => setShowImport(true)}
             className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+            title="Paste a conversation from anywhere — AI will parse it"
           >
             <Sparkles className="w-3 h-3" />
-            Import conversation from Lofty
+            Paste conversation (AI)
           </button>
         </div>
 
