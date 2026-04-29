@@ -197,28 +197,34 @@ function ScaledIframe({
     return () => ro.disconnect();
   }, [naturalWidth]);
 
-  // After iframe content writes, measure real body height (use html scrollHeight,
-  // pick the larger of body/html, and add a tiny buffer so the last line never clips)
+  // After iframe content writes, measure real body height. We tick a bounded
+  // number of frames so we catch image loads, but only commit a new height if
+  // it actually changed (otherwise we'd cause an infinite re-render loop).
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
     let raf = 0;
+    let lastH = 0;
     const measure = () => {
       const doc = iframe.contentDocument;
       if (!doc) return;
       const bodyH = doc.body?.scrollHeight ?? 0;
       const htmlH = doc.documentElement?.scrollHeight ?? 0;
-      const h = Math.max(bodyH, htmlH);
-      if (h > 0) setContentHeight(h + 4);
+      const h = Math.min(2000, Math.max(bodyH, htmlH));
+      if (h > 0 && Math.abs(h - lastH) > 1) {
+        lastH = h;
+        setContentHeight(h);
+      }
     };
     let count = 0;
     const tick = () => {
       measure();
-      if (count++ < 90) raf = requestAnimationFrame(tick);
+      if (count++ < 60) raf = requestAnimationFrame(tick);
     };
     tick();
     return () => cancelAnimationFrame(raf);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [naturalWidth, naturalHeight]);
 
   return (
     <div
