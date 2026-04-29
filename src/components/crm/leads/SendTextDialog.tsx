@@ -190,6 +190,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       toast.error(e?.message || 'Upload failed');
     } finally {
       setUploading(false);
+    }
   }
 
   /** Unified entry-point for AttachMenu / drag-drop / paste — uploads each
