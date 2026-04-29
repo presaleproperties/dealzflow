@@ -161,6 +161,85 @@ interface CrmProfileSeed {
 
 type PrefillSource = "presale" | "profile" | "fallback" | "user";
 
+/**
+ * ScaledIframe — renders the signature iframe at its natural email width
+ * (e.g. 600px) and uses a CSS transform to shrink it down so it ALWAYS
+ * fits the parent container with no horizontal scroll. After load, it
+ * re-measures the body height and adjusts so there's no vertical scroll
+ * either.
+ */
+function ScaledIframe({
+  iframeRef,
+  title,
+  naturalWidth,
+  naturalHeight,
+}: {
+  iframeRef: React.RefObject<HTMLIFrameElement>;
+  title: string;
+  naturalWidth: number;
+  naturalHeight: number;
+}) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [contentHeight, setContentHeight] = useState(naturalHeight);
+
+  // Watch wrapper width → compute scale = min(1, width / naturalWidth)
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      if (w > 0) setScale(Math.min(1, w / naturalWidth));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [naturalWidth]);
+
+  // After iframe content writes, measure real body height
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    let raf = 0;
+    const measure = () => {
+      const doc = iframe.contentDocument;
+      if (!doc?.body) return;
+      const h = doc.body.scrollHeight;
+      if (h > 0) setContentHeight(h);
+    };
+    // Re-measure every frame for ~1s after each render to catch image loads
+    let count = 0;
+    const tick = () => {
+      measure();
+      if (count++ < 60) raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  });
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="relative w-full overflow-hidden"
+      style={{ height: contentHeight * scale }}
+    >
+      <iframe
+        ref={iframeRef}
+        title={title}
+        className="border-0 pointer-events-none block bg-white absolute top-0 left-0"
+        style={{
+          width: naturalWidth,
+          height: contentHeight,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+        sandbox="allow-same-origin"
+      />
+    </div>
+  );
+}
+
 export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
