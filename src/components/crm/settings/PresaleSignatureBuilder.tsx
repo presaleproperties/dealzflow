@@ -556,10 +556,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     <div className="flex items-center gap-2 mt-1.5">
                       <button
                         type="button"
-                        onClick={() => {
-                          setTouched(true);
-                          setFields((prev) => ({ ...prev, headshotShape: "circle" }));
-                        }}
+                        onClick={() => update("headshotShape", "circle")}
                         className={cn(
                           "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all",
                           fields.headshotShape === "circle"
@@ -572,10 +569,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setTouched(true);
-                          setFields((prev) => ({ ...prev, headshotShape: "rounded" }));
-                        }}
+                        onClick={() => update("headshotShape", "rounded")}
                         className={cn(
                           "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all",
                           fields.headshotShape === "rounded"
