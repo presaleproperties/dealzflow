@@ -654,12 +654,12 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
           </Button>
         </div>
 
-        {/* Right: Both Previews */}
-        <div className="space-y-4">
+        {/* Right: Both Previews — full width on wide screens, side-by-side at 2xl */}
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4 min-w-0">
           {/* Variation 1: Horizontal */}
           <div
             className={cn(
-              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer",
+              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer min-w-0",
               layout === "horizontal"
                 ? "border-primary ring-2 ring-primary/15 shadow-md"
                 : "border-border hover:border-primary/20",
@@ -700,12 +700,12 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                 <Copy className="h-2.5 w-2.5" /> Copy
               </Button>
             </div>
-            <div className="bg-card">
+            <div className="bg-card overflow-x-auto">
               <iframe
                 ref={iframeHRef}
                 title="Horizontal Signature"
-                className="w-full border-0 pointer-events-none"
-                style={{ minHeight: 170 }}
+                className="border-0 pointer-events-none block"
+                style={{ minHeight: 220, width: "100%", minWidth: 580 }}
                 sandbox="allow-same-origin"
               />
             </div>
@@ -714,7 +714,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
           {/* Variation 2: Stacked */}
           <div
             className={cn(
-              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer",
+              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer min-w-0",
               layout === "stacked"
                 ? "border-primary ring-2 ring-primary/15 shadow-md"
                 : "border-border hover:border-primary/20",
@@ -755,18 +755,18 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                 <Copy className="h-2.5 w-2.5" /> Copy
               </Button>
             </div>
-            <div className="bg-card">
+            <div className="bg-card overflow-x-auto">
               <iframe
                 ref={iframeVRef}
                 title="Stacked Signature"
-                className="w-full border-0 pointer-events-none"
-                style={{ minHeight: 240 }}
+                className="border-0 pointer-events-none block"
+                style={{ minHeight: 360, width: "100%", minWidth: 380 }}
                 sandbox="allow-same-origin"
               />
             </div>
           </div>
 
-          <p className="text-[10px] text-muted-foreground/60 text-center">
+          <p className="text-[10px] text-muted-foreground/60 text-center 2xl:col-span-2">
             Click a variation to select it · Copy HTML for an external email client, or "Apply" to use it inside this CRM
           </p>
         </div>
