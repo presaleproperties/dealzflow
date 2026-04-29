@@ -61,6 +61,7 @@ interface PresaleSignatureBuilderProps {
   initialData?: {
     fields?: Partial<SignatureBuilderFields>;
     touchedFields?: Record<string, boolean>;
+    layout?: LayoutVariant;
   } | null;
   /** Called with the rendered HTML when the user clicks "Apply to CRM". */
   onApply: (
@@ -234,11 +235,13 @@ function ScaledIframe({
   title,
   naturalWidth,
   naturalHeight,
+  previewWidth,
 }: {
   iframeRef: React.RefObject<HTMLIFrameElement>;
   title: string;
   naturalWidth: number;
   naturalHeight: number;
+  previewWidth?: number;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -249,14 +252,14 @@ function ScaledIframe({
     const el = wrapperRef.current;
     if (!el) return;
     const update = () => {
-      const w = el.clientWidth;
+      const w = previewWidth ? Math.min(el.clientWidth, previewWidth) : el.clientWidth;
       if (w > 0) setScale(Math.min(1, w / naturalWidth));
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [naturalWidth]);
+  }, [naturalWidth, previewWidth]);
 
   // After iframe content writes, measure real body height. We tick a bounded
   // number of frames so we catch image loads, but only commit a new height if
@@ -290,8 +293,8 @@ function ScaledIframe({
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full overflow-hidden"
-      style={{ height: Math.ceil(contentHeight * scale) }}
+      className="relative w-full overflow-hidden mx-auto"
+      style={{ height: Math.ceil(contentHeight * scale), maxWidth: previewWidth ?? "100%" }}
     >
       <iframe
         ref={iframeRef}
