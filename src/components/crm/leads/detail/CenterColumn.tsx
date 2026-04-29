@@ -202,6 +202,18 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
+        {/* Import conversation from another CRM (Lofty etc.) */}
+        <div className="px-4 md:px-0 -mt-1">
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Sparkles className="w-3 h-3" />
+            Import conversation from Lofty
+          </button>
+        </div>
+
         {/* Filter strip — single horizontal scroll row on mobile, wrap on desktop */}
         <div className="px-4 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none">
           <div className="flex items-center gap-1.5 md:flex-wrap min-w-max md:min-w-0">
