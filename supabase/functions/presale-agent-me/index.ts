@@ -77,6 +77,19 @@ function normalize(raw: any) {
       "website",
       "profile_url",
     ]),
+    title: pick<string>(raw, [
+      "title",
+      "job_title",
+      "role",
+      "position",
+    ]),
+    instagramUrl: pick<string>(raw, [
+      "instagram_url",
+      "instagramUrl",
+      "instagram",
+      "ig_url",
+      "social_instagram",
+    ]),
     raw,
   };
 }
