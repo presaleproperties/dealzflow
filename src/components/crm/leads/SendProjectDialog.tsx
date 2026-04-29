@@ -543,3 +543,78 @@ function Combobox({
     </Popover>
   );
 }
+
+// ───────── Attachment row ───────────────────────────────────────────────────
+type AssetInfoLite = { url: string | null; filename: string | null; source: 'manual' | 'presale' | null };
+
+function AttachmentRow({
+  icon, label, asset, loading, checked, onCheckedChange, uploading, onPickFile,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  asset: AssetInfoLite | undefined;
+  loading: boolean;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+  uploading: boolean;
+  onPickFile: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const available = Boolean(asset?.url);
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <div className="text-muted-foreground shrink-0">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{label}</span>
+          {loading ? (
+            <span className="text-[10px] text-muted-foreground">Checking…</span>
+          ) : available ? (
+            <span className={cn(
+              "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border",
+              asset?.source === 'manual'
+                ? "border-primary/40 text-primary"
+                : "border-border text-muted-foreground",
+            )}>
+              {asset?.source === 'manual' ? 'Uploaded' : 'From Presale'}
+            </span>
+          ) : (
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Not available</span>
+          )}
+        </div>
+        {asset?.filename && (
+          <div className="text-[11px] text-muted-foreground truncate mt-0.5">{asset.filename}</div>
+        )}
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onPickFile(f);
+            e.target.value = '';
+          }}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-[11px]"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+          <span className="ml-1">{available ? 'Replace' : 'Upload'}</span>
+        </Button>
+        <Switch
+          checked={available && checked}
+          onCheckedChange={onCheckedChange}
+          disabled={!available}
+        />
+      </div>
+    </div>
+  );
+}
