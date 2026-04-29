@@ -169,9 +169,11 @@ export function BottomNav() {
   // Filter admin-only items
   const visibleMore = useMemo(
     () => moreGroups
-      .map(g => ({ ...g, items: g.items.filter(i => !i.ownerAdminOnly || isCrmAdmin) }))
+      .map(g => ({ ...g, items: g.items.filter(i =>
+        (!i.ownerAdminOnly || isCrmAdmin) && (!i.ownerOnly || isCrmOwner)
+      ) }))
       .filter(g => g.items.length > 0),
-    [moreGroups, isCrmAdmin]
+    [moreGroups, isCrmAdmin, isCrmOwner]
   );
 
   const moreActive = !tabs.some(t => isActive(location.pathname, t.path)) &&
