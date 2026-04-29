@@ -115,6 +115,19 @@ export function RichTextEditor({
 
   const btnClass = 'h-8 w-8 p-0';
 
+  const handleSetLink = useCallback(() => {
+    const previous = editor.getAttributes('link').href as string | undefined;
+    const url = window.prompt('Link URL', previous ?? 'https://');
+    if (url === null) return; // cancelled
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    // Basic normalisation: prepend https:// if missing scheme.
+    const normalised = /^(https?:|mailto:|tel:)/i.test(url) ? url : `https://${url}`;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: normalised }).run();
+  }, [editor]);
+
   return (
     <div className="flex flex-col h-full min-h-[320px] bg-background">
       {/* Toolbar — sits flush against the composer header above (no border-top, no rounded corners) */}
