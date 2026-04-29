@@ -16,6 +16,7 @@
 // Auth: requires signed-in CRM user JWT.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { presaleBridge } from "../_shared/presale-bridge.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,9 +27,6 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BRIDGE_URL = Deno.env.get("PRESALE_BRIDGE_URL");
-const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET");
-const PRESALE_ANON_KEY = Deno.env.get("PRESALE_ANON_KEY");
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -119,41 +117,35 @@ Deno.serve(async (req) => {
     assets.pricing = { url: projRow.pricing_url, filename: projRow.pricing_filename ?? filenameFromUrl(projRow.pricing_url), source: "manual" };
   }
 
-  // 2. Fall back to Presale for any kind that's still empty
+  // 2. Fall back to Presale (bridge-get-project) for any kind that's still empty.
+  // Canonical bridge fields (confirmed via bridge-get-project response):
+  //   first_brochure_url        + brochure_files[]   + pitch_deck_url
+  //   first_floorplan_url       + floorplan_files[]
+  //   first_pricing_sheet_url   + pricing_sheets[]
   const presaleSlug = projRow?.presale_slug ?? null;
-  const needsPresale =
-    presaleSlug && BRIDGE_URL && BRIDGE_SECRET && PRESALE_ANON_KEY &&
-    (!assets.brochure.url || !assets.floor_plans.url || !assets.pricing.url);
+  const needsPresale = presaleSlug && (!assets.brochure.url || !assets.floor_plans.url || !assets.pricing.url);
 
   if (needsPresale) {
     try {
-      const r = await fetch(`${BRIDGE_URL}/bridge-proxy?action=get-project&slug=${encodeURIComponent(presaleSlug!)}`, {
-        method: "GET",
-        headers: {
-          "x-bridge-secret": BRIDGE_SECRET!,
-          "Authorization": `Bearer ${PRESALE_ANON_KEY!}`,
-          "apikey": PRESALE_ANON_KEY!,
-        },
-      });
-      const text = await r.text();
-      let project: any = {};
-      try { project = JSON.parse(text)?.data ?? JSON.parse(text); } catch { /* */ }
+      const raw = await presaleBridge.getProject(presaleSlug!);
+      // Bridge returns either { project: {...} } or the project object itself.
+      const project: any = (raw as any)?.project ?? raw ?? {};
 
       if (!assets.brochure.url) {
         const url =
-          pickStr(project, ["brochure_url", "brochureUrl", "brochure", "pitch_deck_url", "pitchDeckUrl", "deck_url", "presentation_url"]) ||
-          pickFromArray(project, ["brochures", "documents", "downloads"]);
+          pickStr(project, ["first_brochure_url", "brochure_url", "brochureUrl", "pitch_deck_url", "pitchDeckUrl"]) ||
+          pickFromArray(project, ["brochure_files", "brochures", "documents", "downloads"]);
         if (url) assets.brochure = { url, filename: filenameFromUrl(url), source: "presale" };
       }
       if (!assets.floor_plans.url) {
         const url =
-          pickStr(project, ["floor_plans_url", "floorPlansUrl", "floorplan_url", "floorplans_url"]) ||
-          pickFromArray(project, ["floor_plans", "floorPlans", "plans", "floorplans"]);
+          pickStr(project, ["first_floorplan_url", "floor_plans_url", "floorPlansUrl", "floorplan_url"]) ||
+          pickFromArray(project, ["floorplan_files", "floor_plans", "floorPlans", "plans", "floorplans"]);
         if (url) assets.floor_plans = { url, filename: filenameFromUrl(url), source: "presale" };
       }
       if (!assets.pricing.url) {
         const url =
-          pickStr(project, ["pricing_url", "pricingUrl", "price_sheet_url", "priceSheetUrl", "pricing_sheet_url"]) ||
+          pickStr(project, ["first_pricing_sheet_url", "pricing_url", "pricingUrl", "price_sheet_url"]) ||
           pickFromArray(project, ["pricing_sheets", "pricingSheets", "price_sheets", "priceSheets"]);
         if (url) assets.pricing = { url, filename: filenameFromUrl(url), source: "presale" };
       }
