@@ -378,20 +378,38 @@ export function ComposeTab() {
                     value={selectedContact ? `${formatContactName(selectedContact.first_name, selectedContact.last_name)} <${selectedContact.email ?? 'no email'}>` : searchTo}
                     onChange={e => { setSearchTo(e.target.value); setSelectedContact(null); setToOpen(true); }}
                     onFocus={() => setToOpen(true)}
-                    placeholder="Search contact..."
+                    placeholder="Search contact or type an email address…"
                     className="pl-9 min-h-[44px] sm:min-h-0"
                   />
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] sm:w-[400px] p-0" align="start">
-                <div className="max-h-[200px] overflow-y-auto">
+                <div className="max-h-[240px] overflow-y-auto">
+                  {/* Manual email row — appears when the typed value is a
+                      valid email and isn't already an exact contact match.
+                      Lets the user send to any address without a CRM lead. */}
+                  {manualEmail && !filteredContacts.some(c => (c.email ?? '').toLowerCase() === manualEmail) && (
+                    <div
+                      className="px-3 py-2.5 sm:py-2 hover:bg-primary/5 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center gap-2 border-b border-border/40"
+                      onClick={() => setToOpen(false)}
+                    >
+                      <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="font-medium text-foreground">Send to</span>
+                      <span className="text-muted-foreground truncate">{manualEmail}</span>
+                      <span className="ml-auto text-[10px] uppercase tracking-wider text-primary font-semibold shrink-0">Manual</span>
+                    </div>
+                  )}
                   {filteredContacts.map(c => (
                     <div key={c.id} className="px-3 py-2.5 sm:py-2 hover:bg-muted/50 cursor-pointer text-sm min-h-[44px] sm:min-h-0 flex items-center" onClick={() => { setSelectedContact(c); setToOpen(false); }}>
                       <span className="font-medium text-foreground">{formatContactName(c.first_name, c.last_name)}</span>
                       {c.email && <span className="text-muted-foreground ml-2 truncate">{c.email}</span>}
                     </div>
                   ))}
-                  {filteredContacts.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">No contacts found</p>}
+                  {filteredContacts.length === 0 && !manualEmail && (
+                    <p className="px-3 py-4 text-sm text-muted-foreground text-center">
+                      No contacts found — type a full email address to send manually.
+                    </p>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>
