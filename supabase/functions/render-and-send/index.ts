@@ -190,11 +190,21 @@ Deno.serve(async (req) => {
         "apikey": PRESALE_ANON_KEY,
       },
       body: JSON.stringify({
+        // Ask the bridge to render its OWN native template (hero image,
+        // project card, CALL NOW, agent footer) instead of merging into
+        // our local body_html. We send the slug under several keys so
+        // older/newer bridge versions both pick it up. Subject is still
+        // forwarded as a soft default — the bridge may override it.
+        template_key: template_slug,
+        template_slug: template_slug,
+        preset: template_slug,
         template: {
+          key: template_slug,
+          slug: template_slug,
           name: template.name,
           subject: template.subject,
-          body_html: template.body_html,
         },
+        subject: template.subject,
         contact: {
           first_name: contact.first_name,
           last_name: contact.last_name,
@@ -241,6 +251,13 @@ Deno.serve(async (req) => {
   const subject_rendered = rendered.subject_rendered || rendered.subject || template.subject || "";
   const html_rendered = rendered.html_rendered || rendered.html || "";
   const text_rendered = rendered.text_rendered ?? rendered.text ?? "";
+  console.log("[render-and-send] bridge ok", {
+    status: renderRes.status,
+    html_len: html_rendered.length,
+    has_hero: html_rendered.includes("<img"),
+    has_card: html_rendered.toLowerCase().includes("call now") || html_rendered.toLowerCase().includes("view "),
+    keys: Object.keys(rendered),
+  });
   if (!renderRes.ok || !html_rendered) {
     console.error("[render-and-send] bridge render failed", { status: renderRes.status, body: renderText.slice(0, 500) });
     return json({
