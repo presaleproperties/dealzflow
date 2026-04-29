@@ -23,6 +23,8 @@ import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSec
 import SourceManagerSection from '@/components/crm/settings/SourceManagerSection';
 import { LeadSourcesPanel } from '@/components/crm/integrations/LeadSourcesPanel';
 import ProfileSection from '@/components/settings/ProfileSection';
+import { InviteAgentCard } from '@/components/settings/InviteAgentCard';
+import { WorkspaceMembersCard } from '@/components/settings/WorkspaceMembersCard';
 import GmailConnectCard from '@/components/crm/email/GmailConnectCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -251,7 +253,13 @@ export default function CrmSettingsPage() {
         {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
         {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
         {activeTab === 'timeline'      && <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>}
-        {activeTab === 'team'          && <SectionErrorBoundary name="Team"><TeamManagement /></SectionErrorBoundary>}
+        {activeTab === 'team'          && (
+          <SectionErrorBoundary name="Team">
+            <TeamManagement />
+            <WorkspaceMembersCard />
+            <InviteAgentCard />
+          </SectionErrorBoundary>
+        )}
         {activeTab === 'integrations'  && <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>}
         {activeTab === 'projects'      && <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>}
         {activeTab === 'import'        && <SectionErrorBoundary name="Import"><DataImportSection /></SectionErrorBoundary>}
