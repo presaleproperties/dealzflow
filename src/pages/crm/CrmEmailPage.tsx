@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import CrmMarketingHubPage from './CrmMarketingHubPage';
-import CrmEmailCenterPage from './CrmEmailCenterPage';
+// Inbox is served by CrmEmailWorkspacePage at /crm/email — no longer duplicated here.
 import CrmEmailWorkflowsPage from './CrmEmailWorkflowsPage';
 import CrmEmailHealthPage from './CrmEmailHealthPage';
 import CrmEmailCampaignsPage from './CrmEmailCampaignsPage';
