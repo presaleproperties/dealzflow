@@ -4,6 +4,20 @@ import { toast } from 'sonner';
 
 export type WorkspaceStatus = 'pending' | 'approved' | 'suspended';
 
+export type OnboardingStepKey =
+  | 'welcome'
+  | 'profile'
+  | 'province'
+  | 'rezen'
+  | 'google'
+  | 'signature'
+  | 'push'
+  | 'crm_sources'
+  | 'crm_sms'
+  | 'crm_tour';
+
+export type OnboardingSteps = Partial<Record<OnboardingStepKey, boolean>>;
+
 export type Profile = {
   id: string;
   user_id: string;
@@ -18,9 +32,17 @@ export type Profile = {
   requested_at: string | null;
   created_at: string;
   updated_at: string;
+  // Onboarding-related
+  onboarding_steps: OnboardingSteps;
+  onboarding_started_at: string | null;
+  onboarding_completed_at: string | null;
+  license_no: string | null;
+  brokerage: string | null;
+  province: string | null;
 };
 
-const PROFILE_COLUMNS = 'id, user_id, full_name, avatar_url, avatar_position, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at';
+const PROFILE_COLUMNS =
+  'id, user_id, full_name, avatar_url, avatar_position, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at, onboarding_steps, onboarding_started_at, onboarding_completed_at, license_no, brokerage, province';
 
 export function useProfile() {
   return useQuery({
@@ -43,18 +65,32 @@ export function useProfile() {
           .select(PROFILE_COLUMNS)
           .single();
         if (insertErr) throw insertErr;
-        return created as Profile;
+        return created as unknown as Profile;
       }
-      return data as Profile;
+      return data as unknown as Profile;
     },
     staleTime: 60_000,
   });
 }
 
+type UpdatableProfileFields = Partial<
+  Pick<
+    Profile,
+    | 'full_name'
+    | 'avatar_url'
+    | 'avatar_position'
+    | 'phone'
+    | 'title'
+    | 'license_no'
+    | 'brokerage'
+    | 'province'
+  >
+>;
+
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: Partial<Pick<Profile, 'full_name' | 'avatar_url' | 'avatar_position' | 'phone' | 'title'>>) => {
+    mutationFn: async (updates: UpdatableProfileFields) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not signed in');
       const { error } = await supabase
