@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QuietHoursConfirmHost } from "@/components/crm/sms/QuietHoursConfirm";
@@ -10,6 +11,7 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PageLoader } from "@/components/ui/page-loader";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { DealDraftProvider } from "@/contexts/DealDraftContext";
 import { CrmAccessProvider } from "@/contexts/CrmAccessContext";
 import { CrmLayout } from "@/components/crm/CrmLayout";
@@ -21,64 +23,78 @@ import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
 import { usePresaleSignatureAutoImport } from "@/hooks/usePresaleSignatureAutoImport";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
+// ── Eager-loaded pages ────────────────────────────────────────────────────
+// Auth + the most common landing destinations stay eager so first paint is
+// instant. Everything else is code-split below to keep the initial bundle
+// small (was the main cause of long splash screens).
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
-import DealsPage from "./pages/DealsPage";
-import NewDealPage from "./pages/NewDealPage";
-import DealDetailPage from "./pages/DealDetailPage";
-import PayoutsPage from "./pages/PayoutsPage";
-import ExpensesPage from "./pages/ExpensesPage";
-import ForecastPage from "./pages/ForecastPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import UnifiedSettingsPage from "./pages/UnifiedSettingsPage";
-import AdminPage from "./pages/AdminPage";
-import TermsPage from "./pages/TermsPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import NetworkPage from "./pages/NetworkPage";
-import PipelinePage from "./pages/PipelinePage";
-import ClientInventoryPage from "./pages/ClientInventoryPage";
-
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
-import AcceptInvitePage from "./pages/AcceptInvitePage";
-import ChangePasswordPage from "./pages/ChangePasswordPage";
-import ApiDocsPage from "./pages/ApiDocsPage";
-import BridgeStatusPage from "./pages/admin/BridgeStatusPage";
-import AdminProjectsPage from "./pages/admin/AdminProjectsPage";
-import AgentProfilePage from "./pages/agent/AgentProfilePage";
-import AgentComposePage from "./pages/agent/AgentComposePage";
-import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
-import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
-import HelpOnboardingPage from "./pages/HelpOnboardingPage";
 
-// CRM pages
+// ── Lazy-loaded pages ─────────────────────────────────────────────────────
+const DealsPage = lazy(() => import("./pages/DealsPage"));
+const NewDealPage = lazy(() => import("./pages/NewDealPage"));
+const DealDetailPage = lazy(() => import("./pages/DealDetailPage"));
+const PayoutsPage = lazy(() => import("./pages/PayoutsPage"));
+const ExpensesPage = lazy(() => import("./pages/ExpensesPage"));
+const ForecastPage = lazy(() => import("./pages/ForecastPage"));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const UnifiedSettingsPage = lazy(() => import("./pages/UnifiedSettingsPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const NetworkPage = lazy(() => import("./pages/NetworkPage"));
+const PipelinePage = lazy(() => import("./pages/PipelinePage"));
+const ClientInventoryPage = lazy(() => import("./pages/ClientInventoryPage"));
+const AcceptInvitePage = lazy(() => import("./pages/AcceptInvitePage"));
+const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
+const ApiDocsPage = lazy(() => import("./pages/ApiDocsPage"));
+const BridgeStatusPage = lazy(() => import("./pages/admin/BridgeStatusPage"));
+const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
+const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
+const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
+const ResponsiveChecklistPage = lazy(() => import("./pages/ResponsiveChecklistPage"));
+const MobileSpacingChecklistPage = lazy(() => import("./pages/MobileSpacingChecklistPage"));
+const HelpOnboardingPage = lazy(() => import("./pages/HelpOnboardingPage"));
 
+// CRM pages — also lazy. Leads + LeadDetail stay eager because they're
+// the primary CRM landing surfaces.
 import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
-import CrmPipelinePage from "./pages/crm/CrmPipelinePage";
-import CrmEmailPage from "./pages/crm/CrmEmailPage";
-import CrmEmailWorkspacePage from "./pages/crm/CrmEmailWorkspacePage";
-import CrmChatsPage from "./pages/crm/CrmChatsPage";
-import CrmChatThreadPage from "./pages/crm/CrmChatThreadPage";
-
-import CrmMarketingHubPage from "./pages/crm/CrmMarketingHubPage";
-import CrmTemplatesPage from "./pages/crm/CrmTemplatesPage";
-import CrmEmailBuilderPage from "./pages/crm/CrmEmailBuilderPage";
-// CrmContactsPage removed — merged into CrmLeadsPage
-import CrmAutomationsPage from "./pages/crm/CrmAutomationsPage";
-import CrmCalendarPage from "./pages/crm/CrmCalendarPage";
-import CrmReportsPage from "./pages/crm/CrmReportsPage";
-import CrmSettingsPage from "./pages/crm/CrmSettingsPage";
-import CrmIntegrationsPage from "./pages/crm/CrmIntegrationsPage";
-import CrmBehaviorLeadsPage from "./pages/crm/CrmBehaviorLeadsPage";
-import CrmBehaviorDashboardPage from "./pages/crm/CrmBehaviorDashboardPage";
-import CrmSmsCenterPage from "./pages/crm/CrmSmsCenterPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
-import CrmSchedulerPage from "./pages/crm/CrmSchedulerPage";
-import PublicAgentLandingPage from "./pages/public/PublicAgentLandingPage";
-import PublicBookingPage from "./pages/public/PublicBookingPage";
-import PublicBookingPaidPage from "./pages/public/PublicBookingPaidPage";
+
+const CrmPipelinePage = lazy(() => import("./pages/crm/CrmPipelinePage"));
+const CrmEmailPage = lazy(() => import("./pages/crm/CrmEmailPage"));
+const CrmEmailWorkspacePage = lazy(() => import("./pages/crm/CrmEmailWorkspacePage"));
+const CrmChatsPage = lazy(() => import("./pages/crm/CrmChatsPage"));
+const CrmChatThreadPage = lazy(() => import("./pages/crm/CrmChatThreadPage"));
+const CrmMarketingHubPage = lazy(() => import("./pages/crm/CrmMarketingHubPage"));
+const CrmTemplatesPage = lazy(() => import("./pages/crm/CrmTemplatesPage"));
+const CrmEmailBuilderPage = lazy(() => import("./pages/crm/CrmEmailBuilderPage"));
+const CrmAutomationsPage = lazy(() => import("./pages/crm/CrmAutomationsPage"));
+const CrmCalendarPage = lazy(() => import("./pages/crm/CrmCalendarPage"));
+const CrmReportsPage = lazy(() => import("./pages/crm/CrmReportsPage"));
+const CrmSettingsPage = lazy(() => import("./pages/crm/CrmSettingsPage"));
+const CrmIntegrationsPage = lazy(() => import("./pages/crm/CrmIntegrationsPage"));
+const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage"));
+const CrmBehaviorDashboardPage = lazy(() => import("./pages/crm/CrmBehaviorDashboardPage"));
+const CrmSmsCenterPage = lazy(() => import("./pages/crm/CrmSmsCenterPage"));
+const CrmSchedulerPage = lazy(() => import("./pages/crm/CrmSchedulerPage"));
+const PublicAgentLandingPage = lazy(() => import("./pages/public/PublicAgentLandingPage"));
+const PublicBookingPage = lazy(() => import("./pages/public/PublicBookingPage"));
+const PublicBookingPaidPage = lazy(() => import("./pages/public/PublicBookingPaidPage"));
 
 import { idbPersister } from "./lib/queryPersister";
+
+/** Shared Suspense fallback — uses the same PageLoader as auth gates so
+ * route transitions feel cohesive. */
+function RouteFallback() {
+  return (
+    <div className="min-h-dvh flex items-center justify-center bg-background">
+      <PageLoader />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
