@@ -237,7 +237,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         className="max-w-3xl w-screen sm:w-auto h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
       >
         {/* Header — sticky, consistent vertical rhythm */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 h-12 sm:h-14 border-b shrink-0">
+        <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <h2 className="text-[15px] sm:text-base font-bold uppercase tracking-wider truncate">
               Send {channel === 'whatsapp' ? 'WhatsApp' : 'Text'}
@@ -324,13 +324,13 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
 
           {/* Opt-out / no phone warning */}
           {!contact.phone && (
-            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive">No phone number on file for this lead. Add one to send a text.</p>
             </div>
           )}
           {isOptedOut && (
-            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive font-medium">This contact has opted out (replied STOP). Sending is blocked.</p>
             </div>
@@ -566,7 +566,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         </div>
 
         {/* Footer — pinned, safe-area aware on mobile */}
-        <div className="flex items-center justify-end gap-2 px-4 sm:px-6 h-12 sm:h-14 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="flex items-center justify-end gap-2 px-5 sm:px-8 h-14 sm:h-16 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleSend}
