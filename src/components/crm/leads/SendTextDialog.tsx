@@ -18,9 +18,23 @@ import {
   useSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
   SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
+import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+
+/**
+ * Build the canonical share URL for a project. Prefers explicit
+ * `marketing_url` / `website_url` fields, then falls back to the
+ * Presale Properties slug pattern. Returns `null` when nothing is known.
+ */
+function projectShareUrl(p: CrmProject): string | null {
+  if (p.marketing_url?.startsWith('http')) return p.marketing_url;
+  if (p.website_url?.startsWith('http')) return p.website_url;
+  const slug = p.presale_slug || p.slug;
+  if (slug) return `https://presaleproperties.com/projects/${slug}`;
+  return null;
+}
 
 interface Props {
   contact: CrmContact;
@@ -48,6 +62,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const { data: templates = [] } = useSmsTemplates();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
+  const { data: projects = [] } = useCrmProjects();
 
   const [channel, setChannel] = useState<MessagingChannel>(initialChannel);
   const [body, setBody] = useState('');
@@ -58,6 +73,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const [varOpen, setVarOpen] = useState(false);
   const [tplOpen, setTplOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
   const [pendingMediaUrl, setPendingMediaUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -102,6 +119,34 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
 
   const preview = useMemo(() => renderSmsTemplate(body, ctx), [body, ctx]);
   const segs = useMemo(() => smsSegments(preview), [preview]);
+
+  const filteredProjects = useMemo(() => {
+    const q = projectSearch.trim().toLowerCase();
+    const list = q
+      ? projects.filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          (p.city ?? '').toLowerCase().includes(q) ||
+          (p.developer ?? '').toLowerCase().includes(q),
+        )
+      : projects;
+    return list.slice(0, 30);
+  }, [projects, projectSearch]);
+
+  function insertProjectUrl(p: CrmProject) {
+    const url = projectShareUrl(p);
+    if (!url) {
+      toast.error(`No share URL on file for ${p.name}. Add a marketing URL or slug in Settings → Projects.`);
+      return;
+    }
+    // Add a leading space when the body doesn't already end with whitespace,
+    // so the URL doesn't glue onto the previous word.
+    const ta = textareaRef.current;
+    const start = ta?.selectionStart ?? body.length;
+    const needsLeadingSpace = start > 0 && !/\s$/.test(body.slice(0, start));
+    insertAtCursor(`${needsLeadingSpace ? ' ' : ''}${url} `);
+    setProjectOpen(false);
+    setProjectSearch('');
+  }
 
   function insertAtCursor(text: string) {
     const ta = textareaRef.current;
@@ -189,10 +234,10 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
         hideMobileHandle
-        className="max-w-2xl w-screen sm:w-auto h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
+        className="max-w-3xl w-screen sm:w-auto h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
       >
         {/* Header — sticky, consistent vertical rhythm */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 h-12 sm:h-14 border-b shrink-0">
+        <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <h2 className="text-[15px] sm:text-base font-bold uppercase tracking-wider truncate">
               Send {channel === 'whatsapp' ? 'WhatsApp' : 'Text'}
@@ -228,8 +273,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         {/* Scrollable body — keeps the footer pinned on both mobile + desktop */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* From row */}
-          <div className="flex items-center gap-3 px-4 sm:px-6 h-10 sm:h-12 border-b">
-            <span className="text-xs sm:text-sm font-semibold text-foreground/90 shrink-0">From</span>
+          <div className="flex items-center gap-3 px-5 sm:px-8 h-11 sm:h-14 border-b">
             <span className="text-xs sm:text-sm font-mono text-foreground truncate">
               {formatPhoneDisplay(effectiveSender) || <span className="text-muted-foreground italic">Not configured</span>}
             </span>
@@ -271,8 +315,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           </div>
 
           {/* To row */}
-          <div className="flex items-center gap-3 px-4 sm:px-6 h-10 sm:h-12 border-b">
-            <span className="text-xs sm:text-sm font-semibold text-foreground/90 shrink-0">To</span>
+          <div className="flex items-center gap-3 px-5 sm:px-8 h-11 sm:h-14 border-b">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
               <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
               {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
@@ -281,20 +324,20 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
 
           {/* Opt-out / no phone warning */}
           {!contact.phone && (
-            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive">No phone number on file for this lead. Add one to send a text.</p>
             </div>
           )}
           {isOptedOut && (
-            <div className="flex items-start gap-2 px-4 sm:px-6 py-2.5 bg-destructive/10 border-b border-destructive/20">
+            <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive font-medium">This contact has opted out (replied STOP). Sending is blocked.</p>
             </div>
           )}
 
           {/* Composer */}
-          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3">
+          <div className="px-5 sm:px-8 py-4 sm:py-5 space-y-4">
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-y-1.5 gap-x-3">
               <p className="text-xs text-muted-foreground min-w-0 truncate order-2 sm:order-1 basis-full sm:basis-auto">
@@ -332,10 +375,61 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                   </PopoverContent>
                 </Popover>
 
-                {/* Property/Variables/etc placeholders */}
-                <Button variant="ghost" size="icon" className="h-8 w-8" title="Insert property" disabled>
-                  <Building2 className="h-4 w-4" />
-                </Button>
+                {/* Project picker — inserts the project share URL at the cursor */}
+                <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Insert project link">
+                      <Building2 className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-80 p-0">
+                    <div className="px-3 py-2 border-b">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Insert project link</p>
+                    </div>
+                    <div className="px-3 py-2 border-b">
+                      <Input
+                        autoFocus
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        placeholder="Search projects, city, developer…"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {projects.length === 0 ? (
+                        <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                          No projects yet.<br />
+                          Add some in Settings → Projects.
+                        </div>
+                      ) : filteredProjects.length === 0 ? (
+                        <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                          No matches for "{projectSearch}".
+                        </div>
+                      ) : filteredProjects.map(p => {
+                        const url = projectShareUrl(p);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => insertProjectUrl(p)}
+                            disabled={!url}
+                            className="w-full text-left px-3 py-2 hover:bg-muted border-b last:border-b-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <div className="text-sm font-medium truncate">{p.name}</div>
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                              {p.city && <span className="truncate">{p.city}</span>}
+                              {url ? (
+                                <span className="truncate font-mono text-[10px] ml-auto">{url.replace(/^https?:\/\//, '')}</span>
+                              ) : (
+                                <span className="ml-auto text-destructive/80">No URL on file</span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
                 {/* Image / Media */}
                 <Popover open={mediaOpen} onOpenChange={setMediaOpen}>
@@ -433,7 +527,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={`Write your message to ${contact.first_name || 'this lead'}…`}
                 maxLength={1600}
-                className="min-h-[160px] sm:min-h-[180px] resize-none text-sm leading-relaxed pb-10 border focus-visible:ring-1 focus-visible:ring-primary"
+                className="min-h-[200px] sm:min-h-[220px] resize-none text-[15px] leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
               />
               <div className="absolute bottom-2 right-3 flex items-center gap-2 text-[11px] text-muted-foreground pointer-events-none">
                 <span className="font-mono">{preview.length}/1600</span>
@@ -472,7 +566,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         </div>
 
         {/* Footer — pinned, safe-area aware on mobile */}
-        <div className="flex items-center justify-end gap-2 px-4 sm:px-6 h-12 sm:h-14 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
+        <div className="flex items-center justify-end gap-2 px-5 sm:px-8 h-14 sm:h-16 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleSend}
