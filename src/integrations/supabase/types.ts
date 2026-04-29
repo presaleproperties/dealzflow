@@ -5266,6 +5266,19 @@ export type Database = {
           status: Database["public"]["Enums"]["crm_invite_status"]
         }[]
       }
+      crm_team_list_workspace_candidates: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          crm_role: string
+          crm_status: string
+          crm_team_id: string
+          email: string
+          full_name: string
+          user_id: string
+          workspace_status: string
+        }[]
+      }
       crm_team_redeem_invite: { Args: { _token: string }; Returns: Json }
       crm_team_revoke_invite: {
         Args: { _invite_id: string }
@@ -5280,6 +5293,15 @@ export type Database = {
           _team_id: string
         }
         Returns: undefined
+      }
+      crm_team_update_member: {
+        Args: {
+          _display_name?: string
+          _is_active?: boolean
+          _role?: string
+          _user_id: string
+        }
+        Returns: Json
       }
       crm_team_validate_invite: { Args: { _token: string }; Returns: Json }
       decrypt_api_credential: {
