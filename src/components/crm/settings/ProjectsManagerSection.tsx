@@ -31,6 +31,7 @@ export default function ProjectsManagerSection() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<CrmProject | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [syncingTemplates, setSyncingTemplates] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -72,6 +73,28 @@ export default function ProjectsManagerSection() {
     }
   }
 
+  async function handleSyncTemplates() {
+    setSyncingTemplates(true);
+    const t = toast.loading('Pulling latest email templates from Presale Properties…');
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
+      toast.dismiss(t);
+      if (error) throw error;
+      const created = data?.results?.filter((r: any) => r.action === 'created').length ?? 0;
+      const updated = data?.results?.filter((r: any) => r.action === 'updated').length ?? 0;
+      if (created || updated) {
+        toast.success(`Templates synced — ${created} new, ${updated} updated.`);
+      } else {
+        toast.success(`All ${data?.count ?? 0} templates already up to date.`);
+      }
+    } catch (e: any) {
+      toast.dismiss(t);
+      toast.error(e?.message || 'Template sync failed');
+    } finally {
+      setSyncingTemplates(false);
+    }
+  }
+
   return (
     <Card className="rounded-[10px] lg:rounded-xl">
       <CardHeader className="px-3 sm:px-6 flex flex-row items-start justify-between gap-3 space-y-0">
@@ -81,17 +104,31 @@ export default function ProjectsManagerSection() {
             {projects.length} projects · auto-synced daily from Presale Properties. Click any row to enrich it with city, developer, status, price & completion date.
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleSyncFromPresale}
-          disabled={syncing}
-          className="shrink-0 whitespace-nowrap"
-        >
-          {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
-          {syncing ? 'Syncing…' : 'Sync now'}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSyncTemplates}
+            disabled={syncingTemplates}
+            className="whitespace-nowrap"
+            title="Pull the latest branded email templates from Presale Properties"
+          >
+            {syncingTemplates ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <FileText className="h-3.5 w-3.5 mr-1.5" />}
+            {syncingTemplates ? 'Syncing…' : 'Sync templates'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSyncFromPresale}
+            disabled={syncing}
+            className="whitespace-nowrap"
+          >
+            {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+            {syncing ? 'Syncing…' : 'Sync projects'}
+          </Button>
+        </div>
       </CardHeader>
+
       <CardContent className="px-3 sm:px-6 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
