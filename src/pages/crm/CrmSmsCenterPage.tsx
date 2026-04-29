@@ -42,6 +42,7 @@ import { toast } from 'sonner';
 // ════════════════════════════════════════════════════════════════════
 export default function CrmSmsCenterPage() {
   const { data: allTemplates = [] } = useSmsTemplates();
+  const AGENTS = useAgentNames();
   const { data: allCampaigns = [] } = useSmsCampaigns();
   const { data: optOuts = [] } = useSmsOptOuts();
   const { data: numbers = [] } = useSmsNumbers();
