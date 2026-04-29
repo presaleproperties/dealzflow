@@ -19,6 +19,7 @@ import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { renderForRecipient, type RecipientLead } from '@/lib/emailVariables';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { useEmailSignatures } from '@/hooks/useEmailSignatures';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import type { CrmContact } from '@/hooks/useCrmContacts';
