@@ -1046,16 +1046,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 >
                   <FileText className="h-[15px] w-[15px]" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  aria-label="Attach"
-                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform disabled:opacity-50"
-                  title="Attach files"
-                >
-                  {uploading ? <Loader2 className="h-[15px] w-[15px] animate-spin" /> : <Paperclip className="h-[15px] w-[15px]" />}
-                </button>
+                <AttachMenu
+                  variant="icon"
+                  uploading={uploading}
+                  onFiles={(f) => handleAttachFiles(f)}
+                  className="h-9 w-9 rounded-full bg-muted/60 active:scale-95 transition-transform"
+                />
                 <button
                   type="button"
                   onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
