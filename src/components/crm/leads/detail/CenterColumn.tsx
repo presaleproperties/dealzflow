@@ -39,6 +39,12 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const { data: smsLog = [] } = useCrmContactSmsLog(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
+  const openChat = useOpenChat();
+
+  const openSmsThread = (row: CrmSmsLogRow) => {
+    const channel = row.channel === 'whatsapp' ? 'whatsapp' : 'sms';
+    openChat(contact.id, channel, onText);
+  };
 
   // Merge real notes with virtual entries synthesized from the email + SMS
   // logs so every channel shows up in the central activity timeline.
