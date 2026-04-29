@@ -119,6 +119,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/pending-approval" replace />;
   }
 
+  // Gate: invited users on a temp password must set a real one first
+  if (profile?.must_change_password) {
+    return <Navigate to="/auth/change-password" replace />;
+  }
+
   return <>{children}</>;
 }
 
