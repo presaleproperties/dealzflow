@@ -14,6 +14,7 @@ import { SendSmsDialog } from './SendSmsDialog';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
+  const { data: agents = [] } = useTeamAgents();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
