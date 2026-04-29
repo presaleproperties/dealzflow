@@ -106,7 +106,7 @@ export function WorkspaceMembersCard() {
           display_name: vars.c.full_name || vars.c.email,
           role: vars.role,
           mode: 'temp_password',
-          app_origin: window.location.origin,
+          app_origin: 'https://dealzflow.ca',
         },
       });
       if (error) throw error;
