@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           agent: null,
           reason: "no_match",
-          message: `No Presale agent found for ${email}`,
+          message: `No Presale agent found for ${lookupEmail}${overrideSlug ? ` (slug:${overrideSlug})` : ""}`,
         }),
         {
           status: 200,
