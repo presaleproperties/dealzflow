@@ -79,7 +79,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const [projectSearch, setProjectSearch] = useState('');
   const [pendingMediaUrl, setPendingMediaUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Reset on close; sync channel with `initialChannel` on open
