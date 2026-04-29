@@ -273,8 +273,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         {/* Scrollable body — keeps the footer pinned on both mobile + desktop */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* From row */}
-          <div className="flex items-center gap-3 px-4 sm:px-6 h-10 sm:h-12 border-b">
-            <span className="text-xs sm:text-sm font-semibold text-foreground/90 shrink-0">From</span>
+          <div className="flex items-center gap-3 px-5 sm:px-8 h-11 sm:h-14 border-b">
             <span className="text-xs sm:text-sm font-mono text-foreground truncate">
               {formatPhoneDisplay(effectiveSender) || <span className="text-muted-foreground italic">Not configured</span>}
             </span>
