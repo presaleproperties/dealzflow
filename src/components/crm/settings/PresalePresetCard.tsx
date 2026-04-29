@@ -26,7 +26,7 @@ interface PresalePresetCardProps {
  */
 export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePresetCardProps) {
   const { agent, status, error, refresh, lastFetchedAt } = usePresaleAgent();
-  const [selected, setSelected] = useState<PresaleSignaturePresetId>("presale_card");
+  const [selected, setSelected] = useState<PresaleSignaturePresetId>("presale_headshot_left");
 
   // Auto-fetch on mount (will no-op if cached & fresh).
   useEffect(() => {
