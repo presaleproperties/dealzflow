@@ -135,7 +135,8 @@ export function BottomNav() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
-  const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin } = useCrmAccess();
+  const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin, role: crmRole } = useCrmAccess();
+  const isCrmOwner = crmRole === 'owner';
   const [moreOpen, setMoreOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
