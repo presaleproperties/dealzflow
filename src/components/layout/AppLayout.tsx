@@ -4,6 +4,8 @@ import { BottomNav } from './BottomNav';
 import { RightRail } from './RightRail';
 import { MobileAppHeader } from './MobileAppHeader';
 import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
+import { AgentOnboardingWizard } from '@/components/onboarding/AgentOnboardingWizard';
+import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
 
 
 interface AppLayoutProps {
@@ -20,10 +22,12 @@ export function AppLayout({ children }: AppLayoutProps) {
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain lg:pr-[52px]"
         style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
       >
+        <OnboardingBanner />
         {children}
       </main>
       <RightRail />
       <BottomNav />
+      <AgentOnboardingWizard />
       <SafeAreaPreview />
     </div>
   );

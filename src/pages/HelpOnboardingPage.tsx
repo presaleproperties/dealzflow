@@ -1,6 +1,6 @@
-import { Helmet } from 'react-helmet-async';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Building2, MapPin, Plug, Calendar, PenLine, Bell, Users, MessageSquare, Workflow } from 'lucide-react';
+import { ArrowLeft, Sparkles, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
@@ -96,12 +96,12 @@ const FAQ = [
 export default function HelpOnboardingPage() {
   const { reopenWizard, percent, isComplete } = useOnboardingProgress();
 
+  useEffect(() => {
+    document.title = 'Day 1 Onboarding Playbook | dealzflow';
+  }, []);
+
   return (
     <>
-      <Helmet>
-        <title>Day 1 Onboarding Playbook | dealzflow</title>
-        <meta name="description" content="Step-by-step guide to set up your dealzflow workspace and CRM access in under 15 minutes." />
-      </Helmet>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <Button asChild variant="ghost" size="sm" className="mb-4 -ml-2 text-muted-foreground">
