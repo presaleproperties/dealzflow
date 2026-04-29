@@ -140,12 +140,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
   }, [open]);
 
-  /* Draft autosave — per-contact, survives accidental close / app backgrounding */
+  /* Draft autosave — per-contact, survives accidental close / app backgrounding.
+     Cross-tab sync: edits in another tab live-update this composer. */
   const draftScope = `lead:${contact.id}`;
   const { savedAt, clear: clearDraft } = useEmailDraftAutosave(
     draftScope,
     { subject, bodyHtml, cc, bcc },
     open,
+    (remote) => {
+      setSubject(remote.subject || '');
+      setBodyHtml(remote.bodyHtml || '<p></p>');
+      setCc(remote.cc || '');
+      setBcc(remote.bcc || '');
+      if (remote.cc || remote.bcc) setShowCcBcc(true);
+    },
   );
 
   const discardDraft = () => {
