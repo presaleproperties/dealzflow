@@ -88,6 +88,30 @@ Deno.serve(async (req) => {
   const bySlug = new Map<string, BridgeProject>();
   const errors: { q: string; err: string }[] = [];
 
+  // Fetch the public sitemap to build short-slug → SEO-slug map.
+  // The sitemap exposes canonical URLs like
+  //   https://presaleproperties.com/willoughby-presale-condos-eden
+  // We extract the trailing project slug after `presale-(condos|townhomes|homes|duplexes|land)-`
+  // and use it to resolve the bridge slug `eden` → full SEO path.
+  const seoBySlug = new Map<string, string>();
+  try {
+    const sitemapRes = await fetch(
+      "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1/generate-sitemap?type=projects",
+    );
+    if (sitemapRes.ok) {
+      const xml = await sitemapRes.text();
+      const re = /<loc>https:\/\/presaleproperties\.com\/([^<]+)<\/loc>/g;
+      const slugRe = /presale-(?:condos|townhomes|homes|duplexes|land)-(.+)$/;
+      for (const m of xml.matchAll(re)) {
+        const fullSlug = m[1];
+        const sm = fullSlug.match(slugRe);
+        if (sm) seoBySlug.set(sm[1], fullSlug);
+      }
+    }
+  } catch (e) {
+    errors.push({ q: "sitemap", err: (e as Error).message });
+  }
+
   for (const q of SWEEP_QUERIES) {
     try {
       const raw = await presaleBridge.searchProjects(q);
