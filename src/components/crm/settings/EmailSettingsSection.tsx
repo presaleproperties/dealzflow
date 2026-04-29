@@ -232,6 +232,7 @@ export default function EmailSettingsSection() {
                 signature_mode: 'html',
                 signature_builder_data: nextBuilder,
               } as any);
+              syncDefaultSignatureRow(html);
               toast.success(
                 `${layout === 'horizontal' ? 'Headshot Left' : 'Headshot Top'} signature applied`,
               );
