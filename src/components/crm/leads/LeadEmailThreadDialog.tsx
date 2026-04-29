@@ -440,7 +440,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                         </button>
                       </div>
                       <div className="p-4">
-                        <RichTextEditor value={replyHtml} onChange={setReplyHtml} />
+                        <RichTextEditor content={replyHtml} onChange={setReplyHtml} placeholder="Write your reply..." />
                       </div>
 
                       {/* Signature preview */}
