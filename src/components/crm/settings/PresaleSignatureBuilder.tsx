@@ -454,8 +454,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
               <div className="p-5 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Full Name
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Full Name <SourceBadge field="fullName" />
                     </Label>
                     <Input
                       value={fields.fullName}
@@ -464,8 +464,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Title
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Title <SourceBadge field="title" />
                     </Label>
                     <Input
                       value={fields.title}
@@ -474,8 +474,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Phone
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Phone <SourceBadge field="phone" />
                     </Label>
                     <Input
                       value={fields.phone}
@@ -484,8 +484,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Email
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Email <SourceBadge field="email" />
                     </Label>
                     <Input
                       value={fields.email}
@@ -494,8 +494,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Website
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Website <SourceBadge field="website" />
                     </Label>
                     <Input
                       value={fields.website}
@@ -504,8 +504,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Brokerage
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Brokerage <SourceBadge field="brokerage" />
                     </Label>
                     <Input
                       value={fields.brokerage}
@@ -514,8 +514,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Instagram
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Instagram <SourceBadge field="instagram" />
                     </Label>
                     <Input
                       value={fields.instagram}
@@ -525,8 +525,8 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Headshot URL
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                      Headshot URL <SourceBadge field="photoUrl" />
                     </Label>
                     <Input
                       value={fields.photoUrl}
