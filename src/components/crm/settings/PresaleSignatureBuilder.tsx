@@ -427,7 +427,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(420px,520px)_1fr] gap-5 items-start">
         {/* Left: Editor / HTML */}
         <div className="space-y-4">
           {mode === "form" ? (
