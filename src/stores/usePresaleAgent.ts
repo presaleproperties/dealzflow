@@ -121,9 +121,10 @@ export const usePresaleAgentStore = create<PresaleAgentState>()(
     {
       name: "presale-agent",
       storage: createJSONStorage(() => localStorage),
+      // Do NOT persist `agent` itself — only timestamps + which email
+      // it belongs to, so we can detect account switches on next mount.
+      // The agent payload is always re-fetched from the server.
       partialize: (s) => ({
-        agent: s.agent,
-        status: s.status,
         lastFetchedAt: s.lastFetchedAt,
         matchedEmail: s.matchedEmail,
       }),
