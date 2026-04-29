@@ -19,7 +19,7 @@ interface Props {
 export function StepProfile({ eyebrow, onBack, onNext }: Props) {
   const { data: profile } = useProfile();
   const update = useUpdateProfile();
-  const presale = usePresaleAgent();
+  const { agent } = usePresaleAgent();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,11 +28,11 @@ export function StepProfile({ eyebrow, onBack, onNext }: Props) {
 
   useEffect(() => {
     if (!profile) return;
-    setFullName(profile.full_name ?? presale?.displayName ?? '');
-    setPhone(profile.phone ?? '');
-    setLicenseNo(profile.license_no ?? presale?.licenseNo ?? '');
-    setBrokerage(profile.brokerage ?? presale?.brokerage ?? 'Real Broker');
-  }, [profile, presale]);
+    setFullName(profile.full_name ?? agent?.name ?? '');
+    setPhone(profile.phone ?? agent?.phone ?? '');
+    setLicenseNo(profile.license_no ?? agent?.licenseNumber ?? '');
+    setBrokerage(profile.brokerage ?? agent?.brokerage ?? 'Real Broker');
+  }, [profile, agent]);
 
   const handleSave = async () => {
     if (!fullName.trim()) {

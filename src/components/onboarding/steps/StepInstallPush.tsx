@@ -20,8 +20,8 @@ export function StepInstallPush({ eyebrow, onBack, onNext, onSkip, primaryLabel 
 
   const handleEnablePush = async () => {
     try {
-      if (push?.subscribe) await push.subscribe();
-      else if (push?.requestPermission) await push.requestPermission();
+      if (typeof push?.subscribe === 'function') await push.subscribe();
+      else if (typeof push?.requestPermission === 'function') await push.requestPermission();
       toast.success('Push notifications enabled');
     } catch (e: any) {
       toast.error(e?.message ?? 'Could not enable notifications');
