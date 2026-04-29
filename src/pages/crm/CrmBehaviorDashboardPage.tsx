@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useBehaviorOverview } from "@/hooks/useBehaviorOverview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, Eye, Users, Repeat, ExternalLink, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCrmAccess } from "@/contexts/CrmAccessContext";
 
 const WINDOW_OPTIONS = [
   { label: "24h", value: 1 },
@@ -13,6 +15,7 @@ const WINDOW_OPTIONS = [
 ];
 
 export default function CrmBehaviorDashboardPage() {
+  const { role, isLoading: accessLoading } = useCrmAccess();
   const [days, setDays] = useState(30);
   const { data, isLoading } = useBehaviorOverview(days);
   const queryClient = useQueryClient();
@@ -40,6 +43,11 @@ export default function CrmBehaviorDashboardPage() {
   const funnel = data?.signup_funnel ?? { started: 0, in_progress: 0, completed: 0, abandoned: 0 };
   const funnelTotal = funnel.started + funnel.in_progress + funnel.completed + funnel.abandoned;
   const conversionRate = funnelTotal > 0 ? Math.round((funnel.completed / funnelTotal) * 100) : 0;
+
+  // Owner-only page — team members are bounced to the leads list
+  if (!accessLoading && role !== 'owner') {
+    return <Navigate to="/crm/leads" replace />;
+  }
 
   return (
     <div className="space-y-6 max-w-7xl">

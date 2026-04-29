@@ -9,6 +9,7 @@ import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWid
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { cn } from '@/lib/utils';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
@@ -17,18 +18,28 @@ interface Props {
 
 type TabKey = 'emails' | 'behavior' | 'source';
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'emails',   label: 'Emails' },
-  { key: 'behavior', label: 'Behavior' },
-  { key: 'source',   label: 'Source' },
-];
-
 /**
  * Unified Engagement card — collapses 5 previously separate widgets
  * (Email Activity, Email Attribution, Live Engagement, Presale Activity,
  * Web Behavior, Signup Source) into one tabbed surface.
+ *
+ * The "Behavior" tab is owner-only — team members see Emails + Source.
  */
 export function EngagementTabs({ contact }: Props) {
+  const { role } = useCrmAccess();
+  const isOwner = role === 'owner';
+
+  const TABS: { key: TabKey; label: string }[] = isOwner
+    ? [
+        { key: 'emails',   label: 'Emails' },
+        { key: 'behavior', label: 'Behavior' },
+        { key: 'source',   label: 'Source' },
+      ]
+    : [
+        { key: 'emails', label: 'Emails' },
+        { key: 'source', label: 'Source' },
+      ];
+
   const [tab, setTab] = useState<TabKey>('emails');
   const { data: emails = [], isLoading: emailsLoading } = useCrmEmailLog(contact.id);
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
@@ -128,7 +139,7 @@ export function EngagementTabs({ contact }: Props) {
           </>
         )}
 
-        {tab === 'behavior' && (
+        {tab === 'behavior' && isOwner && (
           <div className="space-y-3">
             {contact.id && <LiveActivityTimeline contactId={contact.id} limit={10} />}
             <div className="pt-2 border-t border-border/40">

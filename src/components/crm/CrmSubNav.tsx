@@ -12,6 +12,7 @@ interface Tab {
   path: string;
   icon: LucideIcon;
   ownerAdminOnly?: boolean;
+  ownerOnly?: boolean;
   /** When true, this tab is hidden in Simple mode (visible in Pro). */
   pro?: boolean;
 }
@@ -28,7 +29,7 @@ const TABS: Tab[] = [
   // Pro-mode extras
   { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate, pro: true },
   { label: 'Scheduler',    path: '/crm/scheduler',    icon: CalendarClock,  pro: true },
-  { label: 'Behavior',     path: '/crm/behavior',     icon: Activity,       pro: true },
+  { label: 'Behavior',     path: '/crm/behavior',     icon: Activity,       pro: true, ownerOnly: true },
   { label: 'Reports',      path: '/crm/reports',      icon: BarChart3,      pro: true },
   { label: 'Automations',  path: '/crm/automations',  icon: Zap,            pro: true, ownerAdminOnly: true },
   { label: 'Integrations', path: '/crm/integrations', icon: Plug,           pro: true, ownerAdminOnly: true },
@@ -46,11 +47,12 @@ function isActive(pathname: string, path: string): boolean {
 
 export function CrmSubNav() {
   const location = useLocation();
-  const { isOwnerOrAdmin } = useCrmAccess();
+  const { isOwnerOrAdmin, role } = useCrmAccess();
   const [navMode, setNavMode] = useCrmNavMode();
 
   const visible = TABS.filter(t => {
     if (t.ownerAdminOnly && !isOwnerOrAdmin) return false;
+    if (t.ownerOnly && role !== 'owner') return false;
     if (t.pro && navMode !== 'pro') return false;
     return true;
   });

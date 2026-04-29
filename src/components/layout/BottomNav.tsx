@@ -31,6 +31,7 @@ interface TabItem {
   path: string;
   icon: LucideIcon;
   ownerAdminOnly?: boolean;
+  ownerOnly?: boolean;
 }
 interface MoreItem extends TabItem { description?: string; }
 interface MoreGroup { label: string; items: MoreItem[] }
@@ -100,7 +101,7 @@ const CRM_MORE: MoreGroup[] = [
     label: 'Insights',
     items: [
       { label: 'Reports',  path: '/crm/reports',  icon: BarChart3 },
-      { label: 'Behavior', path: '/crm/behavior', icon: Sparkles },
+      { label: 'Behavior', path: '/crm/behavior', icon: Sparkles, ownerOnly: true },
     ],
   },
   {
@@ -134,7 +135,8 @@ export function BottomNav() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
-  const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin } = useCrmAccess();
+  const { isMember: isCrmMember, isOwnerOrAdmin: isCrmAdmin, role: crmRole } = useCrmAccess();
+  const isCrmOwner = crmRole === 'owner';
   const [moreOpen, setMoreOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
@@ -167,9 +169,11 @@ export function BottomNav() {
   // Filter admin-only items
   const visibleMore = useMemo(
     () => moreGroups
-      .map(g => ({ ...g, items: g.items.filter(i => !i.ownerAdminOnly || isCrmAdmin) }))
+      .map(g => ({ ...g, items: g.items.filter(i =>
+        (!i.ownerAdminOnly || isCrmAdmin) && (!i.ownerOnly || isCrmOwner)
+      ) }))
       .filter(g => g.items.length > 0),
-    [moreGroups, isCrmAdmin]
+    [moreGroups, isCrmAdmin, isCrmOwner]
   );
 
   const moreActive = !tabs.some(t => isActive(location.pathname, t.path)) &&
