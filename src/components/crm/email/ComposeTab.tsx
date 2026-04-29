@@ -202,16 +202,11 @@ export function ComposeTab() {
 
   const handleSelectTemplate = (tpl: CrmEmailTemplate) => {
     setActiveTemplate(tpl);
-    const agentPhone = (emailSettings as any)?.signature_builder_data?.phone || '';
-    const agentEmail = emailSettings?.reply_to || '';
-    const merged = replaceMergeTags(
-      tpl.body_html || '',
-      selectedContact,
-      emailSettings?.sender_name || undefined,
-      agentEmail,
-      agentPhone,
-    );
-    setHtmlBody(merged);
+    // Store the RAW template body so per-recipient merging happens at send time
+    // via buildHtml(c). Pre-merging with `selectedContact` (which is null in
+    // campaign/bulk mode) would strip {{first_name}} to "" and recipients
+    // would see "Hi ," instead of their name.
+    setHtmlBody(tpl.body_html || '');
     if (tpl.subject && !subject) setSubject(tpl.subject);
     setShowHtmlEditor(false);
   };
