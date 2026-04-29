@@ -139,7 +139,17 @@ Deno.serve(async (req) => {
       return json({ scheduled: true }, 200);
     }
 
-    // ── Immediate send via Presale bridge ──
+    // ── Immediate send: prefer agent's connected Gmail, fallback to bridge ──
+    // If the logged-in user has a connected Gmail mailbox, send through THEIR
+    // mailbox so the From: header matches the agent. This keeps the per-agent
+    // identity correct (Zara's emails come from admin@…, not info@…).
+    const { data: gmailToken } = await supabase
+      .from("gmail_tokens")
+      .select("gmail_email")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const useAgentGmail = !!gmailToken?.gmail_email;
+
     // Fetch sender's brand logo settings so 1:1 emails carry the same banner
     // as bulk sends (visible in body regardless of BIMI/Workspace avatars).
     const { data: settings } = await supabase
