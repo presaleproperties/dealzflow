@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddCrmTask } from '@/hooks/useCrmLeadDetail';
-import { AGENTS } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 
 const TASK_TYPES = ['follow_up', 'showing', 'call', 'email', 'other'] as const;
 const PRIORITIES = ['high', 'medium', 'low'] as const;
