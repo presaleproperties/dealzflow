@@ -12,9 +12,11 @@ import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder'
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
 import LiveSignaturePreview from './LiveSignaturePreview';
+import PresalePresetCard from './PresalePresetCard';
 import { isRichHtml } from '@/lib/htmlDetect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { PresaleSignaturePresetId } from '@/lib/presaleSignatures';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
 
