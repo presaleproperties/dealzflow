@@ -655,7 +655,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     <>
       <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
         <ResponsiveDialogContent
-          ref={composerRef as any}
+          ref={composerRef}
           hideMobileHandle
           className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
