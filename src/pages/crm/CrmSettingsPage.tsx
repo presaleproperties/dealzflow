@@ -645,6 +645,33 @@ function TeamManagement() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const resendInvite = useMutation({
+    mutationFn: async (m: { email: string; display_name: string | null; role: string }) => {
+      const { data, error } = await supabase.functions.invoke('crm-invite-agent', {
+        body: {
+          email: m.email,
+          display_name: m.display_name || m.email,
+          role: m.role === 'owner' ? 'admin' : m.role,
+          mode: 'temp_password',
+          app_origin: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Could not resend invite');
+      return data as { email_sent: boolean; temp_password?: string };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
+      toast.success(
+        data.email_sent
+          ? 'Invite re-sent — new temporary password emailed'
+          : `New temp password: ${data.temp_password ?? '(check Cloud → Emails)'}`,
+        { duration: 8000 },
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const roleBadgeColor = (role: string) => {
     if (role === 'owner') return 'bg-primary/15 text-primary border-primary/30';
     if (role === 'admin') return 'bg-blue-500/15 text-blue-600 border-blue-500/30';
@@ -797,6 +824,22 @@ function TeamManagement() {
                       {!m.user_id && <span className="text-amber-600 dark:text-amber-500">· Awaiting signup</span>}
                     </div>
                     <div className="flex items-center gap-0.5">
+                      {!isOwner && (
+                        <Button
+                          variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
+                          disabled={resendInvite.isPending && resendInvite.variables?.email === m.email}
+                          onClick={() => resendInvite.mutate({
+                            email: m.email,
+                            display_name: m.display_name,
+                            role: m.role,
+                          })}
+                          title="Generate a new temporary password and email it"
+                        >
+                          {resendInvite.isPending && resendInvite.variables?.email === m.email
+                            ? 'Sending…'
+                            : 'Resend invite'}
+                        </Button>
+                      )}
                       {!isOwner && (
                         <Button
                           variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
