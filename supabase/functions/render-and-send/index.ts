@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     channel?: "email" | "sms";
     enroll_followup_slug?: string | null;
     dry_run?: boolean;
+    attachments?: { brochure?: boolean; floor_plans?: boolean; pricing?: boolean };
   } = {};
   try { body = await req.json(); } catch { /* */ }
 
@@ -76,6 +77,7 @@ Deno.serve(async (req) => {
     channel = "email",
     enroll_followup_slug = null,
     dry_run = false,
+    attachments = {},
   } = body;
 
   if (!contact_id || !template_slug || !project_slug) {
