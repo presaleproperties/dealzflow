@@ -534,25 +534,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
    * single source of truth for these actions to avoid duplication. */
   const composerActions = (
     <div className="hidden md:flex items-center gap-1">
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => handleAttachFiles(e.target.files)}
+      <AttachMenu
+        onFiles={(f) => handleAttachFiles(f)}
+        uploading={uploading}
+        className="h-8 px-2 text-xs"
       />
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        className="h-8 gap-1.5 px-2 text-xs"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
-        title="Attach files or images"
-      >
-        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-        Attach
-      </Button>
       <Button
         type="button"
         size="sm"
