@@ -632,7 +632,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
             Possible duplicate lead
           </AlertDialogTitle>
           <AlertDialogDescription>
-            We found {dupes.length} existing lead{dupes.length === 1 ? '' : 's'} with a matching email or phone.
+            You already have {dupes.length} lead{dupes.length === 1 ? '' : 's'} in your list with a matching email or phone.
             Review before creating a new record.
           </AlertDialogDescription>
         </AlertDialogHeader>
