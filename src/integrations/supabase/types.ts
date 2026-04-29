@@ -2262,11 +2262,15 @@ export type Database = {
         Row: {
           aliases: string[] | null
           bedrooms_offered: number[] | null
+          brochure_filename: string | null
+          brochure_url: string | null
           city: string | null
           color: string | null
           completion_date: string | null
           created_at: string
           developer: string | null
+          floor_plans_filename: string | null
+          floor_plans_url: string | null
           id: string
           is_active: boolean
           last_viewed_at: string | null
@@ -2279,6 +2283,8 @@ export type Database = {
           presale_slug: string | null
           price_from: number | null
           price_to: number | null
+          pricing_filename: string | null
+          pricing_url: string | null
           property_type: string | null
           province: string | null
           slug: string | null
@@ -2291,11 +2297,15 @@ export type Database = {
         Insert: {
           aliases?: string[] | null
           bedrooms_offered?: number[] | null
+          brochure_filename?: string | null
+          brochure_url?: string | null
           city?: string | null
           color?: string | null
           completion_date?: string | null
           created_at?: string
           developer?: string | null
+          floor_plans_filename?: string | null
+          floor_plans_url?: string | null
           id?: string
           is_active?: boolean
           last_viewed_at?: string | null
@@ -2308,6 +2318,8 @@ export type Database = {
           presale_slug?: string | null
           price_from?: number | null
           price_to?: number | null
+          pricing_filename?: string | null
+          pricing_url?: string | null
           property_type?: string | null
           province?: string | null
           slug?: string | null
@@ -2320,11 +2332,15 @@ export type Database = {
         Update: {
           aliases?: string[] | null
           bedrooms_offered?: number[] | null
+          brochure_filename?: string | null
+          brochure_url?: string | null
           city?: string | null
           color?: string | null
           completion_date?: string | null
           created_at?: string
           developer?: string | null
+          floor_plans_filename?: string | null
+          floor_plans_url?: string | null
           id?: string
           is_active?: boolean
           last_viewed_at?: string | null
@@ -2337,6 +2353,8 @@ export type Database = {
           presale_slug?: string | null
           price_from?: number | null
           price_to?: number | null
+          pricing_filename?: string | null
+          pricing_url?: string | null
           property_type?: string | null
           province?: string | null
           slug?: string | null
