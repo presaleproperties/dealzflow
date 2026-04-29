@@ -94,6 +94,13 @@ export function ComposeTab() {
   const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [toOpen, setToOpen] = useState(false);
 
+  // Manual recipient — when user types a raw email address (no matching
+  // contact in the CRM). RFC-lite check: local@domain.tld.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const manualEmail = !selectedContact && EMAIL_RE.test(searchTo.trim())
+    ? searchTo.trim().toLowerCase()
+    : null;
+
   // CC/BCC
   const [showCcBcc, setShowCcBcc] = useState(false);
   const [cc, setCc] = useState('');
