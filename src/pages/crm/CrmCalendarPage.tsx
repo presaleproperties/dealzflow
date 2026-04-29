@@ -403,9 +403,9 @@ export default function CrmCalendarPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Agents</SelectItem>
-                        {AGENTS.map((a) => (
-                          <SelectItem key={a} value={a}>
-                            {a}
+                        {agents.map((a) => (
+                          <SelectItem key={a.id} value={a.name}>
+                            <span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
