@@ -88,6 +88,30 @@ Deno.serve(async (req) => {
   const bySlug = new Map<string, BridgeProject>();
   const errors: { q: string; err: string }[] = [];
 
+  // Fetch the public sitemap to build short-slug → SEO-slug map.
+  // The sitemap exposes canonical URLs like
+  //   https://presaleproperties.com/willoughby-presale-condos-eden
+  // We extract the trailing project slug after `presale-(condos|townhomes|homes|duplexes|land)-`
+  // and use it to resolve the bridge slug `eden` → full SEO path.
+  const seoBySlug = new Map<string, string>();
+  try {
+    const sitemapRes = await fetch(
+      "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1/generate-sitemap?type=projects",
+    );
+    if (sitemapRes.ok) {
+      const xml = await sitemapRes.text();
+      const re = /<loc>https:\/\/presaleproperties\.com\/([^<]+)<\/loc>/g;
+      const slugRe = /presale-(?:condos|townhomes|homes|duplexes|land)-(.+)$/;
+      for (const m of xml.matchAll(re)) {
+        const fullSlug = m[1];
+        const sm = fullSlug.match(slugRe);
+        if (sm) seoBySlug.set(sm[1], fullSlug);
+      }
+    }
+  } catch (e) {
+    errors.push({ q: "sitemap", err: (e as Error).message });
+  }
+
   for (const q of SWEEP_QUERIES) {
     try {
       const raw = await presaleBridge.searchProjects(q);
@@ -124,8 +148,17 @@ Deno.serve(async (req) => {
     const completionDate = p.completion_year
       ? `${p.completion_year}-01-01`
       : null;
-    // Public-facing share URL (no /projects/ prefix) — used in emails, SMS, templates.
-    const marketingUrl = `https://presaleproperties.com/${slug}`;
+    // Public-facing share URL — prefer SEO slug from sitemap when available,
+    // otherwise fall back to the short bridge slug.
+    const seoSlug = seoBySlug.get(slug);
+    const marketingUrl = `https://presaleproperties.com/${seoSlug ?? slug}`;
+
+    // Treat any non-SEO URL (legacy `/projects/`, or short-slug-only) as
+    // overwritable so we always upgrade to the SEO slug when available.
+    const existingIsLegacy = existing?.marketing_url
+      ? existing.marketing_url.includes("/projects/")
+        || (!!seoSlug && !existing.marketing_url.includes(seoSlug))
+      : true;
 
     // Only fill blank fields — don't overwrite agent edits.
     const payload: Record<string, unknown> = {
@@ -140,10 +173,7 @@ Deno.serve(async (req) => {
       price_from: existing?.price_from ?? p.starting_price ?? null,
       status: existing?.status ?? p.status ?? null,
       completion_date: existing?.completion_date ?? completionDate,
-      marketing_url:
-        existing?.marketing_url && !existing.marketing_url.includes("/projects/")
-          ? existing.marketing_url
-          : marketingUrl,
+      marketing_url: existingIsLegacy ? marketingUrl : existing?.marketing_url,
     };
 
     if (existing?.id) {
