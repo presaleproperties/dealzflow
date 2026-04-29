@@ -250,67 +250,11 @@ Deno.serve(async (req) => {
     }, 502);
   }
 
-  // (c.5) Post-process: keep Presale's built-in inline agent signature
-  // (the project-card already includes the agent block synced from Presale),
-  // and only inject an "Attachments" section when toggles are on. Appending
-  // the CRM signature on top of Presale's caused two signatures in the email.
-  let html_final = html_rendered;
-
-  // — Resolve and inject attachment links
-  const wantedAttachments = (["brochure", "floor_plans", "pricing"] as const).filter((k) => attachments[k]);
-  const resolvedAttachments: { kind: string; label: string; url: string; filename: string | null }[] = [];
-  if (wantedAttachments.length > 0) {
-    try {
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/presale-project-assets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
-          apikey: ANON_KEY,
-        },
-        body: JSON.stringify({ project_slug }),
-      });
-      const j = await r.json();
-      const assets = j?.assets ?? {};
-      const labels: Record<string, string> = {
-        brochure: "Brochure",
-        floor_plans: "Floor Plans",
-        pricing: "Pricing Sheet",
-      };
-      for (const k of wantedAttachments) {
-        const a = assets[k];
-        if (a?.url) resolvedAttachments.push({ kind: k, label: labels[k], url: a.url, filename: a.filename });
-      }
-    } catch (e) {
-      console.warn("[render-and-send] asset resolve failed", (e as Error).message);
-    }
-  }
-
-  if (resolvedAttachments.length > 0) {
-    const items = resolvedAttachments.map((a) =>
-      `<tr><td style="padding:8px 0;">` +
-        `<a href="${a.url}" style="display:inline-block;padding:10px 14px;border:1px solid #D7A542;border-radius:6px;color:#111;background:#fff;text-decoration:none;font-weight:600;font-size:13px;">` +
-        `📎 ${a.label}${a.filename ? ` <span style="color:#666;font-weight:400;">— ${a.filename}</span>` : ""}` +
-        `</a>` +
-      `</td></tr>`
-    ).join("");
-    const attachBlock =
-      `<div style="margin:24px 0 8px;font-family:Arial,Helvetica,sans-serif;">` +
-        `<div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Attached</div>` +
-        `<table cellpadding="0" cellspacing="0" border="0">${items}</table>` +
-      `</div>`;
-    // Insert before the signature block we appended (or before </body> as a fallback)
-    if (/<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;/i.test(html_final)) {
-      html_final = html_final.replace(
-        /(<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;)/i,
-        `${attachBlock}$1`,
-      );
-    } else if (/<\/body\s*>/i.test(html_final)) {
-      html_final = html_final.replace(/<\/body\s*>/i, `${attachBlock}</body>`);
-    } else {
-      html_final = `${html_final}${attachBlock}`;
-    }
-  }
+  // The bridge already renders the full Presale-styled email — including
+  // the "Your Requested Documents" card with VIEW BROCHURE / VIEW FLOOR
+  // PLANS / VIEW PRICING buttons (we passed the resolved doc URLs above)
+  // and the inline agent block. Nothing to post-process.
+  const html_final = html_rendered;
 
   // (d) dry run — preview only
   if (dry_run) {
@@ -319,7 +263,11 @@ Deno.serve(async (req) => {
       subject: subject_rendered,
       html: html_final,
       text: text_rendered,
-      attachments: resolvedAttachments,
+      attachments: Object.entries(resolvedAttachmentsForBridge).map(([kind, a]) => ({
+        kind,
+        url: a.url,
+        filename: a.filename,
+      })),
     });
   }
 
