@@ -18,9 +18,23 @@ import {
   useSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
   SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
+import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+
+/**
+ * Build the canonical share URL for a project. Prefers explicit
+ * `marketing_url` / `website_url` fields, then falls back to the
+ * Presale Properties slug pattern. Returns `null` when nothing is known.
+ */
+function projectShareUrl(p: CrmProject): string | null {
+  if (p.marketing_url?.startsWith('http')) return p.marketing_url;
+  if (p.website_url?.startsWith('http')) return p.website_url;
+  const slug = p.presale_slug || p.slug;
+  if (slug) return `https://presaleproperties.com/projects/${slug}`;
+  return null;
+}
 
 interface Props {
   contact: CrmContact;
