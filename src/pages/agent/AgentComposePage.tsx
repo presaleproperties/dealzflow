@@ -462,7 +462,7 @@ export default function AgentComposePage() {
 
               {project && (
                 <a
-                  href={`https://presaleproperties.com/projects/${project.slug}`}
+                  href={`https://presaleproperties.com/${project.slug}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
