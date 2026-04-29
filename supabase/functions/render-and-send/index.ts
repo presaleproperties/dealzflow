@@ -216,62 +216,11 @@ Deno.serve(async (req) => {
     }, 502);
   }
 
-  // (c.5) Post-process: swap Presale auto-signature with the agent's CRM
-  // signature, and inject an "Attachments" section if any toggles are on.
+  // (c.5) Post-process: keep Presale's built-in inline agent signature
+  // (the project-card already includes the agent block synced from Presale),
+  // and only inject an "Attachments" section when toggles are on. Appending
+  // the CRM signature on top of Presale's caused two signatures in the email.
   let html_final = html_rendered;
-
-  // — Resolve the agent's CRM signature (default signature → fallback to legacy)
-  let agentSignatureHtml = "";
-  try {
-    const { data: sigRow } = await supabase
-      .from("crm_email_signatures")
-      .select("html, is_default")
-      .eq("user_id", user.id)
-      .order("is_default", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (sigRow?.html && sigRow.html.trim()) {
-      agentSignatureHtml = sigRow.html;
-    } else {
-      const { data: settings } = await supabase
-        .from("crm_email_settings")
-        .select("signature_html")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (settings?.signature_html?.trim()) agentSignatureHtml = settings.signature_html;
-    }
-  } catch (e) {
-    console.warn("[render-and-send] signature lookup failed", (e as Error).message);
-  }
-
-  // — Strip Presale's trailing signature & branding strip, replace with ours.
-  // The bridge wraps the signature in a section we can target reliably; we also
-  // fall back to a generic "agent block" trim if markers change.
-  if (agentSignatureHtml) {
-    // Drop everything from the first known signature marker onward, then close.
-    const markers = [
-      /<table[^>]*data-presale-signature[\s\S]*$/i,
-      /<div[^>]*data-presale-signature[\s\S]*$/i,
-      /<!--\s*presale:signature\s*-->[\s\S]*$/i,
-      /<table[^>]*class="[^"]*signature[^"]*"[\s\S]*$/i,
-    ];
-    let stripped = html_final;
-    for (const rx of markers) {
-      if (rx.test(stripped)) { stripped = stripped.replace(rx, ""); break; }
-    }
-    // Re-close any open tags conservatively, then append CRM signature + close.
-    const closing = /<\/body>|<\/html>/i.test(stripped) ? "" : "";
-    const signatureBlock =
-      `<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#111;">` +
-      agentSignatureHtml +
-      `</div>`;
-    if (/<\/body\s*>/i.test(stripped)) {
-      html_final = stripped.replace(/<\/body\s*>/i, `${signatureBlock}</body>`);
-    } else {
-      html_final = `${stripped}${signatureBlock}${closing}`;
-    }
-  }
 
   // — Resolve and inject attachment links
   const wantedAttachments = (["brochure", "floor_plans", "pricing"] as const).filter((k) => attachments[k]);
