@@ -122,12 +122,12 @@ export function buildHorizontalHtml(d: SignatureBuilderFields): string {
       <p style="margin: 0 0 1px; font-size: 19px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px;">${d.fullName}</p>
       <p style="margin: 0 0 10px; font-size: 11px; color: #c8a45e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">${d.title} · ${d.brokerage}</p>
       <p style="margin: 0; font-size: 13px; color: #333;">
-        <a href="tel:${d.phone}" style="color: #333; text-decoration: none;">${d.phone}</a>
+        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color: #333; text-decoration: none;">${d.phone}</a>
         <span style="color: #ddd; padding: 0 6px;">|</span>
-        <a href="mailto:${d.email}" style="color: #333; text-decoration: none;">${d.email}</a>
+        <a href="mailto:${escapeAttr(d.email)}" style="color: #333; text-decoration: none;">${d.email}</a>
       </p>
       <p style="margin: 6px 0 0; font-size: 13px;">
-        <a href="${d.website}" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>${
+        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>${
           igBtn
             ? `
         <span style="padding: 0 8px;"></span>${igBtn}`
