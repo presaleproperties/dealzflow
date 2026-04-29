@@ -992,6 +992,7 @@ export default function PresaleSignatureBuilder({
               <div className="rounded-lg border border-border/60 bg-background p-2">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mobile preview</p>
                 <ScaledIframe
+                  iframeRef={iframeHMobileRef}
                   title="Horizontal Signature Mobile"
                   naturalWidth={620}
                   naturalHeight={200}
@@ -1065,6 +1066,7 @@ export default function PresaleSignatureBuilder({
               <div className="rounded-lg border border-border/60 bg-background p-2">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mobile preview</p>
                 <ScaledIframe
+                  iframeRef={iframeVMobileRef}
                   title="Stacked Signature Mobile"
                   naturalWidth={440}
                   naturalHeight={420}
