@@ -351,6 +351,7 @@ function SendTab({
   onPreviewRecipients: () => void;
 }) {
   const [view, setView] = useState<'compose' | 'history' | 'templates'>('compose');
+  const agentNames = useAgentNames();
   return (
     <>
       <SubTabBar
