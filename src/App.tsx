@@ -251,7 +251,7 @@ const App = () => (
                     <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatThreadPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/email/legacy" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/email/legacy" element={<Navigate to="/crm/email" replace />} />
                     <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                     <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
