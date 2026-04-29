@@ -9,6 +9,7 @@ import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSms
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -91,9 +92,18 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   }, [rawNotes, emailLog, smsLog, contact.id]);
 
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
-    if (row) setPreviewEmail(row);
+    if (!row) return;
+    // Open the full-thread dialog scoped to this email so the agent sees
+    // the complete back-and-forth with quoted history + inline reply.
+    setThreadInitialId(`log-${row.id}`);
+    setThreadOpen(true);
+    // Keep the legacy preview state available but unused; future single-row
+    // previews can re-enable this without code changes.
+    setPreviewEmail(null);
   };
 
   const [draft, setDraft] = useState('');
@@ -346,6 +356,13 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         open={!!previewEmail}
         onOpenChange={(o) => !o && setPreviewEmail(null)}
         contactEmail={contact.email}
+      />
+
+      <LeadEmailThreadDialog
+        contact={contact}
+        open={threadOpen}
+        onOpenChange={(o) => { setThreadOpen(o); if (!o) setThreadInitialId(null); }}
+        initialEmailId={threadInitialId}
       />
     </Tabs>
   );

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -12,6 +12,8 @@ interface Props {
   onTask: () => void;
   onShowing: () => void;
   onSendProject?: () => void;
+  /** Open the full-thread email dialog (Quick Reply). */
+  onOpenEmailThread?: () => void;
   /** Show "Task" CTA only when the left details panel is collapsed. */
   showTaskCta?: boolean;
   /** Show "Book Showing" CTA only when the right insights panel is collapsed. */
@@ -19,7 +21,7 @@ interface Props {
 }
 
 /** Top bar — Lead identity, navigation, and primary CTAs. */
-export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, showTaskCta, showShowingCta }: Props) {
+export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, onOpenEmailThread, showTaskCta, showShowingCta }: Props) {
   const typeLabel = TYPE_LABELS[contact.contact_type] ?? 'LEAD';
   return (
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
@@ -39,6 +41,11 @@ export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, sh
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        {onOpenEmailThread && contact.email && (
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onOpenEmailThread}>
+            <Mail className="w-3.5 h-3.5" /> Quick Reply
+          </Button>
+        )}
         {showTaskCta && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={onTask}>
             <ListTodo className="w-3.5 h-3.5" /> Task

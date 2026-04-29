@@ -11,6 +11,7 @@ import { useLeadNotes } from '@/hooks/useCrmNotes';
 import { BookShowingDialog } from '@/components/crm/leads/BookShowingDialog';
 import { CreateTaskDialog } from '@/components/crm/leads/CreateTaskDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { SendProjectDialog } from '@/components/crm/leads/SendProjectDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
@@ -46,6 +47,7 @@ export default function LeadDetailPage() {
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
   const [showSendProject, setShowSendProject] = useState(false);
+  const [showEmailThread, setShowEmailThread] = useState(false);
 
   const [leftCollapsed, setLeftCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -306,6 +308,7 @@ export default function LeadDetailPage() {
         onTask={() => setShowTask(true)}
         onShowing={() => setShowShowing(true)}
         onSendProject={() => setShowSendProject(true)}
+        onOpenEmailThread={() => setShowEmailThread(true)}
         showTaskCta={leftCollapsed}
         showShowingCta={rightCollapsed}
       />
@@ -385,6 +388,7 @@ export default function LeadDetailPage() {
       <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
       <SendProjectDialog contact={c} open={showSendProject} onOpenChange={setShowSendProject} />
+      <LeadEmailThreadDialog contact={c} open={showEmailThread} onOpenChange={setShowEmailThread} />
     </div>
   );
 }
