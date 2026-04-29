@@ -49,6 +49,8 @@ import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
+import { AttachMenu } from '@/components/crm/shared/AttachMenu';
+import { useDragAndPasteFiles } from '@/hooks/useDragAndPasteFiles';
 import { EMAIL_VARIABLES, EMAIL_VARIABLE_GROUPS, renderForRecipient } from '@/lib/emailVariables';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
