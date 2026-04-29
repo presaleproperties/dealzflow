@@ -128,7 +128,14 @@ function DeliveryIndicator({ state, error }: { state: DeliveryState; error?: str
  * Reuses the existing `ComposeEmailDialog` / `SendTextDialog` for sending,
  * so all template / signature / channel logic stays in one place.
  */
-export default function CrmChatThreadPage() {
+interface CrmChatThreadPageProps {
+  /** When rendered as the right pane of the desktop two-pane shell, the
+   *  thread should fill its parent (no negative margins, no fixed dvh) and
+   *  the back button collapses the selection rather than navigating. */
+  embedded?: boolean;
+}
+
+export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPageProps = {}) {
   const { conversationId = '' } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
