@@ -822,6 +822,50 @@ export default function PresaleSignatureBuilder({
                     <span>Large</span>
                   </div>
                 </div>
+                <div className="md:col-span-2 grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+                      <span>Focus X</span>
+                      <span className="text-muted-foreground/70 normal-case tracking-normal font-mono">
+                        {parseInt(fields.headshotPosX || "50", 10) || 50}%
+                      </span>
+                    </Label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={parseInt(fields.headshotPosX || "50", 10) || 50}
+                      onChange={(e) => update("headshotPosX", e.target.value)}
+                      className="w-full mt-2 accent-primary"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                      <span>Left</span>
+                      <span>Right</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+                      <span>Focus Y</span>
+                      <span className="text-muted-foreground/70 normal-case tracking-normal font-mono">
+                        {parseInt(fields.headshotPosY || "50", 10) || 50}%
+                      </span>
+                    </Label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={parseInt(fields.headshotPosY || "50", 10) || 50}
+                      onChange={(e) => update("headshotPosY", e.target.value)}
+                      className="w-full mt-2 accent-primary"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                      <span>Top</span>
+                      <span>Bottom</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
