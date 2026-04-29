@@ -827,6 +827,22 @@ function TeamManagement() {
                       {!isOwner && (
                         <Button
                           variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
+                          disabled={resendInvite.isPending && resendInvite.variables?.email === m.email}
+                          onClick={() => resendInvite.mutate({
+                            email: m.email,
+                            display_name: m.display_name,
+                            role: m.role,
+                          })}
+                          title="Generate a new temporary password and email it"
+                        >
+                          {resendInvite.isPending && resendInvite.variables?.email === m.email
+                            ? 'Sending…'
+                            : 'Resend invite'}
+                        </Button>
+                      )}
+                      {!isOwner && (
+                        <Button
+                          variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
                           onClick={() => {
                             setPermsEditId(m.id);
                             setPermsDraft((m.permissions ?? {}) as TeamPerms);
