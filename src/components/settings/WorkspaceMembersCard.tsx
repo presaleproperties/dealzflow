@@ -124,6 +124,7 @@ export function WorkspaceMembersCard() {
       qc.invalidateQueries({ queryKey: ['crm_team_workspace_candidates'] });
       qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
       qc.invalidateQueries({ queryKey: ['crm_team_members'] });
+      qc.invalidateQueries({ queryKey: ['crm_team_signin_info'] });
       toast.success(
         data.email_sent
           ? 'Invite sent — they were emailed a temporary password'
