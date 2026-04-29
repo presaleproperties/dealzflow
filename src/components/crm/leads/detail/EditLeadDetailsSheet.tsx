@@ -33,6 +33,7 @@ interface Props {
  */
 export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const updateContact = useUpdateCrmContact();
+  const { data: agents = [] } = useTeamAgents();
   const { data: tagLib = [] } = useCrmTags();
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
