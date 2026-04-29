@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  X, ChevronDown, Image as ImageIcon, Variable, FileText, Hash, Building2, User2,
+  X, ChevronDown, Variable, FileText, Hash, Building2, User2,
   Send, Loader2, Calendar, AlertTriangle, Plus, Trash2, ShieldAlert, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
