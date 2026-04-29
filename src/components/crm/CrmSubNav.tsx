@@ -47,11 +47,12 @@ function isActive(pathname: string, path: string): boolean {
 
 export function CrmSubNav() {
   const location = useLocation();
-  const { isOwnerOrAdmin } = useCrmAccess();
+  const { isOwnerOrAdmin, role } = useCrmAccess();
   const [navMode, setNavMode] = useCrmNavMode();
 
   const visible = TABS.filter(t => {
     if (t.ownerAdminOnly && !isOwnerOrAdmin) return false;
+    if (t.ownerOnly && role !== 'owner') return false;
     if (t.pro && navMode !== 'pro') return false;
     return true;
   });
