@@ -141,11 +141,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   /* Draft autosave — per-contact, survives accidental close / app backgrounding */
   const draftScope = `lead:${contact.id}`;
-  useEmailDraftAutosave(
+  const { savedAt, clear: clearDraft } = useEmailDraftAutosave(
     draftScope,
     { subject, bodyHtml, cc, bcc },
     open,
   );
+
+  const discardDraft = () => {
+    clearDraft();
+    setSubject('');
+    setBodyHtml('<p></p>');
+    setCc('');
+    setBcc('');
+    setShowCcBcc(false);
+    toast.success('Draft discarded');
+  };
 
   /* Restore draft on open (if any) */
   useEffect(() => {
@@ -1089,6 +1099,14 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     </option>
                   ))}
                 </select>
+                {savedAt && (
+                  <span
+                    className="hidden xs:inline shrink-0 text-[10.5px] text-muted-foreground/80 tabular-nums"
+                    title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}
+                  >
+                    Saved
+                  </span>
+                )}
                 {/* Big primary Send button — bottom-right, thumb-reachable */}
                 <button
                   type="button"
@@ -1220,6 +1238,25 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
+                  {savedAt && (
+                    <span className="text-[11px] text-muted-foreground/80 tabular-nums" title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}>
+                      Saved
+                    </span>
+                  )}
+                  {savedAt && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={discardDraft}
+                      disabled={isPending}
+                      className="gap-1.5 text-muted-foreground hover:text-foreground"
+                      title="Discard saved draft"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Discard
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
