@@ -23,6 +23,7 @@ import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
 import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
+import { LeadReplyBar } from '@/components/crm/leads/detail/LeadReplyBar';
 import type { LeadScore } from '@/components/crm/leads/detail/types';
 
 export default function LeadDetailPage() {
@@ -334,13 +335,25 @@ export default function LeadDetailPage() {
         />
 
         <div className="flex-1 min-w-0 flex flex-col bg-background">
-          <CenterColumn
-            contact={c}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-            onText={() => setShowText(true)}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <CenterColumn
+              contact={c}
+              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onText={() => setShowText(true)}
+              onEmail={() => setShowEmail(true)}
+              onTask={() => setShowTask(true)}
+              onShowing={() => setShowShowing(true)}
+            />
+          </div>
+          <LeadReplyBar
+            hasPhone={!!c.phone}
+            hasEmail={!!c.email}
+            onSms={() => { setTextChannel('sms'); setShowText(true); }}
             onEmail={() => setShowEmail(true)}
-            onTask={() => setShowTask(true)}
-            onShowing={() => setShowShowing(true)}
+            onWhatsApp={() => {
+              void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
+            }}
+            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
           />
         </div>
 

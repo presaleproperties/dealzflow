@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Workflow, Activity, Megaphone, BarChart3, Send, Search, X, User2, Sparkles } from 'lucide-react';
+import { Workflow, Activity, Megaphone, BarChart3, Send, Search, X, User2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import CrmMarketingHubPage from './CrmMarketingHubPage';
-import CrmEmailCenterPage from './CrmEmailCenterPage';
+// Inbox is served by CrmEmailWorkspacePage at /crm/email — no longer duplicated here.
 import CrmEmailWorkflowsPage from './CrmEmailWorkflowsPage';
 import CrmEmailHealthPage from './CrmEmailHealthPage';
 import CrmEmailCampaignsPage from './CrmEmailCampaignsPage';
@@ -47,9 +47,8 @@ export default function CrmEmailPage() {
       <QuickSendBar onCompose={(c) => setComposeContact(c)} />
 
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full space-y-4">
-        <TabsList className="w-full sm:w-auto grid grid-cols-6 sm:flex h-auto">
+        <TabsList className="w-full sm:w-auto grid grid-cols-5 sm:flex h-auto">
           <TabsTrigger value="hub" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Sparkles className="h-3.5 w-3.5" /><span>Templates</span></TabsTrigger>
-          <TabsTrigger value="center" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Mail className="h-3.5 w-3.5" /><span>Inbox</span></TabsTrigger>
           <TabsTrigger value="campaigns" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Megaphone className="h-3.5 w-3.5" /><span>Campaigns</span></TabsTrigger>
           <TabsTrigger value="workflows" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><Workflow className="h-3.5 w-3.5" /><span>Flows</span></TabsTrigger>
           <TabsTrigger value="analytics" className="text-[10px] sm:text-sm gap-1 sm:gap-1.5 flex-col sm:flex-row py-2"><BarChart3 className="h-3.5 w-3.5" /><span>Stats</span></TabsTrigger>
@@ -57,7 +56,6 @@ export default function CrmEmailPage() {
         </TabsList>
 
         <TabsContent value="hub" className="mt-0">{tab === 'hub' && <CrmMarketingHubPage />}</TabsContent>
-        <TabsContent value="center" className="mt-0">{tab === 'center' && <CrmEmailCenterPage />}</TabsContent>
         <TabsContent value="campaigns" className="mt-0">{tab === 'campaigns' && <CrmEmailCampaignsPage />}</TabsContent>
         <TabsContent value="workflows" className="mt-0">{tab === 'workflows' && <CrmEmailWorkflowsPage />}</TabsContent>
         <TabsContent value="analytics" className="mt-0">{tab === 'analytics' && <CrmEmailAnalyticsPage />}</TabsContent>

@@ -828,11 +828,15 @@ export function LeadsTable({
 
   if (totalCount === 0 && contacts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
         <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
           <Mail className="w-7 h-7 text-muted-foreground" />
         </div>
-        <p className="text-muted-foreground text-sm">No leads found. Try adjusting your filters or add a new lead.</p>
+        <p className="text-foreground text-sm font-medium mb-1.5">No leads here yet</p>
+        <p className="text-muted-foreground text-[13px] leading-relaxed">
+          This is normal for new agents — leads appear here as soon as your admin routes lead sources
+          (Presale, Lofty, TikTok, referrals) to you. You can also add a lead manually from the top right.
+        </p>
       </div>
     );
   }

@@ -767,7 +767,14 @@ export default function PresaleSignatureBuilder({
                     this URL
                   </p>
                 </div>
-                <div className="md:col-span-2">
+                <details className="md:col-span-2 group rounded-lg border border-border/60 bg-muted/20 open:bg-muted/30 transition-colors">
+                  <summary className="cursor-pointer list-none px-3 py-2 flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wide select-none">
+                    <span>Customize headshot</span>
+                    <span className="text-[10px] normal-case tracking-normal text-muted-foreground/70 group-open:hidden">Shape · Size · Focus</span>
+                    <span className="text-[10px] normal-case tracking-normal text-muted-foreground/70 hidden group-open:inline">Hide</span>
+                  </summary>
+                  <div className="px-3 pb-3 pt-1 space-y-3">
+                <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                     Headshot Shape
                   </Label>
@@ -866,6 +873,8 @@ export default function PresaleSignatureBuilder({
                     </div>
                   </div>
                 </div>
+                  </div>
+                </details>
               </div>
             </div>
           </div>

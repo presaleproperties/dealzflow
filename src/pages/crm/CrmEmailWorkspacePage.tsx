@@ -148,7 +148,7 @@ export default function CrmEmailWorkspacePage() {
 
       <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px]">
         <span className="text-muted-foreground/60 uppercase tracking-wider mr-1 font-semibold">More:</span>
-        <FooterLink to="/crm/email/legacy?tab=center" icon={Mail} label="Sent log" />
+        <FooterLink to="/crm/email/legacy?tab=hub" icon={Mail} label="Templates" />
         <FooterLink to="/crm/email/legacy?tab=campaigns" icon={Megaphone} label="Campaigns" />
         <FooterLink to="/crm/email/legacy?tab=workflows" icon={Workflow} label="Flows" />
         <FooterLink to="/crm/email/legacy?tab=analytics" icon={BarChart3} label="Stats" />
