@@ -414,8 +414,8 @@ function IMessageBubble({
                     <path d="M0 18 C 8 18, 14 12, 18 0 L 18 18 Z" fill="url(#imsg-out-grad)" />
                     <defs>
                       <linearGradient id="imsg-out-grad" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stopColor="#006eff" />
-                        <stop offset="100%" stopColor="#1e8eff" />
+                        <stop offset="0%" stopColor="#0066f5" />
+                        <stop offset="100%" stopColor="#0a74ff" />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -425,7 +425,7 @@ function IMessageBubble({
                     className="absolute -left-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
                     aria-hidden
                   >
-                    <path d="M18 18 C 10 18, 4 12, 0 0 L 0 18 Z" className="fill-[hsl(220_13%_91%)] dark:fill-[hsl(222_14%_22%)]" />
+                    <path d="M18 18 C 10 18, 4 12, 0 0 L 0 18 Z" className="fill-[hsl(220_14%_93%)] dark:fill-[hsl(222_16%_20%)]" />
                   </svg>
                 )
               )}
