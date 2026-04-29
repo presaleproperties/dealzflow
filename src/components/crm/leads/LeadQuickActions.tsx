@@ -10,7 +10,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
-import { SendSmsDialog } from './SendSmsDialog';
+import { SendTextDialog } from './SendTextDialog';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
@@ -81,7 +81,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
       <BookShowingDialog contactId={contact.id} project={contact.project} open={showShowing} onOpenChange={setShowShowing} />
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
-      <SendSmsDialog contact={contact} open={showSms} onOpenChange={setShowSms} />
+      <SendTextDialog contact={contact} open={showSms} onOpenChange={setShowSms} initialChannel="sms" />
     </>
   );
 }

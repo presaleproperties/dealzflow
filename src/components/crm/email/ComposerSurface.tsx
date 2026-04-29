@@ -786,7 +786,8 @@ export function ComposerSurface({
         )}
       </div>
 
-      {/* Footer — premium sticky action bar (compact on mobile) */}
+      {/* Footer — premium sticky action bar. On mobile the Send button gets full-bleed prominence
+          (Apple-Mail / Gmail mobile-style) so the primary CTA is unmistakable. */}
       <div className="px-3 py-2 lg:px-6 lg:py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
         <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
@@ -844,7 +845,7 @@ export function ComposerSurface({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 lg:ml-auto w-full lg:w-auto">
           <Button
             type="button"
             variant="ghost"
@@ -863,13 +864,16 @@ export function ComposerSurface({
             onClick={handleSendClick}
             disabled={!canSend || isPending}
             className={cn(
-              'h-9 gap-2 min-w-[160px] px-4 font-semibold text-[12.5px] tracking-[-0.005em] rounded-lg',
+              /* Mobile: full-width primary CTA so the Send action reads as the
+                 single, unmistakable next step (Apple Mail / Gmail mobile parity).
+                 Desktop: compact pill with min-width so the label never wraps. */
+              'h-11 lg:h-9 w-full lg:w-auto gap-2 lg:min-w-[160px] px-4 font-semibold text-[13px] lg:text-[12.5px] tracking-[-0.005em] rounded-xl lg:rounded-lg',
               'bg-primary text-primary-foreground hover:bg-primary/90',
               'shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.5)] hover:shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.55)]',
               'transition-all disabled:shadow-none disabled:opacity-50',
             )}
           >
-            {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : recipientCount > 1 ? <Users className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+            {isPending ? <Loader2 className="h-4 w-4 lg:h-3.5 lg:w-3.5 animate-spin" /> : recipientCount > 1 ? <Users className="h-4 w-4 lg:h-3.5 lg:w-3.5" /> : <Send className="h-4 w-4 lg:h-3.5 lg:w-3.5" />}
             {isPending ? 'Sending…' : sendLabel}
           </Button>
         </div>
