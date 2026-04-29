@@ -1412,3 +1412,7 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
   .agent-signature-block { font-size: 13.5px; line-height: 1.5; }
   .agent-signature-block p { margin: .35em 0 !important; }
 }
+
+/* Hide scrollbar but keep scrollability — used by horizontally-scrollable tab strips */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

@@ -64,7 +64,6 @@ import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const CrmPipelinePage = lazy(() => import("./pages/crm/CrmPipelinePage"));
-const CrmEmailPage = lazy(() => import("./pages/crm/CrmEmailPage"));
 const CrmEmailWorkspacePage = lazy(() => import("./pages/crm/CrmEmailWorkspacePage"));
 const CrmChatsPage = lazy(() => import("./pages/crm/CrmChatsPage"));
 const CrmChatThreadPage = lazy(() => import("./pages/crm/CrmChatThreadPage"));
@@ -252,7 +251,7 @@ const App = () => (
                     <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatThreadPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/email/legacy" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/email/legacy" element={<Navigate to="/crm/email" replace />} />
                     <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
                     <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
