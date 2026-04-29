@@ -645,7 +645,32 @@ function TeamManagement() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const roleBadgeColor = (role: string) => {
+  const resendInvite = useMutation({
+    mutationFn: async (m: { email: string; display_name: string | null; role: string }) => {
+      const { data, error } = await supabase.functions.invoke('crm-invite-agent', {
+        body: {
+          email: m.email,
+          display_name: m.display_name || m.email,
+          role: m.role === 'owner' ? 'admin' : m.role,
+          mode: 'temp_password',
+          app_origin: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Could not resend invite');
+      return data as { email_sent: boolean; temp_password?: string };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
+      toast.success(
+        data.email_sent
+          ? 'Invite re-sent — new temporary password emailed'
+          : `New temp password: ${data.temp_password ?? '(check Cloud → Emails)'}`,
+        { duration: 8000 },
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
     if (role === 'owner') return 'bg-primary/15 text-primary border-primary/30';
     if (role === 'admin') return 'bg-blue-500/15 text-blue-600 border-blue-500/30';
     if (role === 'agent') return 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30';
