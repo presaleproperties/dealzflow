@@ -52,6 +52,7 @@ export function WorkspaceMembersCard() {
   const [editing, setEditing] = useState<WorkspaceCandidate | null>(null);
   const [editRole, setEditRole] = useState<'owner' | 'admin' | 'agent' | 'viewer'>('agent');
   const [editActive, setEditActive] = useState(true);
+  const [editPresaleEmail, setEditPresaleEmail] = useState('');
   const [lastResult, setLastResult] = useState<{
     email: string;
     temp_password?: string;
