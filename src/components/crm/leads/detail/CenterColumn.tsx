@@ -385,6 +385,12 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         onOpenChange={(o) => { setThreadOpen(o); if (!o) setThreadInitialId(null); }}
         initialEmailId={threadInitialId}
       />
+
+      <ImportConversationDialog
+        contact={contact}
+        open={showImport}
+        onOpenChange={setShowImport}
+      />
     </Tabs>
   );
 }
