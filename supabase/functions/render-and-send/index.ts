@@ -251,6 +251,13 @@ Deno.serve(async (req) => {
   const subject_rendered = rendered.subject_rendered || rendered.subject || template.subject || "";
   const html_rendered = rendered.html_rendered || rendered.html || "";
   const text_rendered = rendered.text_rendered ?? rendered.text ?? "";
+  console.log("[render-and-send] bridge ok", {
+    status: renderRes.status,
+    html_len: html_rendered.length,
+    has_hero: html_rendered.includes("<img"),
+    has_card: html_rendered.toLowerCase().includes("call now") || html_rendered.toLowerCase().includes("view "),
+    keys: Object.keys(rendered),
+  });
   if (!renderRes.ok || !html_rendered) {
     console.error("[render-and-send] bridge render failed", { status: renderRes.status, body: renderText.slice(0, 500) });
     return json({
