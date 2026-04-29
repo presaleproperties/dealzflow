@@ -12,6 +12,7 @@ import {
   Database, Link2, User, RefreshCw, Loader2, Phone, CheckCircle2, AlertCircle,
   Sparkles, ArrowRight, Circle, ChevronRight, Briefcase, FileText, Inbox,
   Building2, FolderKanban, Crown, GitBranch, Layers, CreditCard, ExternalLink, Eye,
+  Search, MoreHorizontal, Pencil, Key, Trash2, History, Camera, X, Upload,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior, setTimelineLinkBehavior, type TimelineLinkBehavior,
