@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Users, CalendarDays, Target, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,7 @@ import { useCrmContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, parseISO, startOfMonth, differenceInDays } from 'date-fns';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
 
 const FUNNEL_STAGES = [
   'New Lead', 'Contacted', 'Nurturing', 'Hot / Engaged',
@@ -16,6 +18,7 @@ const FUNNEL_STAGES = [
 ] as const;
 
 export default function CrmReportsPage() {
+  const { role, isLoading: accessLoading } = useCrmAccess();
   const { data: contacts = [] } = useCrmContacts();
 
   const { data: showings = [] } = useQuery({
@@ -47,6 +50,11 @@ export default function CrmReportsPage() {
       return all;
     },
   });
+
+  // Owner-only — team members are redirected to the leads list
+  if (!accessLoading && role !== 'owner') {
+    return <Navigate to="/crm/leads" replace />;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

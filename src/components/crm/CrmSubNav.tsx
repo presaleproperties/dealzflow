@@ -30,7 +30,7 @@ const TABS: Tab[] = [
   { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate, pro: true },
   { label: 'Scheduler',    path: '/crm/scheduler',    icon: CalendarClock,  pro: true },
   { label: 'Behavior',     path: '/crm/behavior',     icon: Activity,       pro: true, ownerOnly: true },
-  { label: 'Reports',      path: '/crm/reports',      icon: BarChart3,      pro: true },
+  { label: 'Reports',      path: '/crm/reports',      icon: BarChart3,      pro: true, ownerOnly: true },
   { label: 'Automations',  path: '/crm/automations',  icon: Zap,            pro: true, ownerAdminOnly: true },
   { label: 'Integrations', path: '/crm/integrations', icon: Plug,           pro: true, ownerAdminOnly: true },
 ];
