@@ -120,15 +120,30 @@ Deno.serve(async (req) => {
     });
   }
 
-  const email = user.email.toLowerCase();
+  const loginEmail = user.email.toLowerCase();
 
   try {
-    // 1. List all agents, find the matching email
+    // Look up an override on crm_team: explicit slug or presale_email
+    const { data: teamRow } = await supabase
+      .from("crm_team")
+      .select("slug, presale_email")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const overrideSlug = teamRow?.slug?.trim() || null;
+    const overrideEmail = teamRow?.presale_email?.trim().toLowerCase() || null;
+    const lookupEmail = overrideEmail ?? loginEmail;
+
+    // 1. List all agents, find by override slug first, then by email
     const listed = await presaleBridge.listAgents();
     const agents = unwrapList(listed) as BridgeAgent[];
-    const match = agents.find(
-      (a) => (a.email ?? "").toLowerCase() === email,
-    );
+    const match =
+      (overrideSlug
+        ? agents.find(
+            (a) => (a.slug ?? "").toLowerCase() === overrideSlug.toLowerCase(),
+          )
+        : undefined) ??
+      agents.find((a) => (a.email ?? "").toLowerCase() === lookupEmail);
 
     if (!match?.slug) {
       return new Response(
