@@ -29,7 +29,8 @@ import {
   useSmsCampaigns, useSmsOptOuts, useSmsNumbers, useSmsSettings, useAllSmsLog,
   useSendSms, smsSegments, renderSmsTemplate, SMS_VARIABLES,
 } from '@/hooks/useSms';
-import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { BulkSendTextDialog } from '@/components/crm/leads/BulkSendTextDialog';
 import { MessagingCenter } from '@/components/crm/sms/MessagingCenter';
 import { format, formatDistanceToNow, subDays } from 'date-fns';
@@ -349,6 +350,7 @@ function SendTab({
   onPreviewRecipients: () => void;
 }) {
   const [view, setView] = useState<'compose' | 'history' | 'templates'>('compose');
+  const agentNames = useAgentNames();
   return (
     <>
       <SubTabBar
@@ -370,7 +372,7 @@ function SendTab({
 
           <FilterRow label="Pipeline stage" options={LEAD_STATUSES} selected={fStatuses} onToggle={(v) => toggleArr(fStatuses, v, setFStatuses)} />
           <FilterRow label="Lead source" options={LEAD_SOURCES} selected={fSources} onToggle={(v) => toggleArr(fSources, v, setFSources)} />
-          <FilterRow label="Assigned to" options={AGENTS} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
+          <FilterRow label="Assigned to" options={agentNames} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
 
           <div className="space-y-1.5">
             <Label className="text-xs">Tags (comma-separated)</Label>

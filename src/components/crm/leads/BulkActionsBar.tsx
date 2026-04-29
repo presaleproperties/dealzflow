@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare } from 'lucide-react';
-import { useBulkUpdateContacts, useBulkDeleteContacts, useBulkAddTagsToContacts, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { useBulkUpdateContacts, useBulkDeleteContacts, useBulkAddTagsToContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { BulkSendTextDialog } from './BulkSendTextDialog';
@@ -24,6 +26,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const bulkDelete = useBulkDeleteContacts();
   const bulkAddTags = useBulkAddTagsToContacts();
   const { data: tagLib = [] } = useCrmTags();
+  const { data: agents = [] } = useTeamAgents();
   const createTag = useCreateCrmTag();
   const [showDelete, setShowDelete] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
@@ -92,7 +95,14 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
             <span>Assign</span>
           </SelectTrigger>
           <SelectContent>
-            {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            {agents.map((a) => (
+              <SelectItem key={a.id} value={a.name}>
+                <span className="inline-flex items-center gap-2">
+                  <AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />
+                  {a.name}
+                </span>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

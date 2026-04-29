@@ -11,7 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { RichTextEditor } from './RichTextEditor';
 import { TemplatePicker } from './TemplatePicker';
-import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { formatContactName } from '@/lib/format';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
@@ -44,6 +45,7 @@ function replaceMergeTags(html: string, contact: CrmContact | null, senderName?:
 export function ComposeTab() {
   const { data: contacts = [] } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(contacts);
+  const AGENTS = useAgentNames();
   const { data: templates = [] } = useCrmEmailTemplates();
   const addMessage = useAddCrmMessage();
   const bridgeSend = useBridgeSendEmail();

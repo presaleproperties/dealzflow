@@ -3,7 +3,9 @@ import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
@@ -12,6 +14,7 @@ import { SendSmsDialog } from './SendSmsDialog';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
+  const { data: agents = [] } = useTeamAgents();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
@@ -68,7 +71,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             <Select value={contact.assigned_to ?? ''} onValueChange={handleAgentChange}>
               <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Assign agent" /></SelectTrigger>
               <SelectContent>
-                {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                {agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
               </SelectContent>
             </Select>
           </div>

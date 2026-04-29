@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCrmContacts, AGENTS } from '@/hooks/useCrmContacts';
+import { useCrmContacts } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useCreateShowing } from '@/hooks/useCrmShowings';
 import { ProjectPicker } from '@/components/crm/projects/ProjectPicker';
 
@@ -17,6 +19,7 @@ interface Props {
 export function BookShowingModal({ open, onOpenChange }: Props) {
   const { data: contacts } = useCrmContacts();
   const createMut = useCreateShowing();
+  const { data: agents = [] } = useTeamAgents();
 
   const [contactId, setContactId] = useState('');
   const [project, setProject] = useState('');
@@ -101,7 +104,7 @@ export function BookShowingModal({ open, onOpenChange }: Props) {
             <Select value={agent} onValueChange={setAgent}>
               <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
               <SelectContent>
-                {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                {agents.map(a => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
               </SelectContent>
             </Select>
           </div>

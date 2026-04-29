@@ -6,7 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { ContactTypeFilter } from './ContactTypeFilter';
 
@@ -255,6 +256,7 @@ export function FilterPanel({
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
+  const AGENTS = useAgentNames();
   // Defer unmount so the slide-out animation can play
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(open);

@@ -4,7 +4,8 @@ import { Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, AGENTS, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
@@ -31,6 +32,7 @@ const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: st
 export default function CrmContactsPage() {
   const { data: contacts = [], isLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(contacts);
+  const AGENTS = useAgentNames();
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');

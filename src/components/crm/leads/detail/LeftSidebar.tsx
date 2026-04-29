@@ -25,7 +25,9 @@ import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
-import { LEAD_STATUSES, AGENTS, LEAD_TYPES, LEAD_TYPE_LABELS, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, LEAD_TYPES, LEAD_TYPE_LABELS, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { InlineLibraryPicker } from '@/components/crm/leads/InlineLibraryPicker';
 import { SourcePicker } from '@/components/crm/leads/SourcePicker';
@@ -53,6 +55,8 @@ export function LeftSidebar({
   contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail, onWhatsApp,
 }: Props) {
   const updateContact = useUpdateCrmContact();
+  const { data: agents = [] } = useTeamAgents();
+  const AGENTS = agents.map((a) => a.name);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
@@ -496,7 +500,7 @@ export function LeftSidebar({
           <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
             <SelectTrigger className="h-9 text-sm bg-card transition-all duration-200"><SelectValue placeholder="Select agent" /></SelectTrigger>
             <SelectContent>
-              {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              {agents.map(a => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
             </SelectContent>
           </Select>
         )}

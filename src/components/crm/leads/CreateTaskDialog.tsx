@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddCrmTask } from '@/hooks/useCrmLeadDetail';
-import { AGENTS } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 
 const TASK_TYPES = ['follow_up', 'showing', 'call', 'email', 'other'] as const;
 const PRIORITIES = ['high', 'medium', 'low'] as const;
@@ -20,6 +21,7 @@ interface Props {
 
 export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: Props) {
   const addTask = useAddCrmTask();
+  const { data: agents = [] } = useTeamAgents();
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -110,7 +112,7 @@ export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: 
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assigned To</Label>
                 <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
                   <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue placeholder="Select agent" /></SelectTrigger>
-                  <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  <SelectContent>{agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>

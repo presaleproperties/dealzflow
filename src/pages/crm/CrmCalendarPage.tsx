@@ -39,7 +39,9 @@ import {
   useGoogleCalendarConnection,
   type GoogleCalendarEvent,
 } from '@/hooks/useGoogleCalendarEvents';
-import { AGENTS, PROJECTS } from '@/hooks/useCrmContacts';
+import { PROJECTS } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { formatContactName } from '@/lib/format';
 import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
 import { ShowingDetailModal } from '@/components/crm/calendar/ShowingDetailModal';
@@ -92,6 +94,7 @@ const DESKTOP_VIEWS: { key: ViewKey; label: string }[] = [
 export default function CrmCalendarPage() {
   const { data: showings, isLoading } = useCrmShowings();
   const updateStatus = useUpdateShowingStatus();
+  const { data: agents = [] } = useTeamAgents();
   const isMobile = useIsMobile();
 
   const calendarRef = useRef<FullCalendar | null>(null);
@@ -400,9 +403,9 @@ export default function CrmCalendarPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Agents</SelectItem>
-                        {AGENTS.map((a) => (
-                          <SelectItem key={a} value={a}>
-                            {a}
+                        {agents.map((a) => (
+                          <SelectItem key={a.id} value={a.name}>
+                            <span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -459,9 +462,9 @@ export default function CrmCalendarPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Agents</SelectItem>
-                  {AGENTS.map((a) => (
-                    <SelectItem key={a} value={a}>
-                      {a}
+                  {agents.map((a) => (
+                    <SelectItem key={a.id} value={a.name}>
+                      <span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>

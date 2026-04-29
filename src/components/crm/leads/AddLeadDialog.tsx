@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight, AlertTriangle, Plus, X } from 'lucide-react'
 import { MobilePickerDrawer } from './MobilePickerDrawer';
 import { MobileMultiPickerDrawer } from './MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from './MobileTextEditDrawer';
-import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
+import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
@@ -40,6 +41,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
+  const AGENTS = useAgentNames();
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});

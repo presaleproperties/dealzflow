@@ -4,7 +4,9 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail, MessageSquare, Check } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName, formatPhone, formatEmail } from '@/lib/format';
-import { LEAD_TYPE_LABELS, LEAD_STATUSES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_TYPE_LABELS, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmTags } from '@/hooks/useCrmTags';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
@@ -422,6 +424,8 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
 
 /* ── Inline Agent Editor ── */
 function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
+  const { data: agents = [] } = useTeamAgents();
+  const current = agents.find((a) => a.name === contact.assigned_to);
   return (
     <div onClick={e => e.stopPropagation()}>
       <Select
@@ -431,12 +435,24 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
           toast.success(`Assigned → ${v}`);
         }}
       >
-        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 text-muted-foreground">
-          <SelectValue placeholder="Unassigned" />
+        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 text-muted-foreground gap-1.5">
+          {current ? (
+            <span className="inline-flex items-center gap-1.5 truncate">
+              <AgentAvatar name={current.name} headshotUrl={current.headshot_url} focalY={current.focal_y} size={18} />
+              <span className="truncate">{current.name}</span>
+            </span>
+          ) : (
+            <SelectValue placeholder="Unassigned" />
+          )}
         </SelectTrigger>
         <SelectContent>
-          {AGENTS.map(a => (
-            <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>
+          {agents.map(a => (
+            <SelectItem key={a.id} value={a.name} className="text-xs">
+              <span className="inline-flex items-center gap-2">
+                <AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />
+                {a.name}
+              </span>
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

@@ -15,7 +15,9 @@ import {
 } from 'lucide-react';
 import { TRIGGER_TYPES, ACTION_TYPES, useCreateAutomation, useUpdateAutomation, useCrmAutomationSteps } from '@/hooks/useCrmAutomations';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
-import { LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmAutomation } from '@/hooks/useCrmAutomations';
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
@@ -50,6 +52,7 @@ interface Props {
 
 export function AutomationBuilderDialog({ open, onOpenChange, editing, templatePrefill }: Props) {
   const [name, setName] = useState('');
+  const { data: agents = [] } = useTeamAgents();
   const [description, setDescription] = useState('');
   const [triggerType, setTriggerType] = useState('new_lead');
   const [triggerConfig, setTriggerConfig] = useState<Record<string, unknown>>({});
@@ -248,7 +251,7 @@ export function AutomationBuilderDialog({ open, onOpenChange, editing, templateP
               onValueChange={v => updateActionConfig(idx, 'agent', v)}>
               <SelectTrigger className="h-9"><SelectValue placeholder="Select team member" /></SelectTrigger>
               <SelectContent>
-                {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                {agents.map(a => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
               </SelectContent>
             </Select>
           </div>

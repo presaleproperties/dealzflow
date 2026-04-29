@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddCrmShowing } from '@/hooks/useCrmLeadDetail';
-import { AGENTS } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { ProjectPicker } from '@/components/crm/projects/ProjectPicker';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 
 export function BookShowingDialog({ contactId, project, open, onOpenChange }: Props) {
   const addShowing = useAddCrmShowing();
+  const { data: agents = [] } = useTeamAgents();
   const [form, setForm] = useState({
     project: project ?? '',
     unit: '',
@@ -98,7 +100,7 @@ export function BookShowingDialog({ contactId, project, open, onOpenChange }: Pr
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assigned Agent</Label>
               <Select value={form.assigned_agent} onValueChange={(v) => setForm({ ...form, assigned_agent: v })}>
                 <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue placeholder="Select agent" /></SelectTrigger>
-                <SelectContent>{AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                <SelectContent>{agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}</SelectContent>
               </Select>
             </div>
 

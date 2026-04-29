@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, AlertCircle } from 'lucide-react';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { LEAD_STATUSES, AGENTS, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, LEAD_SOURCES, LEAD_TYPES, LEAD_TYPE_LABELS } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { CheckboxDropdown } from '@/components/crm/leads/CheckboxDropdown';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
 import { cn } from '@/lib/utils';
@@ -31,6 +33,7 @@ interface Props {
  */
 export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
   const updateContact = useUpdateCrmContact();
+  const { data: agents = [] } = useTeamAgents();
   const { data: tagLib = [] } = useCrmTags();
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
@@ -312,7 +315,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
               <Select value={form.assigned_to || undefined} onValueChange={(v) => update('assigned_to', v)}>
                 <SelectTrigger className={inputCls()}><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
-                  {AGENTS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  {agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
                 </SelectContent>
               </Select>,
             )}
