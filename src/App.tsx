@@ -47,6 +47,7 @@ import AgentProfilePage from "./pages/agent/AgentProfilePage";
 import AgentComposePage from "./pages/agent/AgentComposePage";
 import ResponsiveChecklistPage from "./pages/ResponsiveChecklistPage";
 import MobileSpacingChecklistPage from "./pages/MobileSpacingChecklistPage";
+import HelpOnboardingPage from "./pages/HelpOnboardingPage";
 
 // CRM pages
 
@@ -214,6 +215,7 @@ const App = () => (
                   <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
                   <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
                   <Route path="/dev/mobile-spacing" element={<ProtectedRoute><MobileSpacingChecklistPage /></ProtectedRoute>} />
+                  <Route path="/help/onboarding" element={<ProtectedRoute><HelpOnboardingPage /></ProtectedRoute>} />
 
                   {/* CRM Routes — guarded by CrmRouteGuard inside CrmLayout */}
                   <Route path="/crm/dashboard" element={<Navigate to="/crm/leads" replace />} />
