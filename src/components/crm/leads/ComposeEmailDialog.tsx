@@ -1089,6 +1089,14 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                     </option>
                   ))}
                 </select>
+                {savedAt && (
+                  <span
+                    className="hidden xs:inline shrink-0 text-[10.5px] text-muted-foreground/80 tabular-nums"
+                    title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}
+                  >
+                    Saved
+                  </span>
+                )}
                 {/* Big primary Send button — bottom-right, thumb-reachable */}
                 <button
                   type="button"
