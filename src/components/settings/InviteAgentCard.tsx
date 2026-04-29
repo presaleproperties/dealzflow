@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserPlus, Mail, Copy, Check, X, Loader2, Send } from 'lucide-react';
+import { UserPlus, Mail, Copy, Check, X, Loader2, Send, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
