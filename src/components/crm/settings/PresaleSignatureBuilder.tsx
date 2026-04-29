@@ -46,8 +46,34 @@ export interface SignatureBuilderFields {
 interface PresaleSignatureBuilderProps {
   /** Falls back to these values when nothing is loaded from Presale yet. */
   fallback: Partial<SignatureBuilderFields>;
+  /** Persisted builder state from previous saves — user edits take priority. */
+  initialData?: { fields?: Partial<SignatureBuilderFields>; touchedFields?: Record<string, boolean> } | null;
   /** Called with the rendered HTML when the user clicks "Apply to CRM". */
-  onApply: (html: string, layout: LayoutVariant, fields: SignatureBuilderFields) => void;
+  onApply: (
+    html: string,
+    layout: LayoutVariant,
+    fields: SignatureBuilderFields,
+    touchedFields: Record<string, boolean>,
+  ) => void;
+}
+
+// ── URL helpers ──────────────────────────────────────────────────────
+function normalizeUrl(raw: string): string {
+  const v = (raw || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (/^mailto:|^tel:/i.test(v)) return v;
+  return `https://${v.replace(/^\/+/, "")}`;
+}
+function normalizeInstagram(raw: string): string {
+  const v = (raw || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  const handle = v.replace(/^@/, "").replace(/^instagram\.com\//i, "");
+  return `https://instagram.com/${handle}`;
+}
+function escapeAttr(s: string): string {
+  return (s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // ── Helper: build headshot img tag based on shape ────────────────────
@@ -60,16 +86,26 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
     .toUpperCase();
   const radius = d.headshotShape === "circle" ? "50%" : "14px";
   const img = d.photoUrl
-    ? `<img src="${d.photoUrl}" alt="${d.fullName}" width="${size}" height="${size}" style="border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
+    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
     : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#c8a45e,#a8843e);color:#fff;font-size:${Math.round(size * 0.32)}px;font-weight:700;text-align:center;line-height:${size}px;box-shadow:0 4px 16px rgba(200,164,94,0.2);border:3px solid #c8a45e;">${initials}</div>`;
-  return d.headshotLink
-    ? `<a href="${d.headshotLink}" target="_blank" style="text-decoration:none;">${img}</a>`
+  // Headshot links to: explicit headshotLink → Instagram → website
+  const linkRaw = d.headshotLink || d.instagram || d.website;
+  const link = d.headshotLink
+    ? normalizeUrl(d.headshotLink)
+    : d.instagram
+    ? normalizeInstagram(d.instagram)
+    : d.website
+    ? normalizeUrl(d.website)
+    : "";
+  return link
+    ? `<a href="${escapeAttr(link)}" target="_blank" rel="noopener" style="text-decoration:none;">${img}</a>`
     : img;
 }
 
 function buildInstagramButton(d: SignatureBuilderFields): string {
   if (!d.instagram) return "";
-  return `<a href="${d.instagram}" target="_blank" style="display: inline-block; padding: 4px 12px; border: 1.5px solid #c8a45e; border-radius: 6px; color: #c8a45e; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; line-height: 18px; vertical-align: middle;">Instagram</a>`;
+  const href = normalizeInstagram(d.instagram);
+  return `<a href="${escapeAttr(href)}" target="_blank" rel="noopener" style="display: inline-block; padding: 4px 12px; border: 1.5px solid #c8a45e; border-radius: 6px; color: #c8a45e; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; line-height: 18px; vertical-align: middle;">Instagram</a>`;
 }
 
 // ── Horizontal layout: headshot on the left with gold divider ────────
