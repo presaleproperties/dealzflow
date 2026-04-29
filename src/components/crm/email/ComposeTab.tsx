@@ -396,19 +396,42 @@ export function ComposeTab() {
           {filtersExpanded && (
             <div className="space-y-3">
               {lockedIds ? (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <Lock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground">
-                      Recipients locked from Leads selection
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {campaignRecipients.length} contact{campaignRecipients.length === 1 ? '' : 's'} with email · use the exclude box below to drop any individuals
-                    </p>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <Lock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground">
+                        Recipients locked from Leads selection
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {campaignRecipients.length} contact{campaignRecipients.length === 1 ? '' : 's'} with email · use the exclude box below to drop any individuals
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={clearLockedIds}>
+                      Use filters instead
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={clearLockedIds}>
-                    Use filters instead
-                  </Button>
+                  {campaignRecipients.length > 0 && (
+                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-2 rounded-md border border-border/60 bg-muted/20">
+                      {campaignRecipients.slice(0, 100).map((c) => (
+                        <Badge
+                          key={c.id}
+                          variant="secondary"
+                          className="text-[10px] gap-1 cursor-pointer"
+                          onClick={() => setExcludedIds((prev) => new Set([...prev, c.id]))}
+                          title={`${c.email ?? ''} — click to exclude`}
+                        >
+                          {formatContactName(c.first_name, c.last_name) || c.email}
+                          <X className="w-2.5 h-2.5" />
+                        </Badge>
+                      ))}
+                      {campaignRecipients.length > 100 && (
+                        <span className="text-[10px] text-muted-foreground self-center px-1">
+                          +{campaignRecipients.length - 100} more
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
