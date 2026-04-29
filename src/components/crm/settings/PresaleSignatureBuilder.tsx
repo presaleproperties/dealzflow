@@ -197,22 +197,24 @@ function ScaledIframe({
     return () => ro.disconnect();
   }, [naturalWidth]);
 
-  // After iframe content writes, measure real body height
+  // After iframe content writes, measure real body height (use html scrollHeight,
+  // pick the larger of body/html, and add a tiny buffer so the last line never clips)
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
     let raf = 0;
     const measure = () => {
       const doc = iframe.contentDocument;
-      if (!doc?.body) return;
-      const h = doc.body.scrollHeight;
-      if (h > 0) setContentHeight(h);
+      if (!doc) return;
+      const bodyH = doc.body?.scrollHeight ?? 0;
+      const htmlH = doc.documentElement?.scrollHeight ?? 0;
+      const h = Math.max(bodyH, htmlH);
+      if (h > 0) setContentHeight(h + 4);
     };
-    // Re-measure every frame for ~1s after each render to catch image loads
     let count = 0;
     const tick = () => {
       measure();
-      if (count++ < 60) raf = requestAnimationFrame(tick);
+      if (count++ < 90) raf = requestAnimationFrame(tick);
     };
     tick();
     return () => cancelAnimationFrame(raf);
@@ -222,11 +224,12 @@ function ScaledIframe({
     <div
       ref={wrapperRef}
       className="relative w-full overflow-hidden"
-      style={{ height: contentHeight * scale }}
+      style={{ height: Math.ceil(contentHeight * scale) }}
     >
       <iframe
         ref={iframeRef}
         title={title}
+        scrolling="no"
         className="border-0 pointer-events-none block bg-white absolute top-0 left-0"
         style={{
           width: naturalWidth,
