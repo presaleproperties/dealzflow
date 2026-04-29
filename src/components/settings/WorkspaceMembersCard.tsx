@@ -235,6 +235,7 @@ export function WorkspaceMembersCard() {
             <CandidateRow
               key={c.user_id}
               candidate={c}
+              signinInfo={signinByUser[c.user_id] ?? null}
               isPending={pendingId === c.user_id}
               onInvite={(role) => inviteMut.mutate({ c, role })}
               onResend={() =>
