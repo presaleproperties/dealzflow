@@ -43,3 +43,30 @@ export function useAgentNames(): string[] {
   const { data } = useTeamAgents();
   return (data ?? []).map((a) => a.name);
 }
+
+/**
+ * Returns the current signed-in user's CRM `display_name` — the canonical
+ * value stored in `crm_contacts.assigned_to`. Returns null when the user
+ * isn't on an active team. Use this to default new leads into the creator's
+ * own pool so RLS/visibility match what the user expects.
+ */
+export function useMyAgentName(): string | null {
+  const { data } = useQuery({
+    queryKey: ['crm_team_my_display_name'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return null;
+      const { data, error } = await supabase
+        .from('crm_team')
+        .select('display_name, is_active')
+        .eq('user_id', uid)
+        .maybeSingle();
+      if (error) return null;
+      if (!data?.is_active) return null;
+      return (data.display_name as string | null) ?? null;
+    },
+  });
+  return data ?? null;
+}
