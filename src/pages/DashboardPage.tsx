@@ -10,7 +10,6 @@ import { useProperties } from '@/hooks/useProperties';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useRefreshData } from '@/hooks/useRefreshData';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { cn } from '@/lib/utils';
 
 import { QuickStats } from '@/components/dashboard/QuickStats';
@@ -23,7 +22,7 @@ import { ExpenseCommandCenter } from '@/components/dashboard/ExpenseCommandCente
 import { AIBusinessInsights } from '@/components/dashboard/AIBusinessInsights';
 import { PipelinePreview } from '@/components/dashboard/PipelinePreview';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
-import { OnboardingWizard } from '@/components/OnboardingWizard';
+
 import { InsightsGreeting } from '@/components/dashboard/InsightsGreeting';
 import { UpcomingRevenue } from '@/components/dashboard/UpcomingRevenue';
 import { NeedsAttention } from '@/components/dashboard/NeedsAttention';
@@ -58,7 +57,7 @@ export default function DashboardPage() {
   const { data: pipelineProspects = [] } = usePipelineProspects();
   const { data: connections = [] } = usePlatformConnections();
   const syncPlatform = useSyncPlatform();
-  const { showOnboarding, isChecking, completeOnboarding } = useOnboarding();
+  
   const refreshData = useRefreshData();
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -148,18 +147,6 @@ export default function DashboardPage() {
     return fmtEarliest === fmtLatest ? fmtEarliest : `${fmtEarliest} – ${fmtLatest}`;
   }, [syncedPayouts]);
 
-  if (isChecking) {
-    return (
-      <AppLayout>
-        <div className="min-h-dvh flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <p className="text-muted-foreground text-sm">Loading...</p>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
 
   const hasConnection = connections.length > 0;
   const isEmpty = !hasConnection && syncedTransactions.length === 0;
@@ -187,8 +174,6 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <OnboardingWizard open={showOnboarding} onComplete={completeOnboarding} />
-
       <div className="hidden sm:block">
         <Header
           title="Dashboard"
