@@ -18,9 +18,25 @@ interface InviteBody {
   role?: "agent" | "admin" | "viewer";
   app_origin?: string; // optional override; defaults to https://dealzflow.ca
   personal_note?: string | null;
+  /**
+   * "set_password" (default, legacy): user gets a link, picks their own password.
+   * "temp_password": admin generates a temp password, account is created
+   *   immediately, user is forced to change it on first login.
+   */
+  mode?: "set_password" | "temp_password";
 }
 
 const DEFAULT_APP_ORIGIN = "https://dealzflow.ca";
+
+// Generates a memorable but strong temp password: Word-Word-#### (e.g. "Falcon-River-4827")
+function generateTempPassword(): string {
+  const adjectives = ["Falcon", "River", "Maple", "Cedar", "Harbor", "Summit", "Aspen", "Quartz", "Bronze", "Ember", "Stellar", "Cobalt"];
+  const nouns = ["Trail", "Ridge", "Cove", "Grove", "Peak", "Field", "Lake", "Bay", "Vale", "Pier"];
+  const a = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const b = nouns[Math.floor(Math.random() * nouns.length)];
+  const n = Math.floor(1000 + Math.random() * 9000);
+  return `${a}-${b}-${n}`;
+}
 
 function escapeHtml(s: string): string {
   return s
