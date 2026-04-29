@@ -36,7 +36,9 @@ export function InviteAgentCard() {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [lastUrl, setLastUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
+  const [lastEmailRecipient, setLastEmailRecipient] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'url' | 'pw' | null>(null);
 
   const { data: invites = [], isLoading } = useQuery({
     queryKey: ['crm_team_invites'],
@@ -55,22 +57,39 @@ export function InviteAgentCard() {
           email: email.trim(),
           display_name: name.trim(),
           role: 'agent',
+          mode: 'temp_password',
           app_origin: window.location.origin,
           personal_note: note.trim() || null,
         },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Could not send invite');
-      return data as { accept_url: string; email_sent: boolean; warning?: string };
+      return data as {
+        mode?: 'temp_password' | 'set_password';
+        accept_url?: string;
+        login_url?: string;
+        email?: string;
+        temp_password?: string;
+        email_sent: boolean;
+        warning?: string;
+      };
     },
     onSuccess: (data) => {
-      setLastUrl(data.accept_url);
+      setLastUrl(data.login_url ?? data.accept_url ?? null);
+      setLastTempPassword(data.temp_password ?? null);
+      setLastEmailRecipient(data.email ?? email.trim());
       setName(''); setEmail(''); setNote('');
       qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
       if (data.email_sent) {
-        toast.success('Invite sent', { description: 'They\'ll get an email with a link to set their password.' });
+        toast.success('Invite sent', {
+          description: data.mode === 'temp_password'
+            ? 'They got an email with a temporary password and will be asked to set their own.'
+            : "They'll get an email with a link to set their password.",
+        });
       } else {
-        toast.warning('Invite created — email not sent', { description: data.warning ?? 'Copy the link below to share manually.' });
+        toast.warning('Invite created — email not sent', {
+          description: data.warning ?? 'Copy the details below to share manually.',
+        });
       }
     },
     onError: (e: any) => toast.error(e?.message ?? 'Could not send invite'),
