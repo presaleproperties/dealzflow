@@ -25,11 +25,14 @@ const sha = (p) => createHash('sha1').update(readFileSync(p)).digest('hex').slic
 const exists = (p) => existsSync(resolve(ROOT, p));
 const read = (p) => readFileSync(resolve(ROOT, p), 'utf8');
 
-// Image dimensions via ImageMagick (already available in repo env).
+// PNG dimensions read straight from the IHDR chunk — no external binary needed.
 function dims(p) {
   try {
-    const out = execSync(`identify -format "%w %h" "${resolve(ROOT, p)}"`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
-    const [w, h] = out.trim().split(/\s+/).map(Number);
+    const buf = readFileSync(resolve(ROOT, p));
+    // PNG signature 8 bytes, then IHDR length(4)+type(4)+width(4)+height(4)
+    if (buf.slice(1, 4).toString() !== 'PNG') return null;
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
     return { w, h };
   } catch {
     return null;
