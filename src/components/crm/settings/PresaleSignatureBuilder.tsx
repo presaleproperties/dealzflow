@@ -86,8 +86,8 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
     .toUpperCase();
   const radius = d.headshotShape === "circle" ? "50%" : "14px";
   const img = d.photoUrl
-    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
-    : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#c8a45e,#a8843e);color:#fff;font-size:${Math.round(size * 0.32)}px;font-weight:700;text-align:center;line-height:${size}px;box-shadow:0 4px 16px rgba(200,164,94,0.2);border:3px solid #c8a45e;">${initials}</div>`;
+    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-sizing: border-box; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
+    : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#c8a45e,#a8843e);color:#fff;font-size:${Math.round(size * 0.32)}px;font-weight:700;text-align:center;line-height:${size}px;box-shadow:0 4px 16px rgba(200,164,94,0.2);border:3px solid #c8a45e;box-sizing:border-box;margin:0 auto;">${initials}</div>`;
   // Headshot links to: explicit headshotLink → Instagram → website
   const linkRaw = d.headshotLink || d.instagram || d.website;
   const link = d.headshotLink
@@ -98,7 +98,7 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
     ? normalizeUrl(d.website)
     : "";
   return link
-    ? `<a href="${escapeAttr(link)}" target="_blank" rel="noopener" style="text-decoration:none;">${img}</a>`
+    ? `<a href="${escapeAttr(link)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;line-height:0;margin:0 auto;">${img}</a>`
     : img;
 }
 
@@ -115,7 +115,7 @@ export function buildHorizontalHtml(d: SignatureBuilderFields): string {
 
   return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 520px;">
   <tr>
-    <td width="120" align="center" style="width: 120px; padding-right: 18px; vertical-align: middle; text-align: center;">
+    <td width="118" align="center" style="width:118px; padding:0 18px 0 0; vertical-align: middle; text-align:center; line-height:0;">
       ${headshot}
     </td>
     <td style="border-left: 3px solid #c8a45e; padding-left: 18px; vertical-align: middle;">
