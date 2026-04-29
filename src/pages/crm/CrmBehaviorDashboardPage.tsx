@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useBehaviorOverview } from "@/hooks/useBehaviorOverview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, Eye, Users, Repeat, ExternalLink, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCrmAccess } from "@/contexts/CrmAccessContext";
 
 const WINDOW_OPTIONS = [
   { label: "24h", value: 1 },
@@ -13,6 +15,7 @@ const WINDOW_OPTIONS = [
 ];
 
 export default function CrmBehaviorDashboardPage() {
+  const { role, isLoading: accessLoading } = useCrmAccess();
   const [days, setDays] = useState(30);
   const { data, isLoading } = useBehaviorOverview(days);
   const queryClient = useQueryClient();
