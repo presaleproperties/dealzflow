@@ -19,6 +19,7 @@ interface Props {
 
 export function BookShowingDialog({ contactId, project, open, onOpenChange }: Props) {
   const addShowing = useAddCrmShowing();
+  const { data: agents = [] } = useTeamAgents();
   const [form, setForm] = useState({
     project: project ?? '',
     unit: '',
