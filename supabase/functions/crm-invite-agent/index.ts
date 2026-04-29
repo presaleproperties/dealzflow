@@ -309,6 +309,114 @@ Deno.serve(async (req) => {
       userResp.user.email ||
       "Your teammate";
 
+    const mode = body.mode ?? "temp_password";
+
+    // ============================================================
+    // TEMP PASSWORD MODE — create the auth user immediately,
+    // redeem the invite as them, and email the credentials.
+    // ============================================================
+    if (mode === "temp_password") {
+      const tempPassword = generateTempPassword();
+      const loginUrl = `${origin}/auth?invited=1`;
+
+      // 1. Create or update the auth user (email pre-confirmed)
+      let userId: string | null = null;
+      const { data: existing } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
+      const match = existing?.users?.find((u) => (u.email ?? "").toLowerCase() === result.email.toLowerCase());
+      if (match) {
+        userId = match.id;
+        const { error: updErr } = await supabase.auth.admin.updateUserById(userId, {
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: { full_name: result.display_name },
+        });
+        if (updErr) {
+          console.error("updateUserById failed", updErr);
+          return json({ error: updErr.message }, 500);
+        }
+      } else {
+        const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+          email: result.email,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: { full_name: result.display_name },
+        });
+        if (createErr || !created?.user) {
+          console.error("createUser failed", createErr);
+          return json({ error: createErr?.message ?? "Could not create user" }, 500);
+        }
+        userId = created.user.id;
+      }
+
+      // 2. Sign in as them server-side so we can redeem the invite with their JWT
+      const anon2 = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        auth: { persistSession: false },
+      });
+      const { data: signInData, error: signInErr } = await anon2.auth.signInWithPassword({
+        email: result.email,
+        password: tempPassword,
+      });
+      if (signInErr || !signInData?.session) {
+        console.error("signInWithPassword failed", signInErr);
+        return json({ error: signInErr?.message ?? "Could not start session" }, 500);
+      }
+      const newUserClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: `Bearer ${signInData.session.access_token}` } },
+        auth: { persistSession: false },
+      });
+      const { error: redeemErr } = await newUserClient.rpc("crm_team_redeem_invite", {
+        _token: result.token,
+      });
+      if (redeemErr) {
+        console.error("redeem_invite failed", redeemErr);
+        return json({ error: redeemErr.message }, 500);
+      }
+
+      // 3. Mark profile as must-change-password
+      await supabase
+        .from("profiles")
+        .update({ must_change_password: true })
+        .eq("user_id", userId);
+
+      // 4. Email the credentials via bridge (Presale Gmail SMTP)
+      const { subject, html } = buildTempPasswordEmail({
+        inviterName,
+        recipientName: result.display_name,
+        loginUrl,
+        email: result.email,
+        tempPassword,
+        personalNote: body.personal_note ?? null,
+      });
+
+      const sendResp = await fetch(`${supabaseUrl}/functions/v1/bridge-send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: authHeader },
+        body: JSON.stringify({ to: result.email, subject, html }),
+      });
+
+      const emailOk = sendResp.ok;
+      if (!emailOk) {
+        const errText = await sendResp.text();
+        console.error("bridge-send-email failed", sendResp.status, errText);
+      }
+
+      return json({
+        success: true,
+        mode: "temp_password",
+        email_sent: emailOk,
+        invite_id: result.invite_id,
+        login_url: loginUrl,
+        email: result.email,
+        // Returned ONCE so the admin UI can show / copy it as a fallback.
+        // Never logged or stored anywhere else.
+        temp_password: tempPassword,
+        warning: emailOk ? undefined : "Account created but the email failed to send. Share the temporary password manually.",
+      });
+    }
+
+    // ============================================================
+    // SET-PASSWORD MODE (legacy) — user picks their own password via link.
+    // ============================================================
     const { subject, html } = buildInviteEmail({
       inviterName,
       recipientName: result.display_name,
@@ -317,7 +425,6 @@ Deno.serve(async (req) => {
       personalNote: body.personal_note ?? null,
     });
 
-    // Send via existing bridge-send-email (Presale Gmail SMTP)
     const sendResp = await fetch(`${supabaseUrl}/functions/v1/bridge-send-email`, {
       method: "POST",
       headers: {
@@ -334,7 +441,6 @@ Deno.serve(async (req) => {
     if (!sendResp.ok) {
       const errText = await sendResp.text();
       console.error("bridge-send-email failed", sendResp.status, errText);
-      // Invite was created; just couldn't send. Return the URL so admin can copy/paste.
       return json({
         success: true,
         email_sent: false,
