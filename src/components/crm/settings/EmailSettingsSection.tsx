@@ -206,11 +206,12 @@ export default function EmailSettingsSection() {
                 signature_mode: 'html',
                 signature_builder_data: null,
               } as any);
-              toast.success(
-                preset === 'presale_card'
-                  ? 'Presale Card signature applied'
-                  : 'Lofty / plain signature applied',
-              );
+              const labelByPreset: Record<string, string> = {
+                presale_headshot_left: 'Headshot Left signature applied',
+                presale_card: 'Presale Card signature applied',
+                presale_lofty: 'Lofty / plain signature applied',
+              };
+              toast.success(labelByPreset[preset] ?? 'Signature applied');
             }}
           />
         </div>
