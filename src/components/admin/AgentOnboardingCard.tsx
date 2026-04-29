@@ -19,6 +19,7 @@ type TeamRow = {
 export function AgentOnboardingCard() {
   const qc = useQueryClient();
   const [pwInputs, setPwInputs] = useState<Record<string, string>>({});
+  const [shownPw, setShownPw] = useState<Record<string, boolean>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const { data: team = [], isLoading } = useQuery({
