@@ -315,8 +315,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           </div>
 
           {/* To row */}
-          <div className="flex items-center gap-3 px-4 sm:px-6 h-10 sm:h-12 border-b">
-            <span className="text-xs sm:text-sm font-semibold text-foreground/90 shrink-0">To</span>
+          <div className="flex items-center gap-3 px-5 sm:px-8 h-11 sm:h-14 border-b">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
               <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
               {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
