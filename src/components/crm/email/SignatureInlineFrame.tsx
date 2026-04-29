@@ -55,20 +55,25 @@ export function SignatureInlineFrame({ html }: { html: string }) {
     img{max-width:100%;height:auto;display:block}
     table{border-collapse:collapse;max-width:100%}
     td,th{vertical-align:top}
-    /* Mobile: signatures are typically built as multi-column <table> layouts
-       (headshot | text). On narrow viewports, force every cell to stack so
-       nothing gets cramped or horizontally clipped. Desktop keeps the
-       authored layout untouched. */
+    /* Mobile: keep the authored 2-column "headshot | text" layout side by side
+       so it reads as one tight signature block. Cap the headshot, tighten
+       padding, and never let a cell exceed viewport width. */
     @media (max-width: 520px){
-      table, tbody, tr{display:block !important;width:100% !important}
-      td, th{display:block !important;width:100% !important;padding:4px 0 !important;text-align:left !important}
-      td[align="center"], th[align="center"]{text-align:center !important}
-      img{margin-left:0 !important;margin-right:0 !important}
-      /* Headshots / logos: cap at a tasteful size on phones */
-      img[width]{width:auto !important;max-width:88px !important}
-      /* Tighten line-height for the stacked block */
-      body{font-size:13.5px;line-height:1.55}
-      p{margin:.45em 0}
+      html,body{padding:0 14px !important}
+      body{font-size:13px;line-height:1.5}
+      p{margin:.35em 0}
+      table{width:100% !important;table-layout:fixed !important}
+      td,th{padding:2px 6px !important;vertical-align:middle !important;word-break:break-word}
+      /* First cell (headshot) — fixed compact width, image left-aligned */
+      tr > td:first-child, tr > th:first-child{width:72px !important;padding-left:0 !important}
+      tr > td:first-child img, tr > th:first-child img{
+        width:64px !important;height:64px !important;max-width:64px !important;
+        border-radius:9999px !important;object-fit:cover !important;margin:0 !important;
+      }
+      /* Any other inline images (logos, badges) — keep modest */
+      img{max-width:100% !important;height:auto !important}
+      /* Trim oversized brand logos that some signatures embed full-width */
+      tr > td:not(:first-child) img[width]{max-width:120px !important;width:auto !important;height:auto !important}
     }
   </style></head><body>${html}</body></html>`;
 
