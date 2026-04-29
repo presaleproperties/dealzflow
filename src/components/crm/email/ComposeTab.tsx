@@ -19,6 +19,7 @@ import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { renderForRecipient, type RecipientLead } from '@/lib/emailVariables';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { useEmailSignatures } from '@/hooks/useEmailSignatures';
 import { MultiSelectFilter } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -50,6 +51,19 @@ export function ComposeTab() {
   const addMessage = useAddCrmMessage();
   const bridgeSend = useBridgeSendEmail();
   const { data: emailSettings } = useEmailSettings();
+  const { data: signatures } = useEmailSignatures();
+  // Single source of truth for the active signature: prefer the user's saved
+  // default in `crm_email_signatures` (edited via Signatures Manager), fall
+  // back to the legacy `crm_email_settings.signature_html` only when no
+  // signatures have been saved. This keeps Compose, Lead Reply, and Mass Send
+  // all rendering the same signature whenever the user updates it.
+  const activeSignatureHtml = useMemo(() => {
+    if (signatures && signatures.length > 0) {
+      const def = signatures.find((s) => s.is_default) ?? signatures[0];
+      return def.html || '';
+    }
+    return emailSettings?.signature_html || '';
+  }, [signatures, emailSettings]);
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -218,8 +232,8 @@ export function ComposeTab() {
       agentEmail,
       agentPhone,
     );
-    const sig = includeSignature && emailSettings?.signature_html
-      ? `<br/><br/>--<br/>${emailSettings.signature_html}`
+    const sig = includeSignature && activeSignatureHtml
+      ? `<br/><br/>--<br/>${activeSignatureHtml}`
       : '';
     return isHtmlMode ? merged : `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6;">${merged}${sig}</div>`;
   };
@@ -544,7 +558,7 @@ export function ComposeTab() {
       {/* Signature preview — only shown when composing a non-template email.
           Templates already contain their own footer/signature, so adding the
           system signature would duplicate it. */}
-      {!isHtmlMode && emailSettings?.signature_html && (
+      {!isHtmlMode && activeSignatureHtml && (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Checkbox id="include-sig" checked={includeSignature} onCheckedChange={(v) => setIncludeSignature(!!v)} />
@@ -556,7 +570,7 @@ export function ComposeTab() {
           {includeSignature && (
             <div className="rounded-lg border border-border/30 bg-muted/10 p-3 opacity-60">
               <div className="text-xs text-muted-foreground mb-1.5">--</div>
-              <div className="prose prose-sm dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: emailSettings.signature_html }} />
+              <div className="prose prose-sm dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: activeSignatureHtml }} />
             </div>
           )}
         </div>
