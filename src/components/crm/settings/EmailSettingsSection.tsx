@@ -97,6 +97,7 @@ export default function EmailSettingsSection() {
       setTwilioFrom((settings as any).twilio_from_number || '');
       setBrandLogoUrl((settings as any).brand_logo_url || '');
       setBrandLogoAlt((settings as any).brand_logo_alt || '');
+      setBrandLogoEnabled(Boolean((settings as any).brand_logo_enabled));
       const mode = ((settings as any).signature_mode as SignatureMode) || 'builder';
       setSignatureMode(mode);
       setBuilderData((settings as any).signature_builder_data || null);
