@@ -128,7 +128,14 @@ function DeliveryIndicator({ state, error }: { state: DeliveryState; error?: str
  * Reuses the existing `ComposeEmailDialog` / `SendTextDialog` for sending,
  * so all template / signature / channel logic stays in one place.
  */
-export default function CrmChatThreadPage() {
+interface CrmChatThreadPageProps {
+  /** When rendered as the right pane of the desktop two-pane shell, the
+   *  thread should fill its parent (no negative margins, no fixed dvh) and
+   *  the back button collapses the selection rather than navigating. */
+  embedded?: boolean;
+}
+
+export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPageProps = {}) {
   const { conversationId = '' } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -285,16 +292,22 @@ export default function CrmChatThreadPage() {
   }
 
   return (
-    <div className="-mx-3 sm:-mx-4 -my-3 sm:-my-4 flex flex-col h-[calc(100dvh-60px)]">
+    <div className={
+      embedded
+        ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
+        : '-mx-3 sm:-mx-4 -my-3 sm:-my-4 flex flex-col h-[calc(100dvh-60px)]'
+    }>
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
-        <button
-          onClick={() => navigate('/crm/chats')}
-          className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
-          aria-label="Back to chats"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        {!embedded && (
+          <button
+            onClick={() => navigate('/crm/chats')}
+            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+            aria-label="Back to chats"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
         <Link
           to={`/crm/leads/${contact.id}`}
           className="flex items-center gap-2.5 min-w-0 flex-1 group"

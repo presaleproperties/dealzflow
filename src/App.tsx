@@ -68,6 +68,7 @@ const CrmPipelinePage = lazy(() => import("./pages/crm/CrmPipelinePage"));
 const CrmEmailWorkspacePage = lazy(() => import("./pages/crm/CrmEmailWorkspacePage"));
 const CrmChatsPage = lazy(() => import("./pages/crm/CrmChatsPage"));
 const CrmChatThreadPage = lazy(() => import("./pages/crm/CrmChatThreadPage"));
+const CrmChatsShell = lazy(() => import("./pages/crm/CrmChatsShell"));
 const CrmMarketingHubPage = lazy(() => import("./pages/crm/CrmMarketingHubPage"));
 const CrmTemplatesPage = lazy(() => import("./pages/crm/CrmTemplatesPage"));
 const CrmEmailBuilderPage = lazy(() => import("./pages/crm/CrmEmailBuilderPage"));
@@ -254,8 +255,8 @@ const App = () => (
                     <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsPage /></CrmLayout></ProtectedRoute>} />
-                    <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatThreadPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsShell /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatsShell /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email/legacy" element={<Navigate to="/crm/email" replace />} />
                     <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
