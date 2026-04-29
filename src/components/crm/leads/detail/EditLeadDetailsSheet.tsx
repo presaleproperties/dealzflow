@@ -315,7 +315,7 @@ export function EditLeadDetailsSheet({ contact, open, onOpenChange }: Props) {
               <Select value={form.assigned_to || undefined} onValueChange={(v) => update('assigned_to', v)}>
                 <SelectTrigger className={inputCls()}><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
-                  {agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
+                  {agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2 whitespace-nowrap"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
                 </SelectContent>
               </Select>,
             )}
