@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Maximize2 } from 'lucide-react';
 
 const STORAGE_KEY = 'crm:compose:signature-frame-height';
-const MIN_HEIGHT = 40;
+const MIN_HEIGHT = 24;
 const MAX_HEIGHT = 800;
 
 /**
