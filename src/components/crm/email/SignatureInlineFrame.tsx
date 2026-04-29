@@ -64,11 +64,13 @@ export function SignatureInlineFrame({ html }: { html: string }) {
       p{margin:.35em 0}
       table{width:100% !important;table-layout:fixed !important}
       td,th{padding:2px 6px !important;vertical-align:middle !important;word-break:break-word}
-      /* First cell (headshot) — fixed compact width, image left-aligned */
-      tr > td:first-child, tr > th:first-child{width:72px !important;padding-left:0 !important}
+      /* First cell (headshot) — compact width, image left-aligned.
+         IMPORTANT: do NOT force border-radius — preserve the signature's
+         authored shape (square / rounded-square per the template). */
+      tr > td:first-child, tr > th:first-child{width:96px !important;padding-left:0 !important}
       tr > td:first-child img, tr > th:first-child img{
-        width:64px !important;height:64px !important;max-width:64px !important;
-        border-radius:9999px !important;object-fit:cover !important;margin:0 !important;
+        width:88px !important;height:88px !important;max-width:88px !important;
+        object-fit:cover !important;margin:0 !important;
       }
       /* Any other inline images (logos, badges) — keep modest */
       img{max-width:100% !important;height:auto !important}
