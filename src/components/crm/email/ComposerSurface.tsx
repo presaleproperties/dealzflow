@@ -284,10 +284,11 @@ export function ComposerSurface({
   ];
 
   /* Attachments */
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const handleAttachFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleAttachFiles = async (files: File[] | FileList | null) => {
+    const list = !files ? [] : Array.isArray(files) ? files : Array.from(files);
+    if (list.length === 0) return;
     if (!user?.id) {
       toast.error('You must be signed in to attach files');
       return;
@@ -295,7 +296,7 @@ export function ComposerSurface({
     setUploading(true);
     try {
       const inserts: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of list) {
         if (file.size > 20 * 1024 * 1024) {
           toast.error(`"${file.name}" is larger than 20MB`);
           continue;
@@ -326,9 +327,12 @@ export function ComposerSurface({
       }
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+  const { dragActive } = useDragAndPasteFiles({
+    targetRef: composerRef,
+    onFiles: (files) => { void handleAttachFiles(files); },
+  });
 
   const openSaveDialog = () => {
     if (!bodyText) {
