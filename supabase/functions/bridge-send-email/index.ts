@@ -176,35 +176,75 @@ Deno.serve(async (req) => {
     const linkedHtml = rewriteLinks(bodyWithBanner, trackingId);
     const trackedHtml = injectTrackingPixel(linkedHtml, trackingId);
 
-    const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-bridge-secret": bridgeSecret,
-        "Authorization": `Bearer ${presaleAnonKey}`,
-        "apikey": presaleAnonKey,
-      },
-      body: JSON.stringify({
-        to: toArr,
-        cc: body.cc,
-        bcc: body.bcc,
-        subject: body.subject,
-        html: trackedHtml,
-        template_id: body.template_id ?? null,
-        source: "dealzflow_crm",
-      }),
-    });
-
-    const upstreamText = await upstream.text();
     let upstreamJson: any = {};
-    try { upstreamJson = JSON.parse(upstreamText); } catch {/* ignore */}
+    let upstreamOk = false;
+    let upstreamStatus = 0;
 
-    if (!upstream.ok) {
-      console.error("Presale bridge-send-email failed", upstream.status, upstreamText);
-      return json(
-        { error: upstreamJson?.error ?? "Send failed", status: upstream.status },
-        502,
-      );
+    if (useAgentGmail) {
+      // Send through gmail-actions using the agent's connected mailbox.
+      // We loop one-per-recipient so each gets a clean To: header.
+      const recipients = toArr.filter(Boolean);
+      const sendResults: Array<{ ok: boolean; gmail_message_id?: string; error?: string }> = [];
+      for (const rcpt of recipients) {
+        const r = await fetch(`${supabaseUrl}/functions/v1/gmail-actions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: authHeader,
+            apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+          },
+          body: JSON.stringify({
+            action: "send_reply",
+            to: rcpt,
+            subject: body.subject,
+            body_html: trackedHtml,
+            contact_id: body.contact_id ?? null,
+          }),
+        });
+        const j = await r.json().catch(() => ({}));
+        sendResults.push({ ok: r.ok && !j.error, gmail_message_id: j.gmail_message_id, error: j.error });
+        if (!r.ok) upstreamStatus = r.status;
+      }
+      upstreamOk = sendResults.every((s) => s.ok);
+      upstreamJson = { sent_via: "gmail", results: sendResults };
+      if (!upstreamOk) {
+        const firstErr = sendResults.find((s) => !s.ok)?.error ?? "Gmail send failed";
+        console.error("agent Gmail send failed", firstErr);
+        return json({ error: firstErr, status: upstreamStatus || 502 }, 502);
+      }
+    } else {
+      // Fallback: route through Presale's bridge (info@presaleproperties.com)
+      const upstream = await fetch(`${PRESALE_FUNCTIONS_URL}/bridge-send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-bridge-secret": bridgeSecret,
+          "Authorization": `Bearer ${presaleAnonKey}`,
+          "apikey": presaleAnonKey,
+        },
+        body: JSON.stringify({
+          to: toArr,
+          cc: body.cc,
+          bcc: body.bcc,
+          subject: body.subject,
+          html: trackedHtml,
+          template_id: body.template_id ?? null,
+          source: "dealzflow_crm",
+        }),
+      });
+
+      const upstreamText = await upstream.text();
+      try { upstreamJson = JSON.parse(upstreamText); } catch {/* ignore */}
+      upstreamOk = upstream.ok;
+      upstreamStatus = upstream.status;
+
+      if (!upstreamOk) {
+        console.error("Presale bridge-send-email failed", upstream.status, upstreamText);
+        return json(
+          { error: upstreamJson?.error ?? "Send failed", status: upstream.status },
+          502,
+        );
+      }
     }
 
     // Log to crm_email_log only when we have a contact_id (column is NOT NULL).
