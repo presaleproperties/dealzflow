@@ -9,6 +9,7 @@ import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSms
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
