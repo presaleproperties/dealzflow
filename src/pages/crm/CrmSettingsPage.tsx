@@ -253,7 +253,13 @@ export default function CrmSettingsPage() {
         {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
         {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
         {activeTab === 'timeline'      && <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>}
-        {activeTab === 'team'          && <SectionErrorBoundary name="Team"><TeamManagement /></SectionErrorBoundary>}
+        {activeTab === 'team'          && (
+          <SectionErrorBoundary name="Team">
+            <TeamManagement />
+            <WorkspaceMembersCard />
+            <InviteAgentCard />
+          </SectionErrorBoundary>
+        )}
         {activeTab === 'integrations'  && <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>}
         {activeTab === 'projects'      && <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>}
         {activeTab === 'import'        && <SectionErrorBoundary name="Import"><DataImportSection /></SectionErrorBoundary>}
