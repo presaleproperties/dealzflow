@@ -323,7 +323,8 @@ export function useAddCrmContact() {
         assigned_to: contact.assigned_to || null,
         contact_type: contact.contact_type || 'lead',
         tags: contact.tags?.length ? contact.tags : null,
-        lead_types: contact.lead_types?.length ? contact.lead_types : null,
+        // `lead_types` is text[] NOT NULL DEFAULT '{}' — never send null.
+        lead_types: contact.lead_types?.length ? contact.lead_types : [],
         city: contact.city || null,
         language: contact.language || null,
         bedrooms_preferred: contact.bedrooms_preferred || null,
