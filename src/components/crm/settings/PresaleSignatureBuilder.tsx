@@ -975,13 +975,25 @@ export default function PresaleSignatureBuilder({
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
-              <ScaledIframe
-                iframeRef={iframeHRef}
-                title="Horizontal Signature"
-                naturalWidth={620}
-                naturalHeight={200}
-              />
+            <div className="bg-muted/20 p-2 space-y-2">
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Desktop preview</p>
+                <ScaledIframe
+                  iframeRef={iframeHRef}
+                  title="Horizontal Signature Desktop"
+                  naturalWidth={620}
+                  naturalHeight={200}
+                />
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mobile preview</p>
+                <ScaledIframe
+                  title="Horizontal Signature Mobile"
+                  naturalWidth={620}
+                  naturalHeight={200}
+                  previewWidth={360}
+                />
+              </div>
             </div>
           </div>
 
@@ -1036,13 +1048,25 @@ export default function PresaleSignatureBuilder({
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
-              <ScaledIframe
-                iframeRef={iframeVRef}
-                title="Stacked Signature"
-                naturalWidth={440}
-                naturalHeight={420}
-              />
+            <div className="bg-muted/20 p-2 space-y-2">
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Desktop preview</p>
+                <ScaledIframe
+                  iframeRef={iframeVRef}
+                  title="Stacked Signature Desktop"
+                  naturalWidth={440}
+                  naturalHeight={420}
+                />
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background p-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mobile preview</p>
+                <ScaledIframe
+                  title="Stacked Signature Mobile"
+                  naturalWidth={440}
+                  naturalHeight={420}
+                  previewWidth={360}
+                />
+              </div>
             </div>
           </div>
         </div>
