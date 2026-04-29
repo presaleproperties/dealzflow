@@ -186,12 +186,6 @@ export default function EmailSettingsSection() {
 
         {/* ───────── 2. Signature Builder (1:1 with Presale Properties) ───────── */}
         <div className="space-y-3">
-          <div>
-            <Label className="text-sm font-semibold">Email Signature</Label>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Build your signature with the same editor as the Presale Properties agent portal. Pick "Headshot Left" or "Headshot Top", then Apply to use it on every email you send from this CRM.
-            </p>
-          </div>
           <PresaleSignatureBuilder
             fallback={{
               fullName: senderName.split('|')[0]?.trim() || senderName,
@@ -214,8 +208,8 @@ export default function EmailSettingsSection() {
           />
         </div>
 
-        {/* Active signature preview (always visible if one is set) */}
-        {getActiveSignatureHtml() && (
+        {/* Active signature preview — only shown when user picked a non-Presale custom signature */}
+        {getActiveSignatureHtml() && signatureMode !== 'html' && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Eye className="h-3.5 w-3.5" />
