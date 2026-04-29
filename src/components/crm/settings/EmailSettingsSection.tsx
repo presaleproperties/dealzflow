@@ -12,9 +12,11 @@ import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder'
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
 import LiveSignaturePreview from './LiveSignaturePreview';
+import PresalePresetCard from './PresalePresetCard';
 import { isRichHtml } from '@/lib/htmlDetect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { PresaleSignaturePresetId } from '@/lib/presaleSignatures';
 
 type SignatureMode = 'builder' | 'html' | 'simple';
 
@@ -277,9 +279,35 @@ export default function EmailSettingsSection() {
           </details>
         </div>
 
-        {/* Signature Editor — 3 Modes */}
+        {/* ───────── Presale Properties presets (recommended) ───────── */}
+        <PresalePresetCard
+          fallbackAgent={{
+            full_name: senderName.split('|')[0]?.trim() || senderName,
+            email: replyTo || null,
+          }}
+          onApply={(preset: PresaleSignaturePresetId, html) => {
+            // Flip to HTML Import mode so the preset is auto-appended verbatim.
+            setSignatureMode('html');
+            setHtmlImport(html);
+            setSignatureHtml(html);
+            setShowHtmlPreview(true);
+            // Persist immediately so the user doesn't have to hit Save.
+            upsert.mutate({
+              signature_html: html,
+              signature_mode: 'html',
+              signature_builder_data: null,
+            } as any);
+            toast.success(
+              preset === 'presale_card'
+                ? 'Presale Card signature applied'
+                : 'Lofty / plain signature applied',
+            );
+          }}
+        />
+
+        {/* Signature Editor — 3 Modes (advanced) */}
         <div className="space-y-3">
-          <Label>Email Signature</Label>
+          <Label>Email Signature (advanced)</Label>
           <Tabs value={signatureMode} onValueChange={(v) => setSignatureMode(v as SignatureMode)}>
             <TabsList className="grid w-full grid-cols-3 h-9">
               <TabsTrigger value="builder" className="text-xs gap-1.5">
