@@ -112,7 +112,7 @@ export function CreateTaskDialog({ contactId, assignedTo, open, onOpenChange }: 
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assigned To</Label>
                 <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
                   <SelectTrigger className="h-11 text-base md:text-sm md:h-10"><SelectValue placeholder="Select agent" /></SelectTrigger>
-                  <SelectContent>{agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2 whitespace-nowrap"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}</SelectContent>
+                  <SelectContent>{agents.map((a) => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2 whitespace-nowrap leading-none"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
