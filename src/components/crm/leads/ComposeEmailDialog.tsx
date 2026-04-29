@@ -23,7 +23,7 @@ import {
   Inbox,
   X,
   Search,
-  Paperclip,
+  Pencil,
   Pencil,
   Check,
   MousePointerClick,
