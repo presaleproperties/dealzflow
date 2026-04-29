@@ -254,9 +254,17 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
+        ref={composerRef}
         hideMobileHandle
         className="sm:max-w-[920px] w-screen sm:w-[92vw] h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
       >
+        {dragActive && (
+          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
+            <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
+              Drop to attach
+            </div>
+          </div>
+        )}
         {/* Header — sticky, consistent vertical rhythm */}
         <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
