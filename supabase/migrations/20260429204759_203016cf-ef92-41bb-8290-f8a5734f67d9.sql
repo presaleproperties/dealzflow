@@ -1,0 +1,2 @@
+ALTER TABLE public.crm_team ADD COLUMN IF NOT EXISTS presale_email text;
+CREATE INDEX IF NOT EXISTS crm_team_presale_email_lower_idx ON public.crm_team (lower(presale_email)) WHERE presale_email IS NOT NULL;
