@@ -320,7 +320,7 @@ export default function PresaleSignatureBuilder({
 }: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
-  const [layout, setLayout] = useState<LayoutVariant>("horizontal");
+  const [layout, setLayout] = useState<LayoutVariant>(initialData?.layout ?? "horizontal");
   const [mode, setMode] = useState<"form" | "html">("form");
   const [fields, setFields] = useState<SignatureBuilderFields>(() => ({
     ...BLANK,
@@ -389,7 +389,14 @@ export default function PresaleSignatureBuilder({
 
     const profile = crmProfile ?? {};
 
-    const next: SignatureBuilderFields = { ...BLANK };
+    const baseFields: SignatureBuilderFields = {
+      ...BLANK,
+      ...fallback,
+      ...(initialData?.fields ?? {}),
+      ...fields,
+    };
+    const savedFields = (initialData?.fields ?? {}) as Partial<SignatureBuilderFields>;
+    const next: SignatureBuilderFields = { ...baseFields };
     const sources: Record<string, PrefillSource> = {};
 
     const apply = (
@@ -398,7 +405,12 @@ export default function PresaleSignatureBuilder({
     ) => {
       // If user explicitly edited this field, keep it.
       if (touchedFields[key]) {
-        next[key] = fields[key] as never;
+        next[key] = baseFields[key] as never;
+        sources[key] = "user";
+        return;
+      }
+      if (typeof savedFields[key] === "string" && savedFields[key]!.trim() !== "") {
+        (next as any)[key] = savedFields[key];
         sources[key] = "user";
         return;
       }
@@ -447,20 +459,20 @@ export default function PresaleSignatureBuilder({
     apply("instagram", [[presale.instagram, "presale"]]);
     // Headshot link/shape are user-only choices
     next.headshotLink = touchedFields.headshotLink
-      ? fields.headshotLink
-      : fields.headshotLink || BLANK.headshotLink;
+      ? baseFields.headshotLink
+      : savedFields.headshotLink || baseFields.headshotLink || BLANK.headshotLink;
     next.headshotShape = touchedFields.headshotShape
-      ? fields.headshotShape
-      : fields.headshotShape || BLANK.headshotShape;
+      ? baseFields.headshotShape
+      : savedFields.headshotShape || baseFields.headshotShape || BLANK.headshotShape;
     next.headshotSize = touchedFields.headshotSize
-      ? fields.headshotSize
-      : fields.headshotSize || BLANK.headshotSize;
+      ? baseFields.headshotSize
+      : savedFields.headshotSize || baseFields.headshotSize || BLANK.headshotSize;
     next.headshotPosX = touchedFields.headshotPosX
-      ? fields.headshotPosX
-      : fields.headshotPosX || BLANK.headshotPosX;
+      ? baseFields.headshotPosX
+      : savedFields.headshotPosX || baseFields.headshotPosX || BLANK.headshotPosX;
     next.headshotPosY = touchedFields.headshotPosY
-      ? fields.headshotPosY
-      : fields.headshotPosY || BLANK.headshotPosY;
+      ? baseFields.headshotPosY
+      : savedFields.headshotPosY || baseFields.headshotPosY || BLANK.headshotPosY;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
     sources.headshotSize = touchedFields.headshotSize ? "user" : "fallback";
