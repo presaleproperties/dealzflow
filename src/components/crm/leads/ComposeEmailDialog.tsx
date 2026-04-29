@@ -139,6 +139,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     }
   }, [open]);
 
+  /* Draft autosave — per-contact, survives accidental close / app backgrounding */
+  const draftScope = `lead:${contact.id}`;
+  useEmailDraftAutosave(
+    draftScope,
+    { subject, bodyHtml, cc, bcc },
+    open,
+  );
+
+  /* Restore draft on open (if any) */
+  useEffect(() => {
+    if (!open) return;
+    const draft = loadEmailDraft(draftScope);
+    if (!draft) return;
+    setSubject(draft.subject || '');
+    setBodyHtml(draft.bodyHtml || '<p></p>');
+    setCc(draft.cc || '');
+    setBcc(draft.bcc || '');
+    if (draft.cc || draft.bcc) setShowCcBcc(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   /* Reset on close */
   useEffect(() => {
     if (!open) {
