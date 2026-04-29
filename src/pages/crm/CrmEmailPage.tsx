@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Workflow, Activity, Megaphone, BarChart3, Send, Search, X, User2, Sparkles } from 'lucide-react';
+import { Workflow, Activity, Megaphone, BarChart3, Send, Search, X, User2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
