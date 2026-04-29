@@ -632,8 +632,13 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
           className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
-          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
-          <DialogHeader className="md:hidden px-2 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
+          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar.
+              Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
+              keyboard pushes the dialog up. */}
+          <DialogHeader
+            className="md:hidden px-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: '0.5rem' }}
+          >
             <button
               type="button"
               onClick={() => onOpenChange(false)}
