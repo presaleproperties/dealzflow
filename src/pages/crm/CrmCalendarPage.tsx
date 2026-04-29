@@ -405,7 +405,7 @@ export default function CrmCalendarPage() {
                         <SelectItem value="all">All Agents</SelectItem>
                         {agents.map((a) => (
                           <SelectItem key={a.id} value={a.name}>
-                            <span className="inline-flex items-center gap-2 whitespace-nowrap"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
+                            <span className="inline-flex items-center gap-2 whitespace-nowrap leading-none"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -464,7 +464,7 @@ export default function CrmCalendarPage() {
                   <SelectItem value="all">All Agents</SelectItem>
                   {agents.map((a) => (
                     <SelectItem key={a.id} value={a.name}>
-                      <span className="inline-flex items-center gap-2 whitespace-nowrap"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
+                      <span className="inline-flex items-center gap-2 whitespace-nowrap leading-none"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>

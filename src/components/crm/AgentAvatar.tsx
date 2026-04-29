@@ -33,7 +33,7 @@ export function AgentAvatar({
         width={size}
         height={size}
         loading="lazy"
-        className={cn('rounded-full object-cover shrink-0 ring-1 ring-border/60', className)}
+        className={cn('block rounded-full object-cover shrink-0 align-middle ring-1 ring-border/60', className)}
         style={{
           width: size,
           height: size,
@@ -45,7 +45,7 @@ export function AgentAvatar({
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-full bg-muted text-[9px] font-semibold text-muted-foreground shrink-0 ring-1 ring-border/60',
+        'inline-flex items-center justify-center rounded-full bg-muted text-[9px] font-semibold leading-none text-muted-foreground shrink-0 align-middle ring-1 ring-border/60',
         className,
       )}
       style={{ width: size, height: size }}

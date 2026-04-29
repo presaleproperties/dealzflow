@@ -435,22 +435,22 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
           toast.success(`Assigned → ${v}`);
         }}
       >
-        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-full min-w-0 max-w-full text-muted-foreground gap-1.5 [&>svg]:shrink-0 [&>span]:min-w-0 [&>span]:flex-1">
+        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-full min-w-0 max-w-full text-muted-foreground gap-1.5 [&>svg]:shrink-0 [&>span]:!flex [&>span]:!items-center [&>span]:min-w-0 [&>span]:flex-1">
           {current ? (
-            <span className="flex items-center gap-1.5 min-w-0 flex-1">
+            <span className="items-center gap-1.5 min-w-0 flex-1 whitespace-nowrap leading-none">
               <AgentAvatar name={current.name} headshotUrl={current.headshot_url} focalY={current.focal_y} size={18} />
-              <span className="truncate whitespace-nowrap">{current.name}</span>
+              <span className="min-w-0 truncate whitespace-nowrap leading-none">{current.name}</span>
             </span>
           ) : (
             <SelectValue placeholder="Unassigned" />
           )}
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[200px]">
           {agents.map(a => (
-            <SelectItem key={a.id} value={a.name} className="text-xs">
-              <span className="inline-flex items-center gap-2">
+            <SelectItem key={a.id} value={a.name} className="text-xs whitespace-nowrap">
+              <span className="inline-flex items-center gap-2 whitespace-nowrap leading-none">
                 <AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />
-                {a.name}
+                <span className="whitespace-nowrap leading-none">{a.name}</span>
               </span>
             </SelectItem>
           ))}
