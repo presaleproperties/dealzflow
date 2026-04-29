@@ -278,6 +278,7 @@ export function PipelineKanban() {
     const contact = contacts.find(c => c.id === contactId);
     const targetSeg = pipelineSegments.find(s => s.id === targetSegId);
     if (!contact || !targetSeg) return;
+    if (result.source.droppableId === targetSegId) return;
 
     // Build update payload from target segment's filter_config
     const updates: Record<string, unknown> = {};
@@ -288,20 +289,36 @@ export function PipelineKanban() {
       updates.status = (fc.status as string[])[0];
       oldValues.status = contact.status;
       updates.status_changed_at = new Date().toISOString();
+      updates.stage_changed_at = new Date().toISOString();
     }
     if (fc.lead_type && Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
       updates.lead_type = (fc.lead_type as string[])[0];
       oldValues.lead_type = contact.lead_type;
     }
 
-    if (Object.keys(updates).length === 0) return;
+    if (Object.keys(updates).length === 0) {
+      toast.info(`"${targetSeg.name}" has no stage rules — drop ignored.`);
+      return;
+    }
+
+    // Optimistic update so the card visibly stays in the new column
+    const prev = queryClient.getQueryData<CrmContact[]>(['crm-contacts']);
+    if (prev) {
+      queryClient.setQueryData<CrmContact[]>(
+        ['crm-contacts'],
+        prev.map(c => c.id === contactId ? { ...c, ...(updates as Partial<CrmContact>) } : c)
+      );
+    }
 
     const name = formatContactName(contact.first_name, contact.last_name);
     updateContact.mutate(
       { id: contactId, updates, oldValues },
       {
         onSuccess: () => toast.success(`Moved ${name} to ${targetSeg.name}`, { duration: 2000 }),
-        onError: () => toast.error(`Failed to move ${name}. Reverted.`),
+        onError: () => {
+          if (prev) queryClient.setQueryData(['crm-contacts'], prev);
+          toast.error(`Failed to move ${name}. Reverted.`);
+        },
       }
     );
   };
