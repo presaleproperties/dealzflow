@@ -216,13 +216,127 @@ Deno.serve(async (req) => {
     }, 502);
   }
 
+  // (c.5) Post-process: swap Presale auto-signature with the agent's CRM
+  // signature, and inject an "Attachments" section if any toggles are on.
+  let html_final = html_rendered;
+
+  // — Resolve the agent's CRM signature (default signature → fallback to legacy)
+  let agentSignatureHtml = "";
+  try {
+    const { data: sigRow } = await supabase
+      .from("crm_email_signatures")
+      .select("html, is_default")
+      .eq("user_id", user.id)
+      .order("is_default", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (sigRow?.html && sigRow.html.trim()) {
+      agentSignatureHtml = sigRow.html;
+    } else {
+      const { data: settings } = await supabase
+        .from("crm_email_settings")
+        .select("signature_html")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (settings?.signature_html?.trim()) agentSignatureHtml = settings.signature_html;
+    }
+  } catch (e) {
+    console.warn("[render-and-send] signature lookup failed", (e as Error).message);
+  }
+
+  // — Strip Presale's trailing signature & branding strip, replace with ours.
+  // The bridge wraps the signature in a section we can target reliably; we also
+  // fall back to a generic "agent block" trim if markers change.
+  if (agentSignatureHtml) {
+    // Drop everything from the first known signature marker onward, then close.
+    const markers = [
+      /<table[^>]*data-presale-signature[\s\S]*$/i,
+      /<div[^>]*data-presale-signature[\s\S]*$/i,
+      /<!--\s*presale:signature\s*-->[\s\S]*$/i,
+      /<table[^>]*class="[^"]*signature[^"]*"[\s\S]*$/i,
+    ];
+    let stripped = html_final;
+    for (const rx of markers) {
+      if (rx.test(stripped)) { stripped = stripped.replace(rx, ""); break; }
+    }
+    // Re-close any open tags conservatively, then append CRM signature + close.
+    const closing = /<\/body>|<\/html>/i.test(stripped) ? "" : "";
+    const signatureBlock =
+      `<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#111;">` +
+      agentSignatureHtml +
+      `</div>`;
+    if (/<\/body\s*>/i.test(stripped)) {
+      html_final = stripped.replace(/<\/body\s*>/i, `${signatureBlock}</body>`);
+    } else {
+      html_final = `${stripped}${signatureBlock}${closing}`;
+    }
+  }
+
+  // — Resolve and inject attachment links
+  const wantedAttachments = (["brochure", "floor_plans", "pricing"] as const).filter((k) => attachments[k]);
+  const resolvedAttachments: { kind: string; label: string; url: string; filename: string | null }[] = [];
+  if (wantedAttachments.length > 0) {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/presale-project-assets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+          apikey: ANON_KEY,
+        },
+        body: JSON.stringify({ project_slug }),
+      });
+      const j = await r.json();
+      const assets = j?.assets ?? {};
+      const labels: Record<string, string> = {
+        brochure: "Brochure",
+        floor_plans: "Floor Plans",
+        pricing: "Pricing Sheet",
+      };
+      for (const k of wantedAttachments) {
+        const a = assets[k];
+        if (a?.url) resolvedAttachments.push({ kind: k, label: labels[k], url: a.url, filename: a.filename });
+      }
+    } catch (e) {
+      console.warn("[render-and-send] asset resolve failed", (e as Error).message);
+    }
+  }
+
+  if (resolvedAttachments.length > 0) {
+    const items = resolvedAttachments.map((a) =>
+      `<tr><td style="padding:8px 0;">` +
+        `<a href="${a.url}" style="display:inline-block;padding:10px 14px;border:1px solid #D7A542;border-radius:6px;color:#111;background:#fff;text-decoration:none;font-weight:600;font-size:13px;">` +
+        `📎 ${a.label}${a.filename ? ` <span style="color:#666;font-weight:400;">— ${a.filename}</span>` : ""}` +
+        `</a>` +
+      `</td></tr>`
+    ).join("");
+    const attachBlock =
+      `<div style="margin:24px 0 8px;font-family:Arial,Helvetica,sans-serif;">` +
+        `<div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Attached</div>` +
+        `<table cellpadding="0" cellspacing="0" border="0">${items}</table>` +
+      `</div>`;
+    // Insert before the signature block we appended (or before </body> as a fallback)
+    if (/<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;/i.test(html_final)) {
+      html_final = html_final.replace(
+        /(<div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;)/i,
+        `${attachBlock}$1`,
+      );
+    } else if (/<\/body\s*>/i.test(html_final)) {
+      html_final = html_final.replace(/<\/body\s*>/i, `${attachBlock}</body>`);
+    } else {
+      html_final = `${html_final}${attachBlock}`;
+    }
+  }
+
   // (d) dry run — preview only
   if (dry_run) {
     return json({
       ok: true,
       subject: subject_rendered,
-      html: html_rendered,
+      html: html_final,
       text: text_rendered,
+      attachments: resolvedAttachments,
     });
   }
 
