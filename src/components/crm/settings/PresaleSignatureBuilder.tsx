@@ -189,7 +189,7 @@ function ScaledIframe({
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
-      if (w > 0) setScale(w / naturalWidth);
+      if (w > 0) setScale(Math.min(1, w / naturalWidth));
     };
     update();
     const ro = new ResizeObserver(update);
