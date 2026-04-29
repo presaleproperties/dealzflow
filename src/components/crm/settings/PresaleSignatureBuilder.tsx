@@ -46,8 +46,34 @@ export interface SignatureBuilderFields {
 interface PresaleSignatureBuilderProps {
   /** Falls back to these values when nothing is loaded from Presale yet. */
   fallback: Partial<SignatureBuilderFields>;
+  /** Persisted builder state from previous saves — user edits take priority. */
+  initialData?: { fields?: Partial<SignatureBuilderFields>; touchedFields?: Record<string, boolean> } | null;
   /** Called with the rendered HTML when the user clicks "Apply to CRM". */
-  onApply: (html: string, layout: LayoutVariant, fields: SignatureBuilderFields) => void;
+  onApply: (
+    html: string,
+    layout: LayoutVariant,
+    fields: SignatureBuilderFields,
+    touchedFields: Record<string, boolean>,
+  ) => void;
+}
+
+// ── URL helpers ──────────────────────────────────────────────────────
+function normalizeUrl(raw: string): string {
+  const v = (raw || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (/^mailto:|^tel:/i.test(v)) return v;
+  return `https://${v.replace(/^\/+/, "")}`;
+}
+function normalizeInstagram(raw: string): string {
+  const v = (raw || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  const handle = v.replace(/^@/, "").replace(/^instagram\.com\//i, "");
+  return `https://instagram.com/${handle}`;
+}
+function escapeAttr(s: string): string {
+  return (s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // ── Helper: build headshot img tag based on shape ────────────────────
@@ -60,16 +86,26 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
     .toUpperCase();
   const radius = d.headshotShape === "circle" ? "50%" : "14px";
   const img = d.photoUrl
-    ? `<img src="${d.photoUrl}" alt="${d.fullName}" width="${size}" height="${size}" style="border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
+    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
     : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#c8a45e,#a8843e);color:#fff;font-size:${Math.round(size * 0.32)}px;font-weight:700;text-align:center;line-height:${size}px;box-shadow:0 4px 16px rgba(200,164,94,0.2);border:3px solid #c8a45e;">${initials}</div>`;
-  return d.headshotLink
-    ? `<a href="${d.headshotLink}" target="_blank" style="text-decoration:none;">${img}</a>`
+  // Headshot links to: explicit headshotLink → Instagram → website
+  const linkRaw = d.headshotLink || d.instagram || d.website;
+  const link = d.headshotLink
+    ? normalizeUrl(d.headshotLink)
+    : d.instagram
+    ? normalizeInstagram(d.instagram)
+    : d.website
+    ? normalizeUrl(d.website)
+    : "";
+  return link
+    ? `<a href="${escapeAttr(link)}" target="_blank" rel="noopener" style="text-decoration:none;">${img}</a>`
     : img;
 }
 
 function buildInstagramButton(d: SignatureBuilderFields): string {
   if (!d.instagram) return "";
-  return `<a href="${d.instagram}" target="_blank" style="display: inline-block; padding: 4px 12px; border: 1.5px solid #c8a45e; border-radius: 6px; color: #c8a45e; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; line-height: 18px; vertical-align: middle;">Instagram</a>`;
+  const href = normalizeInstagram(d.instagram);
+  return `<a href="${escapeAttr(href)}" target="_blank" rel="noopener" style="display: inline-block; padding: 4px 12px; border: 1.5px solid #c8a45e; border-radius: 6px; color: #c8a45e; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; line-height: 18px; vertical-align: middle;">Instagram</a>`;
 }
 
 // ── Horizontal layout: headshot on the left with gold divider ────────
@@ -86,12 +122,12 @@ export function buildHorizontalHtml(d: SignatureBuilderFields): string {
       <p style="margin: 0 0 1px; font-size: 19px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px;">${d.fullName}</p>
       <p style="margin: 0 0 10px; font-size: 11px; color: #c8a45e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">${d.title} · ${d.brokerage}</p>
       <p style="margin: 0; font-size: 13px; color: #333;">
-        <a href="tel:${d.phone}" style="color: #333; text-decoration: none;">${d.phone}</a>
+        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color: #333; text-decoration: none;">${d.phone}</a>
         <span style="color: #ddd; padding: 0 6px;">|</span>
-        <a href="mailto:${d.email}" style="color: #333; text-decoration: none;">${d.email}</a>
+        <a href="mailto:${escapeAttr(d.email)}" style="color: #333; text-decoration: none;">${d.email}</a>
       </p>
       <p style="margin: 6px 0 0; font-size: 13px;">
-        <a href="${d.website}" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>${
+        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>${
           igBtn
             ? `
         <span style="padding: 0 8px;"></span>${igBtn}`
@@ -120,12 +156,12 @@ export function buildStackedHtml(d: SignatureBuilderFields): string {
       <p style="margin: 0 0 12px; font-size: 11px; color: #c8a45e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">${d.title} · ${d.brokerage}</p>
       <div style="width: 40px; height: 2px; background: #c8a45e; margin: 0 auto 12px; border-radius: 1px;"></div>
       <p style="margin: 0 0 3px; font-size: 13px;">
-        <a href="tel:${d.phone}" style="color: #333; text-decoration: none;">${d.phone}</a>
+        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color: #333; text-decoration: none;">${d.phone}</a>
         <span style="color: #ddd; padding: 0 6px;">|</span>
-        <a href="mailto:${d.email}" style="color: #333; text-decoration: none;">${d.email}</a>
+        <a href="mailto:${escapeAttr(d.email)}" style="color: #333; text-decoration: none;">${d.email}</a>
       </p>
       <p style="margin: 0 0 8px; font-size: 13px;">
-        <a href="${d.website}" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>
+        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>
       </p>${
         igBtn
           ? `
@@ -249,7 +285,7 @@ function ScaledIframe({
   );
 }
 
-export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSignatureBuilderProps) {
+export default function PresaleSignatureBuilder({ fallback, initialData, onApply }: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
   const [layout, setLayout] = useState<LayoutVariant>("horizontal");
@@ -257,10 +293,13 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
   const [fields, setFields] = useState<SignatureBuilderFields>(() => ({
     ...BLANK,
     ...fallback,
+    ...(initialData?.fields ?? {}),
   }));
   // Per-field touched + per-field source tracking so user edits never get
   // overwritten by a later prefill, and we can show "from Presale" etc.
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    () => initialData?.touchedFields ?? {},
+  );
   const [sourceMap, setSourceMap] = useState<Record<string, PrefillSource>>({});
   const [crmProfile, setCrmProfile] = useState<CrmProfileSeed | null>(null);
 
@@ -409,7 +448,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
   };
 
   const handleApply = () => {
-    onApply(activeHtml, layout, fields);
+    onApply(activeHtml, layout, fields, touchedFields);
   };
 
   const isLoading = status === "loading";

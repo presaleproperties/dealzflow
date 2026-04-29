@@ -191,15 +191,18 @@ export default function EmailSettingsSection() {
               fullName: senderName.split('|')[0]?.trim() || senderName,
               email: replyTo || '',
             }}
-            onApply={(html, layout) => {
+            initialData={(builderData as any) ?? null}
+            onApply={(html, layout, fields, touchedFields) => {
               setSignatureMode('html');
               setHtmlImport(html);
               setSignatureHtml(html);
               setShowHtmlPreview(true);
+              const nextBuilder = { fields, touchedFields } as any;
+              setBuilderData(nextBuilder);
               upsert.mutate({
                 signature_html: html,
                 signature_mode: 'html',
-                signature_builder_data: null,
+                signature_builder_data: nextBuilder,
               } as any);
               toast.success(
                 `${layout === 'horizontal' ? 'Headshot Left' : 'Headshot Top'} signature applied`,
