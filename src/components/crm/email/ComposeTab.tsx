@@ -123,12 +123,15 @@ export function ComposeTab() {
   // Template state
   const [activeTemplate, setActiveTemplate] = useState<CrmEmailTemplate | null>(null);
   const [htmlBody, setHtmlBody] = useState('');
-  const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+  // Editor mode for templates: 'preview' (read-only), 'simple' (edit text inline
+  // on the rendered preview), or 'html' (raw HTML editor).
+  const [editorMode, setEditorMode] = useState<'preview' | 'simple' | 'html'>('preview');
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const isHtmlMode = !!activeTemplate;
+
 
   // From display
   const fromDisplay = useMemo(() => {
@@ -188,7 +191,7 @@ export function ComposeTab() {
     ).slice(0, 5);
   }, [contacts, excludeSearch, excludedIds]);
 
-  // Update iframe when htmlBody changes
+  // Update iframe when htmlBody / editor mode changes
   useEffect(() => {
     if (iframeRef.current && isHtmlMode) {
       const doc = iframeRef.current.contentDocument;
@@ -196,9 +199,24 @@ export function ComposeTab() {
         doc.open();
         doc.write(htmlBody || '<p style="color:#888;font-family:sans-serif;padding:20px;">No content</p>');
         doc.close();
+        // In "simple" mode, make the rendered preview directly editable so the
+        // user can rewrite headlines / paragraphs without touching HTML.
+        if (editorMode === 'simple' && doc.body) {
+          doc.body.contentEditable = 'true';
+          doc.body.style.outline = 'none';
+          doc.body.style.cursor = 'text';
+          const onInput = () => {
+            // Capture full HTML (incl. <head>) so styles/inline images stay intact
+            try {
+              setHtmlBody(`<!DOCTYPE html>\n${doc.documentElement.outerHTML}`);
+            } catch { /* noop */ }
+          };
+          doc.body.addEventListener('input', onInput);
+        }
       }
     }
-  }, [htmlBody, isHtmlMode, previewWidth]);
+    // editorMode in deps so the contentEditable toggle re-applies on switch
+  }, [htmlBody, isHtmlMode, previewWidth, editorMode]);
 
   const handleSelectTemplate = (tpl: CrmEmailTemplate) => {
     setActiveTemplate(tpl);
@@ -208,8 +226,9 @@ export function ComposeTab() {
     // would see "Hi ," instead of their name.
     setHtmlBody(tpl.body_html || '');
     if (tpl.subject && !subject) setSubject(tpl.subject);
-    setShowHtmlEditor(false);
+    setEditorMode('preview');
   };
+
 
   const clearTemplate = () => {
     setActiveTemplate(null);
@@ -522,9 +541,34 @@ export function ComposeTab() {
       {/* Body — HTML mode vs plain mode */}
       {isHtmlMode ? (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Email Body (HTML Template)</Label>
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <Label>Email Body (Template)</Label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Edit-mode toggle: Preview / Simple text / HTML */}
+              <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('preview')}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${editorMode === 'preview' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('simple')}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${editorMode === 'simple' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Edit text
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('html')}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors flex items-center gap-1 ${editorMode === 'html' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Code className="w-3 h-3" />
+                  HTML
+                </button>
+              </div>
               <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5">
                 <button onClick={() => setPreviewWidth('desktop')} className={`p-1 rounded transition-colors ${previewWidth === 'desktop' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
                   <Monitor className="w-3.5 h-3.5" />
@@ -533,12 +577,14 @@ export function ComposeTab() {
                   <Smartphone className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <button onClick={() => setShowHtmlEditor(!showHtmlEditor)} className="text-[11px] font-medium text-primary hover:text-primary/80 flex items-center gap-1">
-                <Code className="w-3.5 h-3.5" />
-                {showHtmlEditor ? 'Hide HTML' : 'Edit HTML'}
-              </button>
             </div>
           </div>
+
+          {editorMode === 'simple' && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-foreground/80">
+              <span className="font-medium text-primary">Simple text mode:</span> click any heading or paragraph in the preview below to edit it directly. Layout, images and styling stay intact. Switch back to <span className="font-medium">Preview</span> when you're done.
+            </div>
+          )}
 
           {/* HTML Preview — full template render (no signature appended; templates already include footer/signature) */}
           <div className="flex justify-center">
@@ -560,7 +606,7 @@ export function ComposeTab() {
           </p>
 
           {/* Raw HTML editor */}
-          {showHtmlEditor && (
+          {editorMode === 'html' && (
             <Textarea
               value={htmlBody}
               onChange={e => setHtmlBody(e.target.value)}
@@ -568,6 +614,7 @@ export function ComposeTab() {
               spellCheck={false}
             />
           )}
+
         </div>
       ) : (
         <div>

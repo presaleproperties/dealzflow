@@ -35,28 +35,45 @@ interface ResultRow {
 
 function renderForLead(template: string, lead: Record<string, string>, sender: Record<string, string>): string {
   // Legacy aliases supported by the client renderer (renderForRecipient) — keep
-  // server-side parity so Presale templates with {{first_name}}, {{lead_name}},
-  // {{agent_name}} etc. expand instead of being stripped to empty strings.
+  // server-side parity so Presale / Lofty templates with {{first_name}},
+  // {$name}, ${first_name}, etc. all expand instead of being stripped.
+  const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(" ");
   const legacy: Record<string, string> = {
+    name: lead.first_name ?? "",
     first_name: lead.first_name ?? "",
+    firstname: lead.first_name ?? "",
     last_name: lead.last_name ?? "",
-    lead_name: [lead.first_name, lead.last_name].filter(Boolean).join(" "),
-    full_name: [lead.first_name, lead.last_name].filter(Boolean).join(" "),
+    lastname: lead.last_name ?? "",
+    full_name: fullName,
+    lead_name: fullName,
+    contact_name: fullName,
+    email: lead.email ?? "",
+    phone: lead.phone ?? "",
     agent_name: sender.full_name ?? "",
+    agent_first_name: sender.first_name ?? "",
     agent_email: sender.email ?? "",
     agent_phone: sender.phone ?? "",
+    sender_name: sender.full_name ?? "",
+    sender_email: sender.email ?? "",
     company_name: "The Presale Properties Group",
+    unsubscribe: "",
+    unsubscribe_link: "",
   };
-  return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
-    const tok = String(key);
+  const resolve = (raw: string): string => {
+    const tok = String(raw);
     const path = tok.split(".");
     if (path[0] === "lead") return lead[path[1]] ?? "";
     if (path[0] === "sender") return sender[path[1]] ?? "";
     const lower = tok.toLowerCase();
     if (lower in legacy) return legacy[lower];
     return "";
-  });
+  };
+  return template
+    .replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => resolve(k))
+    .replace(/\{\s*\$\s*([\w.]+)\s*\}/g, (_, k) => resolve(k))
+    .replace(/\$\{\s*([\w.]+)\s*\}/g, (_, k) => resolve(k));
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
