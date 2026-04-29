@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, Eye, Pencil, RefreshCw, Check, ExternalLink, Loader2, Sparkles } from "lucide-react";
+import { Copy, Eye, Pencil, RefreshCw, Check, ExternalLink, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePresaleAgent } from "@/stores/usePresaleAgent";
 import { supabase } from "@/integrations/supabase/client";
@@ -433,78 +433,226 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
     );
   };
 
-  // Count how many fields were auto-prefilled
-  const prefilledCount = Object.values(sourceMap).filter(
-    (s) => s === "presale" || s === "profile",
-  ).length;
+  const initials = (fields.fullName || "?")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="space-y-6">
-      {/* ─────────── Header bar ─────────── */}
-      <div className="rounded-xl border border-border bg-card/40 p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Email Signature
-            </p>
-            <h3 className="text-lg font-semibold mt-0.5">Pick a layout, edit, then apply</h3>
-            <p className="text-xs text-muted-foreground/80 mt-1">
-              Same builder used in the Presale Properties agent portal.
-              {prefilledCount > 0 && (
-                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
-                  <Sparkles className="h-3 w-3" />
-                  {prefilledCount} field{prefilledCount === 1 ? "" : "s"} auto-filled
-                </span>
-              )}
-              {status === "unmatched" && (
-                <span className="ml-2 text-amber-600 dark:text-amber-400">
-                  · No Presale match — using your CRM profile
-                </span>
-              )}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
+    <div className="space-y-5">
+      {/* ─────────── Header row ─────────── */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Email Signature
+          </p>
+          <p className="text-sm text-muted-foreground/80 mt-1">
+            Generate premium signatures for the team
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Agent identity pill (read-only single-agent dropdown look) */}
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card pl-1.5 pr-3 py-1 h-10 min-w-[200px]">
+            {fields.photoUrl ? (
+              <img src={fields.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
+            ) : (
+              <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                {initials}
+              </div>
+            )}
+            <span className="text-sm font-medium truncate flex-1">
+              {fields.fullName || "Your name"}
+            </span>
+            <RefreshCw
+              className={cn("h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-foreground", isLoading && "animate-spin")}
               onClick={() => refresh({ force: true })}
-              disabled={isLoading}
-              className="h-9 text-xs"
-            >
-              {isLoading ? (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              Pull from Presale
-            </Button>
-            <Button
+            />
+          </div>
+          {/* Edit / HTML toggle */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden h-10">
+            <button
               type="button"
-              size="sm"
-              onClick={handleApply}
-              className="h-9 text-xs gap-1.5"
+              onClick={() => setMode("form")}
+              className={cn(
+                "px-3 h-full flex items-center gap-1.5 text-sm font-medium transition-colors",
+                mode === "form"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted",
+              )}
             >
-              <Check className="h-3.5 w-3.5" />
-              Apply "{layout === "horizontal" ? "Headshot Left" : "Headshot Top"}"
-            </Button>
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("html")}
+              className={cn(
+                "px-3 h-full flex items-center gap-1.5 text-sm font-medium transition-colors",
+                mode === "html"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted",
+              )}
+            >
+              <Eye className="h-3.5 w-3.5" /> HTML
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ─────────── Live previews (big, side-by-side, full width) ─────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Live Preview · Click to choose
-          </p>
-          <p className="text-[10px] text-muted-foreground/60">
-            Renders at real email width (600px)
-          </p>
-        </div>
+      {/* ─────────── Two-column body: editor (left) · previews (right stacked) ─────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        {/* ===== LEFT: Editor ===== */}
+        {mode === "form" ? (
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            {/* Agent preview header */}
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-border p-4 flex items-center gap-3">
+              {fields.photoUrl ? (
+                <img
+                  src={fields.photoUrl}
+                  alt=""
+                  className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md shrink-0"
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-full bg-primary/20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md flex items-center justify-center text-primary font-bold shrink-0">
+                  {initials}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-base font-bold truncate">{fields.fullName || "Your name"}</p>
+                <p className="text-[11px] text-primary font-bold uppercase tracking-wide truncate">
+                  {fields.title}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                  {fields.brokerage}
+                </p>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Fields */}
+            <div className="p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Full Name <SourceBadge field="fullName" />
+                  </Label>
+                  <Input value={fields.fullName} onChange={(e) => update("fullName", e.target.value)} className="h-10 text-sm mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Title <SourceBadge field="title" />
+                  </Label>
+                  <Input value={fields.title} onChange={(e) => update("title", e.target.value)} className="h-10 text-sm mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Phone <SourceBadge field="phone" />
+                  </Label>
+                  <Input value={fields.phone} onChange={(e) => update("phone", e.target.value)} className="h-10 text-sm mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Email <SourceBadge field="email" />
+                  </Label>
+                  <Input value={fields.email} onChange={(e) => update("email", e.target.value)} className="h-10 text-sm mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Website <SourceBadge field="website" />
+                  </Label>
+                  <Input value={fields.website} onChange={(e) => update("website", e.target.value)} className="h-10 text-sm mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Brokerage <SourceBadge field="brokerage" />
+                  </Label>
+                  <Input value={fields.brokerage} onChange={(e) => update("brokerage", e.target.value)} className="h-10 text-sm mt-1" />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Instagram <SourceBadge field="instagram" />
+                  </Label>
+                  <Input value={fields.instagram} onChange={(e) => update("instagram", e.target.value)} className="h-10 text-sm mt-1" placeholder="https://instagram.com/..." />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Headshot URL <SourceBadge field="photoUrl" />
+                  </Label>
+                  <Input value={fields.photoUrl} onChange={(e) => update("photoUrl", e.target.value)} className="h-10 text-sm mt-1" placeholder="https://..." />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" /> Headshot Link URL
+                  </Label>
+                  <Input value={fields.headshotLink} onChange={(e) => update("headshotLink", e.target.value)} className="h-10 text-sm mt-1" placeholder="https://..." />
+                  <p className="text-[10px] text-muted-foreground/70 mt-1">
+                    When set, the headshot image becomes clickable and links to this URL
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Headshot Shape
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => update("headshotShape", "circle")}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-medium transition-all flex-1 justify-center",
+                        fields.headshotShape === "circle"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/30",
+                      )}
+                    >
+                      <div className="h-4 w-4 rounded-full border-2 border-current" />
+                      Circle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => update("headshotShape", "rounded")}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-medium transition-all flex-1 justify-center",
+                        fields.headshotShape === "rounded"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/30",
+                      )}
+                    >
+                      <div className="h-4 w-4 rounded-[4px] border-2 border-current" />
+                      Rounded
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+              <p className="text-xs font-semibold text-muted-foreground">
+                {layout === "horizontal" ? "Headshot Left" : "Headshot Top"} — HTML
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1.5"
+                onClick={() => handleCopyHtml(activeHtml)}
+              >
+                <Copy className="h-3 w-3" /> Copy
+              </Button>
+            </div>
+            <div className="p-3">
+              <Textarea
+                value={activeHtml}
+                readOnly
+                className="font-mono text-[10px] min-h-[520px] bg-muted/20 border-0 resize-y"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ===== RIGHT: Previews stacked ===== */}
+        <div className="space-y-4">
           {/* Variation 1: Horizontal */}
           <div
             className={cn(
@@ -621,256 +769,18 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
         </div>
       </div>
 
-      {/* ─────────── Editor / HTML view (full width below previews) ─────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {mode === "form" ? "Edit Details" : "Raw HTML"}
-          </p>
-          <div className="flex items-center border border-border rounded-lg overflow-hidden h-8">
-            <button
-              type="button"
-              onClick={() => setMode("form")}
-              className={cn(
-                "px-3 h-full flex items-center gap-1.5 text-xs font-medium transition-colors",
-                mode === "form"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <Pencil className="h-3 w-3" /> Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("html")}
-              className={cn(
-                "px-3 h-full flex items-center gap-1.5 text-xs font-medium transition-colors",
-                mode === "html"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              <Eye className="h-3 w-3" /> HTML
-            </button>
-          </div>
-        </div>
-
-        {mode === "form" ? (
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            {/* Agent preview header */}
-            <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-border p-4 flex items-center gap-3">
-              {fields.photoUrl ? (
-                <img
-                  src={fields.photoUrl}
-                  alt=""
-                  className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md shrink-0"
-                />
-              ) : (
-                <div className="h-14 w-14 rounded-full bg-primary/20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md flex items-center justify-center text-primary font-bold shrink-0">
-                  {fields.fullName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase() || "?"}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-sm font-bold truncate">{fields.fullName || "Your name"}</p>
-                <p className="text-[11px] text-primary font-semibold uppercase tracking-wide truncate">
-                  {fields.title}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  {fields.brokerage}
-                </p>
-              </div>
-            </div>
-
-            {/* Fields — wider grid since editor is now full-width */}
-            <div className="p-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
-                <div className="md:col-span-2 lg:col-span-3">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Full Name <SourceBadge field="fullName" />
-                  </Label>
-                  <Input
-                    value={fields.fullName}
-                    onChange={(e) => update("fullName", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Title <SourceBadge field="title" />
-                  </Label>
-                  <Input
-                    value={fields.title}
-                    onChange={(e) => update("title", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Phone <SourceBadge field="phone" />
-                  </Label>
-                  <Input
-                    value={fields.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Brokerage <SourceBadge field="brokerage" />
-                  </Label>
-                  <Input
-                    value={fields.brokerage}
-                    onChange={(e) => update("brokerage", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                <div className="md:col-span-1 lg:col-span-2">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Email <SourceBadge field="email" />
-                  </Label>
-                  <Input
-                    value={fields.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Website <SourceBadge field="website" />
-                  </Label>
-                  <Input
-                    value={fields.website}
-                    onChange={(e) => update("website", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-                <div className="md:col-span-2 lg:col-span-1">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Instagram <SourceBadge field="instagram" />
-                  </Label>
-                  <Input
-                    value={fields.instagram}
-                    onChange={(e) => update("instagram", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                    placeholder="https://instagram.com/..."
-                  />
-                </div>
-                <div className="md:col-span-2 lg:col-span-2">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                    Headshot URL <SourceBadge field="photoUrl" />
-                  </Label>
-                  <Input
-                    value={fields.photoUrl}
-                    onChange={(e) => update("photoUrl", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="md:col-span-2 lg:col-span-2">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                    <ExternalLink className="h-3 w-3" /> Headshot Link URL
-                  </Label>
-                  <Input
-                    value={fields.headshotLink}
-                    onChange={(e) => update("headshotLink", e.target.value)}
-                    className="h-9 text-sm mt-1"
-                    placeholder="https://... (clicking headshot opens this link)"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                    Headshot Shape
-                  </Label>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <button
-                      type="button"
-                      onClick={() => update("headshotShape", "circle")}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all flex-1 justify-center",
-                        fields.headshotShape === "circle"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/30",
-                      )}
-                    >
-                      <div className="h-4 w-4 rounded-full border-2 border-current" />
-                      Circle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => update("headshotShape", "rounded")}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all flex-1 justify-center",
-                        fields.headshotShape === "rounded"
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/30",
-                      )}
-                    >
-                      <div className="h-4 w-4 rounded-[4px] border-2 border-current" />
-                      Rounded
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground">
-                  Headshot Left — HTML
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1.5"
-                  onClick={() => handleCopyHtml(horizontalHtml)}
-                >
-                  <Copy className="h-3 w-3" /> Copy
-                </Button>
-              </div>
-              <div className="p-3">
-                <Textarea
-                  value={horizontalHtml}
-                  readOnly
-                  className="font-mono text-[10px] min-h-[260px] bg-muted/20 border-0 resize-y"
-                />
-              </div>
-            </div>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground">
-                  Headshot Top — HTML
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1.5"
-                  onClick={() => handleCopyHtml(stackedHtml)}
-                >
-                  <Copy className="h-3 w-3" /> Copy
-                </Button>
-              </div>
-              <div className="p-3">
-                <Textarea
-                  value={stackedHtml}
-                  readOnly
-                  className="font-mono text-[10px] min-h-[260px] bg-muted/20 border-0 resize-y"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <p className="text-[10px] text-muted-foreground/60 text-center mt-3">
-          Edit fields above · Click a preview to choose layout · "Apply" saves it as your CRM signature
+      {/* ─────────── Save Changes (gold pill, bottom-left) ─────────── */}
+      <div className="flex items-center justify-between pt-2">
+        <Button
+          type="button"
+          onClick={handleApply}
+          className="h-12 px-6 rounded-xl gap-2 text-sm font-semibold shadow-md shadow-primary/20"
+        >
+          <Check className="h-4 w-4" />
+          Save Changes
+        </Button>
+        <p className="text-[11px] text-muted-foreground/70 hidden sm:block">
+          Click a variation to select it · Copy the HTML into your email client's signature settings
         </p>
       </div>
     </div>
