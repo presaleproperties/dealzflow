@@ -704,10 +704,7 @@
   .imsg-bubble-out {
     background: linear-gradient(180deg, #2a96ff 0%, #0a74ff 55%, #0066f5 100%);
     color: #ffffff;
-    box-shadow:
-      0 1px 1.5px hsl(212 90% 25% / 0.22),
-      0 0 0 0.5px hsl(212 90% 35% / 0.35) inset,
-      0 1px 0 hsl(0 0% 100% / 0.12) inset;
+    box-shadow: 0 1px 1.5px hsl(212 90% 25% / 0.18);
     text-shadow: 0 0.5px 0 hsl(212 90% 18% / 0.18);
     -webkit-font-smoothing: antialiased;
   }
@@ -720,9 +717,7 @@
   .imsg-bubble-in {
     background: hsl(220 14% 93%);
     color: hsl(222 25% 10%);
-    box-shadow:
-      0 1px 1px hsl(220 15% 20% / 0.06),
-      0 0 0 0.5px hsl(220 13% 80% / 0.6) inset;
+    box-shadow: 0 1px 1px hsl(220 15% 20% / 0.06);
     -webkit-font-smoothing: antialiased;
   }
   .imsg-bubble-in a {
@@ -731,16 +726,13 @@
     text-underline-offset: 2px;
   }
   .dark .imsg-bubble-in {
-    background: linear-gradient(180deg, hsl(222 14% 24%) 0%, hsl(222 16% 20%) 100%);
+    background: hsl(222 16% 22%);
     color: hsl(220 14% 94%);
-    box-shadow:
-      0 1px 1px hsl(0 0% 0% / 0.25),
-      0 0 0 0.5px hsl(220 12% 32% / 0.7) inset;
+    box-shadow: 0 1px 1px hsl(0 0% 0% / 0.22);
   }
   .dark .imsg-bubble-in a {
     color: #5ab0ff;
   }
-  /* Subtle pop animation already exists as msg-pop-in; bubbles inherit it */
   .imsg-header {
     background: hsl(var(--background) / 0.78);
     backdrop-filter: saturate(180%) blur(20px);
