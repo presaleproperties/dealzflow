@@ -246,6 +246,18 @@ export function InviteAgentCard() {
                       )}
                     </div>
                   </div>
+                  {(inv.status === 'pending' || inv.status === 'expired') && (
+                    <button
+                      onClick={() => resendMut.mutate(inv)}
+                      disabled={resendMut.isPending}
+                      className="p-1 text-muted-foreground hover:text-[#D7A542] transition-colors disabled:opacity-50"
+                      title="Resend invite with a new temporary password"
+                    >
+                      {resendMut.isPending && resendMut.variables?.id === inv.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <RotateCw className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                   {inv.status === 'pending' && (
                     <button
                       onClick={() => revokeMut.mutate(inv.id)}
