@@ -218,7 +218,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     sendSms.mutate({
       contact_id: contact.id,
       to: contact.phone,
-      body,
+      body: preview,
       from: fromOverride || undefined,
       media_urls: mediaUrls,
       channel,
