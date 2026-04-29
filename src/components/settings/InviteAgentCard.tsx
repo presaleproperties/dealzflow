@@ -107,6 +107,35 @@ export function InviteAgentCard() {
     onError: (e: any) => toast.error(e?.message ?? 'Could not revoke'),
   });
 
+  const resendMut = useMutation({
+    mutationFn: async (inv: InviteRow) => {
+      const { data, error } = await supabase.functions.invoke('crm-invite-agent', {
+        body: {
+          email: inv.email,
+          display_name: inv.display_name,
+          role: inv.role || 'agent',
+          mode: 'temp_password',
+          app_origin: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Could not resend invite');
+      return data as { email?: string; temp_password?: string; login_url?: string; email_sent: boolean };
+    },
+    onSuccess: (data, inv) => {
+      setLastUrl(data.login_url ?? null);
+      setLastTempPassword(data.temp_password ?? null);
+      setLastEmailRecipient(data.email ?? inv.email);
+      qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
+      toast.success(
+        data.email_sent
+          ? 'Invite re-sent — new temporary password emailed'
+          : 'New temp password generated — copy it below to share manually',
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not resend invite'),
+  });
+
   if (!isOwnerOrAdmin) return null;
 
   function copyTo(kind: 'url' | 'pw', value: string) {
