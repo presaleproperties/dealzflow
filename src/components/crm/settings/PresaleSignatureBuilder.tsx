@@ -459,7 +459,7 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
     if (!src || src === "fallback") return null;
     const config: Record<PrefillSource, { label: string; className: string }> = {
       presale:  { label: "Presale", className: "bg-primary/10 text-primary border-primary/20" },
-      profile:  { label: "Profile", className: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400" },
+      profile:  { label: "Profile", className: "bg-muted text-muted-foreground border-border" },
       user:     { label: "Edited",  className: "bg-muted text-muted-foreground border-border" },
       fallback: { label: "",        className: "" },
     };
