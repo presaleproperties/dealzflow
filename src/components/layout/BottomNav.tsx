@@ -31,6 +31,7 @@ interface TabItem {
   path: string;
   icon: LucideIcon;
   ownerAdminOnly?: boolean;
+  ownerOnly?: boolean;
 }
 interface MoreItem extends TabItem { description?: string; }
 interface MoreGroup { label: string; items: MoreItem[] }
