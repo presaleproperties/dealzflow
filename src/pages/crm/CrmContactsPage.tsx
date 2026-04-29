@@ -32,6 +32,7 @@ const CONTACT_TYPE_STYLES: Record<string, { bg: string; color: string; label: st
 export default function CrmContactsPage() {
   const { data: contacts = [], isLoading } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(contacts);
+  const AGENTS = useAgentNames();
   const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
