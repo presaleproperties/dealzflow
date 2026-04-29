@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
 
     // Fetch sender info (settings + signature + brand logo)
     const { data: settings } = await supabase
-      .from("crm_email_settings").select("sender_name,reply_to,signature_html,brand_logo_url,brand_logo_alt")
+      .from("crm_email_settings").select("sender_name,reply_to,signature_html,brand_logo_url,brand_logo_alt,brand_logo_enabled")
       .eq("user_id", userId).maybeSingle();
 
     let signatureHtml = "";
@@ -93,11 +93,10 @@ Deno.serve(async (req) => {
     }
 
     // Build the brand logo banner once (used for every recipient).
-    // Recipients' inboxes load this from the public HTTPS URL — guarantees the
-    // logo is visible inside the message body for everyone, regardless of
-    // BIMI / Workspace / Outlook avatar resolution rules.
+    // Header logo is opt-in: only injected when explicitly enabled in Settings.
+    const logoEnabled = settings?.brand_logo_enabled === true;
     const rawLogoUrl = (settings?.brand_logo_url ?? "").trim();
-    const safeLogoUrl = /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
+    const safeLogoUrl = logoEnabled && /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
     const safeLogoAlt = ((settings?.brand_logo_alt ?? settings?.sender_name ?? "Logo") || "Logo")
       .replace(/[<>"']/g, "");
     const brandBannerHtml = safeLogoUrl
