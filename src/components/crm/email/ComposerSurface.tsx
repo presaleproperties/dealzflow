@@ -367,6 +367,7 @@ export function ComposerSurface({
     setEditingSignature(false);
     setSigDraft('');
     setAppliedTplId(null);
+    clearEmailDraft(draftScope);
   };
 
   const doSingleSend = () => {
