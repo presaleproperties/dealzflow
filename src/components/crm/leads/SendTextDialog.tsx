@@ -120,6 +120,34 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const preview = useMemo(() => renderSmsTemplate(body, ctx), [body, ctx]);
   const segs = useMemo(() => smsSegments(preview), [preview]);
 
+  const filteredProjects = useMemo(() => {
+    const q = projectSearch.trim().toLowerCase();
+    const list = q
+      ? projects.filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          (p.city ?? '').toLowerCase().includes(q) ||
+          (p.developer ?? '').toLowerCase().includes(q),
+        )
+      : projects;
+    return list.slice(0, 30);
+  }, [projects, projectSearch]);
+
+  function insertProjectUrl(p: CrmProject) {
+    const url = projectShareUrl(p);
+    if (!url) {
+      toast.error(`No share URL on file for ${p.name}. Add a marketing URL or slug in Settings → Projects.`);
+      return;
+    }
+    // Add a leading space when the body doesn't already end with whitespace,
+    // so the URL doesn't glue onto the previous word.
+    const ta = textareaRef.current;
+    const start = ta?.selectionStart ?? body.length;
+    const needsLeadingSpace = start > 0 && !/\s$/.test(body.slice(0, start));
+    insertAtCursor(`${needsLeadingSpace ? ' ' : ''}${url} `);
+    setProjectOpen(false);
+    setProjectSearch('');
+  }
+
   function insertAtCursor(text: string) {
     const ta = textareaRef.current;
     if (!ta) {
