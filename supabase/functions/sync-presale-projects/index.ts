@@ -148,8 +148,17 @@ Deno.serve(async (req) => {
     const completionDate = p.completion_year
       ? `${p.completion_year}-01-01`
       : null;
-    // Public-facing share URL (no /projects/ prefix) — used in emails, SMS, templates.
-    const marketingUrl = `https://presaleproperties.com/${slug}`;
+    // Public-facing share URL — prefer SEO slug from sitemap when available,
+    // otherwise fall back to the short bridge slug.
+    const seoSlug = seoBySlug.get(slug);
+    const marketingUrl = `https://presaleproperties.com/${seoSlug ?? slug}`;
+
+    // Treat any non-SEO URL (legacy `/projects/`, or short-slug-only) as
+    // overwritable so we always upgrade to the SEO slug when available.
+    const existingIsLegacy = existing?.marketing_url
+      ? existing.marketing_url.includes("/projects/")
+        || (!!seoSlug && !existing.marketing_url.includes(seoSlug))
+      : true;
 
     // Only fill blank fields — don't overwrite agent edits.
     const payload: Record<string, unknown> = {
