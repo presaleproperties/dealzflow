@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
-import { StickyNote, Sparkles } from 'lucide-react';
+import { StickyNote, Sparkles, Download, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
@@ -120,6 +123,40 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [filter, setFilter] = useState<FilterType>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [pullingLofty, setPullingLofty] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handlePullFromLofty = async () => {
+    if (pullingLofty) return;
+    setPullingLofty(true);
+    const t = toast.loading('Pulling conversation from Lofty…');
+    try {
+      const { data, error } = await supabase.functions.invoke('lofty-sync-conversations', {
+        body: { contactId: contact.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const r = (data?.results || [])[0];
+      if (r?.error) {
+        toast.error(r.error, { id: t });
+      } else {
+        const c = r?.counts || { emails: 0, texts: 0, calls: 0, skipped: 0 };
+        toast.success(
+          `Imported ${c.emails} email${c.emails === 1 ? '' : 's'}, ${c.texts} text${c.texts === 1 ? '' : 's'}, ${c.calls} call${c.calls === 1 ? '' : 's'}`
+            + (c.skipped ? ` · ${c.skipped} already in sync` : ''),
+          { id: t },
+        );
+      }
+      // Refresh the activity timeline.
+      queryClient.invalidateQueries({ queryKey: ['crm-email-log', contact.id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-sms-log', contact.id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-notes', contact.id] });
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to pull from Lofty', { id: t });
+    } finally {
+      setPullingLofty(false);
+    }
+  };
 
   const isWebActivity = (n: CrmNote) =>
     /website behavior summary/i.test(n.content) || n.note_type === 'zapier';
@@ -204,14 +241,28 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         {/* Import conversation from another CRM (Lofty etc.) */}
-        <div className="px-4 md:px-0 -mt-1">
+        <div className="px-4 md:px-0 -mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <button
+            type="button"
+            onClick={handlePullFromLofty}
+            disabled={pullingLofty}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
+            title="Pulls emails, texts and calls for this lead from the Lofty API"
+          >
+            {pullingLofty
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <Download className="w-3 h-3" />}
+            {pullingLofty ? 'Pulling from Lofty…' : 'Pull from Lofty (API)'}
+          </button>
+          <span className="text-muted-foreground/30 text-[10px]">·</span>
           <button
             type="button"
             onClick={() => setShowImport(true)}
             className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+            title="Paste a conversation from anywhere — AI will parse it"
           >
             <Sparkles className="w-3 h-3" />
-            Import conversation from Lofty
+            Paste conversation (AI)
           </button>
         </div>
 
