@@ -44,6 +44,11 @@ export default function CrmBehaviorDashboardPage() {
   const funnelTotal = funnel.started + funnel.in_progress + funnel.completed + funnel.abandoned;
   const conversionRate = funnelTotal > 0 ? Math.round((funnel.completed / funnelTotal) * 100) : 0;
 
+  // Owner-only page — team members are bounced to the leads list
+  if (!accessLoading && role !== 'owner') {
+    return <Navigate to="/crm/leads" replace />;
+  }
+
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header */}
