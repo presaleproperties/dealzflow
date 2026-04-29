@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
@@ -108,6 +108,10 @@ export function AgentOnboardingWizard() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && closeForLater()}>
       <DialogContent className="max-w-3xl p-0 [&>button]:hidden flex flex-col lg:flex-row max-h-[92dvh] overflow-hidden gap-0">
+        <DialogTitle className="sr-only">Agent onboarding — {STEP_LABELS[activeKey]}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Step {activeIdx + 1} of {total}. {percent}% complete. Set up your account in a few quick steps. You can resume later from the dashboard banner.
+        </DialogDescription>
         {/* Mobile close affordance — sidebar provides it on desktop */}
         <button
           type="button"
