@@ -6,7 +6,7 @@ import { useProfile, type OnboardingStepKey, type OnboardingSteps } from './useP
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 
 const CORE_STEPS: OnboardingStepKey[] = [
-  'welcome', 'profile', 'province', 'rezen', 'google', 'signature', 'push',
+  'welcome', 'profile', 'province', 'rezen', 'google', 'inbox', 'signature', 'push',
 ];
 const CRM_STEPS: OnboardingStepKey[] = ['crm_sources', 'crm_sms', 'crm_tour'];
 
