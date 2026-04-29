@@ -864,13 +864,16 @@ export function ComposerSurface({
             onClick={handleSendClick}
             disabled={!canSend || isPending}
             className={cn(
-              'h-9 gap-2 min-w-[160px] px-4 font-semibold text-[12.5px] tracking-[-0.005em] rounded-lg',
+              /* Mobile: full-width primary CTA so the Send action reads as the
+                 single, unmistakable next step (Apple Mail / Gmail mobile parity).
+                 Desktop: compact pill with min-width so the label never wraps. */
+              'h-11 lg:h-9 w-full lg:w-auto gap-2 lg:min-w-[160px] px-4 font-semibold text-[13px] lg:text-[12.5px] tracking-[-0.005em] rounded-xl lg:rounded-lg',
               'bg-primary text-primary-foreground hover:bg-primary/90',
               'shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.5)] hover:shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.55)]',
               'transition-all disabled:shadow-none disabled:opacity-50',
             )}
           >
-            {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : recipientCount > 1 ? <Users className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+            {isPending ? <Loader2 className="h-4 w-4 lg:h-3.5 lg:w-3.5 animate-spin" /> : recipientCount > 1 ? <Users className="h-4 w-4 lg:h-3.5 lg:w-3.5" /> : <Send className="h-4 w-4 lg:h-3.5 lg:w-3.5" />}
             {isPending ? 'Sending…' : sendLabel}
           </Button>
         </div>
