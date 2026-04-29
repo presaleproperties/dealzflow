@@ -360,44 +360,196 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
   ).length;
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
+    <div className="space-y-6">
+      {/* ─────────── Header bar ─────────── */}
+      <div className="rounded-xl border border-border bg-card/40 p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Email Signature
+            </p>
+            <h3 className="text-lg font-semibold mt-0.5">Pick a layout, edit, then apply</h3>
+            <p className="text-xs text-muted-foreground/80 mt-1">
+              Same builder used in the Presale Properties agent portal.
+              {prefilledCount > 0 && (
+                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
+                  <Sparkles className="h-3 w-3" />
+                  {prefilledCount} field{prefilledCount === 1 ? "" : "s"} auto-filled
+                </span>
+              )}
+              {status === "unmatched" && (
+                <span className="ml-2 text-amber-600 dark:text-amber-400">
+                  · No Presale match — using your CRM profile
+                </span>
+              )}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => refresh({ force: true })}
+              disabled={isLoading}
+              className="h-9 text-xs"
+            >
+              {isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              Pull from Presale
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleApply}
+              className="h-9 text-xs gap-1.5"
+            >
+              <Check className="h-3.5 w-3.5" />
+              Apply "{layout === "horizontal" ? "Headshot Left" : "Headshot Top"}"
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────── Live previews (big, side-by-side, full width) ─────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Email Signature
+            Live Preview · Click to choose
           </p>
-          <p className="text-xs text-muted-foreground/70 mt-0.5 flex items-center gap-2">
-            Same builder as the Presale Properties agent portal
-            {prefilledCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-primary font-medium">
-                <Sparkles className="h-3 w-3" />
-                {prefilledCount} field{prefilledCount === 1 ? "" : "s"} auto-filled
-              </span>
-            )}
-            {status === "unmatched" && (
-              <span className="text-amber-600 dark:text-amber-400">
-                · No Presale match — using your CRM profile
-              </span>
-            )}
+          <p className="text-[10px] text-muted-foreground/60">
+            Renders at real email width (600px)
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => refresh({ force: true })}
-            disabled={isLoading}
-            className="h-8 text-xs"
-          >
-            {isLoading ? (
-              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Variation 1: Horizontal */}
+          <div
+            className={cn(
+              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer min-w-0",
+              layout === "horizontal"
+                ? "border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/5"
+                : "border-border hover:border-primary/30",
             )}
-            Pull from Presale
-          </Button>
+            onClick={() => setLayout("horizontal")}
+          >
+            <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={cn(
+                    "h-4 w-4 rounded-full border-2 transition-colors flex items-center justify-center shrink-0",
+                    layout === "horizontal"
+                      ? "border-primary bg-primary"
+                      : "border-muted-foreground/40",
+                  )}
+                >
+                  {layout === "horizontal" && (
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold leading-none">Headshot Left</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Horizontal · ~520px</p>
+                </div>
+                {layout === "horizontal" && (
+                  <Badge className="text-[9px] bg-primary/15 text-primary border-0 h-4 px-1.5 ml-1">
+                    Selected
+                  </Badge>
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-[10px] gap-1 px-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyHtml(horizontalHtml);
+                }}
+              >
+                <Copy className="h-2.5 w-2.5" /> Copy HTML
+              </Button>
+            </div>
+            <div className="bg-[#fafafa] dark:bg-zinc-950/40 overflow-x-auto">
+              <iframe
+                ref={iframeHRef}
+                title="Horizontal Signature"
+                className="border-0 pointer-events-none block bg-white"
+                style={{ minHeight: 240, width: "100%", minWidth: 600 }}
+                sandbox="allow-same-origin"
+              />
+            </div>
+          </div>
+
+          {/* Variation 2: Stacked */}
+          <div
+            className={cn(
+              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer min-w-0",
+              layout === "stacked"
+                ? "border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/5"
+                : "border-border hover:border-primary/30",
+            )}
+            onClick={() => setLayout("stacked")}
+          >
+            <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={cn(
+                    "h-4 w-4 rounded-full border-2 transition-colors flex items-center justify-center shrink-0",
+                    layout === "stacked"
+                      ? "border-primary bg-primary"
+                      : "border-muted-foreground/40",
+                  )}
+                >
+                  {layout === "stacked" && (
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold leading-none">Headshot Top</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Stacked · ~340px</p>
+                </div>
+                {layout === "stacked" && (
+                  <Badge className="text-[9px] bg-primary/15 text-primary border-0 h-4 px-1.5 ml-1">
+                    Selected
+                  </Badge>
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-[10px] gap-1 px-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyHtml(stackedHtml);
+                }}
+              >
+                <Copy className="h-2.5 w-2.5" /> Copy HTML
+              </Button>
+            </div>
+            <div className="bg-[#fafafa] dark:bg-zinc-950/40 overflow-x-auto">
+              <iframe
+                ref={iframeVRef}
+                title="Stacked Signature"
+                className="border-0 pointer-events-none block bg-white"
+                style={{ minHeight: 380, width: "100%", minWidth: 380 }}
+                sandbox="allow-same-origin"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────── Editor / HTML view (full width below previews) ─────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {mode === "form" ? "Edit Details" : "Raw HTML"}
+          </p>
           <div className="flex items-center border border-border rounded-lg overflow-hidden h-8">
             <button
               type="button"
@@ -425,351 +577,224 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(420px,520px)_1fr] gap-5 items-start">
-        {/* Left: Editor / HTML */}
-        <div className="space-y-4">
-          {mode === "form" ? (
+        {mode === "form" ? (
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            {/* Agent preview header */}
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-border p-4 flex items-center gap-3">
+              {fields.photoUrl ? (
+                <img
+                  src={fields.photoUrl}
+                  alt=""
+                  className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md shrink-0"
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-full bg-primary/20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md flex items-center justify-center text-primary font-bold shrink-0">
+                  {fields.fullName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() || "?"}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-bold truncate">{fields.fullName || "Your name"}</p>
+                <p className="text-[11px] text-primary font-semibold uppercase tracking-wide truncate">
+                  {fields.title}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                  {fields.brokerage}
+                </p>
+              </div>
+            </div>
+
+            {/* Fields — wider grid since editor is now full-width */}
+            <div className="p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+                <div className="md:col-span-2 lg:col-span-3">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Full Name <SourceBadge field="fullName" />
+                  </Label>
+                  <Input
+                    value={fields.fullName}
+                    onChange={(e) => update("fullName", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Title <SourceBadge field="title" />
+                  </Label>
+                  <Input
+                    value={fields.title}
+                    onChange={(e) => update("title", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Phone <SourceBadge field="phone" />
+                  </Label>
+                  <Input
+                    value={fields.phone}
+                    onChange={(e) => update("phone", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Brokerage <SourceBadge field="brokerage" />
+                  </Label>
+                  <Input
+                    value={fields.brokerage}
+                    onChange={(e) => update("brokerage", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                  />
+                </div>
+                <div className="md:col-span-1 lg:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Email <SourceBadge field="email" />
+                  </Label>
+                  <Input
+                    value={fields.email}
+                    onChange={(e) => update("email", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Website <SourceBadge field="website" />
+                  </Label>
+                  <Input
+                    value={fields.website}
+                    onChange={(e) => update("website", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2 lg:col-span-1">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Instagram <SourceBadge field="instagram" />
+                  </Label>
+                  <Input
+                    value={fields.instagram}
+                    onChange={(e) => update("instagram", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                    placeholder="https://instagram.com/..."
+                  />
+                </div>
+                <div className="md:col-span-2 lg:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
+                    Headshot URL <SourceBadge field="photoUrl" />
+                  </Label>
+                  <Input
+                    value={fields.photoUrl}
+                    onChange={(e) => update("photoUrl", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="md:col-span-2 lg:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" /> Headshot Link URL
+                  </Label>
+                  <Input
+                    value={fields.headshotLink}
+                    onChange={(e) => update("headshotLink", e.target.value)}
+                    className="h-9 text-sm mt-1"
+                    placeholder="https://... (clicking headshot opens this link)"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Headshot Shape
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => update("headshotShape", "circle")}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all flex-1 justify-center",
+                        fields.headshotShape === "circle"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/30",
+                      )}
+                    >
+                      <div className="h-4 w-4 rounded-full border-2 border-current" />
+                      Circle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => update("headshotShape", "rounded")}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all flex-1 justify-center",
+                        fields.headshotShape === "rounded"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/30",
+                      )}
+                    >
+                      <div className="h-4 w-4 rounded-[4px] border-2 border-current" />
+                      Rounded
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              {/* Agent preview header */}
-              <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-border p-4 flex items-center gap-3">
-                {fields.photoUrl ? (
-                  <img
-                    src={fields.photoUrl}
-                    alt=""
-                    className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md"
-                  />
-                ) : (
-                  <div className="h-14 w-14 rounded-full bg-primary/20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background shadow-md flex items-center justify-center text-primary font-bold">
-                    {fields.fullName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase() || "?"}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-bold truncate">{fields.fullName || "Your name"}</p>
-                  <p className="text-[11px] text-primary font-semibold uppercase tracking-wide truncate">
-                    {fields.title}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                    {fields.brokerage}
-                  </p>
-                </div>
-              </div>
-
-              {/* Fields */}
-              <div className="p-5 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Full Name <SourceBadge field="fullName" />
-                    </Label>
-                    <Input
-                      value={fields.fullName}
-                      onChange={(e) => update("fullName", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Title <SourceBadge field="title" />
-                    </Label>
-                    <Input
-                      value={fields.title}
-                      onChange={(e) => update("title", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Phone <SourceBadge field="phone" />
-                    </Label>
-                    <Input
-                      value={fields.phone}
-                      onChange={(e) => update("phone", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Email <SourceBadge field="email" />
-                    </Label>
-                    <Input
-                      value={fields.email}
-                      onChange={(e) => update("email", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Website <SourceBadge field="website" />
-                    </Label>
-                    <Input
-                      value={fields.website}
-                      onChange={(e) => update("website", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Brokerage <SourceBadge field="brokerage" />
-                    </Label>
-                    <Input
-                      value={fields.brokerage}
-                      onChange={(e) => update("brokerage", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Instagram <SourceBadge field="instagram" />
-                    </Label>
-                    <Input
-                      value={fields.instagram}
-                      onChange={(e) => update("instagram", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                      placeholder="https://instagram.com/..."
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
-                      Headshot URL <SourceBadge field="photoUrl" />
-                    </Label>
-                    <Input
-                      value={fields.photoUrl}
-                      onChange={(e) => update("photoUrl", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                      <ExternalLink className="h-3 w-3" /> Headshot Link URL
-                    </Label>
-                    <Input
-                      value={fields.headshotLink}
-                      onChange={(e) => update("headshotLink", e.target.value)}
-                      className="h-8 text-sm mt-1"
-                      placeholder="https://... (clicking headshot opens this link)"
-                    />
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">
-                      When set, the headshot becomes clickable and links to this URL
-                    </p>
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Headshot Shape
-                    </Label>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <button
-                        type="button"
-                        onClick={() => update("headshotShape", "circle")}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all",
-                          fields.headshotShape === "circle"
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:border-primary/30",
-                        )}
-                      >
-                        <div className="h-5 w-5 rounded-full border-2 border-current" />
-                        Circle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => update("headshotShape", "rounded")}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all",
-                          fields.headshotShape === "rounded"
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:border-primary/30",
-                        )}
-                      >
-                        <div className="h-5 w-5 rounded-[4px] border-2 border-current" />
-                        Rounded
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Variation 1 — Headshot Left
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs gap-1.5"
-                    onClick={() => handleCopyHtml(horizontalHtml)}
-                  >
-                    <Copy className="h-3 w-3" /> Copy
-                  </Button>
-                </div>
-                <div className="p-3">
-                  <Textarea
-                    value={horizontalHtml}
-                    readOnly
-                    className="font-mono text-[10px] min-h-[180px] bg-muted/20 border-0"
-                  />
-                </div>
-              </div>
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Variation 2 — Headshot Top
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs gap-1.5"
-                    onClick={() => handleCopyHtml(stackedHtml)}
-                  >
-                    <Copy className="h-3 w-3" /> Copy
-                  </Button>
-                </div>
-                <div className="p-3">
-                  <Textarea
-                    value={stackedHtml}
-                    readOnly
-                    className="font-mono text-[10px] min-h-[180px] bg-muted/20 border-0"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Apply button — saves the chosen variation as the active CRM signature */}
-          <Button type="button" className="gap-1.5 w-full sm:w-auto" onClick={handleApply}>
-            <Check className="h-3.5 w-3.5" />
-            Apply "{layout === "horizontal" ? "Headshot Left" : "Headshot Top"}" to CRM
-          </Button>
-        </div>
-
-        {/* Right: Both Previews — full width on wide screens, side-by-side at 2xl */}
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4 min-w-0">
-          {/* Variation 1: Horizontal */}
-          <div
-            className={cn(
-              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer min-w-0",
-              layout === "horizontal"
-                ? "border-primary ring-2 ring-primary/15 shadow-md"
-                : "border-border hover:border-primary/20",
-            )}
-            onClick={() => setLayout("horizontal")}
-          >
-            <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "h-3.5 w-3.5 rounded-full border-2 transition-colors flex items-center justify-center",
-                    layout === "horizontal"
-                      ? "border-primary bg-primary"
-                      : "border-muted-foreground/30",
-                  )}
+              <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Headshot Left — HTML
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => handleCopyHtml(horizontalHtml)}
                 >
-                  {layout === "horizontal" && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
-                  )}
-                </div>
-                <p className="text-xs font-semibold">Headshot Left</p>
-                {layout === "horizontal" && (
-                  <Badge className="text-[9px] bg-primary/10 text-primary border-0 h-4 px-1.5">
-                    Active
-                  </Badge>
-                )}
+                  <Copy className="h-3 w-3" /> Copy
+                </Button>
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="h-6 text-[10px] gap-1 px-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyHtml(horizontalHtml);
-                }}
-              >
-                <Copy className="h-2.5 w-2.5" /> Copy
-              </Button>
+              <div className="p-3">
+                <Textarea
+                  value={horizontalHtml}
+                  readOnly
+                  className="font-mono text-[10px] min-h-[260px] bg-muted/20 border-0 resize-y"
+                />
+              </div>
             </div>
-            <div className="bg-card overflow-x-auto">
-              <iframe
-                ref={iframeHRef}
-                title="Horizontal Signature"
-                className="border-0 pointer-events-none block"
-                style={{ minHeight: 220, width: "100%", minWidth: 580 }}
-                sandbox="allow-same-origin"
-              />
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Headshot Top — HTML
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => handleCopyHtml(stackedHtml)}
+                >
+                  <Copy className="h-3 w-3" /> Copy
+                </Button>
+              </div>
+              <div className="p-3">
+                <Textarea
+                  value={stackedHtml}
+                  readOnly
+                  className="font-mono text-[10px] min-h-[260px] bg-muted/20 border-0 resize-y"
+                />
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Variation 2: Stacked */}
-          <div
-            className={cn(
-              "rounded-xl border bg-card overflow-hidden transition-all cursor-pointer min-w-0",
-              layout === "stacked"
-                ? "border-primary ring-2 ring-primary/15 shadow-md"
-                : "border-border hover:border-primary/20",
-            )}
-            onClick={() => setLayout("stacked")}
-          >
-            <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "h-3.5 w-3.5 rounded-full border-2 transition-colors flex items-center justify-center",
-                    layout === "stacked"
-                      ? "border-primary bg-primary"
-                      : "border-muted-foreground/30",
-                  )}
-                >
-                  {layout === "stacked" && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
-                  )}
-                </div>
-                <p className="text-xs font-semibold">Headshot Top</p>
-                {layout === "stacked" && (
-                  <Badge className="text-[9px] bg-primary/10 text-primary border-0 h-4 px-1.5">
-                    Active
-                  </Badge>
-                )}
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="h-6 text-[10px] gap-1 px-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyHtml(stackedHtml);
-                }}
-              >
-                <Copy className="h-2.5 w-2.5" /> Copy
-              </Button>
-            </div>
-            <div className="bg-card overflow-x-auto">
-              <iframe
-                ref={iframeVRef}
-                title="Stacked Signature"
-                className="border-0 pointer-events-none block"
-                style={{ minHeight: 360, width: "100%", minWidth: 380 }}
-                sandbox="allow-same-origin"
-              />
-            </div>
-          </div>
-
-          <p className="text-[10px] text-muted-foreground/60 text-center 2xl:col-span-2">
-            Click a variation to select it · Copy HTML for an external email client, or "Apply" to use it inside this CRM
-          </p>
-        </div>
+        <p className="text-[10px] text-muted-foreground/60 text-center mt-3">
+          Edit fields above · Click a preview to choose layout · "Apply" saves it as your CRM signature
+        </p>
       </div>
     </div>
   );
