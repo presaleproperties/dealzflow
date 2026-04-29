@@ -52,6 +52,7 @@ export function WorkspaceMembersCard() {
   const [editing, setEditing] = useState<WorkspaceCandidate | null>(null);
   const [editRole, setEditRole] = useState<'owner' | 'admin' | 'agent' | 'viewer'>('agent');
   const [editActive, setEditActive] = useState(true);
+  const [editPresaleEmail, setEditPresaleEmail] = useState('');
   const [lastResult, setLastResult] = useState<{
     email: string;
     temp_password?: string;
@@ -135,10 +136,20 @@ export function WorkspaceMembersCard() {
 
   if (!isOwnerOrAdmin) return null;
 
-  function openEdit(c: WorkspaceCandidate) {
+  async function openEdit(c: WorkspaceCandidate) {
     setEditing(c);
     setEditRole((c.crm_role as any) ?? 'agent');
     setEditActive(c.crm_status !== 'inactive');
+    setEditPresaleEmail('');
+    // Fetch current presale_email override
+    if (c.crm_team_id) {
+      const { data } = await supabase
+        .from('crm_team')
+        .select('presale_email')
+        .eq('id', c.crm_team_id)
+        .maybeSingle();
+      setEditPresaleEmail((data?.presale_email ?? '') as string);
+    }
   }
 
   function copyPassword() {
@@ -261,6 +272,21 @@ export function WorkspaceMembersCard() {
               <Switch checked={editActive} onCheckedChange={setEditActive} />
             </div>
 
+            <div>
+              <div className="text-xs text-muted-foreground mb-1.5">
+                Presale agent email <span className="text-muted-foreground/70">(optional override)</span>
+              </div>
+              <Input
+                type="email"
+                placeholder={editing?.email ?? 'agent@presaleproperties.com'}
+                value={editPresaleEmail}
+                onChange={(e) => setEditPresaleEmail(e.target.value)}
+              />
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Use when their login email differs from the email on their Presale Properties agent profile. Leave blank to match by login email.
+              </div>
+            </div>
+
             <Button
               variant="outline"
               className="w-full justify-start text-sm"
@@ -280,8 +306,20 @@ export function WorkspaceMembersCard() {
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
             <Button
               disabled={updateMut.isPending}
-              onClick={() => {
+              onClick={async () => {
                 if (!editing) return;
+                // Persist presale_email override directly on crm_team
+                if (editing.crm_team_id) {
+                  const next = editPresaleEmail.trim().toLowerCase() || null;
+                  const { error: peErr } = await supabase
+                    .from('crm_team')
+                    .update({ presale_email: next })
+                    .eq('id', editing.crm_team_id);
+                  if (peErr) {
+                    toast.error(peErr.message);
+                    return;
+                  }
+                }
                 updateMut.mutate({
                   user_id: editing.user_id,
                   role: editRole,

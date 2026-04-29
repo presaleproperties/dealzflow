@@ -3557,6 +3557,7 @@ export type Database = {
           name_aliases: string[]
           permissions: Json
           phone: string | null
+          presale_email: string | null
           presale_snapshot: Json | null
           presale_synced_at: string | null
           role: string
@@ -3587,6 +3588,7 @@ export type Database = {
           name_aliases?: string[]
           permissions?: Json
           phone?: string | null
+          presale_email?: string | null
           presale_snapshot?: Json | null
           presale_synced_at?: string | null
           role?: string
@@ -3617,6 +3619,7 @@ export type Database = {
           name_aliases?: string[]
           permissions?: Json
           phone?: string | null
+          presale_email?: string | null
           presale_snapshot?: Json | null
           presale_synced_at?: string | null
           role?: string
