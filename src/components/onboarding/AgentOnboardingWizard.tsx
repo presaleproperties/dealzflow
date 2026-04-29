@@ -175,12 +175,22 @@ export function AgentOnboardingWizard() {
           </Button>
         </aside>
 
-        {/* Mobile progress bar */}
-        <div className="lg:hidden h-1 bg-border/60 shrink-0">
-          <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${percent}%` }}
-          />
+        {/* Mobile progress bar + step pill */}
+        <div className="lg:hidden shrink-0">
+          <div className="h-1 bg-border/60">
+            <div
+              className="h-full bg-primary transition-all duration-500"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <div className="px-5 pt-3 flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+              {STEP_LABELS[activeKey]}
+            </p>
+            <p className="text-[10px] text-muted-foreground tabular-nums">
+              {activeIdx + 1} / {total} · {percent}%
+            </p>
+          </div>
         </div>
 
         {/* Active step */}
