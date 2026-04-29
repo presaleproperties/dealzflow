@@ -64,7 +64,7 @@ export default function PendingApprovalPage() {
                 <li className="flex items-start gap-2.5">
                   <Mail className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                   <span className="text-foreground/90">
-                    You'll get an email at <span className="font-medium text-foreground">{profile?.email ?? 'your account email'}</span> the moment you're approved.
+                    You'll get an email at <span className="font-medium text-foreground">{user?.email ?? 'your account email'}</span> the moment you're approved.
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
