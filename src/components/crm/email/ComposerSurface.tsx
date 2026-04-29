@@ -428,7 +428,7 @@ export function ComposerSurface({
   return (
     <div className="flex flex-col h-full min-h-0 bg-muted/30">
       {/* Recipient bar — width matches the body composer (max-w-[920px]) */}
-      <div className="px-6 pt-5 pb-4 border-b border-border/60 bg-card shrink-0">
+      <div className="px-3 pt-3 pb-2 lg:px-6 lg:pt-5 lg:pb-4 border-b border-border/60 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto">
         <div className="flex items-baseline justify-between mb-3.5">
           <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-foreground leading-none">New Message</h2>
@@ -548,7 +548,7 @@ export function ComposerSurface({
       </div>
 
       {/* Mode tabs — aligned to body width */}
-      <div className="px-6 py-2 border-b border-border/40 bg-card shrink-0">
+      <div className="px-3 py-1.5 lg:px-6 lg:py-2 border-b border-border/40 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto flex items-center justify-between gap-2">
         <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {(() => {
@@ -599,10 +599,12 @@ export function ComposerSurface({
         </div>
       </div>
 
-      {/* Body — flex column so the editor stretches edge-to-edge with the header */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-5">
+      {/* Body — flex column so the editor stretches edge-to-edge with the header.
+          Mobile: zero padding so the editor + signature fill all available space
+          with no white space gap below. Desktop: keep the airy framed look. */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto px-0 py-0 lg:px-6 lg:py-5 bg-card lg:bg-transparent">
         {mode === 'edit' && (
-          <div className="flex-1 min-h-0 flex flex-col w-full max-w-[920px] mx-auto rounded-xl border border-border/70 bg-card shadow-sm overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col w-full max-w-[920px] mx-auto rounded-none lg:rounded-xl border-0 lg:border lg:border-border/70 bg-card shadow-none lg:shadow-sm overflow-hidden">
             <RichTextEditor
               content={bodyHtml}
               onChange={setBodyHtml}
@@ -712,7 +714,7 @@ export function ComposerSurface({
               footerSlot={
                 <>
                   {isBodyEmpty && (
-                    <div className="px-4 pb-5 pt-1">
+                    <div className="hidden lg:block px-4 pb-5 pt-1">
                       <div className="rounded-2xl border border-border/50 bg-gradient-to-b from-muted/30 to-transparent px-4 py-4">
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <div>
@@ -749,7 +751,12 @@ export function ComposerSurface({
                         <textarea value={sigDraft} onChange={(e) => setSigDraft(e.target.value)} className="w-full font-mono text-[12px] leading-relaxed px-4 py-3 bg-transparent border-0 resize-y focus-visible:outline-none focus-visible:ring-0 text-foreground" style={{ minHeight: 160 }} spellCheck={false} />
                       </div>
                     ) : (
-                      <SignatureInlineFrame html={activeSignatureHtml} />
+                      // Mobile: render signature as an inline continuation of the body
+                      // (no border seam, no extra padding) so it reads as one unified
+                      // message — exactly like Apple Mail / Gmail mobile.
+                      <div className="pt-1 lg:pt-0">
+                        <SignatureInlineFrame html={activeSignatureHtml} />
+                      </div>
                     )
                   ) : null}
                 </>
@@ -779,9 +786,9 @@ export function ComposerSurface({
         )}
       </div>
 
-      {/* Footer — premium sticky action bar */}
-      <div className="px-6 py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+      {/* Footer — premium sticky action bar (compact on mobile) */}
+      <div className="px-3 py-2 lg:px-6 lg:py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+        <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">Signature</span>
             <Select
@@ -837,19 +844,19 @@ export function ComposerSurface({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={openSaveDialog}
             disabled={isPending}
-            className="h-9 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            className="hidden lg:inline-flex h-9 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/60"
           >
             <Save className="h-3.5 w-3.5" />
             Save as template
           </Button>
-          <div className="h-6 w-px bg-border/60 mx-1" />
+          <div className="hidden lg:block h-6 w-px bg-border/60 mx-1" />
           <Button
             type="button"
             size="sm"

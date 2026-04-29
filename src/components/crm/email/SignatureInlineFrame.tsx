@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Maximize2 } from 'lucide-react';
 
 const STORAGE_KEY = 'crm:compose:signature-frame-height';
-const MIN_HEIGHT = 40;
+const MIN_HEIGHT = 24;
 const MAX_HEIGHT = 800;
 
 /**
@@ -18,7 +18,7 @@ const MAX_HEIGHT = 800;
 export function SignatureInlineFrame({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [contentHeight, setContentHeight] = useState(40);
+  const [contentHeight, setContentHeight] = useState(24);
   const [customHeight, setCustomHeight] = useState<number | null>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);

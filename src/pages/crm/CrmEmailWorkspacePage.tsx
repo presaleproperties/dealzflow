@@ -50,7 +50,7 @@ export default function CrmEmailWorkspacePage() {
     setRecipients((prev) => prev.filter((r) => r.id !== id));
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-140px)] min-h-[600px]">
+    <div className="flex flex-col h-full min-h-0 lg:h-[calc(100dvh-140px)] lg:min-h-[600px]">
       {/* Header — Apple-Mail-style segmented control */}
       <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
@@ -171,7 +171,7 @@ export default function CrmEmailWorkspacePage() {
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 flex-wrap text-[11px]">
+      <div className="hidden lg:flex mt-3 items-center gap-1.5 flex-wrap text-[11px]">
         <span className="text-muted-foreground/60 uppercase tracking-wider mr-1 font-semibold">More:</span>
         <FooterLink to="/crm/email/legacy?tab=hub" icon={Mail} label="Templates" />
         <FooterLink to="/crm/email/legacy?tab=campaigns" icon={Megaphone} label="Campaigns" />
