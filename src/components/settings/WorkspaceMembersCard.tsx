@@ -70,6 +70,24 @@ export function WorkspaceMembersCard() {
     },
   });
 
+  // Map of user_id → last sign-in timestamp (null = never signed in)
+  const { data: signinByUser = {} } = useQuery({
+    queryKey: ['crm_team_signin_info'],
+    enabled: isOwnerOrAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('crm_team_member_signin_info');
+      if (error) throw error;
+      const map: Record<string, { last_sign_in_at: string | null; created_at: string | null }> = {};
+      for (const r of (data ?? []) as any[]) {
+        map[r.user_id] = {
+          last_sign_in_at: r.last_sign_in_at,
+          created_at: r.created_at,
+        };
+      }
+      return map;
+    },
+  });
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return candidates;
@@ -106,6 +124,7 @@ export function WorkspaceMembersCard() {
       qc.invalidateQueries({ queryKey: ['crm_team_workspace_candidates'] });
       qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
       qc.invalidateQueries({ queryKey: ['crm_team_members'] });
+      qc.invalidateQueries({ queryKey: ['crm_team_signin_info'] });
       toast.success(
         data.email_sent
           ? 'Invite sent — they were emailed a temporary password'
@@ -217,6 +236,7 @@ export function WorkspaceMembersCard() {
             <CandidateRow
               key={c.user_id}
               candidate={c}
+              signinInfo={signinByUser[c.user_id] ?? null}
               isPending={pendingId === c.user_id}
               onInvite={(role) => inviteMut.mutate({ c, role })}
               onResend={() =>
@@ -337,14 +357,32 @@ export function WorkspaceMembersCard() {
   );
 }
 
+function formatRelative(iso: string | null): string {
+  if (!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return 'just now';
+  const min = Math.floor(ms / 60_000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day}d ago`;
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return `${mo}mo ago`;
+  return `${Math.floor(mo / 12)}y ago`;
+}
+
 function CandidateRow({
   candidate,
+  signinInfo,
   isPending,
   onInvite,
   onResend,
   onEdit,
 }: {
   candidate: WorkspaceCandidate;
+  signinInfo: { last_sign_in_at: string | null; created_at: string | null } | null;
   isPending: boolean;
   onInvite: (role: 'agent' | 'admin' | 'viewer') => void;
   onResend: () => void;
@@ -357,6 +395,8 @@ function CandidateRow({
   );
 
   const onTeam = candidate.crm_status !== 'none';
+  const lastSignInAt = signinInfo?.last_sign_in_at ?? null;
+  const neverSignedIn = onTeam && !lastSignInAt;
 
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 transition-colors">
@@ -373,8 +413,20 @@ function CandidateRow({
 
       {/* Identity */}
       <div className="flex-1 min-w-0">
-        <div className="text-sm text-foreground truncate">
-          {candidate.full_name || <span className="text-muted-foreground italic">No name</span>}
+        <div className="text-sm text-foreground truncate flex items-center gap-2">
+          <span className="truncate">
+            {candidate.full_name || <span className="text-muted-foreground italic">No name</span>}
+          </span>
+          {neverSignedIn && (
+            <span className="shrink-0 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/30">
+              Never logged in
+            </span>
+          )}
+          {onTeam && lastSignInAt && (
+            <span className="shrink-0 text-[10px] text-muted-foreground">
+              · last in {formatRelative(lastSignInAt)}
+            </span>
+          )}
         </div>
         <div className="text-[11px] text-muted-foreground truncate">
           {candidate.email}
@@ -414,16 +466,18 @@ function CandidateRow({
           <>
             <Button
               size="sm"
-              variant="outline"
-              className="h-8"
+              variant={neverSignedIn ? 'default' : 'outline'}
+              className={neverSignedIn ? 'h-8 bg-amber-500 hover:bg-amber-600 text-white' : 'h-8'}
               disabled={isPending}
               onClick={onResend}
-              title="Generate a new temporary password and email it again"
+              title={neverSignedIn
+                ? 'Generate a fresh temporary password and email it again'
+                : 'Generate a new temporary password and email it again'}
             >
               {isPending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <><KeyRound className="w-3.5 h-3.5 mr-1.5" />Resend</>
+                <><KeyRound className="w-3.5 h-3.5 mr-1.5" />{neverSignedIn ? 'Resend invite' : 'Resend'}</>
               )}
             </Button>
             <Button size="sm" variant="ghost" className="h-8" onClick={onEdit}>
