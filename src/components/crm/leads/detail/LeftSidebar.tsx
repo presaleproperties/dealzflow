@@ -55,6 +55,8 @@ export function LeftSidebar({
   contact, leadScore, lastTouchLabel, daysInPipeline, onCall, onSms, onEmail, onWhatsApp,
 }: Props) {
   const updateContact = useUpdateCrmContact();
+  const { data: agents = [] } = useTeamAgents();
+  const AGENTS = agents.map((a) => a.name);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [coBuyerOpen, setCoBuyerOpen] = useState(true);
