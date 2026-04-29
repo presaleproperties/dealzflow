@@ -303,11 +303,13 @@ function CandidateRow({
   candidate,
   isPending,
   onInvite,
+  onResend,
   onEdit,
 }: {
   candidate: WorkspaceCandidate;
   isPending: boolean;
   onInvite: (role: 'agent' | 'admin' | 'viewer') => void;
+  onResend: () => void;
   onEdit: () => void;
 }) {
   const [role, setRole] = useState<'agent' | 'admin' | 'viewer'>(
@@ -371,9 +373,25 @@ function CandidateRow({
           </>
         )}
         {onTeam && (
-          <Button size="sm" variant="outline" className="h-8" onClick={onEdit}>
-            Edit
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              disabled={isPending}
+              onClick={onResend}
+              title="Generate a new temporary password and email it again"
+            >
+              {isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <><KeyRound className="w-3.5 h-3.5 mr-1.5" />Resend</>
+              )}
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8" onClick={onEdit}>
+              Edit
+            </Button>
+          </>
         )}
       </div>
     </div>
