@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Search, RefreshCw, Mail, Phone, MapPin, Flame } from 'lucide-react';
 import { formatCurrencyCompact } from '@/lib/format';
@@ -60,7 +62,7 @@ function formatBudget(min?: number | null, max?: number | null): string | null {
 }
 
 /* ─── Lead Card ─── */
-function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
+function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: number; onOpen: (id: string) => void }) {
   const days = daysInStage(contact);
   const daysColor = days === null ? undefined : days <= 7 ? 'hsl(142 71% 45%)' : days <= 14 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
   const touchColor = !contact.last_touch_at ? undefined : (() => {
@@ -75,6 +77,9 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   const cityPref = cAny.city_pref || contact.city;
   const isPreApproved = !!cAny.is_pre_approved;
 
+  // Track pointer to distinguish click vs drag
+  const downPos = useRef<{ x: number; y: number } | null>(null);
+
   return (
     <Draggable draggableId={contact.id} index={index}>
       {(provided, snapshot) => (
@@ -82,7 +87,16 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-grab transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg]' : 'hover:shadow-md hover:border-border/80'}`}
+          onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY }; }}
+          onPointerUp={(e) => {
+            const start = downPos.current;
+            downPos.current = null;
+            if (snapshot.isDragging || !start) return;
+            const dx = Math.abs(e.clientX - start.x);
+            const dy = Math.abs(e.clientY - start.y);
+            if (dx < 5 && dy < 5) onOpen(contact.id);
+          }}
+          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
         >
           {/* Header: name + assigned avatar */}
           <div className="flex items-start justify-between gap-2 mb-2">
@@ -189,6 +203,9 @@ export function PipelineKanban() {
   }, [contacts]);
   const updateContact = useUpdateCrmContact();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const handleOpen = useCallback((id: string) => navigate(`/crm/leads/${id}`), [navigate]);
   const [search, setSearch] = useState('');
   const [filterProject, setFilterProject] = useState('all');
   const [filterAgent, setFilterAgent] = useState('all');
@@ -261,6 +278,7 @@ export function PipelineKanban() {
     const contact = contacts.find(c => c.id === contactId);
     const targetSeg = pipelineSegments.find(s => s.id === targetSegId);
     if (!contact || !targetSeg) return;
+    if (result.source.droppableId === targetSegId) return;
 
     // Build update payload from target segment's filter_config
     const updates: Record<string, unknown> = {};
@@ -271,20 +289,36 @@ export function PipelineKanban() {
       updates.status = (fc.status as string[])[0];
       oldValues.status = contact.status;
       updates.status_changed_at = new Date().toISOString();
+      updates.stage_changed_at = new Date().toISOString();
     }
     if (fc.lead_type && Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
       updates.lead_type = (fc.lead_type as string[])[0];
       oldValues.lead_type = contact.lead_type;
     }
 
-    if (Object.keys(updates).length === 0) return;
+    if (Object.keys(updates).length === 0) {
+      toast.info(`"${targetSeg.name}" has no stage rules — drop ignored.`);
+      return;
+    }
+
+    // Optimistic update so the card visibly stays in the new column
+    const prev = queryClient.getQueryData<CrmContact[]>(['crm-contacts']);
+    if (prev) {
+      queryClient.setQueryData<CrmContact[]>(
+        ['crm-contacts'],
+        prev.map(c => c.id === contactId ? { ...c, ...(updates as Partial<CrmContact>) } : c)
+      );
+    }
 
     const name = formatContactName(contact.first_name, contact.last_name);
     updateContact.mutate(
       { id: contactId, updates, oldValues },
       {
         onSuccess: () => toast.success(`Moved ${name} to ${targetSeg.name}`, { duration: 2000 }),
-        onError: () => toast.error(`Failed to move ${name}. Reverted.`),
+        onError: () => {
+          if (prev) queryClient.setQueryData(['crm-contacts'], prev);
+          toast.error(`Failed to move ${name}. Reverted.`);
+        },
       }
     );
   };
@@ -418,7 +452,7 @@ export function PipelineKanban() {
                             style={{ maxHeight: 'calc(100dvh - 280px)' }}
                           >
                             {visible.map((contact, idx) => (
-                              <LeadCard key={contact.id} contact={contact} index={idx} />
+                              <LeadCard key={contact.id} contact={contact} index={idx} onOpen={handleOpen} />
                             ))}
                             {provided.placeholder}
                             {remaining > 0 && (
