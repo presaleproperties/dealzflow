@@ -53,6 +53,7 @@ function channelChip(c: ChatChannel) {
 
 export default function CrmChatsPage() {
   const navigate = useNavigate();
+  const { conversationId: activeId } = useParams<{ conversationId?: string }>();
   const prefetchThread = usePrefetchChatThread();
   const [filter, setFilter] = useState<ChatChannelFilter>('all');
   const [search, setSearch] = useState('');
