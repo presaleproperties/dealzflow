@@ -94,21 +94,8 @@ export default function CrmEmailWorkspacePage() {
       className="flex flex-col h-full min-h-0 lg:h-[calc(100dvh-140px)] lg:min-h-[600px]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      {/* Editorial header */}
-      <div className="mb-4 space-y-3">
-        <div className="flex items-baseline gap-3">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 font-semibold">Email</p>
-          <span className="h-px flex-1 bg-border/60" aria-hidden />
-        </div>
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="text-[22px] sm:text-[24px] font-semibold tracking-tight text-foreground leading-none">
-              {active.label}
-            </h1>
-            <p className="text-[12px] text-muted-foreground mt-1.5">{active.subtitle}</p>
-          </div>
-        </div>
-
+      {/* Editorial header — compact, tabs only */}
+      <div className="mb-3">
         {/* Segmented hub nav — scrollable on small screens */}
         <div className="-mx-1 overflow-x-auto no-scrollbar">
           <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
