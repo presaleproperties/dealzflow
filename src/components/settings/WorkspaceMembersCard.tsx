@@ -272,6 +272,21 @@ export function WorkspaceMembersCard() {
               <Switch checked={editActive} onCheckedChange={setEditActive} />
             </div>
 
+            <div>
+              <div className="text-xs text-muted-foreground mb-1.5">
+                Presale agent email <span className="text-muted-foreground/70">(optional override)</span>
+              </div>
+              <Input
+                type="email"
+                placeholder={editing?.email ?? 'agent@presaleproperties.com'}
+                value={editPresaleEmail}
+                onChange={(e) => setEditPresaleEmail(e.target.value)}
+              />
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Use when their login email differs from the email on their Presale Properties agent profile. Leave blank to match by login email.
+              </div>
+            </div>
+
             <Button
               variant="outline"
               className="w-full justify-start text-sm"
