@@ -559,9 +559,9 @@ export function ComposerSurface({
       </div>
 
       {/* Body — flex column so the editor stretches edge-to-edge with the header */}
-      <div className="flex-1 flex flex-col bg-background min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-5">
         {mode === 'edit' && (
-          <div className="flex-1 min-h-0 flex flex-col px-6 max-w-[920px] mx-auto w-full">
+          <div className="flex-1 min-h-0 flex flex-col w-full max-w-[920px] mx-auto rounded-xl border border-border/70 bg-card shadow-sm overflow-hidden">
             <RichTextEditor
               content={bodyHtml}
               onChange={setBodyHtml}
