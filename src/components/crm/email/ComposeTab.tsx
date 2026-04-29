@@ -268,16 +268,21 @@ export function ComposeTab() {
     const bodyContent = isHtmlMode ? htmlBody : body;
 
     if (mode === 'individual') {
-      if (!selectedContact || !selectedContact.email || !subject.trim() || !bodyContent.trim()) return;
+      // Allow either a CRM contact OR a manually-typed email address.
+      const recipientEmail = selectedContact?.email ?? manualEmail;
+      if (!recipientEmail || !subject.trim() || !bodyContent.trim()) return;
+
+      // Merge tags only resolve when we have a real contact; for manual
+      // sends, send the raw subject/body as-typed.
       const html = buildHtml(selectedContact);
       await bridgeSend.mutateAsync({
-        to: selectedContact.email,
+        to: recipientEmail,
         cc: cc || undefined,
         bcc: bcc || undefined,
-        subject: replaceMergeTags(subject, selectedContact),
+        subject: selectedContact ? replaceMergeTags(subject, selectedContact) : subject,
         html,
         template_id: activeTemplate?.id ?? null,
-        contact_id: selectedContact.id,
+        contact_id: selectedContact?.id ?? null,
         send_at: sendAtIso,
       });
       setSelectedContact(null);
