@@ -140,7 +140,10 @@ Deno.serve(async (req) => {
       price_from: existing?.price_from ?? p.starting_price ?? null,
       status: existing?.status ?? p.status ?? null,
       completion_date: existing?.completion_date ?? completionDate,
-      marketing_url: existing?.marketing_url ?? marketingUrl,
+      marketing_url:
+        existing?.marketing_url && !existing.marketing_url.includes("/projects/")
+          ? existing.marketing_url
+          : marketingUrl,
     };
 
     if (existing?.id) {
