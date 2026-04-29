@@ -100,7 +100,7 @@ const CRM_MORE: MoreGroup[] = [
   {
     label: 'Insights',
     items: [
-      { label: 'Reports',  path: '/crm/reports',  icon: BarChart3 },
+      { label: 'Reports',  path: '/crm/reports',  icon: BarChart3, ownerOnly: true },
       { label: 'Behavior', path: '/crm/behavior', icon: Sparkles, ownerOnly: true },
     ],
   },
