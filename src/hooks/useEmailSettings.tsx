@@ -13,6 +13,7 @@ export type EmailSettings = {
   twilio_from_number: string | null;
   brand_logo_url: string | null;
   brand_logo_alt: string | null;
+  brand_logo_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
