@@ -116,7 +116,7 @@ const TABS: TabDef[] = [
   { id: 'timeline',      label: 'Timeline Links',    icon: Link2,         group: 'personal',  audience: 'member', description: 'Link click behavior' },
   // Workspace — owner + admin
   { id: 'team',          label: 'Team',              icon: Shield,        group: 'workspace', audience: 'admin',  description: 'Members, roles, permissions' },
-  { id: 'integrations',  label: 'Integrations',      icon: MessageSquare, group: 'workspace', audience: 'admin',  description: 'Calendar, Gmail, etc.' },
+  { id: 'integrations',  label: 'Integrations',      icon: MessageSquare, group: 'personal',  audience: 'member', description: 'Connect your Gmail & Calendar' },
   { id: 'projects',      label: 'Projects',          icon: FolderKanban,  group: 'workspace', audience: 'admin',  description: 'Knowledge base & cities' },
   { id: 'import',        label: 'Data Import',       icon: Database,      group: 'workspace', audience: 'admin',  description: 'CSV uploads' },
   { id: 'data',          label: 'Data Manager',      icon: FileText,      group: 'workspace', audience: 'admin',  description: 'Cleanup & exports' },
