@@ -433,11 +433,6 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
     );
   };
 
-  // Count how many fields were auto-prefilled
-  const prefilledCount = Object.values(sourceMap).filter(
-    (s) => s === "presale" || s === "profile",
-  ).length;
-
   const initials = (fields.fullName || "?")
     .split(" ")
     .map((n) => n[0])
