@@ -320,17 +320,18 @@ Deno.serve(async (req) => {
       const loginUrl = `${origin}/auth?invited=1`;
 
       // 1. Create or update the auth user (email pre-confirmed)
-      // Resolve existing user reliably via profiles table (paginated listUsers
-      // can miss users beyond the first page).
+      // Look up an existing user via crm_team (has the email column) or by
+      // paginating auth.users — profiles has no email column.
       let userId: string | null = null;
       const emailLc = result.email.toLowerCase();
 
-      const { data: profileMatch } = await supabase
-        .from("profiles")
+      const { data: teamMatch } = await supabase
+        .from("crm_team")
         .select("user_id")
         .ilike("email", emailLc)
+        .not("user_id", "is", null)
         .maybeSingle();
-      if (profileMatch?.user_id) userId = profileMatch.user_id as string;
+      if (teamMatch?.user_id) userId = teamMatch.user_id as string;
 
       // Fallback: scan a couple of pages of auth users
       if (!userId) {
