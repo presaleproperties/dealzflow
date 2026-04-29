@@ -141,7 +141,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   /* Draft autosave — per-contact, survives accidental close / app backgrounding */
   const draftScope = `lead:${contact.id}`;
-  useEmailDraftAutosave(
+  const { savedAt } = useEmailDraftAutosave(
     draftScope,
     { subject, bodyHtml, cc, bcc },
     open,
