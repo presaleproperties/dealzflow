@@ -49,6 +49,7 @@ export interface SignatureBuilderFields {
   instagram: string;
   headshotLink: string;
   headshotShape: HeadshotShape;
+  headshotSize: string; // px as string, 60-160
 }
 
 interface PresaleSignatureBuilderProps {
@@ -125,7 +126,8 @@ function buildInstagramButton(d: SignatureBuilderFields): string {
 
 // ── Horizontal layout: headshot on the left with gold divider ────────
 export function buildHorizontalHtml(d: SignatureBuilderFields): string {
-  const headshot = buildHeadshotTag(d, 100);
+  const sz = Math.max(60, Math.min(160, parseInt(d.headshotSize || "100", 10) || 100));
+  const headshot = buildHeadshotTag(d, sz);
   const igBtn = buildInstagramButton(d);
 
   return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 520px;">
@@ -156,7 +158,8 @@ export function buildHorizontalHtml(d: SignatureBuilderFields): string {
 
 // ── Stacked layout: headshot on top, centered ────────────────────────
 export function buildStackedHtml(d: SignatureBuilderFields): string {
-  const headshot = buildHeadshotTag(d, 110);
+  const sz = Math.max(60, Math.min(180, (parseInt(d.headshotSize || "110", 10) || 110) + 10));
+  const headshot = buildHeadshotTag(d, sz);
   const igBtn = buildInstagramButton(d);
 
   return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 340px; margin: 0 auto;">
@@ -199,6 +202,7 @@ const BLANK: SignatureBuilderFields = {
   instagram: "",
   headshotLink: "",
   headshotShape: "rounded",
+  headshotSize: "100",
 };
 
 interface CrmProfileSeed {
@@ -439,8 +443,12 @@ export default function PresaleSignatureBuilder({
     next.headshotShape = touchedFields.headshotShape
       ? fields.headshotShape
       : fields.headshotShape || BLANK.headshotShape;
+    next.headshotSize = touchedFields.headshotSize
+      ? fields.headshotSize
+      : fields.headshotSize || BLANK.headshotSize;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
+    sources.headshotSize = touchedFields.headshotSize ? "user" : "fallback";
 
     setFields(next);
     setSourceMap(sources);
@@ -776,6 +784,28 @@ export default function PresaleSignatureBuilder({
                       <div className="h-4 w-4 rounded-[4px] border-2 border-current" />
                       Rounded
                     </button>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+                    <span>Headshot Size</span>
+                    <span className="text-muted-foreground/70 normal-case tracking-normal font-mono">
+                      {parseInt(fields.headshotSize || "100", 10) || 100}px
+                    </span>
+                  </Label>
+                  <input
+                    type="range"
+                    min={60}
+                    max={160}
+                    step={2}
+                    value={parseInt(fields.headshotSize || "100", 10) || 100}
+                    onChange={(e) => update("headshotSize", e.target.value)}
+                    className="w-full mt-2 accent-primary"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                    <span>Small</span>
+                    <span>Default</span>
+                    <span>Large</span>
                   </div>
                 </div>
               </div>
