@@ -714,7 +714,7 @@ export function ComposerSurface({
               footerSlot={
                 <>
                   {isBodyEmpty && (
-                    <div className="px-4 pb-5 pt-1">
+                    <div className="hidden lg:block px-4 pb-5 pt-1">
                       <div className="rounded-2xl border border-border/50 bg-gradient-to-b from-muted/30 to-transparent px-4 py-4">
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <div>
@@ -751,7 +751,12 @@ export function ComposerSurface({
                         <textarea value={sigDraft} onChange={(e) => setSigDraft(e.target.value)} className="w-full font-mono text-[12px] leading-relaxed px-4 py-3 bg-transparent border-0 resize-y focus-visible:outline-none focus-visible:ring-0 text-foreground" style={{ minHeight: 160 }} spellCheck={false} />
                       </div>
                     ) : (
-                      <SignatureInlineFrame html={activeSignatureHtml} />
+                      // Mobile: render signature as an inline continuation of the body
+                      // (no border seam, no extra padding) so it reads as one unified
+                      // message — exactly like Apple Mail / Gmail mobile.
+                      <div className="pt-1 lg:pt-0">
+                        <SignatureInlineFrame html={activeSignatureHtml} />
+                      </div>
                     )
                   ) : null}
                 </>
