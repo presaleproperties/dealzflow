@@ -46,12 +46,12 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     enabled: open,
   });
 
-  const { data: templates = [] } = useQuery<Template[]>({
+  const { data: templates = [], refetch: refetchTemplates } = useQuery<Template[]>({
     queryKey: ['send-project.templates'],
     queryFn: async () => {
       const { data } = await supabase
         .from('crm_email_templates')
-        .select('slug, name')
+        .select('slug, name, last_synced_at, source')
         .eq('is_active', true)
         .not('slug', 'is', null)
         .order('name');
@@ -67,6 +67,25 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     staleTime: 5 * 60 * 1000,
     enabled: open,
   });
+
+  // ─── Auto-refresh templates from Presale if stale (>24h) ─────────────────
+  // Fires once per dialog open. Silent — uses background invoke + refetch.
+  const triedRefreshRef = useRef(false);
+  useEffect(() => {
+    if (!open || triedRefreshRef.current || templates.length === 0) return;
+    const newest = templates
+      .map((t: any) => t.last_synced_at ? new Date(t.last_synced_at).getTime() : 0)
+      .reduce((a, b) => Math.max(a, b), 0);
+    const ageMs = Date.now() - newest;
+    if (newest === 0 || ageMs > 24 * 60 * 60 * 1000) {
+      triedRefreshRef.current = true;
+      void supabase.functions
+        .invoke('sync-bridge-templates', { body: {} })
+        .then(({ error }) => { if (!error) refetchTemplates(); })
+        .catch(() => {});
+    }
+  }, [open, templates, refetchTemplates]);
+
 
   const { data: gmailConnected } = useQuery({
     queryKey: ['send-project.gmail-status'],
