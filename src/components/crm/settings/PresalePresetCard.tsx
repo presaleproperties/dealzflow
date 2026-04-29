@@ -37,7 +37,7 @@ export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePre
     if (agent) {
       return {
         full_name: agent.name ?? fallbackAgent.full_name ?? null,
-        title: fallbackAgent.title ?? null,
+        title: (agent as any).title ?? fallbackAgent.title ?? null,
         photo_url: agent.headshotUrl ?? fallbackAgent.photo_url ?? null,
         phone: agent.phone ?? fallbackAgent.phone ?? null,
         email: agent.email ?? fallbackAgent.email ?? null,
@@ -45,6 +45,7 @@ export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePre
         calendly_url: agent.calendlyUrl ?? fallbackAgent.calendly_url ?? null,
         brokerage: agent.brokerage ?? fallbackAgent.brokerage ?? null,
         license_no: agent.licenseNumber ?? fallbackAgent.license_no ?? null,
+        instagram_url: (agent as any).instagramUrl ?? fallbackAgent.instagram_url ?? null,
       };
     }
     return fallbackAgent;
