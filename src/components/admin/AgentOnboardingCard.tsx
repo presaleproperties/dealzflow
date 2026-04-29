@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserCog, KeyRound, Link2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UserCog, KeyRound, Link2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 type TeamRow = {
