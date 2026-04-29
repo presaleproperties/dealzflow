@@ -64,7 +64,6 @@ import CrmLeadsPage from "./pages/crm/CrmLeadsPage";
 import LeadDetailPage from "./pages/crm/LeadDetailPage";
 
 const CrmPipelinePage = lazy(() => import("./pages/crm/CrmPipelinePage"));
-const CrmEmailPage = lazy(() => import("./pages/crm/CrmEmailPage"));
 const CrmEmailWorkspacePage = lazy(() => import("./pages/crm/CrmEmailWorkspacePage"));
 const CrmChatsPage = lazy(() => import("./pages/crm/CrmChatsPage"));
 const CrmChatThreadPage = lazy(() => import("./pages/crm/CrmChatThreadPage"));
