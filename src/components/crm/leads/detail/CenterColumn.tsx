@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StickyNote } from 'lucide-react';
+import { StickyNote, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
@@ -7,6 +7,7 @@ import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/u
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
+import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
@@ -101,6 +102,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
@@ -199,6 +201,18 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-3 md:p-6 space-y-3 md:space-y-5">
         <div className="px-4 md:px-0">
           <QuickActionBar contact={contact} />
+        </div>
+
+        {/* Import conversation from another CRM (Lofty etc.) */}
+        <div className="px-4 md:px-0 -mt-1">
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Sparkles className="w-3 h-3" />
+            Import conversation from Lofty
+          </button>
         </div>
 
         {/* Filter strip — single horizontal scroll row on mobile, wrap on desktop */}
@@ -370,6 +384,12 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         open={threadOpen}
         onOpenChange={(o) => { setThreadOpen(o); if (!o) setThreadInitialId(null); }}
         initialEmailId={threadInitialId}
+      />
+
+      <ImportConversationDialog
+        contact={contact}
+        open={showImport}
+        onOpenChange={setShowImport}
       />
     </Tabs>
   );
