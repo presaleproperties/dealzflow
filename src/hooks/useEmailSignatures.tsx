@@ -82,9 +82,20 @@ export function useSetDefaultSignature() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      // Unset any existing default for this user first so only one signature
+      // is ever marked default. Without this, callers that pick the default
+      // via `signatures.find(s => s.is_default)` can return stale rows.
+      const { error: clearErr } = await (supabase.from('crm_email_signatures' as any) as any)
+        .update({ is_default: false })
+        .eq('user_id', session.user.id)
+        .eq('is_default', true);
+      if (clearErr) throw clearErr;
       const { error } = await (supabase.from('crm_email_signatures' as any) as any)
         .update({ is_default: true })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', session.user.id);
       if (error) throw error;
     },
     onSuccess: () => {
