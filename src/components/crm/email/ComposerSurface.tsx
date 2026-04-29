@@ -64,6 +64,15 @@ const isRichSignatureHtml = (html: string) =>
   /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
   || /<[a-z][^>]*\sstyle\s*=/i.test(html);
 
+/** Public-facing share URL for a project (mirrors SendTextDialog). */
+function projectShareUrl(p: CrmProject): string | null {
+  if (p.marketing_url?.startsWith('http')) return p.marketing_url;
+  if (p.website_url?.startsWith('http')) return p.website_url;
+  const slug = p.presale_slug || p.slug;
+  if (slug) return `https://presaleproperties.com/${slug}`;
+  return null;
+}
+
 export function ComposerSurface({
   recipients,
   onAddRecipient,
