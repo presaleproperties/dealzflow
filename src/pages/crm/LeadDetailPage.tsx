@@ -388,6 +388,7 @@ export default function LeadDetailPage() {
       <CreateTaskDialog contactId={c.id} assignedTo={c.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <BookShowingDialog contactId={c.id} project={c.project} open={showShowing} onOpenChange={setShowShowing} />
       <SendProjectDialog contact={c} open={showSendProject} onOpenChange={setShowSendProject} />
+      <LeadEmailThreadDialog contact={c} open={showEmailThread} onOpenChange={setShowEmailThread} />
     </div>
   );
 }
