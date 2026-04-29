@@ -50,7 +50,7 @@ export function RichTextEditor({
       attributes: {
         // When a signature/footer is rendered below, drop the bottom padding
         // and last-paragraph margin so text can sit flush against it.
-        class: `prose prose-sm max-w-none min-h-[200px] px-4 pt-4 outline-none text-foreground${flushClasses} ${
+        class: `prose prose-sm max-w-none min-h-[120px] px-4 pt-4 outline-none text-foreground${flushClasses} ${
           footerSlot ? 'pb-0' : 'pb-4'
         }`,
       },
