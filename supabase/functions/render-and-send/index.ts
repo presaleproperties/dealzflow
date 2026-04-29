@@ -190,11 +190,21 @@ Deno.serve(async (req) => {
         "apikey": PRESALE_ANON_KEY,
       },
       body: JSON.stringify({
+        // Ask the bridge to render its OWN native template (hero image,
+        // project card, CALL NOW, agent footer) instead of merging into
+        // our local body_html. We send the slug under several keys so
+        // older/newer bridge versions both pick it up. Subject is still
+        // forwarded as a soft default — the bridge may override it.
+        template_key: template_slug,
+        template_slug: template_slug,
+        preset: template_slug,
         template: {
+          key: template_slug,
+          slug: template_slug,
           name: template.name,
           subject: template.subject,
-          body_html: template.body_html,
         },
+        subject: template.subject,
         contact: {
           first_name: contact.first_name,
           last_name: contact.last_name,
