@@ -147,6 +147,15 @@ export function RichTextEditor({
         <Button type="button" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
           <ListOrdered className="w-4 h-4" />
         </Button>
+        <div className="w-px h-5 bg-border/70 mx-1" />
+        <Button type="button" variant={editor.isActive('link') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={handleSetLink} title="Add or edit link">
+          <Link2 className="w-4 h-4" />
+        </Button>
+        {editor.isActive('link') && (
+          <Button type="button" variant="ghost" size="sm" className={btnClass} onClick={() => editor.chain().focus().unsetLink().run()} title="Remove link">
+            <Link2Off className="w-4 h-4" />
+          </Button>
+        )}
         {toolbarSlot && (
           <>
             <div className="w-px h-5 bg-border/70 mx-1" />
