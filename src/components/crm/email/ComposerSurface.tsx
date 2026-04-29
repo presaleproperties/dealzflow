@@ -635,11 +635,11 @@ export function ComposerSurface({
               placeholder="Write your message... use {{lead.first_name}} for personalization."
               toolbarSlot={
                 <>
-                  <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleAttachFiles(e.target.files)} />
-                  <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-                    Attach
-                  </Button>
+                  <AttachMenu
+                    onFiles={(f) => handleAttachFiles(f)}
+                    uploading={uploading}
+                    className="h-8 px-2 text-xs"
+                  />
                   <Popover open={varPickerOpen} onOpenChange={(o) => { setVarPickerOpen(o); if (!o) setVarSearch(''); }}>
                     <PopoverTrigger asChild>
                       <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs">
