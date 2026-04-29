@@ -320,11 +320,29 @@ Deno.serve(async (req) => {
       const loginUrl = `${origin}/auth?invited=1`;
 
       // 1. Create or update the auth user (email pre-confirmed)
+      // Resolve existing user reliably via profiles table (paginated listUsers
+      // can miss users beyond the first page).
       let userId: string | null = null;
-      const { data: existing } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
-      const match = existing?.users?.find((u) => (u.email ?? "").toLowerCase() === result.email.toLowerCase());
-      if (match) {
-        userId = match.id;
+      const emailLc = result.email.toLowerCase();
+
+      const { data: profileMatch } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .ilike("email", emailLc)
+        .maybeSingle();
+      if (profileMatch?.user_id) userId = profileMatch.user_id as string;
+
+      // Fallback: scan a couple of pages of auth users
+      if (!userId) {
+        for (let page = 1; page <= 5 && !userId; page++) {
+          const { data: existing } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+          const match = existing?.users?.find((u) => (u.email ?? "").toLowerCase() === emailLc);
+          if (match) userId = match.id;
+          if (!existing?.users || existing.users.length < 200) break;
+        }
+      }
+
+      if (userId) {
         const { error: updErr } = await supabase.auth.admin.updateUserById(userId, {
           password: tempPassword,
           email_confirm: true,
@@ -342,10 +360,35 @@ Deno.serve(async (req) => {
           user_metadata: { full_name: result.display_name },
         });
         if (createErr || !created?.user) {
-          console.error("createUser failed", createErr);
-          return json({ error: createErr?.message ?? "Could not create user" }, 500);
+          // Most common cause: user already exists but slipped past our lookups.
+          // Try one more lookup and update instead of failing.
+          console.error("createUser failed, attempting fallback lookup", createErr);
+          let fallbackId: string | null = null;
+          for (let page = 1; page <= 10 && !fallbackId; page++) {
+            const { data: existing } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+            const match = existing?.users?.find((u) => (u.email ?? "").toLowerCase() === emailLc);
+            if (match) fallbackId = match.id;
+            if (!existing?.users || existing.users.length < 200) break;
+          }
+          if (!fallbackId) {
+            return json({
+              error: createErr?.message ?? "Could not create user",
+              hint: "If this user already exists in Auth, the lookup did not find them. Try again or contact support.",
+            }, 500);
+          }
+          const { error: updErr2 } = await supabase.auth.admin.updateUserById(fallbackId, {
+            password: tempPassword,
+            email_confirm: true,
+            user_metadata: { full_name: result.display_name },
+          });
+          if (updErr2) {
+            console.error("fallback updateUserById failed", updErr2);
+            return json({ error: updErr2.message }, 500);
+          }
+          userId = fallbackId;
+        } else {
+          userId = created.user.id;
         }
-        userId = created.user.id;
       }
 
       // 2. Sign in as them server-side so we can redeem the invite with their JWT
