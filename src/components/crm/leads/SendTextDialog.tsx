@@ -205,7 +205,13 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     }
   }
 
-  function applyTemplate(tplId: string) {
+  const { dragActive } = useDragAndPasteFiles({
+    targetRef: composerRef,
+    onFiles: (files) => { void handleFiles(files); },
+    accept: ['image/', 'video/'],
+    enabled: open,
+  });
+
     const t = templates.find(t => t.id === tplId);
     if (!t) return;
     setBody(t.body);
