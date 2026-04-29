@@ -1,27 +1,37 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Kanban, Mail, MessageCircle,
+  Users, Kanban, Mail, MessageCircle,
   LayoutTemplate, CalendarDays, BarChart3, Zap, Plug, Settings, Activity, CalendarClock,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
+import { useCrmNavMode } from '@/hooks/useCrmNavMode';
 
-interface Tab { label: string; path: string; icon: LucideIcon; ownerAdminOnly?: boolean; }
+interface Tab {
+  label: string;
+  path: string;
+  icon: LucideIcon;
+  ownerAdminOnly?: boolean;
+  /** When true, this tab is hidden in Simple mode (visible in Pro). */
+  pro?: boolean;
+}
 
 const TABS: Tab[] = [
-  
+  // Simple-mode core (every agent's daily loop)
   { label: 'Leads',        path: '/crm/leads',        icon: Users },
   { label: 'Pipeline',     path: '/crm/pipeline',     icon: Kanban },
   { label: 'Email',        path: '/crm/email',        icon: Mail },
   { label: 'SMS',          path: '/crm/sms',          icon: MessageCircle, ownerAdminOnly: true },
-  { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate },
   { label: 'Calendar',     path: '/crm/calendar',     icon: CalendarDays },
-  { label: 'Scheduler',    path: '/crm/scheduler',    icon: CalendarClock },
-  { label: 'Behavior',     path: '/crm/behavior',     icon: Activity },
-  { label: 'Reports',      path: '/crm/reports',      icon: BarChart3 },
-  { label: 'Automations',  path: '/crm/automations',  icon: Zap,      ownerAdminOnly: true },
-  { label: 'Integrations', path: '/crm/integrations', icon: Plug,     ownerAdminOnly: true },
   { label: 'Settings',     path: '/crm/settings',     icon: Settings },
+
+  // Pro-mode extras
+  { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate, pro: true },
+  { label: 'Scheduler',    path: '/crm/scheduler',    icon: CalendarClock,  pro: true },
+  { label: 'Behavior',     path: '/crm/behavior',     icon: Activity,       pro: true },
+  { label: 'Reports',      path: '/crm/reports',      icon: BarChart3,      pro: true },
+  { label: 'Automations',  path: '/crm/automations',  icon: Zap,            pro: true, ownerAdminOnly: true },
+  { label: 'Integrations', path: '/crm/integrations', icon: Plug,           pro: true, ownerAdminOnly: true },
 ];
 
 const TEAL = 'hsl(var(--primary))';
@@ -37,7 +47,13 @@ function isActive(pathname: string, path: string): boolean {
 export function CrmSubNav() {
   const location = useLocation();
   const { isOwnerOrAdmin } = useCrmAccess();
-  const visible = TABS.filter(t => !t.ownerAdminOnly || isOwnerOrAdmin);
+  const [navMode, setNavMode] = useCrmNavMode();
+
+  const visible = TABS.filter(t => {
+    if (t.ownerAdminOnly && !isOwnerOrAdmin) return false;
+    if (t.pro && navMode !== 'pro') return false;
+    return true;
+  });
 
   return (
     <div
@@ -79,6 +95,22 @@ export function CrmSubNav() {
             </Link>
           );
         })}
+
+        {/* Simple ↔ Pro mode toggle */}
+        <div className="ml-auto flex items-center gap-1 shrink-0 pl-3">
+          <button
+            type="button"
+            onClick={() => setNavMode(navMode === 'simple' ? 'pro' : 'simple')}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium border border-border/70 hover:border-primary/40 transition-colors"
+            style={{ color: INACTIVE }}
+            title={navMode === 'simple'
+              ? 'Show all tools (Templates, Scheduler, Behavior, Reports, Automations, Integrations)'
+              : 'Hide power-user tools'}
+          >
+            <span className="text-[10px] uppercase tracking-wider opacity-70">View</span>
+            <span style={{ color: TEAL }}>{navMode === 'simple' ? 'Simple' : 'Pro'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
