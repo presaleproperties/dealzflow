@@ -190,7 +190,7 @@ export default function EmailSettingsSection() {
               fullName: senderName.split('|')[0]?.trim() || senderName,
               email: replyTo || '',
             }}
-            initialData={(builderData as any) ?? null}
+            initialData={(builderData as any) ?? ((settings as any)?.signature_builder_data || null)}
             onApply={(html, layout, fields, touchedFields) => {
               setSignatureHtml(html);
               const nextBuilder = { fields, touchedFields, layout } as any;
