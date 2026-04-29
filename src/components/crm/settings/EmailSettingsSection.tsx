@@ -241,12 +241,33 @@ export default function EmailSettingsSection() {
             <div className="mt-4 space-y-6">
               {/* Brand Logo */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:p-4">
-                <div>
-                  <Label className="text-sm font-semibold">Brand Logo Banner</Label>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Added to the top of bulk &amp; 1:1 emails. Recommended: 600px wide max, under 2 MB.
-                  </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Label className="text-sm font-semibold">Brand Logo Banner</Label>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Optional logo prepended to the top of bulk &amp; 1:1 emails. Off by default — most agents prefer the logo to live in the signature only. Recommended: 600px wide max, under 2 MB.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {brandLogoEnabled ? 'On' : 'Off'}
+                    </span>
+                    <Switch
+                      checked={brandLogoEnabled}
+                      onCheckedChange={(v) => {
+                        setBrandLogoEnabled(v);
+                        upsert.mutate({ brand_logo_enabled: v } as any);
+                      }}
+                      aria-label="Enable email header logo"
+                    />
+                  </div>
                 </div>
+
+                {!brandLogoEnabled && (
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Header logo is currently disabled — outgoing emails will have no banner image at the top.
+                  </p>
+                )}
 
                 <input
                   ref={fileInputRef}
