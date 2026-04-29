@@ -18,7 +18,7 @@ const MAX_HEIGHT = 800;
 export function SignatureInlineFrame({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [contentHeight, setContentHeight] = useState(40);
+  const [contentHeight, setContentHeight] = useState(24);
   const [customHeight, setCustomHeight] = useState<number | null>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
