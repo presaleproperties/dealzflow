@@ -208,6 +208,12 @@ export function WorkspaceMembersCard() {
               candidate={c}
               isPending={pendingId === c.user_id}
               onInvite={(role) => inviteMut.mutate({ c, role })}
+              onResend={() =>
+                inviteMut.mutate({
+                  c,
+                  role: (c.crm_role === 'owner' || c.crm_role === 'admin' ? 'admin' : (c.crm_role as any) ?? 'agent'),
+                })
+              }
               onEdit={() => openEdit(c)}
             />
           ))}
