@@ -62,7 +62,7 @@ function formatBudget(min?: number | null, max?: number | null): string | null {
 }
 
 /* ─── Lead Card ─── */
-function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
+function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: number; onOpen: (id: string) => void }) {
   const days = daysInStage(contact);
   const daysColor = days === null ? undefined : days <= 7 ? 'hsl(142 71% 45%)' : days <= 14 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
   const touchColor = !contact.last_touch_at ? undefined : (() => {
@@ -77,6 +77,9 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
   const cityPref = cAny.city_pref || contact.city;
   const isPreApproved = !!cAny.is_pre_approved;
 
+  // Track pointer to distinguish click vs drag
+  const downPos = useRef<{ x: number; y: number } | null>(null);
+
   return (
     <Draggable draggableId={contact.id} index={index}>
       {(provided, snapshot) => (
@@ -84,7 +87,16 @@ function LeadCard({ contact, index }: { contact: CrmContact; index: number }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-grab transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg]' : 'hover:shadow-md hover:border-border/80'}`}
+          onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY }; }}
+          onPointerUp={(e) => {
+            const start = downPos.current;
+            downPos.current = null;
+            if (snapshot.isDragging || !start) return;
+            const dx = Math.abs(e.clientX - start.x);
+            const dy = Math.abs(e.clientY - start.y);
+            if (dx < 5 && dy < 5) onOpen(contact.id);
+          }}
+          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
         >
           {/* Header: name + assigned avatar */}
           <div className="flex items-start justify-between gap-2 mb-2">
