@@ -116,9 +116,21 @@ export function ComposerSurface({
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
 
-  /* Draft autosave — workspace-wide single draft. Survives navigation / reload. */
+  /* Draft autosave — workspace-wide single draft. Survives navigation / reload.
+     Cross-tab sync: edits in another tab live-update this composer. */
   const draftScope = 'workspace';
-  const { savedAt } = useEmailDraftAutosave(draftScope, { subject, bodyHtml, cc, bcc }, true);
+  const { savedAt } = useEmailDraftAutosave(
+    draftScope,
+    { subject, bodyHtml, cc, bcc },
+    true,
+    (remote) => {
+      setSubject(remote.subject || '');
+      setBodyHtml(remote.bodyHtml || '<p></p>');
+      setCc(remote.cc || '');
+      setBcc(remote.bcc || '');
+      if (remote.cc || remote.bcc) setShowCcBcc(true);
+    },
+  );
   const draftRestored = useRef(false);
   useEffect(() => {
     if (draftRestored.current) return;
