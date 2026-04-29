@@ -196,94 +196,98 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <AuthProvider>
-        <CrmAccessProvider>
-          <DealDraftProvider>
-            <TooltipProvider>
-              <NativeBootstrap>
-              <UpdateBanner />
-              <Toaster />
-              <Sonner />
-              <QuietHoursConfirmHost />
-              <BrowserRouter>
-                <ScrollToTop />
-                <Routes>
-                  <Route path="/" element={<Navigate to="/auth" replace />} />
-                  <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
-                  <Route path="/pending-approval" element={<PendingApprovalPage />} />
-                  <Route path="/accept-invite" element={<AcceptInvitePage />} />
-                  <Route path="/auth/change-password" element={<ChangePasswordPage />} />
-                  <Route path="/terms" element={<TermsPage />} />
-                  <Route path="/privacy" element={<PrivacyPage />} />
-                  
-                  <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                  <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
-                  <Route path="/deals" element={<ProtectedRoute><DealsPage /></ProtectedRoute>} />
-                  <Route path="/deals/new" element={<ProtectedRoute><NewDealPage /></ProtectedRoute>} />
-                  <Route path="/deals/:id" element={<ProtectedRoute><DealDetailPage /></ProtectedRoute>} />
-                  <Route path="/payouts" element={<ProtectedRoute><PayoutsPage /></ProtectedRoute>} />
-                  <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
-                  <Route path="/forecast" element={<ProtectedRoute><ForecastPage /></ProtectedRoute>} />
-                  <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-                  <Route path="/inventory" element={<ProtectedRoute><ClientInventoryPage /></ProtectedRoute>} />
-                  <Route path="/command-center" element={<Navigate to="/dashboard" replace />} />
-                  
-                  <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><UnifiedSettingsPage /></ProtectedRoute>} />
-                  <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-                  <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
-                  <Route path="/admin/bridge-status" element={<AdminRoute><BridgeStatusPage /></AdminRoute>} />
-                  <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
-                  <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
-                  <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
-                  <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
-                  <Route path="/dev/mobile-spacing" element={<ProtectedRoute><MobileSpacingChecklistPage /></ProtectedRoute>} />
-                  <Route path="/help/onboarding" element={<ProtectedRoute><HelpOnboardingPage /></ProtectedRoute>} />
+  <AppErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <AuthProvider>
+          <CrmAccessProvider>
+            <DealDraftProvider>
+              <TooltipProvider>
+                <NativeBootstrap>
+                <UpdateBanner />
+                <Toaster />
+                <Sonner />
+                <QuietHoursConfirmHost />
+                <BrowserRouter>
+                  <ScrollToTop />
+                  <Suspense fallback={<RouteFallback />}>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/auth" replace />} />
+                    <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+                    <Route path="/pending-approval" element={<PendingApprovalPage />} />
+                    <Route path="/accept-invite" element={<AcceptInvitePage />} />
+                    <Route path="/auth/change-password" element={<ChangePasswordPage />} />
+                    <Route path="/terms" element={<TermsPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
 
-                  {/* CRM Routes — guarded by CrmRouteGuard inside CrmLayout */}
-                  <Route path="/crm/dashboard" element={<Navigate to="/crm/leads" replace />} />
-                  <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatThreadPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/email/legacy" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
-                  <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/marketing-hub" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/email-builder" element={<ProtectedRoute><CrmLayout><CrmEmailBuilderPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/contacts" element={<Navigate to="/crm/leads" replace />} />
-                  <Route path="/crm/automations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmAutomationsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/behavior" element={<ProtectedRoute><CrmLayout><CrmBehaviorDashboardPage /></CrmLayout></ProtectedRoute>} />
-                  <Route path="/crm/scheduler" element={<ProtectedRoute><CrmLayout><CrmSchedulerPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                    <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
+                    <Route path="/deals" element={<ProtectedRoute><DealsPage /></ProtectedRoute>} />
+                    <Route path="/deals/new" element={<ProtectedRoute><NewDealPage /></ProtectedRoute>} />
+                    <Route path="/deals/:id" element={<ProtectedRoute><DealDetailPage /></ProtectedRoute>} />
+                    <Route path="/payouts" element={<ProtectedRoute><PayoutsPage /></ProtectedRoute>} />
+                    <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
+                    <Route path="/forecast" element={<ProtectedRoute><ForecastPage /></ProtectedRoute>} />
+                    <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+                    <Route path="/inventory" element={<ProtectedRoute><ClientInventoryPage /></ProtectedRoute>} />
+                    <Route path="/command-center" element={<Navigate to="/dashboard" replace />} />
 
-                  {/* Public booking pages — no auth. /r/ is the neutral short URL; /book/ kept as alias. */}
-                  <Route path="/r/:teamSlug" element={<PublicAgentLandingPage />} />
-                  <Route path="/r/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
-                  <Route path="/r/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
-                  <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
-                  <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
-                  <Route path="/book/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
+                    <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><UnifiedSettingsPage /></ProtectedRoute>} />
+                    <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                    <Route path="/api-docs" element={<AdminRoute><ApiDocsPage /></AdminRoute>} />
+                    <Route path="/admin/bridge-status" element={<AdminRoute><BridgeStatusPage /></AdminRoute>} />
+                    <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
+                    <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
+                    <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
+                    <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />
+                    <Route path="/dev/mobile-spacing" element={<ProtectedRoute><MobileSpacingChecklistPage /></ProtectedRoute>} />
+                    <Route path="/help/onboarding" element={<ProtectedRoute><HelpOnboardingPage /></ProtectedRoute>} />
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-              </NativeBootstrap>
-            </TooltipProvider>
-          </DealDraftProvider>
-        </CrmAccessProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+                    {/* CRM Routes — guarded by CrmRouteGuard inside CrmLayout */}
+                    <Route path="/crm/dashboard" element={<Navigate to="/crm/leads" replace />} />
+                    <Route path="/crm/leads" element={<ProtectedRoute><CrmLayout><CrmLeadsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/leads/:id" element={<ProtectedRoute><CrmLayout><LeadDetailPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatThreadPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/email/legacy" element={<ProtectedRoute><CrmLayout><CrmEmailPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/whatsapp" element={<Navigate to="/crm/leads" replace />} />
+                    <Route path="/crm/templates" element={<ProtectedRoute><CrmLayout><CrmTemplatesPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/marketing-hub" element={<ProtectedRoute><CrmLayout><CrmMarketingHubPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/email-builder" element={<ProtectedRoute><CrmLayout><CrmEmailBuilderPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/contacts" element={<Navigate to="/crm/leads" replace />} />
+                    <Route path="/crm/automations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmAutomationsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/calendar" element={<ProtectedRoute><CrmLayout><CrmCalendarPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/reports" element={<ProtectedRoute><CrmLayout><CrmReportsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/settings" element={<ProtectedRoute><CrmLayout><CrmSettingsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/integrations" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmIntegrationsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/behavior-leads" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmBehaviorLeadsPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/behavior" element={<ProtectedRoute><CrmLayout><CrmBehaviorDashboardPage /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/scheduler" element={<ProtectedRoute><CrmLayout><CrmSchedulerPage /></CrmLayout></ProtectedRoute>} />
+
+                    {/* Public booking pages — no auth. /r/ is the neutral short URL; /book/ kept as alias. */}
+                    <Route path="/r/:teamSlug" element={<PublicAgentLandingPage />} />
+                    <Route path="/r/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
+                    <Route path="/r/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
+                    <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
+                    <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
+                    <Route path="/book/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
+
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  </Suspense>
+                </BrowserRouter>
+                </NativeBootstrap>
+              </TooltipProvider>
+            </DealDraftProvider>
+          </CrmAccessProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </AppErrorBoundary>
 );
 
 export default App;
