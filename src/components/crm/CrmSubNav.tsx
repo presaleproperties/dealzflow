@@ -1,16 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import {
-  Users, Kanban, Mail, MessageCircle,
-  LayoutTemplate, CalendarDays, BarChart3, Zap, Plug, Settings, Activity, CalendarClock,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import { useCrmNavMode } from '@/hooks/useCrmNavMode';
 
 interface Tab {
   label: string;
   path: string;
-  icon: LucideIcon;
   ownerAdminOnly?: boolean;
   ownerOnly?: boolean;
   /** When true, this tab is hidden in Simple mode (visible in Pro). */
@@ -19,26 +13,25 @@ interface Tab {
 
 const TABS: Tab[] = [
   // Simple-mode core (every agent's daily loop)
-  { label: 'Leads',        path: '/crm/leads',        icon: Users },
-  { label: 'Pipeline',     path: '/crm/pipeline',     icon: Kanban },
-  { label: 'Email',        path: '/crm/email',        icon: Mail },
-  { label: 'SMS',          path: '/crm/sms',          icon: MessageCircle, ownerAdminOnly: true },
-  { label: 'Calendar',     path: '/crm/calendar',     icon: CalendarDays },
-  { label: 'Settings',     path: '/crm/settings',     icon: Settings },
+  { label: 'Leads',        path: '/crm/leads' },
+  { label: 'Pipeline',     path: '/crm/pipeline' },
+  { label: 'Email',        path: '/crm/email' },
+  { label: 'SMS',          path: '/crm/sms', ownerAdminOnly: true },
+  { label: 'Calendar',     path: '/crm/calendar' },
 
   // Pro-mode extras
-  { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate, pro: true },
-  { label: 'Scheduler',    path: '/crm/scheduler',    icon: CalendarClock,  pro: true },
-  { label: 'Behavior',     path: '/crm/behavior',     icon: Activity,       pro: true, ownerOnly: true },
-  { label: 'Reports',      path: '/crm/reports',      icon: BarChart3,      pro: true, ownerOnly: true },
-  { label: 'Automations',  path: '/crm/automations',  icon: Zap,            pro: true, ownerAdminOnly: true },
-  { label: 'Integrations', path: '/crm/integrations', icon: Plug,           pro: true, ownerAdminOnly: true },
+  { label: 'Templates',    path: '/crm/templates',    pro: true },
+  { label: 'Scheduler',    path: '/crm/scheduler',    pro: true },
+  { label: 'Behavior',     path: '/crm/behavior',     pro: true, ownerOnly: true },
+  { label: 'Reports',      path: '/crm/reports',      pro: true, ownerOnly: true },
+  { label: 'Automations',  path: '/crm/automations',  pro: true, ownerAdminOnly: true },
+  { label: 'Integrations', path: '/crm/integrations', pro: true, ownerAdminOnly: true },
+
+  // Settings always last, quiet
+  { label: 'Settings',     path: '/crm/settings',     ownerAdminOnly: true },
 ];
 
-const TEAL = 'hsl(var(--primary))';
-const TEAL_BG = 'hsl(var(--primary) / 0.12)';
-const NAVY_BG = 'hsl(var(--background))';
-const NAVY_BORDER = 'hsl(var(--border) / 0.85)';
+const GOLD = 'hsl(var(--primary))';
 const INACTIVE = 'hsl(var(--muted-foreground))';
 
 function isActive(pathname: string, path: string): boolean {
@@ -59,60 +52,46 @@ export function CrmSubNav() {
 
   return (
     <div
-      className="hidden lg:block sticky top-[54px] z-30 backdrop-blur-xl"
-      style={{
-        background: NAVY_BG,
-        borderBottom: `1px solid ${NAVY_BORDER}`,
-      }}
+      className="hidden lg:block sticky top-[54px] z-30 backdrop-blur-xl bg-background/85"
+      style={{ borderBottom: '1px solid hsl(var(--border) / 0.6)' }}
     >
-      <div className="flex items-center gap-0.5 px-3 sm:px-4 lg:px-6 h-[42px] overflow-x-auto">
-        <div
-          className="text-[10.5px] font-semibold uppercase tracking-[0.16em] mr-3 shrink-0"
-          style={{ color: TEAL }}
-        >
-          CRM
-        </div>
+      <div className="flex items-center gap-5 px-3 sm:px-4 lg:px-6 h-[38px] overflow-x-auto">
         {visible.map(tab => {
           const active = isActive(location.pathname, tab.path);
-          const Icon = tab.icon;
           return (
             <Link
               key={tab.path}
               to={tab.path}
-              className="flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[12.5px] transition-colors shrink-0"
+              className="relative flex items-center h-full text-[12.5px] tracking-tight transition-colors shrink-0 hover:text-foreground"
               style={{
-                color: active ? TEAL : INACTIVE,
-                background: active ? TEAL_BG : 'transparent',
+                color: active ? 'hsl(var(--foreground))' : INACTIVE,
                 fontWeight: active ? 600 : 500,
               }}
-              onMouseEnter={(e) => {
-                if (!active) e.currentTarget.style.background = 'hsl(var(--muted) / 0.6)';
-              }}
-              onMouseLeave={(e) => {
-                if (!active) e.currentTarget.style.background = 'transparent';
-              }}
             >
-              <Icon className="w-3.5 h-3.5" strokeWidth={active ? 2.2 : 1.8} />
               {tab.label}
+              {active && (
+                <span
+                  className="absolute left-0 right-0 -bottom-px h-[2px] rounded-t-sm"
+                  style={{ background: GOLD }}
+                  aria-hidden
+                />
+              )}
             </Link>
           );
         })}
 
-        {/* Simple ↔ Pro mode toggle */}
-        <div className="ml-auto flex items-center gap-1 shrink-0 pl-3">
-          <button
-            type="button"
-            onClick={() => setNavMode(navMode === 'simple' ? 'pro' : 'simple')}
-            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium border border-border/70 hover:border-primary/40 transition-colors"
-            style={{ color: INACTIVE }}
-            title={navMode === 'simple'
-              ? 'Show all tools (Templates, Scheduler, Behavior, Reports, Automations, Integrations)'
-              : 'Hide power-user tools'}
-          >
-            <span className="text-[10px] uppercase tracking-wider opacity-70">View</span>
-            <span style={{ color: TEAL }}>{navMode === 'simple' ? 'Simple' : 'Pro'}</span>
-          </button>
-        </div>
+        {/* Quiet Simple ↔ Pro toggle */}
+        <button
+          type="button"
+          onClick={() => setNavMode(navMode === 'simple' ? 'pro' : 'simple')}
+          className="ml-auto shrink-0 text-[10.5px] uppercase tracking-[0.14em] font-medium text-muted-foreground/80 hover:text-foreground transition-colors"
+          title={navMode === 'simple'
+            ? 'Switch to Pro view (Templates, Scheduler, Behavior, Reports, Automations, Integrations)'
+            : 'Switch to Simple view'}
+        >
+          <span className="opacity-60">View · </span>
+          <span style={{ color: GOLD }}>{navMode === 'simple' ? 'Simple' : 'Pro'}</span>
+        </button>
       </div>
     </div>
   );
