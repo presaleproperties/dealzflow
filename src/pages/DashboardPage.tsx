@@ -147,18 +147,6 @@ export default function DashboardPage() {
     return fmtEarliest === fmtLatest ? fmtEarliest : `${fmtEarliest} – ${fmtLatest}`;
   }, [syncedPayouts]);
 
-  if (isChecking) {
-    return (
-      <AppLayout>
-        <div className="min-h-dvh flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <p className="text-muted-foreground text-sm">Loading...</p>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
 
   const hasConnection = connections.length > 0;
   const isEmpty = !hasConnection && syncedTransactions.length === 0;
