@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
         action: "send_reply",
         to: contact.email,
         subject: subject_rendered,
-        body_html: html_rendered,
+        body_html: html_final,
         contact_id,
       }),
     });
@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
       contact_id,
       user_id: user.id,
       subject: `[FAILED] ${subject_rendered}`,
-      body: html_rendered,
+      body: html_final,
       sent_at: new Date().toISOString(),
       direction: "outbound",
     });
@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
       contact_id,
       user_id: user.id,
       subject: subject_rendered,
-      body: html_rendered,
+      body: html_final,
       sent_at: new Date().toISOString(),
       direction: "outbound",
       gmail_message_id,
