@@ -500,7 +500,7 @@ export function LeftSidebar({
           <Select value={contact.assigned_to ?? undefined} onValueChange={(v) => saveWithLog('assigned_to', v)}>
             <SelectTrigger className="h-9 text-sm bg-card transition-all duration-200"><SelectValue placeholder="Select agent" /></SelectTrigger>
             <SelectContent>
-              {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              {agents.map(a => <SelectItem key={a.id} value={a.name}><span className="inline-flex items-center gap-2"><AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />{a.name}</span></SelectItem>)}
             </SelectContent>
           </Select>
         )}
