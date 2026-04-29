@@ -79,7 +79,7 @@ export function buildHorizontalHtml(d: SignatureBuilderFields): string {
 
   return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 520px;">
   <tr>
-    <td style="padding-right: 18px; vertical-align: middle;">
+    <td width="120" align="center" style="width: 120px; padding-right: 18px; vertical-align: middle; text-align: center;">
       ${headshot}
     </td>
     <td style="border-left: 3px solid #c8a45e; padding-left: 18px; vertical-align: middle;">
