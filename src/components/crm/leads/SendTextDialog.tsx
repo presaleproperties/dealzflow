@@ -32,7 +32,7 @@ function projectShareUrl(p: CrmProject): string | null {
   if (p.marketing_url?.startsWith('http')) return p.marketing_url;
   if (p.website_url?.startsWith('http')) return p.website_url;
   const slug = p.presale_slug || p.slug;
-  if (slug) return `https://presaleproperties.com/projects/${slug}`;
+  if (slug) return `https://presaleproperties.com/${slug}`;
   return null;
 }
 
