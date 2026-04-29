@@ -95,6 +95,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   });
 
   // ─── Local state ─────────────────────────────────────────────────────────
+  const queryClient = useQueryClient();
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
   const [channel, setChannel] = useState<'email' | 'sms'>('email');
@@ -105,6 +106,26 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [previewHtml, setPreviewHtml] = useState<string>('');
   const [previewSubject, setPreviewSubject] = useState<string>('');
   const [previewError, setPreviewError] = useState<string | null>(null);
+  // Attachment toggles + cached availability per project
+  const [attachBrochure, setAttachBrochure] = useState(false);
+  const [attachFloorPlans, setAttachFloorPlans] = useState(false);
+  const [attachPricing, setAttachPricing] = useState(false);
+
+  // ─── Per-project asset availability (manual or Presale) ──────────────────
+  type AssetInfo = { url: string | null; filename: string | null; source: 'manual' | 'presale' | null };
+  const { data: assets, isLoading: assetsLoading } = useQuery<{ brochure: AssetInfo; floor_plans: AssetInfo; pricing: AssetInfo }>({
+    queryKey: ['send-project.assets', projectSlug],
+    enabled: open && Boolean(projectSlug),
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('presale-project-assets', {
+        body: { project_slug: projectSlug },
+      });
+      if (error) throw error;
+      return (data as any).assets;
+    },
+  });
+
 
   // ─── Defaults when modal opens / data arrives ───────────────────────────
   useEffect(() => {
