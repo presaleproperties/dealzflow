@@ -13,6 +13,8 @@ export interface PresaleAgent {
   licenseNumber?: string;
   brokerage?: string;
   websiteUrl?: string;
+  title?: string;
+  instagramUrl?: string;
   raw?: unknown;
 }
 
