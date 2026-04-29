@@ -163,6 +163,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           template_slug: templateSlug,
           channel: 'email',
           dry_run: true,
+          attachments: {
+            brochure: attachBrochure,
+            floor_plans: attachFloorPlans,
+            pricing: attachPricing,
+          },
         },
       });
       if (error || !data?.ok) {
@@ -176,7 +181,61 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 300);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, channel]);
+  }, [open, contact.id, projectSlug, templateSlug, channel, attachBrochure, attachFloorPlans, attachPricing]);
+
+  // ─── Reset attachment toggles when project changes ───────────────────────
+  useEffect(() => {
+    setAttachBrochure(false);
+    setAttachFloorPlans(false);
+    setAttachPricing(false);
+  }, [projectSlug]);
+
+  // ─── Upload helper ───────────────────────────────────────────────────────
+  const [uploadingKind, setUploadingKind] = useState<null | 'brochure' | 'floor_plans' | 'pricing'>(null);
+  const handleUpload = async (kind: 'brochure' | 'floor_plans' | 'pricing', file: File) => {
+    if (!projectSlug) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 20 MB.', variant: 'destructive' });
+      return;
+    }
+    setUploadingKind(kind);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+    const path = `${projectSlug}/${kind}/${Date.now()}-${safeName}`;
+    const { error: upErr } = await supabase.storage
+      .from('crm-project-assets')
+      .upload(path, file, { upsert: true, contentType: file.type || 'application/pdf' });
+    if (upErr) {
+      setUploadingKind(null);
+      toast({ title: 'Upload failed', description: upErr.message, variant: 'destructive' });
+      return;
+    }
+    const { data: signed } = await supabase.storage
+      .from('crm-project-assets')
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    const url = signed?.signedUrl;
+    if (!url) {
+      setUploadingKind(null);
+      toast({ title: 'Upload failed', description: 'Could not sign URL.', variant: 'destructive' });
+      return;
+    }
+    const patch: Record<string, string> =
+      kind === 'brochure'    ? { brochure_url: url, brochure_filename: file.name } :
+      kind === 'floor_plans' ? { floor_plans_url: url, floor_plans_filename: file.name } :
+                               { pricing_url: url, pricing_filename: file.name };
+    const { error: updErr } = await supabase.from('crm_projects').update(patch).eq('slug', projectSlug);
+    setUploadingKind(null);
+    if (updErr) {
+      toast({ title: 'Saved file but project update failed', description: updErr.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Uploaded', description: file.name });
+    queryClient.invalidateQueries({ queryKey: ['send-project.assets', projectSlug] });
+    queryClient.invalidateQueries({ queryKey: ['crm-projects'] });
+    // Auto-enable the toggle once upload succeeds
+    if (kind === 'brochure') setAttachBrochure(true);
+    if (kind === 'floor_plans') setAttachFloorPlans(true);
+    if (kind === 'pricing') setAttachPricing(true);
+  };
 
   // ─── Send ────────────────────────────────────────────────────────────────
   const handleSend = async () => {
@@ -190,6 +249,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         channel: 'email',
         enroll_followup_slug: enrollFollowup && automationAvailable ? FOLLOWUP_SLUG : null,
         dry_run: false,
+        attachments: {
+          brochure: attachBrochure,
+          floor_plans: attachFloorPlans,
+          pricing: attachPricing,
+        },
       },
     });
     setSending(false);
