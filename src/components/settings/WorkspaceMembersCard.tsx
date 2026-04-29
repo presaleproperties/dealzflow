@@ -306,8 +306,20 @@ export function WorkspaceMembersCard() {
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
             <Button
               disabled={updateMut.isPending}
-              onClick={() => {
+              onClick={async () => {
                 if (!editing) return;
+                // Persist presale_email override directly on crm_team
+                if (editing.crm_team_id) {
+                  const next = editPresaleEmail.trim().toLowerCase() || null;
+                  const { error: peErr } = await supabase
+                    .from('crm_team')
+                    .update({ presale_email: next })
+                    .eq('id', editing.crm_team_id);
+                  if (peErr) {
+                    toast.error(peErr.message);
+                    return;
+                  }
+                }
                 updateMut.mutate({
                   user_id: editing.user_id,
                   role: editRole,
