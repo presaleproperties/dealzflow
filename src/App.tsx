@@ -18,6 +18,7 @@ import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
+import { usePresaleSignatureAutoImport } from "@/hooks/usePresaleSignatureAutoImport";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
 import AuthPage from "./pages/AuthPage";
@@ -173,6 +174,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   useStandaloneMode();
   useGlobalTapHaptics();
   usePresaleAgentSync();
+  usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
   return <>{children}</>;
 }
