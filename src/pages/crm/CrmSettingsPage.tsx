@@ -12,6 +12,7 @@ import {
   Database, Link2, User, RefreshCw, Loader2, Phone, CheckCircle2, AlertCircle,
   Sparkles, ArrowRight, Circle, ChevronRight, Briefcase, FileText, Inbox,
   Building2, FolderKanban, Crown, GitBranch, Layers, CreditCard, ExternalLink, Eye,
+  Search, MoreHorizontal, Pencil, Key, Trash2, History, Camera, X, Upload,
 } from 'lucide-react';
 import {
   getTimelineLinkBehavior, setTimelineLinkBehavior, type TimelineLinkBehavior,
@@ -39,6 +40,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 /* ─────────────────────────────────────────────────────────────
@@ -508,7 +516,7 @@ function ChecklistGroup({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Team Management (admin only — unchanged behavior, light polish)
+   Team Management — owner control center
    ───────────────────────────────────────────────────────────── */
 type TeamPerms = {
   see_all_leads?: boolean;
@@ -530,6 +538,27 @@ const PERMISSION_LIST: { key: keyof TeamPerms; label: string; desc: string }[] =
   { key: 'manage_team',      label: 'Manage team',       desc: 'Invite and manage other team members.' },
 ];
 
+type EditDraft = {
+  display_name: string;
+  title: string;
+  phone: string;
+  email: string;
+  headshot_url: string;
+  headshot_focal_y: number;
+};
+
+function relativeTime(iso?: string | null) {
+  if (!iso) return null;
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 function TeamManagement() {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -538,14 +567,46 @@ function TeamManagement() {
   const [inviteName, setInviteName] = useState('');
   const [permsEditId, setPermsEditId] = useState<string | null>(null);
   const [permsDraft, setPermsDraft] = useState<TeamPerms>({});
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const [removeId, setRemoveId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['crm-team-members'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_team')
-        .select('id,user_id,display_name,email,phone,title,brokerage,headshot_url,headshot_focal_y,role,is_active,permissions,created_at,presale_synced_at')
+        .select('id,user_id,display_name,email,phone,title,brokerage,headshot_url,headshot_focal_y,role,is_active,permissions,created_at,invited_at,presale_synced_at')
         .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: signinInfo = [] } = useQuery({
+    queryKey: ['crm-team-signin-info'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('crm_team_member_signin_info');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const signinByUser = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const r of signinInfo as any[]) m.set(r.user_id, r);
+    return m;
+  }, [signinInfo]);
+
+  const { data: auditEvents = [] } = useQuery({
+    queryKey: ['crm-team-audit'],
+    enabled: auditOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('crm_team_recent_audit', { _limit: 60 });
       if (error) throw error;
       return data ?? [];
     },
@@ -569,30 +630,24 @@ function TeamManagement() {
     }
   };
 
-  const updateRole = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const { error } = await supabase.rpc('crm_team_update', {
-        _team_id: id, _role: role, _permissions: null, _is_active: null, _name_aliases: null,
+  const adminUpdate = useMutation({
+    mutationFn: async (args: { id: string; patch: Partial<EditDraft> & { role?: string; is_active?: boolean } }) => {
+      const { error } = await supabase.rpc('crm_team_admin_update_member', {
+        _team_id: args.id,
+        _display_name: args.patch.display_name ?? null,
+        _title: args.patch.title ?? null,
+        _phone: args.patch.phone ?? null,
+        _email: args.patch.email ?? null,
+        _headshot_url: args.patch.headshot_url ?? null,
+        _headshot_focal_y: args.patch.headshot_focal_y ?? null,
+        _role: args.patch.role ?? null,
+        _is_active: args.patch.is_active ?? null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
-      toast.success('Role updated');
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const toggleActive = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.rpc('crm_team_update', {
-        _team_id: id, _role: null, _permissions: null, _is_active: is_active, _name_aliases: null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
-      toast.success('Status updated');
+      queryClient.invalidateQueries({ queryKey: ['crm-team-audit'] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -605,6 +660,7 @@ function TeamManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
       toast.success('Member removed');
+      setRemoveId(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -636,7 +692,7 @@ function TeamManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
-      toast.success('Team member invited. They will be linked when they sign up.');
+      toast.success('Team member invited.');
       setInviteOpen(false);
       setInviteEmail('');
       setInviteName('');
@@ -657,14 +713,13 @@ function TeamManagement() {
         },
       });
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error ?? 'Could not resend invite');
+      if (!data?.success) throw new Error(data?.error ?? 'Could not reset password');
       return data as { email_sent: boolean; temp_password?: string };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['crm-team-members'] });
       toast.success(
         data.email_sent
-          ? 'Invite re-sent — new temporary password emailed'
+          ? 'Password reset — new temporary password emailed'
           : `New temp password: ${data.temp_password ?? '(check Cloud → Emails)'}`,
         { duration: 8000 },
       );
@@ -687,14 +742,65 @@ function TeamManagement() {
       .map((s) => s[0]?.toUpperCase())
       .join('') || '?');
 
-  const relativeSync = (iso?: string | null) => {
-    if (!iso) return null;
-    const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-    if (m < 1) return 'just now';
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    return `${Math.floor(h / 24)}d ago`;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return members.filter((m: any) => {
+      if (roleFilter !== 'all' && m.role !== roleFilter) return false;
+      if (statusFilter === 'active' && !m.is_active) return false;
+      if (statusFilter === 'inactive' && m.is_active) return false;
+      if (statusFilter === 'pending' && m.user_id) return false;
+      if (!q) return true;
+      return (
+        (m.display_name || '').toLowerCase().includes(q) ||
+        (m.email || '').toLowerCase().includes(q) ||
+        (m.title || '').toLowerCase().includes(q) ||
+        (m.phone || '').toLowerCase().includes(q)
+      );
+    });
+  }, [members, search, roleFilter, statusFilter]);
+
+  const openEdit = (m: any) => {
+    setEditDraft({
+      display_name: m.display_name ?? '',
+      title: m.title ?? '',
+      phone: m.phone ?? '',
+      email: m.email ?? '',
+      headshot_url: m.headshot_url ?? '',
+      headshot_focal_y: m.headshot_focal_y ?? 30,
+    });
+    setEditId(m.id);
+  };
+
+  const handleHeadshotUpload = async (file: File) => {
+    if (!editId || !file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${editId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('crm-team-headshots')
+        .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('crm-team-headshots').getPublicUrl(path);
+      setEditDraft((d) => (d ? { ...d, headshot_url: pub.publicUrl } : d));
+      toast.success('Headshot uploaded');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editId || !editDraft) return;
+    await adminUpdate.mutateAsync({ id: editId, patch: editDraft });
+    toast.success('Member updated');
+    setEditId(null);
+    setEditDraft(null);
   };
 
   return (
@@ -704,10 +810,13 @@ function TeamManagement() {
           <Shield className="h-4 w-4 text-primary shrink-0" />
           <CardTitle className="text-base sm:text-lg">Team Management</CardTitle>
           <span className="text-xs sm:text-sm text-muted-foreground ml-1">
-            · {members.length} {members.length === 1 ? 'member' : 'members'}
+            · {filtered.length} of {members.length}
           </span>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          <Button size="sm" variant="ghost" onClick={() => setAuditOpen(true)} className="text-xs">
+            <History className="h-3.5 w-3.5 mr-1.5" /> Activity
+          </Button>
           <Button size="sm" variant="outline" onClick={syncFromPresale} disabled={syncing} className="flex-1 sm:flex-none">
             {syncing
               ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Syncing</>
@@ -718,170 +827,311 @@ function TeamManagement() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-3 sm:px-6 pb-5">
+
+      {/* Filter bar */}
+      <div className="px-4 sm:px-6 pb-3 flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search name, email, title…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-9 text-sm"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="h-9 w-full sm:w-[120px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="owner">Owner</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="agent">Agent</SelectItem>
+            <SelectItem value="viewer">Viewer</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="pending">Pending signup</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <CardContent className="px-0 sm:px-2 pb-5">
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1.5 px-3 sm:px-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-[150px] rounded-lg bg-muted/40 animate-pulse" />
+              <div key={i} className="h-[58px] rounded-md bg-muted/40 animate-pulse" />
             ))}
           </div>
-        ) : members.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8 text-sm">No team members yet.</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8 text-sm">No team members match.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {members.map((m: any) => {
+          <div className="divide-y divide-border/60">
+            {filtered.map((m: any) => {
               const isOwner = m.role === 'owner';
               const focalY = m.headshot_focal_y ?? 30;
-              const missing: string[] = [];
-              if (!m.headshot_url) missing.push('headshot');
-              if (!m.title)        missing.push('title');
-              if (!m.phone)        missing.push('phone');
-              const synced = relativeSync(m.presale_synced_at);
+              const signin = m.user_id ? signinByUser.get(m.user_id) : null;
+              const lastSeen = signin?.last_sign_in_at ? relativeTime(signin.last_sign_in_at) : null;
+              const isPending = !m.user_id;
+              const inviteAge = isPending && m.invited_at ? relativeTime(m.invited_at) : null;
 
               return (
                 <div
                   key={m.id}
-                  className="group relative rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors"
+                  className="group flex items-center gap-3 px-4 sm:px-6 py-2.5 hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-start gap-3.5">
-                    {m.headshot_url ? (
-                      <img
-                        src={m.headshot_url}
-                        alt={m.display_name || ''}
-                        className="w-14 h-14 rounded-full object-cover border border-border shrink-0 ring-1 ring-primary/15"
-                        style={{ objectPosition: `center ${focalY}%` }}
-                      />
-                    ) : (
-                      <Avatar className="w-14 h-14 shrink-0 border border-border">
-                        <AvatarFallback className="text-sm font-semibold bg-primary text-primary-foreground tracking-tight">
-                          {initialsOf(m.display_name, m.email)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                  {/* Avatar */}
+                  {m.headshot_url ? (
+                    <img
+                      src={m.headshot_url}
+                      alt={m.display_name || ''}
+                      className="w-10 h-10 rounded-full object-cover border border-border shrink-0"
+                      style={{ objectPosition: `center ${focalY}%` }}
+                    />
+                  ) : (
+                    <Avatar className="w-10 h-10 shrink-0 border border-border">
+                      <AvatarFallback className="text-xs font-semibold bg-primary text-primary-foreground">
+                        {initialsOf(m.display_name, m.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {isOwner && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
-                        <h4 className="text-[14px] font-semibold text-foreground leading-tight truncate tracking-[-0.01em]">
-                          {m.display_name || '—'}
-                        </h4>
-                      </div>
-                      {m.title ? (
-                        <div className="text-[12px] text-foreground/70 truncate mt-0.5">{m.title}</div>
-                      ) : (
-                        <div className="text-[12px] italic text-muted-foreground/70 mt-0.5">No title</div>
+                  {/* Identity */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      {isOwner && <Crown className="h-3 w-3 text-primary shrink-0" />}
+                      <span className="text-[14px] font-semibold text-foreground truncate tracking-[-0.01em]">
+                        {m.display_name || m.email || '—'}
+                      </span>
+                      {!m.is_active && (
+                        <Badge variant="outline" className="text-[10px] h-4 px-1 bg-muted text-muted-foreground border-border">
+                          inactive
+                        </Badge>
                       )}
-                      <div className="mt-1.5 space-y-0.5">
-                        {m.email && (
-                          <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-                            <Mail className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{m.email}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-                          <Phone className="w-3 h-3 shrink-0" />
-                          {m.phone ? <span>{m.phone}</span> : <span className="italic">No phone</span>}
-                        </div>
-                      </div>
+                      {isPending && (
+                        <Badge variant="outline" className="text-[10px] h-4 px-1 bg-amber-500/10 text-amber-600 border-amber-500/30">
+                          pending
+                        </Badge>
+                      )}
                     </div>
-
-                    <div className="shrink-0 flex flex-col items-end gap-1.5">
-                      {isOwner ? (
-                        <Badge variant="outline" className={roleBadgeColor('owner')}>owner</Badge>
-                      ) : (
-                        <Select value={m.role} onValueChange={(v) => updateRole.mutate({ id: m.id, role: v })}>
-                          <SelectTrigger className="w-[92px] h-7 text-[11px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">admin</SelectItem>
-                            <SelectItem value="agent">agent</SelectItem>
-                            <SelectItem value="viewer">viewer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                      {!isOwner && (
-                        <Switch
-                          checked={m.is_active}
-                          onCheckedChange={(v) => toggleActive.mutate({ id: m.id, is_active: v })}
-                        />
-                      )}
+                    <div className="text-[11.5px] text-muted-foreground truncate">
+                      {m.title ? <span>{m.title} · </span> : null}
+                      <span>{m.email}</span>
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2 text-[10.5px] flex-wrap">
-                      {missing.length === 0 ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="w-3 h-3" /> Complete
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                          <AlertCircle className="w-3 h-3" /> Missing {missing.join(', ')}
-                        </span>
-                      )}
-                      {synced && <span className="text-muted-foreground">· Synced {synced}</span>}
-                      {!m.user_id && <span className="text-amber-600 dark:text-amber-500">· Awaiting signup</span>}
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      {!isOwner && (
-                        <Button
-                          variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
-                          disabled={resendInvite.isPending && resendInvite.variables?.email === m.email}
-                          onClick={() => resendInvite.mutate({
-                            email: m.email,
-                            display_name: m.display_name,
-                            role: m.role,
-                          })}
-                          title="Generate a new temporary password and email it"
-                        >
-                          {resendInvite.isPending && resendInvite.variables?.email === m.email
-                            ? 'Sending…'
-                            : 'Resend invite'}
-                        </Button>
-                      )}
-                      {!isOwner && (
-                        <Button
-                          variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
-                          onClick={() => {
-                            setPermsEditId(m.id);
-                            setPermsDraft((m.permissions ?? {}) as TeamPerms);
-                          }}
-                        >
-                          Permissions
-                        </Button>
-                      )}
-                      {!isOwner && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-7 px-2 text-[11px]">
-                              Remove
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {m.display_name || m.email} will lose access to the CRM.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => removeMember.mutate(m.id)}>
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
+                  {/* Role badge (desktop) */}
+                  <div className="hidden md:block shrink-0">
+                    <Badge variant="outline" className={cn('text-[10.5px] h-5', roleBadgeColor(m.role))}>
+                      {m.role}
+                    </Badge>
                   </div>
+
+                  {/* Last seen (desktop) */}
+                  <div className="hidden lg:block shrink-0 w-[110px] text-right text-[11px] text-muted-foreground">
+                    {isPending
+                      ? <span className="text-amber-600">Invited {inviteAge ?? 'recently'}</span>
+                      : lastSeen
+                        ? <span>Active {lastSeen}</span>
+                        : <span className="italic">Never signed in</span>}
+                  </div>
+
+                  {/* Actions menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem onClick={() => openEdit(m)}>
+                        <Pencil className="h-3.5 w-3.5 mr-2" /> Edit profile
+                      </DropdownMenuItem>
+                      {!isOwner && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Role
+                          </DropdownMenuLabel>
+                          {(['admin', 'agent', 'viewer'] as const).map((r) => (
+                            <DropdownMenuItem
+                              key={r}
+                              disabled={m.role === r}
+                              onClick={() => adminUpdate.mutate({ id: m.id, patch: { role: r } })}
+                            >
+                              <Shield className="h-3.5 w-3.5 mr-2 opacity-60" />
+                              Make {r}
+                              {m.role === r && <CheckCircle2 className="h-3.5 w-3.5 ml-auto text-primary" />}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => adminUpdate.mutate({ id: m.id, patch: { is_active: !m.is_active } })}
+                          >
+                            {m.is_active ? <Eye className="h-3.5 w-3.5 mr-2" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-2" />}
+                            {m.is_active ? 'Deactivate' : 'Activate'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setPermsEditId(m.id);
+                              setPermsDraft((m.permissions ?? {}) as TeamPerms);
+                            }}
+                          >
+                            <Lock className="h-3.5 w-3.5 mr-2" /> Permissions…
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            disabled={resendInvite.isPending && resendInvite.variables?.email === m.email}
+                            onClick={() => resendInvite.mutate({
+                              email: m.email,
+                              display_name: m.display_name,
+                              role: m.role,
+                            })}
+                          >
+                            <Key className="h-3.5 w-3.5 mr-2" />
+                            {resendInvite.isPending && resendInvite.variables?.email === m.email
+                              ? 'Sending…'
+                              : 'Reset password'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setRemoveId(m.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove from team
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               );
             })}
           </div>
         )}
       </CardContent>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={!!editId} onOpenChange={(o) => { if (!o) { setEditId(null); setEditDraft(null); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit team member</DialogTitle>
+          </DialogHeader>
+          {editDraft && (
+            <div className="space-y-4 py-2">
+              {/* Headshot */}
+              <div className="flex items-center gap-4">
+                {editDraft.headshot_url ? (
+                  <img
+                    src={editDraft.headshot_url}
+                    alt=""
+                    className="w-20 h-20 rounded-full object-cover border-2 border-border ring-1 ring-primary/15"
+                    style={{ objectPosition: `center ${editDraft.headshot_focal_y}%` }}
+                  />
+                ) : (
+                  <Avatar className="w-20 h-20 border-2 border-border">
+                    <AvatarFallback className="text-base font-semibold bg-primary text-primary-foreground">
+                      {initialsOf(editDraft.display_name, editDraft.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="flex-1 space-y-2">
+                  <Label className="text-xs">Headshot</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <label className="inline-flex">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleHeadshotUpload(f);
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button asChild size="sm" variant="outline" disabled={uploading}>
+                        <span className="cursor-pointer">
+                          {uploading
+                            ? <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Uploading</>
+                            : <><Upload className="h-3 w-3 mr-1.5" /> Upload</>}
+                        </span>
+                      </Button>
+                    </label>
+                    {editDraft.headshot_url && (
+                      <Button
+                        size="sm" variant="ghost"
+                        onClick={() => setEditDraft((d) => d && ({ ...d, headshot_url: '' }))}
+                      >
+                        <X className="h-3 w-3 mr-1.5" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  {editDraft.headshot_url && (
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">Vertical focus ({editDraft.headshot_focal_y}%)</Label>
+                      <input
+                        type="range" min={0} max={100} step={5}
+                        value={editDraft.headshot_focal_y}
+                        onChange={(e) => setEditDraft((d) => d && ({ ...d, headshot_focal_y: Number(e.target.value) }))}
+                        className="w-full accent-primary"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Full name</Label>
+                  <Input
+                    value={editDraft.display_name}
+                    onChange={(e) => setEditDraft((d) => d && ({ ...d, display_name: e.target.value }))}
+                    placeholder="Jane Doe"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Title</Label>
+                  <Input
+                    value={editDraft.title}
+                    onChange={(e) => setEditDraft((d) => d && ({ ...d, title: e.target.value }))}
+                    placeholder="REALTOR®"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Phone</Label>
+                  <Input
+                    value={editDraft.phone}
+                    onChange={(e) => setEditDraft((d) => d && ({ ...d, phone: e.target.value }))}
+                    placeholder="(604) 555-1234"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Login email</Label>
+                  <Input
+                    type="email"
+                    value={editDraft.email}
+                    onChange={(e) => setEditDraft((d) => d && ({ ...d, email: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Changing the email here only updates the CRM record. To change the actual login, use <strong>Reset password</strong> after.
+              </p>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => { setEditId(null); setEditDraft(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit} disabled={adminUpdate.isPending}>
+              {adminUpdate.isPending ? 'Saving…' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Permissions Dialog */}
       <Dialog open={!!permsEditId} onOpenChange={(o) => !o && setPermsEditId(null)}>
@@ -914,6 +1164,24 @@ function TeamManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Remove confirm */}
+      <AlertDialog open={!!removeId} onOpenChange={(o) => !o && setRemoveId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will lose access to the CRM. Their data and lead history stay intact.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => removeId && removeMember.mutate(removeId)}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
@@ -950,7 +1218,7 @@ function TeamManagement() {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground">
-              They'll be auto-linked when they sign up with this email. Their Presale headshot &amp; signature pull automatically on first login.
+              They'll be auto-linked when they sign up with this email. To send a temp password right away, use the dedicated <strong>Invite an agent</strong> card.
             </p>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -965,6 +1233,51 @@ function TeamManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Activity drawer */}
+      <Sheet open={auditOpen} onOpenChange={setAuditOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Team activity</SheetTitle>
+            <SheetDescription>Recent role, permission and profile changes.</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 space-y-2">
+            {auditEvents.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No activity yet.</p>
+            ) : (
+              (auditEvents as any[]).map((ev) => {
+                const changes = (ev.details?.changes ?? {}) as Record<string, [any, any]>;
+                const keys = Object.keys(changes);
+                return (
+                  <div key={ev.id} className="rounded-md border border-border/60 bg-card p-3 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-foreground">
+                        {ev.admin_name || 'Someone'} → {ev.target_name || 'a member'}
+                      </span>
+                      <span className="text-muted-foreground text-[10px]">
+                        {relativeTime(ev.created_at)}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 space-y-0.5">
+                      {keys.length === 0 ? (
+                        <span className="text-muted-foreground">{ev.action}</span>
+                      ) : (
+                        keys.map((k) => (
+                          <div key={k} className="text-muted-foreground">
+                            <span className="font-medium text-foreground/80">{k}:</span>{' '}
+                            <span className="line-through opacity-60">{String(changes[k][0] ?? '∅')}</span>{' '}
+                            → <span className="text-foreground">{String(changes[k][1] ?? '∅')}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 }

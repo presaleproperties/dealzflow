@@ -5240,6 +5240,20 @@ export type Database = {
         Args: { _agent_user_id: string }
         Returns: undefined
       }
+      crm_team_admin_update_member: {
+        Args: {
+          _display_name?: string
+          _email?: string
+          _headshot_focal_y?: number
+          _headshot_url?: string
+          _is_active?: boolean
+          _phone?: string
+          _role?: string
+          _team_id: string
+          _title?: string
+        }
+        Returns: Json
+      }
       crm_team_create_invite: {
         Args: { _display_name: string; _email: string; _role?: string }
         Returns: Json
@@ -5277,6 +5291,28 @@ export type Database = {
           full_name: string
           user_id: string
           workspace_status: string
+        }[]
+      }
+      crm_team_member_signin_info: {
+        Args: never
+        Returns: {
+          created_at: string
+          email_confirmed_at: string
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
+      crm_team_recent_audit: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          admin_name: string
+          admin_user_id: string
+          created_at: string
+          details: Json
+          id: string
+          target_name: string
+          target_user_id: string
         }[]
       }
       crm_team_redeem_invite: { Args: { _token: string }; Returns: Json }
