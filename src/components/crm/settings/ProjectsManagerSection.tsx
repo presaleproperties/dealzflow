@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Pencil, Eye, Users } from 'lucide-react';
+import { Search, Pencil, Eye, Users, Upload, Loader2, FileText, Map, DollarSign, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useCrmProjects, useUpdateCrmProject, type CrmProject } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
 
