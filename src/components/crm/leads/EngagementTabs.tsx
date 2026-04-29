@@ -9,6 +9,7 @@ import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWid
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { cn } from '@/lib/utils';
+import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 interface Props {
@@ -16,12 +17,6 @@ interface Props {
 }
 
 type TabKey = 'emails' | 'behavior' | 'source';
-
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'emails',   label: 'Emails' },
-  { key: 'behavior', label: 'Behavior' },
-  { key: 'source',   label: 'Source' },
-];
 
 /**
  * Unified Engagement card — collapses 5 previously separate widgets
