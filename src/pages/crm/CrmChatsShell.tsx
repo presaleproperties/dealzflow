@@ -29,8 +29,7 @@ export default function CrmChatsShell() {
       <div className="hidden lg:flex flex-1 min-h-0 h-full -mx-4 -my-4">
         {/* Left: list (fixed width) */}
         <aside className="w-[380px] xl:w-[420px] shrink-0 border-r border-border/60 bg-background flex flex-col min-h-0 overflow-hidden">
-          {/* CrmChatsPage already renders its own sticky header + scrollable list */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
             <CrmChatsPage />
           </div>
         </aside>
