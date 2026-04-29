@@ -27,6 +27,7 @@ export type EmailLogRow = {
   last_opened_at?: string | null;
   last_clicked_at?: string | null;
   tracking_id?: string | null;
+  sent_by?: string | null;
 };
 
 interface Props {

@@ -13,6 +13,7 @@ import { useUpdateNote, useDeleteNote, type CrmNote } from '@/hooks/useCrmNotes'
 import { formatNoteContent, LinkifiedText } from '@/lib/formatNoteContent';
 import { cn } from '@/lib/utils';
 import { noteTime } from './types';
+import { AgentBadge } from './AgentBadge';
 
 export type NoteMeta = { icon: typeof StickyNote; label: string; tint: string };
 
@@ -124,6 +125,12 @@ export function NoteCard({
             )}
             <span className="opacity-30">·</span>
             <span className="shrink-0">{dateLabel} · {time}</span>
+            {note.user_id && (
+              <>
+                <span className="opacity-30">·</span>
+                <AgentBadge userId={note.user_id} prefix="by" />
+              </>
+            )}
             {isClickableEmail && (
               <>
                 <span className="opacity-30">·</span>

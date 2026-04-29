@@ -2,9 +2,10 @@ import { ArrowDownLeft, ArrowUpRight, Eye, MailOpen, Paperclip } from 'lucide-re
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { EmailLogRow } from './EmailPreviewDialog';
+import { AgentBadge } from './detail/AgentBadge';
 
 interface Props {
-  email: EmailLogRow;
+  email: EmailLogRow & { sent_by?: string | null };
   onOpen: () => void;
   contactEmail?: string | null;
 }
@@ -84,6 +85,12 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
             </span>
             <span className="opacity-30">·</span>
             <span className="shrink-0 normal-case tracking-normal text-xs">{dateLabel} · {time}</span>
+            {!isInbound && email.sent_by && (
+              <>
+                <span className="opacity-30">·</span>
+                <AgentBadge userId={email.sent_by} prefix="by" />
+              </>
+            )}
             {opens > 0 && !isInbound && (
               <>
                 <span className="opacity-30">·</span>

@@ -2,6 +2,7 @@ import { ArrowDownLeft, ArrowUpRight, MessageSquare, AlertTriangle, Image as Ima
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
+import { AgentBadge } from './detail/AgentBadge';
 
 interface Props {
   message: CrmSmsLogRow;
@@ -74,6 +75,12 @@ export function SmsNoteCard({ message, onOpen }: Props) {
             </span>
             <span className="opacity-30">·</span>
             <span className="shrink-0 normal-case tracking-normal text-xs">{dateLabel} · {time}</span>
+            {!isInbound && message.user_id && (
+              <>
+                <span className="opacity-30">·</span>
+                <AgentBadge userId={message.user_id} prefix="by" />
+              </>
+            )}
             {failed && (
               <>
                 <span className="opacity-30">·</span>
