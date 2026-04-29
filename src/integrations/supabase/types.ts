@@ -1279,6 +1279,7 @@ export type Database = {
       crm_email_settings: {
         Row: {
           brand_logo_alt: string | null
+          brand_logo_enabled: boolean
           brand_logo_url: string | null
           created_at: string
           id: string
@@ -1293,6 +1294,7 @@ export type Database = {
         }
         Insert: {
           brand_logo_alt?: string | null
+          brand_logo_enabled?: boolean
           brand_logo_url?: string | null
           created_at?: string
           id?: string
@@ -1307,6 +1309,7 @@ export type Database = {
         }
         Update: {
           brand_logo_alt?: string | null
+          brand_logo_enabled?: boolean
           brand_logo_url?: string | null
           created_at?: string
           id?: string

@@ -144,12 +144,14 @@ Deno.serve(async (req) => {
     // as bulk sends (visible in body regardless of BIMI/Workspace avatars).
     const { data: settings } = await supabase
       .from("crm_email_settings")
-      .select("sender_name,brand_logo_url,brand_logo_alt")
+      .select("sender_name,brand_logo_url,brand_logo_alt,brand_logo_enabled")
       .eq("user_id", userId)
       .maybeSingle();
 
+    // Header logo is opt-in: only injected when explicitly enabled in Settings.
+    const logoEnabled = settings?.brand_logo_enabled === true;
     const rawLogoUrl = (settings?.brand_logo_url ?? "").trim();
-    const safeLogoUrl = /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
+    const safeLogoUrl = logoEnabled && /^https:\/\//i.test(rawLogoUrl) ? rawLogoUrl : "";
     const safeLogoAlt = ((settings?.brand_logo_alt ?? settings?.sender_name ?? "Logo") || "Logo")
       .replace(/[<>"']/g, "");
     const brandBannerHtml = safeLogoUrl
