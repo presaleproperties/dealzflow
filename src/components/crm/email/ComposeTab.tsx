@@ -232,8 +232,8 @@ export function ComposeTab() {
       agentEmail,
       agentPhone,
     );
-    const sig = includeSignature && emailSettings?.signature_html
-      ? `<br/><br/>--<br/>${emailSettings.signature_html}`
+    const sig = includeSignature && activeSignatureHtml
+      ? `<br/><br/>--<br/>${activeSignatureHtml}`
       : '';
     return isHtmlMode ? merged : `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6;">${merged}${sig}</div>`;
   };
