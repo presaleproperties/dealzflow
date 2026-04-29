@@ -40,6 +40,7 @@ import ClientInventoryPage from "./pages/ClientInventoryPage";
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import BridgeStatusPage from "./pages/admin/BridgeStatusPage";
 import AdminProjectsPage from "./pages/admin/AdminProjectsPage";
