@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserPlus, Mail, Copy, Check, X, Loader2, Send } from 'lucide-react';
+import { UserPlus, Mail, Copy, Check, X, Loader2, Send, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -105,6 +105,35 @@ export function InviteAgentCard() {
       qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
     },
     onError: (e: any) => toast.error(e?.message ?? 'Could not revoke'),
+  });
+
+  const resendMut = useMutation({
+    mutationFn: async (inv: InviteRow) => {
+      const { data, error } = await supabase.functions.invoke('crm-invite-agent', {
+        body: {
+          email: inv.email,
+          display_name: inv.display_name,
+          role: inv.role || 'agent',
+          mode: 'temp_password',
+          app_origin: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Could not resend invite');
+      return data as { email?: string; temp_password?: string; login_url?: string; email_sent: boolean };
+    },
+    onSuccess: (data, inv) => {
+      setLastUrl(data.login_url ?? null);
+      setLastTempPassword(data.temp_password ?? null);
+      setLastEmailRecipient(data.email ?? inv.email);
+      qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
+      toast.success(
+        data.email_sent
+          ? 'Invite re-sent — new temporary password emailed'
+          : 'New temp password generated — copy it below to share manually',
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not resend invite'),
   });
 
   if (!isOwnerOrAdmin) return null;
@@ -217,6 +246,18 @@ export function InviteAgentCard() {
                       )}
                     </div>
                   </div>
+                  {(inv.status === 'pending' || inv.status === 'expired') && (
+                    <button
+                      onClick={() => resendMut.mutate(inv)}
+                      disabled={resendMut.isPending}
+                      className="p-1 text-muted-foreground hover:text-[#D7A542] transition-colors disabled:opacity-50"
+                      title="Resend invite with a new temporary password"
+                    >
+                      {resendMut.isPending && resendMut.variables?.id === inv.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <RotateCw className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                   {inv.status === 'pending' && (
                     <button
                       onClick={() => revokeMut.mutate(inv.id)}
