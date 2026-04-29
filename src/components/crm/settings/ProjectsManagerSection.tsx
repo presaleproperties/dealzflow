@@ -217,6 +217,8 @@ function ProjectEditSheet({ project, onClose, onSave, saving }: SheetProps) {
             <Input value={form.notes ?? ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Internal notes" />
           </Field>
 
+          <ProjectAssetsBlock project={project} />
+
           <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-2">
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button onClick={() => onSave(form)} disabled={saving}>
