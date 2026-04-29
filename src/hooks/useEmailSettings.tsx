@@ -47,6 +47,7 @@ export function useUpsertEmailSettings() {
       twilio_from_number?: string | null;
       brand_logo_url?: string | null;
       brand_logo_alt?: string | null;
+      brand_logo_enabled?: boolean;
     }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
