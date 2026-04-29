@@ -788,7 +788,7 @@ export function ComposerSurface({
 
       {/* Footer — premium sticky action bar */}
       <div className="px-6 py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+        <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">Signature</span>
             <Select
