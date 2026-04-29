@@ -49,6 +49,7 @@ export interface SignatureBuilderFields {
   instagram: string;
   headshotLink: string;
   headshotShape: HeadshotShape;
+  headshotSize: string; // px as string, 60-160
 }
 
 interface PresaleSignatureBuilderProps {
@@ -125,7 +126,8 @@ function buildInstagramButton(d: SignatureBuilderFields): string {
 
 // ── Horizontal layout: headshot on the left with gold divider ────────
 export function buildHorizontalHtml(d: SignatureBuilderFields): string {
-  const headshot = buildHeadshotTag(d, 100);
+  const sz = Math.max(60, Math.min(160, parseInt(d.headshotSize || "100", 10) || 100));
+  const headshot = buildHeadshotTag(d, sz);
   const igBtn = buildInstagramButton(d);
 
   return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 520px;">
@@ -156,7 +158,8 @@ export function buildHorizontalHtml(d: SignatureBuilderFields): string {
 
 // ── Stacked layout: headshot on top, centered ────────────────────────
 export function buildStackedHtml(d: SignatureBuilderFields): string {
-  const headshot = buildHeadshotTag(d, 110);
+  const sz = Math.max(60, Math.min(180, (parseInt(d.headshotSize || "110", 10) || 110) + 10));
+  const headshot = buildHeadshotTag(d, sz);
   const igBtn = buildInstagramButton(d);
 
   return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 14px; line-height: 1.5; max-width: 340px; margin: 0 auto;">
@@ -199,6 +202,7 @@ const BLANK: SignatureBuilderFields = {
   instagram: "",
   headshotLink: "",
   headshotShape: "rounded",
+  headshotSize: "100",
 };
 
 interface CrmProfileSeed {
@@ -439,8 +443,12 @@ export default function PresaleSignatureBuilder({
     next.headshotShape = touchedFields.headshotShape
       ? fields.headshotShape
       : fields.headshotShape || BLANK.headshotShape;
+    next.headshotSize = touchedFields.headshotSize
+      ? fields.headshotSize
+      : fields.headshotSize || BLANK.headshotSize;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
+    sources.headshotSize = touchedFields.headshotSize ? "user" : "fallback";
 
     setFields(next);
     setSourceMap(sources);
