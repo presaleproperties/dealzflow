@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, Eye, Pencil, RefreshCw, Check, ExternalLink, Loader2, Sparkles } from "lucide-react";
+import { Copy, Eye, Pencil, RefreshCw, Check, ExternalLink, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePresaleAgent } from "@/stores/usePresaleAgent";
 import { supabase } from "@/integrations/supabase/client";
