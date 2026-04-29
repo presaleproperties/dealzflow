@@ -876,6 +876,14 @@ export function ComposerSurface({
             Save as template
           </Button>
           <div className="hidden lg:block h-6 w-px bg-border/60 mx-1" />
+          {savedAt && (
+            <span
+              className="hidden lg:inline text-[11px] text-muted-foreground/80 tabular-nums mr-1"
+              title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}
+            >
+              Saved
+            </span>
+          )}
           <Button
             type="button"
             size="sm"
