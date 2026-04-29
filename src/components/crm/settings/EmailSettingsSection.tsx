@@ -193,7 +193,7 @@ export default function EmailSettingsSection() {
             initialData={(builderData as any) ?? null}
             onApply={(html, layout, fields, touchedFields) => {
               setSignatureHtml(html);
-              const nextBuilder = { fields, touchedFields } as any;
+              const nextBuilder = { fields, touchedFields, layout } as any;
               setBuilderData(nextBuilder);
               upsert.mutate({
                 signature_html: html,
