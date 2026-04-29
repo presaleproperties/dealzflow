@@ -3,11 +3,14 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
-import { Sparkles, Check } from 'lucide-react';
+import { Sparkles, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { OnboardingStepKey } from '@/hooks/useProfile';
+
+const SNOOZE_KEY = 'ob-wizard-snoozed-at';
+const SNOOZE_MS = 1000 * 60 * 60 * 4; // 4 hours
 
 import { StepWelcome } from './steps/StepWelcome';
 import { StepProfile } from './steps/StepProfile';
@@ -49,10 +52,15 @@ export function AgentOnboardingWizard() {
   const [activeIdx, setActiveIdx] = useState(0);
 
   // Open automatically when the user is signed in, approved, and not yet done
+  // — but respect a 4-hour snooze when they closed it themselves.
   useEffect(() => {
     if (!user || profileLoading || !profile) return;
     if (profile.workspace_status !== 'approved') return;
     if (isComplete) return;
+    try {
+      const snoozedAt = Number(sessionStorage.getItem(SNOOZE_KEY) || 0);
+      if (snoozedAt && Date.now() - snoozedAt < SNOOZE_MS) return;
+    } catch { /* ignore */ }
     setOpen(true);
   }, [user, profile, profileLoading, isComplete]);
 
@@ -87,13 +95,28 @@ export function AgentOnboardingWizard() {
     setOpen(false);
   };
 
-  const closeForLater = () => setOpen(false);
+  const closeForLater = () => {
+    try { sessionStorage.setItem(SNOOZE_KEY, String(Date.now())); } catch { /* ignore */ }
+    toast.message('Saved your progress', {
+      description: 'Resume anytime from the gold banner on your dashboard.',
+    });
+    setOpen(false);
+  };
 
   if (!open || !activeKey) return null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && closeForLater()}>
       <DialogContent className="max-w-3xl p-0 [&>button]:hidden flex flex-col lg:flex-row max-h-[92dvh] overflow-hidden gap-0">
+        {/* Mobile close affordance — sidebar provides it on desktop */}
+        <button
+          type="button"
+          onClick={closeForLater}
+          aria-label="Close and resume later"
+          className="lg:hidden absolute top-2.5 right-2.5 z-10 w-9 h-9 rounded-full bg-background/80 backdrop-blur border border-border/60 text-muted-foreground hover:text-foreground flex items-center justify-center"
+        >
+          <X className="w-4 h-4" />
+        </button>
         {/* Stepper sidebar (desktop) */}
         <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-border/60 bg-muted/30 p-5">
           <div className="flex items-center gap-2 mb-5">
@@ -152,12 +175,22 @@ export function AgentOnboardingWizard() {
           </Button>
         </aside>
 
-        {/* Mobile progress bar */}
-        <div className="lg:hidden h-1 bg-border/60 shrink-0">
-          <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${percent}%` }}
-          />
+        {/* Mobile progress bar + step pill */}
+        <div className="lg:hidden shrink-0">
+          <div className="h-1 bg-border/60">
+            <div
+              className="h-full bg-primary transition-all duration-500"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <div className="px-5 pt-3 flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+              {STEP_LABELS[activeKey]}
+            </p>
+            <p className="text-[10px] text-muted-foreground tabular-nums">
+              {activeIdx + 1} / {total} · {percent}%
+            </p>
+          </div>
         </div>
 
         {/* Active step */}

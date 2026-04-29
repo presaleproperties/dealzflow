@@ -25,6 +25,8 @@ export function OnboardingBanner() {
 
   const handleResume = async () => {
     try {
+      // Clear the wizard's 4h snooze so it re-opens immediately
+      sessionStorage.removeItem('ob-wizard-snoozed-at');
       await reopenWizard();
     } catch {
       /* no-op */
