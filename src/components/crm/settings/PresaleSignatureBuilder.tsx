@@ -156,12 +156,12 @@ export function buildStackedHtml(d: SignatureBuilderFields): string {
       <p style="margin: 0 0 12px; font-size: 11px; color: #c8a45e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">${d.title} · ${d.brokerage}</p>
       <div style="width: 40px; height: 2px; background: #c8a45e; margin: 0 auto 12px; border-radius: 1px;"></div>
       <p style="margin: 0 0 3px; font-size: 13px;">
-        <a href="tel:${d.phone}" style="color: #333; text-decoration: none;">${d.phone}</a>
+        <a href="tel:${escapeAttr(d.phone.replace(/[^\d+]/g, ""))}" style="color: #333; text-decoration: none;">${d.phone}</a>
         <span style="color: #ddd; padding: 0 6px;">|</span>
-        <a href="mailto:${d.email}" style="color: #333; text-decoration: none;">${d.email}</a>
+        <a href="mailto:${escapeAttr(d.email)}" style="color: #333; text-decoration: none;">${d.email}</a>
       </p>
       <p style="margin: 0 0 8px; font-size: 13px;">
-        <a href="${d.website}" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>
+        <a href="${escapeAttr(normalizeUrl(d.website))}" target="_blank" rel="noopener" style="color: #c8a45e; text-decoration: none; font-weight: 600;">${d.website.replace(/^https?:\/\//, "")}</a>
       </p>${
         igBtn
           ? `
