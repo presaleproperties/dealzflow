@@ -632,8 +632,13 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
           className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
-          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar. */}
-          <DialogHeader className="md:hidden px-2 py-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2">
+          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar.
+              Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
+              keyboard pushes the dialog up. */}
+          <DialogHeader
+            className="md:hidden px-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: '0.5rem' }}
+          >
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -966,36 +971,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                               />
                             </div>
                           ) : (
-                            <>
-                              {/* Desktop: always show inline signature preview */}
-                              <div className="hidden md:block">
-                                <SignatureInlineFrame html={activeSignatureHtml} />
-                              </div>
-                              {/* Mobile: collapsed by default to maximize typing area */}
-                              <div className="md:hidden border-t border-border/40">
-                                {showSignaturePreviewMobile ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowSignaturePreviewMobile(false)}
-                                      className="w-full text-left px-4 py-2 text-[11px] uppercase tracking-wider text-muted-foreground active:opacity-60"
-                                    >
-                                      Hide signature
-                                    </button>
-                                    <SignatureInlineFrame html={activeSignatureHtml} />
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowSignaturePreviewMobile(true)}
-                                    className="w-full text-left px-4 py-2.5 text-[12px] text-muted-foreground active:opacity-60 flex items-center justify-between"
-                                  >
-                                    <span>Signature attached</span>
-                                    <span className="text-[11px] uppercase tracking-wider text-primary">Show</span>
-                                  </button>
-                                )}
-                              </div>
-                            </>
+                            // Signature renders inline as a continuation of the body on every
+                            // viewport — no border seam, no "Show signature" gate. Reads as one
+                            // unified message exactly like Apple Mail / Gmail mobile.
+                            <SignatureInlineFrame html={activeSignatureHtml} />
                           )
                         ) : null
                       }
