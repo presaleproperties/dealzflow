@@ -435,11 +435,11 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
           toast.success(`Assigned → ${v}`);
         }}
       >
-        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-auto min-w-0 text-muted-foreground gap-1.5">
+        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-full min-w-0 max-w-full text-muted-foreground gap-1.5 [&>svg]:shrink-0 [&>span]:min-w-0 [&>span]:flex-1">
           {current ? (
-            <span className="inline-flex items-center gap-1.5 truncate">
+            <span className="flex items-center gap-1.5 min-w-0 flex-1">
               <AgentAvatar name={current.name} headshotUrl={current.headshot_url} focalY={current.focal_y} size={18} />
-              <span className="truncate">{current.name}</span>
+              <span className="truncate whitespace-nowrap">{current.name}</span>
             </span>
           ) : (
             <SelectValue placeholder="Unassigned" />
