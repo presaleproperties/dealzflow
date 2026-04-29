@@ -192,7 +192,12 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   usePresaleAgentSync();
   usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <EmailIdentitySetupDialog />
+    </>
+  );
 }
 
 const App = () => (
