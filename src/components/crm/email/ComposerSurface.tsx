@@ -670,24 +670,22 @@ export function ComposerSurface({
           </div>
         )}
         {mode === 'html' && (
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
-            <div className="max-w-[920px] mx-auto">
-              <textarea
-                ref={htmlTextareaRef}
-                value={bodyHtml}
-                onChange={(e) => setBodyHtml(e.target.value)}
-                className="w-full h-[400px] font-mono text-xs p-4 rounded-xl border border-border bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                spellCheck={false}
-              />
-            </div>
+          <div className="w-full max-w-[920px] mx-auto rounded-xl border border-border/70 bg-card shadow-sm p-4">
+            <textarea
+              ref={htmlTextareaRef}
+              value={bodyHtml}
+              onChange={(e) => setBodyHtml(e.target.value)}
+              className="w-full h-[420px] font-mono text-xs p-4 rounded-lg border border-border/60 bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              spellCheck={false}
+            />
           </div>
         )}
         {mode === 'preview' && (
-          <div className={cn('h-full w-full flex justify-center', device === 'desktop' ? 'bg-background' : 'bg-muted/20 p-5')}>
+          <div className={cn('w-full max-w-[920px] mx-auto rounded-xl border border-border/70 bg-card shadow-sm overflow-hidden', device === 'mobile' && 'p-5 flex justify-center')}>
             <iframe
               title="email-preview"
               srcDoc={previewDoc}
-              className={cn('bg-white transition-all block', device === 'desktop' ? 'w-full h-full border-0' : 'w-[375px] h-full max-h-[640px] border border-border rounded-xl shadow-sm')}
+              className={cn('bg-white block', device === 'desktop' ? 'w-full h-[560px] border-0' : 'w-[375px] h-[560px] border border-border rounded-xl shadow-sm')}
             />
           </div>
         )}
