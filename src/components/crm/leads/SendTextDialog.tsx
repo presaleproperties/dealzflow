@@ -377,10 +377,61 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                   </PopoverContent>
                 </Popover>
 
-                {/* Property/Variables/etc placeholders */}
-                <Button variant="ghost" size="icon" className="h-8 w-8" title="Insert property" disabled>
-                  <Building2 className="h-4 w-4" />
-                </Button>
+                {/* Project picker — inserts the project share URL at the cursor */}
+                <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Insert project link">
+                      <Building2 className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-80 p-0">
+                    <div className="px-3 py-2 border-b">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Insert project link</p>
+                    </div>
+                    <div className="px-3 py-2 border-b">
+                      <Input
+                        autoFocus
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        placeholder="Search projects, city, developer…"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {projects.length === 0 ? (
+                        <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                          No projects yet.<br />
+                          Add some in Settings → Projects.
+                        </div>
+                      ) : filteredProjects.length === 0 ? (
+                        <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                          No matches for "{projectSearch}".
+                        </div>
+                      ) : filteredProjects.map(p => {
+                        const url = projectShareUrl(p);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => insertProjectUrl(p)}
+                            disabled={!url}
+                            className="w-full text-left px-3 py-2 hover:bg-muted border-b last:border-b-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <div className="text-sm font-medium truncate">{p.name}</div>
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                              {p.city && <span className="truncate">{p.city}</span>}
+                              {url ? (
+                                <span className="truncate font-mono text-[10px] ml-auto">{url.replace(/^https?:\/\//, '')}</span>
+                              ) : (
+                                <span className="ml-auto text-destructive/80">No URL on file</span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
                 {/* Image / Media */}
                 <Popover open={mediaOpen} onOpenChange={setMediaOpen}>
