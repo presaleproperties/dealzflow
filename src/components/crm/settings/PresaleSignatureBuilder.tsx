@@ -105,9 +105,14 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
   const radius = d.headshotShape === "circle" ? "50%" : "14px";
   const px = Math.max(0, Math.min(100, parseInt(d.headshotPosX || "50", 10) || 50));
   const py = Math.max(0, Math.min(100, parseInt(d.headshotPosY || "50", 10) || 50));
-  const img = d.photoUrl
-    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius: ${radius}; object-fit: cover; object-position: ${px}% ${py}%; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-sizing: border-box; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
-    : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#c8a45e,#a8843e);color:#fff;font-size:${Math.round(size * 0.32)}px;font-weight:700;text-align:center;line-height:${size}px;box-shadow:0 4px 16px rgba(200,164,94,0.2);border:3px solid #c8a45e;box-sizing:border-box;margin:0 auto;">${initials}</div>`;
+  // Premium frame: outer thin gold ring + 3px white gap + inner image with soft layered shadow
+  const innerSize = size; // image size
+  const ringSize = size + 10; // outer ring adds 5px on each side
+  const sharedShadow = "0 1px 2px rgba(20,24,31,0.08), 0 8px 24px rgba(20,24,31,0.12), 0 18px 48px rgba(200,164,94,0.18)";
+  const imgInner = d.photoUrl
+    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${innerSize}" height="${innerSize}" style="width:${innerSize}px;height:${innerSize}px;border-radius:${radius};object-fit:cover;object-position:${px}% ${py}%;display:block;border:0;outline:0;" />`
+    : `<div style="width:${innerSize}px;height:${innerSize}px;border-radius:${radius};background:linear-gradient(135deg,#d7a542 0%,#b8862e 100%);color:#fff;font-size:${Math.round(innerSize * 0.34)}px;font-weight:600;letter-spacing:0.5px;text-align:center;line-height:${innerSize}px;font-family:'Helvetica Neue',Arial,sans-serif;">${initials}</div>`;
+  const img = `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 auto;"><tr><td style="width:${ringSize}px;height:${ringSize}px;padding:4px;background:#ffffff;border:1px solid #d7a542;border-radius:${d.headshotShape === "circle" ? "50%" : "18px"};box-shadow:${sharedShadow};line-height:0;">${imgInner}</td></tr></table>`;
   // Headshot links to: explicit headshotLink → Instagram → website
   const linkRaw = d.headshotLink || d.instagram || d.website;
   const link = d.headshotLink
