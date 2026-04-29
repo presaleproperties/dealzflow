@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StickyNote } from 'lucide-react';
+import { StickyNote, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
