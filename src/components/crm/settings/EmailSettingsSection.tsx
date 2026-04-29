@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { useEmailSettings, useUpsertEmailSettings } from '@/hooks/useEmailSettings';
+import { useEmailSignatures, useUpsertEmailSignature } from '@/hooks/useEmailSignatures';
 import SignatureBuilder, { type SignatureBuilderData } from './SignatureBuilder';
 import SignaturesManager from './SignaturesManager';
 import SignatureImportBox from './SignatureImportBox';
