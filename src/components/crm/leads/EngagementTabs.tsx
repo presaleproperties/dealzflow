@@ -22,8 +22,24 @@ type TabKey = 'emails' | 'behavior' | 'source';
  * Unified Engagement card — collapses 5 previously separate widgets
  * (Email Activity, Email Attribution, Live Engagement, Presale Activity,
  * Web Behavior, Signup Source) into one tabbed surface.
+ *
+ * The "Behavior" tab is owner-only — team members see Emails + Source.
  */
 export function EngagementTabs({ contact }: Props) {
+  const { role } = useCrmAccess();
+  const isOwner = role === 'owner';
+
+  const TABS: { key: TabKey; label: string }[] = isOwner
+    ? [
+        { key: 'emails',   label: 'Emails' },
+        { key: 'behavior', label: 'Behavior' },
+        { key: 'source',   label: 'Source' },
+      ]
+    : [
+        { key: 'emails', label: 'Emails' },
+        { key: 'source', label: 'Source' },
+      ];
+
   const [tab, setTab] = useState<TabKey>('emails');
   const { data: emails = [], isLoading: emailsLoading } = useCrmEmailLog(contact.id);
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
