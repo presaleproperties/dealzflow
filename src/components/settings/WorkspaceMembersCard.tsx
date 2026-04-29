@@ -70,6 +70,24 @@ export function WorkspaceMembersCard() {
     },
   });
 
+  // Map of user_id → last sign-in timestamp (null = never signed in)
+  const { data: signinByUser = {} } = useQuery({
+    queryKey: ['crm_team_signin_info'],
+    enabled: isOwnerOrAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('crm_team_member_signin_info');
+      if (error) throw error;
+      const map: Record<string, { last_sign_in_at: string | null; created_at: string | null }> = {};
+      for (const r of (data ?? []) as any[]) {
+        map[r.user_id] = {
+          last_sign_in_at: r.last_sign_in_at,
+          created_at: r.created_at,
+        };
+      }
+      return map;
+    },
+  });
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return candidates;
