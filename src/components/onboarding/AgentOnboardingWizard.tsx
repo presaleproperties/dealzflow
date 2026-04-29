@@ -46,7 +46,7 @@ const STEP_LABELS: Record<OnboardingStepKey, string> = {
  */
 export function AgentOnboardingWizard() {
   const { user } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: profile } = useProfile();
   const { stepKeys, steps, percent, markStepDone, markFullyComplete, isComplete } =
     useOnboardingProgress();
 
