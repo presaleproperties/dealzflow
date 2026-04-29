@@ -122,7 +122,7 @@ export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePre
         </div>
 
         {/* Preset chooser */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {PRESALE_SIGNATURE_PRESETS.map((preset) => {
             const active = preset.id === selected;
             return (
