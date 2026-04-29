@@ -48,6 +48,7 @@ interface Props {
 
 export function AutomationBuilder({ editing, templatePrefill, onClose }: Props) {
   const [name, setName] = useState('');
+  const { data: agents = [] } = useTeamAgents();
   const [description, setDescription] = useState('');
   const [triggerType, setTriggerType] = useState('new_lead');
   const [triggerConfig, setTriggerConfig] = useState<Record<string, unknown>>({});
