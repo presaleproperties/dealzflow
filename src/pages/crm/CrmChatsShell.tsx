@@ -38,7 +38,7 @@ export default function CrmChatsShell() {
         {/* Right: thread or empty state */}
         <section className="flex-1 min-w-0 flex flex-col bg-muted/5">
           {hasThread ? (
-            <CrmChatThreadPage />
+            <CrmChatThreadPage embedded />
           ) : (
             <EmptyThreadState />
           )}
