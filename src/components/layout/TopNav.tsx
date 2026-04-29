@@ -170,9 +170,9 @@ export function TopNav() {
             <img
               src={logoMark}
               alt="Dealzflow"
-              className="w-[34px] h-[34px] rounded-[9px] transition-opacity group-hover:opacity-80"
+              className="w-[26px] h-[26px] rounded-[7px] transition-opacity group-hover:opacity-80"
             />
-            <span className="hidden sm:inline-block font-semibold text-[16px] tracking-[-0.02em] text-foreground">
+            <span className="hidden sm:inline-block font-semibold text-[15px] tracking-[-0.02em] text-foreground">
               Dealz<span style={{ color: GOLD }}>flow</span>
             </span>
           </Link>
