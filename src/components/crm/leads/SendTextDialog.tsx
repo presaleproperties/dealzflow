@@ -465,7 +465,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                 <div className="relative">
                   <AttachMenu
                     variant="icon"
-                    multiple={false}
+                    multiple
                     accept="image/*,video/*"
                     uploading={uploading}
                     onFiles={(f) => handleFiles(f)}
@@ -507,10 +507,17 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                       <Button
                         size="sm" variant="outline"
                         onClick={() => {
-                          if (pendingMediaUrl.startsWith('http')) {
-                            setMediaUrls(prev => [...prev, pendingMediaUrl.trim()]);
-                            setPendingMediaUrl('');
-                          } else toast.error('Must be a public URL');
+                          const url = pendingMediaUrl.trim();
+                          if (!/^https:\/\/\S+$/i.test(url)) {
+                            toast.error('Must be a public https:// URL');
+                            return;
+                          }
+                          if (mediaUrls.length >= 10) {
+                            toast.error('Max 10 attachments');
+                            return;
+                          }
+                          setMediaUrls(prev => [...prev, url]);
+                          setPendingMediaUrl('');
                         }}
                       >
                         Add
