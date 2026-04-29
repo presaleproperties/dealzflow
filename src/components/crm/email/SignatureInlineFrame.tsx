@@ -156,8 +156,9 @@ export function SignatureInlineFrame({ html }: { html: string }) {
         className="w-full border-0 block bg-transparent"
         style={{ height: effectiveHeight }}
       />
-      {/* Tiny floating control bar — only visible on hover */}
-      <div className="absolute top-1 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+      {/* Tiny floating control bar — desktop hover only; hidden on mobile so
+          the signature reads as one with the body. */}
+      <div className="hidden sm:flex absolute top-1 right-2 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         {isCustom && (
           <button
             type="button"
@@ -173,7 +174,7 @@ export function SignatureInlineFrame({ html }: { html: string }) {
           {Math.round(effectiveHeight)}px{isCustom ? '' : ' · auto'}
         </span>
       </div>
-      {/* Drag handle — bottom edge, full width, with a centered grip */}
+      {/* Drag handle — desktop only. Mobile hides it so body+signature feel unified. */}
       <div
         role="separator"
         aria-orientation="horizontal"
@@ -183,7 +184,7 @@ export function SignatureInlineFrame({ html }: { html: string }) {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onDoubleClick={fitToContent}
-        className="absolute left-0 right-0 -bottom-1 h-2 cursor-ns-resize flex items-center justify-center group/handle"
+        className="hidden sm:flex absolute left-0 right-0 -bottom-1 h-2 cursor-ns-resize items-center justify-center group/handle"
         title="Drag to resize · double-click to fit"
       >
         <div className="h-1 w-10 rounded-full bg-border group-hover:bg-primary/40 group-hover/handle:bg-primary transition-colors" />
