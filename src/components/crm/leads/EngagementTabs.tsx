@@ -139,7 +139,7 @@ export function EngagementTabs({ contact }: Props) {
           </>
         )}
 
-        {tab === 'behavior' && (
+        {tab === 'behavior' && isOwner && (
           <div className="space-y-3">
             {contact.id && <LiveActivityTimeline contactId={contact.id} limit={10} />}
             <div className="pt-2 border-t border-border/40">
