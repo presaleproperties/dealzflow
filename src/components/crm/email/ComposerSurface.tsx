@@ -450,7 +450,14 @@ export function ComposerSurface({
       : `Send to ${recipientCount.toLocaleString()} recipients`;
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-muted/30">
+    <div ref={composerRef} className="relative flex flex-col h-full min-h-0 bg-muted/30">
+      {dragActive && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary">
+          <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
+            Drop to attach
+          </div>
+        </div>
+      )}
       {/* Recipient bar — width matches the body composer (max-w-[920px]) */}
       <div className="px-3 pt-3 pb-2 lg:px-6 lg:pt-5 lg:pb-4 border-b border-border/60 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto">
