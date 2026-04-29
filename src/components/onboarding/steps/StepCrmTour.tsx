@@ -1,5 +1,5 @@
 import { StepShell } from '../StepShell';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Users, Workflow, MessageCircle, Calendar, ArrowRight } from 'lucide-react';
 
 interface Props {
@@ -37,21 +37,31 @@ const STOPS = [
 ];
 
 export function StepCrmTour({ eyebrow, onBack, onFinish, finishLabel = 'Finish' }: Props) {
+  const navigate = useNavigate();
+
+  // Finish first (closes the dialog + marks complete) then jump to the page,
+  // so users aren't staring at the wizard layered over their destination.
+  const jumpTo = async (to: string) => {
+    await onFinish();
+    navigate(to);
+  };
+
   return (
     <StepShell
       eyebrow={eyebrow}
       title="Your 4 daily stops"
-      subtitle="The CRM is built around four pages. Tap any one to jump in — your wizard progress is saved."
+      subtitle="The CRM is built around four pages. Tap any one to jump in — your wizard will close so you can explore."
       primaryLabel={finishLabel}
       onBack={onBack}
       onPrimary={onFinish}
     >
       <div className="space-y-2.5">
         {STOPS.map(({ to, icon: Icon, title, body }) => (
-          <Link
+          <button
             key={to}
-            to={to}
-            className="flex items-start gap-3 p-3.5 rounded-xl border border-border/60 bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+            type="button"
+            onClick={() => jumpTo(to)}
+            className="w-full text-left flex items-start gap-3 p-3.5 rounded-xl border border-border/60 bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-colors group"
           >
             <div className="w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
               <Icon className="w-4 h-4" />
@@ -63,7 +73,7 @@ export function StepCrmTour({ eyebrow, onBack, onFinish, finishLabel = 'Finish' 
               <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{body}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors mt-2 shrink-0" />
-          </Link>
+          </button>
         ))}
       </div>
     </StepShell>
