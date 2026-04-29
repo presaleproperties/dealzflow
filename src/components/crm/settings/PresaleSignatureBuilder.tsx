@@ -22,7 +22,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, Eye, Pencil, RefreshCw, Check, ExternalLink, Sparkles } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  Pencil,
+  RefreshCw,
+  Check,
+  ExternalLink,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePresaleAgent } from "@/stores/usePresaleAgent";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,7 +55,10 @@ interface PresaleSignatureBuilderProps {
   /** Falls back to these values when nothing is loaded from Presale yet. */
   fallback: Partial<SignatureBuilderFields>;
   /** Persisted builder state from previous saves — user edits take priority. */
-  initialData?: { fields?: Partial<SignatureBuilderFields>; touchedFields?: Record<string, boolean> } | null;
+  initialData?: {
+    fields?: Partial<SignatureBuilderFields>;
+    touchedFields?: Record<string, boolean>;
+  } | null;
   /** Called with the rendered HTML when the user clicks "Apply to CRM". */
   onApply: (
     html: string,
@@ -73,7 +84,11 @@ function normalizeInstagram(raw: string): string {
   return `https://instagram.com/${handle}`;
 }
 function escapeAttr(s: string): string {
-  return (s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return (s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 // ── Helper: build headshot img tag based on shape ────────────────────
@@ -93,10 +108,10 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
   const link = d.headshotLink
     ? normalizeUrl(d.headshotLink)
     : d.instagram
-    ? normalizeInstagram(d.instagram)
-    : d.website
-    ? normalizeUrl(d.website)
-    : "";
+      ? normalizeInstagram(d.instagram)
+      : d.website
+        ? normalizeUrl(d.website)
+        : "";
   return link
     ? `<a href="${escapeAttr(link)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;line-height:0;margin:0 auto;">${img}</a>`
     : img;
@@ -285,7 +300,11 @@ function ScaledIframe({
   );
 }
 
-export default function PresaleSignatureBuilder({ fallback, initialData, onApply }: PresaleSignatureBuilderProps) {
+export default function PresaleSignatureBuilder({
+  fallback,
+  initialData,
+  onApply,
+}: PresaleSignatureBuilderProps) {
   const { agent, status, refresh } = usePresaleAgent();
 
   const [layout, setLayout] = useState<LayoutVariant>("horizontal");
@@ -315,7 +334,9 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user || cancelled) return;
       const { data: profile } = await supabase
         .from("profiles")
@@ -332,7 +353,9 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
         photoUrl: profile?.avatar_url ?? undefined,
       });
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Merge sources whenever any input changes. Precedence per field:
@@ -383,17 +406,39 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
       }
     };
 
-    apply("fullName",  [[presale.fullName, "presale"], [profile.fullName, "profile"]]);
-    apply("title",     [[presale.title, "presale"], [profile.title, "profile"]]);
-    apply("phone",     [[presale.phone, "presale"], [profile.phone, "profile"]]);
-    apply("email",     [[presale.email, "presale"], [profile.email, "profile"]]);
-    apply("website",   [[presale.website, "presale"]]);
-    apply("brokerage", [[presale.brokerage, "presale"], [profile.brokerage, "profile"]]);
-    apply("photoUrl",  [[presale.photoUrl, "presale"], [profile.photoUrl, "profile"]]);
+    apply("fullName", [
+      [presale.fullName, "presale"],
+      [profile.fullName, "profile"],
+    ]);
+    apply("title", [
+      [presale.title, "presale"],
+      [profile.title, "profile"],
+    ]);
+    apply("phone", [
+      [presale.phone, "presale"],
+      [profile.phone, "profile"],
+    ]);
+    apply("email", [
+      [presale.email, "presale"],
+      [profile.email, "profile"],
+    ]);
+    apply("website", [[presale.website, "presale"]]);
+    apply("brokerage", [
+      [presale.brokerage, "presale"],
+      [profile.brokerage, "profile"],
+    ]);
+    apply("photoUrl", [
+      [presale.photoUrl, "presale"],
+      [profile.photoUrl, "profile"],
+    ]);
     apply("instagram", [[presale.instagram, "presale"]]);
     // Headshot link/shape are user-only choices
-    next.headshotLink = touchedFields.headshotLink ? fields.headshotLink : (fields.headshotLink || BLANK.headshotLink);
-    next.headshotShape = touchedFields.headshotShape ? fields.headshotShape : (fields.headshotShape || BLANK.headshotShape);
+    next.headshotLink = touchedFields.headshotLink
+      ? fields.headshotLink
+      : fields.headshotLink || BLANK.headshotLink;
+    next.headshotShape = touchedFields.headshotShape
+      ? fields.headshotShape
+      : fields.headshotShape || BLANK.headshotShape;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
 
@@ -457,18 +502,32 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
   const SourceBadge = ({ field }: { field: keyof SignatureBuilderFields }) => {
     const src = sourceMap[field];
     if (!src || src === "fallback") return null;
-    const config: Record<PrefillSource, { label: string; className: string }> = {
-      presale:  { label: "Presale", className: "bg-primary/10 text-primary border-primary/20" },
-      profile:  { label: "Profile", className: "bg-muted text-muted-foreground border-border" },
-      user:     { label: "Edited",  className: "bg-muted text-muted-foreground border-border" },
-      fallback: { label: "",        className: "" },
-    };
+    const config: Record<PrefillSource, { label: string; className: string }> =
+      {
+        presale: {
+          label: "Presale",
+          className: "bg-primary/10 text-primary border-primary/20",
+        },
+        profile: {
+          label: "Profile",
+          className: "bg-muted text-muted-foreground border-border",
+        },
+        user: {
+          label: "Edited",
+          className: "bg-muted text-muted-foreground border-border",
+        },
+        fallback: { label: "", className: "" },
+      };
     const cfg = config[src];
     return (
       <button
         type="button"
         onClick={() => src === "user" && handleResetField(field)}
-        title={src === "user" ? "Click to reset to auto-filled value" : `Auto-filled from ${cfg.label}`}
+        title={
+          src === "user"
+            ? "Click to reset to auto-filled value"
+            : `Auto-filled from ${cfg.label}`
+        }
         className={cn(
           "ml-2 inline-flex items-center gap-0.5 rounded border px-1 py-0 text-[9px] font-semibold uppercase tracking-wide leading-[14px] h-[14px]",
           cfg.className,
@@ -504,7 +563,11 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
           {/* Agent identity pill (read-only single-agent dropdown look) */}
           <div className="flex items-center gap-2 rounded-lg border border-border bg-card pl-1.5 pr-3 py-1 h-10 min-w-[200px]">
             {fields.photoUrl ? (
-              <img src={fields.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
+              <img
+                src={fields.photoUrl}
+                alt=""
+                className="h-7 w-7 rounded-full object-cover"
+              />
             ) : (
               <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
                 {initials}
@@ -514,7 +577,10 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
               {fields.fullName || "Your name"}
             </span>
             <RefreshCw
-              className={cn("h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-foreground", isLoading && "animate-spin")}
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-foreground",
+                isLoading && "animate-spin",
+              )}
               onClick={() => refresh({ force: true })}
             />
           </div>
@@ -567,7 +633,9 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-base font-bold truncate">{fields.fullName || "Your name"}</p>
+                <p className="text-base font-bold truncate">
+                  {fields.fullName || "Your name"}
+                </p>
                 <p className="text-[11px] text-primary font-bold uppercase tracking-wide truncate">
                   {fields.title}
                 </p>
@@ -584,57 +652,97 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Full Name <SourceBadge field="fullName" />
                   </Label>
-                  <Input value={fields.fullName} onChange={(e) => update("fullName", e.target.value)} className="h-10 text-sm mt-1" />
+                  <Input
+                    value={fields.fullName}
+                    onChange={(e) => update("fullName", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Title <SourceBadge field="title" />
                   </Label>
-                  <Input value={fields.title} onChange={(e) => update("title", e.target.value)} className="h-10 text-sm mt-1" />
+                  <Input
+                    value={fields.title}
+                    onChange={(e) => update("title", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Phone <SourceBadge field="phone" />
                   </Label>
-                  <Input value={fields.phone} onChange={(e) => update("phone", e.target.value)} className="h-10 text-sm mt-1" />
+                  <Input
+                    value={fields.phone}
+                    onChange={(e) => update("phone", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Email <SourceBadge field="email" />
                   </Label>
-                  <Input value={fields.email} onChange={(e) => update("email", e.target.value)} className="h-10 text-sm mt-1" />
+                  <Input
+                    value={fields.email}
+                    onChange={(e) => update("email", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Website <SourceBadge field="website" />
                   </Label>
-                  <Input value={fields.website} onChange={(e) => update("website", e.target.value)} className="h-10 text-sm mt-1" />
+                  <Input
+                    value={fields.website}
+                    onChange={(e) => update("website", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Brokerage <SourceBadge field="brokerage" />
                   </Label>
-                  <Input value={fields.brokerage} onChange={(e) => update("brokerage", e.target.value)} className="h-10 text-sm mt-1" />
+                  <Input
+                    value={fields.brokerage}
+                    onChange={(e) => update("brokerage", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                  />
                 </div>
                 <div>
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Instagram <SourceBadge field="instagram" />
                   </Label>
-                  <Input value={fields.instagram} onChange={(e) => update("instagram", e.target.value)} className="h-10 text-sm mt-1" placeholder="https://instagram.com/..." />
+                  <Input
+                    value={fields.instagram}
+                    onChange={(e) => update("instagram", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                    placeholder="https://instagram.com/..."
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center">
                     Headshot URL <SourceBadge field="photoUrl" />
                   </Label>
-                  <Input value={fields.photoUrl} onChange={(e) => update("photoUrl", e.target.value)} className="h-10 text-sm mt-1" placeholder="https://..." />
+                  <Input
+                    value={fields.photoUrl}
+                    onChange={(e) => update("photoUrl", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                    placeholder="https://..."
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                     <ExternalLink className="h-3 w-3" /> Headshot Link URL
                   </Label>
-                  <Input value={fields.headshotLink} onChange={(e) => update("headshotLink", e.target.value)} className="h-10 text-sm mt-1" placeholder="https://..." />
+                  <Input
+                    value={fields.headshotLink}
+                    onChange={(e) => update("headshotLink", e.target.value)}
+                    className="h-10 text-sm mt-1"
+                    placeholder="https://..."
+                  />
                   <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    When set, the headshot image becomes clickable and links to this URL
+                    When set, the headshot image becomes clickable and links to
+                    this URL
                   </p>
                 </div>
                 <div className="md:col-span-2">
@@ -677,7 +785,8 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
               <p className="text-xs font-semibold text-muted-foreground">
-                {layout === "horizontal" ? "Headshot Left" : "Headshot Top"} — HTML
+                {layout === "horizontal" ? "Headshot Left" : "Headshot Top"} —
+                HTML
               </p>
               <Button
                 type="button"
@@ -726,8 +835,12 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold leading-none">Headshot Left</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Horizontal · ~520px</p>
+                  <p className="text-sm font-semibold leading-none">
+                    Headshot Left
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Horizontal · ~520px
+                  </p>
                 </div>
                 {layout === "horizontal" && (
                   <Badge className="text-[9px] bg-primary/15 text-primary border-0 h-4 px-1.5 ml-1">
@@ -783,8 +896,12 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold leading-none">Headshot Top</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Stacked · ~340px</p>
+                  <p className="text-sm font-semibold leading-none">
+                    Headshot Top
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Stacked · ~340px
+                  </p>
                 </div>
                 {layout === "stacked" && (
                   <Badge className="text-[9px] bg-primary/15 text-primary border-0 h-4 px-1.5 ml-1">
@@ -828,7 +945,8 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
           Save Changes
         </Button>
         <p className="text-[11px] text-muted-foreground/70 hidden sm:block">
-          Click a variation to select it · Copy the HTML into your email client's signature settings
+          Click a variation to select it · Copy the HTML into your email
+          client's signature settings
         </p>
       </div>
     </div>
