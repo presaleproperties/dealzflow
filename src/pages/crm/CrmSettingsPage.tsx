@@ -242,7 +242,7 @@ export default function CrmSettingsPage() {
       {/* Main content pane */}
       <div
         id="crm-settings-content"
-        className="flex-1 min-h-0 overflow-y-auto space-y-5 max-w-3xl pb-12"
+        className="flex-1 min-h-0 overflow-y-auto space-y-5 max-w-6xl pb-12"
       >
         {/* Mobile h1 */}
         <div className="lg:hidden">
