@@ -124,7 +124,8 @@ Deno.serve(async (req) => {
     const completionDate = p.completion_year
       ? `${p.completion_year}-01-01`
       : null;
-    const marketingUrl = `https://presaleproperties.com/projects/${slug}`;
+    // Public-facing share URL (no /projects/ prefix) — used in emails, SMS, templates.
+    const marketingUrl = `https://presaleproperties.com/${slug}`;
 
     // Only fill blank fields — don't overwrite agent edits.
     const payload: Record<string, unknown> = {
