@@ -128,6 +128,7 @@ export default function EmailSettingsSection() {
       twilio_from_number: twilioFrom.trim() || null,
       brand_logo_url: brandLogoUrl.trim() || null,
       brand_logo_alt: brandLogoAlt.trim() || null,
+      brand_logo_enabled: brandLogoEnabled,
       signature_html: getActiveSignatureHtml() || undefined,
       signature_mode: signatureMode,
       signature_builder_data: signatureMode === 'builder' ? builderData : undefined,
