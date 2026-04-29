@@ -26,7 +26,7 @@ interface PresalePresetCardProps {
  */
 export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePresetCardProps) {
   const { agent, status, error, refresh, lastFetchedAt } = usePresaleAgent();
-  const [selected, setSelected] = useState<PresaleSignaturePresetId>("presale_card");
+  const [selected, setSelected] = useState<PresaleSignaturePresetId>("presale_headshot_left");
 
   // Auto-fetch on mount (will no-op if cached & fresh).
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePre
     if (agent) {
       return {
         full_name: agent.name ?? fallbackAgent.full_name ?? null,
-        title: fallbackAgent.title ?? null,
+        title: (agent as any).title ?? fallbackAgent.title ?? null,
         photo_url: agent.headshotUrl ?? fallbackAgent.photo_url ?? null,
         phone: agent.phone ?? fallbackAgent.phone ?? null,
         email: agent.email ?? fallbackAgent.email ?? null,
@@ -45,6 +45,7 @@ export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePre
         calendly_url: agent.calendlyUrl ?? fallbackAgent.calendly_url ?? null,
         brokerage: agent.brokerage ?? fallbackAgent.brokerage ?? null,
         license_no: agent.licenseNumber ?? fallbackAgent.license_no ?? null,
+        instagram_url: (agent as any).instagramUrl ?? fallbackAgent.instagram_url ?? null,
       };
     }
     return fallbackAgent;
@@ -121,7 +122,7 @@ export default function PresalePresetCard({ fallbackAgent, onApply }: PresalePre
         </div>
 
         {/* Preset chooser */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {PRESALE_SIGNATURE_PRESETS.map((preset) => {
             const active = preset.id === selected;
             return (
