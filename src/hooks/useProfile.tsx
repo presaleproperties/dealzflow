@@ -39,10 +39,11 @@ export type Profile = {
   license_no: string | null;
   brokerage: string | null;
   province: string | null;
+  must_change_password: boolean;
 };
 
 const PROFILE_COLUMNS =
-  'id, user_id, full_name, avatar_url, avatar_position, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at, onboarding_steps, onboarding_started_at, onboarding_completed_at, license_no, brokerage, province';
+  'id, user_id, full_name, avatar_url, avatar_position, phone, title, workspace_status, approved_at, denial_reason, requested_at, created_at, updated_at, onboarding_steps, onboarding_started_at, onboarding_completed_at, license_no, brokerage, province, must_change_password';
 
 export function useProfile() {
   return useQuery({
