@@ -174,8 +174,6 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <OnboardingWizard open={showOnboarding} onComplete={completeOnboarding} />
-
       <div className="hidden sm:block">
         <Header
           title="Dashboard"
