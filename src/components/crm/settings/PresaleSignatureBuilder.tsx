@@ -197,22 +197,24 @@ function ScaledIframe({
     return () => ro.disconnect();
   }, [naturalWidth]);
 
-  // After iframe content writes, measure real body height
+  // After iframe content writes, measure real body height (use html scrollHeight,
+  // pick the larger of body/html, and add a tiny buffer so the last line never clips)
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
     let raf = 0;
     const measure = () => {
       const doc = iframe.contentDocument;
-      if (!doc?.body) return;
-      const h = doc.body.scrollHeight;
-      if (h > 0) setContentHeight(h);
+      if (!doc) return;
+      const bodyH = doc.body?.scrollHeight ?? 0;
+      const htmlH = doc.documentElement?.scrollHeight ?? 0;
+      const h = Math.max(bodyH, htmlH);
+      if (h > 0) setContentHeight(h + 4);
     };
-    // Re-measure every frame for ~1s after each render to catch image loads
     let count = 0;
     const tick = () => {
       measure();
-      if (count++ < 60) raf = requestAnimationFrame(tick);
+      if (count++ < 90) raf = requestAnimationFrame(tick);
     };
     tick();
     return () => cancelAnimationFrame(raf);
@@ -222,11 +224,12 @@ function ScaledIframe({
     <div
       ref={wrapperRef}
       className="relative w-full overflow-hidden"
-      style={{ height: contentHeight * scale }}
+      style={{ height: Math.ceil(contentHeight * scale) }}
     >
       <iframe
         ref={iframeRef}
         title={title}
+        scrolling="no"
         className="border-0 pointer-events-none block bg-white absolute top-0 left-0"
         style={{
           width: naturalWidth,
@@ -384,7 +387,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
       if (!doc) return;
       doc.open();
       doc.write(
-        `<!DOCTYPE html><html><head><style>body{margin:20px;font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;}</style></head><body>${html}</body></html>`,
+        `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}body{padding:24px;font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;box-sizing:border-box;}*{box-sizing:border-box;}</style></head><body>${html}</body></html>`,
       );
       doc.close();
     });
@@ -700,12 +703,12 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40">
+            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
               <ScaledIframe
                 iframeRef={iframeHRef}
                 title="Horizontal Signature"
-                naturalWidth={600}
-                naturalHeight={220}
+                naturalWidth={620}
+                naturalHeight={200}
               />
             </div>
           </div>
@@ -757,12 +760,12 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40">
+            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
               <ScaledIframe
                 iframeRef={iframeVRef}
                 title="Stacked Signature"
-                naturalWidth={420}
-                naturalHeight={360}
+                naturalWidth={440}
+                naturalHeight={420}
               />
             </div>
           </div>
