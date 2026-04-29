@@ -15,7 +15,9 @@ import {
 } from 'lucide-react';
 import { TRIGGER_TYPES, ACTION_TYPES, useCreateAutomation, useUpdateAutomation, useCrmAutomationSteps } from '@/hooks/useCrmAutomations';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
-import { LEAD_STATUSES, LEAD_SOURCES, AGENTS } from '@/hooks/useCrmContacts';
+import { LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useTeamAgents } from '@/hooks/useTeamAgents';
+import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmAutomation } from '@/hooks/useCrmAutomations';
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
