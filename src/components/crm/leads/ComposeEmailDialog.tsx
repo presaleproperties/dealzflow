@@ -659,7 +659,13 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
           hideMobileHandle
           className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
-          <DropOverlay active={dragActive} />
+          {dragActive && (
+            <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
+              <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
+                Drop to attach
+              </div>
+            </div>
+          )}
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
           {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar.
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
