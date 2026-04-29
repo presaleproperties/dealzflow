@@ -58,7 +58,7 @@ export function InviteAgentCard() {
           display_name: name.trim(),
           role: 'agent',
           mode: 'temp_password',
-          app_origin: window.location.origin,
+          app_origin: 'https://dealzflow.ca',
           personal_note: note.trim() || null,
         },
       });
@@ -115,7 +115,7 @@ export function InviteAgentCard() {
           display_name: inv.display_name,
           role: inv.role || 'agent',
           mode: 'temp_password',
-          app_origin: window.location.origin,
+          app_origin: 'https://dealzflow.ca',
         },
       });
       if (error) throw error;

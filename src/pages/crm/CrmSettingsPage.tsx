@@ -709,7 +709,7 @@ function TeamManagement() {
           display_name: m.display_name || m.email,
           role: m.role === 'owner' ? 'admin' : m.role,
           mode: 'temp_password',
-          app_origin: window.location.origin,
+          app_origin: 'https://dealzflow.ca',
         },
       });
       if (error) throw error;
