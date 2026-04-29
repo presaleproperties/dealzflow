@@ -212,6 +212,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     enabled: open,
   });
 
+  function applyTemplate(tplId: string) {
     const t = templates.find(t => t.id === tplId);
     if (!t) return;
     setBody(t.body);
