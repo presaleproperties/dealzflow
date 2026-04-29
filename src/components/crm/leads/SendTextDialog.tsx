@@ -62,6 +62,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const { data: templates = [] } = useSmsTemplates();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
+  const { data: projects = [] } = useCrmProjects();
 
   const [channel, setChannel] = useState<MessagingChannel>(initialChannel);
   const [body, setBody] = useState('');
