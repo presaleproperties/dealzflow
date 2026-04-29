@@ -234,7 +234,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
         hideMobileHandle
-        className="max-w-3xl w-screen sm:w-auto h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
+        className="sm:max-w-[920px] w-screen sm:w-[92vw] h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
       >
         {/* Header — sticky, consistent vertical rhythm */}
         <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
@@ -527,7 +527,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={`Write your message to ${contact.first_name || 'this lead'}…`}
                 maxLength={1600}
-                className="min-h-[200px] sm:min-h-[220px] resize-none text-[15px] leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
+                className="min-h-[260px] sm:min-h-[300px] resize-none text-[15px] leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
               />
               <div className="absolute bottom-2 right-3 flex items-center gap-2 text-[11px] text-muted-foreground pointer-events-none">
                 <span className="font-mono">{preview.length}/1600</span>
