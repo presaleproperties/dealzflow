@@ -5491,6 +5491,7 @@ export type Database = {
         Args: { _from_name: string; _to_name: string }
         Returns: Json
       }
+      set_my_presale_email: { Args: { _email: string }; Returns: undefined }
       split_crm_multi_value: { Args: { input: string }; Returns: string[] }
       split_imported_note: {
         Args: { _fallback_ts: string; _raw: string }
