@@ -21,6 +21,7 @@ import { useGlobalTapHaptics } from "@/hooks/useGlobalTapHaptics";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
 import { usePresaleSignatureAutoImport } from "@/hooks/usePresaleSignatureAutoImport";
+import { EmailIdentitySetupDialog } from "@/components/email/EmailIdentitySetupDialog";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
@@ -191,7 +192,12 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   usePresaleAgentSync();
   usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <EmailIdentitySetupDialog />
+    </>
+  );
 }
 
 const App = () => (
