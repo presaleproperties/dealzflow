@@ -873,6 +873,8 @@ export default function PresaleSignatureBuilder({
                     </div>
                   </div>
                 </div>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
