@@ -53,8 +53,23 @@ export function SignatureInlineFrame({ html }: { html: string }) {
     p{margin:1.1428571em 0}
     a{color:hsl(217 91% 50%);text-decoration:underline}
     img{max-width:100%;height:auto;display:block}
-    table{border-collapse:collapse}
+    table{border-collapse:collapse;max-width:100%}
     td,th{vertical-align:top}
+    /* Mobile: signatures are typically built as multi-column <table> layouts
+       (headshot | text). On narrow viewports, force every cell to stack so
+       nothing gets cramped or horizontally clipped. Desktop keeps the
+       authored layout untouched. */
+    @media (max-width: 520px){
+      table, tbody, tr{display:block !important;width:100% !important}
+      td, th{display:block !important;width:100% !important;padding:4px 0 !important;text-align:left !important}
+      td[align="center"], th[align="center"]{text-align:center !important}
+      img{margin-left:0 !important;margin-right:0 !important}
+      /* Headshots / logos: cap at a tasteful size on phones */
+      img[width]{width:auto !important;max-width:88px !important}
+      /* Tighten line-height for the stacked block */
+      body{font-size:13.5px;line-height:1.55}
+      p{margin:.45em 0}
+    }
   </style></head><body>${html}</body></html>`;
 
 

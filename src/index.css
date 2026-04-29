@@ -1383,3 +1383,31 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
 /* Prevent long-press image save / drag on chrome icons + avatars */
 .native-chrome img,
 .native-icon { -webkit-user-drag: none; pointer-events: auto; }
+
+/* ------------------------------------------------------------------
+   Agent signature — responsive rendering
+   Signatures are authored in Presale as fixed-width <table> layouts.
+   On mobile we stack the cells so headshot/text don't get cramped;
+   desktop keeps the authored layout untouched.
+   ------------------------------------------------------------------ */
+.agent-signature-block { max-width: 100%; }
+.agent-signature-block table { border-collapse: collapse; max-width: 100%; }
+.agent-signature-block img { max-width: 100%; height: auto; }
+
+@media (max-width: 520px) {
+  .agent-signature-block table,
+  .agent-signature-block tbody,
+  .agent-signature-block tr { display: block !important; width: 100% !important; }
+  .agent-signature-block td,
+  .agent-signature-block th {
+    display: block !important;
+    width: 100% !important;
+    padding: 4px 0 !important;
+    text-align: left !important;
+  }
+  .agent-signature-block td[align="center"],
+  .agent-signature-block th[align="center"] { text-align: center !important; }
+  .agent-signature-block img[width] { width: auto !important; max-width: 88px !important; }
+  .agent-signature-block { font-size: 13.5px; line-height: 1.5; }
+  .agent-signature-block p { margin: .35em 0 !important; }
+}
