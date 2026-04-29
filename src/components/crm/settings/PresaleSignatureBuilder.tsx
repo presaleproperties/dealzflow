@@ -330,9 +330,10 @@ export default function PresaleSignatureBuilder({
   // Per-field touched + per-field source tracking so user edits never get
   // overwritten by a later prefill, and we can show "from Presale" etc.
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
-    () => initialData?.touchedFields ?? Object.fromEntries(
-      Object.keys(initialData?.fields ?? {}).map((key) => [key, true]),
-    ),
+    () => ({
+      ...Object.fromEntries(Object.keys(initialData?.fields ?? {}).map((key) => [key, true])),
+      ...(initialData?.touchedFields ?? {}),
+    }),
   );
   const [sourceMap, setSourceMap] = useState<Record<string, PrefillSource>>({});
   const [crmProfile, setCrmProfile] = useState<CrmProfileSeed | null>(null);
@@ -399,7 +400,6 @@ export default function PresaleSignatureBuilder({
       ...(initialData?.fields ?? {}),
       ...fields,
     };
-    const savedFields = (initialData?.fields ?? {}) as Partial<SignatureBuilderFields>;
     const next: SignatureBuilderFields = { ...baseFields };
     const sources: Record<string, PrefillSource> = {};
 
@@ -410,11 +410,6 @@ export default function PresaleSignatureBuilder({
       // If user explicitly edited this field, keep it.
       if (touchedFields[key]) {
         next[key] = baseFields[key] as never;
-        sources[key] = "user";
-        return;
-      }
-      if (typeof savedFields[key] === "string" && savedFields[key]!.trim() !== "") {
-        (next as any)[key] = savedFields[key];
         sources[key] = "user";
         return;
       }
@@ -464,19 +459,19 @@ export default function PresaleSignatureBuilder({
     // Headshot link/shape are user-only choices
     next.headshotLink = touchedFields.headshotLink
       ? baseFields.headshotLink
-      : savedFields.headshotLink || baseFields.headshotLink || BLANK.headshotLink;
+      : BLANK.headshotLink;
     next.headshotShape = touchedFields.headshotShape
       ? baseFields.headshotShape
-      : savedFields.headshotShape || baseFields.headshotShape || BLANK.headshotShape;
+      : BLANK.headshotShape;
     next.headshotSize = touchedFields.headshotSize
       ? baseFields.headshotSize
-      : savedFields.headshotSize || baseFields.headshotSize || BLANK.headshotSize;
+      : BLANK.headshotSize;
     next.headshotPosX = touchedFields.headshotPosX
       ? baseFields.headshotPosX
-      : savedFields.headshotPosX || baseFields.headshotPosX || BLANK.headshotPosX;
+      : BLANK.headshotPosX;
     next.headshotPosY = touchedFields.headshotPosY
       ? baseFields.headshotPosY
-      : savedFields.headshotPosY || baseFields.headshotPosY || BLANK.headshotPosY;
+      : BLANK.headshotPosY;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
     sources.headshotSize = touchedFields.headshotSize ? "user" : "fallback";
