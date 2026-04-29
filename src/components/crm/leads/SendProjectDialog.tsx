@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Loader2, Mail, MessageSquare, ChevronsUpDown, Check } from 'lucide-react';
+import { Send, Loader2, Mail, MessageSquare, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign, Paperclip } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -95,6 +95,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   });
 
   // ─── Local state ─────────────────────────────────────────────────────────
+  const queryClient = useQueryClient();
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
   const [channel, setChannel] = useState<'email' | 'sms'>('email');
@@ -105,6 +106,26 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [previewHtml, setPreviewHtml] = useState<string>('');
   const [previewSubject, setPreviewSubject] = useState<string>('');
   const [previewError, setPreviewError] = useState<string | null>(null);
+  // Attachment toggles + cached availability per project
+  const [attachBrochure, setAttachBrochure] = useState(false);
+  const [attachFloorPlans, setAttachFloorPlans] = useState(false);
+  const [attachPricing, setAttachPricing] = useState(false);
+
+  // ─── Per-project asset availability (manual or Presale) ──────────────────
+  type AssetInfo = { url: string | null; filename: string | null; source: 'manual' | 'presale' | null };
+  const { data: assets, isLoading: assetsLoading } = useQuery<{ brochure: AssetInfo; floor_plans: AssetInfo; pricing: AssetInfo }>({
+    queryKey: ['send-project.assets', projectSlug],
+    enabled: open && Boolean(projectSlug),
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('presale-project-assets', {
+        body: { project_slug: projectSlug },
+      });
+      if (error) throw error;
+      return (data as any).assets;
+    },
+  });
+
 
   // ─── Defaults when modal opens / data arrives ───────────────────────────
   useEffect(() => {
@@ -142,6 +163,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           template_slug: templateSlug,
           channel: 'email',
           dry_run: true,
+          attachments: {
+            brochure: attachBrochure,
+            floor_plans: attachFloorPlans,
+            pricing: attachPricing,
+          },
         },
       });
       if (error || !data?.ok) {
@@ -155,7 +181,61 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 300);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, channel]);
+  }, [open, contact.id, projectSlug, templateSlug, channel, attachBrochure, attachFloorPlans, attachPricing]);
+
+  // ─── Reset attachment toggles when project changes ───────────────────────
+  useEffect(() => {
+    setAttachBrochure(false);
+    setAttachFloorPlans(false);
+    setAttachPricing(false);
+  }, [projectSlug]);
+
+  // ─── Upload helper ───────────────────────────────────────────────────────
+  const [uploadingKind, setUploadingKind] = useState<null | 'brochure' | 'floor_plans' | 'pricing'>(null);
+  const handleUpload = async (kind: 'brochure' | 'floor_plans' | 'pricing', file: File) => {
+    if (!projectSlug) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 20 MB.', variant: 'destructive' });
+      return;
+    }
+    setUploadingKind(kind);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+    const path = `${projectSlug}/${kind}/${Date.now()}-${safeName}`;
+    const { error: upErr } = await supabase.storage
+      .from('crm-project-assets')
+      .upload(path, file, { upsert: true, contentType: file.type || 'application/pdf' });
+    if (upErr) {
+      setUploadingKind(null);
+      toast({ title: 'Upload failed', description: upErr.message, variant: 'destructive' });
+      return;
+    }
+    const { data: signed } = await supabase.storage
+      .from('crm-project-assets')
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    const url = signed?.signedUrl;
+    if (!url) {
+      setUploadingKind(null);
+      toast({ title: 'Upload failed', description: 'Could not sign URL.', variant: 'destructive' });
+      return;
+    }
+    const patch: Record<string, string> =
+      kind === 'brochure'    ? { brochure_url: url, brochure_filename: file.name } :
+      kind === 'floor_plans' ? { floor_plans_url: url, floor_plans_filename: file.name } :
+                               { pricing_url: url, pricing_filename: file.name };
+    const { error: updErr } = await supabase.from('crm_projects').update(patch).eq('slug', projectSlug);
+    setUploadingKind(null);
+    if (updErr) {
+      toast({ title: 'Saved file but project update failed', description: updErr.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Uploaded', description: file.name });
+    queryClient.invalidateQueries({ queryKey: ['send-project.assets', projectSlug] });
+    queryClient.invalidateQueries({ queryKey: ['crm-projects'] });
+    // Auto-enable the toggle once upload succeeds
+    if (kind === 'brochure') setAttachBrochure(true);
+    if (kind === 'floor_plans') setAttachFloorPlans(true);
+    if (kind === 'pricing') setAttachPricing(true);
+  };
 
   // ─── Send ────────────────────────────────────────────────────────────────
   const handleSend = async () => {
@@ -169,6 +249,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         channel: 'email',
         enroll_followup_slug: enrollFollowup && automationAvailable ? FOLLOWUP_SLUG : null,
         dry_run: false,
+        attachments: {
+          brochure: attachBrochure,
+          floor_plans: attachFloorPlans,
+          pricing: attachPricing,
+        },
       },
     });
     setSending(false);
@@ -240,7 +325,46 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 emptyText="No project email styles."
               />
               <div className="text-[11px] text-muted-foreground mt-1.5">
-                Branded layout, signature, and project card are rendered by Presale Properties — pixel-identical to what you'd send from there.
+                Branded layout & project card from Presale Properties · your CRM signature replaces the default footer.
+              </div>
+            </Field>
+
+            {/* Attachments — Brochure / Floor Plans / Pricing */}
+            <Field label="Attachments">
+              <div className="rounded-md border border-border divide-y divide-border">
+                <AttachmentRow
+                  icon={<FileText className="w-3.5 h-3.5" />}
+                  label="Brochure"
+                  asset={assets?.brochure}
+                  loading={assetsLoading}
+                  checked={attachBrochure}
+                  onCheckedChange={setAttachBrochure}
+                  uploading={uploadingKind === 'brochure'}
+                  onPickFile={(file) => handleUpload('brochure', file)}
+                />
+                <AttachmentRow
+                  icon={<Map className="w-3.5 h-3.5" />}
+                  label="Floor Plans"
+                  asset={assets?.floor_plans}
+                  loading={assetsLoading}
+                  checked={attachFloorPlans}
+                  onCheckedChange={setAttachFloorPlans}
+                  uploading={uploadingKind === 'floor_plans'}
+                  onPickFile={(file) => handleUpload('floor_plans', file)}
+                />
+                <AttachmentRow
+                  icon={<DollarSign className="w-3.5 h-3.5" />}
+                  label="Pricing Sheet"
+                  asset={assets?.pricing}
+                  loading={assetsLoading}
+                  checked={attachPricing}
+                  onCheckedChange={setAttachPricing}
+                  uploading={uploadingKind === 'pricing'}
+                  onPickFile={(file) => handleUpload('pricing', file)}
+                />
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1.5">
+                Pulled from Presale Properties when available. Upload a PDF if the project doesn't have one — it's saved per project for everyone.
               </div>
             </Field>
 
@@ -417,5 +541,80 @@ function Combobox({
         </Command>
       </PopoverContent>
     </Popover>
+  );
+}
+
+// ───────── Attachment row ───────────────────────────────────────────────────
+type AssetInfoLite = { url: string | null; filename: string | null; source: 'manual' | 'presale' | null };
+
+function AttachmentRow({
+  icon, label, asset, loading, checked, onCheckedChange, uploading, onPickFile,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  asset: AssetInfoLite | undefined;
+  loading: boolean;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+  uploading: boolean;
+  onPickFile: (file: File) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const available = Boolean(asset?.url);
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <div className="text-muted-foreground shrink-0">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{label}</span>
+          {loading ? (
+            <span className="text-[10px] text-muted-foreground">Checking…</span>
+          ) : available ? (
+            <span className={cn(
+              "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border",
+              asset?.source === 'manual'
+                ? "border-primary/40 text-primary"
+                : "border-border text-muted-foreground",
+            )}>
+              {asset?.source === 'manual' ? 'Uploaded' : 'From Presale'}
+            </span>
+          ) : (
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Not available</span>
+          )}
+        </div>
+        {asset?.filename && (
+          <div className="text-[11px] text-muted-foreground truncate mt-0.5">{asset.filename}</div>
+        )}
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onPickFile(f);
+            e.target.value = '';
+          }}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-[11px]"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+          <span className="ml-1">{available ? 'Replace' : 'Upload'}</span>
+        </Button>
+        <Switch
+          checked={available && checked}
+          onCheckedChange={onCheckedChange}
+          disabled={!available}
+        />
+      </div>
+    </div>
   );
 }

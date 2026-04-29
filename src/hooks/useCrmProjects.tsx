@@ -27,6 +27,14 @@ export interface CrmProject {
   last_viewed_at: string | null;
   created_at: string;
   updated_at: string;
+  slug?: string | null;
+  presale_slug?: string | null;
+  brochure_url?: string | null;
+  brochure_filename?: string | null;
+  floor_plans_url?: string | null;
+  floor_plans_filename?: string | null;
+  pricing_url?: string | null;
+  pricing_filename?: string | null;
 }
 
 /**
