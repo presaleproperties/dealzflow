@@ -256,6 +256,7 @@ export function FilterPanel({
   onClearAll,
   activeFilterCount,
 }: FilterPanelProps) {
+  const AGENTS = useAgentNames();
   // Defer unmount so the slide-out animation can play
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(open);
