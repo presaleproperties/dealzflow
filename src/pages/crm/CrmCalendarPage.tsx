@@ -94,6 +94,7 @@ const DESKTOP_VIEWS: { key: ViewKey; label: string }[] = [
 export default function CrmCalendarPage() {
   const { data: showings, isLoading } = useCrmShowings();
   const updateStatus = useUpdateShowingStatus();
+  const { data: agents = [] } = useTeamAgents();
   const isMobile = useIsMobile();
 
   const calendarRef = useRef<FullCalendar | null>(null);
