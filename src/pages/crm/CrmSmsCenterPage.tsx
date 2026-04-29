@@ -170,39 +170,8 @@ export default function CrmSmsCenterPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      {/* ============ Editorial header ============ */}
-      <div className="space-y-3">
-        <div className="flex items-baseline gap-3">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 font-semibold">Messages · SMS</p>
-          <span className="h-px flex-1 bg-border/60" aria-hidden />
-        </div>
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="text-[22px] sm:text-[24px] font-semibold tracking-tight text-foreground leading-none">
-              {active.label}
-            </h1>
-            <p className="text-[12px] text-muted-foreground mt-1.5">{active.subtitle}</p>
-          </div>
-          {/* Inline status chips */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {failed24h.length > 0 && (
-              <button
-                onClick={() => setFailedDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-destructive/40 bg-destructive/5 text-destructive text-[11px] font-medium hover:bg-destructive/10 transition-colors"
-              >
-                <AlertTriangle className="w-3 h-3" />
-                {failed24h.length} failed · 24h
-              </button>
-            )}
-            {scheduledQueue.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-[11px] font-medium">
-                <Clock className="w-3 h-3" />
-                {scheduledQueue.length} scheduled · {format(new Date(scheduledQueue[0].scheduled_for!), 'MMM d, h:mm a')}
-              </span>
-            )}
-          </div>
-        </div>
-
+      {/* ============ Compact header — tabs + status chips only ============ */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Segmented pill tabs — matches /crm/email aesthetic */}
         <div className="-mx-1 overflow-x-auto no-scrollbar">
           <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
@@ -226,6 +195,25 @@ export default function CrmSmsCenterPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Inline status chips */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {failed24h.length > 0 && (
+            <button
+              onClick={() => setFailedDrawerOpen(true)}
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-destructive/40 bg-destructive/5 text-destructive text-[11px] font-medium hover:bg-destructive/10 transition-colors"
+            >
+              <AlertTriangle className="w-3 h-3" />
+              {failed24h.length} failed · 24h
+            </button>
+          )}
+          {scheduledQueue.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-[11px] font-medium">
+              <Clock className="w-3 h-3" />
+              {scheduledQueue.length} scheduled · {format(new Date(scheduledQueue[0].scheduled_for!), 'MMM d, h:mm a')}
+            </span>
+          )}
         </div>
       </div>
 
