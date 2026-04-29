@@ -29,6 +29,7 @@ export default function EmailSettingsSection() {
   const [twilioFrom, setTwilioFrom] = useState('');
   const [brandLogoUrl, setBrandLogoUrl] = useState('');
   const [brandLogoAlt, setBrandLogoAlt] = useState('');
+  const [brandLogoEnabled, setBrandLogoEnabled] = useState(false);
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('builder');
   const [signatureHtml, setSignatureHtml] = useState('');
   const [htmlImport, setHtmlImport] = useState('');
