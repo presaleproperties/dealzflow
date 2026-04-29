@@ -12,6 +12,7 @@ interface Tab {
   path: string;
   icon: LucideIcon;
   ownerAdminOnly?: boolean;
+  ownerOnly?: boolean;
   /** When true, this tab is hidden in Simple mode (visible in Pro). */
   pro?: boolean;
 }
