@@ -293,10 +293,13 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
   const [fields, setFields] = useState<SignatureBuilderFields>(() => ({
     ...BLANK,
     ...fallback,
+    ...(initialData?.fields ?? {}),
   }));
   // Per-field touched + per-field source tracking so user edits never get
   // overwritten by a later prefill, and we can show "from Presale" etc.
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    () => initialData?.touchedFields ?? {},
+  );
   const [sourceMap, setSourceMap] = useState<Record<string, PrefillSource>>({});
   const [crmProfile, setCrmProfile] = useState<CrmProfileSeed | null>(null);
 
