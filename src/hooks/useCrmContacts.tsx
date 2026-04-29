@@ -318,7 +318,8 @@ export function useAddCrmContact() {
         source: contact.source || null,
         status: contact.contact_type === 'past_client' ? 'Closed' : (contact.status || 'New Lead'),
         project: contact.project || null,
-        projects: contact.projects?.length ? contact.projects : null,
+        // `projects` is text[] NOT NULL DEFAULT '{}' — never send null.
+        projects: contact.projects?.length ? contact.projects : [],
         assigned_to: contact.assigned_to || null,
         contact_type: contact.contact_type || 'lead',
         tags: contact.tags?.length ? contact.tags : null,
