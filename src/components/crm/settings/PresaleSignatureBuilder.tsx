@@ -339,6 +339,8 @@ export default function PresaleSignatureBuilder({
 
   const iframeHRef = useRef<HTMLIFrameElement>(null);
   const iframeVRef = useRef<HTMLIFrameElement>(null);
+  const iframeHMobileRef = useRef<HTMLIFrameElement>(null);
+  const iframeVMobileRef = useRef<HTMLIFrameElement>(null);
 
   // Auto-fetch Presale agent record on mount.
   useEffect(() => {
@@ -509,7 +511,9 @@ export default function PresaleSignatureBuilder({
   useEffect(() => {
     [
       { ref: iframeHRef, html: horizontalHtml },
+      { ref: iframeHMobileRef, html: horizontalHtml },
       { ref: iframeVRef, html: stackedHtml },
+      { ref: iframeVMobileRef, html: stackedHtml },
     ].forEach(({ ref, html }) => {
       if (!ref.current) return;
       const doc = ref.current.contentDocument;
