@@ -330,7 +330,7 @@ export function ComposeTab() {
   const bodyContent = isHtmlMode ? htmlBody : body;
 
   const canSend = mode === 'individual'
-    ? !!selectedContact && subject.trim() && bodyContent.trim()
+    ? (!!selectedContact || !!manualEmail) && subject.trim() && bodyContent.trim()
     : campaignRecipients.length > 0 && subject.trim() && bodyContent.trim();
 
   return (
