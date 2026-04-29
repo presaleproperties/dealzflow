@@ -10,7 +10,9 @@ import { toast } from 'sonner';
 import type { OnboardingStepKey } from '@/hooks/useProfile';
 
 const SNOOZE_KEY = 'ob-wizard-snoozed-at';
-const SNOOZE_MS = 1000 * 60 * 60 * 4; // 4 hours
+const FIRST_SEEN_KEY = 'ob-wizard-first-seen';
+// We never auto-pop the wizard over the dashboard. The OnboardingBanner is the
+// single entry point — user must explicitly click "Resume" to open it.
 
 import { StepWelcome } from './steps/StepWelcome';
 import { StepProfile } from './steps/StepProfile';
@@ -51,18 +53,18 @@ export function AgentOnboardingWizard() {
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // Open automatically when the user is signed in, approved, and not yet done
-  // — but respect a 4-hour snooze when they closed it themselves.
+  // Never auto-open over the dashboard. Listen for an explicit "open" signal
+  // dispatched by the OnboardingBanner's Resume button (via reopenWizard()).
   useEffect(() => {
-    if (!user || profileLoading || !profile) return;
-    if (profile.workspace_status !== 'approved') return;
-    if (isComplete) return;
-    try {
-      const snoozedAt = Number(sessionStorage.getItem(SNOOZE_KEY) || 0);
-      if (snoozedAt && Date.now() - snoozedAt < SNOOZE_MS) return;
-    } catch { /* ignore */ }
-    setOpen(true);
-  }, [user, profile, profileLoading, isComplete]);
+    const handler = () => {
+      if (!user || !profile) return;
+      if (profile.workspace_status !== 'approved') return;
+      if (isComplete) return;
+      setOpen(true);
+    };
+    window.addEventListener('onboarding:open', handler);
+    return () => window.removeEventListener('onboarding:open', handler);
+  }, [user, profile, isComplete]);
 
   // Jump to first incomplete step on open
   useEffect(() => {
