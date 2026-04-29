@@ -135,10 +135,11 @@
     --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
-    /* Composer top inset — guarantees a minimum 50px clearance even when
-       env(safe-area-inset-top) reports 0 in standalone PWA mode, so headers
-       like "SEND TEXT" / "New Message" never collide with the iOS time/notch. */
-    --composer-top-pad: max(env(safe-area-inset-top, 0px), 50px);
+    /* Composer top inset — guarantees a comfortable clearance even when
+       env(safe-area-inset-top) reports 0 in standalone PWA mode, AND when
+       iOS shifts the bottom-sheet upward to make room for the keyboard. 
+       60px ≈ iOS Dynamic Island / notch + status bar height. */
+    --composer-top-pad: max(env(safe-area-inset-top, 0px), 60px);
   }
   :root.is-standalone,
   :root.is-standalone-pwa {
