@@ -422,6 +422,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         message_type: 'text',
       });
       toast.success('Email logged');
+      clearEmailDraft(draftScope);
       onOpenChange(false);
       return;
     }
@@ -443,6 +444,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         sent_by: 'Agent',
         message_type: 'text',
       });
+      clearEmailDraft(draftScope);
       onOpenChange(false);
     } catch {
       /* toast handled in hook */
