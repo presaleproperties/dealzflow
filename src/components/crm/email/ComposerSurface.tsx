@@ -90,6 +90,7 @@ export function ComposerSurface({
   const { data: emailSettings } = useEmailSettings();
   const { data: signatures = [] } = useEmailSignatures();
   const upsertSignature = useUpsertEmailSignature();
+  const { data: projects = [] } = useCrmProjects();
 
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('<p></p>');
