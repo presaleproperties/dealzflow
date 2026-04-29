@@ -136,10 +136,20 @@ export function WorkspaceMembersCard() {
 
   if (!isOwnerOrAdmin) return null;
 
-  function openEdit(c: WorkspaceCandidate) {
+  async function openEdit(c: WorkspaceCandidate) {
     setEditing(c);
     setEditRole((c.crm_role as any) ?? 'agent');
     setEditActive(c.crm_status !== 'inactive');
+    setEditPresaleEmail('');
+    // Fetch current presale_email override
+    if (c.crm_team_id) {
+      const { data } = await supabase
+        .from('crm_team')
+        .select('presale_email')
+        .eq('id', c.crm_team_id)
+        .maybeSingle();
+      setEditPresaleEmail((data?.presale_email ?? '') as string);
+    }
   }
 
   function copyPassword() {
