@@ -1,11 +1,12 @@
-// CRM Email Workspace — 3-pane Apple-Mail-style email platform.
-// Compose mode: Templates (left) · Composer (center) · Recipients (right)
-// Inbox mode: synced Gmail conversations (replies, threads).
+// CRM Email — single unified hub.
+// Top-level segmented control: Compose · Inbox · Templates · Campaigns · Flows · Stats · Health.
+// Compose mode keeps the 3-pane Apple-Mail-style layout (Templates · Composer · Recipients).
+// All other modes are lazy-loaded so cold loads stay fast.
 
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Mail, Workflow, Megaphone, BarChart3, Activity, Send, ArrowRight, Inbox, PenSquare,
+  Mail, Workflow, Megaphone, BarChart3, Activity, Send, Inbox, PenSquare, Sparkles,
 } from 'lucide-react';
 import { TemplatesRail, type AnyTpl } from '@/components/crm/email/TemplatesRail';
 import { RecipientsRail } from '@/components/crm/email/RecipientsRail';
@@ -14,13 +15,36 @@ import InboxView from '@/components/crm/email/InboxView';
 import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
-type Mode = 'compose' | 'inbox';
+// Lazy hub sections — only load when their tab is opened.
+const CrmMarketingHubPage = lazy(() => import('./CrmMarketingHubPage'));
+const CrmEmailCampaignsPage = lazy(() => import('./CrmEmailCampaignsPage'));
+const CrmEmailWorkflowsPage = lazy(() => import('./CrmEmailWorkflowsPage'));
+const CrmEmailAnalyticsPage = lazy(() => import('./CrmEmailAnalyticsPage'));
+const CrmEmailHealthPage = lazy(() => import('./CrmEmailHealthPage'));
+
+type Mode = 'compose' | 'inbox' | 'templates' | 'campaigns' | 'workflows' | 'analytics' | 'health';
+
+const TABS: { value: Mode; icon: typeof Mail; label: string; subtitle: string }[] = [
+  { value: 'compose',    icon: PenSquare, label: 'Compose',    subtitle: 'Pick a template, choose recipients, write, send.' },
+  { value: 'inbox',      icon: Inbox,     label: 'Inbox',      subtitle: 'Synced replies and threads.' },
+  { value: 'templates',  icon: Sparkles,  label: 'Templates',  subtitle: 'Branded templates synced from Presale Properties.' },
+  { value: 'campaigns',  icon: Megaphone, label: 'Campaigns',  subtitle: 'Mass-send to a segment with tracking.' },
+  { value: 'workflows',  icon: Workflow,  label: 'Flows',      subtitle: 'Automated drips & follow-ups.' },
+  { value: 'analytics',  icon: BarChart3, label: 'Stats',      subtitle: 'Opens, clicks, replies — all sends.' },
+  { value: 'health',     icon: Activity,  label: 'Health',     subtitle: 'Domain auth, deliverability, bounces.' },
+];
+
+const VALID = new Set<Mode>(TABS.map(t => t.value));
 
 export default function CrmEmailWorkspacePage() {
-  const [mode, setMode] = useState<Mode>('compose');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as Mode) ?? 'compose';
+  const [mode, setMode] = useState<Mode>(VALID.has(initialTab) ? initialTab : 'compose');
+
   const [recipients, setRecipients] = useState<CrmContact[]>([]);
   const [appliedTpl, setAppliedTpl] = useState<AnyTpl | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
@@ -41,6 +65,20 @@ export default function CrmEmailWorkspacePage() {
     localStorage.setItem('crm.emailWorkspace.rightCollapsed', rightCollapsed ? '1' : '0');
   }, [rightCollapsed]);
 
+  // Keep tab in URL so refreshes/links land on the right section.
+  useEffect(() => {
+    const t = searchParams.get('tab') as Mode | null;
+    if (t && VALID.has(t) && t !== mode) setMode(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    const sp = new URLSearchParams(searchParams);
+    if (next === 'compose') sp.delete('tab'); else sp.set('tab', next);
+    setSearchParams(sp, { replace: true });
+  };
+
   const applyTemplate = (t: AnyTpl) => {
     setAppliedTpl(t);
     setActiveTemplateId(t.id);
@@ -49,33 +87,46 @@ export default function CrmEmailWorkspacePage() {
   const removeRecipient = (id: string) =>
     setRecipients((prev) => prev.filter((r) => r.id !== id));
 
+  const active = TABS.find(t => t.value === mode) ?? TABS[0];
+
   return (
     <div
       className="flex flex-col h-full min-h-0 lg:h-[calc(100dvh-140px)] lg:min-h-[600px]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      {/* Header — Apple-Mail-style segmented control */}
-      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-[18px] font-semibold tracking-tight text-foreground leading-none">
-            {mode === 'compose' ? 'Compose' : 'Inbox'}
-          </h1>
-          <p className="text-[11.5px] text-muted-foreground mt-1">
-            {mode === 'compose'
-              ? 'Pick a template, choose recipients, write, send.'
-              : 'Synced replies and threads.'}
-          </p>
+      {/* Editorial header */}
+      <div className="mb-4 space-y-3">
+        <div className="flex items-baseline gap-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 font-semibold">Email</p>
+          <span className="h-px flex-1 bg-border/60" aria-hidden />
         </div>
-        <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-border/70 bg-card shadow-sm">
-          <ModeBtn active={mode === 'compose'} onClick={() => setMode('compose')} icon={PenSquare} label="Compose" />
-          <ModeBtn active={mode === 'inbox'} onClick={() => setMode('inbox')} icon={Inbox} label="Inbox" />
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-[22px] sm:text-[24px] font-semibold tracking-tight text-foreground leading-none">
+              {active.label}
+            </h1>
+            <p className="text-[12px] text-muted-foreground mt-1.5">{active.subtitle}</p>
+          </div>
+        </div>
+
+        {/* Segmented hub nav — scrollable on small screens */}
+        <div className="-mx-1 overflow-x-auto no-scrollbar">
+          <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
+            {TABS.map(t => (
+              <ModeBtn
+                key={t.value}
+                active={mode === t.value}
+                onClick={() => switchMode(t.value)}
+                icon={t.icon}
+                label={t.label}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="flex-1 min-h-0">
-        {mode === 'inbox' ? (
-          <InboxView />
-        ) : (
+        {mode === 'compose' && (
           <div className="h-full flex flex-col md:flex-row min-h-0 rounded-2xl border border-border/70 overflow-hidden bg-card shadow-sm">
             {!leftCollapsed && (
               <div className="hidden md:block min-h-0 w-[240px] lg:w-[280px] flex-shrink-0 border-r border-border/70">
@@ -92,7 +143,7 @@ export default function CrmEmailWorkspacePage() {
             </div>
 
             <div className="min-h-0 overflow-hidden flex-1 min-w-0 flex flex-col">
-              {/* Phone-only quick actions (md+ has the side rails) */}
+              {/* Phone-only quick actions */}
               <div className="md:hidden flex items-center gap-2 px-4 py-2.5 border-b border-border/70 bg-muted/10">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -118,7 +169,7 @@ export default function CrmEmailWorkspacePage() {
                 </Sheet>
               </div>
 
-              {/* Tablet-only quick toggles (md to lg) — Recipients shown as a sheet to save horizontal space */}
+              {/* Tablet (md→lg) toggles */}
               <div className="hidden md:flex lg:hidden items-center gap-2 px-4 py-2 border-b border-border/70 bg-muted/10">
                 <button
                   type="button"
@@ -156,7 +207,7 @@ export default function CrmEmailWorkspacePage() {
               </div>
             </div>
 
-            {/* Recipients rail — desktop (lg+) only; tablets use the sheet above */}
+            {/* Recipients rail — desktop only */}
             <div className="hidden lg:block">
               <PanelEdgeHandle
                 side="right"
@@ -172,15 +223,20 @@ export default function CrmEmailWorkspacePage() {
             )}
           </div>
         )}
-      </div>
 
-      <div className="hidden lg:flex mt-3 items-center gap-1.5 flex-wrap text-[11px]">
-        <span className="text-muted-foreground/60 uppercase tracking-wider mr-1 font-semibold">More:</span>
-        <FooterLink to="/crm/email/legacy?tab=hub" icon={Mail} label="Templates" />
-        <FooterLink to="/crm/email/legacy?tab=campaigns" icon={Megaphone} label="Campaigns" />
-        <FooterLink to="/crm/email/legacy?tab=workflows" icon={Workflow} label="Flows" />
-        <FooterLink to="/crm/email/legacy?tab=analytics" icon={BarChart3} label="Stats" />
-        <FooterLink to="/crm/email/legacy?tab=health" icon={Activity} label="Health" />
+        {mode === 'inbox' && <InboxView />}
+
+        {(mode === 'templates' || mode === 'campaigns' || mode === 'workflows' || mode === 'analytics' || mode === 'health') && (
+          <div className="h-full overflow-auto rounded-2xl border border-border/70 bg-card shadow-sm">
+            <Suspense fallback={<HubSkeleton />}>
+              {mode === 'templates'  && <CrmMarketingHubPage />}
+              {mode === 'campaigns'  && <CrmEmailCampaignsPage />}
+              {mode === 'workflows'  && <CrmEmailWorkflowsPage />}
+              {mode === 'analytics'  && <CrmEmailAnalyticsPage />}
+              {mode === 'health'     && <CrmEmailHealthPage />}
+            </Suspense>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -191,10 +247,10 @@ function ModeBtn({ active, onClick, icon: Icon, label }: { active: boolean; onCl
     <button
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-[12px] font-semibold transition-all',
+        'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold whitespace-nowrap transition-all',
         active
           ? 'bg-foreground text-background shadow-sm'
-          : 'text-muted-foreground hover:text-foreground',
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
       )}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -203,15 +259,14 @@ function ModeBtn({ active, onClick, icon: Icon, label }: { active: boolean; onCl
   );
 }
 
-function FooterLink({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
+function HubSkeleton() {
   return (
-    <Link
-      to={to}
-      className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border/70 bg-transparent text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
-    >
-      <Icon className="h-3 w-3" />
-      <span className="font-medium">{label}</span>
-      <ArrowRight className="h-2.5 w-2.5 opacity-50" />
-    </Link>
+    <div className="p-6 space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+      </div>
+      <Skeleton className="h-64 rounded-xl" />
+    </div>
   );
 }
