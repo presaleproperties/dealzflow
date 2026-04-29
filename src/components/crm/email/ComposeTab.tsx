@@ -45,6 +45,7 @@ function replaceMergeTags(html: string, contact: CrmContact | null, senderName?:
 export function ComposeTab() {
   const { data: contacts = [] } = useCrmContacts();
   const dynamicOpts = useDynamicFilterOptions(contacts);
+  const AGENTS = useAgentNames();
   const { data: templates = [] } = useCrmEmailTemplates();
   const addMessage = useAddCrmMessage();
   const bridgeSend = useBridgeSendEmail();
