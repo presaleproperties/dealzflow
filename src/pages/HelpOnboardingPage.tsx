@@ -126,7 +126,14 @@ export default function HelpOnboardingPage() {
               <span className="text-sm text-foreground/90 flex-1">
                 You're <strong className="text-primary">{percent}%</strong> through onboarding.
               </span>
-              <Button size="sm" onClick={() => reopenWizard()}>Resume wizard</Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  try { sessionStorage.removeItem('ob-wizard-snoozed-at'); } catch { /* ignore */ }
+                  await reopenWizard();
+                  window.dispatchEvent(new CustomEvent('onboarding:open'));
+                }}
+              >Resume wizard</Button>
             </div>
           )}
         </header>

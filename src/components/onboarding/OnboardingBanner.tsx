@@ -25,9 +25,12 @@ export function OnboardingBanner() {
 
   const handleResume = async () => {
     try {
-      // Clear the wizard's 4h snooze so it re-opens immediately
+      // Clear any prior snooze and re-stamp the profile so the wizard treats
+      // onboarding as in-progress, then dispatch the explicit "open" signal —
+      // the wizard never auto-pops; it only opens via this event.
       sessionStorage.removeItem('ob-wizard-snoozed-at');
       await reopenWizard();
+      window.dispatchEvent(new CustomEvent('onboarding:open'));
     } catch {
       /* no-op */
     }
