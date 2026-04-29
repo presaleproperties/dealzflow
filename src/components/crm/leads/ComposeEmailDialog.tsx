@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { useComposerBackButton } from '@/hooks/useComposerBackButton';
+import { useEmailDraftAutosave, loadEmailDraft, clearEmailDraft } from '@/hooks/useEmailDraftAutosave';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ResponsiveDialog, ResponsiveDialogContent } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
@@ -136,6 +137,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     } catch {
       setRecentIds([]);
     }
+  }, [open]);
+
+  /* Draft autosave — per-contact, survives accidental close / app backgrounding */
+  const draftScope = `lead:${contact.id}`;
+  useEmailDraftAutosave(
+    draftScope,
+    { subject, bodyHtml, cc, bcc },
+    open,
+  );
+
+  /* Restore draft on open (if any) */
+  useEffect(() => {
+    if (!open) return;
+    const draft = loadEmailDraft(draftScope);
+    if (!draft) return;
+    setSubject(draft.subject || '');
+    setBodyHtml(draft.bodyHtml || '<p></p>');
+    setCc(draft.cc || '');
+    setBcc(draft.bcc || '');
+    if (draft.cc || draft.bcc) setShowCcBcc(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   /* Reset on close */
@@ -400,6 +422,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         message_type: 'text',
       });
       toast.success('Email logged');
+      clearEmailDraft(draftScope);
       onOpenChange(false);
       return;
     }
@@ -421,6 +444,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
         sent_by: 'Agent',
         message_type: 'text',
       });
+      clearEmailDraft(draftScope);
       onOpenChange(false);
     } catch {
       /* toast handled in hook */

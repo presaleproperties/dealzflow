@@ -24,6 +24,7 @@ import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
+import { useEmailDraftAutosave, loadEmailDraft, clearEmailDraft } from '@/hooks/useEmailDraftAutosave';
 import { useMassSendEmail } from '@/hooks/useMassSendEmail';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
@@ -112,6 +113,22 @@ export function ComposerSurface({
   const [appliedTplId, setAppliedTplId] = useState<string | null>(null);
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
+
+  /* Draft autosave — workspace-wide single draft. Survives navigation / reload. */
+  const draftScope = 'workspace';
+  useEmailDraftAutosave(draftScope, { subject, bodyHtml, cc, bcc }, true);
+  const draftRestored = useRef(false);
+  useEffect(() => {
+    if (draftRestored.current) return;
+    draftRestored.current = true;
+    const draft = loadEmailDraft(draftScope);
+    if (!draft) return;
+    setSubject(draft.subject || '');
+    setBodyHtml(draft.bodyHtml || '<p></p>');
+    setCc(draft.cc || '');
+    setBcc(draft.bcc || '');
+    if (draft.cc || draft.bcc) setShowCcBcc(true);
+  }, []);
 
   const filteredProjects = useMemo(() => {
     const q = projectSearch.trim().toLowerCase();
@@ -350,6 +367,7 @@ export function ComposerSurface({
     setEditingSignature(false);
     setSigDraft('');
     setAppliedTplId(null);
+    clearEmailDraft(draftScope);
   };
 
   const doSingleSend = () => {
