@@ -703,12 +703,12 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
                 <Copy className="h-2.5 w-2.5" /> Copy HTML
               </Button>
             </div>
-            <div className="bg-[#fafafa] dark:bg-zinc-950/40">
+            <div className="bg-[#fafafa] dark:bg-zinc-950/40 p-2">
               <ScaledIframe
                 iframeRef={iframeHRef}
                 title="Horizontal Signature"
-                naturalWidth={600}
-                naturalHeight={220}
+                naturalWidth={620}
+                naturalHeight={200}
               />
             </div>
           </div>
