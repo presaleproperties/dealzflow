@@ -1,7 +1,6 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import Link from '@tiptap/extension-link';
 import { Bold, Italic, List, ListOrdered, Heading2, Link2, Link2Off } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useRef, useCallback, type ReactNode } from 'react';
@@ -42,18 +41,19 @@ export function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Placeholder.configure({ placeholder }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        linkOnPaste: true,
-        HTMLAttributes: {
-          rel: 'noopener noreferrer nofollow',
-          target: '_blank',
-          class: 'text-primary underline underline-offset-2 hover:text-primary/80',
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          autolink: true,
+          linkOnPaste: true,
+          HTMLAttributes: {
+            rel: 'noopener noreferrer nofollow',
+            target: '_blank',
+            class: 'text-primary underline underline-offset-2 hover:text-primary/80',
+          },
         },
       }),
+      Placeholder.configure({ placeholder }),
     ],
     content,
     autofocus: 'end',
@@ -111,11 +111,8 @@ export function RichTextEditor({
     };
   }, [editor]);
 
-  if (!editor) return null;
-
-  const btnClass = 'h-8 w-8 p-0';
-
   const handleSetLink = useCallback(() => {
+    if (!editor) return;
     const previous = editor.getAttributes('link').href as string | undefined;
     const url = window.prompt('Link URL', previous ?? 'https://');
     if (url === null) return; // cancelled
@@ -127,6 +124,10 @@ export function RichTextEditor({
     const normalised = /^(https?:|mailto:|tel:)/i.test(url) ? url : `https://${url}`;
     editor.chain().focus().extendMarkRange('link').setLink({ href: normalised }).run();
   }, [editor]);
+
+  if (!editor) return null;
+
+  const btnClass = 'h-8 w-8 p-0';
 
   return (
     <div className="flex flex-col h-full min-h-[320px] bg-background">
