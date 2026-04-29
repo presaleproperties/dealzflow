@@ -10,6 +10,7 @@ export type OnboardingStepKey =
   | 'province'
   | 'rezen'
   | 'google'
+  | 'inbox'
   | 'signature'
   | 'push'
   | 'crm_sources'

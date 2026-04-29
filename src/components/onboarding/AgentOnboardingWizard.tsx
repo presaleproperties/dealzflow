@@ -19,6 +19,7 @@ import { StepProfile } from './steps/StepProfile';
 import { StepProvince } from './steps/StepProvince';
 import { StepConnectReZen } from './steps/StepConnectReZen';
 import { StepConnectGoogle } from './steps/StepConnectGoogle';
+import { StepConnectInbox } from './steps/StepConnectInbox';
 import { StepSignature } from './steps/StepSignature';
 import { StepInstallPush } from './steps/StepInstallPush';
 import { StepCrmSources } from './steps/StepCrmSources';
@@ -31,6 +32,7 @@ const STEP_LABELS: Record<OnboardingStepKey, string> = {
   province: 'Province & tax',
   rezen: 'Connect ReZen',
   google: 'Connect Google',
+  inbox: 'Connect inbox',
   signature: 'Email signature',
   push: 'Install + push',
   crm_sources: 'CRM territory',
@@ -209,6 +211,9 @@ export function AgentOnboardingWizard() {
           )}
           {activeKey === 'google' && (
             <StepConnectGoogle eyebrow={eyebrow} onBack={goBack} onNext={goNext} onSkip={skipStep} />
+          )}
+          {activeKey === 'inbox' && (
+            <StepConnectInbox eyebrow={eyebrow} onBack={goBack} onNext={goNext} onSkip={skipStep} />
           )}
           {activeKey === 'signature' && (
             <StepSignature eyebrow={eyebrow} onBack={goBack} onNext={goNext} onSkip={skipStep} />
