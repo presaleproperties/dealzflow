@@ -190,7 +190,19 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       toast.error(e?.message || 'Upload failed');
     } finally {
       setUploading(false);
+  }
+
+  /** Unified entry-point for AttachMenu / drag-drop / paste — uploads each
+   *  file sequentially, hard cap of 10 attachments to stay under MMS limits. */
+  async function handleFiles(files: File[]) {
+    for (const f of files) {
+      if (mediaUrls.length >= 10) {
+        toast.error('Max 10 attachments per message');
+        break;
+      }
+      await handleFileUpload(f);
     }
+  }
   }
 
   function applyTemplate(tplId: string) {
