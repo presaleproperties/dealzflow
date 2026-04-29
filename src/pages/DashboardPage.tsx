@@ -10,7 +10,6 @@ import { useProperties } from '@/hooks/useProperties';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useRefreshData } from '@/hooks/useRefreshData';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import { cn } from '@/lib/utils';
 
 import { QuickStats } from '@/components/dashboard/QuickStats';
@@ -23,7 +22,7 @@ import { ExpenseCommandCenter } from '@/components/dashboard/ExpenseCommandCente
 import { AIBusinessInsights } from '@/components/dashboard/AIBusinessInsights';
 import { PipelinePreview } from '@/components/dashboard/PipelinePreview';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
-import { OnboardingWizard } from '@/components/OnboardingWizard';
+
 import { InsightsGreeting } from '@/components/dashboard/InsightsGreeting';
 import { UpcomingRevenue } from '@/components/dashboard/UpcomingRevenue';
 import { NeedsAttention } from '@/components/dashboard/NeedsAttention';
@@ -58,7 +57,7 @@ export default function DashboardPage() {
   const { data: pipelineProspects = [] } = usePipelineProspects();
   const { data: connections = [] } = usePlatformConnections();
   const syncPlatform = useSyncPlatform();
-  const { showOnboarding, isChecking, completeOnboarding } = useOnboarding();
+  
   const refreshData = useRefreshData();
   const [isSyncing, setIsSyncing] = useState(false);
 
