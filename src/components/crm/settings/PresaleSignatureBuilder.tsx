@@ -786,6 +786,28 @@ export default function PresaleSignatureBuilder({
                     </button>
                   </div>
                 </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between">
+                    <span>Headshot Size</span>
+                    <span className="text-muted-foreground/70 normal-case tracking-normal font-mono">
+                      {parseInt(fields.headshotSize || "100", 10) || 100}px
+                    </span>
+                  </Label>
+                  <input
+                    type="range"
+                    min={60}
+                    max={160}
+                    step={2}
+                    value={parseInt(fields.headshotSize || "100", 10) || 100}
+                    onChange={(e) => update("headshotSize", e.target.value)}
+                    className="w-full mt-2 accent-primary"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                    <span>Small</span>
+                    <span>Default</span>
+                    <span>Large</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
