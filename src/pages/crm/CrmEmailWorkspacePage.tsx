@@ -73,13 +73,13 @@ export default function CrmEmailWorkspacePage() {
         {mode === 'inbox' ? (
           <InboxView />
         ) : (
-          <div className="h-full flex flex-col lg:flex-row min-h-0 rounded-2xl border border-border/70 overflow-hidden bg-card shadow-sm">
+          <div className="h-full flex flex-col md:flex-row min-h-0 rounded-2xl border border-border/70 overflow-hidden bg-card shadow-sm">
             {!leftCollapsed && (
-              <div className="hidden lg:block min-h-0 w-[280px] flex-shrink-0">
+              <div className="hidden md:block min-h-0 w-[240px] lg:w-[280px] flex-shrink-0 border-r border-border/70">
                 <TemplatesRail onApply={applyTemplate} activeTemplateId={activeTemplateId} />
               </div>
             )}
-            <div className="hidden lg:block">
+            <div className="hidden md:block">
               <PanelEdgeHandle
                 side="left"
                 collapsed={leftCollapsed}
@@ -89,7 +89,8 @@ export default function CrmEmailWorkspacePage() {
             </div>
 
             <div className="min-h-0 overflow-hidden flex-1 min-w-0 flex flex-col">
-              <div className="lg:hidden flex items-center gap-2 px-4 py-2.5 border-b border-border/70 bg-muted/10">
+              {/* Phone-only quick actions (md+ has the side rails) */}
+              <div className="md:hidden flex items-center gap-2 px-4 py-2.5 border-b border-border/70 bg-muted/10">
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
@@ -114,6 +115,29 @@ export default function CrmEmailWorkspacePage() {
                 </Sheet>
               </div>
 
+              {/* Tablet-only quick toggles (md to lg) — Recipients shown as a sheet to save horizontal space */}
+              <div className="hidden md:flex lg:hidden items-center gap-2 px-4 py-2 border-b border-border/70 bg-muted/10">
+                <button
+                  type="button"
+                  onClick={() => setLeftCollapsed((v) => !v)}
+                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                >
+                  <Mail className="h-3 w-3" />
+                  {leftCollapsed ? 'Show templates' : 'Hide templates'}
+                </button>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11.5px] ml-auto">
+                      <Send className="h-3 w-3" />
+                      Recipients ({recipients.length})
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-[420px] max-w-[92vw]">
+                    <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
+                  </SheetContent>
+                </Sheet>
+              </div>
+
               <div className="flex-1 min-h-0">
                 <ComposerSurface
                   recipients={recipients}
@@ -129,6 +153,7 @@ export default function CrmEmailWorkspacePage() {
               </div>
             </div>
 
+            {/* Recipients rail — desktop (lg+) only; tablets use the sheet above */}
             <div className="hidden lg:block">
               <PanelEdgeHandle
                 side="right"
@@ -138,7 +163,7 @@ export default function CrmEmailWorkspacePage() {
               />
             </div>
             {!rightCollapsed && (
-              <div className="hidden lg:block min-h-0 w-[380px] flex-shrink-0">
+              <div className="hidden lg:block min-h-0 w-[380px] flex-shrink-0 border-l border-border/70">
                 <RecipientsRail selected={recipients} onSelectedChange={setRecipients} />
               </div>
             )}
