@@ -671,6 +671,8 @@ function TeamManagement() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const roleBadgeColor = (role: string) => {
     if (role === 'owner') return 'bg-primary/15 text-primary border-primary/30';
     if (role === 'admin') return 'bg-blue-500/15 text-blue-600 border-blue-500/30';
     if (role === 'agent') return 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30';
