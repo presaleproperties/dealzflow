@@ -844,19 +844,19 @@ export function ComposerSurface({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={openSaveDialog}
             disabled={isPending}
-            className="h-9 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            className="hidden lg:inline-flex h-9 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/60"
           >
             <Save className="h-3.5 w-3.5" />
             Save as template
           </Button>
-          <div className="h-6 w-px bg-border/60 mx-1" />
+          <div className="hidden lg:block h-6 w-px bg-border/60 mx-1" />
           <Button
             type="button"
             size="sm"
