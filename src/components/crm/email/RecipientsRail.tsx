@@ -41,6 +41,62 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
 
+  // Allow ad-hoc sends to any typed email — no CRM contact required.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const trimmedSearch = search.trim();
+  const isTypedEmail = EMAIL_RE.test(trimmedSearch);
+  const typedEmailLower = isTypedEmail ? trimmedSearch.toLowerCase() : '';
+  const typedEmailExists = isTypedEmail
+    && (contacts.some((c) => (c.email ?? '').toLowerCase() === typedEmailLower)
+      || selected.some((s) => (s.email ?? '').toLowerCase() === typedEmailLower));
+
+  const addManualRecipient = () => {
+    if (!isTypedEmail || typedEmailExists) return;
+    const synthetic: CrmContact = {
+      id: `manual:${typedEmailLower}`,
+      first_name: '',
+      last_name: typedEmailLower,
+      email: typedEmailLower,
+      email_secondary: null,
+      phone: null,
+      phone_secondary: null,
+      address: null,
+      city: null,
+      province: null,
+      postal_code: null,
+      source: null,
+      status: null,
+      project: null,
+      projects: [],
+      assigned_to: null,
+      tags: [],
+      budget_min: null,
+      budget_max: null,
+      bedrooms_preferred: null,
+      language: null,
+      lead_type: null,
+      lead_score: null,
+      notes: null,
+      contact_type: 'manual',
+      birthday: null,
+      co_buyer_name: null,
+      co_buyer_phone: null,
+      co_buyer_email: null,
+      co_buyer_birthday: null,
+      last_contact_at: null,
+      next_followup_date: null,
+      status_changed_at: null,
+      lofty_id: null,
+      last_touch_at: null,
+      last_touch_type: null,
+      stage_changed_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    onSelectedChange([...selected, synthetic]);
+    setSearch('');
+  };
+
   const [mode, setMode] = useState<Mode>('segments');
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [activeProjects, setActiveProjects] = useState<Set<string>>(new Set());
