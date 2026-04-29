@@ -103,8 +103,10 @@ function buildHeadshotTag(d: SignatureBuilderFields, size: number): string {
     .slice(0, 2)
     .toUpperCase();
   const radius = d.headshotShape === "circle" ? "50%" : "14px";
+  const px = Math.max(0, Math.min(100, parseInt(d.headshotPosX || "50", 10) || 50));
+  const py = Math.max(0, Math.min(100, parseInt(d.headshotPosY || "50", 10) || 50));
   const img = d.photoUrl
-    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius: ${radius}; object-fit: cover; object-position: center center; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-sizing: border-box; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
+    ? `<img src="${escapeAttr(d.photoUrl)}" alt="${escapeAttr(d.fullName)}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius: ${radius}; object-fit: cover; object-position: ${px}% ${py}%; display: block; margin: 0 auto; border: 3px solid #c8a45e; box-sizing: border-box; box-shadow: 0 4px 16px rgba(200,164,94,0.2);" />`
     : `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:linear-gradient(135deg,#c8a45e,#a8843e);color:#fff;font-size:${Math.round(size * 0.32)}px;font-weight:700;text-align:center;line-height:${size}px;box-shadow:0 4px 16px rgba(200,164,94,0.2);border:3px solid #c8a45e;box-sizing:border-box;margin:0 auto;">${initials}</div>`;
   // Headshot links to: explicit headshotLink → Instagram → website
   const linkRaw = d.headshotLink || d.instagram || d.website;
@@ -450,9 +452,17 @@ export default function PresaleSignatureBuilder({
     next.headshotSize = touchedFields.headshotSize
       ? fields.headshotSize
       : fields.headshotSize || BLANK.headshotSize;
+    next.headshotPosX = touchedFields.headshotPosX
+      ? fields.headshotPosX
+      : fields.headshotPosX || BLANK.headshotPosX;
+    next.headshotPosY = touchedFields.headshotPosY
+      ? fields.headshotPosY
+      : fields.headshotPosY || BLANK.headshotPosY;
     sources.headshotLink = touchedFields.headshotLink ? "user" : "fallback";
     sources.headshotShape = touchedFields.headshotShape ? "user" : "fallback";
     sources.headshotSize = touchedFields.headshotSize ? "user" : "fallback";
+    sources.headshotPosX = touchedFields.headshotPosX ? "user" : "fallback";
+    sources.headshotPosY = touchedFields.headshotPosY ? "user" : "fallback";
 
     setFields(next);
     setSourceMap(sources);
