@@ -1238,6 +1238,25 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
+                  {savedAt && (
+                    <span className="text-[11px] text-muted-foreground/80 tabular-nums" title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}>
+                      Saved
+                    </span>
+                  )}
+                  {savedAt && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={discardDraft}
+                      disabled={isPending}
+                      className="gap-1.5 text-muted-foreground hover:text-foreground"
+                      title="Discard saved draft"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Discard
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
