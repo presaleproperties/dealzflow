@@ -36,7 +36,9 @@ export function InviteAgentCard() {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [lastUrl, setLastUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
+  const [lastEmailRecipient, setLastEmailRecipient] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'url' | 'pw' | null>(null);
 
   const { data: invites = [], isLoading } = useQuery({
     queryKey: ['crm_team_invites'],
@@ -55,22 +57,39 @@ export function InviteAgentCard() {
           email: email.trim(),
           display_name: name.trim(),
           role: 'agent',
+          mode: 'temp_password',
           app_origin: window.location.origin,
           personal_note: note.trim() || null,
         },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Could not send invite');
-      return data as { accept_url: string; email_sent: boolean; warning?: string };
+      return data as {
+        mode?: 'temp_password' | 'set_password';
+        accept_url?: string;
+        login_url?: string;
+        email?: string;
+        temp_password?: string;
+        email_sent: boolean;
+        warning?: string;
+      };
     },
     onSuccess: (data) => {
-      setLastUrl(data.accept_url);
+      setLastUrl(data.login_url ?? data.accept_url ?? null);
+      setLastTempPassword(data.temp_password ?? null);
+      setLastEmailRecipient(data.email ?? email.trim());
       setName(''); setEmail(''); setNote('');
       qc.invalidateQueries({ queryKey: ['crm_team_invites'] });
       if (data.email_sent) {
-        toast.success('Invite sent', { description: 'They\'ll get an email with a link to set their password.' });
+        toast.success('Invite sent', {
+          description: data.mode === 'temp_password'
+            ? 'They got an email with a temporary password and will be asked to set their own.'
+            : "They'll get an email with a link to set their password.",
+        });
       } else {
-        toast.warning('Invite created — email not sent', { description: data.warning ?? 'Copy the link below to share manually.' });
+        toast.warning('Invite created — email not sent', {
+          description: data.warning ?? 'Copy the details below to share manually.',
+        });
       }
     },
     onError: (e: any) => toast.error(e?.message ?? 'Could not send invite'),
@@ -90,11 +109,10 @@ export function InviteAgentCard() {
 
   if (!isOwnerOrAdmin) return null;
 
-  function copyUrl() {
-    if (!lastUrl) return;
-    navigator.clipboard.writeText(lastUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  function copyTo(kind: 'url' | 'pw', value: string) {
+    navigator.clipboard.writeText(value);
+    setCopied(kind);
+    setTimeout(() => setCopied(null), 1500);
   }
 
   return (
@@ -105,7 +123,9 @@ export function InviteAgentCard() {
           Invite an agent
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
-          Send a branded email so they can set their own password and join your team. They'll only see leads you assign to them.
+          We'll create their account, email them a temporary password, and ask
+          them to set a personal one on first sign-in. They'll only see leads
+          you assign to them.
         </p>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -131,16 +151,43 @@ export function InviteAgentCard() {
             {sendMut.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
             Send invite
           </Button>
-          {lastUrl && (
-            <Button variant="outline" onClick={copyUrl} size="sm">
-              {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-              {copied ? 'Copied' : 'Copy link'}
-            </Button>
-          )}
         </div>
-        {lastUrl && (
-          <div className="text-[11px] text-muted-foreground break-all p-2 rounded-md bg-muted/40 border border-border">
-            {lastUrl}
+
+        {/* Last sent — show temp password ONCE for backup / verbal share */}
+        {(lastTempPassword || lastUrl) && (
+          <div className="rounded-lg border border-[#D7A542]/30 bg-[#D7A542]/5 p-4 space-y-3">
+            <div className="text-[11px] font-semibold tracking-[0.14em] uppercase text-[#D7A542]">
+              Invite sent {lastEmailRecipient ? `· ${lastEmailRecipient}` : ''}
+            </div>
+            {lastTempPassword && (
+              <div>
+                <div className="text-[11px] text-muted-foreground mb-1">Temporary password (shown once — save now if you need a backup)</div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 rounded-md bg-background border border-border font-mono text-sm">
+                    {lastTempPassword}
+                  </code>
+                  <Button variant="outline" size="sm" onClick={() => copyTo('pw', lastTempPassword)}>
+                    {copied === 'pw' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {lastUrl && (
+              <div>
+                <div className="text-[11px] text-muted-foreground mb-1">Sign-in link</div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 rounded-md bg-background border border-border text-[11px] truncate">
+                    {lastUrl}
+                  </code>
+                  <Button variant="outline" size="sm" onClick={() => copyTo('url', lastUrl)}>
+                    {copied === 'url' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              They'll be required to set their own password on first sign-in.
+            </p>
           </div>
         )}
 

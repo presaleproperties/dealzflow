@@ -4614,6 +4614,7 @@ export type Database = {
           id: string
           is_banned: boolean
           license_no: string | null
+          must_change_password: boolean
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
           onboarding_steps: Json
@@ -4639,6 +4640,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           license_no?: string | null
+          must_change_password?: boolean
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
           onboarding_steps?: Json
@@ -4664,6 +4666,7 @@ export type Database = {
           id?: string
           is_banned?: boolean
           license_no?: string | null
+          must_change_password?: boolean
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
           onboarding_steps?: Json
@@ -5356,6 +5359,7 @@ export type Database = {
         Args: { _contact_id: string }
         Returns: undefined
       }
+      mark_password_changed: { Args: never; Returns: undefined }
       mark_source_event_processed: {
         Args: {
           _contact_id: string

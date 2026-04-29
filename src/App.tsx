@@ -40,6 +40,7 @@ import ClientInventoryPage from "./pages/ClientInventoryPage";
 import NotFound from "./pages/NotFound";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import BridgeStatusPage from "./pages/admin/BridgeStatusPage";
 import AdminProjectsPage from "./pages/admin/AdminProjectsPage";
@@ -118,6 +119,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/pending-approval" replace />;
   }
 
+  // Gate: invited users on a temp password must set a real one first
+  if (profile?.must_change_password) {
+    return <Navigate to="/auth/change-password" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -190,6 +196,7 @@ const App = () => (
                   <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
                   <Route path="/pending-approval" element={<PendingApprovalPage />} />
                   <Route path="/accept-invite" element={<AcceptInvitePage />} />
+                  <Route path="/auth/change-password" element={<ChangePasswordPage />} />
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
                   
