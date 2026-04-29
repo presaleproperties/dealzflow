@@ -3,11 +3,14 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
-import { Sparkles, Check } from 'lucide-react';
+import { Sparkles, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { OnboardingStepKey } from '@/hooks/useProfile';
+
+const SNOOZE_KEY = 'ob-wizard-snoozed-at';
+const SNOOZE_MS = 1000 * 60 * 60 * 4; // 4 hours
 
 import { StepWelcome } from './steps/StepWelcome';
 import { StepProfile } from './steps/StepProfile';
