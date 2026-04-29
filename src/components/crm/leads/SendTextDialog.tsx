@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  X, ChevronDown, Image as ImageIcon, Variable, FileText, Hash, Building2, User2,
+  X, ChevronDown, Variable, FileText, Hash, Building2, User2,
   Send, Loader2, Calendar, AlertTriangle, Plus, Trash2, ShieldAlert, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,8 @@ import {
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { AttachMenu } from '@/components/crm/shared/AttachMenu';
+import { useDragAndPasteFiles } from '@/hooks/useDragAndPasteFiles';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 /**
@@ -77,7 +79,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const [projectSearch, setProjectSearch] = useState('');
   const [pendingMediaUrl, setPendingMediaUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Reset on close; sync channel with `initialChannel` on open
@@ -191,6 +193,25 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     }
   }
 
+  /** Unified entry-point for AttachMenu / drag-drop / paste — uploads each
+   *  file sequentially, hard cap of 10 attachments to stay under MMS limits. */
+  async function handleFiles(files: File[]) {
+    for (const f of files) {
+      if (mediaUrls.length >= 10) {
+        toast.error('Max 10 attachments per message');
+        break;
+      }
+      await handleFileUpload(f);
+    }
+  }
+
+  const { dragActive } = useDragAndPasteFiles({
+    targetRef: composerRef,
+    onFiles: (files) => { void handleFiles(files); },
+    accept: ['image/', 'video/'],
+    enabled: open,
+  });
+
   function applyTemplate(tplId: string) {
     const t = templates.find(t => t.id === tplId);
     if (!t) return;
@@ -233,9 +254,17 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
+        ref={composerRef}
         hideMobileHandle
         className="sm:max-w-[920px] w-screen sm:w-[92vw] h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
       >
+        {dragActive && (
+          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
+            <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
+              Drop to attach
+            </div>
+          </div>
+        )}
         {/* Header — sticky, consistent vertical rhythm */}
         <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -431,20 +460,31 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                   </PopoverContent>
                 </Popover>
 
-                {/* Image / Media */}
+                {/* Attachments — unified paperclip (iOS sheet on mobile, file picker on desktop).
+                    Drag/drop + paste-image are wired on the dialog root via useDragAndPasteFiles. */}
+                <div className="relative">
+                  <AttachMenu
+                    variant="icon"
+                    multiple={false}
+                    accept="image/*,video/*"
+                    uploading={uploading}
+                    onFiles={(f) => handleFiles(f)}
+                  />
+                  {mediaUrls.length > 0 && (
+                    <span className="pointer-events-none absolute top-0 right-0 h-3.5 w-3.5 rounded-full bg-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground">
+                      {mediaUrls.length}
+                    </span>
+                  )}
+                </div>
+                {/* Secondary "manage" — only shown when at least 1 attachment exists, or to paste a URL */}
                 <Popover open={mediaOpen} onOpenChange={setMediaOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 relative" title="Attach image">
-                      <ImageIcon className="h-4 w-4" />
-                      {mediaUrls.length > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground">
-                          {mediaUrls.length}
-                        </span>
-                      )}
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-[11px] text-muted-foreground" title="Manage attachments">
+                      {mediaUrls.length > 0 ? `${mediaUrls.length} file${mediaUrls.length > 1 ? 's' : ''}` : 'URL'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-80 p-3 space-y-2">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Add media (MMS)</p>
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Attachments (MMS)</p>
                     {mediaUrls.length > 0 && (
                       <div className="space-y-1">
                         {mediaUrls.map((u, i) => (
@@ -457,19 +497,11 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                         ))}
                       </div>
                     )}
-                    <input
-                      ref={fileRef} type="file" accept="image/*,video/*" className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }}
-                    />
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                      {uploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-                      Upload file
-                    </Button>
                     <div className="flex items-center gap-2">
                       <Input
                         value={pendingMediaUrl}
                         onChange={(e) => setPendingMediaUrl(e.target.value)}
-                        placeholder="…or paste public image URL"
+                        placeholder="Paste public image URL"
                         className="text-xs h-8"
                       />
                       <Button
@@ -484,7 +516,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                         Add
                       </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each</p>
+                    <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each · drag, paste, or tap the paperclip</p>
                   </PopoverContent>
                 </Popover>
 

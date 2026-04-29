@@ -23,7 +23,6 @@ import {
   Inbox,
   X,
   Search,
-  Paperclip,
   Pencil,
   Check,
   MousePointerClick,
@@ -49,6 +48,8 @@ import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
+import { AttachMenu } from '@/components/crm/shared/AttachMenu';
+import { useDragAndPasteFiles } from '@/hooks/useDragAndPasteFiles';
 import { EMAIL_VARIABLES, EMAIL_VARIABLE_GROUPS, renderForRecipient } from '@/lib/emailVariables';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -481,10 +482,16 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
 
   /** Upload one or more files to storage and embed them inline in the email body.
    *  Images are inserted as <img>; other files become a link to the public URL. */
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const handleAttachFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const { dragActive } = useDragAndPasteFiles({
+    targetRef: composerRef,
+    onFiles: (files) => { void handleAttachFiles(files); },
+    enabled: open,
+  });
+  const handleAttachFiles = async (files: File[] | FileList | null) => {
+    const list = !files ? [] : Array.isArray(files) ? files : Array.from(files);
+    if (list.length === 0) return;
     if (!user?.id) {
       toast.error('You must be signed in to attach files');
       return;
@@ -492,7 +499,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     setUploading(true);
     try {
       const inserts: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of list) {
         if (file.size > 20 * 1024 * 1024) {
           toast.error(`"${file.name}" is larger than 20MB`);
           continue;
@@ -523,7 +530,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       }
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -532,25 +538,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
    * single source of truth for these actions to avoid duplication. */
   const composerActions = (
     <div className="hidden md:flex items-center gap-1">
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => handleAttachFiles(e.target.files)}
+      <AttachMenu
+        onFiles={(f) => handleAttachFiles(f)}
+        uploading={uploading}
+        className="h-8 px-2 text-xs"
       />
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        className="h-8 gap-1.5 px-2 text-xs"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
-        title="Attach files or images"
-      >
-        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-        Attach
-      </Button>
       <Button
         type="button"
         size="sm"
@@ -662,9 +654,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
     <>
       <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
         <ResponsiveDialogContent
+          ref={composerRef}
           hideMobileHandle
           className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
+          {dragActive && (
+            <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
+              <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
+                Drop to attach
+              </div>
+            </div>
+          )}
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
           {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar.
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
@@ -1058,16 +1058,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
                 >
                   <FileText className="h-[15px] w-[15px]" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  aria-label="Attach"
-                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform disabled:opacity-50"
-                  title="Attach files"
-                >
-                  {uploading ? <Loader2 className="h-[15px] w-[15px] animate-spin" /> : <Paperclip className="h-[15px] w-[15px]" />}
-                </button>
+                <AttachMenu
+                  variant="icon"
+                  uploading={uploading}
+                  onFiles={(f) => handleAttachFiles(f)}
+                  className="h-9 w-9 rounded-full bg-muted/60 active:scale-95 transition-transform"
+                />
                 <button
                   type="button"
                   onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}

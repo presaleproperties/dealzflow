@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Send, FileText, Eye, Code2, Variable, Loader2, Monitor, Smartphone,
-  Save, X, Search, Paperclip, Pencil, Check, Users, AlertTriangle,
+  Save, X, Search, Pencil, Check, Users, AlertTriangle,
   ChevronDown, MailWarning, UserPlus, Building2,
 } from 'lucide-react';
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
@@ -25,6 +25,8 @@ import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddCrmMessage } from '@/hooks/useCrmLeadDetail';
 import { useEmailDraftAutosave, loadEmailDraft, clearEmailDraft } from '@/hooks/useEmailDraftAutosave';
+import { useDragAndPasteFiles } from '@/hooks/useDragAndPasteFiles';
+import { AttachMenu } from '@/components/crm/shared/AttachMenu';
 import { useMassSendEmail } from '@/hooks/useMassSendEmail';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
@@ -284,10 +286,11 @@ export function ComposerSurface({
   ];
 
   /* Attachments */
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const handleAttachFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleAttachFiles = async (files: File[] | FileList | null) => {
+    const list = !files ? [] : Array.isArray(files) ? files : Array.from(files);
+    if (list.length === 0) return;
     if (!user?.id) {
       toast.error('You must be signed in to attach files');
       return;
@@ -295,7 +298,7 @@ export function ComposerSurface({
     setUploading(true);
     try {
       const inserts: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of list) {
         if (file.size > 20 * 1024 * 1024) {
           toast.error(`"${file.name}" is larger than 20MB`);
           continue;
@@ -326,9 +329,12 @@ export function ComposerSurface({
       }
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+  const { dragActive } = useDragAndPasteFiles({
+    targetRef: composerRef,
+    onFiles: (files) => { void handleAttachFiles(files); },
+  });
 
   const openSaveDialog = () => {
     if (!bodyText) {
@@ -444,7 +450,14 @@ export function ComposerSurface({
       : `Send to ${recipientCount.toLocaleString()} recipients`;
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-muted/30">
+    <div ref={composerRef} className="relative flex flex-col h-full min-h-0 bg-muted/30">
+      {dragActive && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary">
+          <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
+            Drop to attach
+          </div>
+        </div>
+      )}
       {/* Recipient bar — width matches the body composer (max-w-[920px]) */}
       <div className="px-3 pt-3 pb-2 lg:px-6 lg:pt-5 lg:pb-4 border-b border-border/60 bg-card shrink-0">
         <div className="max-w-[920px] mx-auto">
@@ -629,11 +642,11 @@ export function ComposerSurface({
               placeholder="Write your message... use {{lead.first_name}} for personalization."
               toolbarSlot={
                 <>
-                  <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleAttachFiles(e.target.files)} />
-                  <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-                    Attach
-                  </Button>
+                  <AttachMenu
+                    onFiles={(f) => handleAttachFiles(f)}
+                    uploading={uploading}
+                    className="h-8 px-2 text-xs"
+                  />
                   <Popover open={varPickerOpen} onOpenChange={(o) => { setVarPickerOpen(o); if (!o) setVarSearch(''); }}>
                     <PopoverTrigger asChild>
                       <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs">
