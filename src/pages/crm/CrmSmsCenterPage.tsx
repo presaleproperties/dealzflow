@@ -190,6 +190,19 @@ export default function CrmSmsCenterPage() {
         </div>
       </div>
 
+      {/* No-number gate banner */}
+      {numbers.length === 0 && !settings?.messaging_service_sid && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3">
+          <MessageSquare className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground mb-1">SMS line is being set up</p>
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
+              Your admin will provision a Twilio number for you shortly. You can browse templates and draft
+              campaigns now — they'll send the moment your number goes live.
+            </p>
+          </div>
+        </div>
+      )}
       {/* ============ Tabs (3 only: Inbox / Send / Settings) ============ */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-3 w-full sm:w-auto h-auto">
