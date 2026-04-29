@@ -171,6 +171,12 @@ Deno.serve(async (req) => {
           email: contact.email,
           phone: contact.phone,
         },
+        // Bridge uses `recipient.name` to render "Hi {first}," in the greeting.
+        // Without this it falls back to "Hi there,".
+        recipient: {
+          name: [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null,
+          email: contact.email,
+        },
         project_slug: bridgeProjectSlug,
         // Prefer the Presale agent identity synced into crm_team; auth email/id
         // often differs from the Presale agent record and causes 404s.
