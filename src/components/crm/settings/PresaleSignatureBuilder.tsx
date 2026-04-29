@@ -448,7 +448,7 @@ export default function PresaleSignatureBuilder({ fallback, initialData, onApply
   };
 
   const handleApply = () => {
-    onApply(activeHtml, layout, fields);
+    onApply(activeHtml, layout, fields, touchedFields);
   };
 
   const isLoading = status === "loading";
