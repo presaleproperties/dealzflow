@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import {
   Send, FileText, Eye, Code2, Variable, Loader2, Monitor, Smartphone,
   Save, X, Search, Paperclip, Pencil, Check, Users, AlertTriangle,
-  ChevronDown, MailWarning, UserPlus,
+  ChevronDown, MailWarning, UserPlus, Building2,
 } from 'lucide-react';
+import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,6 +64,15 @@ const isRichSignatureHtml = (html: string) =>
   /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
   || /<[a-z][^>]*\sstyle\s*=/i.test(html);
 
+/** Public-facing share URL for a project (mirrors SendTextDialog). */
+function projectShareUrl(p: CrmProject): string | null {
+  if (p.marketing_url?.startsWith('http')) return p.marketing_url;
+  if (p.website_url?.startsWith('http')) return p.website_url;
+  const slug = p.presale_slug || p.slug;
+  if (slug) return `https://presaleproperties.com/${slug}`;
+  return null;
+}
+
 export function ComposerSurface({
   recipients,
   onAddRecipient,
@@ -80,6 +90,7 @@ export function ComposerSurface({
   const { data: emailSettings } = useEmailSettings();
   const { data: signatures = [] } = useEmailSignatures();
   const upsertSignature = useUpsertEmailSignature();
+  const { data: projects = [] } = useCrmProjects();
 
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('<p></p>');
@@ -99,6 +110,34 @@ export function ComposerSurface({
   const [tplCategory, setTplCategory] = useState('general');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [appliedTplId, setAppliedTplId] = useState<string | null>(null);
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
+
+  const filteredProjects = useMemo(() => {
+    const q = projectSearch.trim().toLowerCase();
+    const list = q
+      ? projects.filter((p) =>
+          p.name.toLowerCase().includes(q)
+          || (p.city ?? '').toLowerCase().includes(q)
+          || (p.developer ?? '').toLowerCase().includes(q),
+        )
+      : projects;
+    return list.slice(0, 40);
+  }, [projects, projectSearch]);
+
+  const insertProjectLink = (p: CrmProject) => {
+    const url = projectShareUrl(p);
+    if (!url) {
+      toast.error(`No share URL for ${p.name}. Add one in Settings → Projects.`);
+      return;
+    }
+    const safeName = p.name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const anchor = `<p><a href="${url}" target="_blank" rel="noopener">${safeName}</a></p>`;
+    setBodyHtml((prev) => (!prev || prev === '<p></p>' ? anchor : `${prev}${anchor}`));
+    setProjectOpen(false);
+    setProjectSearch('');
+    toast.success(`Inserted link to ${p.name}`);
+  };
 
   /* Pick default signature on mount / when signatures load */
   useEffect(() => {
@@ -615,6 +654,53 @@ export function ComposerSurface({
                                 ))}
                               </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Popover open={projectOpen} onOpenChange={(o) => { setProjectOpen(o); if (!o) setProjectSearch(''); }}>
+                    <PopoverTrigger asChild>
+                      <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs" title="Insert project link">
+                        <Building2 className="h-3.5 w-3.5" />
+                        Project
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-[380px] p-0 overflow-hidden">
+                      <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Insert project link</p>
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input autoFocus value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} placeholder="Search projects, city, developer…" className="h-8 pl-7 text-xs" />
+                        </div>
+                      </div>
+                      <div className="max-h-[440px] overflow-y-auto py-1">
+                        {projects.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            No projects yet.<br />Add some in Settings → Projects.
+                          </div>
+                        ) : filteredProjects.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                            No matches for "{projectSearch}".
+                          </div>
+                        ) : filteredProjects.map((p) => {
+                          const url = projectShareUrl(p);
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => insertProjectLink(p)}
+                              className="w-full text-left px-3 py-2 hover:bg-accent/60 transition-colors"
+                            >
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="text-xs font-medium text-foreground truncate">{p.name}</span>
+                                {!url && <span className="text-[10px] text-amber-600 shrink-0">no URL</span>}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground truncate">
+                                {[p.city, p.developer].filter(Boolean).join(' · ') || (url ?? '—')}
+                              </div>
+                            </button>
                           );
                         })}
                       </div>
