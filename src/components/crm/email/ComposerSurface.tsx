@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Send, FileText, Eye, Code2, Variable, Loader2, Monitor, Smartphone,
-  Save, X, Search, Paperclip, Pencil, Check, Users, AlertTriangle,
+  Save, X, Search, Pencil, Check, Users, AlertTriangle,
   ChevronDown, MailWarning, UserPlus, Building2,
 } from 'lucide-react';
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
