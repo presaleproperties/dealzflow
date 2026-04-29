@@ -367,8 +367,19 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Email Signature
           </p>
-          <p className="text-xs text-muted-foreground/70 mt-0.5">
+          <p className="text-xs text-muted-foreground/70 mt-0.5 flex items-center gap-2">
             Same builder as the Presale Properties agent portal
+            {prefilledCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-primary font-medium">
+                <Sparkles className="h-3 w-3" />
+                {prefilledCount} field{prefilledCount === 1 ? "" : "s"} auto-filled
+              </span>
+            )}
+            {status === "unmatched" && (
+              <span className="text-amber-600 dark:text-amber-400">
+                · No Presale match — using your CRM profile
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
