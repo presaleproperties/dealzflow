@@ -114,6 +114,22 @@ export function ComposerSurface({
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
 
+  /* Draft autosave — workspace-wide single draft. Survives navigation / reload. */
+  const draftScope = 'workspace';
+  useEmailDraftAutosave(draftScope, { subject, bodyHtml, cc, bcc }, true);
+  const draftRestored = useRef(false);
+  useEffect(() => {
+    if (draftRestored.current) return;
+    draftRestored.current = true;
+    const draft = loadEmailDraft(draftScope);
+    if (!draft) return;
+    setSubject(draft.subject || '');
+    setBodyHtml(draft.bodyHtml || '<p></p>');
+    setCc(draft.cc || '');
+    setBcc(draft.bcc || '');
+    if (draft.cc || draft.bcc) setShowCcBcc(true);
+  }, []);
+
   const filteredProjects = useMemo(() => {
     const q = projectSearch.trim().toLowerCase();
     const list = q
