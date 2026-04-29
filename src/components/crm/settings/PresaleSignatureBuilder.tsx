@@ -387,7 +387,7 @@ export default function PresaleSignatureBuilder({ fallback, onApply }: PresaleSi
       if (!doc) return;
       doc.open();
       doc.write(
-        `<!DOCTYPE html><html><head><style>body{margin:20px;font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;}</style></head><body>${html}</body></html>`,
+        `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}body{padding:24px;font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;box-sizing:border-box;}*{box-sizing:border-box;}</style></head><body>${html}</body></html>`,
       );
       doc.close();
     });
