@@ -77,7 +77,25 @@ function fmtBytes(n: number | null | undefined): string {
 /** Heuristic: looks like HTML if it has at least one tag-ish token. */
 function looksLikeHtml(s: string | null | undefined): boolean {
   if (!s) return false;
-  return /<\/?[a-z][\s\S]*?>/i.test(s);
+  // Real tags
+  if (/<\/?[a-z][\s\S]*?>/i.test(s)) return true;
+  // HTML-entity-encoded markup ("&lt;p&gt;hello") — common when synced through
+  // some inbound webhooks that JSON-escape the body.
+  if (/&lt;\/?[a-z][\s\S]*?&gt;/i.test(s)) return true;
+  return false;
+}
+
+/** Decode HTML entities so encoded markup ("&lt;p&gt;") becomes real HTML. */
+function decodeHtmlEntities(s: string): string {
+  if (!/&(?:lt|gt|amp|quot|#39|nbsp|#x?\d+);/i.test(s)) return s;
+  const ta = document.createElement('textarea');
+  ta.innerHTML = s;
+  return ta.value;
+}
+
+/** True when the string is a full HTML document (has <html>...</html>). */
+function isFullHtmlDocument(s: string): boolean {
+  return /<html[\s>]/i.test(s) && /<\/html\s*>/i.test(s);
 }
 
 /** Strip <script> and on*= handlers as a defense-in-depth before iframe srcdoc. */
@@ -85,7 +103,10 @@ function sanitizeForIframe(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    // Strip javascript: URIs in href/src
+    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
 }
 
 /**
