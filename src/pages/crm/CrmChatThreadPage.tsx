@@ -656,21 +656,93 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                 </button>
               </div>
             )}
+
+            {/* Thread toolbar — collapse/expand all + jump to message */}
+            {filteredMessages.length > 1 && (
+              <div className="flex items-center justify-between gap-2 px-1 pb-1">
+                <div className="text-[12px] text-muted-foreground font-medium">
+                  {filteredMessages.length} messages in thread
+                </div>
+                <div className="flex items-center gap-1 relative">
+                  <button
+                    type="button"
+                    onClick={() => (allExpanded ? collapseAll() : expandAll())}
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted/70 border border-border/40 transition-colors"
+                    title={allExpanded ? 'Collapse all (only most recent stays open)' : 'Expand all messages'}
+                  >
+                    {allExpanded ? <ChevronsDownUp className="w-3 h-3" /> : <ChevronsUpDown className="w-3 h-3" />}
+                    {allExpanded ? 'Collapse all' : 'Expand all'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setJumpOpen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted/70 border border-border/40 transition-colors"
+                    aria-expanded={jumpOpen}
+                    aria-haspopup="listbox"
+                  >
+                    <ListTree className="w-3 h-3" />
+                    Jump to…
+                  </button>
+                  {jumpOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setJumpOpen(false)} aria-hidden />
+                      <div
+                        role="listbox"
+                        className="absolute right-0 top-full mt-1.5 z-40 w-[300px] max-h-[60vh] overflow-y-auto rounded-xl border border-border bg-popover shadow-lg p-1"
+                      >
+                        {filteredMessages.map((m, i) => {
+                          const props = buildEmailViewProps(m);
+                          const stamp = format(new Date(m.created_at), 'MMM d, h:mm a');
+                          const subj = (props.subject || '(no subject)').replace(/^(re:|fwd?:)\s*/i, (s) => s.toUpperCase());
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => jumpTo(m.id)}
+                              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted/60 transition-colors flex items-start gap-2"
+                            >
+                              <span className="shrink-0 w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center mt-0.5 tabular-nums">
+                                {i + 1}
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[12px] font-semibold text-foreground truncate">
+                                  {props.fromName}
+                                  {m.direction === 'outbound' && <span className="text-muted-foreground/70 font-normal"> · You</span>}
+                                </span>
+                                <span className="block text-[11px] text-muted-foreground truncate">{subj}</span>
+                                <span className="block text-[10px] text-muted-foreground/70 tabular-nums mt-0.5">{stamp}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             {filteredMessages.length === 0 ? (
               <p className="text-center text-[13px] text-muted-foreground py-6">No messages match “{searchTerm}”.</p>
             ) : filteredMessages.map((m, i) => {
               const isLast = i === filteredMessages.length - 1;
               const props = buildEmailViewProps(m);
               return (
-                <EmailMessageView
+                <div
                   key={m.id}
-                  {...props}
-                  defaultExpanded={isLast}
-                  accentColor={meta.color}
-                  onReply={isLast ? () => openReply(m) : undefined}
-                  onReplyAll={isLast ? () => openReply(m, true) : undefined}
-                  onForward={isLast ? () => openForward(m) : undefined}
-                />
+                  ref={(el) => { messageRefs.current[m.id] = el; }}
+                  className="rounded-2xl transition-shadow scroll-mt-4"
+                >
+                  <EmailMessageView
+                    {...props}
+                    expanded={isExpanded(m, isLast)}
+                    onExpandedChange={(next) => setOneExpanded(m.id, next)}
+                    accentColor={meta.color}
+                    onReply={() => openReply(m)}
+                    onReplyAll={() => openReply(m, true)}
+                    onForward={() => openForward(m)}
+                  />
+                </div>
               );
             })}
           </div>
