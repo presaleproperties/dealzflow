@@ -160,6 +160,8 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const [jumpOpen, setJumpOpen] = useState(false);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const { user } = useAuth();
+  const inboxFlags = useCrmInboxFlags();
+  const snoozeOptions = useMemo(() => snoozePresets(), []);
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
 
