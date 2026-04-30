@@ -11,6 +11,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/ChatThreadSkeleton';
 import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 import { EmailMessageView, buildReplyQuote, buildForwardQuote } from '@/components/crm/chats/EmailMessageView';
+import { InlineEmailReplyBox } from '@/components/crm/chats/InlineEmailReplyBox';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -883,25 +884,44 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             })}
       </div>
 
-      {/* Composer launcher — opens the right dialog for this channel */}
-      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] flex items-center gap-2">
-        <button
-          onClick={() => setComposeOpen(true)}
-          className="flex-1 h-11 rounded-full bg-muted/60 border border-border text-left px-4 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted active:scale-[0.99] transition-all"
-        >
-          {conv.channel === 'email' ? `Reply by email…` : `Message ${name.split(' ')[0]}…`}
-        </button>
-        <button
-          onClick={() => setComposeOpen(true)}
-          aria-label="Compose"
-          className="h-11 w-11 rounded-full flex items-center justify-center text-primary-foreground active:scale-95 transition-transform shadow-sm"
-          style={{ background: 'hsl(var(--primary))' }}
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Composer — inline for email (Gmail-style), launcher dialog for SMS/WhatsApp */}
+      {conv.channel === 'email' ? (
+        <InlineEmailReplyBox
+          contact={contact}
+          lastSubject={(() => {
+            // Walk messages from the end and pick the first email subject we find.
+            for (let i = messages.length - 1; i >= 0; i--) {
+              const m = messages[i];
+              const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
+              const fromMsg = parseEmailContent(m.content);
+              const subj = log?.subject ?? fromMsg.subject;
+              if (subj) return subj;
+            }
+            return null;
+          })()}
+          onOpenFull={() => setComposeOpen(true)}
+        />
+      ) : (
+        <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] flex items-center gap-2">
+          <button
+            onClick={() => setComposeOpen(true)}
+            className="flex-1 h-11 rounded-full bg-muted/60 border border-border text-left px-4 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted active:scale-[0.99] transition-all"
+          >
+            {`Message ${name.split(' ')[0]}…`}
+          </button>
+          <button
+            onClick={() => setComposeOpen(true)}
+            aria-label="Compose"
+            className="h-11 w-11 rounded-full flex items-center justify-center text-primary-foreground active:scale-95 transition-transform shadow-sm"
+            style={{ background: 'hsl(var(--primary))' }}
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      {/* Channel-specific composers — keep all logic centralized */}
+      {/* Channel-specific composers — full editor opens on demand for email
+          (CC/BCC, attachments, templates) and is the only path for SMS/WhatsApp. */}
       {conv.channel === 'email' && (
         <ComposeEmailDialog
           contact={contact}
