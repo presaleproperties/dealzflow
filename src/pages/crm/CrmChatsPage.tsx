@@ -694,7 +694,7 @@ export default function CrmChatsPage() {
                     >
                       <div className="flex items-center gap-1.5">
                         {t.is_starred && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
-                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight flex-1 ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
+                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight flex-1 min-w-0 ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
                           {name}
                         </h3>
                         {time && (
