@@ -85,13 +85,16 @@ type Merged = CrmEmailTemplate & { __isBridge?: boolean };
 export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [], isLoading: bridgeLoading } = useBridgeTemplates();
+  const mySlug = useMyAgentSlug();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
 
   useEffect(() => {
     if (!open) {
       setSearch('');
       setCatFilter('all');
+      setOwnerFilter('all');
     }
   }, [open]);
 
@@ -101,8 +104,14 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
     return [...bridge, ...local];
   }, [localTemplates, bridgeTemplates]);
 
+  const isMine = (t: Merged) =>
+    !!mySlug && (t.owner_agent_slug === mySlug || t.owner_scope === `agent:${mySlug}`);
+  const isTeam = (t: Merged) => t.owner_scope === 'team:presale' || !!t.__isBridge;
+
   const filtered = useMemo(() => {
     let list = merged;
+    if (ownerFilter === 'mine') list = list.filter(isMine);
+    else if (ownerFilter === 'team') list = list.filter(isTeam);
     if (catFilter === 'presale') {
       list = list.filter((t) => t.__isBridge);
     } else if (catFilter !== 'all') {
@@ -115,7 +124,7 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
       );
     }
     return list;
-  }, [merged, catFilter, search]);
+  }, [merged, catFilter, search, ownerFilter, mySlug]);
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: merged.length, presale: 0 };
@@ -126,6 +135,15 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
     }
     return map;
   }, [merged]);
+
+  const ownerCounts = useMemo(
+    () => ({
+      all: merged.length,
+      mine: merged.filter(isMine).length,
+      team: merged.filter(isTeam).length,
+    }),
+    [merged, mySlug],
+  );
 
   const useTemplate = (tpl: Merged) => {
     onSelect(tpl);
