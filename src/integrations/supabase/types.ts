@@ -1375,12 +1375,14 @@ export type Database = {
           external_id: string | null
           id: string
           is_active: boolean
+          is_favorite: boolean
           last_synced_at: string | null
           last_used_at: string | null
           merge_tags: string[] | null
           name: string
           owner_agent_slug: string | null
           owner_scope: string
+          preview_text: string | null
           project: string | null
           slug: string | null
           source: string
@@ -1397,12 +1399,14 @@ export type Database = {
           external_id?: string | null
           id?: string
           is_active?: boolean
+          is_favorite?: boolean
           last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
           name: string
           owner_agent_slug?: string | null
           owner_scope?: string
+          preview_text?: string | null
           project?: string | null
           slug?: string | null
           source?: string
@@ -1419,12 +1423,14 @@ export type Database = {
           external_id?: string | null
           id?: string
           is_active?: boolean
+          is_favorite?: boolean
           last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
           name?: string
           owner_agent_slug?: string | null
           owner_scope?: string
+          preview_text?: string | null
           project?: string | null
           slug?: string | null
           source?: string
