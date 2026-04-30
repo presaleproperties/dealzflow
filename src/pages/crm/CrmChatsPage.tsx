@@ -12,6 +12,7 @@ import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/u
 import { useCrmInboxFlags, snoozePresets } from '@/hooks/useCrmInboxFlags';
 import { useCrmInboxViews, type InboxView, type InboxViewFilters } from '@/hooks/useCrmInboxViews';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
+import { useEmailThreadsForContact } from '@/hooks/useEmailThreadsForContact';
 import { formatContactName } from '@/lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
