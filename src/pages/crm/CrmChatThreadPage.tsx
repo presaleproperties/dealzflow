@@ -278,10 +278,11 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     queryFn: async (): Promise<Record<string, {
       subject: string | null; body: string | null; cc: string | null; bcc: string | null;
       sent_at: string | null; direction: string | null;
+      thread_id: string | null; gmail_thread_id: string | null;
     }>> => {
       const { data, error } = await supabase
         .from('crm_email_log')
-        .select('id, subject, body, cc, bcc, sent_at, direction')
+        .select('id, subject, body, cc, bcc, sent_at, direction, thread_id, gmail_thread_id')
         .in('id', emailLogIds);
       if (error) throw error;
       const map: Record<string, any> = {};
