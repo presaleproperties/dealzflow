@@ -98,9 +98,26 @@ Deno.serve(async (req) => {
         // Find existing match by external_id
         const { data: existing } = await supabase
           .from("crm_email_templates")
-          .select("id, sync_hash, source")
+          .select("id, sync_hash, source, owner_scope, owner_agent_slug")
           .eq("external_id", t.external_id)
           .maybeSingle();
+
+        // Ownership-conflict guard: never silently re-assign a template
+        // from one agent to another via webhook unless the actor is admin.
+        if (existing && existing.owner_scope?.startsWith("agent:")) {
+          const wantsDifferentOwner = ownerScope !== existing.owner_scope;
+          const actorIsAdmin = (body as any)?.actor_is_admin === true ||
+            (Array.isArray(incoming) ? false : (body as any)?.actor_is_admin === true);
+          if (wantsDifferentOwner && !actorIsAdmin) {
+            results.push({
+              external_id: t.external_id,
+              error: "ownership_conflict",
+              existing_owner: existing.owner_scope,
+              incoming_owner: ownerScope,
+            });
+            continue;
+          }
+        }
 
         if (existing) {
           if (existing.sync_hash === incomingHash) {
