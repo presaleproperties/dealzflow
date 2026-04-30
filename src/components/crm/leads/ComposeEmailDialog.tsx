@@ -60,6 +60,11 @@ interface Props {
   contact: CrmContact;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Optional prefill — used by Reply / Reply All / Forward from the inbox.
+   *  Applied once when the dialog opens, then state is owned by the user. */
+  initialSubject?: string;
+  initialBodyHtml?: string;
+  initialCc?: string;
 }
 
 type Mode = 'edit' | 'html' | 'preview';
