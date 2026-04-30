@@ -202,14 +202,20 @@ Deno.serve(async (req) => {
           }),
         });
         const j = await r.json().catch(() => ({}));
-        sendResults.push({ ok: r.ok && !j.error, gmail_message_id: j.gmail_message_id, error: j.error });
+        const detailMsg = typeof j.details === "object"
+          ? (j.details?.error?.message ?? JSON.stringify(j.details).slice(0, 300))
+          : null;
+        const errMsg = j.error
+          ? (detailMsg ? `${j.error}: ${detailMsg}` : j.error)
+          : (r.ok ? undefined : `Gmail returned ${r.status}`);
+        sendResults.push({ ok: r.ok && !j.error, gmail_message_id: j.gmail_message_id, error: errMsg });
         if (!r.ok) upstreamStatus = r.status;
       }
       upstreamOk = sendResults.every((s) => s.ok);
       upstreamJson = { sent_via: "gmail", results: sendResults };
       if (!upstreamOk) {
         const firstErr = sendResults.find((s) => !s.ok)?.error ?? "Gmail send failed";
-        console.error("agent Gmail send failed", firstErr);
+        console.error("agent Gmail send failed", { userId, firstErr, results: sendResults });
         return json({ error: firstErr, status: upstreamStatus || 502 }, 502);
       }
     } else {
