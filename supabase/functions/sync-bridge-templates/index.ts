@@ -105,6 +105,19 @@ Deno.serve(async (req) => {
       const html = t.body_html ?? t.html ?? "";
       const incomingHash = await hashContent(`${t.subject}|${html}`);
 
+      // Resolve ownership scope from Presale payload (defaults to team)
+      const rawScope: string = (t.owner_scope ?? "team:presale").toString().toLowerCase();
+      const ownerAgentSlug: string | null =
+        rawScope.startsWith("agent:")
+          ? (t.owner_agent_slug ?? rawScope.slice("agent:".length)) || null
+          : null;
+      // Defense in depth: if Presale somehow returned another agent's private template, skip.
+      if (ownerAgentSlug && callerSlug && ownerAgentSlug !== callerSlug && !isAdmin) {
+        results.push({ slug, action: "skipped_other_agent" });
+        continue;
+      }
+      const ownerScope = ownerAgentSlug ? `agent:${ownerAgentSlug}` : "team:presale";
+
       // Match on slug first (canonical), then fall back to external_id
       const { data: existing } = await admin
         .from("crm_email_templates")
@@ -126,11 +139,13 @@ Deno.serve(async (req) => {
         last_synced_at: now,
         is_active: true,
         updated_at: now,
+        owner_scope: ownerScope,
+        owner_agent_slug: ownerAgentSlug,
+        created_by_agent_slug: t.created_by_agent_slug ?? ownerAgentSlug ?? null,
       };
 
       if (existing) {
         if (existing.sync_hash === incomingHash) {
-          // Still bump last_synced_at so the UI can show a fresh check
           await admin.from("crm_email_templates")
             .update({ last_synced_at: now })
             .eq("id", existing.id);
