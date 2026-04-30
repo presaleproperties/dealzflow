@@ -332,12 +332,27 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
 
   // ---------- Email helpers (used only when channel === 'email') ----------
 
-  /** Peel a leading "Subject: ...\n\n<body>" prefix from raw message content. */
+  /** Peel a leading "Subject: ...\n\n<body>" prefix from raw message content,
+   *  and clean up the common case where an inbound webhook stripped HTML tags
+   *  but left raw CSS (`/* ... *\/`, `body{...}`) inside the text. */
   const parseEmailContent = (raw: string | null | undefined): { subject: string | null; body: string } => {
     const s = (raw ?? '').trim();
     const m = s.match(/^Subject:\s*(.+?)\r?\n\r?\n([\s\S]*)$/i);
-    if (m) return { subject: m[1].trim(), body: m[2] };
-    return { subject: null, body: s };
+    let subject: string | null = null;
+    let body = s;
+    if (m) { subject = m[1].trim(); body = m[2]; }
+
+    // If body has no real HTML tags but contains CSS-like rules, strip the
+    // CSS so we don't render raw declarations as text.
+    const hasTags = /<[a-z][\s\S]*?>/i.test(body);
+    if (!hasTags) {
+      body = body
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')                      // /* comments */
+        .replace(/(?:^|\n)\s*[@a-z][\w\-,#.\s>:()]*\{[^}]*\}/gi, ' ') // CSS rules
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+    return { subject, body };
   };
 
   /** Resolve the display name + email for a given message. */

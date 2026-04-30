@@ -77,7 +77,25 @@ function fmtBytes(n: number | null | undefined): string {
 /** Heuristic: looks like HTML if it has at least one tag-ish token. */
 function looksLikeHtml(s: string | null | undefined): boolean {
   if (!s) return false;
-  return /<\/?[a-z][\s\S]*?>/i.test(s);
+  // Real tags
+  if (/<\/?[a-z][\s\S]*?>/i.test(s)) return true;
+  // HTML-entity-encoded markup ("&lt;p&gt;hello") — common when synced through
+  // some inbound webhooks that JSON-escape the body.
+  if (/&lt;\/?[a-z][\s\S]*?&gt;/i.test(s)) return true;
+  return false;
+}
+
+/** Decode HTML entities so encoded markup ("&lt;p&gt;") becomes real HTML. */
+function decodeHtmlEntities(s: string): string {
+  if (!/&(?:lt|gt|amp|quot|#39|nbsp|#x?\d+);/i.test(s)) return s;
+  const ta = document.createElement('textarea');
+  ta.innerHTML = s;
+  return ta.value;
+}
+
+/** True when the string is a full HTML document (has <html>...</html>). */
+function isFullHtmlDocument(s: string): boolean {
+  return /<html[\s>]/i.test(s) && /<\/html\s*>/i.test(s);
 }
 
 /** Strip <script> and on*= handlers as a defense-in-depth before iframe srcdoc. */
@@ -85,7 +103,10 @@ function sanitizeForIframe(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    // Strip javascript: URIs in href/src
+    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
 }
 
 /**
@@ -132,20 +153,37 @@ function splitQuotedText(text: string): { main: string; quoted: string | null } 
   return { main: text, quoted: null };
 }
 
-/** Wrap user HTML in a minimal document so the iframe inherits sane defaults. */
+/** Wrap user HTML in a minimal document so the iframe inherits sane defaults.
+ *  When the source is already a full <html>…</html> document (most marketing
+ *  emails), use it verbatim — only injecting <base target="_blank"> so links
+ *  open in a new tab and a small reset to keep table-based layouts fluid.
+ */
 function buildSrcDoc(html: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"/><base target="_blank"/>
+  const baseAndReset = `
+    <base target="_blank"/>
+    <style>
+      html,body{margin:0;padding:0;background:transparent}
+      img,table{max-width:100% !important;height:auto}
+      [width],[style*="width"]{max-width:100% !important}
+      a{color:#1a73e8}
+    </style>`;
+
+  if (isFullHtmlDocument(html)) {
+    // Inject <base> + reset just before </head>; if no <head>, add one.
+    if (/<head[\s>]/i.test(html)) {
+      return html.replace(/<\/head\s*>/i, `${baseAndReset}</head>`);
+    }
+    return html.replace(/<html([^>]*)>/i, `<html$1><head>${baseAndReset}</head>`);
+  }
+
+  return `<!doctype html><html><head><meta charset="utf-8"/>${baseAndReset}
   <style>
-    html,body{margin:0;padding:0;background:transparent;color:#1a1a1a;
+    html,body{color:#1a1a1a;
       font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       word-wrap:break-word;overflow-wrap:anywhere}
-    img,table{max-width:100% !important;height:auto}
     table{border-collapse:collapse}
-    a{color:#1a73e8}
     blockquote{margin:0 0 0 8px;padding:0 0 0 12px;border-left:3px solid #e0e0e0;color:#5f6368}
     pre{white-space:pre-wrap;word-break:break-word}
-    /* Force fluid widths even when the email hard-codes 600/620px containers */
-    [width],[style*="width"]{max-width:100% !important}
   </style></head><body>${html}</body></html>`;
 }
 
@@ -153,7 +191,7 @@ function buildSrcDoc(html: string): string {
 function HtmlBodyFrame({ html, messageId }: { html: string; messageId: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const [height, setHeight] = useState<number>(80);
-  const srcDoc = useMemo(() => buildSrcDoc(sanitizeForIframe(html)), [html]);
+  const srcDoc = useMemo(() => buildSrcDoc(sanitizeForIframe(decodeHtmlEntities(html))), [html]);
 
   useEffect(() => {
     const frame = ref.current;
@@ -227,8 +265,12 @@ export function EmailMessageView({
   const [showQuoted, setShowQuoted] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
 
-  const isHtml = looksLikeHtml(html) || looksLikeHtml(text);
-  const rawBody = (html && html.trim()) ? html : (text ?? '');
+  // Decode entity-encoded markup so emails synced through JSON webhooks render
+  // as real HTML instead of "&lt;p&gt;hello&lt;/p&gt;" text.
+  const decodedHtml = useMemo(() => (html ? decodeHtmlEntities(html) : ''), [html]);
+  const decodedText = useMemo(() => (text ? decodeHtmlEntities(text) : ''), [text]);
+  const isHtml = looksLikeHtml(decodedHtml) || looksLikeHtml(decodedText);
+  const rawBody = (decodedHtml && decodedHtml.trim()) ? decodedHtml : (decodedText ?? '');
   const { main, quoted } = useMemo(() => {
     if (!rawBody) return { main: '', quoted: null as string | null };
     return looksLikeHtml(rawBody) ? splitQuoted(rawBody) : splitQuotedText(rawBody);
