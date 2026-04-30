@@ -191,7 +191,7 @@ function buildSrcDoc(html: string): string {
 function HtmlBodyFrame({ html, messageId }: { html: string; messageId: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const [height, setHeight] = useState<number>(80);
-  const srcDoc = useMemo(() => buildSrcDoc(sanitizeForIframe(html)), [html]);
+  const srcDoc = useMemo(() => buildSrcDoc(sanitizeForIframe(decodeHtmlEntities(html))), [html]);
 
   useEffect(() => {
     const frame = ref.current;
