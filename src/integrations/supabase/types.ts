@@ -3522,6 +3522,30 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_sync_state: {
+        Row: {
+          last_cursor: string | null
+          last_run_at: string | null
+          payload: Json | null
+          sync_key: string
+          updated_at: string
+        }
+        Insert: {
+          last_cursor?: string | null
+          last_run_at?: string | null
+          payload?: Json | null
+          sync_key: string
+          updated_at?: string
+        }
+        Update: {
+          last_cursor?: string | null
+          last_run_at?: string | null
+          payload?: Json | null
+          sync_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_tags: {
         Row: {
           color: string | null
