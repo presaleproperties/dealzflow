@@ -510,6 +510,24 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             <Phone className="w-4 h-4" />
           </a>
         )}
+        {conv.channel === 'email' && (
+          <>
+            <button
+              onClick={() => setSearchOpen((v) => !v)}
+              aria-label="Search this thread"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+            >
+              <SearchIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={markThreadUnread}
+              aria-label="Mark unread"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+            >
+              <MailOpen className="w-4 h-4" />
+            </button>
+          </>
+        )}
         <Link
           to={`/crm/leads/${contact.id}`}
           aria-label="Lead details"
