@@ -24,21 +24,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    let mounted = true;
+
+    // Set up auth state listener FIRST (synchronous handler — never await inside)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) return;
+      // On a hard token-refresh failure, supabase emits SIGNED_OUT with null
+      // session. We accept that and let the user re-authenticate. We do NOT
+      // wipe localStorage here — that breaks "remember me" across reloads.
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
       setLoading(false);
+
+      // If the refresh token is invalid/expired, surface it once so the next
+      // network call doesn't hang silently. supabase-js handles the cleanup.
+      if (event === 'TOKEN_REFRESHED' && !nextSession) {
+        console.warn('[auth] token refresh returned no session');
+      }
     });
 
-    // Then get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Then hydrate the initial session. If supabase throws (e.g. corrupted
+    // localStorage payload that fails JSON.parse), recover by clearing only
+    // the auth keys and continuing as signed-out — never crash the app.
+    (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          // Common case on mobile: stored refresh token rejected by server
+          // ("missing sub claim" / "bad_jwt"). Force a fresh sign-in cleanly.
+          console.warn('[auth] getSession error, clearing local session:', error.message);
+          await supabase.auth.signOut().catch(() => {});
+        }
+        if (!mounted) return;
+        setSession(data?.session ?? null);
+        setUser(data?.session?.user ?? null);
+      } catch (err) {
+        console.error('[auth] getSession threw:', err);
+        try {
+          // Purge any malformed sb-* token so the next boot starts clean.
+          Object.keys(localStorage)
+            .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+            .forEach((k) => localStorage.removeItem(k));
+        } catch { /* ignore */ }
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
