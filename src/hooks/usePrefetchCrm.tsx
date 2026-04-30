@@ -62,12 +62,29 @@ export function usePrefetchChatThread() {
             .from('crm_conversations')
             .select(
               `id, contact_id, channel, status, unread_count, last_message_at,
+               is_starred, is_archived, snoozed_until,
                crm_contacts!inner ( * )`,
             )
             .eq('id', conversationId)
             .maybeSingle();
           if (error) throw error;
-          return data;
+          if (!data) return null;
+          const contact = Array.isArray((data as any).crm_contacts) ? (data as any).crm_contacts[0] : (data as any).crm_contacts;
+          if (!contact) return null;
+          return {
+            conv: {
+              id: data.id,
+              contact_id: data.contact_id,
+              channel: data.channel,
+              status: data.status,
+              unread_count: data.unread_count,
+              last_message_at: data.last_message_at,
+              is_starred: (data as any).is_starred ?? false,
+              is_archived: (data as any).is_archived ?? false,
+              snoozed_until: (data as any).snoozed_until ?? null,
+            },
+            contact,
+          };
         },
         staleTime: 30_000,
       });

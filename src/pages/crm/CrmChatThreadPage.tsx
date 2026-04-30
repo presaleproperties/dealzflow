@@ -47,6 +47,31 @@ interface MessageRow {
   source_id: string | null;
 }
 
+type ThreadQueryResult = { conv: ConversationRow; contact: CrmContact } | null;
+
+function normalizeThreadData(data: any): ThreadQueryResult {
+  if (!data) return null;
+  if (data.conv && data.contact) return data as ThreadQueryResult;
+
+  const contact = (Array.isArray(data.crm_contacts) ? data.crm_contacts[0] : data.crm_contacts) as CrmContact | undefined;
+  if (!data.id || !data.contact_id || !data.channel || !contact) return null;
+
+  return {
+    conv: {
+      id: data.id,
+      contact_id: data.contact_id,
+      channel: data.channel as Channel,
+      status: data.status ?? null,
+      unread_count: data.unread_count ?? 0,
+      last_message_at: data.last_message_at ?? null,
+      is_starred: data.is_starred ?? false,
+      is_archived: data.is_archived ?? false,
+      snoozed_until: data.snoozed_until ?? null,
+    },
+    contact,
+  };
+}
+
 function channelMeta(c: Channel) {
   switch (c) {
     case 'sms':      return { Icon: MessageSquare, label: 'SMS',      color: 'hsl(199 89% 48%)' };
@@ -166,10 +191,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const outbox = useOfflineOutbox();
 
   // Conversation + joined contact
-  const { data: thread, isLoading: threadLoading } = useQuery({
+  const { data: rawThread, isLoading: threadLoading } = useQuery({
     queryKey: ['crm-chat-thread', conversationId],
     enabled: !!conversationId,
-    queryFn: async () => {
+    queryFn: async (): Promise<ThreadQueryResult> => {
       const { data, error } = await supabase
         .from('crm_conversations')
         .select(`id, contact_id, channel, status, unread_count, last_message_at,
@@ -190,6 +215,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       return { conv, contact };
     },
   });
+  const thread = normalizeThreadData(rawThread);
 
   // Messages for this conversation
   const { data: messages = [], isLoading: msgsLoading } = useQuery({
@@ -209,7 +235,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
 
   // Cross-reference SMS log statuses for outbound SMS/WhatsApp messages
   // so we can show sending / sent / delivered / failed indicators on bubbles.
-  const channel = thread?.conv.channel;
+  const channel = thread?.conv?.channel;
   const smsLogIds = useMemo(
     () => messages
       .filter((m) => m.direction === 'outbound' && m.source_table === 'crm_sms_log' && m.source_id)
