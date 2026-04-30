@@ -733,6 +733,30 @@ export default function CrmChatsPage() {
                       </div>
                     </button>
 
+                    {/* Outlook-style expand chevron — email rows only.
+                        Lazy-loads subject threads on first expand. */}
+                    {t.channel === 'email' && !selectMode && (
+                      <button
+                        type="button"
+                        title={expandedEmail.has(t.contact_id) ? 'Hide email threads' : 'Show email threads'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedEmail((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(t.contact_id)) next.delete(t.contact_id);
+                            else next.add(t.contact_id);
+                            return next;
+                          });
+                        }}
+                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        aria-expanded={expandedEmail.has(t.contact_id)}
+                      >
+                        {expandedEmail.has(t.contact_id)
+                          ? <ChevronDown className="w-4 h-4" />
+                          : <ChevronRight className="w-4 h-4" />}
+                      </button>
+                    )}
+
                     {/* Per-row inline actions — visible on hover or always on touch */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
@@ -755,6 +779,16 @@ export default function CrmChatsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Expanded subject-thread sub-list (Outlook conversation view) */}
+                  {t.channel === 'email' && expandedEmail.has(t.contact_id) && (
+                    <EmailThreadSubList
+                      contactId={t.contact_id}
+                      conversationId={t.id}
+                      activeId={activeId}
+                      onPick={(threadId) => navigate(`/crm/chats/${t.id}?thread=${threadId}`)}
+                    />
+                  )}
                 </li>
               );
             })}
