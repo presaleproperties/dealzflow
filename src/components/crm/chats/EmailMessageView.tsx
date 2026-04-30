@@ -265,8 +265,12 @@ export function EmailMessageView({
   const [showQuoted, setShowQuoted] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
 
-  const isHtml = looksLikeHtml(html) || looksLikeHtml(text);
-  const rawBody = (html && html.trim()) ? html : (text ?? '');
+  // Decode entity-encoded markup so emails synced through JSON webhooks render
+  // as real HTML instead of "&lt;p&gt;hello&lt;/p&gt;" text.
+  const decodedHtml = useMemo(() => (html ? decodeHtmlEntities(html) : ''), [html]);
+  const decodedText = useMemo(() => (text ? decodeHtmlEntities(text) : ''), [text]);
+  const isHtml = looksLikeHtml(decodedHtml) || looksLikeHtml(decodedText);
+  const rawBody = (decodedHtml && decodedHtml.trim()) ? decodedHtml : (decodedText ?? '');
   const { main, quoted } = useMemo(() => {
     if (!rawBody) return { main: '', quoted: null as string | null };
     return looksLikeHtml(rawBody) ? splitQuoted(rawBody) : splitQuotedText(rawBody);
