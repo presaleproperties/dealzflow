@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
@@ -150,6 +150,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  // Map<messageId, expanded?>. Missing = use default (last-message expanded).
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const { user } = useAuth();
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
@@ -434,7 +438,49 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     if (!embedded) navigate('/crm/chats');
   }, [conv, qc, embedded, navigate]);
 
-  // ---------- Keyboard shortcuts (r reply, f forward, /=search, esc=close) ----------
+  // ---------- Thread expand/collapse + jump-to-message ----------
+
+  /** Resolve current expansion for a message (controlled override > default). */
+  const isExpanded = useCallback((m: MessageRow, isLast: boolean) => {
+    if (m.id in expandedMap) return expandedMap[m.id];
+    return isLast;
+  }, [expandedMap]);
+
+  const setOneExpanded = useCallback((mid: string, next: boolean) => {
+    setExpandedMap((prev) => ({ ...prev, [mid]: next }));
+  }, []);
+
+  const expandAll = useCallback(() => {
+    const next: Record<string, boolean> = {};
+    for (const m of filteredMessages) next[m.id] = true;
+    setExpandedMap(next);
+  }, [filteredMessages]);
+
+  const collapseAll = useCallback(() => {
+    const next: Record<string, boolean> = {};
+    for (const m of filteredMessages) next[m.id] = false;
+    setExpandedMap(next);
+  }, [filteredMessages]);
+
+  const jumpTo = useCallback((mid: string) => {
+    setOneExpanded(mid, true);
+    setJumpOpen(false);
+    requestAnimationFrame(() => {
+      const el = messageRefs.current[mid];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.add('ring-2', 'ring-primary/50');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-primary/50'), 1400);
+      }
+    });
+  }, [setOneExpanded]);
+
+  // Detect "all expanded" state for the toolbar toggle icon
+  const allExpanded = useMemo(() => {
+    if (filteredMessages.length === 0) return false;
+    return filteredMessages.every((m, i) => isExpanded(m, i === filteredMessages.length - 1));
+  }, [filteredMessages, isExpanded]);
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -610,21 +656,93 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                 </button>
               </div>
             )}
+
+            {/* Thread toolbar — collapse/expand all + jump to message */}
+            {filteredMessages.length > 1 && (
+              <div className="flex items-center justify-between gap-2 px-1 pb-1">
+                <div className="text-[12px] text-muted-foreground font-medium">
+                  {filteredMessages.length} messages in thread
+                </div>
+                <div className="flex items-center gap-1 relative">
+                  <button
+                    type="button"
+                    onClick={() => (allExpanded ? collapseAll() : expandAll())}
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted/70 border border-border/40 transition-colors"
+                    title={allExpanded ? 'Collapse all (only most recent stays open)' : 'Expand all messages'}
+                  >
+                    {allExpanded ? <ChevronsDownUp className="w-3 h-3" /> : <ChevronsUpDown className="w-3 h-3" />}
+                    {allExpanded ? 'Collapse all' : 'Expand all'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setJumpOpen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted/70 border border-border/40 transition-colors"
+                    aria-expanded={jumpOpen}
+                    aria-haspopup="listbox"
+                  >
+                    <ListTree className="w-3 h-3" />
+                    Jump to…
+                  </button>
+                  {jumpOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setJumpOpen(false)} aria-hidden />
+                      <div
+                        role="listbox"
+                        className="absolute right-0 top-full mt-1.5 z-40 w-[300px] max-h-[60vh] overflow-y-auto rounded-xl border border-border bg-popover shadow-lg p-1"
+                      >
+                        {filteredMessages.map((m, i) => {
+                          const props = buildEmailViewProps(m);
+                          const stamp = format(new Date(m.created_at), 'MMM d, h:mm a');
+                          const subj = (props.subject || '(no subject)').replace(/^(re:|fwd?:)\s*/i, (s) => s.toUpperCase());
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => jumpTo(m.id)}
+                              className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted/60 transition-colors flex items-start gap-2"
+                            >
+                              <span className="shrink-0 w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center mt-0.5 tabular-nums">
+                                {i + 1}
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[12px] font-semibold text-foreground truncate">
+                                  {props.fromName}
+                                  {m.direction === 'outbound' && <span className="text-muted-foreground/70 font-normal"> · You</span>}
+                                </span>
+                                <span className="block text-[11px] text-muted-foreground truncate">{subj}</span>
+                                <span className="block text-[10px] text-muted-foreground/70 tabular-nums mt-0.5">{stamp}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             {filteredMessages.length === 0 ? (
               <p className="text-center text-[13px] text-muted-foreground py-6">No messages match “{searchTerm}”.</p>
             ) : filteredMessages.map((m, i) => {
               const isLast = i === filteredMessages.length - 1;
               const props = buildEmailViewProps(m);
               return (
-                <EmailMessageView
+                <div
                   key={m.id}
-                  {...props}
-                  defaultExpanded={isLast}
-                  accentColor={meta.color}
-                  onReply={isLast ? () => openReply(m) : undefined}
-                  onReplyAll={isLast ? () => openReply(m, true) : undefined}
-                  onForward={isLast ? () => openForward(m) : undefined}
-                />
+                  ref={(el) => { messageRefs.current[m.id] = el; }}
+                  className="rounded-2xl transition-shadow scroll-mt-4"
+                >
+                  <EmailMessageView
+                    {...props}
+                    expanded={isExpanded(m, isLast)}
+                    onExpandedChange={(next) => setOneExpanded(m.id, next)}
+                    accentColor={meta.color}
+                    onReply={() => openReply(m)}
+                    onReplyAll={() => openReply(m, true)}
+                    onForward={() => openForward(m)}
+                  />
+                </div>
               );
             })}
           </div>

@@ -42,6 +42,10 @@ export interface EmailMessageViewProps {
   attachments?: EmailAttachment[];
   /** Whether to expand the message body by default. Latest message: true. */
   defaultExpanded?: boolean;
+  /** Controlled expansion — when provided, overrides internal state. */
+  expanded?: boolean;
+  /** Called when the user toggles the header. Pair with `expanded` for full control. */
+  onExpandedChange?: (next: boolean) => void;
   /** Optional action row — only show on latest message. */
   onReply?: () => void;
   onReplyAll?: () => void;
@@ -209,9 +213,17 @@ function HtmlBodyFrame({ html, messageId }: { html: string; messageId: string })
 export function EmailMessageView({
   id, direction, fromName, fromEmail, toEmail, subject, createdAt,
   html, text, attachments = [], defaultExpanded = true,
+  expanded: controlledExpanded, onExpandedChange,
   onReply, onReplyAll, onForward, accentColor = 'hsl(220 75% 55%)',
 }: EmailMessageViewProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? !!controlledExpanded : internalExpanded;
+  const setExpanded = (next: boolean | ((p: boolean) => boolean)) => {
+    const value = typeof next === 'function' ? (next as (p: boolean) => boolean)(expanded) : next;
+    if (!isControlled) setInternalExpanded(value);
+    onExpandedChange?.(value);
+  };
   const [showQuoted, setShowQuoted] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
 
