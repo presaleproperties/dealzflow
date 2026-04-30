@@ -322,7 +322,9 @@ export function useAddCrmContact() {
         projects: contact.projects?.length ? contact.projects : [],
         assigned_to: contact.assigned_to || null,
         contact_type: contact.contact_type || 'lead',
-        tags: contact.tags?.length ? contact.tags : null,
+        // `tags` is nullable but downstream code (filters, segments, sync triggers)
+        // treats null and [] interchangeably — always send [] for consistency.
+        tags: contact.tags?.length ? contact.tags : [],
         // `lead_types` is text[] NOT NULL DEFAULT '{}' — never send null.
         lead_types: contact.lead_types?.length ? contact.lead_types : [],
         city: contact.city || null,
