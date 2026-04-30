@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
           external_id: body.external_id,
           deleted: true,
           actor_agent_slug: callerSlug,
+          actor_is_admin: isAdmin,
         }),
       });
       const text = await upstream.text();
