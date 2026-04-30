@@ -1,11 +1,43 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft } from 'lucide-react';
+import { format, formatDistanceToNowStrict, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
 import { formatContactName } from '@/lib/format';
+
+/**
+ * Strip HTML, collapse whitespace, and decode common entities so email
+ * previews don't render as raw markup. Also drops quoted ">"-prefixed lines
+ * and "On … wrote:" headers that bloat the snippet with no signal.
+ */
+function cleanPreview(raw?: string | null): string {
+  if (!raw) return '';
+  let s = String(raw);
+  // strip style/script blocks first
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  // turn <br> and block tags into spaces
+  s = s.replace(/<\/?(br|p|div|li|tr|h[1-6])[^>]*>/gi, ' ');
+  // strip remaining tags
+  s = s.replace(/<[^>]+>/g, '');
+  // decode a few entities
+  s = s.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  // drop quoted lines and reply headers
+  s = s.split('\n').filter(l => !/^\s*>/.test(l) && !/^On .+wrote:\s*$/i.test(l)).join(' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/** Smart timestamp: 9:42 AM today, "Yesterday", weekday this week, else MMM d. */
+function smartTime(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isToday(d)) return format(d, 'h:mm a');
+  if (isYesterday(d)) return 'Yesterday';
+  if (isThisWeek(d, { weekStartsOn: 1 })) return format(d, 'EEE');
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return format(d, sameYear ? 'MMM d' : 'MMM d, yy');
+}
 
 /**
  * Inbox channel toggle. "Text" is a combined view of SMS + WhatsApp so the
