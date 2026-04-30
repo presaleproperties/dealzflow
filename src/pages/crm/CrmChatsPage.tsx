@@ -180,7 +180,7 @@ export default function CrmChatsPage() {
   const listRef = useRef<HTMLUListElement | null>(null);
   const [cursor, setCursor] = useState(0);
 
-  useEffect(() => { setCursor(0); }, [filter, search]);
+  useEffect(() => { setCursor(0); }, [filter, search, sender, subject, unreadOnly, attachmentsOnly, dateRange, customFrom, customTo]);
 
   useEffect(() => {
     const isTyping = (el: EventTarget | null) =>
