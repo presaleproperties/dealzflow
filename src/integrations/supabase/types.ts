@@ -785,7 +785,10 @@ export type Database = {
           contact_id: string
           created_at: string | null
           id: string
+          is_archived: boolean
+          is_starred: boolean
           last_message_at: string | null
+          snoozed_until: string | null
           status: string | null
           unread_count: number | null
         }
@@ -795,7 +798,10 @@ export type Database = {
           contact_id: string
           created_at?: string | null
           id?: string
+          is_archived?: boolean
+          is_starred?: boolean
           last_message_at?: string | null
+          snoozed_until?: string | null
           status?: string | null
           unread_count?: number | null
         }
@@ -805,7 +811,10 @@ export type Database = {
           contact_id?: string
           created_at?: string | null
           id?: string
+          is_archived?: boolean
+          is_starred?: boolean
           last_message_at?: string | null
+          snoozed_until?: string | null
           status?: string | null
           unread_count?: number | null
         }
@@ -1691,6 +1700,45 @@ export type Database = {
           user_id?: string
           watch_expires_at?: string | null
           watch_history_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_inbox_views: {
+        Row: {
+          channel: string
+          created_at: string
+          filters: Json
+          id: string
+          name: string
+          pinned: boolean
+          query: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          filters?: Json
+          id?: string
+          name: string
+          pinned?: boolean
+          query?: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          pinned?: boolean
+          query?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

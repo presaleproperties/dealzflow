@@ -23,6 +23,12 @@ export interface ChatThread {
   subject?: string | null;
   // True when latest message has attachments (MMS media or email attachment markers)
   has_attachment?: boolean;
+  // Inbox controls
+  is_starred?: boolean;
+  is_archived?: boolean;
+  snoozed_until?: string | null;
+  // Last outbound delivery state ('failed' surfaces a red dot in the inbox row)
+  last_outbound_status?: string | null;
 }
 
 /**
@@ -32,7 +38,8 @@ export interface ChatThread {
 /** UI-level filter — 'text' is a virtual channel meaning SMS ∪ WhatsApp. */
 export type ChatChannelFilter = ChatChannel | 'text' | 'all';
 
-export function useCrmChats(channelFilter?: ChatChannelFilter) {
+export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArchived?: boolean }) {
+  const showArchived = !!opts?.showArchived;
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -52,22 +59,28 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
   }, [qc]);
 
   return useQuery({
-    queryKey: ['crm-chats', channelFilter ?? 'all'],
+    queryKey: ['crm-chats', channelFilter ?? 'all', showArchived ? 'archived' : 'inbox'],
     queryFn: async (): Promise<ChatThread[]> => {
       let q = supabase
         .from('crm_conversations')
         .select(
           `id, contact_id, channel, status, unread_count, last_message_at,
+           is_starred, is_archived, snoozed_until,
            crm_contacts!inner ( first_name, last_name, email, phone )`,
         )
         .order('last_message_at', { ascending: false, nullsFirst: false })
-        .limit(200);
+        .limit(300);
 
       if (channelFilter === 'text') {
         q = q.in('channel', ['sms', 'whatsapp']);
       } else if (channelFilter && channelFilter !== 'all') {
         q = q.eq('channel', channelFilter);
       }
+
+      // Default inbox view hides archived rows; the dedicated "Archived"
+      // saved view passes showArchived: true to surface them.
+      if (showArchived) q = q.eq('is_archived', true);
+      else q = q.eq('is_archived', false);
 
       const { data, error } = await q;
       if (error) throw error;
@@ -108,6 +121,7 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
 
       const subjectById = new Map<string, string>();
       const attachIds = new Set<string>();
+      const smsStatusById = new Map<string, string>();
       if (emailIds.length > 0) {
         const { data: emails } = await supabase
           .from('crm_email_log')
@@ -123,10 +137,11 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
       if (smsIds.length > 0) {
         const { data: smsRows } = await supabase
           .from('crm_sms_log')
-          .select('id, media_urls')
+          .select('id, media_urls, status')
           .in('id', smsIds);
         for (const s of (smsRows ?? []) as any[]) {
           if (Array.isArray(s.media_urls) && s.media_urls.length > 0) attachIds.add(s.id);
+          if (s.status) smsStatusById.set(s.id, s.status);
         }
       }
 
@@ -135,6 +150,9 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
         const p = previews.get(r.id);
         const subject = p?.source_table === 'crm_email_log' && p.source_id ? subjectById.get(p.source_id) ?? null : null;
         const has_attachment = !!(p?.source_id && attachIds.has(p.source_id));
+        const last_outbound_status = (
+          p?.direction === 'outbound' && p?.source_table === 'crm_sms_log' && p.source_id
+        ) ? smsStatusById.get(p.source_id) ?? null : null;
         return {
           id: r.id,
           contact_id: r.contact_id,
@@ -150,6 +168,10 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
           last_message_direction: (p?.direction as any) ?? null,
           subject,
           has_attachment,
+          is_starred: !!r.is_starred,
+          is_archived: !!r.is_archived,
+          snoozed_until: r.snoozed_until ?? null,
+          last_outbound_status,
         };
       });
     },
@@ -157,12 +179,20 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     select: (threads: ChatThread[]) => {
+      // Hide snoozed rows whose snoozed_until is still in the future from
+      // the default inbox. Once the time passes they reappear automatically.
+      const now = Date.now();
+      const visible = threads.filter((t) => {
+        if (!t.snoozed_until) return true;
+        return new Date(t.snoozed_until).getTime() <= now;
+      });
+
       // Collapse to one row per (contact_id, channel). When multiple
       // crm_conversations rows exist for the same lead+channel, keep the
       // most-recently-active conversation as the canonical row but sum
       // unread counts across the duplicates so nothing is lost.
       const byKey = new Map<string, ChatThread>();
-      for (const t of threads) {
+      for (const t of visible) {
         const key = `${t.contact_id}::${t.channel}`;
         const existing = byKey.get(key);
         if (!existing) {
@@ -170,10 +200,13 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
           continue;
         }
         existing.unread_count = (existing.unread_count ?? 0) + (t.unread_count ?? 0);
+        existing.is_starred = existing.is_starred || t.is_starred;
         // threads arrive sorted by last_message_at desc, so `existing` already
         // holds the freshest preview/timestamp — nothing else to merge.
       }
       return Array.from(byKey.values()).sort((a, b) => {
+        // Starred always above unstarred, then most-recent first
+        if (!!a.is_starred !== !!b.is_starred) return a.is_starred ? -1 : 1;
         const av = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
         const bv = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
         return bv - av;
