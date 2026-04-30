@@ -4,6 +4,7 @@ import {
   Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal,
   Paperclip, Star, Archive, Clock4, MailOpen, MoreHorizontal, BookmarkPlus,
   Trash2, AlertCircle, CheckSquare, Square, ArchiveRestore, BellOff, Bell,
+  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
