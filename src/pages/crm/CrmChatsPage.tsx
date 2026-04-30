@@ -123,6 +123,8 @@ export default function CrmChatsPage() {
 
   // Per-row hover/menu
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  // Outlook-style expanded email rows: contact_id → expanded?
+  const [expandedEmail, setExpandedEmail] = useState<Set<string>>(new Set());
 
   const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived });
 
