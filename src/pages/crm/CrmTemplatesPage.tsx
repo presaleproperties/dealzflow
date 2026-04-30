@@ -337,6 +337,11 @@ function LocalTemplateCard({
           <div className="font-semibold text-sm truncate flex items-center gap-1.5">
             {tpl.is_favorite && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />}
             {tpl.name}
+            {tpl.owner_scope === 'team:presale' ? (
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">Team</span>
+            ) : tpl.owner_scope?.startsWith('agent:') ? (
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground border shrink-0">Mine</span>
+            ) : null}
           </div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
             {tpl.category}{tpl.source && tpl.source !== 'dealflow' ? ` · ${tpl.source}` : ''}
