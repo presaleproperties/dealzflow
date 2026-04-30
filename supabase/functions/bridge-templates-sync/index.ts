@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     if (req.method === "GET") {
       const { data, error } = await supabase
         .from("crm_email_templates")
-        .select("id, external_id, name, subject, body_html, category, project, merge_tags, source, sync_hash, updated_at")
+        .select("id, external_id, name, subject, body_html, category, project, merge_tags, source, sync_hash, owner_scope, owner_agent_slug, created_by_agent_slug, updated_at")
         .eq("is_active", true);
       if (error) throw error;
 
