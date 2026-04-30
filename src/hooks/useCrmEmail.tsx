@@ -110,27 +110,37 @@ export function useCreateTemplate() {
       project?: string;
       category?: string;
       merge_tags?: string[];
-      /** 'mine' (default) creates a private agent template; 'team' creates a shared one (admins only). */
+      /** 'mine' (default) creates a private agent template; 'team' shares it with the whole team. Any agent can promote to team. */
       scope?: 'mine' | 'team';
     }) => {
-      const wantsTeam = tpl.scope === 'team';
-      let owner_scope = 'team:presale';
-      let owner_agent_slug: string | null = null;
-      if (!wantsTeam) {
-        if (!mySlug) {
-          throw new Error('Your Presale agent identity is not synced yet. Refresh and try again.');
-        }
-        owner_scope = `agent:${mySlug}`;
-        owner_agent_slug = mySlug;
+      if (!mySlug) {
+        throw new Error('Your Presale agent identity is not synced yet. Refresh and try again.');
       }
+      const wantsTeam = tpl.scope === 'team';
+      const owner_scope = wantsTeam ? 'team:presale' : `agent:${mySlug}`;
+      const owner_agent_slug = wantsTeam ? null : mySlug;
       const { scope: _drop, ...rest } = tpl;
-      const { error } = await supabase.from('crm_email_templates').insert({
-        ...rest,
-        owner_scope,
-        owner_agent_slug,
-        created_by_agent_slug: mySlug ?? null,
-      });
+      const { data: inserted, error } = await supabase
+        .from('crm_email_templates')
+        .insert({
+          ...rest,
+          owner_scope,
+          owner_agent_slug,
+          created_by_agent_slug: mySlug,
+        })
+        .select('id')
+        .single();
       if (error) throw error;
+
+      // Two-way sync: best-effort push to Presale so it shows up in their portal.
+      // Failure here does NOT roll back the local insert — sync will catch up.
+      try {
+        await supabase.functions.invoke('push-template-to-presale', {
+          body: { template_id: inserted.id },
+        });
+      } catch (e) {
+        console.warn('[push-template-to-presale] non-fatal:', e);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crm-email-templates'] });
