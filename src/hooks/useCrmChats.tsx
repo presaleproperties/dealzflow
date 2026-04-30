@@ -23,6 +23,12 @@ export interface ChatThread {
   subject?: string | null;
   // True when latest message has attachments (MMS media or email attachment markers)
   has_attachment?: boolean;
+  // Inbox controls
+  is_starred?: boolean;
+  is_archived?: boolean;
+  snoozed_until?: string | null;
+  // Last outbound delivery state ('failed' surfaces a red dot in the inbox row)
+  last_outbound_status?: string | null;
 }
 
 /**
