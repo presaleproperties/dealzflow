@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree, Star, Archive, ArchiveRestore, Bell, BellOff, Clock4 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -172,6 +172,10 @@ interface CrmChatThreadPageProps {
 
 export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPageProps = {}) {
   const { conversationId = '' } = useParams<{ conversationId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Outlook-style subject filter: when set, only messages whose
+  // crm_email_log.thread_id matches are rendered (else: full conversation).
+  const filterThreadId = searchParams.get('thread');
   const navigate = useNavigate();
   const qc = useQueryClient();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -274,10 +278,11 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     queryFn: async (): Promise<Record<string, {
       subject: string | null; body: string | null; cc: string | null; bcc: string | null;
       sent_at: string | null; direction: string | null;
+      thread_id: string | null; gmail_thread_id: string | null;
     }>> => {
       const { data, error } = await supabase
         .from('crm_email_log')
-        .select('id, subject, body, cc, bcc, sent_at, direction')
+        .select('id, subject, body, cc, bcc, sent_at, direction, thread_id, gmail_thread_id')
         .in('id', emailLogIds);
       if (error) throw error;
       const map: Record<string, any> = {};
@@ -416,18 +421,29 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     };
   };
 
-  // Filter messages by search term (subject or body)
+  // Filter messages by (a) optional ?thread=<id> Outlook-style subject filter
+  // and (b) the in-thread search term. Email-only messages are kept when their
+  // crm_email_log row's thread_id matches; non-email rows are dropped while a
+  // thread filter is active (since those threads only exist for email).
   const filteredMessages = useMemo(() => {
-    if (!searchTerm.trim()) return messages;
+    let base = messages;
+    if (filterThreadId && channel === 'email') {
+      base = base.filter((m) => {
+        if (m.source_table !== 'crm_email_log' || !m.source_id) return false;
+        const log = (emailLogMap as any)[m.source_id];
+        return log?.thread_id === filterThreadId;
+      });
+    }
+    if (!searchTerm.trim()) return base;
     const q = searchTerm.toLowerCase();
-    return messages.filter((m) => {
+    return base.filter((m) => {
       const c = (m.content ?? '').toLowerCase();
       const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
       const subj = (log?.subject ?? '').toLowerCase();
       const body = (log?.body ?? '').toLowerCase();
       return c.includes(q) || subj.includes(q) || body.includes(q);
     });
-  }, [messages, searchTerm, emailLogMap]);
+  }, [messages, searchTerm, emailLogMap, filterThreadId, channel]);
 
   // ---------- Reply / Forward handlers ----------
 
@@ -707,6 +723,27 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                   aria-label="Close search"
                 >
                   <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Active "Outlook subject filter" banner */}
+            {filterThreadId && channel === 'email' && (
+              <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 mb-1 rounded-lg bg-primary/8 border border-primary/20 text-[12px]">
+                <span className="text-foreground/85 truncate">
+                  <Mail className="inline-block w-3 h-3 mr-1.5 -mt-0.5" />
+                  Showing one subject thread · {filteredMessages.length} message{filteredMessages.length === 1 ? '' : 's'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete('thread');
+                    setSearchParams(next, { replace: true });
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-semibold text-primary hover:bg-primary/10 transition-colors"
+                >
+                  Show all <XIcon className="w-3 h-3" />
                 </button>
               </div>
             )}

@@ -4,6 +4,7 @@ import {
   Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal,
   Paperclip, Star, Archive, Clock4, MailOpen, MoreHorizontal, BookmarkPlus,
   Trash2, AlertCircle, CheckSquare, Square, ArchiveRestore, BellOff, Bell,
+  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/u
 import { useCrmInboxFlags, snoozePresets } from '@/hooks/useCrmInboxFlags';
 import { useCrmInboxViews, type InboxView, type InboxViewFilters } from '@/hooks/useCrmInboxViews';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
+import { useEmailThreadsForContact } from '@/hooks/useEmailThreadsForContact';
 import { formatContactName } from '@/lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
@@ -121,6 +123,8 @@ export default function CrmChatsPage() {
 
   // Per-row hover/menu
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  // Outlook-style expanded email rows: contact_id → expanded?
+  const [expandedEmail, setExpandedEmail] = useState<Set<string>>(new Set());
 
   const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived });
 
@@ -729,6 +733,30 @@ export default function CrmChatsPage() {
                       </div>
                     </button>
 
+                    {/* Outlook-style expand chevron — email rows only.
+                        Lazy-loads subject threads on first expand. */}
+                    {t.channel === 'email' && !selectMode && (
+                      <button
+                        type="button"
+                        title={expandedEmail.has(t.contact_id) ? 'Hide email threads' : 'Show email threads'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedEmail((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(t.contact_id)) next.delete(t.contact_id);
+                            else next.add(t.contact_id);
+                            return next;
+                          });
+                        }}
+                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        aria-expanded={expandedEmail.has(t.contact_id)}
+                      >
+                        {expandedEmail.has(t.contact_id)
+                          ? <ChevronDown className="w-4 h-4" />
+                          : <ChevronRight className="w-4 h-4" />}
+                      </button>
+                    )}
+
                     {/* Per-row inline actions — visible on hover or always on touch */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
@@ -751,6 +779,16 @@ export default function CrmChatsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Expanded subject-thread sub-list (Outlook conversation view) */}
+                  {t.channel === 'email' && expandedEmail.has(t.contact_id) && (
+                    <EmailThreadSubList
+                      contactId={t.contact_id}
+                      conversationId={t.id}
+                      activeId={activeId}
+                      onPick={(threadId) => navigate(`/crm/chats/${t.id}?thread=${threadId}`)}
+                    />
+                  )}
                 </li>
               );
             })}
@@ -809,5 +847,87 @@ function SnoozeMenu({ isSnoozed, onSnooze }: { isSnoozed: boolean; onSnooze: (is
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+/**
+ * Outlook-style sub-list of subject-grouped email threads for one contact.
+ * Shown when the user expands an email row in the chats list. Each sub-row
+ * routes to the same conversation page but with a `?thread=<id>` filter so
+ * the thread page only renders messages from that subject thread.
+ */
+function EmailThreadSubList({
+  contactId,
+  conversationId,
+  activeId,
+  onPick,
+}: {
+  contactId: string;
+  conversationId: string;
+  activeId: string | null;
+  onPick: (threadId: string) => void;
+}) {
+  const { data: threads = [], isLoading } = useEmailThreadsForContact(contactId);
+
+  if (isLoading) {
+    return (
+      <div className="pl-[68px] pr-4 pb-2 text-[12px] text-muted-foreground/70">
+        Loading threads…
+      </div>
+    );
+  }
+  if (threads.length === 0) {
+    return (
+      <div className="pl-[68px] pr-4 pb-2 text-[12px] text-muted-foreground/70 italic">
+        No subject threads yet.
+      </div>
+    );
+  }
+
+  return (
+    <ul className="pl-[68px] pr-2 pb-2 space-y-0.5 border-l-2 border-border/40 ml-[27px]">
+      {threads.map((th) => {
+        const isUnread = (th.unread_count ?? 0) > 0;
+        const time = smartTime(th.last_message_at);
+        const subject = (th.subject || '(no subject)').trim();
+        return (
+          <li key={th.id}>
+            <button
+              type="button"
+              onClick={() => onPick(th.id)}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                activeId === conversationId
+                  ? 'hover:bg-primary/10'
+                  : 'hover:bg-muted/40'
+              }`}
+            >
+              <Mail className="w-3 h-3 shrink-0 text-muted-foreground/70" strokeWidth={2.2} />
+              <span className={`flex-1 min-w-0 truncate text-[12.5px] leading-tight ${
+                isUnread ? 'font-semibold text-foreground' : 'text-foreground/85'
+              }`}>
+                {subject}
+              </span>
+              {th.message_count > 1 && (
+                <span className="shrink-0 text-[10.5px] tabular-nums text-muted-foreground/70 font-medium">
+                  {th.message_count}
+                </span>
+              )}
+              {isUnread && (
+                <span className="shrink-0 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[9.5px] font-bold flex items-center justify-center tabular-nums">
+                  {th.unread_count > 99 ? '99+' : th.unread_count}
+                </span>
+              )}
+              {time && (
+                <time className={`shrink-0 text-[10.5px] tabular-nums ${
+                  isUnread ? 'text-primary font-bold' : 'text-muted-foreground/70 font-medium'
+                }`}>
+                  {time}
+                </time>
+              )}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
