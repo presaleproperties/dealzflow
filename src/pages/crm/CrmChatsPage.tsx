@@ -849,3 +849,85 @@ function SnoozeMenu({ isSnoozed, onSnooze }: { isSnoozed: boolean; onSnooze: (is
     </Popover>
   );
 }
+
+/**
+ * Outlook-style sub-list of subject-grouped email threads for one contact.
+ * Shown when the user expands an email row in the chats list. Each sub-row
+ * routes to the same conversation page but with a `?thread=<id>` filter so
+ * the thread page only renders messages from that subject thread.
+ */
+function EmailThreadSubList({
+  contactId,
+  conversationId,
+  activeId,
+  onPick,
+}: {
+  contactId: string;
+  conversationId: string;
+  activeId: string | null;
+  onPick: (threadId: string) => void;
+}) {
+  const { data: threads = [], isLoading } = useEmailThreadsForContact(contactId);
+
+  if (isLoading) {
+    return (
+      <div className="pl-[68px] pr-4 pb-2 text-[12px] text-muted-foreground/70">
+        Loading threads…
+      </div>
+    );
+  }
+  if (threads.length === 0) {
+    return (
+      <div className="pl-[68px] pr-4 pb-2 text-[12px] text-muted-foreground/70 italic">
+        No subject threads yet.
+      </div>
+    );
+  }
+
+  return (
+    <ul className="pl-[68px] pr-2 pb-2 space-y-0.5 border-l-2 border-border/40 ml-[27px]">
+      {threads.map((th) => {
+        const isUnread = (th.unread_count ?? 0) > 0;
+        const time = smartTime(th.last_message_at);
+        const subject = (th.subject || '(no subject)').trim();
+        return (
+          <li key={th.id}>
+            <button
+              type="button"
+              onClick={() => onPick(th.id)}
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                activeId === conversationId
+                  ? 'hover:bg-primary/10'
+                  : 'hover:bg-muted/40'
+              }`}
+            >
+              <Mail className="w-3 h-3 shrink-0 text-muted-foreground/70" strokeWidth={2.2} />
+              <span className={`flex-1 min-w-0 truncate text-[12.5px] leading-tight ${
+                isUnread ? 'font-semibold text-foreground' : 'text-foreground/85'
+              }`}>
+                {subject}
+              </span>
+              {th.message_count > 1 && (
+                <span className="shrink-0 text-[10.5px] tabular-nums text-muted-foreground/70 font-medium">
+                  {th.message_count}
+                </span>
+              )}
+              {isUnread && (
+                <span className="shrink-0 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[9.5px] font-bold flex items-center justify-center tabular-nums">
+                  {th.unread_count > 99 ? '99+' : th.unread_count}
+                </span>
+              )}
+              {time && (
+                <time className={`shrink-0 text-[10.5px] tabular-nums ${
+                  isUnread ? 'text-primary font-bold' : 'text-muted-foreground/70 font-medium'
+                }`}>
+                  {time}
+                </time>
+              )}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
