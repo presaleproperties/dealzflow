@@ -1371,6 +1371,7 @@ export type Database = {
           body_html: string | null
           category: string
           created_at: string | null
+          created_by_agent_slug: string | null
           external_id: string | null
           id: string
           is_active: boolean
@@ -1378,6 +1379,8 @@ export type Database = {
           last_used_at: string | null
           merge_tags: string[] | null
           name: string
+          owner_agent_slug: string | null
+          owner_scope: string
           project: string | null
           slug: string | null
           source: string
@@ -1390,6 +1393,7 @@ export type Database = {
           body_html?: string | null
           category?: string
           created_at?: string | null
+          created_by_agent_slug?: string | null
           external_id?: string | null
           id?: string
           is_active?: boolean
@@ -1397,6 +1401,8 @@ export type Database = {
           last_used_at?: string | null
           merge_tags?: string[] | null
           name: string
+          owner_agent_slug?: string | null
+          owner_scope?: string
           project?: string | null
           slug?: string | null
           source?: string
@@ -1409,6 +1415,7 @@ export type Database = {
           body_html?: string | null
           category?: string
           created_at?: string | null
+          created_by_agent_slug?: string | null
           external_id?: string | null
           id?: string
           is_active?: boolean
@@ -1416,6 +1423,8 @@ export type Database = {
           last_used_at?: string | null
           merge_tags?: string[] | null
           name?: string
+          owner_agent_slug?: string | null
+          owner_scope?: string
           project?: string | null
           slug?: string | null
           source?: string
@@ -5315,6 +5324,7 @@ export type Database = {
         Args: { _perm: string; _user_id: string }
         Returns: boolean
       }
+      crm_my_presale_slug: { Args: never; Returns: string }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
