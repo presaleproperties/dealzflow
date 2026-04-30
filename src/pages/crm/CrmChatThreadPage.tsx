@@ -438,7 +438,49 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     if (!embedded) navigate('/crm/chats');
   }, [conv, qc, embedded, navigate]);
 
-  // ---------- Keyboard shortcuts (r reply, f forward, /=search, esc=close) ----------
+  // ---------- Thread expand/collapse + jump-to-message ----------
+
+  /** Resolve current expansion for a message (controlled override > default). */
+  const isExpanded = useCallback((m: MessageRow, isLast: boolean) => {
+    if (m.id in expandedMap) return expandedMap[m.id];
+    return isLast;
+  }, [expandedMap]);
+
+  const setOneExpanded = useCallback((mid: string, next: boolean) => {
+    setExpandedMap((prev) => ({ ...prev, [mid]: next }));
+  }, []);
+
+  const expandAll = useCallback(() => {
+    const next: Record<string, boolean> = {};
+    for (const m of filteredMessages) next[m.id] = true;
+    setExpandedMap(next);
+  }, [filteredMessages]);
+
+  const collapseAll = useCallback(() => {
+    const next: Record<string, boolean> = {};
+    for (const m of filteredMessages) next[m.id] = false;
+    setExpandedMap(next);
+  }, [filteredMessages]);
+
+  const jumpTo = useCallback((mid: string) => {
+    setOneExpanded(mid, true);
+    setJumpOpen(false);
+    requestAnimationFrame(() => {
+      const el = messageRefs.current[mid];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.add('ring-2', 'ring-primary/50');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-primary/50'), 1400);
+      }
+    });
+  }, [setOneExpanded]);
+
+  // Detect "all expanded" state for the toolbar toggle icon
+  const allExpanded = useMemo(() => {
+    if (filteredMessages.length === 0) return false;
+    return filteredMessages.every((m, i) => isExpanded(m, i === filteredMessages.length - 1));
+  }, [filteredMessages, isExpanded]);
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
