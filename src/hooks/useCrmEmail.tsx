@@ -30,7 +30,17 @@ export type CrmEmailTemplate = {
   last_used_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  owner_scope: string;            // 'team:presale' or 'agent:<slug>'
+  owner_agent_slug: string | null;
+  created_by_agent_slug: string | null;
+  source?: string | null;
 };
+
+/** Returns the caller's Presale slug from the synced agent identity, if any. */
+function useMyAgentSlug(): string | null {
+  return usePresaleAgentStore((s) => s.agent?.slug ?? null);
+}
+export { useMyAgentSlug };
 
 export function useCrmCampaigns() {
   return useQuery({
