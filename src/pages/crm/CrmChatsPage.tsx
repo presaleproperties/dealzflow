@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft } from 'lucide-react';
+import { Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal, Paperclip } from 'lucide-react';
 import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
@@ -83,6 +83,8 @@ function channelChip(c: ChatChannel) {
   }
 }
 
+type DateRangeKey = 'any' | 'today' | '7d' | '30d' | 'custom';
+
 export default function CrmChatsPage() {
   const navigate = useNavigate();
   const { conversationId: activeId } = useParams<{ conversationId?: string }>();
@@ -91,19 +93,73 @@ export default function CrmChatsPage() {
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Advanced filters
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sender, setSender] = useState('');
+  const [subject, setSubject] = useState('');
+  const [dateRange, setDateRange] = useState<DateRangeKey>('any');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [attachmentsOnly, setAttachmentsOnly] = useState(false);
+
   const { data: threads = [], isLoading } = useCrmChats(filter);
 
+  const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    if (dateRange === 'today') {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      return { from: start.getTime(), to: null };
+    }
+    if (dateRange === '7d') return { from: now - 7 * day, to: null };
+    if (dateRange === '30d') return { from: now - 30 * day, to: null };
+    if (dateRange === 'custom') {
+      const f = customFrom ? new Date(customFrom).getTime() : null;
+      const t = customTo ? new Date(customTo + 'T23:59:59').getTime() : null;
+      return { from: f, to: t };
+    }
+    return { from: null, to: null };
+  }, [dateRange, customFrom, customTo]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return threads;
-    const s = search.toLowerCase();
+    const s = search.trim().toLowerCase();
+    const sndr = sender.trim().toLowerCase();
+    const subj = subject.trim().toLowerCase();
     return threads.filter(t => {
       const name = formatContactName(t.first_name, t.last_name).toLowerCase();
-      return name.includes(s)
-        || (t.email ?? '').toLowerCase().includes(s)
-        || (t.phone ?? '').includes(s)
-        || cleanPreview(t.last_message_preview).toLowerCase().includes(s);
+      const email = (t.email ?? '').toLowerCase();
+      const phone = t.phone ?? '';
+      const preview = cleanPreview(t.last_message_preview).toLowerCase();
+      const tSubject = (t.subject ?? '').toLowerCase();
+
+      if (s) {
+        const inAny = name.includes(s) || email.includes(s) || phone.includes(s)
+          || preview.includes(s) || tSubject.includes(s);
+        if (!inAny) return false;
+      }
+      if (sndr && !(name.includes(sndr) || email.includes(sndr) || phone.includes(sndr))) return false;
+      if (subj && !tSubject.includes(subj)) return false;
+      if (unreadOnly && (t.unread_count ?? 0) === 0) return false;
+      if (attachmentsOnly && !t.has_attachment) return false;
+      if (dateBounds.from || dateBounds.to) {
+        const ts = t.last_message_at ? new Date(t.last_message_at).getTime() : 0;
+        if (dateBounds.from && ts < dateBounds.from) return false;
+        if (dateBounds.to && ts > dateBounds.to) return false;
+      }
+      return true;
     });
-  }, [threads, search]);
+  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, dateBounds]);
+
+  const activeFilterCount =
+    (sender ? 1 : 0) + (subject ? 1 : 0) + (dateRange !== 'any' ? 1 : 0)
+    + (unreadOnly ? 1 : 0) + (attachmentsOnly ? 1 : 0);
+
+  const clearFilters = () => {
+    setSender(''); setSubject(''); setDateRange('any');
+    setCustomFrom(''); setCustomTo('');
+    setUnreadOnly(false); setAttachmentsOnly(false);
+  };
 
   // Per-pill unread counts. "text" rolls up SMS + WhatsApp into a single
   // bucket so the segmented control mirrors the simplified two-channel UX.
@@ -124,7 +180,7 @@ export default function CrmChatsPage() {
   const listRef = useRef<HTMLUListElement | null>(null);
   const [cursor, setCursor] = useState(0);
 
-  useEffect(() => { setCursor(0); }, [filter, search]);
+  useEffect(() => { setCursor(0); }, [filter, search, sender, subject, unreadOnly, attachmentsOnly, dateRange, customFrom, customTo]);
 
   useEffect(() => {
     const isTyping = (el: EventTarget | null) =>
@@ -184,18 +240,35 @@ export default function CrmChatsPage() {
               }
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setSearchOpen(v => !v);
-              if (searchOpen) setSearch('');
-            }}
-            className={`h-10 w-10 rounded-full ${searchOpen || search ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
-            aria-label="Search chats"
-          >
-            {searchOpen ? <X className="w-5 h-5" strokeWidth={2.2} /> : <Search className="w-5 h-5" strokeWidth={2} />}
-          </Button>
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFiltersOpen(v => !v)}
+              className={`relative h-10 w-10 rounded-full ${filtersOpen || activeFilterCount > 0 ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              aria-label="Filters"
+              aria-expanded={filtersOpen}
+            >
+              <SlidersHorizontal className="w-[18px] h-[18px]" strokeWidth={2} />
+              {activeFilterCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center shadow-sm tabular-nums">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setSearchOpen(v => !v);
+                if (searchOpen) setSearch('');
+              }}
+              className={`h-10 w-10 rounded-full ${searchOpen || search ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              aria-label="Search chats"
+            >
+              {searchOpen ? <X className="w-5 h-5" strokeWidth={2.2} /> : <Search className="w-5 h-5" strokeWidth={2} />}
+            </Button>
+          </div>
         </div>
 
         {searchOpen && (
@@ -214,6 +287,111 @@ export default function CrmChatsPage() {
               <kbd className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground tabular-nums">
                 esc
               </kbd>
+            </div>
+          </div>
+        )}
+
+        {/* Advanced filter panel */}
+        {filtersOpen && (
+          <div className="px-4 pb-3 space-y-2.5 border-t border-border/40 pt-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={sender}
+                  onChange={(e) => setSender(e.target.value)}
+                  placeholder="From sender / email…"
+                  className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject contains…"
+                  className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {([
+                { id: 'any',   label: 'Any time' },
+                { id: 'today', label: 'Today' },
+                { id: '7d',    label: '7 days' },
+                { id: '30d',   label: '30 days' },
+                { id: 'custom', label: 'Custom' },
+              ] as { id: DateRangeKey; label: string }[]).map(opt => {
+                const active = dateRange === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setDateRange(opt.id)}
+                    className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {dateRange === 'custom' && (
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground"
+                />
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setUnreadOnly(v => !v)}
+                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                    unreadOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                  }`}
+                  aria-pressed={unreadOnly}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${unreadOnly ? 'bg-primary-foreground' : 'bg-primary'}`} />
+                  Unread
+                </button>
+                <button
+                  onClick={() => setAttachmentsOnly(v => !v)}
+                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                    attachmentsOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                  }`}
+                  aria-pressed={attachmentsOnly}
+                >
+                  <Paperclip className="w-3 h-3" strokeWidth={2.4} />
+                  Attachments
+                </button>
+              </div>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -361,7 +539,21 @@ export default function CrmChatsPage() {
                               aria-label="You replied"
                             />
                           )}
-                          {preview || fallback || 'No messages yet'}
+                          {t.has_attachment && (
+                            <Paperclip
+                              className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70"
+                              strokeWidth={2.2}
+                              aria-label="Has attachment"
+                            />
+                          )}
+                          {t.subject ? (
+                            <>
+                              <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/80'}>{t.subject}</span>
+                              {preview && <span className="text-muted-foreground/70"> — {preview}</span>}
+                            </>
+                          ) : (
+                            preview || fallback || 'No messages yet'
+                          )}
                         </p>
                         {isUnread && (
                           <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30 tabular-nums">
