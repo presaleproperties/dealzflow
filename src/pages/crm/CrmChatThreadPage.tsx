@@ -570,6 +570,46 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
               Send the first {meta.label.toLowerCase()} to {name.split(' ')[0]} to start this thread.
             </p>
           </div>
+        ) : conv.channel === 'email' ? (
+          // ---------- Email card list (Gmail-style) ----------
+          <div className="max-w-[820px] mx-auto w-full space-y-3">
+            {searchOpen && (
+              <div className="sticky top-0 z-10 -mt-1 mb-1 flex items-center gap-2 px-2 py-2 rounded-xl bg-background/90 backdrop-blur border border-border/60">
+                <SearchIcon className="w-4 h-4 text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search this thread…"
+                  className="flex-1 bg-transparent text-[13px] focus:outline-none"
+                />
+                <button
+                  onClick={() => { setSearchOpen(false); setSearchTerm(''); }}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Close search"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {filteredMessages.length === 0 ? (
+              <p className="text-center text-[13px] text-muted-foreground py-6">No messages match “{searchTerm}”.</p>
+            ) : filteredMessages.map((m, i) => {
+              const isLast = i === filteredMessages.length - 1;
+              const props = buildEmailViewProps(m);
+              return (
+                <EmailMessageView
+                  key={m.id}
+                  {...props}
+                  defaultExpanded={isLast}
+                  accentColor={meta.color}
+                  onReply={isLast ? () => openReply(m) : undefined}
+                  onReplyAll={isLast ? () => openReply(m, true) : undefined}
+                  onForward={isLast ? () => openForward(m) : undefined}
+                />
+              );
+            })}
+          </div>
         ) : (
           stacks.map((stack, si) => {
             const outbound = stack.direction === 'outbound';
@@ -594,7 +634,6 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                               : 'bg-card text-foreground border border-border rounded-bl-md'
                           } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''}`}
                         >
-                          {/* For email, content can include "Subject: ..." prefix from compose flow */}
                           {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
                         </div>
                         {isLast && (
