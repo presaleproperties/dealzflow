@@ -421,18 +421,29 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     };
   };
 
-  // Filter messages by search term (subject or body)
+  // Filter messages by (a) optional ?thread=<id> Outlook-style subject filter
+  // and (b) the in-thread search term. Email-only messages are kept when their
+  // crm_email_log row's thread_id matches; non-email rows are dropped while a
+  // thread filter is active (since those threads only exist for email).
   const filteredMessages = useMemo(() => {
-    if (!searchTerm.trim()) return messages;
+    let base = messages;
+    if (filterThreadId && channel === 'email') {
+      base = base.filter((m) => {
+        if (m.source_table !== 'crm_email_log' || !m.source_id) return false;
+        const log = (emailLogMap as any)[m.source_id];
+        return log?.thread_id === filterThreadId;
+      });
+    }
+    if (!searchTerm.trim()) return base;
     const q = searchTerm.toLowerCase();
-    return messages.filter((m) => {
+    return base.filter((m) => {
       const c = (m.content ?? '').toLowerCase();
       const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
       const subj = (log?.subject ?? '').toLowerCase();
       const body = (log?.body ?? '').toLowerCase();
       return c.includes(q) || subj.includes(q) || body.includes(q);
     });
-  }, [messages, searchTerm, emailLogMap]);
+  }, [messages, searchTerm, emailLogMap, filterThreadId, channel]);
 
   // ---------- Reply / Forward handlers ----------
 
