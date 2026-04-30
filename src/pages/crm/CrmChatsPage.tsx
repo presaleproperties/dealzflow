@@ -83,6 +83,8 @@ function channelChip(c: ChatChannel) {
   }
 }
 
+type DateRangeKey = 'any' | 'today' | '7d' | '30d' | 'custom';
+
 export default function CrmChatsPage() {
   const navigate = useNavigate();
   const { conversationId: activeId } = useParams<{ conversationId?: string }>();
@@ -91,19 +93,73 @@ export default function CrmChatsPage() {
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Advanced filters
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sender, setSender] = useState('');
+  const [subject, setSubject] = useState('');
+  const [dateRange, setDateRange] = useState<DateRangeKey>('any');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [attachmentsOnly, setAttachmentsOnly] = useState(false);
+
   const { data: threads = [], isLoading } = useCrmChats(filter);
 
+  const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    if (dateRange === 'today') {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      return { from: start.getTime(), to: null };
+    }
+    if (dateRange === '7d') return { from: now - 7 * day, to: null };
+    if (dateRange === '30d') return { from: now - 30 * day, to: null };
+    if (dateRange === 'custom') {
+      const f = customFrom ? new Date(customFrom).getTime() : null;
+      const t = customTo ? new Date(customTo + 'T23:59:59').getTime() : null;
+      return { from: f, to: t };
+    }
+    return { from: null, to: null };
+  }, [dateRange, customFrom, customTo]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return threads;
-    const s = search.toLowerCase();
+    const s = search.trim().toLowerCase();
+    const sndr = sender.trim().toLowerCase();
+    const subj = subject.trim().toLowerCase();
     return threads.filter(t => {
       const name = formatContactName(t.first_name, t.last_name).toLowerCase();
-      return name.includes(s)
-        || (t.email ?? '').toLowerCase().includes(s)
-        || (t.phone ?? '').includes(s)
-        || cleanPreview(t.last_message_preview).toLowerCase().includes(s);
+      const email = (t.email ?? '').toLowerCase();
+      const phone = t.phone ?? '';
+      const preview = cleanPreview(t.last_message_preview).toLowerCase();
+      const tSubject = (t.subject ?? '').toLowerCase();
+
+      if (s) {
+        const inAny = name.includes(s) || email.includes(s) || phone.includes(s)
+          || preview.includes(s) || tSubject.includes(s);
+        if (!inAny) return false;
+      }
+      if (sndr && !(name.includes(sndr) || email.includes(sndr) || phone.includes(sndr))) return false;
+      if (subj && !tSubject.includes(subj)) return false;
+      if (unreadOnly && (t.unread_count ?? 0) === 0) return false;
+      if (attachmentsOnly && !t.has_attachment) return false;
+      if (dateBounds.from || dateBounds.to) {
+        const ts = t.last_message_at ? new Date(t.last_message_at).getTime() : 0;
+        if (dateBounds.from && ts < dateBounds.from) return false;
+        if (dateBounds.to && ts > dateBounds.to) return false;
+      }
+      return true;
     });
-  }, [threads, search]);
+  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, dateBounds]);
+
+  const activeFilterCount =
+    (sender ? 1 : 0) + (subject ? 1 : 0) + (dateRange !== 'any' ? 1 : 0)
+    + (unreadOnly ? 1 : 0) + (attachmentsOnly ? 1 : 0);
+
+  const clearFilters = () => {
+    setSender(''); setSubject(''); setDateRange('any');
+    setCustomFrom(''); setCustomTo('');
+    setUnreadOnly(false); setAttachmentsOnly(false);
+  };
 
   // Per-pill unread counts. "text" rolls up SMS + WhatsApp into a single
   // bucket so the segmented control mirrors the simplified two-channel UX.
