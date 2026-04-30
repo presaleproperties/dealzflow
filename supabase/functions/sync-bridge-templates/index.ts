@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
           "Authorization": `Bearer ${PRESALE_ANON}`,
           "apikey": PRESALE_ANON,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ agent_slug: callerSlug, include_team: true }),
       });
       text = await upstream.text();
       if (upstream.ok) break;
