@@ -240,18 +240,35 @@ export default function CrmChatsPage() {
               }
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setSearchOpen(v => !v);
-              if (searchOpen) setSearch('');
-            }}
-            className={`h-10 w-10 rounded-full ${searchOpen || search ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
-            aria-label="Search chats"
-          >
-            {searchOpen ? <X className="w-5 h-5" strokeWidth={2.2} /> : <Search className="w-5 h-5" strokeWidth={2} />}
-          </Button>
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFiltersOpen(v => !v)}
+              className={`relative h-10 w-10 rounded-full ${filtersOpen || activeFilterCount > 0 ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              aria-label="Filters"
+              aria-expanded={filtersOpen}
+            >
+              <SlidersHorizontal className="w-[18px] h-[18px]" strokeWidth={2} />
+              {activeFilterCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center shadow-sm tabular-nums">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setSearchOpen(v => !v);
+                if (searchOpen) setSearch('');
+              }}
+              className={`h-10 w-10 rounded-full ${searchOpen || search ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              aria-label="Search chats"
+            >
+              {searchOpen ? <X className="w-5 h-5" strokeWidth={2.2} /> : <Search className="w-5 h-5" strokeWidth={2} />}
+            </Button>
+          </div>
         </div>
 
         {searchOpen && (
