@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
+import { useMyAgentSlug } from '@/hooks/useCrmEmail';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
+
+const OWNER_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'mine', label: 'Mine' },
+  { value: 'team', label: 'Team' },
+] as const;
+type OwnerFilter = typeof OWNER_TABS[number]['value'];
 
 const CATEGORY_TABS = [
   { value: 'all', label: 'All', icon: Layers },
@@ -77,13 +85,16 @@ type Merged = CrmEmailTemplate & { __isBridge?: boolean };
 export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
   const { data: localTemplates = [] } = useCrmEmailTemplates();
   const { data: bridgeTemplates = [], isLoading: bridgeLoading } = useBridgeTemplates();
+  const mySlug = useMyAgentSlug();
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
 
   useEffect(() => {
     if (!open) {
       setSearch('');
       setCatFilter('all');
+      setOwnerFilter('all');
     }
   }, [open]);
 
@@ -93,8 +104,14 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
     return [...bridge, ...local];
   }, [localTemplates, bridgeTemplates]);
 
+  const isMine = (t: Merged) =>
+    !!mySlug && (t.owner_agent_slug === mySlug || t.owner_scope === `agent:${mySlug}`);
+  const isTeam = (t: Merged) => t.owner_scope === 'team:presale' || !!t.__isBridge;
+
   const filtered = useMemo(() => {
     let list = merged;
+    if (ownerFilter === 'mine') list = list.filter(isMine);
+    else if (ownerFilter === 'team') list = list.filter(isTeam);
     if (catFilter === 'presale') {
       list = list.filter((t) => t.__isBridge);
     } else if (catFilter !== 'all') {
@@ -107,7 +124,7 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
       );
     }
     return list;
-  }, [merged, catFilter, search]);
+  }, [merged, catFilter, search, ownerFilter, mySlug]);
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: merged.length, presale: 0 };
@@ -118,6 +135,15 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
     }
     return map;
   }, [merged]);
+
+  const ownerCounts = useMemo(
+    () => ({
+      all: merged.length,
+      mine: merged.filter(isMine).length,
+      team: merged.filter(isTeam).length,
+    }),
+    [merged, mySlug],
+  );
 
   const useTemplate = (tpl: Merged) => {
     onSelect(tpl);
@@ -149,8 +175,30 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
           </Button>
         </div>
 
-        {/* Filters row — search + horizontally scrollable category chips */}
+        {/* Filters row — owner segments + search + category chips */}
         <div className="px-4 sm:px-5 py-2.5 border-b border-border bg-muted/10 shrink-0 space-y-2">
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted/40 w-fit">
+            {OWNER_TABS.map((tab) => {
+              const active = ownerFilter === tab.value;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setOwnerFilter(tab.value)}
+                  className={cn(
+                    'h-7 px-3 rounded-md text-[12px] font-semibold transition-colors flex items-center gap-1.5',
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {tab.label}
+                  <span className="text-[10.5px] tabular-nums opacity-70">
+                    {ownerCounts[tab.value]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -212,11 +260,19 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
                   style={{ '--thumb-scale': '0.5' } as React.CSSProperties}
                 >
                   <div className="relative border-b border-border/60">
-                    {tpl.__isBridge && (
+                    {tpl.__isBridge ? (
                       <Badge className="absolute top-2 right-2 z-10 bg-primary/95 text-primary-foreground text-[9px] px-1.5 py-0 h-4 shadow-sm">
                         PRESALE
                       </Badge>
-                    )}
+                    ) : isMine(tpl) ? (
+                      <Badge className="absolute top-2 right-2 z-10 bg-foreground text-background text-[9px] px-1.5 py-0 h-4 shadow-sm">
+                        MINE
+                      </Badge>
+                    ) : isTeam(tpl) ? (
+                      <Badge variant="outline" className="absolute top-2 right-2 z-10 bg-background/90 text-[9px] px-1.5 py-0 h-4 shadow-sm">
+                        TEAM
+                      </Badge>
+                    ) : null}
                     <ThumbPreview html={tpl.body_html || ''} />
                   </div>
                   <div className="p-3">
