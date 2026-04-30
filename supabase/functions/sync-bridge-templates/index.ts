@@ -54,11 +54,13 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: member } = await admin
       .from("crm_team")
-      .select("user_id")
+      .select("user_id, slug, role")
       .eq("user_id", userData.user.id)
       .eq("is_active", true)
       .maybeSingle();
     if (!member) return json({ error: "forbidden" }, 403);
+    const callerSlug: string | null = member.slug ?? null;
+    const isAdmin = member.role === "owner" || member.role === "admin";
 
     if (!BRIDGE_SECRET || !PRESALE_ANON) {
       return json({ error: "bridge_not_configured" }, 500);
@@ -76,7 +78,7 @@ Deno.serve(async (req) => {
           "Authorization": `Bearer ${PRESALE_ANON}`,
           "apikey": PRESALE_ANON,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ agent_slug: callerSlug, include_team: true }),
       });
       text = await upstream.text();
       if (upstream.ok) break;
@@ -103,6 +105,19 @@ Deno.serve(async (req) => {
       const html = t.body_html ?? t.html ?? "";
       const incomingHash = await hashContent(`${t.subject}|${html}`);
 
+      // Resolve ownership scope from Presale payload (defaults to team)
+      const rawScope: string = (t.owner_scope ?? "team:presale").toString().toLowerCase();
+      const ownerAgentSlug: string | null =
+        rawScope.startsWith("agent:")
+          ? (t.owner_agent_slug ?? rawScope.slice("agent:".length)) || null
+          : null;
+      // Defense in depth: if Presale somehow returned another agent's private template, skip.
+      if (ownerAgentSlug && callerSlug && ownerAgentSlug !== callerSlug && !isAdmin) {
+        results.push({ slug, action: "skipped_other_agent" });
+        continue;
+      }
+      const ownerScope = ownerAgentSlug ? `agent:${ownerAgentSlug}` : "team:presale";
+
       // Match on slug first (canonical), then fall back to external_id
       const { data: existing } = await admin
         .from("crm_email_templates")
@@ -124,11 +139,13 @@ Deno.serve(async (req) => {
         last_synced_at: now,
         is_active: true,
         updated_at: now,
+        owner_scope: ownerScope,
+        owner_agent_slug: ownerAgentSlug,
+        created_by_agent_slug: t.created_by_agent_slug ?? ownerAgentSlug ?? null,
       };
 
       if (existing) {
         if (existing.sync_hash === incomingHash) {
-          // Still bump last_synced_at so the UI can show a fresh check
           await admin.from("crm_email_templates")
             .update({ last_synced_at: now })
             .eq("id", existing.id);

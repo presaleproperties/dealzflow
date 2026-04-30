@@ -18,6 +18,10 @@ interface TemplatePush {
   project?: string;
   merge_tags?: string[];
   sync_hash?: string;           // hash of content from Presale
+  owner_scope?: string;         // 'team:presale' | 'agent:<slug>'
+  owner_agent_slug?: string | null;
+  created_by_agent_slug?: string | null;
+  deleted?: boolean;            // soft-delete signal
 }
 
 async function hashContent(s: string): Promise<string> {
@@ -40,7 +44,7 @@ Deno.serve(async (req) => {
     if (req.method === "GET") {
       const { data, error } = await supabase
         .from("crm_email_templates")
-        .select("id, external_id, name, subject, body_html, category, project, merge_tags, source, sync_hash, updated_at")
+        .select("id, external_id, name, subject, body_html, category, project, merge_tags, source, sync_hash, owner_scope, owner_agent_slug, created_by_agent_slug, updated_at")
         .eq("is_active", true);
       if (error) throw error;
 
@@ -62,11 +66,34 @@ Deno.serve(async (req) => {
 
       const results: any[] = [];
       for (const t of incoming) {
-        if (!t.external_id || !t.name || !t.subject) {
+        if (!t.external_id) {
+          results.push({ external_id: t.external_id, error: "missing external_id" });
+          continue;
+        }
+
+        // Soft-delete signal
+        if (t.deleted) {
+          await supabase.from("crm_email_templates")
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq("external_id", t.external_id);
+          results.push({ external_id: t.external_id, action: "soft_deleted" });
+          continue;
+        }
+
+        if (!t.name || !t.subject) {
           results.push({ external_id: t.external_id, error: "missing required fields" });
           continue;
         }
+
         const incomingHash = t.sync_hash || await hashContent(`${t.subject}|${t.body_html || ""}`);
+
+        // Resolve scope (defaults to team)
+        const rawScope = (t.owner_scope ?? "team:presale").toString().toLowerCase();
+        const ownerAgentSlug: string | null =
+          rawScope.startsWith("agent:")
+            ? (t.owner_agent_slug ?? rawScope.slice("agent:".length)) || null
+            : null;
+        const ownerScope = ownerAgentSlug ? `agent:${ownerAgentSlug}` : "team:presale";
 
         // Find existing match by external_id
         const { data: existing } = await supabase
@@ -76,7 +103,6 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (existing) {
-          // Skip if unchanged (loop prevention)
           if (existing.sync_hash === incomingHash) {
             results.push({ external_id: t.external_id, action: "unchanged" });
             continue;
@@ -91,6 +117,9 @@ Deno.serve(async (req) => {
             sync_hash: incomingHash,
             last_synced_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            owner_scope: ownerScope,
+            owner_agent_slug: ownerAgentSlug,
+            created_by_agent_slug: t.created_by_agent_slug ?? null,
           }).eq("id", existing.id);
           results.push({ external_id: t.external_id, action: "updated", id: existing.id });
         } else {
@@ -105,6 +134,9 @@ Deno.serve(async (req) => {
             external_id: t.external_id,
             sync_hash: incomingHash,
             last_synced_at: new Date().toISOString(),
+            owner_scope: ownerScope,
+            owner_agent_slug: ownerAgentSlug,
+            created_by_agent_slug: t.created_by_agent_slug ?? ownerAgentSlug,
           }).select("id").single();
           results.push({ external_id: t.external_id, action: "created", id: created?.id });
         }

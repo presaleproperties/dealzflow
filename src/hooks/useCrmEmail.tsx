@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 
 export type CrmEmailCampaign = {
   id: string;
@@ -29,7 +30,17 @@ export type CrmEmailTemplate = {
   last_used_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  owner_scope: string;            // 'team:presale' or 'agent:<slug>'
+  owner_agent_slug: string | null;
+  created_by_agent_slug: string | null;
+  source?: string | null;
 };
+
+/** Returns the caller's Presale slug from the synced agent identity, if any. */
+function useMyAgentSlug(): string | null {
+  return usePresaleAgentStore((s) => s.agent?.slug ?? null);
+}
+export { useMyAgentSlug };
 
 export function useCrmCampaigns() {
   return useQuery({
@@ -90,9 +101,35 @@ export function useCreateCampaign() {
 
 export function useCreateTemplate() {
   const qc = useQueryClient();
+  const mySlug = useMyAgentSlug();
   return useMutation({
-    mutationFn: async (tpl: { name: string; subject: string; body_html: string; project?: string; category?: string; merge_tags?: string[] }) => {
-      const { error } = await supabase.from('crm_email_templates').insert(tpl);
+    mutationFn: async (tpl: {
+      name: string;
+      subject: string;
+      body_html: string;
+      project?: string;
+      category?: string;
+      merge_tags?: string[];
+      /** 'mine' (default) creates a private agent template; 'team' creates a shared one (admins only). */
+      scope?: 'mine' | 'team';
+    }) => {
+      const wantsTeam = tpl.scope === 'team';
+      let owner_scope = 'team:presale';
+      let owner_agent_slug: string | null = null;
+      if (!wantsTeam) {
+        if (!mySlug) {
+          throw new Error('Your Presale agent identity is not synced yet. Refresh and try again.');
+        }
+        owner_scope = `agent:${mySlug}`;
+        owner_agent_slug = mySlug;
+      }
+      const { scope: _drop, ...rest } = tpl;
+      const { error } = await supabase.from('crm_email_templates').insert({
+        ...rest,
+        owner_scope,
+        owner_agent_slug,
+        created_by_agent_slug: mySlug ?? null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
