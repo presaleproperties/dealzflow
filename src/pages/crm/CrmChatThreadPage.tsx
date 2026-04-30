@@ -218,7 +218,32 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     },
   });
 
-  // Realtime — refetch on new message in this conversation
+  // Cross-reference email-log rows so we can show real From/Subject/CC and
+  // attachments on email bubbles instead of plain "Subject: ..." prefixes.
+  const emailLogIds = useMemo(
+    () => messages
+      .filter((m) => m.channel === 'email' && m.source_table === 'crm_email_log' && m.source_id)
+      .map((m) => m.source_id as string),
+    [messages],
+  );
+  const { data: emailLogMap = {} } = useQuery({
+    queryKey: ['crm-chat-thread-email-logs', conversationId, emailLogIds.length, emailLogIds.join('|')],
+    enabled: emailLogIds.length > 0 && channel === 'email',
+    queryFn: async (): Promise<Record<string, {
+      subject: string | null; body: string | null; cc: string | null; bcc: string | null;
+      sent_at: string | null; direction: string | null;
+    }>> => {
+      const { data, error } = await supabase
+        .from('crm_email_log')
+        .select('id, subject, body, cc, bcc, sent_at, direction')
+        .in('id', emailLogIds);
+      if (error) throw error;
+      const map: Record<string, any> = {};
+      for (const r of (data ?? [])) map[(r as any).id] = r;
+      return map;
+    },
+  });
+
   useEffect(() => {
     if (!conversationId) return;
     const ch = supabase
