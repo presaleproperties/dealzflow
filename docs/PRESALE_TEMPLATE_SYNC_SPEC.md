@@ -1,6 +1,7 @@
 # Presale Properties ↔ Dealzflow CRM — Template Sync Spec (v1.0)
 
 **Status:** CRM side is shipped and waiting on Presale to implement these endpoints.
+**Feature flag:** All outbound calls to Presale are gated by the `PRESALE_TEMPLATE_SYNC_ENABLED` secret on the CRM side. It is currently **OFF** — local saves work normally and the "Sync now" button shows a friendly "not live yet" message instead of erroring. Flip the secret to `"true"` the day Presale deploys `bridge-receive-template` + scoped `bridge-list-templates`.
 **Owners:** Uzair (CRM) ↔ Presale Properties dev
 **Last test target:** Zara on her Presale agent portal
 
