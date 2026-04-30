@@ -62,6 +62,14 @@ Deno.serve(async (req) => {
     const callerSlug: string | null = member.slug ?? null;
     const isAdmin = member.role === "owner" || member.role === "admin";
 
+    // Feature flag — Presale hasn't shipped the scoped `bridge-list-templates`
+    // contract yet. Return a soft "not ready" so the UI shows a friendly note
+    // instead of a red error toast. Flip PRESALE_TEMPLATE_SYNC_ENABLED to "true"
+    // once Presale deploys.
+    const syncEnabled = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
+    if (!syncEnabled) {
+      return json({ ok: true, skipped: "presale_sync_disabled", count: 0, results: [] });
+    }
     if (!BRIDGE_SECRET || !PRESALE_ANON) {
       return json({ error: "bridge_not_configured" }, 500);
     }

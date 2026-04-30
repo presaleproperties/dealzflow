@@ -1,6 +1,6 @@
 ---
 name: Per-agent Template Ownership
-description: Single unified `crm_email_templates` table with owner_scope (`team:presale` | `agent:<slug>`); RLS via `crm_my_presale_slug()`; legacy `email_templates` table dropped. Push/pull edge fns forward `actor_agent_slug` + `actor_is_admin` for admin moderation. Canonical slugs: uzair-muhammad, sarb-grewal, ravish-passy, zara-malik.
+description: Single unified `crm_email_templates` table with owner_scope (`team:presale` | `agent:<slug>`); RLS via `crm_my_presale_slug()`. Outbound Presale sync (push-template-to-presale + sync-bridge-templates) gated by `PRESALE_TEMPLATE_SYNC_ENABLED` secret — OFF until Presale ships `bridge-receive-template` + scoped `bridge-list-templates`. While OFF, local saves succeed silently and the Sync button shows a friendly "not live yet" toast.
 type: feature
 ---
 

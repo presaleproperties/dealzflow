@@ -62,6 +62,14 @@ Deno.serve(async (req) => {
     const callerSlug: string | null = member.slug ?? null;
     const isAdmin = member.role === "owner" || member.role === "admin";
 
+    // Feature flag: Presale's inbound `bridge-receive-template` endpoint isn't
+    // live yet. Until they ship it, every push would 404/timeout. Default OFF
+    // so local edits succeed silently. Flip the secret PRESALE_TEMPLATE_SYNC_ENABLED
+    // to "true" the day Presale deploys.
+    const syncEnabled = (Deno.env.get("PRESALE_TEMPLATE_SYNC_ENABLED") ?? "").toLowerCase() === "true";
+    if (!syncEnabled) {
+      return json({ ok: true, skipped: "presale_sync_disabled" });
+    }
     if (!BRIDGE_SECRET || !PRESALE_ANON) {
       // Bridge not configured — push is a no-op so local edits don't fail.
       return json({ ok: true, skipped: "bridge_not_configured" });
