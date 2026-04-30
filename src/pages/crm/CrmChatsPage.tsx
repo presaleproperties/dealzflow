@@ -101,7 +101,7 @@ export default function CrmChatsPage() {
       return name.includes(s)
         || (t.email ?? '').toLowerCase().includes(s)
         || (t.phone ?? '').includes(s)
-        || (t.last_message_preview ?? '').toLowerCase().includes(s);
+        || cleanPreview(t.last_message_preview).toLowerCase().includes(s);
     });
   }, [threads, search]);
 
@@ -117,6 +117,54 @@ export default function CrmChatsPage() {
     }
     return c;
   }, [threads]);
+
+  // Keyboard navigation: j/k or ↑/↓ to move, Enter to open, / or ⌘K to focus
+  // search, Esc to clear/close. Skipped while user is typing in a field.
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const [cursor, setCursor] = useState(0);
+
+  useEffect(() => { setCursor(0); }, [filter, search]);
+
+  useEffect(() => {
+    const isTyping = (el: EventTarget | null) =>
+      el instanceof HTMLElement && (
+        el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+      );
+    const onKey = (e: KeyboardEvent) => {
+      // Global focus search
+      if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !isTyping(e.target))) {
+        e.preventDefault();
+        setSearchOpen(true);
+        requestAnimationFrame(() => searchRef.current?.focus());
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (search) { setSearch(''); return; }
+        if (searchOpen) { setSearchOpen(false); return; }
+      }
+      if (isTyping(e.target)) return;
+      if (filtered.length === 0) return;
+      if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setCursor(c => Math.min(filtered.length - 1, c + 1));
+      } else if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setCursor(c => Math.max(0, c - 1));
+      } else if (e.key === 'Enter') {
+        const t = filtered[cursor];
+        if (t) navigate(`/crm/chats/${t.id}`);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [filtered, cursor, navigate, search, searchOpen]);
+
+  // Scroll active cursor row into view
+  useEffect(() => {
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-row-index="${cursor}"]`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [cursor]);
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
