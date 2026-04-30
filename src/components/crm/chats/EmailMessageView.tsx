@@ -153,20 +153,37 @@ function splitQuotedText(text: string): { main: string; quoted: string | null } 
   return { main: text, quoted: null };
 }
 
-/** Wrap user HTML in a minimal document so the iframe inherits sane defaults. */
+/** Wrap user HTML in a minimal document so the iframe inherits sane defaults.
+ *  When the source is already a full <html>…</html> document (most marketing
+ *  emails), use it verbatim — only injecting <base target="_blank"> so links
+ *  open in a new tab and a small reset to keep table-based layouts fluid.
+ */
 function buildSrcDoc(html: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"/><base target="_blank"/>
+  const baseAndReset = `
+    <base target="_blank"/>
+    <style>
+      html,body{margin:0;padding:0;background:transparent}
+      img,table{max-width:100% !important;height:auto}
+      [width],[style*="width"]{max-width:100% !important}
+      a{color:#1a73e8}
+    </style>`;
+
+  if (isFullHtmlDocument(html)) {
+    // Inject <base> + reset just before </head>; if no <head>, add one.
+    if (/<head[\s>]/i.test(html)) {
+      return html.replace(/<\/head\s*>/i, `${baseAndReset}</head>`);
+    }
+    return html.replace(/<html([^>]*)>/i, `<html$1><head>${baseAndReset}</head>`);
+  }
+
+  return `<!doctype html><html><head><meta charset="utf-8"/>${baseAndReset}
   <style>
-    html,body{margin:0;padding:0;background:transparent;color:#1a1a1a;
+    html,body{color:#1a1a1a;
       font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       word-wrap:break-word;overflow-wrap:anywhere}
-    img,table{max-width:100% !important;height:auto}
     table{border-collapse:collapse}
-    a{color:#1a73e8}
     blockquote{margin:0 0 0 8px;padding:0 0 0 12px;border-left:3px solid #e0e0e0;color:#5f6368}
     pre{white-space:pre-wrap;word-break:break-word}
-    /* Force fluid widths even when the email hard-codes 600/620px containers */
-    [width],[style*="width"]{max-width:100% !important}
   </style></head><body>${html}</body></html>`;
 }
 
