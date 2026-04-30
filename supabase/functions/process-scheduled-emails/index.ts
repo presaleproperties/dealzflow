@@ -1,7 +1,11 @@
 // Cron worker: drains crm_email_schedule (rows with status='pending' AND send_at <= now())
 // and dispatches each via Presale's bridge-send-email.
 //
-// Auth: gated by CRON_SECRET header (x-cron-secret).
+// Auth: accepts EITHER `x-cron-secret: <CRON_SECRET>` (legacy) OR a standard
+// `Authorization: Bearer <SUPABASE_ANON_KEY|SERVICE_ROLE_KEY>` header. The
+// latter matches every other pg_cron job in this project, eliminating a
+// drift bug where the legacy CRON_SECRET vault row went missing and silently
+// 401'd every minute (i.e., scheduled emails never sent).
 // Schedule: trigger every minute via pg_cron (set up separately).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -17,15 +21,33 @@ const PRESALE_FUNCTIONS_URL =
 
 const BATCH_SIZE = 25;
 
+function isAuthorized(req: Request): boolean {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const provided = req.headers.get("x-cron-secret") || "";
+  if (cronSecret && provided && provided === cronSecret) return true;
+
+  // Accept the standard Supabase bearer (anon or service-role) which is what
+  // pg_cron sends as Authorization. Verifying the prefix is enough — the
+  // Supabase platform already gates calls on a valid project key, and this
+  // function only reads/writes its own crm_email_schedule rows via the
+  // service-role client below.
+  const auth = req.headers.get("authorization") || "";
+  if (auth.toLowerCase().startsWith("bearer ")) {
+    const token = auth.slice(7).trim();
+    const anon = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const svc  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    if (token && (token === anon || token === svc)) return true;
+  }
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    const provided = req.headers.get("x-cron-secret") || "";
-    if (!cronSecret || provided !== cronSecret) {
+    if (!isAuthorized(req)) {
       return json({ error: "Unauthorized" }, 401);
     }
 
