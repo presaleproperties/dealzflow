@@ -291,6 +291,111 @@ export default function CrmChatsPage() {
           </div>
         )}
 
+        {/* Advanced filter panel */}
+        {filtersOpen && (
+          <div className="px-4 pb-3 space-y-2.5 border-t border-border/40 pt-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={sender}
+                  onChange={(e) => setSender(e.target.value)}
+                  placeholder="From sender / email…"
+                  className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject contains…"
+                  className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {([
+                { id: 'any',   label: 'Any time' },
+                { id: 'today', label: 'Today' },
+                { id: '7d',    label: '7 days' },
+                { id: '30d',   label: '30 days' },
+                { id: 'custom', label: 'Custom' },
+              ] as { id: DateRangeKey; label: string }[]).map(opt => {
+                const active = dateRange === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setDateRange(opt.id)}
+                    className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {dateRange === 'custom' && (
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground"
+                />
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setUnreadOnly(v => !v)}
+                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                    unreadOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                  }`}
+                  aria-pressed={unreadOnly}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${unreadOnly ? 'bg-primary-foreground' : 'bg-primary'}`} />
+                  Unread
+                </button>
+                <button
+                  onClick={() => setAttachmentsOnly(v => !v)}
+                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                    attachmentsOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                  }`}
+                  aria-pressed={attachmentsOnly}
+                >
+                  <Paperclip className="w-3 h-3" strokeWidth={2.4} />
+                  Attachments
+                </button>
+              </div>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Segmented filter — premium pill group */}
         <div className="px-3 pb-2.5">
           <div className="flex items-center gap-1 p-1 rounded-full bg-muted/40 border border-border/40 overflow-x-auto scrollbar-hide">
