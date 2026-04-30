@@ -539,7 +539,21 @@ export default function CrmChatsPage() {
                               aria-label="You replied"
                             />
                           )}
-                          {preview || fallback || 'No messages yet'}
+                          {t.has_attachment && (
+                            <Paperclip
+                              className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70"
+                              strokeWidth={2.2}
+                              aria-label="Has attachment"
+                            />
+                          )}
+                          {t.subject ? (
+                            <>
+                              <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/80'}>{t.subject}</span>
+                              {preview && <span className="text-muted-foreground/70"> — {preview}</span>}
+                            </>
+                          ) : (
+                            preview || fallback || 'No messages yet'
+                          )}
                         </p>
                         {isUnread && (
                           <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30 tabular-nums">
