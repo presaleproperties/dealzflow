@@ -1,32 +1,34 @@
 ---
 name: Per-agent + team template ownership
-description: crm_email_templates scoped via owner_scope ('team:presale' | 'agent:<slug>') + owner_agent_slug; RLS gates visibility to team OR caller's own slug; sync edge fns forward agent_slug and accept owner_scope from Presale
+description: Two-way sync of crm_email_templates with Presale; owner_scope ('team:presale' | 'agent:<slug>') + RLS via crm_my_presale_slug(); any agent can contribute to team, only authors+admins edit/remove; CRM edits push back via push-template-to-presale → bridge-receive-template
 type: feature
 ---
 
-# Per-agent + Team Template Ownership
+# Per-agent + Team Template Ownership (v1, two-way)
 
 ## Schema (`crm_email_templates`)
-- `owner_scope` text NOT NULL DEFAULT `'team:presale'` — format `team:<x>` or `agent:<slug>`
-- `owner_agent_slug` text — null for team scope, required for agent scope (CHECK enforces)
-- `created_by_agent_slug` text — audit only
+- `owner_scope` text NOT NULL DEFAULT `'team:presale'` — `team:<x>` or `agent:<slug>`
+- `owner_agent_slug` text — null for team scope, required for agent scope (CHECK)
+- `created_by_agent_slug` text — required for team scope (RLS), audit elsewhere
 
-## Visibility & edit rules (RLS)
-- SELECT: team templates OR `owner_agent_slug = crm_my_presale_slug()` OR admin
-- UPDATE/DELETE: own agent templates OR (team + admin)
-- INSERT: agents create only `agent:<self>`; team templates require admin
-- Helper: `crm_my_presale_slug()` reads caller's `crm_team.slug`
+## RLS (using `crm_my_presale_slug()` helper)
+- **SELECT**: team OR `owner_agent_slug = my slug` OR admin
+- **INSERT**: own personal; team (must stamp `created_by_agent_slug = me`); admin override
+- **UPDATE/DELETE**: own personal; own team contribution (`crm_template_is_my_team_contribution`); admin override
 
-## Sync flow
-- `sync-bridge-templates` (pull) → forwards `{ agent_slug, include_team: true }` to Presale's `bridge-list-templates`; respects `owner_scope`/`owner_agent_slug` returned; defense-in-depth skip if Presale leaks another agent
-- `bridge-templates-sync` (push webhook) → accepts `owner_scope`, `owner_agent_slug`, `created_by_agent_slug`, plus `deleted: true` for soft-delete
-- GET on push fn now exposes scope fields back to Presale
+## Sync (three edge fns)
+- `sync-bridge-templates` (pull, manual + daily cron) → POST `bridge-list-templates` with `{ agent_slug, include_team: true }`. Skips templates Presale leaks for other agents.
+- `bridge-templates-sync` (Presale push webhook) → upserts with scope; supports `{ deleted: true }`.
+- `push-template-to-presale` (CRM → Presale on save/delete) → POST `bridge-receive-template`; hash-gated to prevent loops; non-fatal on failure.
 
 ## Client (`useCrmEmail.tsx`)
-- `useCreateTemplate` accepts `scope: 'mine' | 'team'` (default `mine`)
-- `useMyAgentSlug()` exposes the caller's slug from `usePresaleAgentStore`
-- `useCrmEmailTemplates` returns rows naturally filtered by RLS; no client filter needed
+- `useMyAgentSlug()` from `usePresaleAgentStore`
+- `useCreateTemplate({ scope: 'mine' | 'team' })` — any agent can pick `team`
+- `useUpdateTemplate` / `useDeleteTemplate` auto-fire push to Presale (best-effort)
+
+## Spec doc
+`docs/PRESALE_TEMPLATE_SYNC_SPEC.md` — single source of truth for cross-team coordination.
 
 ## Affected surfaces
-- All template pickers (`TemplatePicker`, `TemplatesRail`, `ComposeEmailDialog`, `SendProjectDialog`, `NewCampaignDialog`, `AutomationBuilder`) automatically respect scoping via the hook
-- `CrmTemplatesPage.EmailTemplatesPanel` uses a separate `email_templates` table (legacy) — scoping does NOT apply there
+All template pickers (`TemplatePicker`, `TemplatesRail`, `ComposeEmailDialog`, `SendProjectDialog`, `NewCampaignDialog`, `AutomationBuilder`) inherit RLS scoping automatically.
+`CrmTemplatesPage.EmailTemplatesPanel` uses the legacy `email_templates` table — scoping does NOT apply there.
