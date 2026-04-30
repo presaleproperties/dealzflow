@@ -524,6 +524,17 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     return () => window.removeEventListener('keydown', onKey);
   }, [composeOpen, searchOpen, conv?.channel, messages, openReply, openForward]);
 
+  if (threadLoading) {
+    return <ChatThreadSkeleton onBack={() => navigate('/crm/chats')} />;
+  }
+  if (!thread || !conv || !contact) {
+    return (
+      <div className="px-6 py-20 text-center text-sm text-muted-foreground">
+        Conversation not found. <Link to="/crm/chats" className="text-primary underline">Back to Chats</Link>
+      </div>
+    );
+  }
+
   return (
     <div className={
       embedded
