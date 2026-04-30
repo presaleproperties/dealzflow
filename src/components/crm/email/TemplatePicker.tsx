@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
+import { useMyAgentSlug } from '@/hooks/useMyAgentSlug';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
+
+const OWNER_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'mine', label: 'Mine' },
+  { value: 'team', label: 'Team' },
+] as const;
+type OwnerFilter = typeof OWNER_TABS[number]['value'];
 
 const CATEGORY_TABS = [
   { value: 'all', label: 'All', icon: Layers },
