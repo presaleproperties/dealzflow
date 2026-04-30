@@ -19,6 +19,10 @@ export interface ChatThread {
   // Last message preview (best-effort)
   last_message_preview?: string | null;
   last_message_direction?: 'inbound' | 'outbound' | null;
+  // Email subject of latest message (email channel only)
+  subject?: string | null;
+  // True when latest message has attachments (MMS media or email attachment markers)
+  has_attachment?: boolean;
 }
 
 /**
