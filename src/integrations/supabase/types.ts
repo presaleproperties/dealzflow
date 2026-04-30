@@ -5437,6 +5437,10 @@ export type Database = {
         Returns: Json
       }
       crm_team_validate_invite: { Args: { _token: string }; Returns: Json }
+      crm_template_is_my_team_contribution: {
+        Args: { _created_by_agent_slug: string }
+        Returns: boolean
+      }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }
         Returns: string
