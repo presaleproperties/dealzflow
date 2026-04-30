@@ -714,7 +714,14 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
 
       {/* Channel-specific composers — keep all logic centralized */}
       {conv.channel === 'email' && (
-        <ComposeEmailDialog contact={contact} open={composeOpen} onOpenChange={setComposeOpen} />
+        <ComposeEmailDialog
+          contact={contact}
+          open={composeOpen}
+          onOpenChange={(o) => { setComposeOpen(o); if (!o) setComposePrefill(null); }}
+          initialSubject={composePrefill?.subject}
+          initialBodyHtml={composePrefill?.bodyHtml}
+          initialCc={composePrefill?.cc}
+        />
       )}
       {(conv.channel === 'sms' || conv.channel === 'whatsapp') && (
         <SendTextDialog contact={contact} open={composeOpen} onOpenChange={setComposeOpen} />
