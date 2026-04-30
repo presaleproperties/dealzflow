@@ -183,6 +183,23 @@ function EmailTemplatesPanel() {
             updatedAt={bridgeQ.dataUpdatedAt}
             onRefresh={() => bridgeQ.refetch()}
           />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              const t = toast.loading('Pulling latest from Presale…');
+              try {
+                const { error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
+                if (error) throw error;
+                await Promise.all([localQ.refetch(), bridgeQ.refetch()]);
+                toast.success('Templates synced from Presale', { id: t });
+              } catch (e: any) {
+                toast.error(e?.message || 'Sync failed', { id: t });
+              }
+            }}
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1" /> Sync now
+          </Button>
           <Button size="sm" onClick={() => { setCloneDraft(null); setCreating(true); }}>
             <Plus className="w-3.5 h-3.5 mr-1" /> New template
           </Button>
