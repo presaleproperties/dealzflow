@@ -124,6 +124,7 @@ Deno.serve(async (req) => {
       created_by_agent_slug: tpl.created_by_agent_slug,
       sync_hash: incomingHash,
       actor_agent_slug: callerSlug,
+      actor_is_admin: isAdmin,
     };
 
     const upstream = await fetch(`${BRIDGE_URL}/bridge-receive-template`, {
