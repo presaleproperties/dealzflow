@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!member) return json({ error: "forbidden" }, 403);
     const callerSlug: string | null = member.slug ?? null;
+    const isAdmin = member.role === "owner" || member.role === "admin";
 
     if (!BRIDGE_SECRET || !PRESALE_ANON) {
       // Bridge not configured — push is a no-op so local edits don't fail.
