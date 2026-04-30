@@ -474,14 +474,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
         html: finalHtml,
         contact_id: contact.id,
       });
-      await addMessage.mutateAsync({
-        contact_id: contact.id,
-        direction: 'outbound',
-        content: `Subject: ${renderedSubject}\n\n${finalHtml.replace(/<[^>]*>/g, ' ').trim()}`,
-        channel: 'email',
-        sent_by: 'Agent',
-        message_type: 'text',
-      });
+      // NOTE: do NOT manually insert into crm_messages here. The DB trigger
+      // `trg_crm_sync_email_log_to_messages` automatically creates a properly-
+      // linked chat message (with source_table='crm_email_log' + source_id) so
+      // the chat thread can render the full HTML body via emailLogMap. Inserting
+      // a second row here would create an orphan with stripped text and break
+      // the rendered email bubble (no subject, no HTML, no quoted thread).
       clearEmailDraft(draftScope);
       onOpenChange(false);
     } catch {
