@@ -260,11 +260,19 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
                   style={{ '--thumb-scale': '0.5' } as React.CSSProperties}
                 >
                   <div className="relative border-b border-border/60">
-                    {tpl.__isBridge && (
+                    {tpl.__isBridge ? (
                       <Badge className="absolute top-2 right-2 z-10 bg-primary/95 text-primary-foreground text-[9px] px-1.5 py-0 h-4 shadow-sm">
                         PRESALE
                       </Badge>
-                    )}
+                    ) : isMine(tpl) ? (
+                      <Badge className="absolute top-2 right-2 z-10 bg-foreground text-background text-[9px] px-1.5 py-0 h-4 shadow-sm">
+                        MINE
+                      </Badge>
+                    ) : isTeam(tpl) ? (
+                      <Badge variant="outline" className="absolute top-2 right-2 z-10 bg-background/90 text-[9px] px-1.5 py-0 h-4 shadow-sm">
+                        TEAM
+                      </Badge>
+                    ) : null}
                     <ThumbPreview html={tpl.body_html || ''} />
                   </div>
                   <div className="p-3">
