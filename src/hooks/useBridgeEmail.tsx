@@ -39,30 +39,33 @@ export function useBridgeTemplates() {
   return useQuery({
     queryKey: ['bridge-templates'],
     queryFn: async (): Promise<BridgeTemplate[]> => {
-      const { data, error } = await supabase.functions.invoke('bridge-templates', {
-        body: {},
-      });
+      // Read directly from the unified table — RLS already scopes results
+      // to the caller (their own + team templates). No need for the legacy
+      // bridge-templates edge function.
+      const { data, error } = await supabase
+        .from('crm_email_templates')
+        .select('id, name, subject, body_html, category, project, is_active, times_used, last_used_at, created_at, updated_at, source, owner_scope')
+        .eq('is_active', true)
+        .eq('source', 'presale')
+        .order('updated_at', { ascending: false });
       if (error) {
         console.warn('[bridge] templates unavailable:', error.message);
         return [];
       }
-      const list = (data?.templates ?? []) as Array<Record<string, unknown>>;
-      return list.map((t) => {
-        const tagsRaw = (Array.isArray(t.tags) ? (t.tags as unknown[]) : []).map((x) => String(x));
-        return {
-          id: String(t.id),
-          name: String(t.name ?? 'Untitled'),
-          subject: String(t.subject ?? ''),
-          body_html: (t.body_html as string) ?? '',
-          project: null,
-          category: String(t.category ?? 'general'),
-          merge_tags: null,
-          is_active: true,
-          times_used: null,
-          last_used_at: null,
-          created_at: (t.updated_at as string) ?? null,
-          updated_at: (t.updated_at as string) ?? null,
-          source: 'presale_properties',
+      return (data ?? []).map((t) => ({
+        id: String(t.id),
+        name: String(t.name ?? 'Untitled'),
+        subject: String(t.subject ?? ''),
+        body_html: (t.body_html as string) ?? '',
+        project: t.project ?? null,
+        category: String(t.category ?? 'general'),
+        merge_tags: null,
+        is_active: true,
+        times_used: t.times_used ?? null,
+        last_used_at: t.last_used_at ?? null,
+        created_at: t.created_at ?? null,
+        updated_at: t.updated_at ?? null,
+        source: 'presale_properties',
           owner_scope: 'team:presale',
           owner_agent_slug: null,
           created_by_agent_slug: null,
