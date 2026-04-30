@@ -43,7 +43,7 @@ export default function CrmEmailWorkflowsPage() {
     setLoading(true);
     const [wfRes, tmplRes] = await Promise.all([
       (supabase as any).from("crm_email_workflows").select("*").order("created_at", { ascending: false }),
-      (supabase as any).from("email_templates").select("id, name").order("name"),
+      supabase.from("crm_email_templates").select("id, name").eq("is_active", true).order("name"),
     ]);
     setWorkflows(wfRes.data || []);
     setTemplates(tmplRes.data || []);
