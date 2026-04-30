@@ -1,34 +1,35 @@
 ---
-name: Per-agent + team template ownership
-description: Two-way sync of crm_email_templates with Presale; owner_scope ('team:presale' | 'agent:<slug>') + RLS via crm_my_presale_slug(); any agent can contribute to team, only authors+admins edit/remove; CRM edits push back via push-template-to-presale → bridge-receive-template
+name: Per-agent Template Ownership
+description: Single unified `crm_email_templates` table with owner_scope (`team:presale` | `agent:<slug>`); RLS via `crm_my_presale_slug()`; legacy `email_templates` table dropped. Push/pull edge fns forward `actor_agent_slug` + `actor_is_admin` for admin moderation. Canonical slugs: uzair-muhammad, sarb-grewal, ravish-passy, zara-malik.
 type: feature
 ---
 
-# Per-agent + Team Template Ownership (v1, two-way)
+## Single source of truth
+- Table: `crm_email_templates` (legacy `email_templates` dropped)
+- Hooks: both `useCrmEmail.useTemplates` and the legacy-named `useEmailTemplates` read/write the same table
+- Columns: `owner_scope`, `owner_agent_slug`, `created_by_agent_slug`, `external_id`, `sync_hash`, `is_favorite`, `preview_text`
 
-## Schema (`crm_email_templates`)
-- `owner_scope` text NOT NULL DEFAULT `'team:presale'` — `team:<x>` or `agent:<slug>`
-- `owner_agent_slug` text — null for team scope, required for agent scope (CHECK)
-- `created_by_agent_slug` text — required for team scope (RLS), audit elsewhere
+## Ownership scope
+- `team:presale` — visible to all; any agent can add; only original author OR admin (owner/admin role) can edit/delete
+- `agent:<slug>` — visible/editable only to that agent (admins can moderate via RLS)
+- RLS helper: `crm_my_presale_slug()` resolves caller → their `crm_team.slug`
 
-## RLS (using `crm_my_presale_slug()` helper)
-- **SELECT**: team OR `owner_agent_slug = my slug` OR admin
-- **INSERT**: own personal; team (must stamp `created_by_agent_slug = me`); admin override
-- **UPDATE/DELETE**: own personal; own team contribution (`crm_template_is_my_team_contribution`); admin override
+## Sync edge functions (3-way clean)
+- `push-template-to-presale` — CRM → Presale on every create/update/soft-delete; forwards `actor_agent_slug` + `actor_is_admin`; sync_hash loop guard
+- `sync-bridge-templates` — CRM-initiated PULL from Presale (`bridge-list-templates`); filters by caller slug; defense-in-depth scope check
+- `bridge-templates-sync` — Presale-initiated PUSH webhook into CRM; rejects ownership-conflict re-assignments unless `actor_is_admin`
 
-## Sync (three edge fns)
-- `sync-bridge-templates` (pull, manual + daily cron) → POST `bridge-list-templates` with `{ agent_slug, include_team: true }`. Skips templates Presale leaks for other agents.
-- `bridge-templates-sync` (Presale push webhook) → upserts with scope; supports `{ deleted: true }`.
-- `push-template-to-presale` (CRM → Presale on save/delete) → POST `bridge-receive-template`; hash-gated to prevent loops; non-fatal on failure.
+## Canonical agent slugs (must match Presale exactly)
+- `uzair-muhammad` (owner)
+- `sarb-grewal`
+- `ravish-passy`
+- `zara-malik`
 
-## Client (`useCrmEmail.tsx`)
-- `useMyAgentSlug()` from `usePresaleAgentStore`
-- `useCreateTemplate({ scope: 'mine' | 'team' })` — any agent can pick `team`
-- `useUpdateTemplate` / `useDeleteTemplate` auto-fire push to Presale (best-effort)
+## UI
+- `CrmTemplatesPage` shows "Mine" / "Team" badge per template, plus "Sync now" button that invokes `sync-bridge-templates`
+- `useCreateTemplate({scope:'mine'|'team'})` controls scope on creation
 
-## Spec doc
-`docs/PRESALE_TEMPLATE_SYNC_SPEC.md` — single source of truth for cross-team coordination.
-
-## Affected surfaces
-All template pickers (`TemplatePicker`, `TemplatesRail`, `ComposeEmailDialog`, `SendProjectDialog`, `NewCampaignDialog`, `AutomationBuilder`) inherit RLS scoping automatically.
-`CrmTemplatesPage.EmailTemplatesPanel` uses the legacy `email_templates` table — scoping does NOT apply there.
+## Removed / deprecated
+- `email_templates` table → DROPPED
+- `bridge-templates` edge function → DELETED (was a duplicate of `bridge-templates-sync`)
+- `bridge-templates-sync` is the spec'd ingest endpoint; `bridge-list-templates` lives on the Presale side
