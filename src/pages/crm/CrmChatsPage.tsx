@@ -1,34 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal, Paperclip } from 'lucide-react';
+import {
+  Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal,
+  Paperclip, Star, Archive, Clock4, MailOpen, MoreHorizontal, BookmarkPlus,
+  Trash2, AlertCircle, CheckSquare, Square, ArchiveRestore, BellOff, Bell,
+} from 'lucide-react';
 import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
+import { useCrmInboxFlags, snoozePresets } from '@/hooks/useCrmInboxFlags';
+import { useCrmInboxViews, type InboxView, type InboxViewFilters } from '@/hooks/useCrmInboxViews';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
 import { formatContactName } from '@/lib/format';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 /**
- * Strip HTML, collapse whitespace, and decode common entities so email
- * previews don't render as raw markup. Also drops quoted ">"-prefixed lines
- * and "On … wrote:" headers that bloat the snippet with no signal.
+ * Strip HTML, collapse whitespace, decode common entities so email previews
+ * don't render as raw markup. Drops quoted ">"-prefixed lines and "On … wrote:"
+ * headers that bloat the snippet with no signal.
  */
 function cleanPreview(raw?: string | null): string {
   if (!raw) return '';
   let s = String(raw);
-  // strip style/script blocks first
   s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ');
-  // turn <br> and block tags into spaces
   s = s.replace(/<\/?(br|p|div|li|tr|h[1-6])[^>]*>/gi, ' ');
-  // strip remaining tags
   s = s.replace(/<[^>]+>/g, '');
-  // decode a few entities
   s = s.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-  // drop quoted lines and reply headers
   s = s.split('\n').filter(l => !/^\s*>/.test(l) && !/^On .+wrote:\s*$/i.test(l)).join(' ');
   return s.replace(/\s+/g, ' ').trim();
 }
 
-/** Smart timestamp: 9:42 AM today, "Yesterday", weekday this week, else MMM d. */
 function smartTime(iso?: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -39,11 +42,15 @@ function smartTime(iso?: string | null): string {
   return format(d, sameYear ? 'MMM d' : 'MMM d, yy');
 }
 
-/**
- * Inbox channel toggle. "Text" is a combined view of SMS + WhatsApp so the
- * user only has to think in two real-world buckets (Email vs Text). One row
- * per (client, channel) is preserved by the underlying hook aggregation.
- */
+function snoozedLabel(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (d.getTime() <= Date.now()) return null;
+  if (isToday(d))     return `Snoozed · ${format(d, 'h:mm a')}`;
+  if (isYesterday(d)) return 'Snoozed';
+  return `Snoozed · ${format(d, 'MMM d, h:mm a')}`;
+}
+
 const FILTERS: { id: ChatChannelFilter; label: string }[] = [
   { id: 'all',   label: 'All' },
   { id: 'email', label: 'Email' },
@@ -58,15 +65,14 @@ function initialsFromName(first?: string | null, last?: string | null, fallback?
   return '?';
 }
 
-// Deterministic gradient per contact id — premium feel vs flat color
 function avatarGradient(id: string): string {
   const palette = [
-    ['hsl(38 88% 58%)',  'hsl(28 85% 48%)'],   // amber → bronze
-    ['hsl(355 78% 62%)', 'hsl(345 70% 50%)'],  // coral → rose
-    ['hsl(155 55% 48%)', 'hsl(165 55% 38%)'],  // emerald → teal
-    ['hsl(220 75% 62%)', 'hsl(232 70% 52%)'],  // blue → indigo
-    ['hsl(265 60% 62%)', 'hsl(280 55% 50%)'],  // violet → purple
-    ['hsl(195 75% 52%)', 'hsl(210 70% 44%)'],  // cyan → blue
+    ['hsl(38 88% 58%)',  'hsl(28 85% 48%)'],
+    ['hsl(355 78% 62%)', 'hsl(345 70% 50%)'],
+    ['hsl(155 55% 48%)', 'hsl(165 55% 38%)'],
+    ['hsl(220 75% 62%)', 'hsl(232 70% 52%)'],
+    ['hsl(265 60% 62%)', 'hsl(280 55% 50%)'],
+    ['hsl(195 75% 52%)', 'hsl(210 70% 44%)'],
   ];
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
@@ -89,11 +95,13 @@ export default function CrmChatsPage() {
   const navigate = useNavigate();
   const { conversationId: activeId } = useParams<{ conversationId?: string }>();
   const prefetchThread = usePrefetchChatThread();
+  const flags = useCrmInboxFlags();
+  const { views, create: createView, remove: removeView } = useCrmInboxViews();
+
   const [filter, setFilter] = useState<ChatChannelFilter>('all');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Advanced filters
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sender, setSender] = useState('');
   const [subject, setSubject] = useState('');
@@ -102,8 +110,19 @@ export default function CrmChatsPage() {
   const [customTo, setCustomTo] = useState('');
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [attachmentsOnly, setAttachmentsOnly] = useState(false);
+  const [starredOnly, setStarredOnly] = useState(false);
+  const [hasFailures, setHasFailures] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
-  const { data: threads = [], isLoading } = useCrmChats(filter);
+  // Bulk-select mode
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  useEffect(() => { if (!selectMode) setSelected(new Set()); }, [selectMode]);
+
+  // Per-row hover/menu
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived });
 
   const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
     const now = Date.now();
@@ -142,6 +161,11 @@ export default function CrmChatsPage() {
       if (subj && !tSubject.includes(subj)) return false;
       if (unreadOnly && (t.unread_count ?? 0) === 0) return false;
       if (attachmentsOnly && !t.has_attachment) return false;
+      if (starredOnly && !t.is_starred) return false;
+      if (hasFailures) {
+        const s2 = (t.last_outbound_status ?? '').toLowerCase();
+        if (s2 !== 'failed' && s2 !== 'undelivered') return false;
+      }
       if (dateBounds.from || dateBounds.to) {
         const ts = t.last_message_at ? new Date(t.last_message_at).getTime() : 0;
         if (dateBounds.from && ts < dateBounds.from) return false;
@@ -149,20 +173,20 @@ export default function CrmChatsPage() {
       }
       return true;
     });
-  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, dateBounds]);
+  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, starredOnly, hasFailures, dateBounds]);
 
   const activeFilterCount =
     (sender ? 1 : 0) + (subject ? 1 : 0) + (dateRange !== 'any' ? 1 : 0)
-    + (unreadOnly ? 1 : 0) + (attachmentsOnly ? 1 : 0);
+    + (unreadOnly ? 1 : 0) + (attachmentsOnly ? 1 : 0) + (starredOnly ? 1 : 0)
+    + (hasFailures ? 1 : 0);
 
   const clearFilters = () => {
     setSender(''); setSubject(''); setDateRange('any');
     setCustomFrom(''); setCustomTo('');
     setUnreadOnly(false); setAttachmentsOnly(false);
+    setStarredOnly(false); setHasFailures(false);
   };
 
-  // Per-pill unread counts. "text" rolls up SMS + WhatsApp into a single
-  // bucket so the segmented control mirrors the simplified two-channel UX.
   const counts = useMemo(() => {
     const c: Record<ChatChannelFilter, number> = { all: 0, email: 0, sms: 0, whatsapp: 0, text: 0 };
     for (const t of threads) {
@@ -174,21 +198,59 @@ export default function CrmChatsPage() {
     return c;
   }, [threads]);
 
-  // Keyboard navigation: j/k or ↑/↓ to move, Enter to open, / or ⌘K to focus
-  // search, Esc to clear/close. Skipped while user is typing in a field.
+  // Apply a saved view
+  const applyView = (v: InboxView) => {
+    setFilter(v.channel);
+    setSearch(v.query ?? '');
+    const f: InboxViewFilters = v.filters ?? {};
+    setSender(f.sender ?? '');
+    setSubject(f.subject ?? '');
+    setDateRange((f.dateRange ?? 'any') as DateRangeKey);
+    setCustomFrom(f.customFrom ?? '');
+    setCustomTo(f.customTo ?? '');
+    setUnreadOnly(!!f.unreadOnly);
+    setAttachmentsOnly(!!f.attachmentsOnly);
+    setStarredOnly(!!f.starredOnly);
+    setHasFailures(!!f.hasFailures);
+    setShowArchived(!!f.showArchived);
+    setActiveViewId(v.id);
+  };
+
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  // Built-in (system) views surfaced as chips alongside user views
+  const builtinViews = useMemo(() => [
+    { id: '__inbox',    name: 'Inbox',    channel: 'all' as ChatChannelFilter, filters: {} as InboxViewFilters },
+    { id: '__unread',   name: 'Unread',   channel: 'all' as ChatChannelFilter, filters: { unreadOnly: true } as InboxViewFilters },
+    { id: '__starred',  name: 'Starred',  channel: 'all' as ChatChannelFilter, filters: { starredOnly: true } as InboxViewFilters },
+    { id: '__failed',   name: 'Failed',   channel: 'all' as ChatChannelFilter, filters: { hasFailures: true } as InboxViewFilters },
+    { id: '__archive',  name: 'Archived', channel: 'all' as ChatChannelFilter, filters: { showArchived: true } as InboxViewFilters },
+  ], []);
+  const applyBuiltin = (b: typeof builtinViews[number]) => {
+    setFilter(b.channel);
+    setSearch('');
+    setSender(''); setSubject(''); setDateRange('any');
+    setCustomFrom(''); setCustomTo('');
+    setUnreadOnly(!!b.filters.unreadOnly);
+    setAttachmentsOnly(!!b.filters.attachmentsOnly);
+    setStarredOnly(!!b.filters.starredOnly);
+    setHasFailures(!!b.filters.hasFailures);
+    setShowArchived(!!b.filters.showArchived);
+    setActiveViewId(b.id);
+  };
+  // Default to Inbox on first mount
+  useEffect(() => { if (activeViewId == null) setActiveViewId('__inbox'); }, [activeViewId]);
+
+  // Keyboard navigation
   const searchRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const [cursor, setCursor] = useState(0);
 
-  useEffect(() => { setCursor(0); }, [filter, search, sender, subject, unreadOnly, attachmentsOnly, dateRange, customFrom, customTo]);
+  useEffect(() => { setCursor(0); }, [filter, search, sender, subject, unreadOnly, attachmentsOnly, dateRange, customFrom, customTo, starredOnly, hasFailures, showArchived]);
 
   useEffect(() => {
     const isTyping = (el: EventTarget | null) =>
-      el instanceof HTMLElement && (
-        el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
-      );
+      el instanceof HTMLElement && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
     const onKey = (e: KeyboardEvent) => {
-      // Global focus search
       if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !isTyping(e.target))) {
         e.preventDefault();
         setSearchOpen(true);
@@ -196,6 +258,7 @@ export default function CrmChatsPage() {
         return;
       }
       if (e.key === 'Escape') {
+        if (selectMode) { setSelectMode(false); return; }
         if (search) { setSearch(''); return; }
         if (searchOpen) { setSearchOpen(false); return; }
       }
@@ -210,44 +273,102 @@ export default function CrmChatsPage() {
       } else if (e.key === 'Enter') {
         const t = filtered[cursor];
         if (t) navigate(`/crm/chats/${t.id}`);
+      } else if (e.key === 'x') {
+        // Toggle select on cursor row (Gmail-style)
+        const t = filtered[cursor];
+        if (!t) return;
+        e.preventDefault();
+        setSelectMode(true);
+        setSelected(prev => {
+          const next = new Set(prev); if (next.has(t.id)) next.delete(t.id); else next.add(t.id); return next;
+        });
+      } else if (e.key === 'e') {
+        const t = filtered[cursor]; if (!t) return; e.preventDefault();
+        flags.archive(t.id, !t.is_archived);
+      } else if (e.key === 's') {
+        const t = filtered[cursor]; if (!t) return; e.preventDefault();
+        flags.star(t.id, !t.is_starred);
+      } else if (e.key === 'u') {
+        const t = filtered[cursor]; if (!t) return; e.preventDefault();
+        if ((t.unread_count ?? 0) > 0) flags.markRead(t.id); else flags.markUnread(t.id);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [filtered, cursor, navigate, search, searchOpen]);
+  }, [filtered, cursor, navigate, search, searchOpen, selectMode, flags]);
 
-  // Scroll active cursor row into view
   useEffect(() => {
     const el = listRef.current?.querySelector<HTMLElement>(`[data-row-index="${cursor}"]`);
     el?.scrollIntoView({ block: 'nearest' });
   }, [cursor]);
 
+  // Save current state as a view
+  const [savePopOpen, setSavePopOpen] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+  const handleSaveView = async () => {
+    if (!newViewName.trim()) { toast.error('Name your view'); return; }
+    await createView.mutateAsync({
+      name: newViewName.trim(),
+      channel: filter,
+      query: search,
+      filters: {
+        sender, subject, dateRange, customFrom, customTo,
+        unreadOnly, attachmentsOnly, starredOnly, hasFailures, showArchived,
+      },
+      pinned: true,
+    });
+    setNewViewName(''); setSavePopOpen(false);
+  };
+
+  // Bulk-action helpers
+  const selectedIds = Array.from(selected);
+  const allOnPageSelected = filtered.length > 0 && filtered.every(t => selected.has(t.id));
+  const toggleSelectAll = () => {
+    setSelected(prev => {
+      if (allOnPageSelected) return new Set();
+      const next = new Set(prev);
+      filtered.forEach(t => next.add(t.id));
+      return next;
+    });
+  };
+
+  const bulkDone = (msg: string) => {
+    toast.success(msg);
+    setSelected(new Set());
+    setSelectMode(false);
+  };
+
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
       {/* Premium glassmorphic header */}
-      <div
-        className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60"
-      >
+      <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60">
         <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
           <div className="min-w-0">
-            <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">
-              Chats
-            </h1>
+            <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">Chats</h1>
             <p className="text-[11px] text-muted-foreground mt-1 font-medium">
-              {counts.all > 0
-                ? <><span className="text-primary font-bold">{counts.all}</span> unread · {threads.length} total</>
-                : <>{threads.length} {threads.length === 1 ? 'conversation' : 'conversations'}</>
+              {selectMode && selected.size > 0
+                ? <><span className="text-primary font-bold">{selected.size}</span> selected</>
+                : counts.all > 0
+                  ? <><span className="text-primary font-bold">{counts.all}</span> unread · {threads.length} total</>
+                  : <>{threads.length} {threads.length === 1 ? 'conversation' : 'conversations'}</>
               }
             </p>
           </div>
           <div className="flex items-center gap-0.5">
             <Button
-              variant="ghost"
-              size="icon"
+              variant="ghost" size="icon"
+              onClick={() => setSelectMode(v => !v)}
+              className={`h-10 w-10 rounded-full ${selectMode ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
+              aria-label="Select threads"
+              title="Select (x)"
+            >
+              {selectMode ? <CheckSquare className="w-[18px] h-[18px]" strokeWidth={2} /> : <Square className="w-[18px] h-[18px]" strokeWidth={2} />}
+            </Button>
+            <Button
+              variant="ghost" size="icon"
               onClick={() => setFiltersOpen(v => !v)}
               className={`relative h-10 w-10 rounded-full ${filtersOpen || activeFilterCount > 0 ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
-              aria-label="Filters"
-              aria-expanded={filtersOpen}
+              aria-label="Filters" aria-expanded={filtersOpen}
             >
               <SlidersHorizontal className="w-[18px] h-[18px]" strokeWidth={2} />
               {activeFilterCount > 0 && (
@@ -257,12 +378,8 @@ export default function CrmChatsPage() {
               )}
             </Button>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setSearchOpen(v => !v);
-                if (searchOpen) setSearch('');
-              }}
+              variant="ghost" size="icon"
+              onClick={() => { setSearchOpen(v => !v); if (searchOpen) setSearch(''); }}
               className={`h-10 w-10 rounded-full ${searchOpen || search ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
               aria-label="Search chats"
             >
@@ -271,69 +388,90 @@ export default function CrmChatsPage() {
           </div>
         </div>
 
+        {/* Bulk-action toolbar */}
+        {selectMode && (
+          <div className="px-3 pb-2.5 flex items-center gap-1.5">
+            <button
+              onClick={toggleSelectAll}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40"
+            >
+              {allOnPageSelected ? 'Clear' : 'Select all'}
+            </button>
+            <button
+              disabled={selected.size === 0}
+              onClick={async () => { await flags.markRead(selectedIds); bulkDone('Marked read'); }}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
+            >
+              <MailOpen className="w-3 h-3" /> Read
+            </button>
+            <button
+              disabled={selected.size === 0}
+              onClick={async () => { await flags.markUnread(selectedIds); bulkDone('Marked unread'); }}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
+            >
+              <Mail className="w-3 h-3" /> Unread
+            </button>
+            <button
+              disabled={selected.size === 0}
+              onClick={async () => { await flags.star(selectedIds, true); bulkDone('Starred'); }}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
+            >
+              <Star className="w-3 h-3" /> Star
+            </button>
+            <button
+              disabled={selected.size === 0}
+              onClick={async () => {
+                if (showArchived) { await flags.archive(selectedIds, false); bulkDone('Restored'); }
+                else { await flags.archive(selectedIds, true); bulkDone('Archived'); }
+              }}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
+            >
+              {showArchived ? <ArchiveRestore className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
+              {showArchived ? 'Restore' : 'Archive'}
+            </button>
+          </div>
+        )}
+
         {searchOpen && (
           <div className="px-4 pb-2.5">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
               <input
-                ref={searchRef}
-                type="search"
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                ref={searchRef} type="search" autoFocus
+                value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, email, or message…  (⌘K)"
                 className="w-full h-11 pl-10 pr-16 rounded-xl bg-muted/60 border border-border/40 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
               />
-              <kbd className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground tabular-nums">
-                esc
-              </kbd>
+              <kbd className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground tabular-nums">esc</kbd>
             </div>
           </div>
         )}
 
-        {/* Advanced filter panel */}
         {filtersOpen && (
           <div className="px-4 pb-3 space-y-2.5 border-t border-border/40 pt-3">
             <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={sender}
-                  onChange={(e) => setSender(e.target.value)}
-                  placeholder="From sender / email…"
-                  className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Subject contains…"
-                  className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
+              <input type="text" value={sender} onChange={(e) => setSender(e.target.value)}
+                placeholder="From sender / email…"
+                className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)}
+                placeholder="Subject contains…"
+                className="w-full h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
               {([
-                { id: 'any',   label: 'Any time' },
-                { id: 'today', label: 'Today' },
-                { id: '7d',    label: '7 days' },
-                { id: '30d',   label: '30 days' },
+                { id: 'any',    label: 'Any time' },
+                { id: 'today',  label: 'Today' },
+                { id: '7d',     label: '7 days' },
+                { id: '30d',    label: '30 days' },
                 { id: 'custom', label: 'Custom' },
               ] as { id: DateRangeKey; label: string }[]).map(opt => {
                 const active = dateRange === opt.id;
                 return (
-                  <button
-                    key={opt.id}
-                    onClick={() => setDateRange(opt.id)}
+                  <button key={opt.id} onClick={() => setDateRange(opt.id)}
                     className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
-                      active
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
-                    }`}
-                  >
+                      active ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+                    }`}>
                     {opt.label}
                   </button>
                 );
@@ -342,81 +480,69 @@ export default function CrmChatsPage() {
 
             {dateRange === 'custom' && (
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground"
-                />
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground"
-                />
+                <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground" />
+                <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-9 px-3 rounded-lg bg-muted/60 border border-border/40 text-[13px] text-foreground" />
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-2 pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setUnreadOnly(v => !v)}
-                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
-                    unreadOnly
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
-                  }`}
-                  aria-pressed={unreadOnly}
-                >
+            <div className="flex items-center justify-between gap-2 pt-0.5 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <FilterChip active={unreadOnly} onClick={() => setUnreadOnly(v => !v)}>
                   <span className={`w-1.5 h-1.5 rounded-full ${unreadOnly ? 'bg-primary-foreground' : 'bg-primary'}`} />
                   Unread
-                </button>
-                <button
-                  onClick={() => setAttachmentsOnly(v => !v)}
-                  className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
-                    attachmentsOnly
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
-                  }`}
-                  aria-pressed={attachmentsOnly}
-                >
-                  <Paperclip className="w-3 h-3" strokeWidth={2.4} />
-                  Attachments
-                </button>
+                </FilterChip>
+                <FilterChip active={attachmentsOnly} onClick={() => setAttachmentsOnly(v => !v)}>
+                  <Paperclip className="w-3 h-3" strokeWidth={2.4} /> Attachments
+                </FilterChip>
+                <FilterChip active={starredOnly} onClick={() => setStarredOnly(v => !v)}>
+                  <Star className="w-3 h-3" strokeWidth={2.4} /> Starred
+                </FilterChip>
+                <FilterChip active={hasFailures} onClick={() => setHasFailures(v => !v)}>
+                  <AlertCircle className="w-3 h-3" strokeWidth={2.4} /> Failed sends
+                </FilterChip>
               </div>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="text-[11px] font-semibold text-muted-foreground hover:text-foreground"
-                >
-                  Clear all
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {activeFilterCount > 0 && (
+                  <button onClick={clearFilters} className="text-[11px] font-semibold text-muted-foreground hover:text-foreground">Clear all</button>
+                )}
+                <Popover open={savePopOpen} onOpenChange={setSavePopOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary hover:bg-primary/15 border border-primary/30">
+                      <BookmarkPlus className="w-3 h-3" /> Save view
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 p-2">
+                    <p className="text-[11px] text-muted-foreground mb-1.5 px-1">Save current filters as a smart folder.</p>
+                    <Input autoFocus value={newViewName} onChange={(e) => setNewViewName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveView()}
+                      placeholder="e.g. Hot leads, Failed today" className="h-8 text-[13px]" />
+                    <div className="flex justify-end mt-2">
+                      <Button size="sm" className="h-7 text-[11px]" onClick={handleSaveView}>Save</Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Segmented filter — premium pill group */}
-        <div className="px-3 pb-2.5">
+        {/* Channel pill group */}
+        <div className="px-3 pb-2">
           <div className="flex items-center gap-1 p-1 rounded-full bg-muted/40 border border-border/40 overflow-x-auto scrollbar-hide">
             {FILTERS.map(f => {
               const active = filter === f.id;
               const unread = counts[f.id] ?? 0;
               return (
                 <button
-                  key={f.id}
-                  onClick={() => setFilter(f.id)}
+                  key={f.id} onClick={() => { setFilter(f.id); setActiveViewId(null); }}
                   className={`relative inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all flex-1 justify-center ${
-                    active
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'bg-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
+                    active ? 'bg-background text-foreground shadow-sm' : 'bg-transparent text-muted-foreground hover:text-foreground'
+                  }`}>
                   {f.label}
                   {unread > 0 && (
-                    <span className={`min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                      active ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'
-                    }`}>
+                    <span className={`min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${active ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'}`}>
                       {unread > 9 ? '9+' : unread}
                     </span>
                   )}
@@ -424,6 +550,40 @@ export default function CrmChatsPage() {
               );
             })}
           </div>
+        </div>
+
+        {/* Saved views chip strip */}
+        <div className="px-3 pb-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {builtinViews.map(b => {
+            const active = activeViewId === b.id;
+            return (
+              <button key={b.id} onClick={() => applyBuiltin(b)}
+                className={`shrink-0 h-7 px-2.5 rounded-full text-[11px] font-semibold border transition-colors ${
+                  active ? 'bg-foreground text-background border-foreground' : 'bg-muted/40 text-muted-foreground hover:text-foreground border-border/40'
+                }`}>
+                {b.name}
+              </button>
+            );
+          })}
+          {views.map(v => {
+            const active = activeViewId === v.id;
+            return (
+              <div key={v.id} className="relative group">
+                <button onClick={() => applyView(v)}
+                  className={`shrink-0 h-7 pl-2.5 pr-7 rounded-full text-[11px] font-semibold border transition-colors ${
+                    active ? 'bg-primary text-primary-foreground border-primary' : 'bg-primary/5 text-primary hover:bg-primary/10 border-primary/30'
+                  }`}>
+                  {v.name}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (confirm(`Delete view "${v.name}"?`)) removeView.mutate(v.id); }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-background/30 inline-flex items-center justify-center"
+                  aria-label={`Delete ${v.name}`}>
+                  <X className={`w-3 h-3 ${active ? 'text-primary-foreground' : 'text-primary'}`} />
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -447,12 +607,10 @@ export default function CrmChatsPage() {
               <Sparkles className="w-7 h-7 text-primary" strokeWidth={1.6} />
             </div>
             <div className="text-[15px] font-semibold text-foreground mb-1.5 tracking-tight">
-              {search ? 'No matches found' : 'Your inbox is clear'}
+              {search ? 'No matches found' : showArchived ? 'No archived threads' : 'Your inbox is clear'}
             </div>
             <p className="text-[13px] text-muted-foreground mb-5 max-w-[260px] leading-relaxed">
-              {search
-                ? 'Try a different name, email, or keyword.'
-                : 'Start a conversation with a lead to see threads appear here.'}
+              {search ? 'Try a different name, email, or keyword.' : 'Start a conversation with a lead to see threads appear here.'}
             </p>
             {!search && (
               <Button asChild variant="outline" size="sm" className="rounded-full">
@@ -473,104 +631,183 @@ export default function CrmChatsPage() {
               const isCursor = idx === cursor;
               const preview = cleanPreview(t.last_message_preview);
               const fallback = t.channel === 'email' ? t.email : t.phone;
+              const isSelected = selected.has(t.id);
+              const failed = (t.last_outbound_status ?? '').toLowerCase() === 'failed' || (t.last_outbound_status ?? '').toLowerCase() === 'undelivered';
+              const snoozeText = snoozedLabel(t.snoozed_until);
+
               return (
                 <li key={t.id} className="relative" data-row-index={idx} role="option" aria-selected={isActive}>
-                  {/* Gold accent bar for unread / focus */}
-                  {(isUnread || isCursor) && (
-                    <span
-                      aria-hidden
-                      className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all ${
-                        isCursor ? 'h-9 w-[3px]' : 'h-7 w-[3px]'
-                      }`}
-                      style={{ background: isUnread ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.55)' }}
-                    />
+                  {(isUnread || isCursor) && !selectMode && (
+                    <span aria-hidden
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all ${isCursor ? 'h-9 w-[3px]' : 'h-7 w-[3px]'}`}
+                      style={{ background: isUnread ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.55)' }} />
                   )}
-                  <button
+                  <div
                     onPointerEnter={() => { prefetchThread(t.id); setCursor(idx); }}
                     onTouchStart={() => prefetchThread(t.id)}
-                    onClick={() => navigate(`/crm/chats/${t.id}`)}
-                    className={`group w-full flex items-center gap-3.5 px-4 py-4 text-left transition-colors outline-none ${
-                      isActive
-                        ? 'bg-primary/10 hover:bg-primary/15'
-                        : isCursor
-                          ? 'bg-muted/40'
-                          : 'hover:bg-muted/30 active:bg-muted/50'
-                    }`}
-                  >
-                    {/* Gradient avatar with channel chip */}
-                    <div className="relative shrink-0">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[15px] font-semibold shadow-sm ring-1 ring-white/10"
-                        style={{ background: avatarGradient(t.contact_id) }}
+                    className={`group w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors outline-none relative ${
+                      isActive ? 'bg-primary/10 hover:bg-primary/15'
+                      : isCursor ? 'bg-muted/40'
+                      : isSelected ? 'bg-primary/8'
+                      : 'hover:bg-muted/30 active:bg-muted/50'
+                    }`}>
+                    {/* Bulk-select checkbox replaces avatar in select mode */}
+                    {selectMode ? (
+                      <button
+                        onClick={() => setSelected(prev => {
+                          const next = new Set(prev); if (next.has(t.id)) next.delete(t.id); else next.add(t.id); return next;
+                        })}
+                        className="shrink-0 w-12 h-12 flex items-center justify-center rounded-full hover:bg-muted/50"
+                        aria-label={isSelected ? 'Deselect' : 'Select'}
                       >
-                        {initials}
-                      </div>
-                      <div
-                        className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background flex items-center justify-center"
-                        style={{ boxShadow: '0 0 0 2px hsl(var(--background))' }}
-                        title={chLabel}
+                        {isSelected
+                          ? <CheckSquare className="w-5 h-5 text-primary" strokeWidth={2.2} />
+                          : <Square className="w-5 h-5 text-muted-foreground" strokeWidth={2} />}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigate(`/crm/chats/${t.id}`)}
+                        className="relative shrink-0"
+                        aria-label="Open thread"
                       >
-                        <Icon className="w-[10px] h-[10px]" style={{ color }} strokeWidth={2.6} />
-                      </div>
-                    </div>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[15px] font-semibold shadow-sm ring-1 ring-white/10"
+                          style={{ background: avatarGradient(t.contact_id) }}>
+                          {initials}
+                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background flex items-center justify-center"
+                          style={{ boxShadow: '0 0 0 2px hsl(var(--background))' }} title={chLabel}>
+                          <Icon className="w-[10px] h-[10px]" style={{ color }} strokeWidth={2.6} />
+                        </div>
+                      </button>
+                    )}
 
                     {/* Body */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
+                    <button
+                      onClick={() => selectMode
+                        ? setSelected(prev => { const n = new Set(prev); if (n.has(t.id)) n.delete(t.id); else n.add(t.id); return n; })
+                        : navigate(`/crm/chats/${t.id}`)}
+                      className="flex-1 min-w-0 text-left"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {t.is_starred && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
+                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight flex-1 ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
                           {name}
                         </h3>
                         {time && (
-                          <time
-                            dateTime={t.last_message_at ?? undefined}
-                            title={fullTime}
-                            className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums leading-tight ${isUnread ? 'text-primary font-bold' : 'text-muted-foreground/80 font-medium'}`}
-                          >
+                          <time dateTime={t.last_message_at ?? undefined} title={fullTime}
+                            className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums leading-tight ${isUnread ? 'text-primary font-bold' : 'text-muted-foreground/80 font-medium'}`}>
                             {time}
                           </time>
                         )}
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1">
                         <p className={`text-[13px] truncate leading-snug flex-1 min-w-0 ${isUnread ? 'text-foreground/85' : 'text-muted-foreground'}`}>
-                          {t.last_message_direction === 'outbound' && (
-                            <CornerUpLeft
-                              className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/60"
-                              strokeWidth={2.2}
-                              aria-label="You replied"
-                            />
+                          {failed && <AlertCircle className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-destructive" strokeWidth={2.4} aria-label="Last send failed" />}
+                          {t.last_message_direction === 'outbound' && !failed && (
+                            <CornerUpLeft className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/60" strokeWidth={2.2} aria-label="You replied" />
                           )}
                           {t.has_attachment && (
-                            <Paperclip
-                              className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70"
-                              strokeWidth={2.2}
-                              aria-label="Has attachment"
-                            />
+                            <Paperclip className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70" strokeWidth={2.2} aria-label="Has attachment" />
                           )}
                           {t.subject ? (
                             <>
                               <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/80'}>{t.subject}</span>
                               {preview && <span className="text-muted-foreground/70"> — {preview}</span>}
                             </>
-                          ) : (
-                            preview || fallback || 'No messages yet'
-                          )}
+                          ) : (preview || fallback || 'No messages yet')}
                         </p>
-                        {isUnread && (
+                        {snoozeText && (
+                          <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                            <Clock4 className="w-2.5 h-2.5" /> {snoozeText.replace(/^Snoozed · /, '')}
+                          </span>
+                        )}
+                        {isUnread && !selectMode && (
                           <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30 tabular-nums">
                             {t.unread_count > 99 ? '99+' : t.unread_count}
                           </span>
                         )}
                       </div>
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* Per-row inline actions — visible on hover or always on touch */}
+                    {!selectMode && (
+                      <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <RowAction title={t.is_starred ? 'Unstar' : 'Star'}
+                          onClick={() => flags.star(t.id, !t.is_starred)}>
+                          <Star className={`w-4 h-4 ${t.is_starred ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
+                        </RowAction>
+                        <RowAction title={(t.unread_count ?? 0) > 0 ? 'Mark read' : 'Mark unread'}
+                          onClick={() => (t.unread_count ?? 0) > 0 ? flags.markRead(t.id) : flags.markUnread(t.id)}>
+                          {(t.unread_count ?? 0) > 0 ? <MailOpen className="w-4 h-4 text-muted-foreground" /> : <Mail className="w-4 h-4 text-muted-foreground" />}
+                        </RowAction>
+                        <SnoozeMenu
+                          isSnoozed={!!snoozeText}
+                          onSnooze={(iso) => flags.snooze(t.id, iso).then(() => toast.success(iso ? 'Snoozed' : 'Unsnoozed'))}
+                        />
+                        <RowAction title={t.is_archived ? 'Restore' : 'Archive'}
+                          onClick={() => flags.archive(t.id, !t.is_archived).then(() => toast.success(t.is_archived ? 'Restored' : 'Archived'))}>
+                          {t.is_archived ? <ArchiveRestore className="w-4 h-4 text-muted-foreground" /> : <Archive className="w-4 h-4 text-muted-foreground" />}
+                        </RowAction>
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
-
-      {/* No per-page FAB — conversations start from Leads / Lead Detail. */}
     </div>
+  );
+}
+
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+        active ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
+      }`}>
+      {children}
+    </button>
+  );
+}
+
+function RowAction({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={(e) => { e.stopPropagation(); onClick(); }} title={title} aria-label={title}
+      className="h-8 w-8 rounded-full inline-flex items-center justify-center hover:bg-background border border-transparent hover:border-border/60 transition-colors">
+      {children}
+    </button>
+  );
+}
+
+function SnoozeMenu({ isSnoozed, onSnooze }: { isSnoozed: boolean; onSnooze: (iso: string | null) => void }) {
+  const presets = useMemo(() => snoozePresets(), []);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button onClick={(e) => e.stopPropagation()} title="Snooze" aria-label="Snooze"
+          className="h-8 w-8 rounded-full inline-flex items-center justify-center hover:bg-background border border-transparent hover:border-border/60">
+          {isSnoozed ? <Bell className="w-4 h-4 text-amber-500" /> : <BellOff className="w-4 h-4 text-muted-foreground" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-52 p-1" onClick={(e) => e.stopPropagation()}>
+        {presets.map(p => (
+          <button key={p.id} onClick={() => onSnooze(p.iso)}
+            className="w-full text-left px-2.5 py-2 rounded-md hover:bg-muted text-[13px] flex items-center gap-2">
+            <Clock4 className="w-3.5 h-3.5 text-muted-foreground" /> {p.label}
+          </button>
+        ))}
+        {isSnoozed && (
+          <>
+            <div className="h-px my-1 bg-border" />
+            <button onClick={() => onSnooze(null)}
+              className="w-full text-left px-2.5 py-2 rounded-md hover:bg-muted text-[13px] flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <Bell className="w-3.5 h-3.5" /> Unsnooze now
+            </button>
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
