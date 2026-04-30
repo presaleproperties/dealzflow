@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft } from 'lucide-react';
-import { format, formatDistanceToNowStrict, isThisWeek, isToday, isYesterday } from 'date-fns';
+import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
