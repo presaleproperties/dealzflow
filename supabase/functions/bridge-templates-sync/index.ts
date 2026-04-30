@@ -18,6 +18,10 @@ interface TemplatePush {
   project?: string;
   merge_tags?: string[];
   sync_hash?: string;           // hash of content from Presale
+  owner_scope?: string;         // 'team:presale' | 'agent:<slug>'
+  owner_agent_slug?: string | null;
+  created_by_agent_slug?: string | null;
+  deleted?: boolean;            // soft-delete signal
 }
 
 async function hashContent(s: string): Promise<string> {
