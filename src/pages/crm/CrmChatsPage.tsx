@@ -1,11 +1,43 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Plus, Mail, MessageSquare, X, Sparkles } from 'lucide-react';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft } from 'lucide-react';
+import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useCrmChats, type ChatChannel, type ChatChannelFilter } from '@/hooks/useCrmChats';
 import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
 import { formatContactName } from '@/lib/format';
+
+/**
+ * Strip HTML, collapse whitespace, and decode common entities so email
+ * previews don't render as raw markup. Also drops quoted ">"-prefixed lines
+ * and "On … wrote:" headers that bloat the snippet with no signal.
+ */
+function cleanPreview(raw?: string | null): string {
+  if (!raw) return '';
+  let s = String(raw);
+  // strip style/script blocks first
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  // turn <br> and block tags into spaces
+  s = s.replace(/<\/?(br|p|div|li|tr|h[1-6])[^>]*>/gi, ' ');
+  // strip remaining tags
+  s = s.replace(/<[^>]+>/g, '');
+  // decode a few entities
+  s = s.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  // drop quoted lines and reply headers
+  s = s.split('\n').filter(l => !/^\s*>/.test(l) && !/^On .+wrote:\s*$/i.test(l)).join(' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/** Smart timestamp: 9:42 AM today, "Yesterday", weekday this week, else MMM d. */
+function smartTime(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isToday(d)) return format(d, 'h:mm a');
+  if (isYesterday(d)) return 'Yesterday';
+  if (isThisWeek(d, { weekStartsOn: 1 })) return format(d, 'EEE');
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return format(d, sameYear ? 'MMM d' : 'MMM d, yy');
+}
 
 /**
  * Inbox channel toggle. "Text" is a combined view of SMS + WhatsApp so the
@@ -69,7 +101,7 @@ export default function CrmChatsPage() {
       return name.includes(s)
         || (t.email ?? '').toLowerCase().includes(s)
         || (t.phone ?? '').includes(s)
-        || (t.last_message_preview ?? '').toLowerCase().includes(s);
+        || cleanPreview(t.last_message_preview).toLowerCase().includes(s);
     });
   }, [threads, search]);
 
@@ -85,6 +117,54 @@ export default function CrmChatsPage() {
     }
     return c;
   }, [threads]);
+
+  // Keyboard navigation: j/k or ↑/↓ to move, Enter to open, / or ⌘K to focus
+  // search, Esc to clear/close. Skipped while user is typing in a field.
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const [cursor, setCursor] = useState(0);
+
+  useEffect(() => { setCursor(0); }, [filter, search]);
+
+  useEffect(() => {
+    const isTyping = (el: EventTarget | null) =>
+      el instanceof HTMLElement && (
+        el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+      );
+    const onKey = (e: KeyboardEvent) => {
+      // Global focus search
+      if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !isTyping(e.target))) {
+        e.preventDefault();
+        setSearchOpen(true);
+        requestAnimationFrame(() => searchRef.current?.focus());
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (search) { setSearch(''); return; }
+        if (searchOpen) { setSearchOpen(false); return; }
+      }
+      if (isTyping(e.target)) return;
+      if (filtered.length === 0) return;
+      if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setCursor(c => Math.min(filtered.length - 1, c + 1));
+      } else if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setCursor(c => Math.max(0, c - 1));
+      } else if (e.key === 'Enter') {
+        const t = filtered[cursor];
+        if (t) navigate(`/crm/chats/${t.id}`);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [filtered, cursor, navigate, search, searchOpen]);
+
+  // Scroll active cursor row into view
+  useEffect(() => {
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-row-index="${cursor}"]`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [cursor]);
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
@@ -123,13 +203,17 @@ export default function CrmChatsPage() {
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
               <input
+                ref={searchRef}
                 type="search"
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, email, or message…"
-                className="w-full h-11 pl-10 pr-3 rounded-xl bg-muted/60 border border-border/40 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
+                placeholder="Search name, email, or message…  (⌘K)"
+                className="w-full h-11 pl-10 pr-16 rounded-xl bg-muted/60 border border-border/40 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
               />
+              <kbd className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground tabular-nums">
+                esc
+              </kbd>
             </div>
           </div>
         )}
@@ -199,32 +283,40 @@ export default function CrmChatsPage() {
             )}
           </div>
         ) : (
-          <ul className="divide-y divide-border/40">
-            {filtered.map(t => {
-              const { Icon, color } = channelChip(t.channel);
+          <ul ref={listRef} className="divide-y divide-border/40" role="listbox" aria-label="Conversations">
+            {filtered.map((t, idx) => {
+              const { Icon, color, label: chLabel } = channelChip(t.channel);
               const name = formatContactName(t.first_name, t.last_name) || t.email || t.phone || 'Unknown';
               const initials = initialsFromName(t.first_name, t.last_name, t.email);
-              const time = t.last_message_at
-                ? formatDistanceToNowStrict(new Date(t.last_message_at), { addSuffix: false })
-                : '';
+              const time = smartTime(t.last_message_at);
+              const fullTime = t.last_message_at ? format(new Date(t.last_message_at), 'PPpp') : '';
               const isUnread = (t.unread_count ?? 0) > 0;
               const isActive = activeId === t.id;
+              const isCursor = idx === cursor;
+              const preview = cleanPreview(t.last_message_preview);
+              const fallback = t.channel === 'email' ? t.email : t.phone;
               return (
-                <li key={t.id} className="relative">
-                  {/* Subtle gold accent bar for unread */}
-                  {isUnread && (
+                <li key={t.id} className="relative" data-row-index={idx} role="option" aria-selected={isActive}>
+                  {/* Gold accent bar for unread / focus */}
+                  {(isUnread || isCursor) && (
                     <span
                       aria-hidden
-                      className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-[3px] rounded-r-full"
-                      style={{ background: 'hsl(var(--primary))' }}
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all ${
+                        isCursor ? 'h-9 w-[3px]' : 'h-7 w-[3px]'
+                      }`}
+                      style={{ background: isUnread ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.55)' }}
                     />
                   )}
                   <button
-                    onPointerEnter={() => prefetchThread(t.id)}
+                    onPointerEnter={() => { prefetchThread(t.id); setCursor(idx); }}
                     onTouchStart={() => prefetchThread(t.id)}
                     onClick={() => navigate(`/crm/chats/${t.id}`)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${
-                      isActive ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30 active:bg-muted/50'
+                    className={`group w-full flex items-center gap-3.5 px-4 py-4 text-left transition-colors outline-none ${
+                      isActive
+                        ? 'bg-primary/10 hover:bg-primary/15'
+                        : isCursor
+                          ? 'bg-muted/40'
+                          : 'hover:bg-muted/30 active:bg-muted/50'
                     }`}
                   >
                     {/* Gradient avatar with channel chip */}
@@ -236,8 +328,9 @@ export default function CrmChatsPage() {
                         {initials}
                       </div>
                       <div
-                        className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background flex items-center justify-center shadow-sm"
+                        className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background flex items-center justify-center"
                         style={{ boxShadow: '0 0 0 2px hsl(var(--background))' }}
+                        title={chLabel}
                       >
                         <Icon className="w-[10px] h-[10px]" style={{ color }} strokeWidth={2.6} />
                       </div>
@@ -246,24 +339,32 @@ export default function CrmChatsPage() {
                     {/* Body */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between gap-2">
-                        <h3 className={`text-[15px] truncate tracking-[-0.01em] ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
+                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
                           {name}
                         </h3>
                         {time && (
-                          <span className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums ${isUnread ? 'text-primary font-bold' : 'text-muted-foreground/80 font-medium'}`}>
+                          <time
+                            dateTime={t.last_message_at ?? undefined}
+                            title={fullTime}
+                            className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums leading-tight ${isUnread ? 'text-primary font-bold' : 'text-muted-foreground/80 font-medium'}`}
+                          >
                             {time}
-                          </span>
+                          </time>
                         )}
                       </div>
-                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <div className="flex items-center justify-between gap-2 mt-1">
                         <p className={`text-[13px] truncate leading-snug flex-1 min-w-0 ${isUnread ? 'text-foreground/85' : 'text-muted-foreground'}`}>
                           {t.last_message_direction === 'outbound' && (
-                            <span className="text-muted-foreground/60 mr-1">You:</span>
+                            <CornerUpLeft
+                              className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/60"
+                              strokeWidth={2.2}
+                              aria-label="You replied"
+                            />
                           )}
-                          {t.last_message_preview || (t.channel === 'email' ? t.email : t.phone) || 'No messages yet'}
+                          {preview || fallback || 'No messages yet'}
                         </p>
                         {isUnread && (
-                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30">
+                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30 tabular-nums">
                             {t.unread_count > 99 ? '99+' : t.unread_count}
                           </span>
                         )}
