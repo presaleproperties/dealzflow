@@ -75,25 +75,66 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
       const rows = (data ?? []) as any[];
       const ids = rows.map(r => r.id);
       // Fetch most-recent message preview per conversation in one round-trip
-      let previews = new Map<string, { content: string; direction: string }>();
+      type LatestMsg = { content: string; direction: string; source_table: string | null; source_id: string | null };
+      let previews = new Map<string, LatestMsg>();
       if (ids.length > 0) {
         const { data: msgs } = await supabase
           .from('crm_messages')
-          .select('conversation_id, content, direction, created_at')
+          .select('conversation_id, content, direction, created_at, source_table, source_id')
           .in('conversation_id', ids)
           .order('created_at', { ascending: false });
         if (msgs) {
           for (const m of msgs as any[]) {
             if (!previews.has(m.conversation_id)) {
-              previews.set(m.conversation_id, { content: m.content ?? '', direction: m.direction });
+              previews.set(m.conversation_id, {
+                content: m.content ?? '',
+                direction: m.direction,
+                source_table: m.source_table ?? null,
+                source_id: m.source_id ?? null,
+              });
             }
           }
+        }
+      }
+
+      // Enrich latest message with subject (email) + attachment flag (mms / email).
+      const emailIds: string[] = [];
+      const smsIds: string[] = [];
+      previews.forEach((p) => {
+        if (!p.source_id) return;
+        if (p.source_table === 'crm_email_log') emailIds.push(p.source_id);
+        else if (p.source_table === 'crm_sms_log') smsIds.push(p.source_id);
+      });
+
+      const subjectById = new Map<string, string>();
+      const attachIds = new Set<string>();
+      if (emailIds.length > 0) {
+        const { data: emails } = await supabase
+          .from('crm_email_log')
+          .select('id, subject, html_body')
+          .in('id', emailIds);
+        for (const e of (emails ?? []) as any[]) {
+          if (e.subject) subjectById.set(e.id, e.subject);
+          // Heuristic: emails with inline cid:/attachment markers in raw HTML
+          const html = (e.html_body ?? '') as string;
+          if (/cid:|<\s*img[^>]+src=|filename=/i.test(html)) attachIds.add(e.id);
+        }
+      }
+      if (smsIds.length > 0) {
+        const { data: smsRows } = await supabase
+          .from('crm_sms_log')
+          .select('id, media_urls')
+          .in('id', smsIds);
+        for (const s of (smsRows ?? []) as any[]) {
+          if (Array.isArray(s.media_urls) && s.media_urls.length > 0) attachIds.add(s.id);
         }
       }
 
       return rows.map((r): ChatThread => {
         const c = Array.isArray(r.crm_contacts) ? r.crm_contacts[0] : r.crm_contacts;
         const p = previews.get(r.id);
+        const subject = p?.source_table === 'crm_email_log' && p.source_id ? subjectById.get(p.source_id) ?? null : null;
+        const has_attachment = !!(p?.source_id && attachIds.has(p.source_id));
         return {
           id: r.id,
           contact_id: r.contact_id,
@@ -107,6 +148,8 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
           phone: c?.phone ?? null,
           last_message_preview: p?.content ?? null,
           last_message_direction: (p?.direction as any) ?? null,
+          subject,
+          has_attachment,
         };
       });
     },
