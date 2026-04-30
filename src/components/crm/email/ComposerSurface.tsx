@@ -403,23 +403,17 @@ export function ComposerSurface({
       html: finalHtml,
       contact_id: isManual ? null : c.id,
     };
-    const logArgs = isManual
-      ? null
-      : {
-          contact_id: c.id,
-          direction: 'outbound' as const,
-          content: `Subject: ${renderedSubject}\n\n${finalHtml.replace(/<[^>]*>/g, ' ').trim()}`,
-          channel: 'email' as const,
-          sent_by: 'Agent',
-          message_type: 'text' as const,
-        };
+    // NOTE: when contact_id is provided, the DB trigger
+    // `trg_crm_sync_email_log_to_messages` automatically creates a properly-
+    // linked chat message row (with source_table='crm_email_log' + source_id).
+    // We MUST NOT insert a duplicate row here, otherwise the chat thread
+    // renders an orphan with stripped text and no HTML body.
     resetComposer();
     onClearRecipients?.();
     onSent?.();
     void (async () => {
       try {
         await sendBridge.mutateAsync(args);
-        if (logArgs) await addMessage.mutateAsync(logArgs);
       } catch { /* hook handles toast */ }
     })();
   };
