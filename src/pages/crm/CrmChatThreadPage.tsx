@@ -26,6 +26,9 @@ interface ConversationRow {
   status: string | null;
   unread_count: number | null;
   last_message_at: string | null;
+  is_starred?: boolean;
+  is_archived?: boolean;
+  snoozed_until?: string | null;
 }
 
 interface MessageRow {
@@ -168,6 +171,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       const { data, error } = await supabase
         .from('crm_conversations')
         .select(`id, contact_id, channel, status, unread_count, last_message_at,
+                 is_starred, is_archived, snoozed_until,
                  crm_contacts!inner ( * )`)
         .eq('id', conversationId)
         .maybeSingle();
@@ -176,6 +180,9 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       const conv: ConversationRow = {
         id: data.id, contact_id: data.contact_id, channel: data.channel as Channel,
         status: data.status, unread_count: data.unread_count, last_message_at: data.last_message_at,
+        is_starred: (data as any).is_starred ?? false,
+        is_archived: (data as any).is_archived ?? false,
+        snoozed_until: (data as any).snoozed_until ?? null,
       };
       const contact = (Array.isArray((data as any).crm_contacts) ? (data as any).crm_contacts[0] : (data as any).crm_contacts) as CrmContact;
       return { conv, contact };
