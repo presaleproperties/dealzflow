@@ -64,15 +64,15 @@ export function useCrmInboxViews() {
   const create = useMutation({
     mutationFn: async (v: Omit<InboxView, 'id' | 'user_id' | 'sort_order'> & { sort_order?: number }) => {
       if (!user?.id) throw new Error('Not signed in');
-      const { error } = await supabase.from('crm_inbox_views').insert({
+      const { error } = await supabase.from('crm_inbox_views').insert([{
         user_id: user.id,
         name: v.name,
         channel: v.channel,
         query: v.query,
-        filters: v.filters,
+        filters: v.filters as any,
         pinned: v.pinned,
         sort_order: v.sort_order ?? 0,
-      });
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
