@@ -150,10 +150,11 @@ serve(async (req) => {
       }
 
       const headers = [
-        `From: ${fromEmail}`,
+        `From: ${fromHeader}`,
         `To: ${to}`,
         `Subject: ${subject ?? "(no subject)"}`,
       ];
+      if (replyTo) headers.push(`Reply-To: ${replyTo}`);
       if (in_reply_to) {
         headers.push(`In-Reply-To: ${in_reply_to}`);
         headers.push(`References: ${references ?? in_reply_to}`);
