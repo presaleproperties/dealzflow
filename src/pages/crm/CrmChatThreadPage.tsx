@@ -145,6 +145,12 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const qc = useQueryClient();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composePrefill, setComposePrefill] = useState<{
+    subject?: string; bodyHtml?: string; cc?: string;
+  } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
 
