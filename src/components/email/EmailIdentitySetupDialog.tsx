@@ -58,6 +58,10 @@ export function EmailIdentitySetupDialog() {
     if (!user?.id) return;
     if (status !== "ready" && status !== "unmatched") return;
 
+    // Skip for workspace owner — not an agent in Presale, doesn't need identity setup.
+    const ownerEmails = ["info@presaleproperties.com"];
+    if (user.email && ownerEmails.includes(user.email.toLowerCase())) return;
+
     try {
       const ack = localStorage.getItem(ackKey(user.id));
       if (ack) return;
@@ -66,7 +70,7 @@ export function EmailIdentitySetupDialog() {
     }
 
     setOpen(true);
-  }, [user?.id, status]);
+  }, [user?.id, user?.email, status]);
 
   const dismiss = () => {
     if (user?.id) {
