@@ -54,11 +54,13 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: member } = await admin
       .from("crm_team")
-      .select("user_id")
+      .select("user_id, slug, role")
       .eq("user_id", userData.user.id)
       .eq("is_active", true)
       .maybeSingle();
     if (!member) return json({ error: "forbidden" }, 403);
+    const callerSlug: string | null = member.slug ?? null;
+    const isAdmin = member.role === "owner" || member.role === "admin";
 
     if (!BRIDGE_SECRET || !PRESALE_ANON) {
       return json({ error: "bridge_not_configured" }, 500);
