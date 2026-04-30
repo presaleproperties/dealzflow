@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
 import { useBridgeTemplates } from '@/hooks/useBridgeEmail';
-import { useMyAgentSlug } from '@/hooks/useMyAgentSlug';
+import { useMyAgentSlug } from '@/hooks/useCrmEmail';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
 
 const OWNER_TABS = [
