@@ -42,6 +42,10 @@ export interface EmailMessageViewProps {
   attachments?: EmailAttachment[];
   /** Whether to expand the message body by default. Latest message: true. */
   defaultExpanded?: boolean;
+  /** Controlled expansion — when provided, overrides internal state. */
+  expanded?: boolean;
+  /** Called when the user toggles the header. Pair with `expanded` for full control. */
+  onExpandedChange?: (next: boolean) => void;
   /** Optional action row — only show on latest message. */
   onReply?: () => void;
   onReplyAll?: () => void;
