@@ -1375,12 +1375,14 @@ export type Database = {
           external_id: string | null
           id: string
           is_active: boolean
+          is_favorite: boolean
           last_synced_at: string | null
           last_used_at: string | null
           merge_tags: string[] | null
           name: string
           owner_agent_slug: string | null
           owner_scope: string
+          preview_text: string | null
           project: string | null
           slug: string | null
           source: string
@@ -1397,12 +1399,14 @@ export type Database = {
           external_id?: string | null
           id?: string
           is_active?: boolean
+          is_favorite?: boolean
           last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
           name: string
           owner_agent_slug?: string | null
           owner_scope?: string
+          preview_text?: string | null
           project?: string | null
           slug?: string | null
           source?: string
@@ -1419,12 +1423,14 @@ export type Database = {
           external_id?: string | null
           id?: string
           is_active?: boolean
+          is_favorite?: boolean
           last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
           name?: string
           owner_agent_slug?: string | null
           owner_scope?: string
+          preview_text?: string | null
           project?: string | null
           slug?: string | null
           source?: string
@@ -4082,77 +4088,6 @@ export type Database = {
           subject?: string | null
           template_id?: string
           version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_template_versions_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "email_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_templates: {
-        Row: {
-          area_tags: string[]
-          category: string
-          created_at: string
-          created_by: string | null
-          html_content: string
-          id: string
-          is_active: boolean
-          is_favorite: boolean
-          last_used_at: string | null
-          name: string
-          preview_text: string | null
-          project_tags: string[]
-          source: string
-          subject: string | null
-          synced_at: string
-          thumbnail_url: string | null
-          times_used: number
-          updated_at: string
-        }
-        Insert: {
-          area_tags?: string[]
-          category?: string
-          created_at?: string
-          created_by?: string | null
-          html_content?: string
-          id?: string
-          is_active?: boolean
-          is_favorite?: boolean
-          last_used_at?: string | null
-          name: string
-          preview_text?: string | null
-          project_tags?: string[]
-          source?: string
-          subject?: string | null
-          synced_at?: string
-          thumbnail_url?: string | null
-          times_used?: number
-          updated_at?: string
-        }
-        Update: {
-          area_tags?: string[]
-          category?: string
-          created_at?: string
-          created_by?: string | null
-          html_content?: string
-          id?: string
-          is_active?: boolean
-          is_favorite?: boolean
-          last_used_at?: string | null
-          name?: string
-          preview_text?: string | null
-          project_tags?: string[]
-          source?: string
-          subject?: string | null
-          synced_at?: string
-          thumbnail_url?: string | null
-          times_used?: number
-          updated_at?: string
         }
         Relationships: []
       }

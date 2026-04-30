@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!member) return json({ error: "forbidden" }, 403);
     const callerSlug: string | null = member.slug ?? null;
+    const isAdmin = member.role === "owner" || member.role === "admin";
 
     if (!BRIDGE_SECRET || !PRESALE_ANON) {
       // Bridge not configured — push is a no-op so local edits don't fail.
@@ -83,6 +84,7 @@ Deno.serve(async (req) => {
           external_id: body.external_id,
           deleted: true,
           actor_agent_slug: callerSlug,
+          actor_is_admin: isAdmin,
         }),
       });
       const text = await upstream.text();
@@ -122,6 +124,7 @@ Deno.serve(async (req) => {
       created_by_agent_slug: tpl.created_by_agent_slug,
       sync_hash: incomingHash,
       actor_agent_slug: callerSlug,
+      actor_is_admin: isAdmin,
     };
 
     const upstream = await fetch(`${BRIDGE_URL}/bridge-receive-template`, {

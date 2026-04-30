@@ -28,6 +28,8 @@ import { TemplateEditor } from '@/components/crm/templates/TemplateEditor';
 import { useSmsTemplates, type MessagingChannel } from '@/hooks/useSms';
 import { Link } from 'react-router-dom';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { stripSignatureBlock } from '@/lib/templateSignature';
 
@@ -183,6 +185,23 @@ function EmailTemplatesPanel() {
             updatedAt={bridgeQ.dataUpdatedAt}
             onRefresh={() => bridgeQ.refetch()}
           />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              const t = toast.loading('Pulling latest from Presale…');
+              try {
+                const { error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
+                if (error) throw error;
+                await Promise.all([localQ.refetch(), bridgeQ.refetch()]);
+                toast.success('Templates synced from Presale', { id: t });
+              } catch (e: any) {
+                toast.error(e?.message || 'Sync failed', { id: t });
+              }
+            }}
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1" /> Sync now
+          </Button>
           <Button size="sm" onClick={() => { setCloneDraft(null); setCreating(true); }}>
             <Plus className="w-3.5 h-3.5 mr-1" /> New template
           </Button>
@@ -337,6 +356,11 @@ function LocalTemplateCard({
           <div className="font-semibold text-sm truncate flex items-center gap-1.5">
             {tpl.is_favorite && <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />}
             {tpl.name}
+            {tpl.owner_scope === 'team:presale' ? (
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">Team</span>
+            ) : tpl.owner_scope?.startsWith('agent:') ? (
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground border shrink-0">Mine</span>
+            ) : null}
           </div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
             {tpl.category}{tpl.source && tpl.source !== 'dealflow' ? ` · ${tpl.source}` : ''}

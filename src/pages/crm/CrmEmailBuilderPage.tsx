@@ -86,9 +86,10 @@ export default function CrmEmailBuilderPage() {
     if (!name || !subject) { toast.error("Name and subject are required"); return; }
     setSaving(true);
     try {
-      const { error } = await (supabase as any).from("email_templates").insert({
-        name, subject, html_content: html, preview_text: previewText, source: "crm_builder",
-      });
+      const { error } = await supabase.from("crm_email_templates").insert({
+        name, subject, body_html: html, preview_text: previewText, source: "crm_builder",
+        category: "general", is_active: true, owner_scope: "team:presale",
+      } as any);
       if (error) throw error;
       toast.success("Saved to shared templates — synced with Presale");
     } catch (e: any) {

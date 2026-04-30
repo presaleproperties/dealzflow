@@ -53,15 +53,14 @@ export function TemplateVersionHistory({ templateId, onRestore }: Props) {
   const restore = useMutation({
     mutationFn: async (v: Version) => {
       const { error } = await supabase
-        .from('email_templates' as any)
+        .from('crm_email_templates')
         .update({
           name: v.name,
           subject: v.subject,
           preview_text: v.preview_text,
-          html_content: v.html_content,
+          body_html: v.html_content,
           category: v.category,
-          project_tags: v.project_tags,
-          area_tags: v.area_tags,
+          project: v.project_tags?.[0] ?? null,
         } as any)
         .eq('id', templateId);
       if (error) throw error;
