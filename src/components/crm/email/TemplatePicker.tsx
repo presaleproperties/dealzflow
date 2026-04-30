@@ -175,8 +175,30 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
           </Button>
         </div>
 
-        {/* Filters row — search + horizontally scrollable category chips */}
+        {/* Filters row — owner segments + search + category chips */}
         <div className="px-4 sm:px-5 py-2.5 border-b border-border bg-muted/10 shrink-0 space-y-2">
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted/40 w-fit">
+            {OWNER_TABS.map((tab) => {
+              const active = ownerFilter === tab.value;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setOwnerFilter(tab.value)}
+                  className={cn(
+                    'h-7 px-3 rounded-md text-[12px] font-semibold transition-colors flex items-center gap-1.5',
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {tab.label}
+                  <span className="text-[10.5px] tabular-nums opacity-70">
+                    {ownerCounts[tab.value]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
