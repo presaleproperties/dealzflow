@@ -203,13 +203,17 @@ export default function CrmChatsPage() {
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
               <input
+                ref={searchRef}
                 type="search"
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, email, or message…"
-                className="w-full h-11 pl-10 pr-3 rounded-xl bg-muted/60 border border-border/40 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
+                placeholder="Search name, email, or message…  (⌘K)"
+                className="w-full h-11 pl-10 pr-16 rounded-xl bg-muted/60 border border-border/40 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
               />
+              <kbd className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center h-5 px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground tabular-nums">
+                esc
+              </kbd>
             </div>
           </div>
         )}
