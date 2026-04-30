@@ -150,6 +150,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  // Map<messageId, expanded?>. Missing = use default (last-message expanded).
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const { user } = useAuth();
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
