@@ -315,22 +315,12 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const contact = thread?.contact;
   const conv = thread?.conv;
   const meta = useMemo(() => channelMeta((conv?.channel ?? 'email') as Channel), [conv?.channel]);
-
-  if (threadLoading) {
-    return <ChatThreadSkeleton onBack={() => navigate('/crm/chats')} />;
-  }
-  if (!thread || !conv || !contact) {
-    return (
-      <div className="px-6 py-20 text-center text-sm text-muted-foreground">
-        Conversation not found. <Link to="/crm/chats" className="text-primary underline">Back to Chats</Link>
-      </div>
-    );
-  }
-
-  const name = formatContactName(contact.first_name, contact.last_name) || contact.email || contact.phone || 'Unknown';
+  const name = contact
+    ? (formatContactName(contact.first_name, contact.last_name) || contact.email || contact.phone || 'Unknown')
+    : 'Unknown';
   const subline =
-    conv.channel === 'email' ? (contact.email ?? 'No email')
-    : (formatPhone(contact.phone) || 'No phone');
+    conv?.channel === 'email' ? (contact?.email ?? 'No email')
+    : (formatPhone(contact?.phone ?? null) || 'No phone');
   const Icon = meta.Icon;
 
   // Group consecutive same-direction messages into "stacks" for nicer bubbles
@@ -533,6 +523,17 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [composeOpen, searchOpen, conv?.channel, messages, openReply, openForward]);
+
+  if (threadLoading) {
+    return <ChatThreadSkeleton onBack={() => navigate('/crm/chats')} />;
+  }
+  if (!thread || !conv || !contact) {
+    return (
+      <div className="px-6 py-20 text-center text-sm text-muted-foreground">
+        Conversation not found. <Link to="/crm/chats" className="text-primary underline">Back to Chats</Link>
+      </div>
+    );
+  }
 
   return (
     <div className={
