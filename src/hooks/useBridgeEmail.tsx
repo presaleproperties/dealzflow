@@ -66,14 +66,13 @@ export function useBridgeTemplates() {
         created_at: t.created_at ?? null,
         updated_at: t.updated_at ?? null,
         source: 'presale_properties',
-          owner_scope: 'team:presale',
-          owner_agent_slug: null,
-          created_by_agent_slug: null,
-          asset_type: classifyAsset(t),
-          thumbnail_url: (t.thumbnail as string) ?? null,
-          tags_raw: tagsRaw,
-        };
-      });
+        owner_scope: 'team:presale',
+        owner_agent_slug: null,
+        created_by_agent_slug: null,
+        asset_type: classifyAsset(t),
+        thumbnail_url: (t as any).thumbnail ?? null,
+        tags_raw: [],
+      }));
     },
     // Keep templates fresh: refetch every 60s in background, on focus, and on reconnect.
     staleTime: 30_000,
