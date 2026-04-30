@@ -60,6 +60,11 @@ interface Props {
   contact: CrmContact;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Optional prefill — used by Reply / Reply All / Forward from the inbox.
+   *  Applied once when the dialog opens, then state is owned by the user. */
+  initialSubject?: string;
+  initialBodyHtml?: string;
+  initialCc?: string;
 }
 
 type Mode = 'edit' | 'html' | 'preview';
@@ -89,7 +94,7 @@ const isRichSignatureHtml = (html: string) =>
   /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
   || /<[a-z][^>]*\sstyle\s*=/i.test(html);
 
-export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
+export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc }: Props) {
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
@@ -195,6 +200,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange }: Props) {
       autoSignaturePreviewedRef.current = false;
     }
   }, [open]);
+
+  /* Apply prefill (Reply / Reply All / Forward) once when the dialog opens */
+  const prefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!open) { prefillAppliedRef.current = false; return; }
+    if (prefillAppliedRef.current) return;
+    if (initialSubject !== undefined) setSubject(initialSubject);
+    if (initialBodyHtml !== undefined) setBodyHtml(initialBodyHtml);
+    if (initialCc !== undefined && initialCc.length > 0) {
+      setCc(initialCc);
+      setShowCcBcc(true);
+    }
+    prefillAppliedRef.current = true;
+  }, [open, initialSubject, initialBodyHtml, initialCc]);
 
   /* Mobile back-button trap — keeps user on the lead detail page. */
   useComposerBackButton(open, onOpenChange);

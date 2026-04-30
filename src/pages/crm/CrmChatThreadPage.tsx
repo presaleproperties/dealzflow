@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, User2, Send, Loader2, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
@@ -10,6 +10,10 @@ import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/ChatThreadSkeleton';
 import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
+import { EmailMessageView, buildReplyQuote, buildForwardQuote } from '@/components/crm/chats/EmailMessageView';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 type Channel = 'email' | 'sms' | 'whatsapp';
 
@@ -141,6 +145,12 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const qc = useQueryClient();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composePrefill, setComposePrefill] = useState<{
+    subject?: string; bodyHtml?: string; cc?: string;
+  } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
 
@@ -208,7 +218,32 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     },
   });
 
-  // Realtime — refetch on new message in this conversation
+  // Cross-reference email-log rows so we can show real From/Subject/CC and
+  // attachments on email bubbles instead of plain "Subject: ..." prefixes.
+  const emailLogIds = useMemo(
+    () => messages
+      .filter((m) => m.channel === 'email' && m.source_table === 'crm_email_log' && m.source_id)
+      .map((m) => m.source_id as string),
+    [messages],
+  );
+  const { data: emailLogMap = {} } = useQuery({
+    queryKey: ['crm-chat-thread-email-logs', conversationId, emailLogIds.length, emailLogIds.join('|')],
+    enabled: emailLogIds.length > 0 && channel === 'email',
+    queryFn: async (): Promise<Record<string, {
+      subject: string | null; body: string | null; cc: string | null; bcc: string | null;
+      sent_at: string | null; direction: string | null;
+    }>> => {
+      const { data, error } = await supabase
+        .from('crm_email_log')
+        .select('id, subject, body, cc, bcc, sent_at, direction')
+        .in('id', emailLogIds);
+      if (error) throw error;
+      const map: Record<string, any> = {};
+      for (const r of (data ?? [])) map[(r as any).id] = r;
+      return map;
+    },
+  });
+
   useEffect(() => {
     if (!conversationId) return;
     const ch = supabase
@@ -291,6 +326,142 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     else stacks.push({ direction: m.direction, items: [m] });
   }
 
+  // ---------- Email helpers (used only when channel === 'email') ----------
+
+  /** Peel a leading "Subject: ...\n\n<body>" prefix from raw message content. */
+  const parseEmailContent = (raw: string | null | undefined): { subject: string | null; body: string } => {
+    const s = (raw ?? '').trim();
+    const m = s.match(/^Subject:\s*(.+?)\r?\n\r?\n([\s\S]*)$/i);
+    if (m) return { subject: m[1].trim(), body: m[2] };
+    return { subject: null, body: s };
+  };
+
+  /** Resolve the display name + email for a given message. */
+  const resolveSender = (m: MessageRow): { name: string; email: string | null } => {
+    if (m.direction === 'inbound') {
+      return { name, email: contact.email ?? null };
+    }
+    const fallback = (user?.user_metadata as any)?.full_name
+      || (user?.user_metadata as any)?.name
+      || user?.email?.split('@')[0]
+      || 'You';
+    return { name: m.sent_by || fallback, email: user?.email ?? null };
+  };
+
+  /** Convert a message into the props EmailMessageView expects. */
+  const buildEmailViewProps = (m: MessageRow) => {
+    const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
+    const fromMsg = parseEmailContent(m.content);
+    const subject = log?.subject ?? fromMsg.subject;
+    const body = log?.body ?? fromMsg.body;
+    const sender = resolveSender(m);
+    const toEmail = m.direction === 'inbound' ? (user?.email ?? null) : (contact.email ?? null);
+    return {
+      id: m.id,
+      direction: m.direction,
+      fromName: sender.name,
+      fromEmail: sender.email,
+      toEmail,
+      subject,
+      createdAt: m.created_at,
+      html: body,
+      text: body,
+    };
+  };
+
+  // Filter messages by search term (subject or body)
+  const filteredMessages = useMemo(() => {
+    if (!searchTerm.trim()) return messages;
+    const q = searchTerm.toLowerCase();
+    return messages.filter((m) => {
+      const c = (m.content ?? '').toLowerCase();
+      const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
+      const subj = (log?.subject ?? '').toLowerCase();
+      const body = (log?.body ?? '').toLowerCase();
+      return c.includes(q) || subj.includes(q) || body.includes(q);
+    });
+  }, [messages, searchTerm, emailLogMap]);
+
+  // ---------- Reply / Forward handlers ----------
+
+  const openReply = useCallback((m: MessageRow, _all = false) => {
+    const props = buildEmailViewProps(m);
+    const subject = (props.subject || '').replace(/^(re:\s*)+/i, '');
+    setComposePrefill({
+      subject: subject ? `Re: ${subject}` : 'Re:',
+      bodyHtml: buildReplyQuote({
+        fromName: props.fromName,
+        fromEmail: props.fromEmail,
+        createdAt: props.createdAt,
+        bodyHtml: props.html,
+        bodyText: props.text,
+      }),
+    });
+    setComposeOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailLogMap, contact, user, name]);
+
+  const openForward = useCallback((m: MessageRow) => {
+    const props = buildEmailViewProps(m);
+    const subject = (props.subject || '').replace(/^(fwd?:\s*)+/i, '');
+    setComposePrefill({
+      subject: subject ? `Fwd: ${subject}` : 'Fwd:',
+      bodyHtml: buildForwardQuote({
+        fromName: props.fromName,
+        fromEmail: props.fromEmail,
+        toEmail: props.toEmail,
+        subject: props.subject,
+        createdAt: props.createdAt,
+        bodyHtml: props.html,
+        bodyText: props.text,
+      }),
+    });
+    setComposeOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailLogMap, contact, user, name]);
+
+  // ---------- Mark unread / read ----------
+
+  const markThreadUnread = useCallback(async () => {
+    if (!conv) return;
+    const { error } = await supabase
+      .from('crm_conversations')
+      .update({ unread_count: 1 })
+      .eq('id', conv.id);
+    if (error) { toast.error('Could not mark unread'); return; }
+    qc.invalidateQueries({ queryKey: ['crm-chats'] });
+    toast.success('Marked unread');
+    if (!embedded) navigate('/crm/chats');
+  }, [conv, qc, embedded, navigate]);
+
+  // ---------- Keyboard shortcuts (r reply, f forward, /=search, esc=close) ----------
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isEditable = !!target && (
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+      );
+      if (isEditable) return;
+      if (composeOpen) return;
+      if (e.key === '/') {
+        e.preventDefault();
+        setSearchOpen(true);
+      } else if (e.key === 'Escape') {
+        if (searchOpen) { setSearchOpen(false); setSearchTerm(''); }
+      } else if (e.key === 'r' && conv?.channel === 'email' && messages.length > 0) {
+        e.preventDefault();
+        const last = [...messages].reverse().find((mm) => mm.direction === 'inbound') ?? messages[messages.length - 1];
+        openReply(last);
+      } else if (e.key === 'f' && conv?.channel === 'email' && messages.length > 0) {
+        e.preventDefault();
+        openForward(messages[messages.length - 1]);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [composeOpen, searchOpen, conv?.channel, messages, openReply, openForward]);
+
   return (
     <div className={
       embedded
@@ -338,6 +509,24 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           >
             <Phone className="w-4 h-4" />
           </a>
+        )}
+        {conv.channel === 'email' && (
+          <>
+            <button
+              onClick={() => setSearchOpen((v) => !v)}
+              aria-label="Search this thread"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+            >
+              <SearchIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={markThreadUnread}
+              aria-label="Mark unread"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+            >
+              <MailOpen className="w-4 h-4" />
+            </button>
+          </>
         )}
         <Link
           to={`/crm/leads/${contact.id}`}
@@ -399,6 +588,46 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
               Send the first {meta.label.toLowerCase()} to {name.split(' ')[0]} to start this thread.
             </p>
           </div>
+        ) : conv.channel === 'email' ? (
+          // ---------- Email card list (Gmail-style) ----------
+          <div className="max-w-[820px] mx-auto w-full space-y-3">
+            {searchOpen && (
+              <div className="sticky top-0 z-10 -mt-1 mb-1 flex items-center gap-2 px-2 py-2 rounded-xl bg-background/90 backdrop-blur border border-border/60">
+                <SearchIcon className="w-4 h-4 text-muted-foreground" />
+                <input
+                  autoFocus
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search this thread…"
+                  className="flex-1 bg-transparent text-[13px] focus:outline-none"
+                />
+                <button
+                  onClick={() => { setSearchOpen(false); setSearchTerm(''); }}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Close search"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {filteredMessages.length === 0 ? (
+              <p className="text-center text-[13px] text-muted-foreground py-6">No messages match “{searchTerm}”.</p>
+            ) : filteredMessages.map((m, i) => {
+              const isLast = i === filteredMessages.length - 1;
+              const props = buildEmailViewProps(m);
+              return (
+                <EmailMessageView
+                  key={m.id}
+                  {...props}
+                  defaultExpanded={isLast}
+                  accentColor={meta.color}
+                  onReply={isLast ? () => openReply(m) : undefined}
+                  onReplyAll={isLast ? () => openReply(m, true) : undefined}
+                  onForward={isLast ? () => openForward(m) : undefined}
+                />
+              );
+            })}
+          </div>
         ) : (
           stacks.map((stack, si) => {
             const outbound = stack.direction === 'outbound';
@@ -423,7 +652,6 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                               : 'bg-card text-foreground border border-border rounded-bl-md'
                           } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''}`}
                         >
-                          {/* For email, content can include "Subject: ..." prefix from compose flow */}
                           {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
                         </div>
                         {isLast && (
@@ -504,7 +732,14 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
 
       {/* Channel-specific composers — keep all logic centralized */}
       {conv.channel === 'email' && (
-        <ComposeEmailDialog contact={contact} open={composeOpen} onOpenChange={setComposeOpen} />
+        <ComposeEmailDialog
+          contact={contact}
+          open={composeOpen}
+          onOpenChange={(o) => { setComposeOpen(o); if (!o) setComposePrefill(null); }}
+          initialSubject={composePrefill?.subject}
+          initialBodyHtml={composePrefill?.bodyHtml}
+          initialCc={composePrefill?.cc}
+        />
       )}
       {(conv.channel === 'sms' || conv.channel === 'whatsapp') && (
         <SendTextDialog contact={contact} open={composeOpen} onOpenChange={setComposeOpen} />
