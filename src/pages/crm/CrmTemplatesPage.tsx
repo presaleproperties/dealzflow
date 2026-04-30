@@ -28,6 +28,8 @@ import { TemplateEditor } from '@/components/crm/templates/TemplateEditor';
 import { useSmsTemplates, type MessagingChannel } from '@/hooks/useSms';
 import { Link } from 'react-router-dom';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { stripSignatureBlock } from '@/lib/templateSignature';
 
