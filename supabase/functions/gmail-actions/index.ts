@@ -123,13 +123,21 @@ serve(async (req) => {
       const { thread_db_id, to, subject, body_html, body_text, in_reply_to, references, contact_id } = body;
       if (!to || (!body_html && !body_text)) return json({ error: "to + body required" }, 400);
 
-      // Fetch the sender's email + thread for proper threading
-      const { data: tokenRow } = await supabase
-        .from("gmail_tokens")
-        .select("gmail_email")
-        .eq("user_id", userId)
-        .single();
-      const fromEmail = tokenRow?.gmail_email ?? user.email ?? "";
+      // Fetch the sender's email + thread for proper threading.
+      // Also pull display name + reply-to from crm_email_settings so the
+      // recipient sees "Sarb Grewal <sarb@…>" instead of a bare address.
+      const [{ data: tokenRow }, { data: settingsRow }, { data: teamRow }] = await Promise.all([
+        supabase.from("gmail_tokens").select("gmail_email").eq("user_id", userId).maybeSingle(),
+        supabase.from("crm_email_settings").select("sender_name,reply_to").eq("user_id", userId).maybeSingle(),
+        supabase.from("crm_team").select("display_name,email").eq("user_id", userId).maybeSingle(),
+      ]);
+      const fromEmail = tokenRow?.gmail_email ?? teamRow?.email ?? user.email ?? "";
+      if (!fromEmail) {
+        return json({ error: "No connected Gmail mailbox. Reconnect inbox in Settings → Email." }, 400);
+      }
+      const displayName = (settingsRow?.sender_name ?? teamRow?.display_name ?? "").replace(/[<>"\\]/g, "").trim();
+      const fromHeader = displayName ? `${displayName} <${fromEmail}>` : fromEmail;
+      const replyTo = (settingsRow?.reply_to ?? "").trim();
 
       let gmailThreadId: string | null = null;
       if (thread_db_id) {
