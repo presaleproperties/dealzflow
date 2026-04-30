@@ -326,6 +326,142 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     else stacks.push({ direction: m.direction, items: [m] });
   }
 
+  // ---------- Email helpers (used only when channel === 'email') ----------
+
+  /** Peel a leading "Subject: ...\n\n<body>" prefix from raw message content. */
+  const parseEmailContent = (raw: string | null | undefined): { subject: string | null; body: string } => {
+    const s = (raw ?? '').trim();
+    const m = s.match(/^Subject:\s*(.+?)\r?\n\r?\n([\s\S]*)$/i);
+    if (m) return { subject: m[1].trim(), body: m[2] };
+    return { subject: null, body: s };
+  };
+
+  /** Resolve the display name + email for a given message. */
+  const resolveSender = (m: MessageRow): { name: string; email: string | null } => {
+    if (m.direction === 'inbound') {
+      return { name, email: contact.email ?? null };
+    }
+    const fallback = (user?.user_metadata as any)?.full_name
+      || (user?.user_metadata as any)?.name
+      || user?.email?.split('@')[0]
+      || 'You';
+    return { name: m.sent_by || fallback, email: user?.email ?? null };
+  };
+
+  /** Convert a message into the props EmailMessageView expects. */
+  const buildEmailViewProps = (m: MessageRow) => {
+    const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
+    const fromMsg = parseEmailContent(m.content);
+    const subject = log?.subject ?? fromMsg.subject;
+    const body = log?.body ?? fromMsg.body;
+    const sender = resolveSender(m);
+    const toEmail = m.direction === 'inbound' ? (user?.email ?? null) : (contact.email ?? null);
+    return {
+      id: m.id,
+      direction: m.direction,
+      fromName: sender.name,
+      fromEmail: sender.email,
+      toEmail,
+      subject,
+      createdAt: m.created_at,
+      html: body,
+      text: body,
+    };
+  };
+
+  // Filter messages by search term (subject or body)
+  const filteredMessages = useMemo(() => {
+    if (!searchTerm.trim()) return messages;
+    const q = searchTerm.toLowerCase();
+    return messages.filter((m) => {
+      const c = (m.content ?? '').toLowerCase();
+      const log = m.source_id ? (emailLogMap as any)[m.source_id] : null;
+      const subj = (log?.subject ?? '').toLowerCase();
+      const body = (log?.body ?? '').toLowerCase();
+      return c.includes(q) || subj.includes(q) || body.includes(q);
+    });
+  }, [messages, searchTerm, emailLogMap]);
+
+  // ---------- Reply / Forward handlers ----------
+
+  const openReply = useCallback((m: MessageRow, _all = false) => {
+    const props = buildEmailViewProps(m);
+    const subject = (props.subject || '').replace(/^(re:\s*)+/i, '');
+    setComposePrefill({
+      subject: subject ? `Re: ${subject}` : 'Re:',
+      bodyHtml: buildReplyQuote({
+        fromName: props.fromName,
+        fromEmail: props.fromEmail,
+        createdAt: props.createdAt,
+        bodyHtml: props.html,
+        bodyText: props.text,
+      }),
+    });
+    setComposeOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailLogMap, contact, user, name]);
+
+  const openForward = useCallback((m: MessageRow) => {
+    const props = buildEmailViewProps(m);
+    const subject = (props.subject || '').replace(/^(fwd?:\s*)+/i, '');
+    setComposePrefill({
+      subject: subject ? `Fwd: ${subject}` : 'Fwd:',
+      bodyHtml: buildForwardQuote({
+        fromName: props.fromName,
+        fromEmail: props.fromEmail,
+        toEmail: props.toEmail,
+        subject: props.subject,
+        createdAt: props.createdAt,
+        bodyHtml: props.html,
+        bodyText: props.text,
+      }),
+    });
+    setComposeOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailLogMap, contact, user, name]);
+
+  // ---------- Mark unread / read ----------
+
+  const markThreadUnread = useCallback(async () => {
+    if (!conv) return;
+    const { error } = await supabase
+      .from('crm_conversations')
+      .update({ unread_count: 1 })
+      .eq('id', conv.id);
+    if (error) { toast.error('Could not mark unread'); return; }
+    qc.invalidateQueries({ queryKey: ['crm-chats'] });
+    toast.success('Marked unread');
+    if (!embedded) navigate('/crm/chats');
+  }, [conv, qc, embedded, navigate]);
+
+  // ---------- Keyboard shortcuts (r reply, f forward, /=search, esc=close) ----------
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isEditable = !!target && (
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+      );
+      if (isEditable) return;
+      if (composeOpen) return;
+      if (e.key === '/') {
+        e.preventDefault();
+        setSearchOpen(true);
+      } else if (e.key === 'Escape') {
+        if (searchOpen) { setSearchOpen(false); setSearchTerm(''); }
+      } else if (e.key === 'r' && conv?.channel === 'email' && messages.length > 0) {
+        e.preventDefault();
+        const last = [...messages].reverse().find((mm) => mm.direction === 'inbound') ?? messages[messages.length - 1];
+        openReply(last);
+      } else if (e.key === 'f' && conv?.channel === 'email' && messages.length > 0) {
+        e.preventDefault();
+        openForward(messages[messages.length - 1]);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [composeOpen, searchOpen, conv?.channel, messages, openReply, openForward]);
+
   return (
     <div className={
       embedded
