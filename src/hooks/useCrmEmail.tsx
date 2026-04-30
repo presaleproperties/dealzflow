@@ -156,6 +156,14 @@ export function useUpdateTemplate() {
     mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; subject?: string; body_html?: string; project?: string | null; category?: string; merge_tags?: string[] } }) => {
       const { error } = await supabase.from('crm_email_templates').update(updates).eq('id', id);
       if (error) throw error;
+      // Two-way sync: best-effort push of edits back to Presale.
+      try {
+        await supabase.functions.invoke('push-template-to-presale', {
+          body: { template_id: id },
+        });
+      } catch (e) {
+        console.warn('[push-template-to-presale] non-fatal:', e);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crm-email-templates'] });
@@ -169,8 +177,23 @@ export function useDeleteTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Snapshot external_id before delete for the soft-delete signal upstream.
+      const { data: row } = await supabase
+        .from('crm_email_templates')
+        .select('external_id')
+        .eq('id', id)
+        .maybeSingle();
       const { error } = await supabase.from('crm_email_templates').delete().eq('id', id);
       if (error) throw error;
+      if (row?.external_id) {
+        try {
+          await supabase.functions.invoke('push-template-to-presale', {
+            body: { external_id: row.external_id, deleted: true },
+          });
+        } catch (e) {
+          console.warn('[push-template-to-presale] non-fatal:', e);
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crm-email-templates'] });
