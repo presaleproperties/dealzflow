@@ -191,10 +191,17 @@ function EmailTemplatesPanel() {
             onClick={async () => {
               const t = toast.loading('Pulling latest from Presale…');
               try {
-                const { error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
+                const { data, error } = await supabase.functions.invoke('sync-bridge-templates', { body: {} });
                 if (error) throw error;
-                await Promise.all([localQ.refetch(), bridgeQ.refetch()]);
-                toast.success('Templates synced from Presale', { id: t });
+                if ((data as any)?.skipped === 'presale_sync_disabled') {
+                  toast.message('Presale template sync isn\'t live yet', {
+                    id: t,
+                    description: 'Your local templates work fine. Two-way sync turns on once Presale ships their endpoints.',
+                  });
+                } else {
+                  await Promise.all([localQ.refetch(), bridgeQ.refetch()]);
+                  toast.success('Templates synced from Presale', { id: t });
+                }
               } catch (e: any) {
                 toast.error(e?.message || 'Sync failed', { id: t });
               }
