@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
