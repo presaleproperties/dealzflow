@@ -111,12 +111,12 @@ export function useCrmChats(channelFilter?: ChatChannelFilter) {
       if (emailIds.length > 0) {
         const { data: emails } = await supabase
           .from('crm_email_log')
-          .select('id, subject, html_body')
+          .select('id, subject, body')
           .in('id', emailIds);
         for (const e of (emails ?? []) as any[]) {
           if (e.subject) subjectById.set(e.id, e.subject);
-          // Heuristic: emails with inline cid:/attachment markers in raw HTML
-          const html = (e.html_body ?? '') as string;
+          // Heuristic: emails with inline cid:/img-src/filename markers in body
+          const html = (e.body ?? '') as string;
           if (/cid:|<\s*img[^>]+src=|filename=/i.test(html)) attachIds.add(e.id);
         }
       }
