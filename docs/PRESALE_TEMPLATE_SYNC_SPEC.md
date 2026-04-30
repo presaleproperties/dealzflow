@@ -119,7 +119,7 @@ The CRM calls this when an agent edits or deletes a template **in the CRM** (two
 
 1. Match by `external_id`.
 2. Compare `sync_hash`. If equal → return `{ "action": "unchanged" }` (loop prevention).
-3. Verify ownership: if `owner_scope = 'agent:<X>'` then `actor_agent_slug` must equal `<X>` OR be an admin. Reject 403 otherwise.
+3. Verify ownership: if `owner_scope = 'agent:<X>'` then `actor_agent_slug` must equal `<X>` **OR** `actor_is_admin === true`. Reject 403 otherwise.
 4. Apply create/update/soft-delete and respond `{ "action": "created"|"updated"|"soft_deleted" }`.
 
 Inbound payload shape (from us):
@@ -129,17 +129,20 @@ Inbound payload shape (from us):
   "slug": "uzair-fall-launch",
   "name": "...", "subject": "...", "body_html": "...",
   "category": "...", "project": "...", "merge_tags": [...],
-  "owner_scope": "agent:uzair-mohammed",
-  "owner_agent_slug": "uzair-mohammed",
-  "created_by_agent_slug": "uzair-mohammed",
+  "owner_scope": "agent:uzair-muhammad",
+  "owner_agent_slug": "uzair-muhammad",
+  "created_by_agent_slug": "uzair-muhammad",
   "sync_hash": "...",
-  "actor_agent_slug": "uzair-mohammed"   // who pressed save in the CRM
+  "actor_agent_slug": "uzair-muhammad",   // who pressed save in the CRM
+  "actor_is_admin": true                    // forwarded so admins can moderate team templates
 }
 ```
 Soft-delete shape:
 ```jsonc
-{ "external_id": "uzair-fall-launch", "deleted": true, "actor_agent_slug": "uzair-mohammed" }
+{ "external_id": "uzair-fall-launch", "deleted": true, "actor_agent_slug": "uzair-muhammad", "actor_is_admin": false }
 ```
+
+> **Slug source of truth**: the canonical agent slugs are `uzair-muhammad`, `sarb-grewal`, `ravish-passy`, `zara-malik`. The CRM now stamps these on every push. Presale must match against these strings.
 
 ---
 
