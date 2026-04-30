@@ -172,6 +172,10 @@ interface CrmChatThreadPageProps {
 
 export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPageProps = {}) {
   const { conversationId = '' } = useParams<{ conversationId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Outlook-style subject filter: when set, only messages whose
+  // crm_email_log.thread_id matches are rendered (else: full conversation).
+  const filterThreadId = searchParams.get('thread');
   const navigate = useNavigate();
   const qc = useQueryClient();
   const scrollRef = useRef<HTMLDivElement | null>(null);
