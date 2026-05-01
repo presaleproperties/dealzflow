@@ -22,6 +22,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
 import { usePresaleSignatureAutoImport } from "@/hooks/usePresaleSignatureAutoImport";
 import { EmailIdentitySetupDialog } from "@/components/email/EmailIdentitySetupDialog";
+import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
