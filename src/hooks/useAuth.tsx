@@ -6,6 +6,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /**
+   * True while we're attempting to silently recover a session (e.g., after
+   * a transient TOKEN_REFRESHED-without-session event from sleep/wake or
+   * flaky network). UI should show an inline "Session restoring…" banner
+   * instead of bouncing the user to /auth.
+   */
+  restoring: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
