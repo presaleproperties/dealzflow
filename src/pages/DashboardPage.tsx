@@ -22,6 +22,7 @@ import { ExpenseCommandCenter } from '@/components/dashboard/ExpenseCommandCente
 import { AIBusinessInsights } from '@/components/dashboard/AIBusinessInsights';
 import { PipelinePreview } from '@/components/dashboard/PipelinePreview';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
+import { PageLoader } from '@/components/ui/page-loader';
 
 import { InsightsGreeting } from '@/components/dashboard/InsightsGreeting';
 import { UpcomingRevenue } from '@/components/dashboard/UpcomingRevenue';
@@ -45,7 +46,7 @@ export default function DashboardPage() {
   const { data: expenses = [] } = useExpenses();
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
-  const { data: syncedTransactions = [] } = useSyncedTransactions();
+  const { data: syncedTransactions = [], isLoading: txLoading, isFetched: txFetched } = useSyncedTransactions();
   const { data: revenueShare = [] } = useRevenueShare();
   // Dashboard projections (Coming In, Earned YTD, active deal counts) use ONLY ReZen-synced data.
   // Manual historical imports are for records/inventory/analytics only — not live projections.
@@ -55,7 +56,7 @@ export default function DashboardPage() {
   );
   const { syncedPayouts, receivedYTD, comingIn, projectedRevenue2026 } = useSyncedIncome(rezenTransactions);
   const { data: pipelineProspects = [] } = usePipelineProspects();
-  const { data: connections = [] } = usePlatformConnections();
+  const { data: connections = [], isLoading: connLoading, isFetched: connFetched } = usePlatformConnections();
   const syncPlatform = useSyncPlatform();
   
   const refreshData = useRefreshData();
@@ -148,8 +149,12 @@ export default function DashboardPage() {
   }, [syncedPayouts]);
 
 
+  // Wait for both connections + transactions to actually resolve before deciding
+  // the dashboard is "empty" — otherwise a refresh briefly flashes the
+  // Connect-ReZen onboarding screen while react-query is still hydrating.
+  const dashboardLoading = connLoading || txLoading || !connFetched || !txFetched;
   const hasConnection = connections.length > 0;
-  const isEmpty = !hasConnection && syncedTransactions.length === 0;
+  const isEmpty = !dashboardLoading && !hasConnection && syncedTransactions.length === 0;
   const activePipeline = pipelineProspects.filter(p => p.status === 'active');
 
   const quickStatsProps = {
@@ -220,7 +225,11 @@ export default function DashboardPage() {
         />
       </div>
 
-      {isEmpty ? (
+      {dashboardLoading ? (
+        <div className="min-h-[calc(100dvh-56px)] flex items-center justify-center">
+          <PageLoader />
+        </div>
+      ) : isEmpty ? (
         <EmptyDashboard />
       ) : (
         <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
