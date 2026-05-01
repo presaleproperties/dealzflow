@@ -22,6 +22,7 @@ import { ExpenseCommandCenter } from '@/components/dashboard/ExpenseCommandCente
 import { AIBusinessInsights } from '@/components/dashboard/AIBusinessInsights';
 import { PipelinePreview } from '@/components/dashboard/PipelinePreview';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
+import { PageLoader } from '@/components/ui/page-loader';
 
 import { InsightsGreeting } from '@/components/dashboard/InsightsGreeting';
 import { UpcomingRevenue } from '@/components/dashboard/UpcomingRevenue';
