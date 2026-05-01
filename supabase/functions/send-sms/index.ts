@@ -282,6 +282,7 @@ Deno.serve(async (req) => {
         campaign_id,
         channel,
         client_dedupe_id,
+        scheduled_for: new Date(Date.now() + 5 * 60_000).toISOString(),
         error_message: 'Twilio not yet connected — message recorded for later delivery.',
       }).select('id').maybeSingle();
       return new Response(JSON.stringify({
@@ -309,6 +310,7 @@ Deno.serve(async (req) => {
       to_number: to, from_number: fromNumber, body: finalBody, media_urls,
       message_type: media_urls.length > 0 ? 'mms' : 'sms',
       status: 'queued', campaign_id, channel, client_dedupe_id,
+      scheduled_for: new Date(Date.now() + 60_000).toISOString(),
       error_message: 'Temporary sending issue — queued for automatic retry.',
       attempt_count: 1,
       last_attempt_at: new Date().toISOString(),
@@ -334,6 +336,7 @@ Deno.serve(async (req) => {
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
         status: transient ? 'queued' : 'failed', campaign_id, channel,
         client_dedupe_id,
+        scheduled_for: transient ? new Date(Date.now() + 60_000).toISOString() : null,
         error_message: friendlyError ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
         attempt_count: 1,
