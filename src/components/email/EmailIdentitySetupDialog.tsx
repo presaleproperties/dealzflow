@@ -39,7 +39,7 @@ function ackKey(userId: string) {
   return `${ACK_KEY_PREFIX}${userId}`;
 }
 
-export function EmailIdentitySetupDialog() {
+export const EmailIdentitySetupDialog = forwardRef<HTMLDivElement>(function EmailIdentitySetupDialog(_props, _ref) {
   const { user } = useAuth();
   const { agent, status } = usePresaleAgent();
   const refresh = usePresaleAgentStore((s) => s.fetch);
