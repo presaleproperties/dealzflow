@@ -45,11 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === 'TOKEN_REFRESHED' && !nextSession) {
         // Transient refresh failure (sleep/wake, flaky network). Don't drop
-        // the user — schedule one silent retry; supabase will recover on the
-        // next successful network call regardless.
+        // the user — flag as "restoring" so UI can show an inline banner
+        // instead of redirecting to /auth, then retry once silently.
+        setRestoring(true);
         if (refreshRetryTimer) window.clearTimeout(refreshRetryTimer);
         refreshRetryTimer = window.setTimeout(() => {
-          supabase.auth.getSession().catch(() => {/* ignore — listener will fire */});
+          supabase.auth.getSession()
+            .catch(() => {/* ignore — listener will fire */})
+            .finally(() => {
+              if (mounted) setRestoring(false);
+            });
         }, 4_000);
         return;
       }
@@ -59,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setUser(null);
         setLoading(false);
+        setRestoring(false);
         return;
       }
 
@@ -66,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (nextSession) {
         setSession(nextSession);
         setUser(nextSession.user);
+        setRestoring(false);
       }
       setLoading(false);
     });
