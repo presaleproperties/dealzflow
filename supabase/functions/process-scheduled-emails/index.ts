@@ -26,9 +26,10 @@ function isAuthorized(req: Request): boolean {
   const auth = req.headers.get("authorization") || "";
   if (auth.toLowerCase().startsWith("bearer ")) {
     const token = auth.slice(7).trim();
-    const anon = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY") || "";
     const svc = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    if (token && (token === anon || token === svc)) return true;
+    const apikey = req.headers.get("apikey") || "";
+    if (token && (token === anon || token === svc || token === apikey)) return true;
   }
   return false;
 }
