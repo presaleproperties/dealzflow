@@ -197,6 +197,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
+      <SessionRestoringBanner />
       <EmailIdentitySetupDialog />
     </>
   );
