@@ -55,7 +55,7 @@ export default function DashboardPage() {
   );
   const { syncedPayouts, receivedYTD, comingIn, projectedRevenue2026 } = useSyncedIncome(rezenTransactions);
   const { data: pipelineProspects = [] } = usePipelineProspects();
-  const { data: connections = [] } = usePlatformConnections();
+  const { data: connections = [], isLoading: connLoading, isFetched: connFetched } = usePlatformConnections();
   const syncPlatform = useSyncPlatform();
   
   const refreshData = useRefreshData();
