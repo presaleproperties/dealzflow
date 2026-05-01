@@ -196,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, 
       session, 
       loading, 
+      restoring,
       signIn,
       signInWithGoogle,
       signUp, 
