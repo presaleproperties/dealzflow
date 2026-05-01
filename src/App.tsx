@@ -23,6 +23,7 @@ import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
 import { usePresaleSignatureAutoImport } from "@/hooks/usePresaleSignatureAutoImport";
 import { EmailIdentitySetupDialog } from "@/components/email/EmailIdentitySetupDialog";
 import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner";
+import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
@@ -220,6 +221,7 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <Suspense fallback={<RouteFallback />}>
+                  <RouteHydrationGate>
                   <Routes>
                     <Route path="/" element={<Navigate to="/auth" replace />} />
                     <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
@@ -287,6 +289,7 @@ const App = () => (
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </RouteHydrationGate>
                   </Suspense>
                 </BrowserRouter>
                 </NativeBootstrap>
