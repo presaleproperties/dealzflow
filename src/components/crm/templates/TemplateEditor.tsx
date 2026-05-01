@@ -246,7 +246,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           <AIAssistMenu
             html={htmlContent}
             subject={subject}
-            agentName={agent?.fullName || agent?.firstName || undefined}
+            agentName={agent?.name || undefined}
             onApplyHtml={(next) => setHtmlContent(stripSignatureBlock(next))}
             onApplySubject={(s) => setSubject(s)}
           />
