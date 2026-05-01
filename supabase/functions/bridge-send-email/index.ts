@@ -140,6 +140,16 @@ Deno.serve(async (req) => {
         created_by: userId,
       });
       if (schedErr) return json({ error: schedErr.message }, 500);
+      if (!body.send_at) {
+        fetch(`${supabaseUrl}/functions/v1/process-scheduled-emails`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ source: "bridge-send-email" }),
+        }).catch((e) => console.warn("email queue kick failed", e));
+      }
       return json({ scheduled: !!body.send_at, queued: !body.send_at }, 200);
     }
 
