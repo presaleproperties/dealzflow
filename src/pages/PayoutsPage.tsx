@@ -32,6 +32,8 @@ import {
 import { useSyncedTransactions } from '@/hooks/usePlatformConnections';
 import { useSyncedPayouts, SyncedPayoutItem } from '@/hooks/useSyncedPayouts';
 import { useRefreshData } from '@/hooks/useRefreshData';
+import { useDashboardEmptyState } from '@/hooks/useDashboardEmptyState';
+import { PageLoader } from '@/components/ui/page-loader';
 import { formatCurrency } from '@/lib/format';
 import { triggerHaptic, springConfigs } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
