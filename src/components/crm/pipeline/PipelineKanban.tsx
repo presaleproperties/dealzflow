@@ -205,7 +205,7 @@ export function PipelineKanban() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const handleOpen = useCallback((id: string) => navigate(`/crm/leads/${id}`), [navigate]);
+  const handleOpen = useCallback((id: string) => navigate(`/crm/leads/${id}`, { state: { from: '/crm/pipeline' } }), [navigate]);
   const [search, setSearch] = useState('');
   const [filterProject, setFilterProject] = useState('all');
   const [filterAgent, setFilterAgent] = useState('all');

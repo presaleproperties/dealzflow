@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, ListTodo, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatContactName } from '@/lib/format';
@@ -23,11 +23,15 @@ interface Props {
 /** Top bar — Lead identity, navigation, and primary CTAs. */
 export function LeadTopBar({ contact, navInfo, onNavigate, onTask, onShowing, onOpenEmailThread, showTaskCta, showShowingCta }: Props) {
   const typeLabel = TYPE_LABELS[contact.contact_type] ?? 'LEAD';
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from || '/crm/leads';
+  const backLabel = from === '/crm/pipeline' ? 'Pipeline' : 'Leads';
   return (
     <div className="px-5 py-3 border-b border-border bg-background flex-shrink-0 flex items-center justify-between gap-4">
       <div className="flex items-center gap-4 min-w-0">
-        <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0">
-          <ArrowLeft className="w-4 h-4" /> Leads
+        <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          <ArrowLeft className="w-4 h-4" /> {backLabel}
         </Link>
         <div className="h-5 w-px bg-border shrink-0" />
         <div className="flex items-center gap-3 min-w-0">
