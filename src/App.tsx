@@ -201,6 +201,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   );
 }
 
+
 const App = () => (
   <AppErrorBoundary>
     <QueryClientProvider client={queryClient}>
