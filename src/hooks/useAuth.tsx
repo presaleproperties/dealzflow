@@ -25,43 +25,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let refreshRetryTimer: number | null = null;
 
-    // Set up auth state listener FIRST (synchronous handler — never await inside)
+    // Set up auth state listener FIRST (synchronous handler — never await inside).
+    // Strict policy: only ever surrender the local session when supabase itself
+    // emits SIGNED_OUT. We never call signOut() defensively from this hook —
+    // doing so was the #1 cause of "I keep getting logged out" because a single
+    // network blip during getSession() would tear the session down.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      // On a hard token-refresh failure, supabase emits SIGNED_OUT with null
-      // session. We accept that and let the user re-authenticate. We do NOT
-      // wipe localStorage here — that breaks "remember me" across reloads.
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      setLoading(false);
 
-      // If the refresh token is invalid/expired, surface it once so the next
-      // network call doesn't hang silently. supabase-js handles the cleanup.
       if (event === 'TOKEN_REFRESHED' && !nextSession) {
-        console.warn('[auth] token refresh returned no session');
+        // Transient refresh failure (sleep/wake, flaky network). Don't drop
+        // the user — schedule one silent retry; supabase will recover on the
+        // next successful network call regardless.
+        if (refreshRetryTimer) window.clearTimeout(refreshRetryTimer);
+        refreshRetryTimer = window.setTimeout(() => {
+          supabase.auth.getSession().catch(() => {/* ignore — listener will fire */});
+        }, 4_000);
+        return;
       }
+
+      if (event === 'SIGNED_OUT') {
+        // Honor explicit sign-out (user click) or a hard backend revocation.
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED (with session), USER_UPDATED, …
+      if (nextSession) {
+        setSession(nextSession);
+        setUser(nextSession.user);
+      }
+      setLoading(false);
     });
 
-    // Then hydrate the initial session. If supabase throws (e.g. corrupted
-    // localStorage payload that fails JSON.parse), recover by clearing only
-    // the auth keys and continuing as signed-out — never crash the app.
+    // Then hydrate the initial session. Critically: do NOT call signOut() on
+    // a getSession error — that wipes a working refresh token whenever the
+    // backend hiccups. Just surface as "not yet loaded" and let supabase's
+    // own auto-refresh recover. Real revocation will arrive as SIGNED_OUT.
     (async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          // Common case on mobile: stored refresh token rejected by server
-          // ("missing sub claim" / "bad_jwt"). Force a fresh sign-in cleanly.
-          console.warn('[auth] getSession error, clearing local session:', error.message);
-          await supabase.auth.signOut().catch(() => {});
-        }
         if (!mounted) return;
+        if (error) {
+          console.warn('[auth] getSession transient error (keeping session):', error.message);
+          // Leave existing state alone — listener will reconcile.
+          setLoading(false);
+          return;
+        }
         setSession(data?.session ?? null);
         setUser(data?.session?.user ?? null);
       } catch (err) {
-        console.error('[auth] getSession threw:', err);
+        // Only handle the *unrecoverable* case: localStorage payload is so
+        // corrupted that supabase-js threw before returning. Purge ONLY the
+        // sb-*-auth-token keys and continue as signed-out — never touch
+        // anything else in storage.
+        console.error('[auth] getSession threw (corrupt token, purging):', err);
         try {
-          // Purge any malformed sb-* token so the next boot starts clean.
           Object.keys(localStorage)
             .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
             .forEach((k) => localStorage.removeItem(k));
@@ -76,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      if (refreshRetryTimer) window.clearTimeout(refreshRetryTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -108,7 +132,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // `local` scope: revoke only this device's session. Prevents one tab
+    // logout from invalidating refresh tokens on the user's other devices.
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   const resetPassword = async (email: string) => {
