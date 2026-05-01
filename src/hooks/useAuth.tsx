@@ -6,6 +6,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /**
+   * True while we're attempting to silently recover a session (e.g., after
+   * a transient TOKEN_REFRESHED-without-session event from sleep/wake or
+   * flaky network). UI should show an inline "Session restoring…" banner
+   * instead of bouncing the user to /auth.
+   */
+  restoring: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
@@ -22,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -37,11 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === 'TOKEN_REFRESHED' && !nextSession) {
         // Transient refresh failure (sleep/wake, flaky network). Don't drop
-        // the user — schedule one silent retry; supabase will recover on the
-        // next successful network call regardless.
+        // the user — flag as "restoring" so UI can show an inline banner
+        // instead of redirecting to /auth, then retry once silently.
+        setRestoring(true);
         if (refreshRetryTimer) window.clearTimeout(refreshRetryTimer);
         refreshRetryTimer = window.setTimeout(() => {
-          supabase.auth.getSession().catch(() => {/* ignore — listener will fire */});
+          supabase.auth.getSession()
+            .catch(() => {/* ignore — listener will fire */})
+            .finally(() => {
+              if (mounted) setRestoring(false);
+            });
         }, 4_000);
         return;
       }
@@ -51,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setUser(null);
         setLoading(false);
+        setRestoring(false);
         return;
       }
 
@@ -58,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (nextSession) {
         setSession(nextSession);
         setUser(nextSession.user);
+        setRestoring(false);
       }
       setLoading(false);
     });
@@ -181,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, 
       session, 
       loading, 
+      restoring,
       signIn,
       signInWithGoogle,
       signUp, 
