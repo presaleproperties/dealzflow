@@ -105,7 +105,7 @@ export function useBridgeSendEmail() {
   return useMutation({
     mutationFn: async (args: SendArgs) => {
       const { data, error } = await supabase.functions.invoke('bridge-send-email', {
-        body: args,
+        body: { ...args, queue_only: !args.send_at },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -114,6 +114,8 @@ export function useBridgeSendEmail() {
     onSuccess: (data, variables) => {
       if (data?.scheduled) {
         toast.success('Email scheduled');
+      } else if (data?.queued) {
+        toast.success('Email queued', { description: 'Delivery will retry automatically if Gmail or the bridge is busy.' });
       } else {
         toast.success('Email sent');
       }
