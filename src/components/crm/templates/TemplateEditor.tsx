@@ -243,6 +243,13 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           )}
         </div>
         <div className="flex items-center gap-2">
+          <AIAssistMenu
+            html={htmlContent}
+            subject={subject}
+            agentName={agent?.fullName || agent?.firstName || undefined}
+            onApplyHtml={(next) => setHtmlContent(stripSignatureBlock(next))}
+            onApplySubject={(s) => setSubject(s)}
+          />
           {isEdit && (
             <>
               {template && <TemplateVersionHistory templateId={template.id} onRestore={(v) => {
