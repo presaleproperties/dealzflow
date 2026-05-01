@@ -16,6 +16,7 @@ import {
 } from '@/hooks/useEmailTemplates';
 import { VariablePicker } from './VariablePicker';
 import { TemplateVersionHistory } from './TemplateVersionHistory';
+import { AIAssistMenu } from './AIAssistMenu';
 import { renderWithSampleData, findUnknownTokens } from '@/lib/emailVariables';
 import { applySignatureBlock, hasSignatureBlock, stripSignatureBlock } from '@/lib/templateSignature';
 import { usePresaleAgent } from '@/stores/usePresaleAgent';
