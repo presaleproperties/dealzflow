@@ -263,4 +263,4 @@ export const EmailIdentitySetupDialog = forwardRef<HTMLDivElement>(function Emai
       </DialogContent>
     </Dialog>
   );
-}
+});
