@@ -69,7 +69,47 @@ export const EmailIdentitySetupDialog = forwardRef<HTMLDivElement>(function Emai
       // localStorage unavailable — fall through and show once per session.
     }
 
-    setOpen(true);
+    let cancelled = false;
+    (async () => {
+      // If admin has already mapped this user in crm_team (slug or
+      // presale_email present), the link is already established server-side
+      // — never nag the agent with the "unmatched" form. Auto-ack so the
+      // dialog stays closed permanently for this user.
+      try {
+        const { data: teamRow } = await supabase
+          .from("crm_team")
+          .select("slug, presale_email")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const alreadyLinked = !!(
+          teamRow?.slug?.trim() || teamRow?.presale_email?.trim()
+        );
+        if (alreadyLinked && status === "unmatched") {
+          // Server says we're linked but bridge couldn't resolve right now
+          // (transient: bridge timeout, agent not yet published, etc.).
+          // Don't show the form — silently ack and move on.
+          try {
+            localStorage.setItem(ackKey(user.id), new Date().toISOString());
+          } catch { /* ignore */ }
+          return;
+        }
+        if (alreadyLinked && status === "ready") {
+          // Already linked and bridge resolved — no setup needed. Auto-ack
+          // so we never show the preview confirmation either.
+          try {
+            localStorage.setItem(ackKey(user.id), new Date().toISOString());
+          } catch { /* ignore */ }
+          return;
+        }
+      } catch {
+        /* ignore — fall through to dialog */
+      }
+      if (!cancelled) setOpen(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id, user?.email, status]);
 
   const dismiss = () => {
