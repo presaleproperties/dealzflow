@@ -224,7 +224,8 @@ async function sendViaPresale(row: any): Promise<SendResult> {
     let upstreamJson: any = {};
     try { upstreamJson = JSON.parse(text); } catch { /* ignore */ }
     if (!upstream.ok) {
-      return { ok: false, provider: "presale", error: upstreamJson?.error ?? text.slice(0, 500) || `Presale bridge returned ${upstream.status}`, retryable: upstream.status === 429 || upstream.status >= 500 };
+      const errorText = upstreamJson?.error ?? (text.slice(0, 500) || `Presale bridge returned ${upstream.status}`);
+      return { ok: false, provider: "presale", error: errorText, retryable: upstream.status === 429 || upstream.status >= 500 };
     }
     return { ok: true, provider: "presale" };
   } catch (e) {
