@@ -18,6 +18,8 @@ import { useSyncedIncome } from '@/hooks/useSyncedIncome';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useProperties } from '@/hooks/useProperties';
 import { useSettings } from '@/hooks/useSettings';
+import { useDashboardEmptyState } from '@/hooks/useDashboardEmptyState';
+import { PageLoader } from '@/components/ui/page-loader';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { formatCurrency, getExtendedMonthRange } from '@/lib/format';
 import { cn } from '@/lib/utils';
