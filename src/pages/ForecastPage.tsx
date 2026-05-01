@@ -540,6 +540,7 @@ export default function ForecastPage() {
           </motion.div>
         </motion.div>
       </PullToRefresh>
+      )}
     </AppLayout>
   );
 }
