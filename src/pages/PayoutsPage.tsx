@@ -443,6 +443,11 @@ export default function PayoutsPage() {
         }
       />
 
+      {isHydrating ? (
+        <div className="min-h-[calc(100dvh-56px)] flex items-center justify-center">
+          <PageLoader />
+        </div>
+      ) : (
       <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
         <motion.div 
           className="p-4 sm:p-5 md:p-6 lg:p-6 space-y-4 sm:space-y-5"
