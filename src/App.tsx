@@ -221,6 +221,7 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <Suspense fallback={<RouteFallback />}>
+                  <RouteHydrationGate>
                   <Routes>
                     <Route path="/" element={<Navigate to="/auth" replace />} />
                     <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
