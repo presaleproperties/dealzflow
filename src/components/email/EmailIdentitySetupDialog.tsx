@@ -12,7 +12,7 @@
 // "Acknowledged" is stored in localStorage keyed by user id so it never
 // nags the same person twice.
 
-import { useEffect, useMemo, useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import { Loader2, CheckCircle2, MailQuestion } from "lucide-react";
 
 import {
@@ -39,7 +39,7 @@ function ackKey(userId: string) {
   return `${ACK_KEY_PREFIX}${userId}`;
 }
 
-export function EmailIdentitySetupDialog() {
+export const EmailIdentitySetupDialog = forwardRef<HTMLDivElement>(function EmailIdentitySetupDialog(_props, _ref) {
   const { user } = useAuth();
   const { agent, status } = usePresaleAgent();
   const refresh = usePresaleAgentStore((s) => s.fetch);
@@ -263,4 +263,4 @@ export function EmailIdentitySetupDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+});
