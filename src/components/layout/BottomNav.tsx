@@ -63,47 +63,53 @@ const CRM_TABS: TabItem[] = [
 ];
 
 const WORKSPACE_MORE: MoreGroup[] = [
+  // Production = the daily money loop. Pipeline first — it's the primary daily route.
   {
     label: 'Production',
     items: [
       { label: 'Pipeline', path: '/pipeline', icon: GitBranch },
-      { label: 'Network',  path: '/network',  icon: Network },
       { label: 'Payouts',  path: '/payouts',  icon: DollarSign },
+      { label: 'Network',  path: '/network',  icon: Network },
     ],
   },
+  // Finance = planning + back-office. Forecast first since it's where Safe-to-Spend lives.
   {
     label: 'Finance',
     items: [
-      { label: 'Expenses',  path: '/expenses',  icon: Receipt },
       { label: 'Forecast',  path: '/forecast',  icon: TrendingUp },
+      { label: 'Expenses',  path: '/expenses',  icon: Receipt },
       { label: 'Analytics', path: '/analytics', icon: BarChart2 },
     ],
   },
 ];
 
 const CRM_MORE: MoreGroup[] = [
+  // Workflow = daily messaging surfaces. Email + SMS are highest frequency.
   {
     label: 'Workflow',
     items: [
-      { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
       { label: 'Email Center', path: '/crm/email',    icon: Mail },
       { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare, ownerAdminOnly: true },
+      { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
     ],
   },
+  // Outreach = compose-time tooling.
   {
     label: 'Outreach',
     items: [
-      { label: 'Templates',    path: '/crm/templates',  icon: LayoutTemplate },
-      { label: 'Automations',  path: '/crm/automations', icon: Zap, ownerAdminOnly: true },
+      { label: 'Templates',   path: '/crm/templates',  icon: LayoutTemplate },
+      { label: 'Automations', path: '/crm/automations', icon: Zap, ownerAdminOnly: true },
     ],
   },
+  // Insights = read-only analysis.
   {
     label: 'Insights',
     items: [
       { label: 'Reports',  path: '/crm/reports',  icon: BarChart3, ownerOnly: true },
-      { label: 'Behavior', path: '/crm/behavior', icon: Sparkles, ownerOnly: true },
+      { label: 'Behavior', path: '/crm/behavior', icon: Sparkles,  ownerOnly: true },
     ],
   },
+  // Admin = config — last because it's least frequent.
   {
     label: 'Admin',
     items: [

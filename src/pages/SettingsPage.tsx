@@ -160,25 +160,27 @@ export default function SettingsPage() {
             {/* Main content */}
             <div
               id="account-settings-content"
-              className="flex-1 min-w-0 space-y-5 max-w-3xl pb-12"
+              className="flex-1 min-w-0 pb-12"
             >
-              <div className="hidden lg:flex items-baseline gap-2.5">
-                <activeMeta.icon className="h-4.5 w-4.5 text-primary self-center" />
-                <h2 className="text-[20px] font-bold text-foreground tracking-[-0.02em]">{activeMeta.label}</h2>
-                {activeMeta.description && (
-                  <span className="text-[12.5px] text-muted-foreground">· {activeMeta.description}</span>
-                )}
-              </div>
+              <div className="max-w-[720px] space-y-5">
+                <div className="hidden lg:flex items-baseline gap-2.5">
+                  <activeMeta.icon className="h-4.5 w-4.5 text-primary self-center" />
+                  <h2 className="text-[20px] font-bold text-foreground tracking-[-0.02em]">{activeMeta.label}</h2>
+                  {activeMeta.description && (
+                    <span className="text-[12.5px] text-muted-foreground">· {activeMeta.description}</span>
+                  )}
+                </div>
 
-              {activeTab === 'setup'         && <SetupChecklistTab onJump={setTab} />}
-              {activeTab === 'profile'       && <ProfileSection />}
-              {activeTab === 'appearance'    && <AppearanceSection />}
-              {activeTab === 'notifications' && <NotificationsTab />}
-              {activeTab === 'goals'         && <GoalsTab />}
-              {activeTab === 'tax'           && <TaxTab />}
-              {activeTab === 'plan'          && <SubscriptionSection />}
-              {activeTab === 'integrations'  && <PlatformConnectionsManager />}
-              {activeTab === 'data'          && <DataTab />}
+                {activeTab === 'setup'         && <SetupChecklistTab onJump={setTab} />}
+                {activeTab === 'profile'       && <ProfileSection />}
+                {activeTab === 'appearance'    && <AppearanceSection />}
+                {activeTab === 'notifications' && <NotificationsTab />}
+                {activeTab === 'goals'         && <GoalsTab />}
+                {activeTab === 'tax'           && <TaxTab />}
+                {activeTab === 'plan'          && <SubscriptionSection />}
+                {activeTab === 'integrations'  && <PlatformConnectionsManager />}
+                {activeTab === 'data'          && <DataTab />}
+              </div>
             </div>
           </div>
         </motion.div>
