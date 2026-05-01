@@ -225,7 +225,11 @@ export default function DashboardPage() {
         />
       </div>
 
-      {isEmpty ? (
+      {dashboardLoading ? (
+        <div className="min-h-[calc(100dvh-56px)] flex items-center justify-center">
+          <PageLoader />
+        </div>
+      ) : isEmpty ? (
         <EmptyDashboard />
       ) : (
         <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
