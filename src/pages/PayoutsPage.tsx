@@ -346,6 +346,9 @@ export default function PayoutsPage() {
   const { data: syncedTransactions = [], isLoading } = useSyncedTransactions();
   const { payoutItems, stats } = useSyncedPayouts(syncedTransactions);
   const refreshData = useRefreshData();
+  // Shared empty-state gate — never flashes Connect-ReZen onboarding while
+  // react-query is still hydrating from IndexedDB on a hard refresh.
+  const { isLoading: isHydrating } = useDashboardEmptyState();
 
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'flagged' | 'thisMonth' | 'received'>('all');
