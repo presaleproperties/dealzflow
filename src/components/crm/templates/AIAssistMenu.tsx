@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Wand2, Scissors, Stretch, Languages, Mic, Type, Loader2 } from 'lucide-react';
+import { Sparkles, Wand2, Scissors, Maximize2, Languages, Mic, Type, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
