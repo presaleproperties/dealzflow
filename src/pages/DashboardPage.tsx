@@ -149,8 +149,12 @@ export default function DashboardPage() {
   }, [syncedPayouts]);
 
 
+  // Wait for both connections + transactions to actually resolve before deciding
+  // the dashboard is "empty" — otherwise a refresh briefly flashes the
+  // Connect-ReZen onboarding screen while react-query is still hydrating.
+  const dashboardLoading = connLoading || txLoading || !connFetched || !txFetched;
   const hasConnection = connections.length > 0;
-  const isEmpty = !hasConnection && syncedTransactions.length === 0;
+  const isEmpty = !dashboardLoading && !hasConnection && syncedTransactions.length === 0;
   const activePipeline = pipelineProspects.filter(p => p.status === 'active');
 
   const quickStatsProps = {
