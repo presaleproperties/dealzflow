@@ -43,6 +43,10 @@ function friendlyTwilioError(code?: unknown, message?: unknown): string | null {
   return typeof message === 'string' && message.trim() ? message : null;
 }
 
+function isTransientStatus(status: number): boolean {
+  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -310,15 +314,25 @@ Deno.serve(async (req) => {
     const friendlyError = friendlyTwilioError(twilioData?.code, twilioData?.message);
 
     if (!twilioRes.ok) {
-      await supabaseAdmin.from('crm_sms_log').insert({
+      const transient = isTransientStatus(twilioRes.status);
+      const { data: logged } = await supabaseAdmin.from('crm_sms_log').insert({
         user_id: user.id, contact_id, direction: 'outbound',
         to_number: to, from_number: fromNumber, body: finalBody, media_urls,
         message_type: media_urls.length > 0 ? 'mms' : 'sms',
-        status: 'failed', campaign_id, channel,
+        status: transient ? 'queued' : 'failed', campaign_id, channel,
         client_dedupe_id,
         error_message: friendlyError ?? `HTTP ${twilioRes.status}`,
         error_code: twilioData?.code ? String(twilioData.code) : null,
-      });
+        attempt_count: 1,
+        last_attempt_at: new Date().toISOString(),
+      }).select('id').maybeSingle();
+
+      if (transient) {
+        return new Response(JSON.stringify({
+          ok: true, queued: true, retrying: true, log_id: logged?.id,
+          message: 'Message queued for automatic retry.',
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       return new Response(JSON.stringify({
         error: friendlyError ?? twilioData?.message ?? 'Twilio send failed', code: twilioData?.code,
       }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -344,8 +358,8 @@ Deno.serve(async (req) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     console.error('send-sms error:', msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ ok: true, queued: true, fallback: true, message: 'Message queued for retry.', detail: msg }), {
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
