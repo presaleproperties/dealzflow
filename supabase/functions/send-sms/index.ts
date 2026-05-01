@@ -50,6 +50,9 @@ function isTransientStatus(status: number): boolean {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
+  let supabaseAdmin: any = null;
+  let fallbackLog: Record<string, unknown> | null = null;
+
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const TWILIO_API_KEY = Deno.env.get('TWILIO_API_KEY');
@@ -67,7 +70,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     );
-    const supabaseAdmin = createClient(
+    supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
@@ -301,6 +304,16 @@ Deno.serve(async (req) => {
     const statusCallback = `${Deno.env.get('SUPABASE_URL')}/functions/v1/twilio-sms-webhook?type=status`;
     params.set('StatusCallback', statusCallback);
 
+    fallbackLog = {
+      user_id: user.id, contact_id, direction: 'outbound',
+      to_number: to, from_number: fromNumber, body: finalBody, media_urls,
+      message_type: media_urls.length > 0 ? 'mms' : 'sms',
+      status: 'queued', campaign_id, channel, client_dedupe_id,
+      error_message: 'Temporary sending issue — queued for automatic retry.',
+      attempt_count: 1,
+      last_attempt_at: new Date().toISOString(),
+    };
+
     const twilioRes = await fetch(`${GATEWAY_URL}/Messages.json`, {
       method: 'POST',
       headers: {
@@ -358,7 +371,16 @@ Deno.serve(async (req) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     console.error('send-sms error:', msg);
-    return new Response(JSON.stringify({ ok: true, queued: true, fallback: true, message: 'Message queued for retry.', detail: msg }), {
+    let logId: string | null = null;
+    if (supabaseAdmin && fallbackLog) {
+      const { data: logged } = await supabaseAdmin
+        .from('crm_sms_log')
+        .insert({ ...fallbackLog, error_message: msg })
+        .select('id')
+        .maybeSingle();
+      logId = logged?.id ?? null;
+    }
+    return new Response(JSON.stringify({ ok: true, queued: true, fallback: true, log_id: logId, message: 'Message queued for retry.', detail: msg }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
