@@ -242,39 +242,41 @@ export default function CrmSettingsPage() {
       {/* Main content pane */}
       <div
         id="crm-settings-content"
-        className="flex-1 min-h-0 overflow-y-auto space-y-5 max-w-6xl pb-12"
+        className="flex-1 min-h-0 overflow-y-auto pb-12"
       >
-        {/* Mobile h1 */}
-        <div className="lg:hidden">
-          <h1 className="m-page-title">CRM Settings</h1>
-        </div>
-        <div className="hidden lg:flex items-baseline gap-2.5">
-          <activeMeta.icon className="h-4.5 w-4.5 text-primary self-center" />
-          <h2 className="text-[20px] font-bold text-foreground tracking-[-0.02em]">{activeMeta.label}</h2>
-          {activeMeta.description && (
-            <span className="text-[12.5px] text-muted-foreground">· {activeMeta.description}</span>
-          )}
-        </div>
+        <div className="max-w-[720px] space-y-5">
+          {/* Mobile h1 */}
+          <div className="lg:hidden">
+            <h1 className="m-page-title">CRM Settings</h1>
+          </div>
+          <div className="hidden lg:flex items-baseline gap-2.5">
+            <activeMeta.icon className="h-4.5 w-4.5 text-primary self-center" />
+            <h2 className="text-[20px] font-bold text-foreground tracking-[-0.02em]">{activeMeta.label}</h2>
+            {activeMeta.description && (
+              <span className="text-[12.5px] text-muted-foreground">· {activeMeta.description}</span>
+            )}
+          </div>
 
-        {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} isOwner={isOwner} onJump={setTab} /></SectionErrorBoundary>}
-        {activeTab === 'profile'       && <SectionErrorBoundary name="Profile"><ProfileSection /></SectionErrorBoundary>}
-        {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
-        {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
-        {activeTab === 'timeline'      && <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>}
-        {activeTab === 'team'          && (
-          <SectionErrorBoundary name="Team">
-            <TeamManagement />
-            <WorkspaceMembersCard />
-            <InviteAgentCard />
-          </SectionErrorBoundary>
-        )}
-        {activeTab === 'integrations'  && <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>}
-        {activeTab === 'projects'      && <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>}
-        {activeTab === 'import'        && <SectionErrorBoundary name="Import"><DataImportSection /></SectionErrorBoundary>}
-        {activeTab === 'data'          && <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>}
-        {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
-        {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
-        {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
+          {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} isOwner={isOwner} onJump={setTab} /></SectionErrorBoundary>}
+          {activeTab === 'profile'       && <SectionErrorBoundary name="Profile"><ProfileSection /></SectionErrorBoundary>}
+          {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
+          {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
+          {activeTab === 'timeline'      && <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>}
+          {activeTab === 'team'          && (
+            <SectionErrorBoundary name="Team">
+              <TeamManagement />
+              <WorkspaceMembersCard />
+              <InviteAgentCard />
+            </SectionErrorBoundary>
+          )}
+          {activeTab === 'integrations'  && <SectionErrorBoundary name="Integrations"><IntegrationsSection /></SectionErrorBoundary>}
+          {activeTab === 'projects'      && <SectionErrorBoundary name="Projects"><ProjectsManagerSection /></SectionErrorBoundary>}
+          {activeTab === 'import'        && <SectionErrorBoundary name="Import"><DataImportSection /></SectionErrorBoundary>}
+          {activeTab === 'data'          && <SectionErrorBoundary name="Data Manager"><DataManagerSection /></SectionErrorBoundary>}
+          {activeTab === 'leadflow'      && <SectionErrorBoundary name="Lead Flow"><LeadFlowSection /></SectionErrorBoundary>}
+          {activeTab === 'sources'       && <SectionErrorBoundary name="Source Library"><SourceManagerSection /></SectionErrorBoundary>}
+          {activeTab === 'plan'          && <SectionErrorBoundary name="Plan & Billing"><PlanBillingSection /></SectionErrorBoundary>}
+        </div>
       </div>
     </div>
   );
