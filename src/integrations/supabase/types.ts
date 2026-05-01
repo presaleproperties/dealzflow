@@ -1082,6 +1082,7 @@ export type Database = {
       }
       crm_email_schedule: {
         Row: {
+          attempt_count: number
           bcc: string | null
           body_html: string
           cc: string | null
@@ -1090,6 +1091,8 @@ export type Database = {
           created_by: string
           error_message: string | null
           id: string
+          last_attempt_at: string | null
+          max_attempts: number
           send_at: string
           sent_at: string | null
           status: string
@@ -1099,6 +1102,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attempt_count?: number
           bcc?: string | null
           body_html: string
           cc?: string | null
@@ -1107,6 +1111,8 @@ export type Database = {
           created_by: string
           error_message?: string | null
           id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
           send_at: string
           sent_at?: string | null
           status?: string
@@ -1116,6 +1122,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attempt_count?: number
           bcc?: string | null
           body_html?: string
           cc?: string | null
@@ -1124,6 +1131,8 @@ export type Database = {
           created_by?: string
           error_message?: string | null
           id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
           send_at?: string
           sent_at?: string | null
           status?: string
@@ -3120,6 +3129,7 @@ export type Database = {
       }
       crm_sms_log: {
         Row: {
+          attempt_count: number
           body: string
           campaign_id: string | null
           channel: string
@@ -3132,6 +3142,8 @@ export type Database = {
           error_message: string | null
           from_number: string | null
           id: string
+          last_attempt_at: string | null
+          max_attempts: number
           media_urls: string[]
           message_type: string
           num_segments: number | null
@@ -3145,6 +3157,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          attempt_count?: number
           body: string
           campaign_id?: string | null
           channel?: string
@@ -3157,6 +3170,8 @@ export type Database = {
           error_message?: string | null
           from_number?: string | null
           id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
           media_urls?: string[]
           message_type?: string
           num_segments?: number | null
@@ -3170,6 +3185,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          attempt_count?: number
           body?: string
           campaign_id?: string | null
           channel?: string
@@ -3182,6 +3198,8 @@ export type Database = {
           error_message?: string | null
           from_number?: string | null
           id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
           media_urls?: string[]
           message_type?: string
           num_segments?: number | null
