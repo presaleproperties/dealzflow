@@ -332,7 +332,7 @@ export function useSendSms() {
             : 'Saved — will retry automatically',
         );
       } else if (data?.scheduled) toast.success('Text scheduled');
-      else if (data?.queued) toast.success('Saved — will send once Twilio is connected');
+      else if (data?.queued) toast.success(data?.retrying || data?.fallback ? 'Text queued — retrying automatically' : 'Saved — will send once Twilio is connected');
       else toast.success('Text sent');
     },
     onError: (e: any, _vars, ctx) => {

@@ -84,6 +84,9 @@ interface SendBody {
   contact_id?: string | null;
   // When provided, send is queued via crm_email_schedule
   send_at?: string | null;
+  // Internal retry path: insert into crm_email_schedule and let the worker
+  // deliver via agent Gmail with Presale bridge fallback.
+  queue_only?: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -121,8 +124,9 @@ Deno.serve(async (req) => {
     const ccStr = Array.isArray(body.cc) ? body.cc.join(",") : (body.cc ?? null);
     const bccStr = Array.isArray(body.bcc) ? body.bcc.join(",") : (body.bcc ?? null);
 
-    // ── Scheduled send: queue and return ──
-    if (body.send_at) {
+    // ── Queue path: scheduled emails and immediate sends both go through the
+    // worker so Gmail/bridge outages retry instead of producing edge errors.
+    if (body.send_at || body.queue_only) {
       const { error: schedErr } = await supabase.from("crm_email_schedule").insert({
         contact_id: body.contact_id ?? null,
         template_id: body.template_id ?? null,
@@ -131,12 +135,22 @@ Deno.serve(async (req) => {
         bcc: bccStr,
         subject: body.subject,
         body_html: body.html,
-        send_at: body.send_at,
+        send_at: body.send_at ?? new Date().toISOString(),
         status: "pending",
         created_by: userId,
       });
       if (schedErr) return json({ error: schedErr.message }, 500);
-      return json({ scheduled: true }, 200);
+      if (!body.send_at) {
+        fetch(`${supabaseUrl}/functions/v1/process-scheduled-emails`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ source: "bridge-send-email" }),
+        }).catch((e) => console.warn("email queue kick failed", e));
+      }
+      return json({ scheduled: !!body.send_at, queued: !body.send_at }, 200);
     }
 
     // ── Immediate send: prefer agent's connected Gmail, fallback to bridge ──
