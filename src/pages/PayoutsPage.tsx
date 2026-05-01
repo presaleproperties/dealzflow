@@ -611,6 +611,7 @@ export default function PayoutsPage() {
           )}
         </motion.div>
       </PullToRefresh>
+      )}
     </AppLayout>
   );
 }
