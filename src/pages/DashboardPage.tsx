@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const { data: expenses = [] } = useExpenses();
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
-  const { data: syncedTransactions = [], isLoading: txLoading, isFetched: txFetched } = useSyncedTransactions();
+  const { data: syncedTransactions = [] } = useSyncedTransactions();
   const { data: revenueShare = [] } = useRevenueShare();
   // Dashboard projections (Coming In, Earned YTD, active deal counts) use ONLY ReZen-synced data.
   // Manual historical imports are for records/inventory/analytics only — not live projections.
