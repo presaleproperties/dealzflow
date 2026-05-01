@@ -16,6 +16,7 @@ import {
 } from '@/hooks/useEmailTemplates';
 import { VariablePicker } from './VariablePicker';
 import { TemplateVersionHistory } from './TemplateVersionHistory';
+import { AIAssistMenu } from './AIAssistMenu';
 import { renderWithSampleData, findUnknownTokens } from '@/lib/emailVariables';
 import { applySignatureBlock, hasSignatureBlock, stripSignatureBlock } from '@/lib/templateSignature';
 import { usePresaleAgent } from '@/stores/usePresaleAgent';
@@ -242,6 +243,13 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           )}
         </div>
         <div className="flex items-center gap-2">
+          <AIAssistMenu
+            html={htmlContent}
+            subject={subject}
+            agentName={agent?.name || undefined}
+            onApplyHtml={(next) => setHtmlContent(stripSignatureBlock(next))}
+            onApplySubject={(s) => setSubject(s)}
+          />
           {isEdit && (
             <>
               {template && <TemplateVersionHistory templateId={template.id} onRestore={(v) => {

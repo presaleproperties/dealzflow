@@ -235,3 +235,64 @@ export function useToggleFavorite() {
     onError: (err: Error) => toast.error(err.message),
   });
 }
+
+/**
+ * Duplicate any template (your own, a teammate's team template, or a Presale-clone)
+ * into your personal library. Always lands as `agent:<mySlug>`.
+ */
+export function useDuplicateTemplate() {
+  const qc = useQueryClient();
+  const mySlug = useMyAgentSlug();
+  return useMutation({
+    mutationFn: async (tpl: EmailTemplate) => {
+      const owner_scope = mySlug ? `agent:${mySlug}` : 'team:presale';
+      const owner_agent_slug = mySlug;
+      const { error } = await supabase.from('crm_email_templates').insert({
+        name: `${tpl.name} (Copy)`,
+        subject: tpl.subject ?? '',
+        body_html: tpl.html_content,
+        preview_text: tpl.preview_text ?? null,
+        category: tpl.category ?? 'general',
+        project: tpl.project_tags?.[0] ?? null,
+        merge_tags: [],
+        source: 'dealflow',
+        is_active: true,
+        is_favorite: false,
+        owner_scope,
+        owner_agent_slug,
+        created_by_agent_slug: mySlug,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['email-templates'] });
+      toast.success('Duplicated to your library');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/**
+ * Promote a personal template up to the shared team library (or pull a team
+ * template back down to personal). RLS still enforces who can perform either.
+ */
+export function useChangeTemplateScope() {
+  const qc = useQueryClient();
+  const mySlug = useMyAgentSlug();
+  return useMutation({
+    mutationFn: async ({ id, scope }: { id: string; scope: 'mine' | 'team' }) => {
+      const owner_scope = scope === 'team' ? 'team:presale' : mySlug ? `agent:${mySlug}` : 'team:presale';
+      const owner_agent_slug = scope === 'team' ? null : mySlug;
+      const { error } = await supabase
+        .from('crm_email_templates')
+        .update({ owner_scope, owner_agent_slug })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['email-templates'] });
+      toast.success(vars.scope === 'team' ? 'Shared with team' : 'Moved to your library');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
