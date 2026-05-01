@@ -40,6 +40,7 @@ import { GCIGoalTracker } from '@/components/dashboard/GCIGoalTracker';
 import { DealsWrittenCard } from '@/components/dashboard/DealsWrittenCard';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
 import { TodayAgenda } from '@/components/dashboard/TodayAgenda';
+import { useDashboardEmptyState } from '@/hooks/useDashboardEmptyState';
 
 export default function DashboardPage() {
   const { user } = useAuth();
