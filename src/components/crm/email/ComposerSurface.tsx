@@ -324,8 +324,16 @@ export function ComposerSurface({
           toast.error(`Upload failed: ${file.name}`);
           continue;
         }
-        const { data: pub } = supabase.storage.from('email-attachments').getPublicUrl(path);
-        const url = pub.publicUrl;
+        // 30-day signed URL — bucket is locked to CRM members, so external recipients
+        // need a signed URL to render embedded images / download attachments.
+        const { data: signed, error: signErr } = await supabase.storage
+          .from('email-attachments')
+          .createSignedUrl(path, 60 * 60 * 24 * 30);
+        if (signErr || !signed?.signedUrl) {
+          toast.error(`Could not generate share link: ${file.name}`);
+          continue;
+        }
+        const url = signed.signedUrl;
         if (file.type.startsWith('image/')) {
           inserts.push(`<p><img src="${url}" alt="${safeName}" style="max-width:100%;height:auto;border-radius:6px;" /></p>`);
         } else {
