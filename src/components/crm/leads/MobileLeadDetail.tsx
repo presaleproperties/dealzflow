@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -40,6 +40,11 @@ export function MobileLeadDetail({
 
   const bottomPadStyle = { paddingBottom: 'var(--bottom-nav-pad)' } as const;
 
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from || '/crm/leads';
+  const backLabel = from === '/crm/pipeline' ? 'Pipeline' : 'Leads';
+
   // Score tier for tinted chip.
   const tier =
     leadScore.score >= 70 ? 'hot'
@@ -54,8 +59,8 @@ export function MobileLeadDetail({
         className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border flex-shrink-0"
       >
         <div className="px-3 h-12 flex items-center justify-between">
-          <Link to="/crm/leads" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary active:opacity-60 transition-opacity">
-            <ArrowLeft className="w-4 h-4" /> Leads
+          <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary active:opacity-60 transition-opacity">
+            <ArrowLeft className="w-4 h-4" /> {backLabel}
           </Link>
           <div
             className="m-score tabular-nums"

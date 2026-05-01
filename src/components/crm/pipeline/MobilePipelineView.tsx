@@ -135,7 +135,7 @@ export function MobilePipelineView() {
           <div className="text-center py-16 text-sm text-muted-foreground">No leads in this stage</div>
         ) : (
           <div className="m-list">
-            {list.map(c => <PipelineRow key={c.id} contact={c} onClick={() => navigate(`/crm/leads/${c.id}`)} />)}
+            {list.map(c => <PipelineRow key={c.id} contact={c} onClick={() => navigate(`/crm/leads/${c.id}`, { state: { from: '/crm/pipeline' } })} />)}
           </div>
         )}
       </div>
