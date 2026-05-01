@@ -18,6 +18,8 @@ import { useSyncedIncome } from '@/hooks/useSyncedIncome';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useProperties } from '@/hooks/useProperties';
 import { useSettings } from '@/hooks/useSettings';
+import { useDashboardEmptyState } from '@/hooks/useDashboardEmptyState';
+import { PageLoader } from '@/components/ui/page-loader';
 import { useRefreshData } from '@/hooks/useRefreshData';
 import { formatCurrency, getExtendedMonthRange } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -55,6 +57,9 @@ export default function ForecastPage() {
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
   const refreshData = useRefreshData();
+  // Shared empty-state gate — prevents Connect-ReZen onboarding from
+  // flashing during react-query hydration on hard refresh.
+  const { isLoading: isHydrating } = useDashboardEmptyState();
 
   const [excludedYears, setExcludedYears] = useState<Set<string>>(new Set(['2028', '2029', '2030']));
 
@@ -179,6 +184,11 @@ export default function ForecastPage() {
         subtitle={allSelected ? 'Multi-Year Projection' : `${availableYears.filter(y => !excludedYears.has(y)).join(', ')} Outlook`}
       />
 
+      {isHydrating ? (
+        <div className="min-h-[calc(100dvh-56px)] flex items-center justify-center">
+          <PageLoader />
+        </div>
+      ) : (
       <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
         <motion.div 
           className="p-3 sm:p-4 md:p-6 lg:p-6 space-y-3 sm:space-y-4"
@@ -530,6 +540,7 @@ export default function ForecastPage() {
           </motion.div>
         </motion.div>
       </PullToRefresh>
+      )}
     </AppLayout>
   );
 }

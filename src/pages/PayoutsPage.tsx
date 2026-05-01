@@ -32,6 +32,8 @@ import {
 import { useSyncedTransactions } from '@/hooks/usePlatformConnections';
 import { useSyncedPayouts, SyncedPayoutItem } from '@/hooks/useSyncedPayouts';
 import { useRefreshData } from '@/hooks/useRefreshData';
+import { useDashboardEmptyState } from '@/hooks/useDashboardEmptyState';
+import { PageLoader } from '@/components/ui/page-loader';
 import { formatCurrency } from '@/lib/format';
 import { triggerHaptic, springConfigs } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -344,6 +346,9 @@ export default function PayoutsPage() {
   const { data: syncedTransactions = [], isLoading } = useSyncedTransactions();
   const { payoutItems, stats } = useSyncedPayouts(syncedTransactions);
   const refreshData = useRefreshData();
+  // Shared empty-state gate — never flashes Connect-ReZen onboarding while
+  // react-query is still hydrating from IndexedDB on a hard refresh.
+  const { isLoading: isHydrating } = useDashboardEmptyState();
 
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'flagged' | 'thisMonth' | 'received'>('all');
@@ -438,6 +443,11 @@ export default function PayoutsPage() {
         }
       />
 
+      {isHydrating ? (
+        <div className="min-h-[calc(100dvh-56px)] flex items-center justify-center">
+          <PageLoader />
+        </div>
+      ) : (
       <PullToRefresh onRefresh={refreshData} className="min-h-[calc(100dvh-56px)]">
         <motion.div 
           className="p-4 sm:p-5 md:p-6 lg:p-6 space-y-4 sm:space-y-5"
@@ -601,6 +611,7 @@ export default function PayoutsPage() {
           )}
         </motion.div>
       </PullToRefresh>
+      )}
     </AppLayout>
   );
 }

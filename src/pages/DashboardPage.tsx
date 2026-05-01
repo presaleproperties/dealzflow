@@ -40,13 +40,14 @@ import { GCIGoalTracker } from '@/components/dashboard/GCIGoalTracker';
 import { DealsWrittenCard } from '@/components/dashboard/DealsWrittenCard';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
 import { TodayAgenda } from '@/components/dashboard/TodayAgenda';
+import { useDashboardEmptyState } from '@/hooks/useDashboardEmptyState';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: expenses = [] } = useExpenses();
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
-  const { data: syncedTransactions = [], isLoading: txLoading, isFetched: txFetched } = useSyncedTransactions();
+  const { data: syncedTransactions = [] } = useSyncedTransactions();
   const { data: revenueShare = [] } = useRevenueShare();
   // Dashboard projections (Coming In, Earned YTD, active deal counts) use ONLY ReZen-synced data.
   // Manual historical imports are for records/inventory/analytics only — not live projections.
@@ -56,7 +57,8 @@ export default function DashboardPage() {
   );
   const { syncedPayouts, receivedYTD, comingIn, projectedRevenue2026 } = useSyncedIncome(rezenTransactions);
   const { data: pipelineProspects = [] } = usePipelineProspects();
-  const { data: connections = [], isLoading: connLoading, isFetched: connFetched } = usePlatformConnections();
+  const { data: connections = [] } = usePlatformConnections();
+  const dashboardEmptyState = useDashboardEmptyState();
   const syncPlatform = useSyncPlatform();
   
   const refreshData = useRefreshData();
@@ -149,12 +151,10 @@ export default function DashboardPage() {
   }, [syncedPayouts]);
 
 
-  // Wait for both connections + transactions to actually resolve before deciding
-  // the dashboard is "empty" — otherwise a refresh briefly flashes the
-  // Connect-ReZen onboarding screen while react-query is still hydrating.
-  const dashboardLoading = connLoading || txLoading || !connFetched || !txFetched;
+  // Shared empty-state gate — never flashes Connect-ReZen onboarding while
+  // react-query is still hydrating from IndexedDB on a hard refresh.
+  const { isLoading: dashboardLoading, isEmpty } = dashboardEmptyState;
   const hasConnection = connections.length > 0;
-  const isEmpty = !dashboardLoading && !hasConnection && syncedTransactions.length === 0;
   const activePipeline = pipelineProspects.filter(p => p.status === 'active');
 
   const quickStatsProps = {
