@@ -132,7 +132,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // `local` scope: revoke only this device's session. Prevents one tab
+    // logout from invalidating refresh tokens on the user's other devices.
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   const resetPassword = async (email: string) => {
