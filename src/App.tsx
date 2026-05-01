@@ -23,6 +23,7 @@ import { usePresaleAgentSync } from "@/hooks/usePresaleAgentSync";
 import { usePresaleSignatureAutoImport } from "@/hooks/usePresaleSignatureAutoImport";
 import { EmailIdentitySetupDialog } from "@/components/email/EmailIdentitySetupDialog";
 import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner";
+import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
