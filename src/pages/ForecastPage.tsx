@@ -55,6 +55,9 @@ export default function ForecastPage() {
   const { data: properties = [] } = useProperties();
   const { data: settings } = useSettings();
   const refreshData = useRefreshData();
+  // Shared empty-state gate — prevents Connect-ReZen onboarding from
+  // flashing during react-query hydration on hard refresh.
+  const { isLoading: isHydrating } = useDashboardEmptyState();
 
   const [excludedYears, setExcludedYears] = useState<Set<string>>(new Set(['2028', '2029', '2030']));
 
