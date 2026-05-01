@@ -129,17 +129,45 @@ Deno.serve(async (req) => {
 });
 
 async function sendQueuedEmail(supabase: any, row: any): Promise<SendResult> {
+  // LOCKED FROM-ADDRESS POLICY:
+  // The From: header MUST match the agent's confirmed Gmail mailbox. Presale's
+  // bridge sends from info@presaleproperties.com — so it is ONLY a valid
+  // fallback when the queued row was created by the owner (info@) identity.
+  // For every other agent we must fail (retryable) instead of silently
+  // sending under the wrong identity.
   const gmail = await sendViaAgentGmail(supabase, row);
   if (gmail.ok) return gmail;
+
+  const ownerOk = await isOwnerIdentity(supabase, row.created_by);
+  if (!ownerOk) {
+    // Hard-lock: never let a non-owner email leave under info@.
+    return {
+      ok: false,
+      provider: "gmail",
+      error: gmail.error || "Agent Gmail not connected — reconnect inbox in Settings → Email to resume sends.",
+      retryable: true,
+    };
+  }
 
   const presale = await sendViaPresale(row);
   if (presale.ok) {
     return gmail.provider === "gmail"
-      ? { ...presale, detail: `Agent Gmail unavailable; fallback used. ${gmail.error}` }
+      ? { ...presale, detail: `Owner Gmail unavailable; bridge fallback used. ${gmail.error}` }
       : presale;
   }
-
   return presale.retryable ? presale : { ...presale, retryable: gmail.retryable || presale.retryable };
+}
+
+async function isOwnerIdentity(supabase: any, userId: string | null | undefined): Promise<boolean> {
+  if (!userId) return false;
+  const { data } = await supabase
+    .from("crm_team")
+    .select("role,email")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return false;
+  // Bridge sends from info@presaleproperties.com — only allow that identity through.
+  return data.role === "owner" && (data.email ?? "").toLowerCase() === "info@presaleproperties.com";
 }
 
 async function sendViaAgentGmail(supabase: any, row: any): Promise<SendResult> {
