@@ -9,6 +9,15 @@ const corsHeaders = {
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/twilio';
 
+function isTransientStatus(status: number): boolean {
+  return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
+}
+
+function nextRetryIso(attempt: number): string {
+  const delayMs = Math.min(30 * 60_000, 2 ** Math.max(0, attempt - 1) * 60_000);
+  return new Date(Date.now() + delayMs).toISOString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -25,19 +34,29 @@ Deno.serve(async (req) => {
     let campaignsStarted = 0;
 
     // 1. Process due individual scheduled messages
+    const nowIso = new Date().toISOString();
     const { data: due } = await admin
-      .from('crm_sms_log').select('*').eq('status', 'scheduled')
-      .lte('scheduled_for', new Date().toISOString()).limit(100);
+      .from('crm_sms_log')
+      .select('*')
+      .or(`and(status.eq.scheduled,scheduled_for.lte.${nowIso}),and(status.eq.queued,scheduled_for.lte.${nowIso})`)
+      .limit(100);
 
     for (const row of due || []) {
       if (!TWILIO_API_KEY || !LOVABLE_API_KEY) {
         await admin.from('crm_sms_log').update({
           status: 'queued',
+          scheduled_for: nextRetryIso(Number(row.attempt_count ?? 0) + 1),
           error_message: 'Twilio not connected at scheduled time.',
         }).eq('id', row.id);
         continue;
       }
       try {
+        const attempt = Number(row.attempt_count ?? 0) + 1;
+        await admin.from('crm_sms_log').update({
+          attempt_count: attempt,
+          last_attempt_at: new Date().toISOString(),
+        }).eq('id', row.id);
+
         const params = new URLSearchParams();
         const isWa = row.channel === 'whatsapp';
         params.set('To', isWa ? `whatsapp:${row.to_number}` : row.to_number);
@@ -64,19 +83,27 @@ Deno.serve(async (req) => {
           }).eq('id', row.id);
           scheduledSent++;
         } else {
+          const transient = isTransientStatus(res.status);
+          const shouldRetry = transient && attempt < Number(row.max_attempts ?? 5);
           await admin.from('crm_sms_log').update({
-            status: 'failed',
+            status: shouldRetry ? 'queued' : 'failed',
+            scheduled_for: shouldRetry ? nextRetryIso(attempt) : row.scheduled_for,
             error_message: td?.message ?? `HTTP ${res.status}`,
             error_code: td?.code ? String(td.code) : null,
           }).eq('id', row.id);
-          scheduledFailed++;
+          if (shouldRetry) scheduledSent++; else scheduledFailed++;
         }
       } catch (e) {
+        const attempt = Number(row.attempt_count ?? 0) + 1;
+        const shouldRetry = attempt < Number(row.max_attempts ?? 5);
         await admin.from('crm_sms_log').update({
-          status: 'failed',
+          status: shouldRetry ? 'queued' : 'failed',
+          scheduled_for: shouldRetry ? nextRetryIso(attempt) : row.scheduled_for,
           error_message: e instanceof Error ? e.message : 'unknown',
+          attempt_count: attempt,
+          last_attempt_at: new Date().toISOString(),
         }).eq('id', row.id);
-        scheduledFailed++;
+        if (shouldRetry) scheduledSent++; else scheduledFailed++;
       }
     }
 
