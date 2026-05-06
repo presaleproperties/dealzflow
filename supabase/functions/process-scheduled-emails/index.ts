@@ -15,8 +15,42 @@ const PRESALE_FUNCTIONS_URL = "https://thvlisplwqhtjpzpedhq.supabase.co/function
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const BATCH_SIZE = 25;
+const TRACKER_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/crm-email-track`;
 
-type SendResult = { ok: true; provider: "gmail" | "presale"; messageId?: string | null; detail?: string } | { ok: false; provider: "gmail" | "presale" | "none"; error: string; retryable: boolean };
+function injectTrackingPixel(html: string, trackingId: string): string {
+  const pixelUrl = `${TRACKER_URL}?a=open&t=${encodeURIComponent(trackingId)}`;
+  if (html.includes(pixelUrl)) return html;
+  const pixelTag = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none!important;width:1px;height:1px;border:0;outline:none;" />`;
+  if (/<\/body\s*>/i.test(html)) return html.replace(/<\/body\s*>/i, `${pixelTag}</body>`);
+  return `${html}${pixelTag}`;
+}
+
+function rewriteLinks(html: string, trackingId: string): string {
+  const SKIP = /^(mailto:|tel:|sms:|javascript:|#)/i;
+  return html.replace(
+    /<a\b([^>]*?)\shref\s*=\s*(["'])([\s\S]*?)\2([^>]*)>/gi,
+    (m, pre, q, href, post) => {
+      const t = href.trim();
+      if (!t || SKIP.test(t) || t.startsWith(TRACKER_URL)) return m;
+      const wrapped = `${TRACKER_URL}?a=click&t=${encodeURIComponent(trackingId)}&u=${encodeURIComponent(t)}`;
+      return `<a${pre} href=${q}${wrapped}${q}${post}>`;
+    },
+  );
+}
+
+async function buildBrandBanner(supabase: any, userId: string | null | undefined): Promise<string> {
+  if (!userId) return "";
+  const { data: settings } = await supabase
+    .from("crm_email_settings")
+    .select("sender_name,brand_logo_url,brand_logo_alt,brand_logo_enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!settings || settings.brand_logo_enabled !== true) return "";
+  const url = (settings.brand_logo_url ?? "").trim();
+  if (!/^https:\/\//i.test(url)) return "";
+  const alt = ((settings.brand_logo_alt ?? settings.sender_name ?? "Logo") || "Logo").replace(/[<>"']/g, "");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 20px 0;"><tr><td align="center" style="padding:8px 0 16px 0;border-bottom:1px solid #ececec;"><img src="${url}" alt="${alt}" style="display:block;max-height:64px;max-width:240px;height:auto;width:auto;border:0;outline:none;text-decoration:none;" /></td></tr></table>`;
+}
 
 function isAuthorized(req: Request): boolean {
   const cronSecret = Deno.env.get("CRON_SECRET");
