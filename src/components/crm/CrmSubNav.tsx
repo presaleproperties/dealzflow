@@ -72,14 +72,14 @@ export function CrmSubNav() {
       className="hidden lg:block sticky top-[54px] z-30 backdrop-blur-xl bg-background/85"
       style={{ borderBottom: '1px solid hsl(var(--border) / 0.6)' }}
     >
-      <div className="flex items-center gap-5 px-3 sm:px-4 lg:px-6 h-[38px]">
+      <div className="flex items-center gap-7 px-3 sm:px-4 lg:px-6 h-[46px]">
         {visiblePrimary.map(tab => {
           const active = isActive(location.pathname, tab.path);
           return (
             <Link
               key={tab.path}
               to={tab.path}
-              className="relative flex items-center h-full text-[12.5px] tracking-tight transition-colors shrink-0 hover:text-foreground"
+              className="relative flex items-center h-full text-[14px] tracking-tight transition-colors shrink-0 hover:text-foreground"
               style={{
                 color: active ? 'hsl(var(--foreground))' : INACTIVE,
                 fontWeight: active ? 600 : 500,
@@ -103,7 +103,7 @@ export function CrmSubNav() {
             <button
               type="button"
               onClick={() => setMoreOpen(o => !o)}
-              className="relative flex items-center gap-1 h-full text-[12.5px] tracking-tight transition-colors shrink-0 hover:text-foreground"
+              className="relative flex items-center gap-1 h-full text-[14px] tracking-tight transition-colors shrink-0 hover:text-foreground"
               style={{
                 color: moreActive || moreOpen ? 'hsl(var(--foreground))' : INACTIVE,
                 fontWeight: moreActive ? 600 : 500,
@@ -133,7 +133,7 @@ export function CrmSubNav() {
                       key={tab.path}
                       to={tab.path}
                       onClick={() => setMoreOpen(false)}
-                      className="flex items-center px-3 py-1.5 text-[13px] hover:bg-muted/60 transition-colors"
+                      className="flex items-center px-3.5 py-2 text-[14px] hover:bg-muted/60 transition-colors"
                       style={{
                         color: active ? GOLD : 'hsl(var(--foreground))',
                         fontWeight: active ? 600 : 500,
