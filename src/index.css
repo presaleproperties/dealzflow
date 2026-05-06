@@ -1522,13 +1522,34 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
 [data-stagger-children] > *:nth-child(n+9){ animation-delay: 260ms; }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Global kill-switch: neutralize every animation + transition (incl. framer-motion). */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Explicitly disable the heavier motion utilities */
   .page-transition,
   .page-loader-enter,
   .page-loader-glow,
   .page-loader-float,
   .page-loader-bar,
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in,
+  .msg-pop-in,
+  .hover-lift,
+  .hover-scale,
   [data-stagger-children] > * {
     animation: none !important;
+    transform: none !important;
   }
-  .ui-spinner { animation-duration: 1.4s; }
+  .skeleton, .crm-skeleton { animation: none !important; }
+  .ui-spinner { animation-duration: 1.4s !important; }
 }
+
