@@ -18,6 +18,25 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // Validate webhook secret — required to prevent unauthenticated lead injection.
+  const expectedSecret = Deno.env.get("LOFTY_INGEST_SECRET");
+  if (!expectedSecret) {
+    return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const providedSecret =
+    req.headers.get("x-webhook-secret") ||
+    req.headers.get("x-lofty-secret") ||
+    new URL(req.url).searchParams.get("secret");
+  if (providedSecret !== expectedSecret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
