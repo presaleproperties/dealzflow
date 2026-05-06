@@ -66,7 +66,8 @@ const SECTIONS: NavSection[] = [
       {
         label: 'Marketing',
         children: [
-          { label: 'Email Center', path: '/crm/email',     icon: Mail,           description: 'Campaigns & inbox' },
+          { label: 'Inbox',        path: '/crm/inbox',     icon: Mail,           description: 'Email, SMS & WhatsApp' },
+          { label: 'Email Center', path: '/crm/email',     icon: MessageCircle,  description: 'Campaigns & broadcasts' },
           { label: 'Templates',    path: '/crm/templates', icon: LayoutTemplate, description: 'Email templates' },
           { label: 'Reports',      path: '/crm/reports',   icon: BarChart3,      description: 'CRM analytics' },
         ],
