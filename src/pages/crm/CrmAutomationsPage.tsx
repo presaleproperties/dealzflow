@@ -198,8 +198,8 @@ export default function CrmAutomationsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-48 rounded-xl bg-muted/20 animate-pulse" />)}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" data-stagger-children>
+          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-48 rounded-xl" />)}
         </div>
       ) : !automations?.length ? (
         <div className="text-center py-16 border border-dashed border-border/50 rounded-2xl bg-muted/5">

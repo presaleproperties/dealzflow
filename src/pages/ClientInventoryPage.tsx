@@ -348,16 +348,16 @@ export default function ClientInventoryPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="card-premium overflow-hidden">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border/30 last:border-b-0 animate-pulse">
-                <div className="w-10 h-10 rounded-xl bg-muted shrink-0" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 bg-muted rounded w-1/3" />
-                  <div className="h-3 bg-muted/60 rounded w-1/2" />
+          <div className="card-premium overflow-hidden" data-stagger-children>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border/30 last:border-b-0">
+                <div className="skeleton w-10 h-10 rounded-xl shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton-text w-1/3" />
+                  <div className="skeleton-line w-1/2" />
                 </div>
-                <div className="h-5 bg-muted rounded w-16 hidden sm:block" />
-                <div className="h-4 bg-muted rounded w-20 hidden sm:block" />
+                <div className="skeleton-pill w-16 hidden sm:block" />
+                <div className="skeleton-text w-20 hidden sm:block" />
               </div>
             ))}
           </div>

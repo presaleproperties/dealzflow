@@ -170,10 +170,13 @@ export default function NetworkPage() {
   if (agentsLoading) {
     return (
       <AppLayout>
-        <div className="p-4 lg:p-8 flex items-center justify-center min-h-[50vh]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading network data...</p>
+        <div className="p-4 lg:p-8 space-y-4" data-stagger-children>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <div key={i} className="skeleton-card" />)}
+          </div>
+          <div className="skeleton h-72 rounded-2xl" />
+          <div className="space-y-2">
+            {[1,2,3,4,5].map(i => <div key={i} className="skeleton-row" />)}
           </div>
         </div>
       </AppLayout>

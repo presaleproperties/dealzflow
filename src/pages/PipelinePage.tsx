@@ -745,14 +745,14 @@ export default function PipelinePage() {
     return (
       <AppLayout>
         <Header title="Pipeline" showAddDeal={false} />
-        <div className="p-5 lg:p-6 space-y-5">
-          <div className="rounded-2xl border border-border/15 bg-card p-5 animate-pulse">
+        <div className="p-5 lg:p-6 space-y-5" data-stagger-children>
+          <div className="rounded-2xl border border-border/15 bg-card p-5">
             <div className="flex items-center justify-between">
-              <div className="space-y-2"><div className="h-3 w-24 bg-muted/30 rounded" /><div className="h-7 w-32 bg-muted/30 rounded-lg" /></div>
-              <div className="flex gap-4">{[1,2,3].map(i => <div key={i} className="h-10 w-14 bg-muted/20 rounded-xl" />)}</div>
+              <div className="space-y-2"><div className="skeleton-line w-24" /><div className="skeleton-title w-32" /></div>
+              <div className="flex gap-3">{[1,2,3].map(i => <div key={i} className="skeleton h-10 w-14 rounded-xl" />)}</div>
             </div>
           </div>
-          {[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-muted/15 animate-pulse" />)}
+          {[1,2,3,4].map(i => <div key={i} className="skeleton-row" />)}
         </div>
       </AppLayout>
     );
