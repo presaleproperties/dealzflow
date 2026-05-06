@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Flame, Phone, Mail, Plus } from 'lucide-react';
+import { Search, ChevronRight, Flame, Phone, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
