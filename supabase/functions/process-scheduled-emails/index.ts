@@ -106,7 +106,16 @@ Deno.serve(async (req) => {
         .in("status", ["pending", "processing"]);
       if (lockErr) continue;
 
-      const result = await sendQueuedEmail(supabase, row);
+      // Inject brand banner + tracking pixel + click rewriter so queued/scheduled
+      // sends carry the same opens/clicks instrumentation as immediate sends.
+      const trackingId = crypto.randomUUID();
+      const banner = await buildBrandBanner(supabase, row.created_by);
+      const withBanner = banner ? `${banner}${row.body_html ?? ""}` : (row.body_html ?? "");
+      const linked = rewriteLinks(withBanner, trackingId);
+      const trackedHtml = injectTrackingPixel(linked, trackingId);
+      const enrichedRow = { ...row, body_html: trackedHtml };
+
+      const result = await sendQueuedEmail(supabase, enrichedRow);
 
       if (result.ok) {
         await supabase.from("crm_email_schedule").update({
@@ -123,10 +132,11 @@ Deno.serve(async (req) => {
               user_id: row.created_by,
               direction: "outbound",
               subject: row.subject,
-              body: row.body_html,
+              body: trackedHtml,
               cc: row.cc,
               bcc: row.bcc,
               gmail_message_id: result.provider === "gmail" ? result.messageId ?? null : null,
+              tracking_id: trackingId,
               sent_at: new Date().toISOString(),
             });
           } catch (logErr) {
