@@ -57,7 +57,7 @@ export interface EmailMessageViewProps {
 function formatStamp(iso: string): string {
   const d = new Date(iso);
   if (isToday(d))     return format(d, 'h:mm a');
-  if (isYesterday(d)) return `Yesterday, h:mm a`.replace('h:mm a', format(d, 'h:mm a'));
+  if (isYesterday(d)) return `Yesterday, ${format(d, 'h:mm a')}`;
   return format(d, 'MMM d, yyyy · h:mm a');
 }
 
