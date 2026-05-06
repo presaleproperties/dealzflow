@@ -13,7 +13,7 @@ import { Inbox, Mail, MessageSquare, Phone } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAdmin } from '@/hooks/useAdmin';
+import { useIsAdmin } from '@/hooks/useAdmin';
 
 const CrmEmailWorkspacePage = lazy(() => import('./CrmEmailWorkspacePage'));
 const CrmChatsShell = lazy(() => import('./CrmChatsShell'));
