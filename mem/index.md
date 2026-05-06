@@ -13,7 +13,7 @@
 - **Composer/Thread Imports**: All new email/SMS composition or thread code MUST import from `@/components/crm/unified` (see Unified Composer Primitives memory).
 
 ## Memories
-- [Unified Composer Primitives](mem://features/crm/unified-composer-primitives) — Phase 1 facade layer at `src/components/crm/unified/`: UnifiedComposer, UnifiedComposerDialog, UnifiedTemplatePicker, UnifiedEmailThreadDialog. New code imports from here; legacy dialogs migrated in Phases 2–4.
+- [Unified Inbox & Composer Primitives](mem://features/crm/unified-composer-primitives) — `/crm/inbox` tabbed Email·SMS·WhatsApp shell + `@/components/crm/unified` barrel (Unified* + Legacy* re-exports). ESLint `no-restricted-imports` bans direct legacy paths.
 - [Team Identity & Inbox Onboarding](mem://features/team/identity-and-inbox-onboarding) — Owner=info@, Sarb/Ravish/Zara on @presaleproperties.com; new `inbox` onboarding step one-click connects Gmail with `loginHint` pre-filled. crm_team.email is canonical — never hard-code agent emails in code.
 - [Presale Bridge Live Components](mem://features/presale/bridge-live-components) — `bridge-proxy` edge fn + `<PresaleProjectPicker />` + `<PresaleLeadBehaviorTimeline />` + `/admin/projects`; live bridge calls (distinct from local `<ProjectPicker />` + `<PresaleActivityWidget />`)
 - [Presale Realtime Activity Webhook](mem://features/presale/realtime-activity-webhook) — `receive-presale-activity` edge fn + `crm_activity_events` (Realtime) + `<LiveActivityTimeline />` + `useHotLeadActivityToasts()`; high-intent toasts for the assigned agent
