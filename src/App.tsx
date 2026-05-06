@@ -296,6 +296,8 @@ const App = () => (
                   </Suspense>
                 </BrowserRouter>
                 </NativeBootstrap>
+                </MotionConfig>
+                </LazyMotion>
               </TooltipProvider>
             </DealDraftProvider>
           </CrmAccessProvider>
