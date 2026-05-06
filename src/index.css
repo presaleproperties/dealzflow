@@ -1040,6 +1040,41 @@
   .crm-row-chev { @apply text-muted-foreground/50 w-4 h-4 flex-shrink-0; }
 
   /* ──────────────────────────────────────────────────────────────
+     CRM DESKTOP — readability uplift (lg+ only)
+     The CRM screens used a denser type ramp than the rest of the
+     app. This scope nudges small text up a step and gives table
+     rows + cards more breathing room so everything is easier to
+     scan. Mobile layouts are untouched (they use the m-* tokens).
+     ────────────────────────────────────────────────────────────── */
+  @media (min-width: 1024px) {
+    body[data-section="crm"] {
+      font-size: 15px;
+      line-height: 1.55;
+    }
+    /* Lift the most common small utilities a half-step. */
+    body[data-section="crm"] .text-xs   { font-size: 13px;   line-height: 1.5; }
+    body[data-section="crm"] .text-sm   { font-size: 14.5px; line-height: 1.55; }
+    body[data-section="crm"] .text-base { font-size: 15.5px; line-height: 1.6; }
+
+    /* Airier table rows. */
+    body[data-section="crm"] table th,
+    body[data-section="crm"] table td {
+      padding-top: 14px;
+      padding-bottom: 14px;
+    }
+    body[data-section="crm"] table th { font-size: 12.5px; letter-spacing: 0.04em; }
+
+    /* Card interiors — give cards a touch more padding so dense
+       Quick Actions / Lead Detail / Settings stop feeling boxed-in. */
+    body[data-section="crm"] .crm-card,
+    body[data-section="crm"] .card-premium { padding: 1.25rem; }
+
+    /* Form controls — bump default heights for less cramped feel. */
+    body[data-section="crm"] .h-8 { height: 2.25rem; }   /* 32 → 36 */
+    body[data-section="crm"] .h-9 { height: 2.5rem; }    /* 36 → 40 */
+  }
+
+  /* ──────────────────────────────────────────────────────────────
      Lofty-derived mobile design system (v1)
      Source of truth for spacing, sizing, and rhythm on phones.
      Use these classes anywhere on mobile to stay in sync.
