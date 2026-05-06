@@ -52,6 +52,8 @@ async function buildBrandBanner(supabase: any, userId: string | null | undefined
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 20px 0;"><tr><td align="center" style="padding:8px 0 16px 0;border-bottom:1px solid #ececec;"><img src="${url}" alt="${alt}" style="display:block;max-height:64px;max-width:240px;height:auto;width:auto;border:0;outline:none;text-decoration:none;" /></td></tr></table>`;
 }
 
+type SendResult = { ok: true; provider: "gmail" | "presale"; messageId?: string | null; detail?: string } | { ok: false; provider: "gmail" | "presale" | "none"; error: string; retryable: boolean };
+
 function isAuthorized(req: Request): boolean {
   const cronSecret = Deno.env.get("CRON_SECRET");
   const provided = req.headers.get("x-cron-secret") || "";
