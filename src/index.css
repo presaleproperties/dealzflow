@@ -1069,9 +1069,6 @@
     body[data-section="crm"] .crm-card,
     body[data-section="crm"] .card-premium { padding: 1.25rem; }
 
-    /* Form controls — bump default heights for less cramped feel. */
-    body[data-section="crm"] .h-8 { height: 2.25rem; }   /* 32 → 36 */
-    body[data-section="crm"] .h-9 { height: 2.5rem; }    /* 36 → 40 */
   }
 
   /* ──────────────────────────────────────────────────────────────
