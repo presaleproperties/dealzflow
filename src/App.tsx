@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QuietHoursConfirmHost } from "@/components/crm/sms/QuietHoursConfirm";
@@ -213,6 +214,8 @@ const App = () => (
           <CrmAccessProvider>
             <DealDraftProvider>
               <TooltipProvider>
+                <LazyMotion features={domAnimation}>
+                <MotionConfig reducedMotion="user" transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}>
                 <NativeBootstrap>
                 <UpdateBanner />
                 <Toaster />
@@ -293,6 +296,8 @@ const App = () => (
                   </Suspense>
                 </BrowserRouter>
                 </NativeBootstrap>
+                </MotionConfig>
+                </LazyMotion>
               </TooltipProvider>
             </DealDraftProvider>
           </CrmAccessProvider>
