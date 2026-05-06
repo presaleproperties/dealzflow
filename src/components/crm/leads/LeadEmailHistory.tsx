@@ -69,9 +69,24 @@ export function LeadEmailHistory({ contactId }: { contactId: string }) {
                     </span>
                   )}
                 </div>
-                {email.body && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{email.body}</p>
-                )}
+                {(() => {
+                  const raw = (email as any).body_html || email.body || (email as any).body_text || '';
+                  if (!raw) return null;
+                  const preview = String(raw)
+                    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&amp;/g, '&')
+                    .replace(/&#39;|&apos;/g, "'")
+                    .replace(/&quot;/g, '"')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                  if (!preview) return null;
+                  return <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{preview}</p>;
+                })()}
                 <div className="flex items-center gap-1 mt-1.5 text-[11px] text-muted-foreground">
                   <Clock className="w-3 h-3" />
                   {format(new Date(email.sent_at), 'MMM d, yyyy · h:mm a')}
