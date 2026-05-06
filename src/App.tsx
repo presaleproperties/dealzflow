@@ -83,6 +83,7 @@ const CrmIntegrationsPage = lazy(() => import("./pages/crm/CrmIntegrationsPage")
 const CrmBehaviorLeadsPage = lazy(() => import("./pages/crm/CrmBehaviorLeadsPage"));
 const CrmBehaviorDashboardPage = lazy(() => import("./pages/crm/CrmBehaviorDashboardPage"));
 const CrmSmsCenterPage = lazy(() => import("./pages/crm/CrmSmsCenterPage"));
+const CrmInboxPage = lazy(() => import("./pages/crm/CrmInboxPage"));
 const CrmSchedulerPage = lazy(() => import("./pages/crm/CrmSchedulerPage"));
 const PublicAgentLandingPage = lazy(() => import("./pages/public/PublicAgentLandingPage"));
 const PublicBookingPage = lazy(() => import("./pages/public/PublicBookingPage"));
@@ -265,6 +266,7 @@ const App = () => (
                     <Route path="/crm/pipeline" element={<ProtectedRoute><CrmLayout><CrmPipelinePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/chats" element={<ProtectedRoute><CrmLayout><CrmChatsShell /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/chats/:conversationId" element={<ProtectedRoute><CrmLayout><CrmChatsShell /></CrmLayout></ProtectedRoute>} />
+                    <Route path="/crm/inbox" element={<ProtectedRoute><CrmLayout><CrmInboxPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email" element={<ProtectedRoute><CrmLayout><CrmEmailWorkspacePage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/crm/email/legacy" element={<Navigate to="/crm/email" replace />} />
                     <Route path="/crm/sms" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmSmsCenterPage /></CrmLayout></ProtectedRoute>} />
