@@ -72,7 +72,7 @@ export function CrmSubNav() {
       className="hidden lg:block sticky top-[54px] z-30 backdrop-blur-xl bg-background/85"
       style={{ borderBottom: '1px solid hsl(var(--border) / 0.6)' }}
     >
-      <div className="flex items-center gap-5 px-3 sm:px-4 lg:px-6 h-[38px]">
+      <div className="flex items-center gap-7 px-3 sm:px-4 lg:px-6 h-[46px]">
         {visiblePrimary.map(tab => {
           const active = isActive(location.pathname, tab.path);
           return (
