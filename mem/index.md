@@ -1,0 +1,122 @@
+# Project Memory
+
+## Core
+- **Tech Stack**: React, TS, Supabase, Tailwind, Vite. RLS strictly scoped to `auth.uid() = user_id`.
+- **Style**: Gold (#D7A542) & Dark (#14181F), Plus Jakarta Sans. 'Editorial' minimal: text-only badges, no generic icons.
+- **Data Security**: PII masked. Realtime disabled for `crm_contacts`. QueryClient ignores 401/403.
+- **Constraints**: WhatsApp, Meta Ads, ManyChat, MailerLite, AI chat, external email senders are removed. Do not re-add. SMS via Twilio is now active (see SMS Ecosystem memory).
+- **Financials**: Timeline from Jan 1, 2023. Team splits: Ravish/Sarb 30% net. Earned YTD uses net payout for teams.
+- **Lead Architecture**: First-match-wins segmentation. Missing last names default to `(unknown)`. Fraser Valley cities only.
+- **PWA**: Command Center is `start_url`. Web Push via aesgcm VAPID. No layout animations for native selects.
+- **User Preference**: Prompt for approval before automated decisions/imports. 100% data retention during import.
+- **Access Model**: Workspace = apply + admin approval (`profiles.workspace_status`). CRM = invite-only (`crm_team`). Two independent gates — never mix.
+- **Composer/Thread Imports**: All new email/SMS composition or thread code MUST import from `@/components/crm/unified` (see Unified Composer Primitives memory).
+
+## Memories
+- [Unified Composer Primitives](mem://features/crm/unified-composer-primitives) — Phase 1 facade layer at `src/components/crm/unified/`: UnifiedComposer, UnifiedComposerDialog, UnifiedTemplatePicker, UnifiedEmailThreadDialog. New code imports from here; legacy dialogs migrated in Phases 2–4.
+- [Team Identity & Inbox Onboarding](mem://features/team/identity-and-inbox-onboarding) — Owner=info@, Sarb/Ravish/Zara on @presaleproperties.com; new `inbox` onboarding step one-click connects Gmail with `loginHint` pre-filled. crm_team.email is canonical — never hard-code agent emails in code.
+- [Presale Bridge Live Components](mem://features/presale/bridge-live-components) — `bridge-proxy` edge fn + `<PresaleProjectPicker />` + `<PresaleLeadBehaviorTimeline />` + `/admin/projects`; live bridge calls (distinct from local `<ProjectPicker />` + `<PresaleActivityWidget />`)
+- [Presale Realtime Activity Webhook](mem://features/presale/realtime-activity-webhook) — `receive-presale-activity` edge fn + `crm_activity_events` (Realtime) + `<LiveActivityTimeline />` + `useHotLeadActivityToasts()`; high-intent toasts for the assigned agent
+- [Presale Agent Identity](mem://features/agent/presale-identity-sync) — Zustand store + `presale-agent-me` edge fn syncs headshot/signature/calendly/license/brokerage from Presale on login; `<AgentSignatureBlock />` renders signature with parity
+- [Projects Knowledge Base](mem://features/crm/projects-knowledge-base-v1) — Enriched crm_projects + crm_cities + crm_neighborhoods, auto-synced from contacts & presale views, ProjectPicker in booking dialogs, Settings → Projects manager
+- [Presale Projects Full Sync](mem://features/crm/presale-projects-full-sync) — `sync-presale-projects` edge fn fans out a-z/0-9 against bridge-search-projects (25-cap), dedupes by slug, upserts crm_projects, daily 5am UTC cron + Settings "Sync now" button
+- [Stack & Schema](mem://technical/stack-and-schema) — Tech stack & RLS scoped to auth.uid()
+- [Broker Commission Logic](mem://features/mortgage-broker-commission-logic) — Upfront/Backend commissions, clawbacks
+- [Safe to Spend Calculator](mem://features/safe-to-spend-calculator-v2) — Real-time spending limit = cash-in - tax - expenses
+- [Tax Sync Engine](mem://technical/calculation-engine-sync) — Dynamic tax utility for provinces/GST
+- [Network RevShare](mem://features/network/growth-and-revshare-tracking) — RevShare tracking via ReZen API
+- [Security Arch](mem://auth/rbac-and-security-architecture) — RBAC, AdminRoute, RLS, query retry logic
+- [API Encryption](mem://auth/api-key-encryption-strategy) — platform_connections pgcrypto encryption
+- [Auth Handling](mem://auth/social-priority-and-pwa-handling) — Google/Apple priority, PWA redirect exclusion
+- [Pipeline Rendering Constraints](mem://technical/pipeline-rendering-constraints) — Disabling framer motion on select, rAF mutations
+- [Screenshot Extraction](mem://features/deals/screenshot-extraction-v3) — Vision AI for deal metadata
+- [Sync Persistence](mem://features/integrations/sync-persistence-logic) — Preserve manual edits on non-null API returns
+- [Sync Preferences](mem://features/integrations/sync-preferences-v1) — Customizable ReZen data sync
+- [Network Data Masking](mem://features/network/privacy-and-data-masking) — Obfuscate email/phone for non-owners
+- [Daily Cron Sync](mem://technical/daily-platform-sync-automation-v2) — pg_cron scheduled sync at 6AM UTC
+- [Subscription Constraints](mem://security/subscription-integrity-constraints-v2) — Prevent self-update, Stripe webhook secret
+- [Listing UI Spec](mem://features/deals/listing-ui-specification-v2) — Sellers agent logic, amber color, completion date
+- [Security & AI Governance](mem://auth/security-and-ai-governance) — Rate limits, AI caps, HIBP manual check
+- [Premium Minimalist Style](mem://style/premium-minimalist-constraints) — Editorial aesthetic, text-forward
+- [Web Push Crypto](mem://technical/web-push-cryptography) — Web Push API VAPID key formats
+- [Expense System](mem://features/expenses/system-overview-v2) — Recurring costs, 2x2 grid, budgeting
+- [Dashboard Financial Engine](mem://features/financial/dashboard-financial-engine-v2) — YTD, Coming In, Expenses projections
+- [Google Calendar Integration](mem://features/command-center/google-calendar-integration) — OAuth2 deduplication, 10s refresh
+- [External Auth Config](mem://technical/external-auth-configuration) — Specific URIs for Google/Meta/Gmail
+- [PWA Reliability](mem://technical/pwa-reliability-and-updates-v2) — Command Center start_url, cache clear on iframe
+- [Needs Attention Logic](mem://features/command-center/needs-attention-logic) — Urgent leads rules
+- [Admin Dashboard](mem://features/admin-dashboard-management-v9) — High density, audit logs, MCP url
+- [MCP Server](mem://technical/mcp-server-architecture-v2) — JSON-RPC Supabase Edge function
+- [Landing Redirection](mem://auth/landing-page-and-redirection) — Auth -> Command Center redirect
+- [FB Ads Integration](mem://features/command-center/facebook-ads-integration-v2) — Meta API 60-day token handling
+- [ReZen Sync Logic](mem://technical/rezen-sync-engine) — Participant prioritization for client contact
+- [Mobile Sidebar Nav](mem://style/navigation-mobile-responsiveness) — forceVisible mobile drawer
+- [CRM Roles](mem://features/crm/access-control-and-roles) — crm_team owner/admin/agent/viewer gating
+- [Client Matching Logic](mem://features/client-inventory/redesign-and-logic-v7) — Strict name matching for deal counts
+- [Mobile Nav Modes](mem://features/crm/mobile-navigation-behavior) — Main vs CRM bottom nav toggle
+- [CRM Showings Calendar](mem://features/crm/showings-calendar-logic) — Fullcalendar with color codes
+- [Campaign Targets](mem://features/crm/campaign-targeting-logic) — Including spouse/alt emails
+- [CRM Hardening](mem://security/architectural-hardening-and-pii-protection) — Disable realtime on crm_contacts
+- [CRM Data Import](mem://features/crm/data-import-system-v3) — CSV parsing with Unknown placeholders
+- [CRM Data Health](mem://features/crm/client-data-health-indicators) — Required fields for complete profile
+- [Large Dataset Fetching](mem://technical/large-dataset-fetching-strategy) — .range() recursive fetching
+- [Lead Sources](mem://features/crm/lead-source-definitions) — Canonical sources, TikTok language defaults
+- [Visual Identity](mem://style/visual-identity-and-theme) — Gold/Dark, Plus Jakarta Sans
+- [Zara API Spec](mem://features/integrations/zara-api-specification) — Zara CRUD operations
+- [User Constraint](mem://constraints/user-interaction-preferences) — Prompt before automated changes
+- [CRM Layout Constraints](mem://style/crm-layout-scroll-constraint) — Flexbox h-dvh scrolling
+- [CRM Pagination](mem://features/crm/pagination-and-performance) — 50 leads per page server-side
+- [CRM Engagement Tracking](mem://features/crm/engagement-and-activity-tracking) — last_touch_at metrics
+- [CRM Name Formatting](mem://technical/crm-name-formatting-logic) — formatContactName utility
+- [Lead Engagement Scoring](mem://features/crm/lead-engagement-scoring) — 0-100 score calculation
+- [Pipeline Mapping Standard](mem://features/crm/pipeline-mapping-standard) — Incoming lead segment mapping
+- [Lead Metadata Prefs](mem://features/crm/lead-preference-metadata) — Fraser Valley cities, 4 specific languages
+- [CRM Admin Analytics](mem://features/admin/crm-data-analytics-integration) — Service role counts
+- [CRM Tabs Rendering](mem://technical/crm-tabs-rendering-fix) — Controlled state rendering for tabs
+- [CRM Segment Counts](mem://features/crm/segment-count-synchronization) — First-match-wins logic
+- [Lead Detail Arch](mem://features/crm/lead-detail-view-architecture-v3) — 3-column architecture, terminology
+- [CRM Data Arch](mem://features/crm/data-architecture-vi-7) — lead_type definitions and tracking
+- [Mobile Responsive CRM](mem://style/crm-mobile-responsive-patterns-v2) — specific viewport breakpoints and layouts
+- [CRM Mobile Redesign V3](mem://style/crm-mobile-redesign-v3) — Sticky lead detail w/ tabs, mobile pipeline list, swipe-to-act lead cards, ResponsiveDialog wrapper, denser tab labels
+- [Search Bar Constraints](mem://features/crm/search-bar-behavior-constraints) — Controlled input, no localStorage
+- [Hot Leads Filtering](mem://features/crm/hot-leads-filtering-logic) — LocalStorage persistence
+- [CRM RLS Security](mem://technical/crm-rls-security-pattern-v2) — Permissive fallback if crm_team empty
+- [Pipeline Kanban Arch](mem://features/crm/pipeline-kanban-architecture) — First-match-wins, 50 card limit
+- [Team Split Logic](mem://features/deals/team-split-logic) — Ravish/Sarb 30% splits
+- [Forecasting Cashflow](mem://features/forecasting-and-cashflow-logic) — Multi-year Jan 1 2023 timeline
+- [Edge Function Security](mem://technical/edge-function-security-and-cors) — Wildcard CORS
+- [Presale Sync Logic](mem://features/deals/presale-management-and-sync-logic) — Advance/completion commission handling
+- [Financial Logic Centralized](mem://technical/financial-logic-centralization) — src/lib/transactionUtils.ts single source of truth
+- [Leads Table UI](mem://features/crm/leads-table-interface) — 15px base font, missing data flags
+- [CRM Bulk Ops](mem://features/crm/leads-bulk-operations-system) — Server-side bulk ops with 50+ guard
+- [CRM Settings Persistence](mem://technical/crm-settings-persistence-architecture) — Key-value jsonb store
+- [CRM Settings UI](mem://features/crm/settings-config-and-persistence-v2) — HTML signature live preview
+- [Analytics Suite V5](mem://features/analytics/comprehensive-suite-v5) — Conversion rate definitions
+- [Calendar Sync Arch](mem://features/crm/calendar-sync-architecture-v3) — Google events read-only rendering
+- [Email Campaign Logic](mem://features/crm/email-campaign-logic-v3) — Local logging only
+- [Notifications System](mem://features/notifications/system-overview-v2) — Push via VAPID, SMS removed
+- [Lofty Inbound Sync](mem://features/crm/lofty-inbound-sync-v4) — Inbound only, deduplication
+- [Lofty Conversation Sync](mem://features/integrations/lofty-conversation-sync) — Outbound migration tool: `lofty-sync-conversations` edge fn pulls emails/SMS/calls per contact; idempotent dedupe via `lofty:` prefix in gmail_message_id/twilio_message_sid + `[lofty-call:<id>]` marker in notes; "Pull from Lofty" button on lead detail
+- [Integrations Hub](mem://features/crm/integrations-hub-v4) — Deprecated integrations listed
+- [Central Hub Architecture](mem://features/crm/central-hub-architecture) — crm_lead_sources registry, crm_source_events audit log, assignment-based notification routing
+- [SMS Ecosystem](mem://features/crm/sms-ecosystem-v1) — Twilio SMS: single send, bulk from Leads, SMS Center page, templates, STOP/HELP, quiet hours, MMS via crm-sms-media bucket
+- [Last Activity Rule](mem://features/crm/last-touch-rule) — last_touch_at = manual actions only; bulk/automation must SET app.skip_touch=on
+- [CRM Mobile Premium Polish v4](mem://style/crm-mobile-premium-polish-v4) — Shared crm-mobile-* utility classes (page-enter motion, airier rows, premium FAB, skeleton shimmer, sheet header) applied to all 6 CRM mobile screens
+- [CRM Leads Search Rules](mem://features/crm/leads-search-rules) — Tokenized AND search across name/email/phone with PostgREST escaping, useRef debounce, mobile bar close clears query, count: 'estimated'
+- [Bottom Nav iOS Pill v5](mem://style/bottom-nav-ios-pill-v5) — Floating Liquid-Glass tab pill with inline center "+"; Quick Actions sheet is the single "+" inventory. Never add per-page FABs.
+- [Bottom Nav Clearance Token](mem://style/bottom-nav-clearance) — Use `var(--bottom-nav-pad)` on every mobile scroll surface so content clears the floating pill nav (resolves to 72px+safe-area on mobile, 0 on lg+)
+- [Mobile Lofty Spacing System v1](mem://style/mobile-lofty-spacing-system-v1) — Tokenized mobile system in `src/index.css`: `m-page`, `m-page-title`, `m-tabs`/`m-tab`, `m-chip`/`m-chip-row`, `m-list`, `m-row` + `m-row__title/meta/meta-weak/side/time`, `m-score[data-tier]`, `m-eyebrow`. All mobile lists must use `m-list`+`m-row`; H1 uses `m-page-title`.
+- [Device-tier Responsive Tokens](mem://style/device-tier-responsive-tokens) — Three-tier viewport scale (compact ≤375 / regular 376–413 / pro-max ≥414) drives --device-scale + --device-pad-x/y/--device-gap. All --m-* and --ld-* tokens read from these so SE/14/Pro Max all rescale automatically. Never hardcode mobile sizes in components.
+- [Pull-to-refresh Pattern](mem://style/pull-to-refresh-pattern) — `usePullToRefresh` hook + `PullToRefreshIndicator`; touch-only, parent must be `relative`. Wired on /crm/chats and /crm/chats/:id.
+- [SMS Offline Outbox v1](mem://features/crm/sms-offline-outbox-v1) — IndexedDB queue + auto-retry (5x exp backoff) for SMS/WhatsApp; `client_dedupe_id` ensures server-side idempotency; banner in chat thread shows offline/queued/failed state
+- [Workspace Approval System](mem://auth/workspace-approval-system) — Two-tier access: workspace = apply+admin approval, CRM = invite-only. `/pending-approval` page, AccessRequestsCard in /admin, `admin_set_workspace_status` RPC
+- [Presale Signature Auto-Import](mem://features/email/presale-signature-auto-import) — `usePresaleSignatureAutoImport` mounted in `App.NativeBootstrap`; seeds default `crm_email_signatures` row + fills blank `crm_email_settings` from synced Presale agent so single+mass sends carry the agent identity. Idempotent, never overwrites existing data.
+- [Email Template Styles Rule](mem://features/crm/email-template-styles) — All outbound email surfaces (single, mass, Send Project, follow-ups, presale bridge) MUST wrap in branded HTML template + AgentSignatureBlock. Never plain/default Resend layout.
+- [Email Identity Setup Dialog](mem://features/email/identity-setup-dialog) — First-login modal in App.NativeBootstrap; preview when Presale match found, self-link form (uses `set_my_presale_email` RPC) when unmatched; one-shot via localStorage ack key
+- [CRM Communication Privacy](mem://features/crm/communication-privacy) — Emails/threads/sends/activity/WhatsApp gated to assigned agent via `crm_can_see_contact_id`; admins see all; reassignment transfers visibility live; shared assets (templates/signatures/campaigns/settings) stay shared
+- [CRM Notification Routing Rule](mem://features/crm/notification-routing-rule) — Notifications go ONLY to assigned agent (no owner spam). Unassigned → owner+admins. All notification inserts MUST use `crm_recipients_for_contact` RPC; no hardcoded recipient lists.
+- [Email Merge Syntax](mem://features/crm/email-merge-syntax) — Both client (`renderForRecipient`) and server (`crm-mass-send-email/renderForLead`) support `{{token}}`, `{$token}` (Lofty/Presale), and `${token}`. Legacy aliases include `name`, `first_name`, `agent_name`, `unsubscribe`. Never expose raw merge syntax to recipients.
+- [Per-agent Duplicate Detection](mem://features/crm/per-agent-duplicate-detection) — `AddLeadDialog` calls `crm_find_my_duplicates` RPC; matches scoped to caller's `crm_team` display_name+aliases via `assigned_to`. Admins do NOT get global dups. Sarb adding a lead Zara owns is allowed silently.
+- [Per-agent Template Ownership](mem://features/crm/per-agent-template-ownership) — `crm_email_templates.owner_scope` (`team:presale` | `agent:<slug>`) + `owner_agent_slug` + RLS via `crm_my_presale_slug()`. Sync edge fns forward agent_slug & accept owner_scope from Presale push/pull. `useCreateTemplate({scope:'mine'|'team'})`.
+- [Templates Redesign v1](mem://features/crm/templates-redesign-v1) — Two-pane Templates page (rail + grid + preview), `template-ai-assist` edge fn (improve/shorten/lengthen/tone/translate/generate/subject_lines, preserves merge tokens & signature), AIDiffDialog accept/reject, `useDuplicateTemplate` + `useChangeTemplateScope` hooks for share/promote.
+- [Nav & Settings Restructure v1](mem://style/nav-and-settings-restructure-v1) — CRM sub-nav reduced to 5 primary tabs + More overflow (Simple/Pro toggle removed). Mobile More groups reordered by frequency. Settings panes capped at 720px. New shared primitives `<SettingsContent>` + `<SettingsSection>` in `src/components/settings/SettingsLayout.tsx`.
