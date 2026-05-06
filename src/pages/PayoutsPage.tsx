@@ -582,15 +582,9 @@ export default function PayoutsPage() {
 
           {/* Payouts List - Grouped by Year/Month */}
           {isLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-3" data-stagger-children>
               {[1, 2, 3, 4].map((i) => (
-                <motion.div 
-                  key={i} 
-                  className="h-32 bg-gradient-to-br from-muted/50 to-muted/20 animate-pulse rounded-2xl border border-border/30"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                />
+                <div key={i} className="skeleton-card" />
               ))}
             </div>
           ) : filteredPayouts.length === 0 ? (
