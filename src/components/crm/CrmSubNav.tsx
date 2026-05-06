@@ -103,7 +103,7 @@ export function CrmSubNav() {
             <button
               type="button"
               onClick={() => setMoreOpen(o => !o)}
-              className="relative flex items-center gap-1 h-full text-[12.5px] tracking-tight transition-colors shrink-0 hover:text-foreground"
+              className="relative flex items-center gap-1 h-full text-[14px] tracking-tight transition-colors shrink-0 hover:text-foreground"
               style={{
                 color: moreActive || moreOpen ? 'hsl(var(--foreground))' : INACTIVE,
                 fontWeight: moreActive ? 600 : 500,
