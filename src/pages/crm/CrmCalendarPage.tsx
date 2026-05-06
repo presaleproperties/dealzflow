@@ -495,7 +495,7 @@ export default function CrmCalendarPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="h-[400px] sm:h-[600px] rounded-xl bg-muted/30 animate-pulse" />
+        <div className="skeleton h-[400px] sm:h-[600px] rounded-xl" />
       ) : isMobile && showAgenda ? (
         // Custom mobile agenda — Apple Calendar style grouped list.
         <div className="space-y-3">
