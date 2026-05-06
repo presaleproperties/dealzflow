@@ -1435,3 +1435,101 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
 /* Hide scrollbar but keep scrollability — used by horizontally-scrollable tab strips */
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ════════════════════════════════════════════════════════════
+   PAGE TRANSITIONS & LOADERS — global premium motion layer
+   Pure-CSS, no framer-motion. Honors prefers-reduced-motion.
+   ════════════════════════════════════════════════════════════ */
+
+/* Soft fade + slight rise on every route change. Wrapped by
+   <PageTransition /> in AppLayout, so every route benefits. */
+.page-transition {
+  animation: pageEnter 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: opacity, transform;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* PageLoader sub-animations (replaces framer-motion spinner). */
+.page-loader-enter { animation: pageLoaderEnter 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes pageLoaderEnter {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.page-loader-glow {
+  animation: pageLoaderGlow 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes pageLoaderGlow {
+  0%, 100% { transform: scale(1);   opacity: 0.55; }
+  50%      { transform: scale(1.45); opacity: 0;   }
+}
+.page-loader-float { animation: pageLoaderFloat 3s ease-in-out infinite; }
+@keyframes pageLoaderFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+.page-loader-bar { animation: pageLoaderBar 1.4s ease-in-out infinite; }
+@keyframes pageLoaderBar {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+/* Lightweight inline spinner — replaces ad-hoc border-spin divs across
+   the codebase. Use: <span class="ui-spinner" /> */
+.ui-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid hsl(var(--muted-foreground) / 0.3);
+  border-top-color: hsl(var(--foreground) / 0.85);
+  border-radius: 9999px;
+  animation: uiSpin 0.7s linear infinite;
+}
+@keyframes uiSpin { to { transform: rotate(360deg); } }
+
+/* Standardised skeleton primitives — extend the existing .skeleton class
+   with sized variants so pages don't reinvent the wheel. */
+.skeleton-line  { @apply skeleton; height: 12px; border-radius: 6px; }
+.skeleton-text  { @apply skeleton; height: 14px; border-radius: 6px; }
+.skeleton-title { @apply skeleton; height: 22px; border-radius: 8px; }
+.skeleton-pill  { @apply skeleton; height: 22px; border-radius: 9999px; }
+.skeleton-card  {
+  @apply skeleton;
+  border-radius: 16px;
+  min-height: 120px;
+}
+.skeleton-row {
+  @apply skeleton;
+  height: 64px;
+  border-radius: 14px;
+}
+
+/* Stagger helpers — add `data-stagger-children` to a parent and its
+   direct children fade in with a 40ms delay each. */
+[data-stagger-children] > * {
+  animation: pageEnter 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-stagger-children] > *:nth-child(1)  { animation-delay: 0ms; }
+[data-stagger-children] > *:nth-child(2)  { animation-delay: 40ms; }
+[data-stagger-children] > *:nth-child(3)  { animation-delay: 80ms; }
+[data-stagger-children] > *:nth-child(4)  { animation-delay: 120ms; }
+[data-stagger-children] > *:nth-child(5)  { animation-delay: 160ms; }
+[data-stagger-children] > *:nth-child(6)  { animation-delay: 200ms; }
+[data-stagger-children] > *:nth-child(7)  { animation-delay: 220ms; }
+[data-stagger-children] > *:nth-child(8)  { animation-delay: 240ms; }
+[data-stagger-children] > *:nth-child(n+9){ animation-delay: 260ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .page-loader-enter,
+  .page-loader-glow,
+  .page-loader-float,
+  .page-loader-bar,
+  [data-stagger-children] > * {
+    animation: none !important;
+  }
+  .ui-spinner { animation-duration: 1.4s; }
+}
