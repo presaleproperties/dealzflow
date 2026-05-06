@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail } from 'lucide-react';
@@ -184,17 +184,10 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
         </DialogHeader>
 
         {/* Body */}
-        <div className="flex-1 overflow-hidden bg-muted/20 p-3 sm:p-5">
-          <div className="h-full bg-white rounded-lg border border-border/40 overflow-hidden shadow-sm">
+        <div className="flex-1 overflow-auto bg-muted/20 p-3 sm:p-5">
+          <div className="bg-white rounded-lg border border-border/40 overflow-hidden shadow-sm">
             {html || plain ? (
-              <iframe
-                key={email.id}
-                title="Email body"
-                srcDoc={srcDoc}
-                className="w-full h-full border-0 block"
-                style={{ minHeight: '400px' }}
-                sandbox="allow-same-origin allow-popups"
-              />
+              <AutoSizingFrame key={email.id} srcDoc={srcDoc} />
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
                 <Mail className="w-8 h-8 mb-2 opacity-40" />
@@ -205,6 +198,61 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AutoSizingFrame({ srcDoc }: { srcDoc: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(400);
+
+  useEffect(() => {
+    const frame = ref.current;
+    if (!frame) return;
+    let ro: ResizeObserver | null = null;
+    const onLoad = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (!doc) return;
+        const measure = () => {
+          const h = Math.max(
+            doc.body?.scrollHeight ?? 0,
+            doc.documentElement?.scrollHeight ?? 0,
+          );
+          if (h > 0) setHeight(h + 8);
+        };
+        measure();
+        if ('ResizeObserver' in window && doc.body) {
+          ro = new ResizeObserver(() => measure());
+          ro.observe(doc.body);
+        }
+        // Re-measure once images load
+        const imgs = doc.querySelectorAll('img');
+        imgs.forEach((img) => {
+          if (!(img as HTMLImageElement).complete) {
+            img.addEventListener('load', measure, { once: true });
+            img.addEventListener('error', measure, { once: true });
+          }
+        });
+      } catch {
+        /* cross-origin srcDoc shouldn't happen, ignore */
+      }
+    };
+    frame.addEventListener('load', onLoad);
+    return () => {
+      frame.removeEventListener('load', onLoad);
+      ro?.disconnect();
+    };
+  }, [srcDoc]);
+
+  return (
+    <iframe
+      ref={ref}
+      title="Email body"
+      srcDoc={srcDoc}
+      className="w-full border-0 block"
+      style={{ height: `${height}px`, minHeight: '320px' }}
+      sandbox="allow-same-origin allow-popups"
+    />
   );
 }
 
