@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { User, Upload, Trash2, Loader2, Mail, Move, Check, X } from 'lucide-react';
+import { User, Upload, Trash2, Loader2, Mail, Move, Check, X, RefreshCw } from 'lucide-react';
+import { hardRefresh, BUILD_ID } from '@/lib/hardRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
