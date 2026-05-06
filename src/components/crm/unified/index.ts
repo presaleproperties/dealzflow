@@ -11,3 +11,15 @@ export {
 } from './UnifiedComposerDialog';
 export { UnifiedTemplatePicker } from './UnifiedTemplatePicker';
 export { UnifiedEmailThreadDialog } from './UnifiedThreadView';
+
+/* Legacy dialogs surfaced through the unified barrel so consumers can move
+ * to a single import path while we keep their bespoke behavior intact.
+ * See ./legacy.ts for rationale. */
+export {
+  LegacyComposeEmailDialog,
+  LegacySendProjectDialog,
+  LegacySendTextDialog,
+  LegacyBulkSendTextDialog,
+  LegacyLeadEmailThreadDialog,
+  LegacyPresaleQuickSendDialog,
+} from './legacy';
