@@ -214,7 +214,7 @@ const App = () => (
           <CrmAccessProvider>
             <DealDraftProvider>
               <TooltipProvider>
-                <LazyMotion features={domAnimation} strict>
+                <LazyMotion features={domAnimation}>
                 <MotionConfig reducedMotion="user" transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}>
                 <NativeBootstrap>
                 <UpdateBanner />
