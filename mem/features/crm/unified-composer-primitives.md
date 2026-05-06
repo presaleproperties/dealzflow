@@ -1,21 +1,45 @@
 ---
-name: Unified Composer Primitives (Phase 1)
-description: Canonical email/SMS composition primitives in src/components/crm/unified — facades over ComposerSurface, TemplatePicker, LeadEmailThreadDialog. New code must import from here.
+name: Unified Inbox & Composer Primitives (Phases 1–4)
+description: Canonical email/SMS/WhatsApp surfaces. /crm/inbox tabbed shell + @/components/crm/unified barrel (Unified* + Legacy* re-exports). ESLint bans direct legacy paths.
 type: feature
 ---
-Phase 1 of the email/SMS workflow consolidation. New canonical surface at
-`src/components/crm/unified/`:
+**Single source of truth for all CRM communication UI.**
 
-- `UnifiedComposer` — wraps `ComposerSurface` (0/1/N recipients, mass + single).
-- `UnifiedComposerDialog` — `<ResponsiveDialog>` shell + `UnifiedComposer`. In
-  Phase 2 it replaces `ComposeEmailDialog`, `SendProjectDialog`, and
-  `PresaleQuickSendDialog`.
-- `UnifiedTemplatePicker` — re-export of `TemplatePicker`.
-- `UnifiedEmailThreadDialog` — re-export of `LeadEmailThreadDialog`. Phase 2
-  will replace this modal with an inline Apple-Mail-style thread view.
+### Routes
+- `/crm/inbox` — Apple-Mail-style hub (Email · SMS · WhatsApp). Each tab
+  mounts the existing surface unmodified (`CrmEmailWorkspacePage`,
+  `CrmSmsCenterPage` (admin-only), `CrmChatsShell`). Active tab persists in
+  `localStorage['crm:inbox:active-channel']` and `?channel=` query.
+- `/crm/email`, `/crm/sms`, `/crm/chats` remain reachable for deep links.
 
-**Rule:** All new email/SMS composer or thread code MUST import from
-`@/components/crm/unified`. Legacy dialogs still work — they get migrated
-in Phases 2–4 and then deleted.
+### Canonical import path
+All composer / thread / template-picker code MUST import from
+`@/components/crm/unified`:
 
-See `src/components/crm/unified/README.md` for the full phase plan.
+| Symbol | Today wraps | Use for |
+|---|---|---|
+| `UnifiedComposer` | `ComposerSurface` | Inline composer |
+| `UnifiedComposerDialog` | `ComposerSurface` in `<ResponsiveDialog>` | New modal composer |
+| `UnifiedTemplatePicker` | `TemplatePicker` | Picking templates |
+| `UnifiedEmailThreadDialog` | `LeadEmailThreadDialog` | Thread modal |
+| `LegacyComposeEmailDialog` | `ComposeEmailDialog` | Existing single-lead compose |
+| `LegacySendProjectDialog` | `SendProjectDialog` | Project preset send |
+| `LegacySendTextDialog` | `SendTextDialog` | Single SMS / WhatsApp send |
+| `LegacyBulkSendTextDialog` | `BulkSendTextDialog` | Bulk SMS / WhatsApp |
+| `LegacyLeadEmailThreadDialog` | `LeadEmailThreadDialog` | Inline thread modal |
+| `LegacyPresaleQuickSendDialog` | `PresaleQuickSendDialog` | Bridge template quick-send |
+
+### Enforcement
+ESLint `no-restricted-imports` rule (in `eslint.config.js`) bans direct
+imports of the six legacy paths anywhere except inside
+`src/components/crm/unified/**` itself.
+
+### Phase log
+- **Phase 1** — extracted Unified primitives as facades (no behavior change).
+- **Phase 2** — surfaced legacy dialogs via `unified/legacy.ts` re-exports.
+- **Phase 3** — built `/crm/inbox` tabbed shell + Sidebar nav entry.
+- **Phase 4** — ESLint guard wired; this memory doc updated.
+
+Future replacements (e.g. unifying SendProjectDialog into
+UnifiedComposerDialog) only need to swap the implementation behind the
+unified barrel — no consumer changes required.

@@ -55,6 +55,7 @@ const crmNavItems: NavItem[] = [
   
   { label: 'Leads',        path: '/crm/leads',        icon: Users },
   { label: 'Pipeline',     path: '/crm/pipeline',     icon: Kanban },
+  { label: 'Inbox',        path: '/crm/inbox',        icon: Mail },
   { label: 'Email Center', path: '/crm/email',        icon: Mail },
   { label: 'Templates',    path: '/crm/templates',    icon: LayoutTemplate },
   { label: 'Automations',  path: '/crm/automations',  icon: Zap },
