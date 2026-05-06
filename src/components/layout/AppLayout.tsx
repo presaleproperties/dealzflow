@@ -3,6 +3,7 @@ import { TopNav } from './TopNav';
 import { BottomNav } from './BottomNav';
 import { RightRail } from './RightRail';
 import { MobileAppHeader } from './MobileAppHeader';
+import { PageTransition } from './PageTransition';
 import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
 import { AgentOnboardingWizard } from '@/components/onboarding/AgentOnboardingWizard';
 import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
@@ -23,7 +24,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
       >
         <OnboardingBanner />
-        {children}
+        <PageTransition>{children}</PageTransition>
       </main>
       <RightRail />
       <BottomNav />
