@@ -133,7 +133,7 @@ export function CrmSubNav() {
                       key={tab.path}
                       to={tab.path}
                       onClick={() => setMoreOpen(false)}
-                      className="flex items-center px-3 py-1.5 text-[13px] hover:bg-muted/60 transition-colors"
+                      className="flex items-center px-3.5 py-2 text-[14px] hover:bg-muted/60 transition-colors"
                       style={{
                         color: active ? GOLD : 'hsl(var(--foreground))',
                         fontWeight: active ? 600 : 500,
