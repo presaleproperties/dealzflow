@@ -596,11 +596,11 @@ export default function CrmChatsPage() {
         {isLoading ? (
           <ul className="divide-y divide-border/40">
             {Array.from({ length: 6 }).map((_, i) => (
-              <li key={i} className="flex items-center gap-3 px-4 py-3.5 animate-pulse">
-                <div className="w-12 h-12 rounded-full bg-muted/60 shrink-0" />
+              <li key={i} className="flex items-center gap-3 px-4 py-3.5">
+                <div className="skeleton w-12 h-12 rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 w-1/3 rounded bg-muted/60" />
-                  <div className="h-3 w-2/3 rounded bg-muted/40" />
+                  <div className="skeleton-line w-1/3" />
+                  <div className="skeleton-line w-2/3" />
                 </div>
               </li>
             ))}
