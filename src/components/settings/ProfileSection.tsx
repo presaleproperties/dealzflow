@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { User, Upload, Trash2, Loader2, Mail, Move, Check, X } from 'lucide-react';
+import { User, Upload, Trash2, Loader2, Mail, Move, Check, X, RefreshCw } from 'lucide-react';
+import { hardRefresh, BUILD_ID } from '@/lib/hardRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -354,6 +355,34 @@ export default function ProfileSection() {
           <Button onClick={handleSave} disabled={update.isPending} className="min-h-[44px] sm:min-h-0">
             {update.isPending ? 'Saving…' : 'Save Profile'}
           </Button>
+        </div>
+
+        <Separator />
+
+        {/* App cache / refresh — fixes stale nav, missing menus, old UI after deploys */}
+        <div className="rounded-lg border bg-muted/20 p-4 space-y-2">
+          <div className="flex items-start gap-3">
+            <RefreshCw className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">App cache</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                If menus, the CRM tab, or new features look missing, clear the app's
+                cached assets and reload. Safe — your data is untouched.
+              </p>
+              <p className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+                Build {BUILD_ID}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { void hardRefresh(); }}
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Clear & reload
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
