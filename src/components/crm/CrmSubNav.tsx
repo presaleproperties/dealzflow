@@ -79,7 +79,7 @@ export function CrmSubNav() {
             <Link
               key={tab.path}
               to={tab.path}
-              className="relative flex items-center h-full text-[12.5px] tracking-tight transition-colors shrink-0 hover:text-foreground"
+              className="relative flex items-center h-full text-[14px] tracking-tight transition-colors shrink-0 hover:text-foreground"
               style={{
                 color: active ? 'hsl(var(--foreground))' : INACTIVE,
                 fontWeight: active ? 600 : 500,
