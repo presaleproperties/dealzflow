@@ -5267,6 +5267,10 @@ export type Database = {
           records_count: number
         }[]
       }
+      crm_add_tags_to_contacts: {
+        Args: { _contact_ids: string[]; _tags: string[] }
+        Returns: number
+      }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
       crm_can_see_contact: {
         Args: { _assigned_to: string; _user_id: string }
