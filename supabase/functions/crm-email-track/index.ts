@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
   const action = url.searchParams.get("a") ?? "open";
   const trackingId = url.searchParams.get("t");
   const targetUrl = url.searchParams.get("u");
+  const buttonKind = url.searchParams.get("b"); // brochure | floor_plans | pricing | project_details | call | link
 
   // Always succeed — we never want a tracking error to break the recipient's experience.
   if (!trackingId) {
@@ -145,7 +146,7 @@ Deno.serve(async (req) => {
           template_name: log?.template_type,
           link_url: targetUrl,
           occurred_at: nowIso,
-          metadata: { tracking_id: trackingId },
+          metadata: { tracking_id: trackingId, button: buttonKind ?? null },
         });
       }
     }
