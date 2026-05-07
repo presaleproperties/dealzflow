@@ -606,8 +606,6 @@ export default function CrmLeadsPage() {
             </div>
           )}
 
-
-
           {segments.length > 0 && (
             <div className={`${isMobile ? 'hidden' : 'flex'} items-center gap-3`}>
               <div className="flex-1 min-w-0">
