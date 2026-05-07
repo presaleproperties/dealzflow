@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Pill } from '@/components/crm/shared/Pill';
 import { toast } from 'sonner';
 import { useCrmContacts, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments';
@@ -138,13 +139,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
           {(contact.project || cityPref || isPreApproved) && (
             <div className="flex flex-wrap items-center gap-1 mb-1.5">
               {contact.project && (
-                <Badge
-                  variant="outline"
-                  className="border-0 text-[10px] font-semibold h-4 px-1.5"
-                  style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
-                >
-                  {contact.project}
-                </Badge>
+                <Pill tone="primary" truncate>{contact.project}</Pill>
               )}
               {cityPref && (
                 <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
@@ -153,13 +148,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
                 </span>
               )}
               {isPreApproved && (
-                <Badge
-                  variant="outline"
-                  className="border-0 text-[10px] font-semibold h-4 px-1.5"
-                  style={{ background: 'hsl(142 71% 45% / 0.15)', color: 'hsl(142 71% 45%)' }}
-                >
-                  Pre-approved
-                </Badge>
+                <Pill tone="success">Pre-approved</Pill>
               )}
             </div>
           )}

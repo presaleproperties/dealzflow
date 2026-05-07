@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
+import { Pill } from '@/components/crm/shared/Pill';
 import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
@@ -188,14 +189,13 @@ function InlineTagsCell({
               {shown.map((tag, i) => {
                 const c = TAG_COLORS[i % TAG_COLORS.length];
                 return (
-                  <Badge
+                  <Pill
                     key={tag}
-                    variant="outline"
-                    className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
+                    truncate
                     style={{ background: c.bg, color: c.color }}
                   >
-                    <span className="block truncate">{tag}</span>
-                  </Badge>
+                    {tag}
+                  </Pill>
                 );
               })}
               {extra > 0 && <span className="text-[10.5px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
@@ -571,13 +571,13 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
       return <span className="text-foreground/80 whitespace-nowrap text-[12px] truncate max-w-[160px] block">{(contact as any).campaign_source ?? '—'}</span>;
     case 'city_pref':
       return (contact as any).city_pref
-        ? <Badge variant="outline" className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.1)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+        ? <Pill color="hsl(210 62% 46%)">{(contact as any).city_pref}</Pill>
         : <span className="text-muted-foreground text-sm">—</span>;
     case 'property_type_pref':
       return <span className="text-foreground/80 whitespace-nowrap text-[12px] capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
     case 'is_pre_approved':
       return (contact as any).is_pre_approved
-        ? <Badge variant="outline" className="border-0 text-[10.5px] font-medium px-2 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.1)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
+        ? <Pill tone="success">Yes</Pill>
         : <span className="text-muted-foreground text-sm">No</span>;
     case 'quick_actions':
       return (
