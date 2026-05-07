@@ -99,7 +99,12 @@ Deno.serve(async (req) => {
   if (!body?.type) {
     return jsonResp({ error: "missing_type" }, 400);
   }
-  if (!body.lead_email && !body.lead_phone) {
+  // Allow batches that only carry presale_user_id (anonymous-but-known visitor)
+  const metaPre: any = body.metadata ?? {};
+  const presaleUserIdEarly: string | null =
+    metaPre?.presale_user_id ?? metaPre?.visitor_id ?? null;
+
+  if (!body.lead_email && !body.lead_phone && !presaleUserIdEarly) {
     return jsonResp({ error: "missing_lead_identifier" }, 400);
   }
 
@@ -109,7 +114,7 @@ Deno.serve(async (req) => {
   const phone = body.lead_phone?.trim() ?? null;
   const occurredAt = body.occurred_at ?? new Date().toISOString();
 
-  // Find matching CRM contact by email first, then phone
+  // Identity stitch order: presale_user_id → email → phone
   let contact:
     | {
         id: string;
@@ -119,7 +124,15 @@ Deno.serve(async (req) => {
       }
     | null = null;
 
-  if (email) {
+  if (presaleUserIdEarly) {
+    const { data } = await supabase
+      .from("crm_contacts")
+      .select("id, first_name, last_name, assigned_to")
+      .eq("presale_user_id", presaleUserIdEarly)
+      .maybeSingle();
+    if (data) contact = data as typeof contact;
+  }
+  if (!contact && email) {
     const { data } = await supabase
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
@@ -134,6 +147,15 @@ Deno.serve(async (req) => {
       .eq("phone", phone)
       .maybeSingle();
     if (data) contact = data as typeof contact;
+  }
+
+  // Backfill presale_user_id on the contact when stitched via email/phone
+  if (contact && presaleUserIdEarly) {
+    await supabase
+      .from("crm_contacts")
+      .update({ presale_user_id: presaleUserIdEarly })
+      .eq("id", contact.id)
+      .is("presale_user_id", null);
   }
 
   // Insert the event (always, even if no contact match — useful for
