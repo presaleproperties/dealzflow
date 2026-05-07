@@ -154,6 +154,11 @@ export function TopNav() {
     closeTimerRef.current = window.setTimeout(() => setOpenSection(null), 180);
   }
 
+  // Cleanup any pending close timer on unmount to avoid stuck state
+  useEffect(() => () => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+  }, []);
+
   // Hide top header on mobile for ALL routes — the bottom nav handles primary
   // nav, and individual pages render their own mobile header so the top bar
   // doesn't waste vertical space with just a logo.
