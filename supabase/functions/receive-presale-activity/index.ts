@@ -16,14 +16,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET") ?? "";
 
-type EventType =
-  | "email_open"
-  | "link_click"
-  | "deck_unlock"
-  | "deck_section_view"
-  | "page_view";
+type EventType = string;
 
-const HIGH_INTENT: EventType[] = ["email_open", "deck_unlock", "link_click"];
+const HIGH_INTENT: EventType[] = ["email_open", "email_opened", "deck_unlock", "link_click", "email_clicked", "return_visit"];
+const LEAD_LIFECYCLE_EVENTS = new Set(["lead.created", "lead.approved", "contact_form"]);
+const FALLBACK_AGENT = "Uzair Muhammad";
 
 interface IncomingEvent {
   type: EventType;
@@ -33,6 +30,62 @@ interface IncomingEvent {
   agent_slug?: string;
   metadata?: Record<string, unknown>;
   occurred_at?: string;
+}
+
+function cleanEmail(value: unknown): string | null {
+  return typeof value === "string" && value.trim()
+    ? value.trim().toLowerCase()
+    : null;
+}
+
+function cleanPhone(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function splitName(value: unknown): { first_name: string; last_name: string } {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return { first_name: "New", last_name: "Lead" };
+  const parts = raw.split(/\s+/).filter(Boolean);
+  return {
+    first_name: parts[0] || "New",
+    last_name: parts.slice(1).join(" ") || "Lead",
+  };
+}
+
+async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<string> {
+  if (agentSlug) {
+    const wanted = agentSlug.trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const nameSlug = (t.display_name ?? "").toLowerCase().replace(/\s+/g, "-");
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return t.slug?.toLowerCase() === wanted || nameSlug === wanted || emailLocal === wanted || presaleLocal === wanted;
+    });
+    if (match?.display_name) return match.display_name;
+  }
+
+  const { data: agents } = await supabase
+    .from("crm_team")
+    .select("display_name, role")
+    .eq("is_active", true)
+    .in("role", ["agent", "admin"]);
+  const candidates = (agents ?? []).map((a: any) => a.display_name).filter(Boolean);
+  if (!candidates.length) return FALLBACK_AGENT;
+
+  const counts: Record<string, number> = {};
+  for (const name of candidates) {
+    const { count } = await supabase
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_to", name);
+    counts[name] = count ?? 0;
+  }
+  candidates.sort((a: string, b: string) => (counts[a] ?? 0) - (counts[b] ?? 0));
+  return candidates[0];
 }
 
 function jsonResp(body: unknown, status = 200) {
