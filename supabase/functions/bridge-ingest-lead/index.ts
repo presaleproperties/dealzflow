@@ -59,6 +59,7 @@ async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<s
 }
 
 
+interface BehaviorPayload {
   views?: Array<{ property_id?: string; property_name?: string; property_url?: string; action?: string; viewed_at?: string; metadata?: any }>;
   engagement?: Array<{ event_type: string; campaign_id?: string; campaign_name?: string; link_url?: string; occurred_at?: string; metadata?: any }>;
   forms?: Array<{ form_type: string; form_name?: string; property_id?: string; property_name?: string; payload?: any; submitted_at?: string }>;
