@@ -757,46 +757,49 @@ function PreviewPane({
   const subject = unifiedSubject(item);
 
   return (
-    <Card className="flex-1 flex flex-col overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-border/60 space-y-1 shrink-0">
-        <div className="flex items-center justify-between gap-2">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-lg border border-border/60 bg-card">
+      <div className="px-4 py-3 border-b border-border/60 shrink-0">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Preview</div>
-            <div className="text-sm font-semibold truncate">{unifiedName(item)}</div>
+            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold mb-0.5">
+              Preview
+            </div>
+            <div className="text-[14px] font-semibold truncate text-foreground">{unifiedName(item)}</div>
+            {subject && (
+              <div className="text-[12px] text-muted-foreground truncate mt-0.5">
+                {renderWithSampleData(subject).replace(/<[^>]+>/g, '')}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {onEdit && (
-              <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={onEdit}>
-                <Pencil className="w-3 h-3" /> Edit
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-[12px]" onClick={onEdit}>
+                <Pencil className="w-3.5 h-3.5" /> Edit
               </Button>
             )}
-            <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" onClick={onClone}>
-              <CopyIcon className="w-3 h-3" /> {item.kind === 'local' ? 'Duplicate' : 'Clone'}
+            <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-[12px]" onClick={onClone}>
+              <CopyIcon className="w-3.5 h-3.5" /> {item.kind === 'local' ? 'Duplicate' : 'Clone'}
             </Button>
             {onSendPresale && (
-              <Button size="sm" className="h-7 gap-1 text-[11px]" onClick={onSendPresale}>
-                <Send className="w-3 h-3" /> Send
+              <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSendPresale}>
+                <Send className="w-3.5 h-3.5" /> Send
               </Button>
             )}
           </div>
         </div>
-        {subject && (
-          <div className="text-[11px] text-foreground/80 truncate">
-            <span className="text-muted-foreground">Subject: </span>
-            {renderWithSampleData(subject).replace(/<[^>]+>/g, '')}
-          </div>
-        )}
       </div>
 
-      <div className="flex-1 bg-white overflow-hidden">
-        <iframe
-          title="Template preview"
-          className="w-full h-full border-0"
-          sandbox="allow-same-origin"
-          srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:20px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
-        />
+      <div className="flex-1 bg-muted/20 overflow-hidden p-4">
+        <div className="h-full rounded-md border border-border/60 bg-white overflow-hidden shadow-sm">
+          <iframe
+            title="Template preview"
+            className="w-full h-full border-0"
+            sandbox="allow-same-origin"
+            srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
+          />
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
