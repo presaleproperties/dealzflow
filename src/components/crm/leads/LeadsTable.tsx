@@ -913,7 +913,6 @@ export function LeadsTable({
       </div>
       <div
         className={`overflow-x-auto rounded-xl border border-border bg-card shadow-sm transition-opacity ${isFetching ? 'opacity-80' : ''}`}
-        style={{ minHeight: 46 + pageSize * 56 }}
       >
         <TooltipProvider delayDuration={200}>
           <table className="w-full text-sm" style={{ tableLayout: 'fixed', minWidth: 1400 }}>
