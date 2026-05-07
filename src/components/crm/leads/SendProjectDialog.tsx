@@ -332,12 +332,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           pricing: attachPricing,
         },
         ctas: {
-          brochure: ctaBrochure,
           project_details: ctaProjectDetails,
           call_now: ctaCallNow,
         },
         cta_overrides: {
-          brochure_url: brochureUrlOverride.trim() || null,
           project_details_url: projectDetailsUrlOverride.trim() || null,
         },
       },
