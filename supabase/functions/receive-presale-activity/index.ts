@@ -238,9 +238,11 @@ Deno.serve(async (req) => {
       return data?.length ?? 0;
     }
 
-    // Stable event_id per row so re-deliveries don't duplicate
+    // Stable event_id per row so re-deliveries don't duplicate. Falls back
+    // to presale_user_id when no contact yet (orphan rows get stitched later).
+    const idScope = cId ?? presaleUserId ?? email ?? phone ?? "anon";
     const stableId = (kind: string, key: string) =>
-      `${cId}:${kind}:${key}`;
+      `${idScope}:${kind}:${key}`;
 
     expanded.forms = await bulkUpsert(
       "crm_lead_behavior_forms",
