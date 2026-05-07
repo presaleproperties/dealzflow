@@ -969,8 +969,10 @@ export function LeadsTable({
           </table>
         </TooltipProvider>
       </div>
-      <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
-        onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
+      <div className="sticky bottom-0 z-20 -mx-1 mt-2 px-3 py-1 bg-background/90 backdrop-blur-md border-t border-border/60">
+        <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
+          onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
+      </div>
       {smsContact && (
         <SendTextDialog
           contact={smsContact}
