@@ -551,6 +551,39 @@ Deno.serve(async (req) => {
   if (!ctaCallNow) {
     html_final = stripButtonByHref(html_final, (h) => /^tel:/i.test(h));
   }
+  // ─── Click + open tracking ───────────────────────────────────────────────
+  // Generate a tracking_id, classify each CTA link as brochure / floor_plans
+  // / pricing / project_details / call so click events identify the button,
+  // then route every external <a href> through crm-email-track. Append a 1×1
+  // open pixel.
+  const TRACK_BASE = `${SUPABASE_URL}/functions/v1/crm-email-track`;
+  const trackingId = crypto.randomUUID();
+  const classifyButton = (href: string): string => {
+    const h = href.toLowerCase();
+    if (h.startsWith("tel:")) return "call";
+    if (/floor[-_]?plan/.test(h)) return "floor_plans";
+    if (/(price|pricing)/.test(h)) return "pricing";
+    if (/\.pdf(\?|$)/.test(h) || /brochure/.test(h)) return "brochure";
+    if (/presaleproperties\.com\/projects?\//.test(h)) return "project_details";
+    return "link";
+  };
+  // Click rewrite — skip mailto, anchors, already-tracked. Pass tel: through
+  // unchanged (most clients can't redirect tel: via 302).
+  html_final = html_final.replace(
+    /<a\b([^>]*?)href=(["'])(https?:\/\/[^"']+)\2/gi,
+    (_m, attrs, q, href) => {
+      if (href.includes("/crm-email-track")) return `<a${attrs}href=${q}${href}${q}`;
+      const btn = classifyButton(href);
+      const tracked = `${TRACK_BASE}?a=click&t=${encodeURIComponent(trackingId)}&b=${encodeURIComponent(btn)}&u=${encodeURIComponent(href)}`;
+      return `<a${attrs}href=${q}${tracked}${q}`;
+    },
+  );
+  // Open pixel
+  const pixel = `<img src="${TRACK_BASE}?a=open&t=${encodeURIComponent(trackingId)}" width="1" height="1" alt="" style="display:block;border:0;outline:none;width:1px;height:1px" />`;
+  html_final = /<\/body>/i.test(html_final)
+    ? html_final.replace(/<\/body>/i, `${pixel}</body>`)
+    : html_final + pixel;
+
   const subject_final = (subject_override?.trim() || subject_rendered || "").trim();
 
   // Plain-text fallback — generated from the final HTML so links + the
