@@ -149,6 +149,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [attachBrochure, setAttachBrochure] = useState(false);
   const [attachFloorPlans, setAttachFloorPlans] = useState(false);
   const [attachPricing, setAttachPricing] = useState(false);
+  // CTA button toggles (default ON — match Presale auto-template)
+  const [ctaBrochure, setCtaBrochure] = useState(true);
+  const [ctaProjectDetails, setCtaProjectDetails] = useState(true);
+  const [ctaCallNow, setCtaCallNow] = useState(true);
 
   // ─── Recipient signal: last email + open count ────────────────────────
   const { data: lastEmail } = useQuery({
