@@ -719,7 +719,7 @@ function PaginationBar({
   if (totalCount === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 px-1">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-1 px-1">
       <div className="flex items-center gap-3">
         <span className="text-[11px] text-muted-foreground">
           {from.toLocaleString()}–{to.toLocaleString()} of {totalCount.toLocaleString()}
@@ -969,8 +969,10 @@ export function LeadsTable({
           </table>
         </TooltipProvider>
       </div>
-      <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
-        onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
+      <div className="sticky bottom-0 z-20 -mx-1 mt-2 px-3 py-1 bg-background/90 backdrop-blur-md border-t border-border/60">
+        <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
+          onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
+      </div>
       {smsContact && (
         <SendTextDialog
           contact={smsContact}
