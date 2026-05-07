@@ -403,11 +403,10 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
     <div onClick={e => e.stopPropagation()}>
       <Select value={activeSeg?.id ?? ''} onValueChange={onPick}>
         <SelectTrigger
-          className="h-7 border-0 px-2.5 py-0 text-[10.5px] font-medium tracking-[0.02em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
+          className="h-auto border-0 px-2 py-0.5 text-[10.5px] font-medium tracking-[0.02em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
           style={{ background: `${displayColor}1A`, color: displayColor }}
         >
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: displayColor }} />
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
             <span>{displayLabel}</span>
           </span>
         </SelectTrigger>
