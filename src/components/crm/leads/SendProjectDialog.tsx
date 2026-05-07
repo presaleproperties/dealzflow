@@ -118,9 +118,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
 
   // ─── Local state ─────────────────────────────────────────────────────────
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const agentKey = user?.id ?? 'anon';
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
-  const [channel, setChannel] = useState<'email' | 'sms'>('email');
   const [enrollFollowup, setEnrollFollowup] = useState<boolean>(true);
   const [showPreviewMobile, setShowPreviewMobile] = useState<boolean>(false);
   const [sending, setSending] = useState(false);
@@ -128,10 +129,32 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [previewHtml, setPreviewHtml] = useState<string>('');
   const [previewSubject, setPreviewSubject] = useState<string>('');
   const [previewError, setPreviewError] = useState<string | null>(null);
+  // Composer fields (Phase 1)
+  const [subjectOverride, setSubjectOverride] = useState<string>('');
+  const [personalNote, setPersonalNote] = useState<string>('');
   // Attachment toggles + cached availability per project
   const [attachBrochure, setAttachBrochure] = useState(false);
   const [attachFloorPlans, setAttachFloorPlans] = useState(false);
   const [attachPricing, setAttachPricing] = useState(false);
+
+  // ─── Recipient signal: last email + open count ────────────────────────
+  const { data: lastEmail } = useQuery({
+    queryKey: ['send-project.last-email', contact.id],
+    enabled: open && !!contact.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('crm_email_log')
+        .select('sent_at, open_count')
+        .eq('contact_id', contact.id)
+        .eq('direction', 'outbound')
+        .order('sent_at', { ascending: false })
+        .limit(5);
+      if (!data || data.length === 0) return null;
+      const opens = data.filter(d => (d.open_count ?? 0) > 0).length;
+      return { lastSentAt: data[0].sent_at, totalRecent: data.length, openedRecent: opens };
+    },
+  });
 
   // ─── Per-project asset availability (manual or Presale) ──────────────────
   type AssetInfo = { url: string | null; filename: string | null; source: 'manual' | 'presale' | null };
