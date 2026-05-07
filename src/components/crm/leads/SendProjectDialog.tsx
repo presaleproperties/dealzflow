@@ -238,12 +238,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             pricing: attachPricing,
           },
           ctas: {
-            brochure: ctaBrochure,
             project_details: ctaProjectDetails,
             call_now: ctaCallNow,
           },
           cta_overrides: {
-            brochure_url: brochureUrlOverride.trim() || null,
             project_details_url: projectDetailsUrlOverride.trim() || null,
           },
         },
@@ -259,7 +257,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow, brochureUrlOverride, projectDetailsUrlOverride]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaProjectDetails, ctaCallNow, projectDetailsUrlOverride]);
 
   // ─── Reset attachment toggles + URL overrides when project changes ──────
   useEffect(() => {
