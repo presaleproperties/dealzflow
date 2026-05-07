@@ -286,22 +286,20 @@ export function TopNav() {
                         strokeWidth={2.2}
                       />
                       {/* Bridge under trigger to keep hover continuous into menu */}
-                      {isOpen && <span className="absolute left-0 right-0 -bottom-2 h-2" aria-hidden />}
+                      {isOpen && <span className="absolute left-0 right-0 -bottom-3 h-3" aria-hidden />}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    sideOffset={2}
+                    sideOffset={8}
                     onMouseEnter={() => openWithDelay(section.label)}
                     onMouseLeave={scheduleClose}
                     onCloseAutoFocus={(e) => e.preventDefault()}
+                    forceMount={undefined}
                     className={cn(
                       'border-0 shadow-2xl origin-top',
-                      'data-[state=open]:animate-in data-[state=closed]:animate-out',
-                      'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
-                      'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
-                      'data-[state=open]:slide-in-from-top-1 data-[state=closed]:slide-out-to-top-1',
-                      'data-[state=open]:duration-150 data-[state=closed]:duration-100',
+                      'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+                      'data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-150',
                       isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]',
                     )}
                     style={{
@@ -313,7 +311,7 @@ export function TopNav() {
                     }}
                   >
                     {/* Invisible hover bridge to prevent flicker between trigger and menu */}
-                    <div className="absolute -top-3 left-0 right-0 h-3" aria-hidden />
+                    <div className="absolute -top-2 left-0 right-0 h-2" aria-hidden />
                     {isMega ? (
                       <div
                         className="grid gap-x-3 gap-y-1"
