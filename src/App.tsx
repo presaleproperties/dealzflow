@@ -56,6 +56,7 @@ const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const ApiDocsPage = lazy(() => import("./pages/ApiDocsPage"));
 const BridgeStatusPage = lazy(() => import("./pages/admin/BridgeStatusPage"));
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
+const WebhookValidationPage = lazy(() => import("./pages/admin/WebhookValidationPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
 const ResponsiveChecklistPage = lazy(() => import("./pages/ResponsiveChecklistPage"));
