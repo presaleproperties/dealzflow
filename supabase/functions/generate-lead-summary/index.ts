@@ -91,8 +91,8 @@ Write 2-4 short sentences an agent can read in 5 seconds. Cover only what matter
 
 Rules:
 - Plain prose. No markdown headings, no bullets, no lists.
-- Use **bold** at most ONCE for the single most important fact (usually the project or a hot signal). Often use no bold at all.
-- Do NOT restate the assigned agent, pipeline status, or lead score — the UI already shows these.
+- Bold 2-4 KEY skim words using **double asterisks** — pick the project name, lead type, hot signals, budget, or unit type. Never bold full sentences.
+- Do NOT bold or restate the assigned agent, pipeline status, or lead score — the UI already shows these.
 - Do NOT pad with phrases like "She is a New Lead" or "Her last contact was".
 - Skip unknown fields silently.
 - If activity is thin, 1-2 sentences is fine.
