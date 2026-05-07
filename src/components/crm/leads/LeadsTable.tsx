@@ -959,12 +959,7 @@ export function LeadsTable({
                   </tr>
                 );
               })}
-              {/* Filler rows to keep stable height on partial pages */}
-              {contacts.length < pageSize && Array.from({ length: pageSize - contacts.length }).map((_, i) => (
-                <tr key={`pad-${i}`} style={{ height: 56 }} aria-hidden="true">
-                  <td colSpan={columns.length + 1} />
-                </tr>
-              ))}
+              {/* No filler rows — sticky footer keeps pagination in place */}
             </tbody>
           </table>
         </TooltipProvider>
