@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Phone, MessageSquare, Mail, CalendarPlus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
@@ -74,6 +74,30 @@ export function MobileLeadDetail({
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Compact action bar — 4 icon-circles, 44pt tap target. Replaces the
+          oversized button grid that was eating ~80px of vertical real estate. */}
+      <div className="flex items-center justify-around gap-2 px-4 py-2 border-b border-border/60 bg-background flex-shrink-0">
+        {([
+          { label: 'Call',    icon: Phone,         onClick: onCall,    enabled: !!contact.phone },
+          { label: 'Text',    icon: MessageSquare, onClick: onText,    enabled: !!contact.phone },
+          { label: 'Email',   icon: Mail,          onClick: onEmail,   enabled: !!contact.email },
+          { label: 'Showing', icon: CalendarPlus,  onClick: onShowing, enabled: true },
+        ] as const).map(({ label, icon: Icon, onClick, enabled }) => (
+          <button
+            key={label}
+            onClick={onClick}
+            disabled={!enabled}
+            className="flex flex-col items-center gap-1 px-2 py-1 rounded-lg active:bg-muted/60 disabled:opacity-40 disabled:active:bg-transparent transition-colors"
+            aria-label={label}
+          >
+            <span className="w-11 h-11 rounded-full bg-muted/50 border border-border/60 flex items-center justify-center">
+              <Icon className="w-[18px] h-[18px] text-foreground" strokeWidth={1.8} />
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground tracking-tight">{label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Tabs — Details first */}
