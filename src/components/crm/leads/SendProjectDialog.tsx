@@ -196,7 +196,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const previewTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!open) return;
-    if (!projectSlug || !templateSlug || channel !== 'email') return;
+    if (!projectSlug || !templateSlug) return;
     window.clearTimeout(previewTimer.current);
     setPreviewLoading(true);
     setPreviewError(null);
@@ -208,6 +208,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           template_slug: templateSlug,
           channel: 'email',
           dry_run: true,
+          subject_override: subjectOverride || null,
+          personal_note: personalNote || null,
           attachments: {
             brochure: attachBrochure,
             floor_plans: attachFloorPlans,
@@ -224,9 +226,9 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         setPreviewSubject(data.subject ?? '');
       }
       setPreviewLoading(false);
-    }, 300);
+    }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, channel, attachBrochure, attachFloorPlans, attachPricing]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing]);
 
   // ─── Reset attachment toggles when project changes ───────────────────────
   useEffect(() => {
