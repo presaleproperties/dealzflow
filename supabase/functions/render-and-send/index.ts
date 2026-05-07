@@ -333,73 +333,66 @@ Deno.serve(async (req) => {
   } else {
     try {
       renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-bridge-secret": BRIDGE_SECRET,
-        "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
-        "apikey": PRESALE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        // Ask the bridge to render its OWN native template (hero image,
-        // project card, CALL NOW, agent footer) instead of merging into
-        // our local body_html. We send the slug under several keys so
-        // older/newer bridge versions both pick it up. Subject is still
-        // forwarded as a soft default — the bridge may override it.
-        template_key: template_slug,
-        template_slug: template_slug,
-        preset: template_slug,
-        template: {
-          key: template_slug,
-          slug: template_slug,
-          name: template.name,
-          subject: template.subject,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-bridge-secret": BRIDGE_SECRET,
+          "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
+          "apikey": PRESALE_ANON_KEY,
         },
-        subject: template.subject,
-        contact: {
-          first_name: contact.first_name,
-          last_name: contact.last_name,
-          email: contact.email,
-          phone: contact.phone,
-        },
-        recipient: {
-          name: [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null,
-          email: contact.email,
-        },
-        project_slug: bridgeProjectSlug,
-        agent_slug: agentSlug,
-        agent_id: agentSlug,
-        agent_auth_user_id: user.id,
-        agent_email: agentEmail,
-        agent: {
-          slug: agentSlug,
-          email: agentEmail,
-          display_name: agentName,
-        },
-        // Tell the bridge which document buttons to render inside its
-        // native "Your Requested Documents" card. Both shapes are sent so
-        // older/newer bridge versions both pick it up.
-        documents: resolvedAttachmentsForBridge,
-        requested_documents: {
-          brochure: !!resolvedAttachmentsForBridge.brochure,
-          floor_plans: !!resolvedAttachmentsForBridge.floor_plans,
-          pricing: !!resolvedAttachmentsForBridge.pricing,
-        },
-        attachments: resolvedAttachmentsForBridge,
-      }),
-    });
-    renderText = await renderRes.text();
-  } catch (e) {
-    console.error("[render-and-send] bridge fetch threw", e);
-    return json({
-      error: "bridge_unreachable",
-      detail: (e as Error).message,
-      bridge_url: BRIDGE_URL,
-    }, 502);
+        body: JSON.stringify({
+          template_key: template_slug,
+          template_slug: template_slug,
+          preset: template_slug,
+          template: {
+            key: template_slug,
+            slug: template_slug,
+            name: template?.name,
+            subject: template?.subject,
+          },
+          subject: template?.subject,
+          contact: {
+            first_name: contact.first_name,
+            last_name: contact.last_name,
+            email: contact.email,
+            phone: contact.phone,
+          },
+          recipient: {
+            name: [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null,
+            email: contact.email,
+          },
+          project_slug: bridgeProjectSlug,
+          agent_slug: agentSlug,
+          agent_id: agentSlug,
+          agent_auth_user_id: user.id,
+          agent_email: agentEmail,
+          agent: {
+            slug: agentSlug,
+            email: agentEmail,
+            display_name: agentName,
+          },
+          documents: resolvedAttachmentsForBridge,
+          requested_documents: {
+            brochure: !!resolvedAttachmentsForBridge.brochure,
+            floor_plans: !!resolvedAttachmentsForBridge.floor_plans,
+            pricing: !!resolvedAttachmentsForBridge.pricing,
+          },
+          attachments: resolvedAttachmentsForBridge,
+        }),
+      });
+      renderText = await renderRes.text();
+    } catch (e) {
+      console.error("[render-and-send] bridge fetch threw", e);
+      return json({
+        error: "bridge_unreachable",
+        detail: (e as Error).message,
+        bridge_url: BRIDGE_URL,
+      }, 502);
+    }
   }
   let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; subject?: string; html?: string; text?: string; error?: string } = {};
   try { rendered = renderText ? JSON.parse(renderText) : {}; } catch { /* */ }
-  const subject_rendered = rendered.subject_rendered || rendered.subject || template.subject || "";
+  const subject_rendered = rendered.subject_rendered || rendered.subject || template?.subject || "";
   const html_rendered = rendered.html_rendered || rendered.html || "";
   const text_rendered = rendered.text_rendered ?? rendered.text ?? "";
   console.log("[render-and-send] bridge ok", {
