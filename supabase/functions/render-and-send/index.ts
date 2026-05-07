@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
     await supabase.from("crm_email_log").insert({
       contact_id,
       user_id: user.id,
-      subject: `[FAILED] ${subject_rendered}`,
+      subject: `[FAILED] ${subject_final}`,
       body: html_final,
       sent_at: new Date().toISOString(),
       direction: "outbound",
@@ -362,7 +362,7 @@ Deno.serve(async (req) => {
     .insert({
       contact_id,
       user_id: user.id,
-      subject: subject_rendered,
+      subject: subject_final,
       body: html_final,
       sent_at: new Date().toISOString(),
       direction: "outbound",
