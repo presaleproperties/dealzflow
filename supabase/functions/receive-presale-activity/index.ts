@@ -16,14 +16,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET") ?? "";
 
-type EventType =
-  | "email_open"
-  | "link_click"
-  | "deck_unlock"
-  | "deck_section_view"
-  | "page_view";
+type EventType = string;
 
-const HIGH_INTENT: EventType[] = ["email_open", "deck_unlock", "link_click"];
+const HIGH_INTENT: EventType[] = ["email_open", "email_opened", "deck_unlock", "link_click", "email_clicked", "return_visit"];
+const LEAD_LIFECYCLE_EVENTS = new Set(["lead.created", "lead.approved", "contact_form"]);
+const FALLBACK_AGENT = "Uzair Muhammad";
 
 interface IncomingEvent {
   type: EventType;
@@ -33,6 +30,62 @@ interface IncomingEvent {
   agent_slug?: string;
   metadata?: Record<string, unknown>;
   occurred_at?: string;
+}
+
+function cleanEmail(value: unknown): string | null {
+  return typeof value === "string" && value.trim()
+    ? value.trim().toLowerCase()
+    : null;
+}
+
+function cleanPhone(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function splitName(value: unknown): { first_name: string; last_name: string } {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return { first_name: "New", last_name: "Lead" };
+  const parts = raw.split(/\s+/).filter(Boolean);
+  return {
+    first_name: parts[0] || "New",
+    last_name: parts.slice(1).join(" ") || "Lead",
+  };
+}
+
+async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<string> {
+  if (agentSlug) {
+    const wanted = agentSlug.trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const nameSlug = (t.display_name ?? "").toLowerCase().replace(/\s+/g, "-");
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return t.slug?.toLowerCase() === wanted || nameSlug === wanted || emailLocal === wanted || presaleLocal === wanted;
+    });
+    if (match?.display_name) return match.display_name;
+  }
+
+  const { data: agents } = await supabase
+    .from("crm_team")
+    .select("display_name, role")
+    .eq("is_active", true)
+    .in("role", ["agent", "admin"]);
+  const candidates = (agents ?? []).map((a: any) => a.display_name).filter(Boolean);
+  if (!candidates.length) return FALLBACK_AGENT;
+
+  const counts: Record<string, number> = {};
+  for (const name of candidates) {
+    const { count } = await supabase
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_to", name);
+    counts[name] = count ?? 0;
+  }
+  candidates.sort((a: string, b: string) => (counts[a] ?? 0) - (counts[b] ?? 0));
+  return candidates[0];
 }
 
 function jsonResp(body: unknown, status = 200) {
@@ -60,16 +113,24 @@ async function notifySyncFailure(
       .map((r: any) => r.user_id)
       .filter(Boolean);
     if (!userIds.length) return;
-    await supabase.from("crm_notifications").insert(
-      userIds.map((u: string) => ({
-        user_id: u,
-        title: `⚠️ Presale sync issue: ${reason}`,
-        body: detail.slice(0, 500),
-        type: "presale_sync_error",
-        link_to: link,
-        is_read: false,
-      })),
-    );
+    const title = `⚠️ Presale sync issue: ${reason}`;
+    const body = detail.slice(0, 500);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const rows: any[] = [];
+    for (const u of userIds) {
+      const { data: existing } = await supabase
+        .from("crm_notifications")
+        .select("id")
+        .eq("user_id", u)
+        .eq("type", "presale_sync_error")
+        .eq("title", title)
+        .eq("body", body)
+        .gte("created_at", since)
+        .limit(1)
+        .maybeSingle();
+      if (!existing) rows.push({ user_id: u, title, body, type: "presale_sync_error", link_to: link, is_read: false });
+    }
+    if (rows.length) await supabase.from("crm_notifications").insert(rows);
   } catch (e) {
     console.error("[receive-presale-activity] notifySyncFailure failed:", e);
   }
@@ -113,6 +174,7 @@ Deno.serve(async (req) => {
   const email = body.lead_email?.trim().toLowerCase() ?? null;
   const phone = body.lead_phone?.trim() ?? null;
   const occurredAt = body.occurred_at ?? new Date().toISOString();
+  const meta: any = body.metadata ?? {};
 
   // Identity stitch order: presale_user_id → email → phone
   let contact:
@@ -147,6 +209,56 @@ Deno.serve(async (req) => {
       .eq("phone", phone)
       .maybeSingle();
     if (data) contact = data as typeof contact;
+  }
+
+  // Presale sometimes sends new-lead lifecycle events to this activity webhook
+  // instead of bridge-ingest-lead. Treat those as real CRM leads, then continue
+  // recording the originating activity against the newly created/merged contact.
+  if (!contact && LEAD_LIFECYCLE_EVENTS.has(body.type) && (email || phone)) {
+    const { first_name, last_name } = splitName(meta.name ?? meta.full_name);
+    const assignee = await pickAssignee(supabase, body.agent_slug ?? meta.agent_slug ?? null);
+    const leadEmail = email ?? cleanEmail(meta.email);
+    const leadPhone = phone ?? cleanPhone(meta.phone);
+    const source = meta.source === "presale_properties_bulk_sync"
+      ? "presaleproperties.com"
+      : (typeof meta.source === "string" ? meta.source : "presaleproperties.com");
+    const leadSource = typeof meta.lead_source === "string" ? meta.lead_source : null;
+    const projects = [body.project_slug, meta.project, meta.property_name, meta.project_name].filter(Boolean) as string[];
+
+    const { data: created, error: createErr } = await supabase
+      .from("crm_contacts")
+      .insert({
+        first_name,
+        last_name,
+        email: leadEmail,
+        phone: leadPhone,
+        presale_user_id: presaleUserIdEarly,
+        source,
+        campaign_source: leadSource,
+        project: projects[0] ?? null,
+        projects: Array.from(new Set(projects)),
+        presale_metadata: meta,
+        tags: Array.from(new Set(["presale-website", leadSource].filter(Boolean))),
+        status: "New Lead",
+        lead_type: "Pre-Sale",
+        assigned_to: assignee,
+        sync_source: "presale",
+        lofty_synced_at: occurredAt,
+        last_activity_at: occurredAt,
+        ai_summary_stale: true,
+      })
+      .select("id, first_name, last_name, assigned_to")
+      .single();
+
+    if (createErr) {
+      await notifySyncFailure(
+        supabase,
+        "lead create failed",
+        `${body.type} for ${leadEmail ?? leadPhone}: ${createErr.message}`,
+      );
+      return jsonResp({ error: createErr.message }, 500);
+    }
+    contact = created as typeof contact;
   }
 
   // Backfill presale_user_id on the contact when stitched via email/phone
@@ -203,7 +315,6 @@ Deno.serve(async (req) => {
   let expanded = { forms: 0, views: 0, sessions: 0, engagement: 0 };
   let projectsAppended: string[] = [];
 
-  const meta: any = body.metadata ?? {};
   const behavior: any = meta?.behavior ?? null;
   const presaleUserId: string | null = presaleUserIdEarly;
 

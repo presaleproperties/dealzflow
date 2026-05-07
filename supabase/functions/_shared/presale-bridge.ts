@@ -135,16 +135,32 @@ export const presaleBridge = {
     call<BridgeBehavior>("bridge-get-lead-behavior", {
       query: { email: params.email, phone: params.phone },
     }),
-  renderEmail: (params: {
+  renderEmail: async (params: {
     projectSlug: string;
     agentSlug: string;
     templateStyle: string;
     leadName?: string;
-  }) =>
-    call<BridgeRenderedEmail>("bridge-render-email", {
+  }) => {
+    const agentsRaw = await call<{ agents: BridgeAgent[] } | BridgeAgent[]>("bridge-list-agents");
+    const agents = Array.isArray(agentsRaw) ? agentsRaw : agentsRaw.agents ?? [];
+    const wanted = params.agentSlug.trim().toLowerCase();
+    const agent = agents.find((a) => {
+      const nameSlug = (a.name ?? (a as any).full_name ?? "").toLowerCase().replace(/\s+/g, "-");
+      const emailLocal = (a.email ?? "").split("@")[0]?.toLowerCase();
+      return a.slug?.toLowerCase() === wanted || nameSlug === wanted || emailLocal === wanted;
+    });
+    return call<BridgeRenderedEmail>("bridge-render-email", {
       method: "POST",
-      body: params,
-    }),
+      body: {
+        ...params,
+        project_slug: params.projectSlug,
+        agent_slug: params.agentSlug,
+        agent_email: agent?.email,
+        template_style: params.templateStyle,
+        lead_name: params.leadName,
+      },
+    });
+  },
 };
 
 export type PresaleBridge = typeof presaleBridge;
