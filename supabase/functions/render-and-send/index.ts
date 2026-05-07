@@ -181,6 +181,7 @@ Deno.serve(async (req) => {
     enroll_followup_slug?: string | null;
     dry_run?: boolean;
     attachments?: { brochure?: boolean; floor_plans?: boolean; pricing?: boolean };
+    ctas?: { brochure?: boolean; project_details?: boolean; call_now?: boolean };
     subject_override?: string | null;
     personal_note?: string | null;
   } = {};
@@ -194,9 +195,13 @@ Deno.serve(async (req) => {
     enroll_followup_slug = null,
     dry_run = false,
     attachments = {},
+    ctas = {},
     subject_override = null,
     personal_note = null,
   } = body;
+  const ctaBrochure = ctas.brochure !== false;
+  const ctaProjectDetails = ctas.project_details !== false;
+  const ctaCallNow = ctas.call_now !== false;
 
   if (!contact_id || !template_slug || !project_slug) {
     return json({ error: "contact_id, template_slug and project_slug are required" }, 400);
