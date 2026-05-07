@@ -184,8 +184,8 @@ Deno.serve(async (req) => {
     return jsonResp({ error: insertErr.message }, 500);
   }
 
-  // Lead identifier present but no CRM match — flag so admin can investigate
-  // (renamed contact, wrong email cased on form, missing import, etc.)
+  // Lead identifier present but no CRM match — flag so admin can investigate.
+  // Skip noise when we only have a presale_user_id (anonymous web visitor).
   if (!contact && (email || phone)) {
     await notifySyncFailure(
       supabase,
@@ -205,8 +205,7 @@ Deno.serve(async (req) => {
 
   const meta: any = body.metadata ?? {};
   const behavior: any = meta?.behavior ?? null;
-  const presaleUserId: string | null =
-    meta?.presale_user_id ?? meta?.visitor_id ?? null;
+  const presaleUserId: string | null = presaleUserIdEarly;
 
   if (behavior && contact) {
     const cId = contact.id;
