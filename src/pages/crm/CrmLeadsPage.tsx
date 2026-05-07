@@ -153,8 +153,7 @@ export default function CrmLeadsPage() {
     return Object.keys(f).length > 0 ? f : undefined;
   }, [activeView]);
 
-  // Segment counts — uses same first-match-wins logic as Pipeline Kanban
-  const segmentCounts = useMemo(() => computeSegmentCounts(allContacts, segments), [allContacts, segments]);
+  // (segment + view counts are computed below, after filter state is declared)
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
