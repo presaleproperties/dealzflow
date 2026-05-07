@@ -87,11 +87,7 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
 
       <div className="flex flex-wrap gap-1.5">
         {tags.map(tag => (
-          <Badge
-            key={tag}
-            className="border-0 text-[11px] font-semibold gap-1 pr-1.5 cursor-default"
-            style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
-          >
+          <Pill key={tag} tone="primary" className="pr-1 gap-1">
             {tag}
             <button
               type="button"
@@ -99,9 +95,9 @@ export function LeadTagsCard({ contact }: { contact: CrmContact }) {
               className="hover:opacity-70 transition-opacity"
               aria-label={`Remove ${tag}`}
             >
-              <X className="w-3 h-3" />
+              <X className="w-2.5 h-2.5" />
             </button>
-          </Badge>
+          </Pill>
         ))}
         {tags.length === 0 && !adding && (
           <button
