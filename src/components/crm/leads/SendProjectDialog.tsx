@@ -339,6 +339,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           project_details: ctaProjectDetails,
           call_now: ctaCallNow,
         },
+        cta_overrides: {
+          brochure_url: brochureUrlOverride.trim() || null,
+          project_details_url: projectDetailsUrlOverride.trim() || null,
+        },
       },
     });
     setSending(false);
