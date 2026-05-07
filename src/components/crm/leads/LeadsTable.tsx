@@ -191,14 +191,14 @@ function InlineTagsCell({
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
+                    className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
                     style={{ background: c.bg, color: c.color }}
                   >
                     <span className="block truncate">{tag}</span>
                   </Badge>
                 );
               })}
-              {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
+              {extra > 0 && <span className="text-[10.5px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
             </>
           )}
         </button>
@@ -275,11 +275,11 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {shown.map(p => (
-        <Badge key={p} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
+        <Badge key={p} variant="outline" className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}>
           {p}
         </Badge>
       ))}
-      {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
+      {extra > 0 && <span className="text-[10.5px] text-muted-foreground font-medium">+{extra}</span>}
     </div>
   );
 }
@@ -555,7 +555,7 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
         <span className="text-foreground/80 whitespace-nowrap text-[12px] inline-flex items-center gap-1.5">
           {contact.source ?? '—'}
           {isLofty && (
-            <span className="text-[10px] px-1.5 py-0 rounded bg-primary/10 text-primary font-semibold">Lofty</span>
+            <span className="text-[9.5px] px-1.5 py-0 rounded bg-primary/10 text-primary font-medium tracking-wide">Lofty</span>
           )}
         </span>
       );
@@ -574,13 +574,13 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
       return <span className="text-foreground/80 whitespace-nowrap text-[12px] truncate max-w-[160px] block">{(contact as any).campaign_source ?? '—'}</span>;
     case 'city_pref':
       return (contact as any).city_pref
-        ? <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+        ? <Badge variant="outline" className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.1)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
         : <span className="text-muted-foreground text-sm">—</span>;
     case 'property_type_pref':
       return <span className="text-foreground/80 whitespace-nowrap text-[12px] capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
     case 'is_pre_approved':
       return (contact as any).is_pre_approved
-        ? <Badge variant="outline" className="border-0 text-[11px] font-semibold px-2 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
+        ? <Badge variant="outline" className="border-0 text-[10.5px] font-medium px-2 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.1)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
         : <span className="text-muted-foreground text-sm">No</span>;
     case 'quick_actions':
       return (
