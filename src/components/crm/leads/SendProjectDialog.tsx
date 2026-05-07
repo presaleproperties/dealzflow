@@ -52,20 +52,33 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { data: templates = [], refetch: refetchTemplates } = useQuery<Template[]>({
     queryKey: ['send-project.templates'],
     queryFn: async () => {
+      // 1. Presale auto-response templates (admin-managed, branded — same as
+      //    what leads receive when they sign up on presaleproperties.com).
+      let presaleAuto: Template[] = [];
+      try {
+        const { data } = await supabase.functions.invoke('fetch-presale-templates', {
+          method: 'GET',
+        });
+        const list = (data as { templates?: Array<{ id: string; name: string; description?: string }> } | null)?.templates ?? [];
+        presaleAuto = list.map((t) => ({ slug: t.id, name: `★ ${t.name}` }));
+      } catch (e) {
+        console.warn('[SendProject] presale auto-templates fetch failed', e);
+      }
+
+      // 2. Local CRM templates (legacy / agent-authored).
       const { data } = await supabase
         .from('crm_email_templates')
         .select('slug, name, last_synced_at, source')
         .eq('is_active', true)
         .not('slug', 'is', null)
         .order('name');
-      // Only show templates relevant to "Send Project" — the bridge composes
-      // the actual project card; we filter out booking/welcome/SMS noise so the
-      // picker matches Presale Properties' project-send flow.
       const PROJECT_TEMPLATE_RX = /(project|property|showcase|info-package|recommendation|the-mason)/i;
-      const allowed = (data ?? []).filter((t) =>
+      const localFiltered = (data ?? []).filter((t) =>
         PROJECT_TEMPLATE_RX.test(t.slug) || PROJECT_TEMPLATE_RX.test(t.name),
       );
-      return (allowed.length > 0 ? allowed : (data ?? [])) as Template[];
+      const localList = (localFiltered.length > 0 ? localFiltered : (data ?? [])) as Template[];
+
+      return [...presaleAuto, ...localList];
     },
     staleTime: 5 * 60 * 1000,
     enabled: open,
@@ -186,6 +199,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   useEffect(() => {
     if (!open || templates.length === 0 || templateSlug) return;
     const preferred =
+      templates.find(t => t.slug === 'auto_project_details_docs') ||
+      templates.find(t => t.slug === 'auto_agent_followup') ||
       templates.find(t => t.slug === 'project-info-package') ||
       templates.find(t => t.slug === 'project-showcase') ||
       templates.find(t => t.slug === 'project-welcome-email');

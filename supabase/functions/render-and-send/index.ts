@@ -205,22 +205,36 @@ Deno.serve(async (req) => {
     return json({ error: "contact_has_no_email" }, 400);
   }
 
-  // (b) template
-  const { data: template, error: templateErr } = await supabase
-    .from("crm_email_templates")
-    .select("id, name, subject, body_html, merge_tags")
-    .eq("slug", template_slug)
-    .maybeSingle();
-  if (templateErr || !template) return json({ error: "template_not_found" }, 404);
+  // (b) template — auto-templates served by Presale do NOT live in
+  // crm_email_templates (they're rendered remotely). For everything else
+  // we need the local row for subject/body fallbacks.
+  const AUTO_TEMPLATE_SLUGS = new Set([
+    "auto_project_details_docs",
+    "auto_agent_followup",
+  ]);
+  const isAutoTemplate = AUTO_TEMPLATE_SLUGS.has(template_slug);
 
-  let bridgeProjectSlug = project_slug;
-  const { data: projectBySlug } = await supabase
+  let template: { id?: string; name?: string; subject?: string | null; body_html?: string | null; merge_tags?: unknown } | null = null;
+  if (!isAutoTemplate) {
+    const { data: tpl, error: templateErr } = await supabase
+      .from("crm_email_templates")
+      .select("id, name, subject, body_html, merge_tags")
+      .eq("slug", template_slug)
+      .maybeSingle();
+    if (templateErr || !tpl) return json({ error: "template_not_found" }, 404);
+    template = tpl;
+  }
+
+  // Pull richer project metadata for auto-templates AND for bridge fallback.
+  const { data: projectRow } = await supabase
     .from("crm_projects")
-    .select("presale_slug")
+    .select("slug, presale_slug, name, city, developer, price_from, completion_date, website_url, marketing_url, brochure_url, floor_plans_url, pricing_url")
     .eq("slug", project_slug)
     .maybeSingle();
-  if (projectBySlug?.presale_slug) {
-    bridgeProjectSlug = projectBySlug.presale_slug;
+
+  let bridgeProjectSlug = project_slug;
+  if (projectRow?.presale_slug) {
+    bridgeProjectSlug = projectRow.presale_slug;
   }
 
   // (c) bridge-render-email (POST)
@@ -260,75 +274,125 @@ Deno.serve(async (req) => {
 
   let renderRes: Response;
   let renderText = "";
-  try {
-    renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-bridge-secret": BRIDGE_SECRET,
-        "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
-        "apikey": PRESALE_ANON_KEY,
+
+  // ───────── Branch A: Presale "auto-response" templates ─────────────────
+  // These mirror the emails leads receive when they sign up on
+  // presaleproperties.com — admin-managed, identical branding.
+  if (isAutoTemplate) {
+    const formatPrice = (n: number | null | undefined) =>
+      typeof n === "number" && n > 0 ? `From $${n.toLocaleString("en-CA")}` : null;
+    const completionYear = projectRow?.completion_date
+      ? new Date(projectRow.completion_date as string).getUTCFullYear().toString()
+      : null;
+
+    const autoBody = {
+      template_id: template_slug,
+      recipient_name: contact.first_name || "there",
+      agent_slug: agentSlug ?? undefined,
+      agent: agentSlug
+        ? undefined
+        : {
+            full_name: agentName || undefined,
+            email: agentEmail || undefined,
+          },
+      project: {
+        projectName: projectRow?.name ?? project_slug,
+        city: projectRow?.city ?? undefined,
+        developerName: projectRow?.developer ?? undefined,
+        startingPrice: formatPrice(projectRow?.price_from as number | null) ?? undefined,
+        completion: completionYear ?? undefined,
+        projectUrl:
+          projectRow?.marketing_url ||
+          projectRow?.website_url ||
+          (bridgeProjectSlug
+            ? `https://presaleproperties.com/projects/${bridgeProjectSlug}`
+            : undefined),
+        brochureUrl: resolvedAttachmentsForBridge.brochure?.url || projectRow?.brochure_url || undefined,
+        floorplanUrl: resolvedAttachmentsForBridge.floor_plans?.url || projectRow?.floor_plans_url || undefined,
+        pricingUrl: resolvedAttachmentsForBridge.pricing?.url || projectRow?.pricing_url || undefined,
       },
-      body: JSON.stringify({
-        // Ask the bridge to render its OWN native template (hero image,
-        // project card, CALL NOW, agent footer) instead of merging into
-        // our local body_html. We send the slug under several keys so
-        // older/newer bridge versions both pick it up. Subject is still
-        // forwarded as a soft default — the bridge may override it.
-        template_key: template_slug,
-        template_slug: template_slug,
-        preset: template_slug,
-        template: {
-          key: template_slug,
-          slug: template_slug,
-          name: template.name,
-          subject: template.subject,
+    };
+
+    try {
+      renderRes = await fetch(
+        "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1/serve-auto-templates",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-bridge-secret": BRIDGE_SECRET,
+          },
+          body: JSON.stringify(autoBody),
         },
-        subject: template.subject,
-        contact: {
-          first_name: contact.first_name,
-          last_name: contact.last_name,
-          email: contact.email,
-          phone: contact.phone,
+      );
+      renderText = await renderRes.text();
+    } catch (e) {
+      console.error("[render-and-send] auto-template fetch threw", e);
+      return json({ error: "bridge_unreachable", detail: (e as Error).message }, 502);
+    }
+  } else {
+    try {
+      renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-bridge-secret": BRIDGE_SECRET,
+          "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
+          "apikey": PRESALE_ANON_KEY,
         },
-        recipient: {
-          name: [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null,
-          email: contact.email,
-        },
-        project_slug: bridgeProjectSlug,
-        agent_slug: agentSlug,
-        agent_id: agentSlug,
-        agent_auth_user_id: user.id,
-        agent_email: agentEmail,
-        agent: {
-          slug: agentSlug,
-          email: agentEmail,
-          display_name: agentName,
-        },
-        // Tell the bridge which document buttons to render inside its
-        // native "Your Requested Documents" card. Both shapes are sent so
-        // older/newer bridge versions both pick it up.
-        documents: resolvedAttachmentsForBridge,
-        requested_documents: {
-          brochure: !!resolvedAttachmentsForBridge.brochure,
-          floor_plans: !!resolvedAttachmentsForBridge.floor_plans,
-          pricing: !!resolvedAttachmentsForBridge.pricing,
-        },
-        attachments: resolvedAttachmentsForBridge,
-      }),
-    });
-    renderText = await renderRes.text();
-  } catch (e) {
-    console.error("[render-and-send] bridge fetch threw", e);
-    return json({
-      error: "bridge_unreachable",
-      detail: (e as Error).message,
-      bridge_url: BRIDGE_URL,
-    }, 502);
+        body: JSON.stringify({
+          template_key: template_slug,
+          template_slug: template_slug,
+          preset: template_slug,
+          template: {
+            key: template_slug,
+            slug: template_slug,
+            name: template?.name,
+            subject: template?.subject,
+          },
+          subject: template?.subject,
+          contact: {
+            first_name: contact.first_name,
+            last_name: contact.last_name,
+            email: contact.email,
+            phone: contact.phone,
+          },
+          recipient: {
+            name: [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null,
+            email: contact.email,
+          },
+          project_slug: bridgeProjectSlug,
+          agent_slug: agentSlug,
+          agent_id: agentSlug,
+          agent_auth_user_id: user.id,
+          agent_email: agentEmail,
+          agent: {
+            slug: agentSlug,
+            email: agentEmail,
+            display_name: agentName,
+          },
+          documents: resolvedAttachmentsForBridge,
+          requested_documents: {
+            brochure: !!resolvedAttachmentsForBridge.brochure,
+            floor_plans: !!resolvedAttachmentsForBridge.floor_plans,
+            pricing: !!resolvedAttachmentsForBridge.pricing,
+          },
+          attachments: resolvedAttachmentsForBridge,
+        }),
+      });
+      renderText = await renderRes.text();
+    } catch (e) {
+      console.error("[render-and-send] bridge fetch threw", e);
+      return json({
+        error: "bridge_unreachable",
+        detail: (e as Error).message,
+        bridge_url: BRIDGE_URL,
+      }, 502);
+    }
   }
   let rendered: { ok?: boolean; subject_rendered?: string; html_rendered?: string; text_rendered?: string; subject?: string; html?: string; text?: string; error?: string } = {};
   try { rendered = renderText ? JSON.parse(renderText) : {}; } catch { /* */ }
-  const subject_rendered = rendered.subject_rendered || rendered.subject || template.subject || "";
+  const subject_rendered = rendered.subject_rendered || rendered.subject || template?.subject || "";
   const html_rendered = rendered.html_rendered || rendered.html || "";
   const text_rendered = rendered.text_rendered ?? rendered.text ?? "";
   console.log("[render-and-send] bridge ok", {
