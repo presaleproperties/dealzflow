@@ -261,17 +261,17 @@ function EmailTemplatesPanel() {
   const clearFilters = activeCategory || activeTag || search || scope !== 'all';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 h-full">
       {/* ======================== LEFT RAIL ======================== */}
-      <aside className="hidden lg:flex flex-col gap-3 overflow-hidden">
-        <div className="space-y-2">
-          <Button size="sm" className="w-full gap-1.5" onClick={() => { setCloneDraft(null); setCreating(true); }}>
+      <aside className="hidden lg:flex flex-col gap-4 overflow-hidden">
+        <div className="space-y-1.5">
+          <Button size="sm" className="w-full gap-1.5 h-9 font-medium" onClick={() => { setCloneDraft(null); setCreating(true); }}>
             <Plus className="w-3.5 h-3.5" /> New template
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            className="w-full gap-1.5"
+            variant="ghost"
+            className="w-full gap-1.5 h-8 text-[12px] text-muted-foreground hover:text-foreground"
             onClick={() => { setCloneDraft(null); setCreating(true); }}
           >
             <Sparkles className="w-3.5 h-3.5 text-primary" /> Draft with AI
@@ -283,8 +283,8 @@ function EmailTemplatesPanel() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search templates…"
-            className="h-9 pl-8 text-sm"
+            placeholder="Search…"
+            className="h-9 pl-8 text-[13px] bg-muted/40 border-transparent focus-visible:bg-background focus-visible:border-border"
           />
           {search && (
             <button
@@ -299,56 +299,28 @@ function EmailTemplatesPanel() {
 
         <ScrollArea className="flex-1 -mr-2 pr-2">
           <RailSection title="Library">
-            <RailItem
-              icon={<FileText className="w-3.5 h-3.5" />}
-              label="All"
-              count={counts.all}
-              active={scope === 'all'}
-              onClick={() => setScope('all')}
-            />
-            <RailItem
-              icon={<User className="w-3.5 h-3.5" />}
-              label="Mine"
-              count={counts.mine}
-              active={scope === 'mine'}
-              onClick={() => setScope('mine')}
-            />
-            <RailItem
-              icon={<Users className="w-3.5 h-3.5" />}
-              label="Team"
-              count={counts.team}
-              active={scope === 'team'}
-              onClick={() => setScope('team')}
-            />
-            <RailItem
-              icon={<ArrowUpRight className="w-3.5 h-3.5" />}
-              label="Presale"
-              count={counts.presale}
-              active={scope === 'presale'}
-              onClick={() => setScope('presale')}
-            />
-            <RailItem
-              icon={<Star className="w-3.5 h-3.5" />}
-              label="Favorites"
-              count={counts.favorites}
-              active={scope === 'favorites'}
-              onClick={() => setScope('favorites')}
-            />
+            <RailItem label="All" count={counts.all} active={scope === 'all'} onClick={() => setScope('all')} />
+            <RailItem label="Mine" count={counts.mine} active={scope === 'mine'} onClick={() => setScope('mine')} />
+            <RailItem label="Team" count={counts.team} active={scope === 'team'} onClick={() => setScope('team')} />
+            <RailItem label="Presale" count={counts.presale} active={scope === 'presale'} onClick={() => setScope('presale')} />
+            <RailItem label="Favorites" count={counts.favorites} active={scope === 'favorites'} onClick={() => setScope('favorites')} />
           </RailSection>
 
-          <RailSection title="Category">
-            {Object.entries(counts.byCategory)
-              .sort((a, b) => b[1] - a[1])
-              .map(([key, count]) => (
-                <RailItem
-                  key={key}
-                  label={CATEGORY_LABELS[key] ?? key}
-                  count={count}
-                  active={activeCategory === key}
-                  onClick={() => setActiveCategory(activeCategory === key ? null : key)}
-                />
-              ))}
-          </RailSection>
+          {Object.keys(counts.byCategory).length > 0 && (
+            <RailSection title="Category">
+              {Object.entries(counts.byCategory)
+                .sort((a, b) => b[1] - a[1])
+                .map(([key, count]) => (
+                  <RailItem
+                    key={key}
+                    label={CATEGORY_LABELS[key] ?? key}
+                    count={count}
+                    active={activeCategory === key}
+                    onClick={() => setActiveCategory(activeCategory === key ? null : key)}
+                  />
+                ))}
+            </RailSection>
+          )}
 
           {topTags.length > 0 && (
             <RailSection title="Tags">
@@ -358,13 +330,13 @@ function EmailTemplatesPanel() {
                     key={tag}
                     onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                     className={cn(
-                      'text-[10px] px-1.5 py-0.5 rounded border transition-colors',
+                      'text-[10.5px] px-1.5 py-0.5 rounded transition-colors',
                       activeTag === tag
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border/60 text-muted-foreground hover:text-foreground hover:border-border',
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                     )}
                   >
-                    {tag.replace(/_/g, ' ')} <span className="opacity-50">·{n}</span>
+                    {tag.replace(/_/g, ' ')}<span className="opacity-50 ml-0.5">{n}</span>
                   </button>
                 ))}
               </div>
@@ -397,11 +369,11 @@ function EmailTemplatesPanel() {
       </aside>
 
       {/* ======================== MAIN GRID + PREVIEW ======================== */}
-      <main className="grid grid-cols-1 xl:grid-cols-[1.1fr_1fr] gap-4 overflow-hidden">
+      <main className="grid grid-cols-1 xl:grid-cols-[1fr_1.05fr] gap-6 overflow-hidden min-w-0">
         {/* Card grid */}
-        <div className="flex flex-col overflow-hidden">
+        <div className="flex flex-col overflow-hidden min-w-0">
           {/* Mobile toolbar */}
-          <div className="lg:hidden flex items-center gap-2 mb-2">
+          <div className="lg:hidden flex items-center gap-2 mb-3">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
@@ -416,47 +388,58 @@ function EmailTemplatesPanel() {
             </Button>
           </div>
 
-          {/* Active filter chips */}
-          {clearFilters && (
-            <div className="flex items-center gap-1.5 flex-wrap mb-2">
-              <Filter className="w-3 h-3 text-muted-foreground" />
-              {scope !== 'all' && (
-                <FilterChip label={scope} onClear={() => setScope('all')} />
-              )}
-              {activeCategory && (
-                <FilterChip
-                  label={CATEGORY_LABELS[activeCategory] ?? activeCategory}
-                  onClear={() => setActiveCategory(null)}
-                />
-              )}
-              {activeTag && <FilterChip label={`#${activeTag}`} onClear={() => setActiveTag(null)} />}
-              {search && <FilterChip label={`"${search}"`} onClear={() => setSearch('')} />}
-              <button
-                onClick={() => { setScope('all'); setActiveCategory(null); setActiveTag(null); setSearch(''); }}
-                className="text-[10px] text-muted-foreground hover:text-foreground underline ml-1"
-              >
-                Clear all
-              </button>
+          {/* Header row: count + active filters */}
+          <div className="flex items-center justify-between gap-2 mb-3 min-h-[24px]">
+            <div className="text-[11px] text-muted-foreground">
+              <span className="font-semibold text-foreground/80">{filtered.length}</span>
+              {filtered.length === 1 ? ' template' : ' templates'}
             </div>
-          )}
+            {clearFilters && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {scope !== 'all' && <FilterChip label={scope} onClear={() => setScope('all')} />}
+                {activeCategory && (
+                  <FilterChip
+                    label={CATEGORY_LABELS[activeCategory] ?? activeCategory}
+                    onClear={() => setActiveCategory(null)}
+                  />
+                )}
+                {activeTag && <FilterChip label={`#${activeTag}`} onClear={() => setActiveTag(null)} />}
+                {search && <FilterChip label={`"${search}"`} onClear={() => setSearch('')} />}
+                <button
+                  onClick={() => { setScope('all'); setActiveCategory(null); setActiveTag(null); setSearch(''); }}
+                  className="text-[10.5px] text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
 
           {isLoading ? (
-            <Card className="p-8 text-center text-sm text-muted-foreground">Loading templates…</Card>
+            <div className="flex-1 grid grid-cols-1 gap-1.5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-[68px] rounded-lg bg-muted/40 animate-pulse" />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
-            <Card className="p-10 text-center space-y-2">
-              <Mail className="w-7 h-7 mx-auto opacity-40" />
-              <div className="text-sm text-muted-foreground">
-                {search || activeCategory || activeTag
-                  ? 'No templates match your filters.'
-                  : 'No templates yet — create one or clone from Presale.'}
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-3 max-w-xs">
+                <div className="w-10 h-10 mx-auto rounded-full bg-muted/60 flex items-center justify-center">
+                  <Mail className="w-4 h-4 opacity-50" />
+                </div>
+                <div className="text-[13px] text-muted-foreground">
+                  {search || activeCategory || activeTag
+                    ? 'Nothing matches those filters.'
+                    : 'No templates yet.'}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => { setCloneDraft(null); setCreating(true); }}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> New template
+                </Button>
               </div>
-              <Button size="sm" variant="outline" onClick={() => { setCloneDraft(null); setCreating(true); }}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> New template
-              </Button>
-            </Card>
+            </div>
           ) : (
             <ScrollArea className="flex-1 -mr-2 pr-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pb-3">
+              <div className="flex flex-col gap-1 pb-3">
                 {filtered.map((u) => (
                   <UnifiedCard
                     key={unifiedKey(u)}
@@ -485,7 +468,7 @@ function EmailTemplatesPanel() {
         </div>
 
         {/* Preview pane */}
-        <aside className="hidden xl:flex flex-col overflow-hidden">
+        <aside className="hidden xl:flex flex-col overflow-hidden min-w-0">
           {selected ? (
             <PreviewPane
               item={selected}
@@ -497,9 +480,9 @@ function EmailTemplatesPanel() {
               onSendPresale={selected.kind === 'presale' ? () => setSendAsset(selected.asset) : undefined}
             />
           ) : (
-            <Card className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+            <div className="flex-1 rounded-lg border border-dashed border-border/60 flex items-center justify-center text-[12.5px] text-muted-foreground">
               Pick a template to preview
-            </Card>
+            </div>
           )}
         </aside>
       </main>
