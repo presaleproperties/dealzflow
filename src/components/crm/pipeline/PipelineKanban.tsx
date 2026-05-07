@@ -165,7 +165,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
           )}
 
           {/* Footer: stage age, activity, contact icons */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/40">
+          <div className="flex items-center justify-between pt-1.5 border-t border-border/40">
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span style={daysColor ? { color: daysColor, fontWeight: 600 } : undefined}>
                 {days !== null ? `${days}d` : '—'}
