@@ -89,6 +89,44 @@ function injectPersonalNote(html: string, noteHtml: string): string {
 
 /** Convert HTML → plain text for multipart fallback. Preserves links as
  *  "text (url)" and keeps paragraph breaks. */
+/** Remove the smallest <table>…</table> block that contains an <a href> matching the predicate.
+ *  Used to strip CTA buttons (Brochure / Project Details / Call Now) that the
+ *  bridge always renders, when the agent has toggled them off in the composer. */
+function stripButtonByHref(html: string, match: (href: string) => boolean): string {
+  let result = html;
+  for (let pass = 0; pass < 8; pass++) {
+    const lower = result.toLowerCase();
+    const aRe = /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    let m: RegExpExecArray | null;
+    let removedThisPass = false;
+    while ((m = aRe.exec(result)) !== null) {
+      if (!match(m[1])) continue;
+      const aStart = m.index;
+      const tableOpenIdx = lower.lastIndexOf("<table", aStart);
+      if (tableOpenIdx < 0) continue;
+      let depth = 0;
+      let i = tableOpenIdx;
+      let end = -1;
+      while (i < lower.length) {
+        const nextOpen = lower.indexOf("<table", i + 1);
+        const nextClose = lower.indexOf("</table>", i + 1);
+        if (nextClose < 0) break;
+        if (nextOpen >= 0 && nextOpen < nextClose) { depth++; i = nextOpen; }
+        else {
+          if (depth === 0) { end = nextClose + "</table>".length; break; }
+          depth--; i = nextClose;
+        }
+      }
+      if (end < 0) continue;
+      result = result.slice(0, tableOpenIdx) + result.slice(end);
+      removedThisPass = true;
+      break;
+    }
+    if (!removedThisPass) break;
+  }
+  return result;
+}
+
 function htmlToPlainText(html: string): string {
   return html
     .replace(/<style[\s\S]*?<\/style>/gi, "")
