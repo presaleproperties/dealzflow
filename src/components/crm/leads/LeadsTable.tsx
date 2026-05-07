@@ -588,8 +588,8 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
           {contact.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors">
-                  <Phone className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                  <Phone className="w-[15px] h-[15px]" strokeWidth={1.75} />
                 </a>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call {formatPhone(contact.phone)}</TooltipContent>
@@ -601,9 +601,9 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
                 <button
                   type="button"
                   onClick={() => onSendSms(contact)}
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
-                  <MessageSquare className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <MessageSquare className="w-[15px] h-[15px]" strokeWidth={1.75} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Text {formatPhone(contact.phone)}</TooltipContent>
@@ -615,9 +615,9 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onSendEmail(contact); }}
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <Mail className="w-[15px] h-[15px]" strokeWidth={1.75} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Email {formatEmail(contact.email)}</TooltipContent>

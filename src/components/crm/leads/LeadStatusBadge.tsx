@@ -17,7 +17,7 @@ export function LeadStatusBadge({ status }: { status: string | null }) {
   return (
     <Badge
       variant="outline"
-      className="border-0 text-[11px] font-semibold whitespace-nowrap"
+      className="border-0 text-[10.5px] font-medium tracking-[0.01em] whitespace-nowrap px-2 py-0.5"
       style={{ background: style.bg, color: style.text }}
     >
       {s}
