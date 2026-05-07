@@ -199,6 +199,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   useEffect(() => {
     if (!open || templates.length === 0 || templateSlug) return;
     const preferred =
+      templates.find(t => t.slug === 'auto_project_details_docs') ||
+      templates.find(t => t.slug === 'auto_agent_followup') ||
       templates.find(t => t.slug === 'project-info-package') ||
       templates.find(t => t.slug === 'project-showcase') ||
       templates.find(t => t.slug === 'project-welcome-email');
