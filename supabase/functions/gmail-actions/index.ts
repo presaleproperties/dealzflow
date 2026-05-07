@@ -136,7 +136,21 @@ serve(async (req) => {
         return json({ error: "No connected Gmail mailbox. Reconnect inbox in Settings → Email." }, 400);
       }
       const displayName = (settingsRow?.sender_name ?? teamRow?.display_name ?? "").replace(/[<>"\\]/g, "").trim();
-      const fromHeader = displayName ? `${displayName} <${fromEmail}>` : fromEmail;
+      // RFC 2047 "encoded-word" for any header value containing non-ASCII.
+      // Without this, em-dashes / smart quotes / accents render as
+      // mojibake (Ã¢Â€Â) in Gmail, Outlook, Apple Mail.
+      const encodeHeader = (value: string): string => {
+        if (!value) return value;
+        // eslint-disable-next-line no-control-regex
+        if (!/[^\x00-\x7F]/.test(value)) return value;
+        const b64 = btoa(unescape(encodeURIComponent(value)));
+        return `=?UTF-8?B?${b64}?=`;
+      };
+      const encodeFromHeader = (name: string, email: string): string => {
+        if (!name) return email;
+        return `${encodeHeader(name)} <${email}>`;
+      };
+      const fromHeader = encodeFromHeader(displayName, fromEmail);
       // Reply-To priority: explicit override (Send Project) > settings.reply_to.
       const replyTo = (reply_to_override ?? settingsRow?.reply_to ?? "").toString().trim();
 
@@ -153,7 +167,7 @@ serve(async (req) => {
       const headers = [
         `From: ${fromHeader}`,
         `To: ${to}`,
-        `Subject: ${subject ?? "(no subject)"}`,
+        `Subject: ${encodeHeader(subject ?? "(no subject)")}`,
       ];
       if (replyTo) headers.push(`Reply-To: ${replyTo}`);
       if (in_reply_to) {
