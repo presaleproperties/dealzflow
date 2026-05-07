@@ -446,42 +446,15 @@ export function useBulkAddTagsToContacts() {
       const cleanTags = normalizeCrmMultiValueList(tags);
       if (ids.length === 0 || cleanTags.length === 0) return;
 
-      const { data: rows, error: fetchErr } = await supabase
-        .from('crm_contacts')
-        .select('id, tags')
-        .in('id', ids);
-      if (fetchErr) throw fetchErr;
-
-      if ((rows ?? []).length !== ids.length) {
-        throw new Error('Some selected contacts could not be loaded for tagging.');
-      }
-
-      const updates = (rows ?? []).map(r => {
-        const current = (r.tags ?? []) as string[];
-        const lower = new Set(current.map(t => t.toLowerCase()));
-        const merged = [...current];
-        cleanTags.forEach(t => {
-          if (!lower.has(t.toLowerCase())) merged.push(t);
-        });
-        return { id: r.id, tags: merged };
+      const { data: updatedCount, error } = await supabase.rpc('crm_add_tags_to_contacts', {
+        _contact_ids: ids,
+        _tags: cleanTags,
       });
 
-      // Run updates per row (unique tag arrays per contact). Postgres has no
-      // SET FROM (VALUES …) helper exposed via the JS client, so iterate.
-      const results = await Promise.all(
-        updates.map(u =>
-          supabase
-            .from('crm_contacts')
-            .update({ tags: u.tags })
-            .eq('id', u.id)
-            .select('id')
-            .maybeSingle(),
-        ),
-      );
-
-      const failed = results.find(result => result.error || !result.data);
-      if (failed?.error) throw failed.error;
-      if (failed) throw new Error('Tag update was not saved. Check CRM access for the selected contact.');
+      if (error) throw error;
+      if ((updatedCount ?? 0) !== ids.length) {
+        throw new Error('Tag update was not saved for every selected contact. Check CRM access for the selected contacts.');
+      }
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
