@@ -294,7 +294,7 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
             <button
               key={o.key}
               onClick={() => toggleKind(o.key)}
-              className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+              className={`text-[10.5px] font-medium leading-none px-2 py-0.5 rounded-full border transition-colors ${
                 active
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-background border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
@@ -308,7 +308,7 @@ export function PresaleActivityWidget({ contactId }: { contactId?: string }) {
           <select
             value={deviceFilter}
             onChange={(e) => setDeviceFilter(e.target.value)}
-            className="text-[10px] px-2 py-0.5 rounded-full border border-border/60 bg-background text-muted-foreground hover:text-foreground"
+            className="text-[10.5px] font-medium leading-none px-2 py-0.5 rounded-full border border-border/60 bg-background text-muted-foreground hover:text-foreground"
           >
             <option value="all">All devices</option>
             {availableDevices.map((d) => (
