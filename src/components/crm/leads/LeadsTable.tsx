@@ -191,14 +191,14 @@ function InlineTagsCell({
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
+                    className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
                     style={{ background: c.bg, color: c.color }}
                   >
                     <span className="block truncate">{tag}</span>
                   </Badge>
                 );
               })}
-              {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
+              {extra > 0 && <span className="text-[10.5px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
             </>
           )}
         </button>
@@ -275,11 +275,11 @@ function ProjectsList({ projects, project }: { projects?: string[]; project?: st
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {shown.map(p => (
-        <Badge key={p} variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
+        <Badge key={p} variant="outline" className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}>
           {p}
         </Badge>
       ))}
-      {extra > 0 && <span className="text-[11px] text-muted-foreground font-medium">+{extra}</span>}
+      {extra > 0 && <span className="text-[10.5px] text-muted-foreground font-medium">+{extra}</span>}
     </div>
   );
 }
@@ -403,8 +403,8 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
     <div onClick={e => e.stopPropagation()}>
       <Select value={activeSeg?.id ?? ''} onValueChange={onPick}>
         <SelectTrigger
-          className="h-7 border-0 px-2.5 py-0 text-[11.5px] font-semibold uppercase tracking-[0.06em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
-          style={{ background: `${displayColor}1F`, color: displayColor }}
+          className="h-7 border-0 px-2.5 py-0 text-[10.5px] font-medium tracking-[0.02em] shadow-none hover:opacity-90 rounded-full w-auto min-w-0 gap-1 [&>svg:last-child]:hidden focus:ring-1 focus:ring-offset-0"
+          style={{ background: `${displayColor}1A`, color: displayColor }}
         >
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: displayColor }} />
@@ -555,7 +555,7 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
         <span className="text-foreground/80 whitespace-nowrap text-[12px] inline-flex items-center gap-1.5">
           {contact.source ?? '—'}
           {isLofty && (
-            <span className="text-[10px] px-1.5 py-0 rounded bg-primary/10 text-primary font-semibold">Lofty</span>
+            <span className="text-[9.5px] px-1.5 py-0 rounded bg-primary/10 text-primary font-medium tracking-wide">Lofty</span>
           )}
         </span>
       );
@@ -574,13 +574,13 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
       return <span className="text-foreground/80 whitespace-nowrap text-[12px] truncate max-w-[160px] block">{(contact as any).campaign_source ?? '—'}</span>;
     case 'city_pref':
       return (contact as any).city_pref
-        ? <Badge variant="outline" className="border-0 text-[11px] font-semibold whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.12)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
+        ? <Badge variant="outline" className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5" style={{ background: 'hsl(210 62% 46% / 0.1)', color: 'hsl(210 62% 46%)' }}>{(contact as any).city_pref}</Badge>
         : <span className="text-muted-foreground text-sm">—</span>;
     case 'property_type_pref':
       return <span className="text-foreground/80 whitespace-nowrap text-[12px] capitalize">{(contact as any).property_type_pref ?? '—'}</span>;
     case 'is_pre_approved':
       return (contact as any).is_pre_approved
-        ? <Badge variant="outline" className="border-0 text-[11px] font-semibold px-2 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.12)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
+        ? <Badge variant="outline" className="border-0 text-[10.5px] font-medium px-2 py-0.5" style={{ background: 'hsl(142 71% 40% / 0.1)', color: 'hsl(142 71% 40%)' }}>Yes</Badge>
         : <span className="text-muted-foreground text-sm">No</span>;
     case 'quick_actions':
       return (
@@ -588,8 +588,8 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
           {contact.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors">
-                  <Phone className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                  <Phone className="w-[15px] h-[15px]" strokeWidth={1.75} />
                 </a>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call {formatPhone(contact.phone)}</TooltipContent>
@@ -601,9 +601,9 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
                 <button
                   type="button"
                   onClick={() => onSendSms(contact)}
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
-                  <MessageSquare className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <MessageSquare className="w-[15px] h-[15px]" strokeWidth={1.75} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Text {formatPhone(contact.phone)}</TooltipContent>
@@ -615,9 +615,9 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onSendEmail(contact); }}
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted/60 transition-colors"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <Mail className="w-[15px] h-[15px]" strokeWidth={1.75} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Email {formatEmail(contact.email)}</TooltipContent>
