@@ -120,7 +120,7 @@ serve(async (req) => {
 
     // ── send reply ────────────────────────────────────────────────────
     if (action === "send_reply") {
-      const { thread_db_id, to, subject, body_html, body_text, in_reply_to, references, contact_id } = body;
+      const { thread_db_id, to, subject, body_html, body_text, in_reply_to, references, contact_id, reply_to_override } = body;
       if (!to || (!body_html && !body_text)) return json({ error: "to + body required" }, 400);
 
       // Fetch the sender's email + thread for proper threading.
@@ -137,7 +137,8 @@ serve(async (req) => {
       }
       const displayName = (settingsRow?.sender_name ?? teamRow?.display_name ?? "").replace(/[<>"\\]/g, "").trim();
       const fromHeader = displayName ? `${displayName} <${fromEmail}>` : fromEmail;
-      const replyTo = (settingsRow?.reply_to ?? "").trim();
+      // Reply-To priority: explicit override (Send Project) > settings.reply_to.
+      const replyTo = (reply_to_override ?? settingsRow?.reply_to ?? "").toString().trim();
 
       let gmailThreadId: string | null = null;
       if (thread_db_id) {
@@ -160,12 +161,35 @@ serve(async (req) => {
         headers.push(`References: ${references ?? in_reply_to}`);
       }
       headers.push("MIME-Version: 1.0");
-      if (body_html) {
+
+      let raw: string;
+      if (body_html && body_text) {
+        // Multipart/alternative: text first, then HTML — much better
+        // deliverability and Apple Mail privacy preview accuracy.
+        const boundary = `bnd_${crypto.randomUUID().replace(/-/g, "")}`;
+        headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+        const parts = [
+          `--${boundary}`,
+          'Content-Type: text/plain; charset="UTF-8"',
+          'Content-Transfer-Encoding: 8bit',
+          '',
+          body_text,
+          `--${boundary}`,
+          'Content-Type: text/html; charset="UTF-8"',
+          'Content-Transfer-Encoding: 8bit',
+          '',
+          body_html,
+          `--${boundary}--`,
+          '',
+        ].join("\r\n");
+        raw = headers.join("\r\n") + "\r\n\r\n" + parts;
+      } else if (body_html) {
         headers.push('Content-Type: text/html; charset="UTF-8"');
+        raw = headers.join("\r\n") + "\r\n\r\n" + body_html;
       } else {
         headers.push('Content-Type: text/plain; charset="UTF-8"');
+        raw = headers.join("\r\n") + "\r\n\r\n" + body_text;
       }
-      const raw = headers.join("\r\n") + "\r\n\r\n" + (body_html || body_text);
       const encoded = btoa(unescape(encodeURIComponent(raw)))
         .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 

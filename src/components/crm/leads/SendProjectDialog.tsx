@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Loader2, Mail, MessageSquare, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign, Paperclip } from 'lucide-react';
+import { Send, Loader2, Mail, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign, AlertCircle } from 'lucide-react';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { loadAgentPrefs, saveAgentPrefs, loadContactDraft, saveContactDraft, clearContactDraft } from '@/lib/sendProjectMemory';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Props {
   contact: CrmContact;
@@ -115,9 +118,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
 
   // ─── Local state ─────────────────────────────────────────────────────────
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const agentKey = user?.id ?? 'anon';
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
-  const [channel, setChannel] = useState<'email' | 'sms'>('email');
   const [enrollFollowup, setEnrollFollowup] = useState<boolean>(true);
   const [showPreviewMobile, setShowPreviewMobile] = useState<boolean>(false);
   const [sending, setSending] = useState(false);
@@ -125,10 +129,32 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [previewHtml, setPreviewHtml] = useState<string>('');
   const [previewSubject, setPreviewSubject] = useState<string>('');
   const [previewError, setPreviewError] = useState<string | null>(null);
+  // Composer fields (Phase 1)
+  const [subjectOverride, setSubjectOverride] = useState<string>('');
+  const [personalNote, setPersonalNote] = useState<string>('');
   // Attachment toggles + cached availability per project
   const [attachBrochure, setAttachBrochure] = useState(false);
   const [attachFloorPlans, setAttachFloorPlans] = useState(false);
   const [attachPricing, setAttachPricing] = useState(false);
+
+  // ─── Recipient signal: last email + open count ────────────────────────
+  const { data: lastEmail } = useQuery({
+    queryKey: ['send-project.last-email', contact.id],
+    enabled: open && !!contact.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('crm_email_log')
+        .select('sent_at, open_count')
+        .eq('contact_id', contact.id)
+        .eq('direction', 'outbound')
+        .order('sent_at', { ascending: false })
+        .limit(5);
+      if (!data || data.length === 0) return null;
+      const opens = data.filter(d => (d.open_count ?? 0) > 0).length;
+      return { lastSentAt: data[0].sent_at, totalRecent: data.length, openedRecent: opens };
+    },
+  });
 
   // ─── Per-project asset availability (manual or Presale) ──────────────────
   type AssetInfo = { url: string | null; filename: string | null; source: 'manual' | 'presale' | null };
@@ -170,7 +196,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const previewTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!open) return;
-    if (!projectSlug || !templateSlug || channel !== 'email') return;
+    if (!projectSlug || !templateSlug) return;
     window.clearTimeout(previewTimer.current);
     setPreviewLoading(true);
     setPreviewError(null);
@@ -182,6 +208,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           template_slug: templateSlug,
           channel: 'email',
           dry_run: true,
+          subject_override: subjectOverride || null,
+          personal_note: personalNote || null,
           attachments: {
             brochure: attachBrochure,
             floor_plans: attachFloorPlans,
@@ -198,9 +226,9 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         setPreviewSubject(data.subject ?? '');
       }
       setPreviewLoading(false);
-    }, 300);
+    }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, channel, attachBrochure, attachFloorPlans, attachPricing]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing]);
 
   // ─── Reset attachment toggles when project changes ───────────────────────
   useEffect(() => {

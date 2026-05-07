@@ -37,6 +37,82 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// ───────── Helpers ─────────────────────────────────────────────────────────
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Render the agent's personal note as a styled block. Returns "" if blank. */
+function renderPersonalNoteBlock(note: string | null | undefined): string {
+  const clean = (note ?? "").trim();
+  if (!clean) return "";
+  // Strip any HTML the agent might have pasted, keep paragraph breaks.
+  const stripped = clean
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+  const paragraphs = stripped
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 12px;line-height:1.55;color:#222;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+    <tr><td style="background:#FAF7F0;border-left:3px solid #D7A542;padding:14px 18px;border-radius:4px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#222;">
+      ${paragraphs}
+    </td></tr>
+  </table>`;
+}
+
+/** Inject the personal-note block into the rendered email HTML.
+ *  Strategy: place it just inside <body>, before the first <table> (the
+ *  bridge always wraps the project card in a <table>). Falls back to
+ *  prepending into <body>, then to prepending the whole document. */
+function injectPersonalNote(html: string, noteHtml: string): string {
+  if (!noteHtml) return html;
+  // Try: first <table> inside body
+  const bodyOpen = html.search(/<body[^>]*>/i);
+  if (bodyOpen >= 0) {
+    const afterBodyOpen = html.indexOf(">", bodyOpen) + 1;
+    const tableIdx = html.toLowerCase().indexOf("<table", afterBodyOpen);
+    if (tableIdx > 0) {
+      return html.slice(0, tableIdx) + noteHtml + html.slice(tableIdx);
+    }
+    return html.slice(0, afterBodyOpen) + noteHtml + html.slice(afterBodyOpen);
+  }
+  return noteHtml + html;
+}
+
+/** Convert HTML → plain text for multipart fallback. Preserves links as
+ *  "text (url)" and keeps paragraph breaks. */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<head[\s\S]*?<\/head>/gi, "")
+    .replace(/<a [^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href, txt) => {
+      const cleanTxt = txt.replace(/<[^>]+>/g, "").trim();
+      return cleanTxt && cleanTxt !== href ? `${cleanTxt} (${href})` : href;
+    })
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -67,6 +143,8 @@ Deno.serve(async (req) => {
     enroll_followup_slug?: string | null;
     dry_run?: boolean;
     attachments?: { brochure?: boolean; floor_plans?: boolean; pricing?: boolean };
+    subject_override?: string | null;
+    personal_note?: string | null;
   } = {};
   try { body = await req.json(); } catch { /* */ }
 
@@ -78,6 +156,8 @@ Deno.serve(async (req) => {
     enroll_followup_slug = null,
     dry_run = false,
     attachments = {},
+    subject_override = null,
+    personal_note = null,
   } = body;
 
   if (!contact_id || !template_slug || !project_slug) {
@@ -270,16 +350,31 @@ Deno.serve(async (req) => {
   // The bridge already renders the full Presale-styled email — including
   // the "Your Requested Documents" card with VIEW BROCHURE / VIEW FLOOR
   // PLANS / VIEW PRICING buttons (we passed the resolved doc URLs above)
-  // and the inline agent block. Nothing to post-process.
-  const html_final = html_rendered;
+  // and the inline agent block.
+  // We post-process to inject the agent's personal note as a styled block
+  // above the project card, and to honor the agent's optional subject
+  // override from the composer.
+  const noteHtml = renderPersonalNoteBlock(personal_note);
+  let html_final = html_rendered;
+  if (noteHtml) {
+    html_final = injectPersonalNote(html_final, noteHtml);
+  }
+  const subject_final = (subject_override?.trim() || subject_rendered || "").trim();
+
+  // Plain-text fallback — generated from the final HTML so links + the
+  // personal note are preserved. Improves deliverability + Apple Mail
+  // privacy-preview accuracy.
+  const text_final = text_rendered && text_rendered.trim().length > 0
+    ? text_rendered
+    : htmlToPlainText(html_final);
 
   // (d) dry run — preview only
   if (dry_run) {
     return json({
       ok: true,
-      subject: subject_rendered,
+      subject: subject_final,
       html: html_final,
-      text: text_rendered,
+      text: text_final,
       attachments: Object.entries(resolvedAttachmentsForBridge).map(([kind, a]) => ({
         kind,
         url: a.url,
@@ -303,8 +398,13 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         action: "send_reply",
         to: contact.email,
-        subject: subject_rendered,
+        subject: subject_final,
         body_html: html_final,
+        body_text: text_final,
+        // Force replies to land in the agent's CRM inbox (so threads show
+        // up in the Lead detail), even when Gmail is connected to a
+        // different mailbox alias.
+        reply_to_override: agentEmail || undefined,
         contact_id,
       }),
     });
@@ -324,7 +424,7 @@ Deno.serve(async (req) => {
     await supabase.from("crm_email_log").insert({
       contact_id,
       user_id: user.id,
-      subject: `[FAILED] ${subject_rendered}`,
+      subject: `[FAILED] ${subject_final}`,
       body: html_final,
       sent_at: new Date().toISOString(),
       direction: "outbound",
@@ -338,7 +438,7 @@ Deno.serve(async (req) => {
     .insert({
       contact_id,
       user_id: user.id,
-      subject: subject_rendered,
+      subject: subject_final,
       body: html_final,
       sent_at: new Date().toISOString(),
       direction: "outbound",
