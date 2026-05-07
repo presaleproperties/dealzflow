@@ -117,13 +117,7 @@ export default function CrmLeadsPage() {
   // Quick view state
   const [activeViewId, setActiveViewId] = useState<QuickViewId>('__all');
 
-  // View counts
-  const viewCounts = useMemo(() => {
-    return {
-      '__all':    allContacts.length,
-      '__closed': allContacts.filter(c => c.status === 'Closed').length,
-    } as Record<QuickViewId, number>;
-  }, [allContacts]);
+  // View counts (computed below after filteredAllContacts is available)
 
   // Segments
   const { data: segments = [] } = useCrmLeadSegments();
