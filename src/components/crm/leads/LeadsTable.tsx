@@ -4,7 +4,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Phone, Mail, MessageSquare, Check } from 'lucide-react';
 import { getMissingFields, formatFieldName } from '@/lib/dataCompleteness';
 import { formatContactName, formatPhone, formatEmail } from '@/lib/format';
-import { LEAD_TYPE_LABELS, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { LEAD_TYPE_LABELS, LEAD_STATUSES, useBulkAddTagsToContacts } from '@/hooks/useCrmContacts';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
@@ -129,6 +129,7 @@ function InlineTagsCell({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const addTags = useBulkAddTagsToContacts();
   const tags = contact.tags ?? [];
   const shown = tags.slice(0, 2);
   const extra = tags.length - 2;
@@ -142,7 +143,12 @@ function InlineTagsCell({
       : [...tags, value];
     // The crm_contacts trg_sync_crm_tags trigger will auto-upsert this into the
     // canonical crm_tags library, making it instantly reusable everywhere.
-    updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
+    if (exists) {
+      updateContact.mutate({ id: contact.id, updates: { tags: next }, oldValues: { tags } });
+      return;
+    }
+
+    addTags.mutate({ ids: [contact.id], tags: [value], silent: true });
   };
 
   const trimmed = search.trim();
