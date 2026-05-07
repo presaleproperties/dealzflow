@@ -442,7 +442,7 @@ export function useBulkUpdateContacts() {
 export function useBulkAddTagsToContacts() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ ids, tags }: { ids: string[]; tags: string[] }) => {
+    mutationFn: async ({ ids, tags }: { ids: string[]; tags: string[]; silent?: boolean }) => {
       const cleanTags = normalizeCrmMultiValueList(tags);
       if (ids.length === 0 || cleanTags.length === 0) return;
 
@@ -451,6 +451,10 @@ export function useBulkAddTagsToContacts() {
         .select('id, tags')
         .in('id', ids);
       if (fetchErr) throw fetchErr;
+
+      if ((rows ?? []).length !== ids.length) {
+        throw new Error('Some selected contacts could not be loaded for tagging.');
+      }
 
       const updates = (rows ?? []).map(r => {
         const current = (r.tags ?? []) as string[];
@@ -464,18 +468,30 @@ export function useBulkAddTagsToContacts() {
 
       // Run updates per row (unique tag arrays per contact). Postgres has no
       // SET FROM (VALUES …) helper exposed via the JS client, so iterate.
-      await Promise.all(
+      const results = await Promise.all(
         updates.map(u =>
-          supabase.from('crm_contacts').update({ tags: u.tags }).eq('id', u.id),
+          supabase
+            .from('crm_contacts')
+            .update({ tags: u.tags })
+            .eq('id', u.id)
+            .select('id')
+            .maybeSingle(),
         ),
       );
+
+      const failed = results.find(result => result.error || !result.data);
+      if (failed?.error) throw failed.error;
+      if (failed) throw new Error('Tag update was not saved. Check CRM access for the selected contact.');
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['crm-tags'] });
-      toast.success(
-        `Added ${vars.tags.length} tag${vars.tags.length > 1 ? 's' : ''} to ${vars.ids.length} contact${vars.ids.length > 1 ? 's' : ''}`,
-      );
+      if (!vars.silent) {
+        toast.success(
+          `Added ${vars.tags.length} tag${vars.tags.length > 1 ? 's' : ''} to ${vars.ids.length} contact${vars.ids.length > 1 ? 's' : ''}`,
+        );
+      }
     },
     onError: (err: Error) => {
       toast.error(`Tag update failed: ${err.message}`);
