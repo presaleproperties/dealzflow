@@ -10,6 +10,7 @@ import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 import { useCrmLeadSegments, useReorderCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { computeSegmentCounts } from '@/lib/segmentMatching';
+import { applyClientFilters } from '@/lib/clientContactFilters';
 import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
