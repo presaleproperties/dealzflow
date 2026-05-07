@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, X, Check, Sparkles } from 'lucide-react';
