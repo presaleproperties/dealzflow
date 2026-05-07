@@ -124,13 +124,204 @@ Deno.serve(async (req) => {
     return jsonResp({ error: insertErr.message }, 500);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Behavior batch fan-out: when Presale sends type="behavior_batch" with a
+  // nested metadata.behavior payload, expand it into the four behavior tables
+  // (forms, views, sessions, engagement) and refresh the lead's project list.
+  // Without this the Timeline/Engage tabs never see new form submissions.
+  // ─────────────────────────────────────────────────────────────────────────
+  let expanded = { forms: 0, views: 0, sessions: 0, engagement: 0 };
+  let projectsAppended: string[] = [];
+
+  const meta: any = body.metadata ?? {};
+  const behavior: any = meta?.behavior ?? null;
+  const presaleUserId: string | null =
+    meta?.presale_user_id ?? meta?.visitor_id ?? null;
+
+  if (behavior && contact) {
+    const cId = contact.id;
+
+    const forms = Array.isArray(behavior.forms) ? behavior.forms : [];
+    const views = Array.isArray(behavior.views) ? behavior.views : [];
+    const sessions = Array.isArray(behavior.sessions) ? behavior.sessions : [];
+    const engagement = Array.isArray(behavior.engagement)
+      ? behavior.engagement
+      : [];
+
+    async function bulkUpsert(table: string, rows: any[]) {
+      if (!rows.length) return 0;
+      const { data, error } = await supabase
+        .from(table)
+        .upsert(rows, { onConflict: "event_id", ignoreDuplicates: true })
+        .select("id");
+      if (error) {
+        console.warn(`[receive-presale-activity] ${table}:`, error.message);
+        return 0;
+      }
+      return data?.length ?? 0;
+    }
+
+    // Stable event_id per row so re-deliveries don't duplicate
+    const stableId = (kind: string, key: string) =>
+      `${cId}:${kind}:${key}`;
+
+    expanded.forms = await bulkUpsert(
+      "crm_lead_behavior_forms",
+      forms.map((f: any) => ({
+        event_id: f.event_id ?? stableId("form", `${f.form_type}:${f.submitted_at}`),
+        contact_id: cId,
+        presale_user_id: presaleUserId,
+        email,
+        form_type: f.form_type ?? "unknown",
+        form_name: f.form_name ?? null,
+        status: f.status ?? null,
+        property_id: f.property_id ?? null,
+        property_name: f.property_name ?? null,
+        payload: f.payload ?? f ?? null,
+        funnel_step: f.funnel_step ?? null,
+        funnel_total_steps: f.funnel_total_steps ?? null,
+        submitted_at: f.submitted_at ?? occurredAt,
+      })),
+    );
+
+    expanded.views = await bulkUpsert(
+      "crm_lead_behavior_views",
+      views.map((v: any) => ({
+        event_id: v.event_id ?? stableId("view", `${v.property_id ?? v.property_url}:${v.viewed_at}`),
+        contact_id: cId,
+        presale_user_id: presaleUserId,
+        email,
+        property_id: v.property_id ?? null,
+        property_name: v.property_name ?? null,
+        property_url: v.property_url ?? null,
+        action: v.action ?? "view",
+        duration_seconds: v.duration_seconds ?? 0,
+        metadata: v.metadata ?? null,
+        viewed_at: v.viewed_at ?? occurredAt,
+      })),
+    );
+
+    expanded.sessions = await bulkUpsert(
+      "crm_lead_behavior_sessions",
+      sessions.map((s: any) => ({
+        event_id: s.event_id ?? stableId("session", s.session_id ?? s.started_at),
+        contact_id: cId,
+        presale_user_id: presaleUserId,
+        email,
+        session_id: s.session_id ?? null,
+        pages_viewed: s.pages_viewed ?? 0,
+        duration_seconds: s.duration_seconds ?? 0,
+        referrer: s.referrer ?? null,
+        utm_source: s.utm_source ?? null,
+        utm_medium: s.utm_medium ?? null,
+        utm_campaign: s.utm_campaign ?? null,
+        device_type: s.device_type ?? null,
+        landing_page: s.landing_page ?? null,
+        exit_page: s.exit_page ?? null,
+        started_at: s.started_at ?? occurredAt,
+        ended_at: s.ended_at ?? null,
+      })),
+    );
+
+    expanded.engagement = await bulkUpsert(
+      "crm_lead_behavior_engagement",
+      engagement.map((e: any) => ({
+        event_id: e.event_id ?? stableId("eng", `${e.event_type}:${e.occurred_at}:${e.link_url ?? ""}`),
+        contact_id: cId,
+        presale_user_id: presaleUserId,
+        email,
+        event_type: e.event_type ?? "unknown",
+        campaign_id: e.campaign_id ?? null,
+        campaign_name: e.campaign_name ?? null,
+        template_id: e.template_id ?? null,
+        template_name: e.template_name ?? null,
+        link_url: e.link_url ?? null,
+        metadata: e.metadata ?? null,
+        occurred_at: e.occurred_at ?? occurredAt,
+      })),
+    );
+
+    // Append any new project names from forms/views into the contact's
+    // projects[] so the lead detail reflects current interest.
+    const newProjects = Array.from(
+      new Set(
+        [
+          ...forms.map((f: any) => f.property_name).filter(Boolean),
+          ...views.map((v: any) => v.property_name).filter(Boolean),
+        ] as string[],
+      ),
+    );
+    if (newProjects.length) {
+      const { data: cur } = await supabase
+        .from("crm_contacts")
+        .select("projects, project, tags, presale_user_id")
+        .eq("id", cId)
+        .maybeSingle();
+      const merged = Array.from(
+        new Set([...(cur?.projects ?? []), ...newProjects]),
+      );
+      projectsAppended = newProjects.filter(
+        (p) => !(cur?.projects ?? []).includes(p),
+      );
+      const newTags = Array.from(
+        new Set([...(cur?.tags ?? []), "presale-website"]),
+      );
+      await supabase
+        .from("crm_contacts")
+        .update({
+          projects: merged,
+          // only set top-level project if blank, never overwrite manual edits
+          project: cur?.project || newProjects[0],
+          tags: newTags,
+          presale_user_id: cur?.presale_user_id || presaleUserId,
+          last_activity_at: occurredAt,
+          ai_summary_stale: true,
+        })
+        .eq("id", cId);
+    }
+  }
+
   // Update last_activity_at on the contact (NOT last_touch_at — that's
   // reserved for human actions per the last-touch rule).
-  if (contact) {
+  if (contact && projectsAppended.length === 0) {
     await supabase
       .from("crm_contacts")
       .update({ last_activity_at: occurredAt })
       .eq("id", contact.id);
+  }
+
+  // Notify assigned agent on completed form submissions in this batch
+  if (contact && behavior?.forms) {
+    const completed = (behavior.forms as any[]).filter(
+      (f) => f?.status === "completed",
+    );
+    if (completed.length > 0) {
+      const { data: recipients } = await supabase.rpc(
+        "crm_recipients_for_contact",
+        { _assigned_to: contact.assigned_to ?? "" },
+      );
+      const fullName =
+        [contact.first_name, contact.last_name].filter(Boolean).join(" ") ||
+        "A lead";
+      const formLabel = completed
+        .map((f) => f.form_type)
+        .filter(Boolean)
+        .join(", ");
+      if (Array.isArray(recipients) && recipients.length > 0) {
+        await supabase.from("crm_notifications").insert(
+          (recipients as string[]).map((u) => ({
+            user_id: u,
+            title: `📝 ${fullName} submitted a form`,
+            body: formLabel
+              ? `New ${formLabel} submission`
+              : "New form submission on Presale",
+            type: "hot_lead_activity",
+            link_to: `/crm/leads/${contact!.id}`,
+            is_read: false,
+          })),
+        );
+      }
+    }
   }
 
   // Hot-signal notification: 2+ email_opens in the last 24h
@@ -179,5 +370,7 @@ Deno.serve(async (req) => {
     matched_contact_id: contact?.id ?? null,
     high_intent: HIGH_INTENT.includes(body.type),
     notified,
+    expanded,
+    projects_appended: projectsAppended,
   });
 });
