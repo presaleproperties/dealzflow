@@ -42,6 +42,39 @@ function jsonResp(body: unknown, status = 200) {
   });
 }
 
+// Notify owner + admins when presale → CRM sync hits a problem so issues
+// (missing leads, failed inserts, dropped batches) surface immediately.
+async function notifySyncFailure(
+  supabase: any,
+  reason: string,
+  detail: string,
+  link: string = "/crm",
+) {
+  try {
+    const { data: admins } = await supabase
+      .from("crm_team")
+      .select("user_id")
+      .eq("is_active", true)
+      .in("role", ["owner", "admin"]);
+    const userIds = (admins ?? [])
+      .map((r: any) => r.user_id)
+      .filter(Boolean);
+    if (!userIds.length) return;
+    await supabase.from("crm_notifications").insert(
+      userIds.map((u: string) => ({
+        user_id: u,
+        title: `⚠️ Presale sync issue: ${reason}`,
+        body: detail.slice(0, 500),
+        type: "presale_sync_error",
+        link_to: link,
+        is_read: false,
+      })),
+    );
+  } catch (e) {
+    console.error("[receive-presale-activity] notifySyncFailure failed:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
