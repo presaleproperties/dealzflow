@@ -99,11 +99,13 @@ function stripButtonBy(
   let result = html;
   for (let pass = 0; pass < 8; pass++) {
     const lower = result.toLowerCase();
-    const aRe = /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    const aRe = /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     let m: RegExpExecArray | null;
     let removedThisPass = false;
     while ((m = aRe.exec(result)) !== null) {
-      if (!match(m[1])) continue;
+      const href = m[1];
+      const label = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (!match(href, label)) continue;
       const aStart = m.index;
       const tableOpenIdx = lower.lastIndexOf("<table", aStart);
       if (tableOpenIdx < 0) continue;
