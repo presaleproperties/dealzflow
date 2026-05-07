@@ -319,7 +319,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
-  const sendDisabled = !gmailConnected || !projectSlug || !templateSlug || sending || channel === 'sms';
+  const sendDisabled = !gmailConnected || !projectSlug || !templateSlug || sending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
