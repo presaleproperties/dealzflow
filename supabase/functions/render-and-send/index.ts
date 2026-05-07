@@ -525,6 +525,20 @@ Deno.serve(async (req) => {
   if (noteHtml) {
     html_final = injectPersonalNote(html_final, noteHtml);
   }
+  // Strip CTA buttons the agent toggled off in the composer.
+  if (!ctaBrochure) {
+    html_final = stripButtonByHref(html_final, (h) =>
+      /\.pdf(\?|$)/i.test(h) || /brochure/i.test(h),
+    );
+  }
+  if (!ctaProjectDetails) {
+    html_final = stripButtonByHref(html_final, (h) =>
+      /presaleproperties\.com\/projects?\//i.test(h),
+    );
+  }
+  if (!ctaCallNow) {
+    html_final = stripButtonByHref(html_final, (h) => /^tel:/i.test(h));
+  }
   const subject_final = (subject_override?.trim() || subject_rendered || "").trim();
 
   // Plain-text fallback — generated from the final HTML so links + the
