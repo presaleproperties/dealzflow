@@ -330,7 +330,7 @@ Deno.serve(async (req) => {
         ] as string[],
       ),
     );
-    if (newProjects.length) {
+    if (newProjects.length && cId) {
       const { data: cur } = await supabase
         .from("crm_contacts")
         .select("projects, project, tags, presale_user_id")
@@ -349,7 +349,6 @@ Deno.serve(async (req) => {
         .from("crm_contacts")
         .update({
           projects: merged,
-          // only set top-level project if blank, never overwrite manual edits
           project: cur?.project || newProjects[0],
           tags: newTags,
           presale_user_id: cur?.presale_user_id || presaleUserId,
