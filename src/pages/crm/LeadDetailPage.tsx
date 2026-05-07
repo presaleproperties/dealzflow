@@ -15,7 +15,7 @@ import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDia
 import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { SendProjectDialog } from '@/components/crm/leads/SendProjectDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
 import type { MessagingChannel } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';

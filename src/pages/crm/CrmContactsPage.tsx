@@ -9,7 +9,7 @@ import { useAgentNames } from '@/hooks/useTeamAgents';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/dataCompleteness';
 import { formatContactName, getContactInitials } from '@/lib/format';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -185,7 +185,7 @@ export default function CrmContactsPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-3">
-        <h1 className="text-lg font-bold text-foreground">Contacts</h1>
+        <h1 className="m-page-title md:text-xl">Contacts</h1>
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input

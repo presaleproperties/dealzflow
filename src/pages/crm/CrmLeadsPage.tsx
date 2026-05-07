@@ -21,7 +21,7 @@ import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BulkActionsBar } from '@/components/crm/leads/BulkActionsBar';
 import { ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
 import { FilterPanel } from '@/components/crm/leads/FilterPanel';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
