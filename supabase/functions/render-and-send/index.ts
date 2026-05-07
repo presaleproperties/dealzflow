@@ -67,6 +67,8 @@ Deno.serve(async (req) => {
     enroll_followup_slug?: string | null;
     dry_run?: boolean;
     attachments?: { brochure?: boolean; floor_plans?: boolean; pricing?: boolean };
+    subject_override?: string | null;
+    personal_note?: string | null;
   } = {};
   try { body = await req.json(); } catch { /* */ }
 
@@ -78,6 +80,8 @@ Deno.serve(async (req) => {
     enroll_followup_slug = null,
     dry_run = false,
     attachments = {},
+    subject_override = null,
+    personal_note = null,
   } = body;
 
   if (!contact_id || !template_slug || !project_slug) {
