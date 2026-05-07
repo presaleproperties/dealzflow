@@ -204,6 +204,12 @@ Deno.serve(async (req) => {
         .select("id");
       if (error) {
         console.warn(`[receive-presale-activity] ${table}:`, error.message);
+        await notifySyncFailure(
+          supabase,
+          `${table} upsert failed`,
+          `${rows.length} rows for ${email ?? phone ?? cId}: ${error.message}`,
+          `/crm/leads/${cId}`,
+        );
         return 0;
       }
       return data?.length ?? 0;
