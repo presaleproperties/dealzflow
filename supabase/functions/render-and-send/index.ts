@@ -37,6 +37,82 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// ───────── Helpers ─────────────────────────────────────────────────────────
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Render the agent's personal note as a styled block. Returns "" if blank. */
+function renderPersonalNoteBlock(note: string | null | undefined): string {
+  const clean = (note ?? "").trim();
+  if (!clean) return "";
+  // Strip any HTML the agent might have pasted, keep paragraph breaks.
+  const stripped = clean
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+  const paragraphs = stripped
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 12px;line-height:1.55;color:#222;">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+    <tr><td style="background:#FAF7F0;border-left:3px solid #D7A542;padding:14px 18px;border-radius:4px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#222;">
+      ${paragraphs}
+    </td></tr>
+  </table>`;
+}
+
+/** Inject the personal-note block into the rendered email HTML.
+ *  Strategy: place it just inside <body>, before the first <table> (the
+ *  bridge always wraps the project card in a <table>). Falls back to
+ *  prepending into <body>, then to prepending the whole document. */
+function injectPersonalNote(html: string, noteHtml: string): string {
+  if (!noteHtml) return html;
+  // Try: first <table> inside body
+  const bodyOpen = html.search(/<body[^>]*>/i);
+  if (bodyOpen >= 0) {
+    const afterBodyOpen = html.indexOf(">", bodyOpen) + 1;
+    const tableIdx = html.toLowerCase().indexOf("<table", afterBodyOpen);
+    if (tableIdx > 0) {
+      return html.slice(0, tableIdx) + noteHtml + html.slice(tableIdx);
+    }
+    return html.slice(0, afterBodyOpen) + noteHtml + html.slice(afterBodyOpen);
+  }
+  return noteHtml + html;
+}
+
+/** Convert HTML → plain text for multipart fallback. Preserves links as
+ *  "text (url)" and keeps paragraph breaks. */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<head[\s\S]*?<\/head>/gi, "")
+    .replace(/<a [^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href, txt) => {
+      const cleanTxt = txt.replace(/<[^>]+>/g, "").trim();
+      return cleanTxt && cleanTxt !== href ? `${cleanTxt} (${href})` : href;
+    })
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
