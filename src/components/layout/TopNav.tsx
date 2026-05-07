@@ -311,7 +311,7 @@ export function TopNav() {
                     }}
                   >
                     {/* Invisible hover bridge to prevent flicker between trigger and menu */}
-                    <div className="absolute -top-3 left-0 right-0 h-3" aria-hidden />
+                    <div className="absolute -top-2 left-0 right-0 h-2" aria-hidden />
                     {isMega ? (
                       <div
                         className="grid gap-x-3 gap-y-1"
