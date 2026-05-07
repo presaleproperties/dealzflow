@@ -149,6 +149,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [attachBrochure, setAttachBrochure] = useState(false);
   const [attachFloorPlans, setAttachFloorPlans] = useState(false);
   const [attachPricing, setAttachPricing] = useState(false);
+  // CTA button toggles (default ON — match Presale auto-template)
+  const [ctaBrochure, setCtaBrochure] = useState(true);
+  const [ctaProjectDetails, setCtaProjectDetails] = useState(true);
+  const [ctaCallNow, setCtaCallNow] = useState(true);
 
   // ─── Recipient signal: last email + open count ────────────────────────
   const { data: lastEmail } = useQuery({
@@ -230,6 +234,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             floor_plans: attachFloorPlans,
             pricing: attachPricing,
           },
+          ctas: {
+            brochure: ctaBrochure,
+            project_details: ctaProjectDetails,
+            call_now: ctaCallNow,
+          },
         },
       });
       if (error || !data?.ok) {
@@ -243,7 +252,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow]);
 
   // ─── Reset attachment toggles when project changes ───────────────────────
   useEffect(() => {
@@ -315,6 +324,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           brochure: attachBrochure,
           floor_plans: attachFloorPlans,
           pricing: attachPricing,
+        },
+        ctas: {
+          brochure: ctaBrochure,
+          project_details: ctaProjectDetails,
+          call_now: ctaCallNow,
         },
       },
     });
@@ -427,6 +441,27 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               </div>
               <div className="text-[11px] text-muted-foreground mt-1.5">
                 Pulled from Presale Properties when available. Upload a PDF if the project doesn't have one — it's saved per project for everyone.
+              </div>
+            </Field>
+
+            {/* CTA buttons — show / hide each call-to-action */}
+            <Field label="Call-to-action buttons">
+              <div className="rounded-md border border-border divide-y divide-border">
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="text-sm">View Brochure</div>
+                  <Switch checked={ctaBrochure} onCheckedChange={setCtaBrochure} />
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="text-sm">View Project Details</div>
+                  <Switch checked={ctaProjectDetails} onCheckedChange={setCtaProjectDetails} />
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="text-sm">Call Now</div>
+                  <Switch checked={ctaCallNow} onCheckedChange={setCtaCallNow} />
+                </div>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1.5">
+                Hide individual buttons that appear in the Presale-styled email body.
               </div>
             </Field>
 
