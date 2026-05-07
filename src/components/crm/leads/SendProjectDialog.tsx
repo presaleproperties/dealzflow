@@ -153,6 +153,9 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [ctaBrochure, setCtaBrochure] = useState(true);
   const [ctaProjectDetails, setCtaProjectDetails] = useState(true);
   const [ctaCallNow, setCtaCallNow] = useState(true);
+  // CTA URL overrides (per-email; blank = use Presale default)
+  const [brochureUrlOverride, setBrochureUrlOverride] = useState<string>('');
+  const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
 
   // ─── Recipient signal: last email + open count ────────────────────────
   const { data: lastEmail } = useQuery({
@@ -239,6 +242,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             project_details: ctaProjectDetails,
             call_now: ctaCallNow,
           },
+          cta_overrides: {
+            brochure_url: brochureUrlOverride.trim() || null,
+            project_details_url: projectDetailsUrlOverride.trim() || null,
+          },
         },
       });
       if (error || !data?.ok) {
@@ -252,13 +259,15 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow, brochureUrlOverride, projectDetailsUrlOverride]);
 
-  // ─── Reset attachment toggles when project changes ───────────────────────
+  // ─── Reset attachment toggles + URL overrides when project changes ──────
   useEffect(() => {
     setAttachBrochure(false);
     setAttachFloorPlans(false);
     setAttachPricing(false);
+    setBrochureUrlOverride('');
+    setProjectDetailsUrlOverride('');
   }, [projectSlug]);
 
   // ─── Upload helper ───────────────────────────────────────────────────────
@@ -329,6 +338,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           brochure: ctaBrochure,
           project_details: ctaProjectDetails,
           call_now: ctaCallNow,
+        },
+        cta_overrides: {
+          brochure_url: brochureUrlOverride.trim() || null,
+          project_details_url: projectDetailsUrlOverride.trim() || null,
         },
       },
     });
@@ -447,13 +460,37 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             {/* CTA buttons — show / hide each call-to-action */}
             <Field label="Call-to-action buttons">
               <div className="rounded-md border border-border divide-y divide-border">
-                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <div className="text-sm">View Brochure</div>
-                  <Switch checked={ctaBrochure} onCheckedChange={setCtaBrochure} />
+                <div className="px-3 py-2.5 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm">View Brochure</div>
+                    <Switch checked={ctaBrochure} onCheckedChange={setCtaBrochure} />
+                  </div>
+                  {ctaBrochure && (
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      placeholder="Override brochure link (optional) — https://…"
+                      value={brochureUrlOverride}
+                      onChange={(e) => setBrochureUrlOverride(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  )}
                 </div>
-                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <div className="text-sm">View Project Details</div>
-                  <Switch checked={ctaProjectDetails} onCheckedChange={setCtaProjectDetails} />
+                <div className="px-3 py-2.5 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm">View Project Details</div>
+                    <Switch checked={ctaProjectDetails} onCheckedChange={setCtaProjectDetails} />
+                  </div>
+                  {ctaProjectDetails && (
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      placeholder="Override project link (optional) — https://…"
+                      value={projectDetailsUrlOverride}
+                      onChange={(e) => setProjectDetailsUrlOverride(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  )}
                 </div>
                 <div className="flex items-center justify-between gap-3 px-3 py-2.5">
                   <div className="text-sm">Call Now</div>
@@ -461,7 +498,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1.5">
-                Hide individual buttons that appear in the Presale-styled email body.
+                Toggle buttons on/off and optionally override the link per email. Leave blank to use the Presale default.
               </div>
             </Field>
 
