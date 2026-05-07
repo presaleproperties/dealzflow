@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.is_crm_agent_or_above(uuid) TO authenticated, anon;
