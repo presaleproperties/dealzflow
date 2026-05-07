@@ -370,5 +370,7 @@ Deno.serve(async (req) => {
     matched_contact_id: contact?.id ?? null,
     high_intent: HIGH_INTENT.includes(body.type),
     notified,
+    expanded,
+    projects_appended: projectsAppended,
   });
 });
