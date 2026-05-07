@@ -73,7 +73,23 @@ export function AiSummaryCard({ note, contactId, isStale }: Props) {
           </button>
         </div>
         <p className="text-[14px] text-foreground/90 whitespace-pre-wrap leading-relaxed">
-          <LinkifiedText text={body} context={{ contactId, noteId: note.id, source: 'ai_summary' }} />
+          {body.split(/(\*\*[^*]+\*\*)/g).map((seg, i) => {
+            const m = seg.match(/^\*\*([^*]+)\*\*$/);
+            if (m) {
+              return (
+                <strong key={i} className="font-semibold text-foreground">
+                  {m[1]}
+                </strong>
+              );
+            }
+            return (
+              <LinkifiedText
+                key={i}
+                text={seg}
+                context={{ contactId, noteId: note.id, source: 'ai_summary' }}
+              />
+            );
+          })}
         </p>
       </div>
     </div>
