@@ -549,35 +549,44 @@ Deno.serve(async (req) => {
     html_final = injectPersonalNote(html_final, noteHtml);
   }
   // Strip CTA buttons the agent toggled off in the composer.
-  if (!ctaBrochure) {
-    html_final = stripButtonByHref(html_final, (h) =>
-      /\.pdf(\?|$)/i.test(h) || /brochure/i.test(h),
-    );
-  }
+  // Match by button label (Presale buttons use predictable copy) AND by
+  // href shape, so this works regardless of underlying URL pattern.
   if (!ctaProjectDetails) {
-    html_final = stripButtonByHref(html_final, (h) =>
-      /presaleproperties\.com\/projects?\//i.test(h),
-    );
+    html_final = stripButtonBy(html_final, (href, label) => {
+      const lbl = label.toLowerCase();
+      if (/view\s+project\s+details?/.test(lbl)) return true;
+      if (/presaleproperties\.com\/projects?\//i.test(href)) return true;
+      // marketing_url is also the projectUrl we passed to bridge
+      if (projectDetailsUrlOverride && href === projectDetailsUrlOverride) return true;
+      return false;
+    });
   }
   if (!ctaCallNow) {
-    html_final = stripButtonByHref(html_final, (h) => /^tel:/i.test(h));
+    html_final = stripButtonBy(html_final, (href, label) => {
+      if (/^tel:/i.test(href)) return true;
+      if (/^call\s+now$/i.test(label)) return true;
+      return false;
+    });
   }
+  // Note: brochure / floor plans / pricing buttons are controlled by the
+  // Attachments toggles, which decide whether we even pass the URL to the
+  // bridge — no post-strip needed.
+
   // ─── Click + open tracking ───────────────────────────────────────────────
-  // Generate a tracking_id, classify each CTA link as brochure / floor_plans
-  // / pricing / project_details / call so click events identify the button,
-  // then route every external <a href> through crm-email-track. Append a 1×1
-  // open pixel.
   const TRACK_BASE = `${SUPABASE_URL}/functions/v1/crm-email-track`;
   const trackingId = crypto.randomUUID();
-  const classifyButton = (href: string): string => {
+  const classifyButton = (href: string, label: string): string => {
     const h = href.toLowerCase();
-    if (h.startsWith("tel:")) return "call";
-    if (/floor[-_]?plan/.test(h)) return "floor_plans";
-    if (/(price|pricing)/.test(h)) return "pricing";
-    if (/\.pdf(\?|$)/.test(h) || /brochure/.test(h)) return "brochure";
-    if (/presaleproperties\.com\/projects?\//.test(h)) return "project_details";
+    const l = label.toLowerCase();
+    if (h.startsWith("tel:") || /^call\s+now$/.test(l)) return "call";
+    if (/floor[-_]?plan/.test(h) || /floor\s*plan/.test(l)) return "floor_plans";
+    if (/(price|pricing)/.test(h) || /pricing/.test(l)) return "pricing";
+    if (/brochure/.test(l) || /brochure/.test(h)) return "brochure";
+    if (/project\s+details?/.test(l) || /presaleproperties\.com\/projects?\//.test(h)) return "project_details";
+    if (/\.pdf(\?|$)/.test(h)) return "brochure";
     return "link";
   };
+
   // Click rewrite — skip mailto, anchors, already-tracked. Pass tel: through
   // unchanged (most clients can't redirect tel: via 302).
   html_final = html_final.replace(
