@@ -823,8 +823,8 @@ function BridgeStatusPill({
         ? 'Synced'
         : 'Idle';
   const tone = isError
-    ? 'text-destructive border-destructive/30 bg-destructive/5'
-    : 'text-emerald-700 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5';
+    ? 'text-destructive hover:bg-destructive/5'
+    : 'text-muted-foreground hover:text-foreground hover:bg-muted';
   return (
     <button
       type="button"
@@ -832,12 +832,18 @@ function BridgeStatusPill({
       disabled={isFetching}
       title="Click to refresh the Presale catalog"
       className={cn(
-        'w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md border text-[10.5px] font-semibold transition-colors hover:opacity-90',
+        'w-full inline-flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-md text-[11px] transition-colors',
         tone,
       )}
     >
-      <Icon className={cn('h-3 w-3', isFetching && 'animate-spin')} />
-      {label} · refresh
+      <span className="inline-flex items-center gap-1.5">
+        <span className={cn(
+          'h-1.5 w-1.5 rounded-full',
+          isError ? 'bg-destructive' : isFetching ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500',
+        )} />
+        Presale · {label}
+      </span>
+      <RefreshCw className={cn('h-3 w-3 opacity-60', isFetching && 'animate-spin')} />
     </button>
   );
 }
