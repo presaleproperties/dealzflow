@@ -964,10 +964,14 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               <div className="hidden md:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-0.5">
                   {(() => {
-                    /* Detect "rich" template HTML the rich text editor can't represent. */
-                    const isRichHtml = /<(table|td|tr|style|center|font|html|head|body|div[^>]*style=)/i.test(bodyHtml);
+                    /* Detect "rich" template HTML the rich text editor can't represent.
+                       Tiptap's StarterKit strips inline styles, images, tables, links with
+                       attrs, and custom tags — flattening branded templates into bare bold
+                       lines. We disable Editor whenever any of those are present so the
+                       user doesn't see a broken-looking version of their template. */
+                    const isRichHtml = /<(table|td|tr|tbody|thead|style|center|font|html|head|body|img|hr|h1|h2|h3|h4|h5|h6)\b|style\s*=|class\s*=|<a\s+[^>]*href/i.test(bodyHtml);
                     return ([
-                      { v: 'edit', label: 'Editor', icon: FileText, disabled: isRichHtml, hint: isRichHtml ? 'Disabled: this template uses full HTML. Use Preview to see the design or HTML to edit the source.' : undefined },
+                      { v: 'edit', label: 'Editor', icon: FileText, disabled: isRichHtml, hint: isRichHtml ? 'This template uses designed HTML — use Preview to see it as the recipient will, or HTML to tweak the source.' : undefined },
                       { v: 'html', label: 'HTML', icon: Code2 },
                       { v: 'preview', label: 'Preview', icon: Eye },
                     ] as const).map((t) => (
