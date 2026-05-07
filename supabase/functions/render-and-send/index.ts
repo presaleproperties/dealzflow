@@ -587,15 +587,16 @@ Deno.serve(async (req) => {
     return "link";
   };
 
-  // Click rewrite — skip mailto, anchors, already-tracked. Pass tel: through
-  // unchanged (most clients can't redirect tel: via 302).
+  // Click rewrite — match the full <a>…</a> so we can use button label for
+  // accurate per-button classification. Skip already-tracked links.
   html_final = html_final.replace(
-    /<a\b([^>]*?)href=(["'])(https?:\/\/[^"']+)\2/gi,
-    (_m, attrs, q, href) => {
-      if (href.includes("/crm-email-track")) return `<a${attrs}href=${q}${href}${q}`;
-      const btn = classifyButton(href);
+    /<a\b([^>]*?)href=(["'])(https?:\/\/[^"']+)\2([^>]*)>([\s\S]*?)<\/a>/gi,
+    (_m, preAttrs, q, href, postAttrs, inner) => {
+      if (href.includes("/crm-email-track")) return _m;
+      const label = String(inner).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      const btn = classifyButton(href, label);
       const tracked = `${TRACK_BASE}?a=click&t=${encodeURIComponent(trackingId)}&b=${encodeURIComponent(btn)}&u=${encodeURIComponent(href)}`;
-      return `<a${attrs}href=${q}${tracked}${q}`;
+      return `<a${preAttrs}href=${q}${tracked}${q}${postAttrs}>${inner}</a>`;
     },
   );
   // Open pixel
