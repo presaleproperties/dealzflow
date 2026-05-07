@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Phone, Mail, StickyNote, CalendarDays, ChevronDown, Settings2, Tag, Building2, Radio } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -111,9 +111,7 @@ function LeadCard({ c, noteId, setNoteId, noteText, setNoteText, handleSaveNote,
         <div className="mt-1.5 flex flex-wrap gap-1 items-center">
           <Tag className="w-3 h-3 text-muted-foreground/60" />
           {tags.slice(0, 4).map(t => (
-            <span key={t} className="text-[10px] font-medium border border-border/60 bg-muted/30 text-foreground/80 rounded px-1.5 py-0.5">
-              {t}
-            </span>
+            <Pill key={t} tone="neutral" size="sm">{t}</Pill>
           ))}
           {tags.length > 4 && <span className="text-[10px] text-muted-foreground/60">+{tags.length - 4}</span>}
         </div>
@@ -297,7 +295,7 @@ export function HotLeadsColumn() {
             <button
               key={seg.id}
               onClick={() => setActiveTab(seg.id)}
-              className={`text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+              className={`text-[10.5px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap transition-colors leading-none ${
                 activeTab === seg.id
                   ? 'bg-foreground text-background'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
@@ -308,7 +306,7 @@ export function HotLeadsColumn() {
           ))}
         </div>
 
-        <Badge variant="secondary" className="text-[10px] flex-shrink-0">{filteredLeads.length}</Badge>
+        <Pill tone="muted" size="sm" className="flex-shrink-0 tabular-nums">{filteredLeads.length}</Pill>
 
         {/* Segment picker popover */}
         <Popover>

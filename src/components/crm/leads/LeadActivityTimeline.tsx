@@ -352,7 +352,7 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
                 onClick={() => setFilter(f.key)}
                 disabled={disabled}
                 className={cn(
-                  'inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-[11px] font-medium border transition-colors',
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none border transition-colors',
                   active
                     ? 'bg-foreground text-background border-foreground'
                     : 'bg-background text-muted-foreground border-border hover:text-foreground hover:bg-muted/50',
