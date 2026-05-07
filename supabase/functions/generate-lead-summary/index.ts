@@ -79,24 +79,25 @@ function makePrompt(ctx: any) {
     ),
   };
 
-  return `You are summarizing a real estate lead for an agent's quick review.
+  return `You are summarizing a real estate lead for an agent's quick scan.
 
 LEAD DATA (JSON):
 ${JSON.stringify(facts, null, 2)}
 
-Write a concise summary (5-7 sentences) covering:
-1. WHO they are (name, type) and HOW they came in (source, project, when)
-2. WHAT they want (budget, city, property type, bedrooms, language) — only if known
-3. ENGAGEMENT (current pipeline stage, assigned agent, recent activity, last touch, lead score)
-4. ANY notable signals from recent notes (showings booked, hot interest, objections, no-response, etc.)
+Write 2-4 short sentences an agent can read in 5 seconds. Cover only what matters:
+- Lead type + source/project (e.g. "First-time buyer from Facebook Ad for Mountvue")
+- What they want (budget, city, beds) — only if known
+- Most recent meaningful signal (showing booked, replied, ghosting, hot interest)
 
 Rules:
-- Use plain English, no markdown headings, no bullet points
-- Use **bold** sparingly to highlight key facts (source, project, stage)
-- Skip fields that are unknown — don't say "no budget specified", just omit it
-- Be factual — don't invent details that aren't in the data
-- If there are very few notes/data, keep it short (2-3 sentences)
-- Format dates as "Mar 12, 2024" style, not ISO`;
+- Plain prose. No markdown headings, no bullets, no lists.
+- Use **bold** at most ONCE for the single most important fact (usually the project or a hot signal). Often use no bold at all.
+- Do NOT restate the assigned agent, pipeline status, or lead score — the UI already shows these.
+- Do NOT pad with phrases like "She is a New Lead" or "Her last contact was".
+- Skip unknown fields silently.
+- If activity is thin, 1-2 sentences is fine.
+- Dates: "Mar 12, 2024" style.
+- Never invent details.`;
 }
 
 async function generateSummary(prompt: string): Promise<string> {
