@@ -291,17 +291,15 @@ export function TopNav() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    sideOffset={2}
+                    sideOffset={8}
                     onMouseEnter={() => openWithDelay(section.label)}
                     onMouseLeave={scheduleClose}
                     onCloseAutoFocus={(e) => e.preventDefault()}
+                    forceMount={undefined}
                     className={cn(
                       'border-0 shadow-2xl origin-top',
-                      'data-[state=open]:animate-in data-[state=closed]:animate-out',
-                      'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
-                      'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
-                      'data-[state=open]:slide-in-from-top-1 data-[state=closed]:slide-out-to-top-1',
-                      'data-[state=open]:duration-150 data-[state=closed]:duration-100',
+                      'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+                      'data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-150',
                       isMega ? 'p-2 min-w-[640px]' : 'p-1.5 min-w-[260px]',
                     )}
                     style={{
