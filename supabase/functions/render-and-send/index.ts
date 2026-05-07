@@ -274,7 +274,64 @@ Deno.serve(async (req) => {
 
   let renderRes: Response;
   let renderText = "";
-  try {
+
+  // ───────── Branch A: Presale "auto-response" templates ─────────────────
+  // These mirror the emails leads receive when they sign up on
+  // presaleproperties.com — admin-managed, identical branding.
+  if (isAutoTemplate) {
+    const formatPrice = (n: number | null | undefined) =>
+      typeof n === "number" && n > 0 ? `From $${n.toLocaleString("en-CA")}` : null;
+    const completionYear = projectRow?.completion_date
+      ? new Date(projectRow.completion_date as string).getUTCFullYear().toString()
+      : null;
+
+    const autoBody = {
+      template_id: template_slug,
+      recipient_name: contact.first_name || "there",
+      agent_slug: agentSlug ?? undefined,
+      agent: agentSlug
+        ? undefined
+        : {
+            full_name: agentName || undefined,
+            email: agentEmail || undefined,
+          },
+      project: {
+        projectName: projectRow?.name ?? project_slug,
+        city: projectRow?.city ?? undefined,
+        developerName: projectRow?.developer ?? undefined,
+        startingPrice: formatPrice(projectRow?.price_from as number | null) ?? undefined,
+        completion: completionYear ?? undefined,
+        projectUrl:
+          projectRow?.marketing_url ||
+          projectRow?.website_url ||
+          (bridgeProjectSlug
+            ? `https://presaleproperties.com/projects/${bridgeProjectSlug}`
+            : undefined),
+        brochureUrl: resolvedAttachmentsForBridge.brochure?.url || projectRow?.brochure_url || undefined,
+        floorplanUrl: resolvedAttachmentsForBridge.floor_plans?.url || projectRow?.floor_plans_url || undefined,
+        pricingUrl: resolvedAttachmentsForBridge.pricing?.url || projectRow?.pricing_url || undefined,
+      },
+    };
+
+    try {
+      renderRes = await fetch(
+        "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1/serve-auto-templates",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-bridge-secret": BRIDGE_SECRET,
+          },
+          body: JSON.stringify(autoBody),
+        },
+      );
+      renderText = await renderRes.text();
+    } catch (e) {
+      console.error("[render-and-send] auto-template fetch threw", e);
+      return json({ error: "bridge_unreachable", detail: (e as Error).message }, 502);
+    }
+  } else {
+
     renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
       method: "POST",
       headers: {
