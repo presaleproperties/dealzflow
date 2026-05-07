@@ -136,7 +136,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
 
           {/* Tags row: project + city + pre-approved */}
           {(contact.project || cityPref || isPreApproved) && (
-            <div className="flex flex-wrap items-center gap-1 mb-2">
+            <div className="flex flex-wrap items-center gap-1 mb-1.5">
               {contact.project && (
                 <Badge
                   variant="outline"
