@@ -8,6 +8,57 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Hardcoded fallback if there are no active agents at all (shouldn't happen).
+const FALLBACK_AGENT = "Uzair Muhammad";
+
+// Round-robin agent picker. Honors `agent_slug` (matched against crm_team.slug,
+// then email/presale_email local-part, then display_name slugified). If no
+// match, returns the active agent with the fewest contacts assigned.
+async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<string> {
+  // 1) Try agent_slug → crm_team
+  if (agentSlug) {
+    const wanted = agentSlug.trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const nameSlug = (t.display_name ?? "").toLowerCase().replace(/\s+/g, "-");
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return (
+        t.slug?.toLowerCase() === wanted ||
+        nameSlug === wanted ||
+        emailLocal === wanted ||
+        presaleLocal === wanted
+      );
+    });
+    if (match?.display_name) return match.display_name;
+  }
+
+  // 2) Round-robin: agent with fewest existing contacts (excluding the owner
+  //    so new leads spread across the sales team).
+  const { data: agents } = await supabase
+    .from("crm_team")
+    .select("display_name, role")
+    .eq("is_active", true)
+    .in("role", ["agent", "admin"]);
+  const candidates = (agents ?? []).map((a: any) => a.display_name).filter(Boolean);
+  if (!candidates.length) return FALLBACK_AGENT;
+
+  const counts: Record<string, number> = {};
+  for (const name of candidates) {
+    const { count } = await supabase
+      .from("crm_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_to", name);
+    counts[name] = count ?? 0;
+  }
+  candidates.sort((a: string, b: string) => (counts[a] ?? 0) - (counts[b] ?? 0));
+  return candidates[0];
+}
+
+
 interface BehaviorPayload {
   views?: Array<{ property_id?: string; property_name?: string; property_url?: string; action?: string; viewed_at?: string; metadata?: any }>;
   engagement?: Array<{ event_type: string; campaign_id?: string; campaign_name?: string; link_url?: string; occurred_at?: string; metadata?: any }>;
@@ -50,6 +101,7 @@ interface IngestRequest {
     signup_completed_at?: string;     // ISO timestamp
 
     tags?: string[];
+    agent_slug?: string;             // optional: route to a specific agent
     metadata?: Record<string, any>;   // any extra fields → stored in presale_metadata
   };
   behavior?: BehaviorPayload;
@@ -148,6 +200,7 @@ Deno.serve(async (req) => {
 
       contactId = existing.id;
     } else {
+      const assignee = await pickAssignee(supabase, L.agent_slug);
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
         last_name: L.last_name || "Lead",
@@ -177,7 +230,7 @@ Deno.serve(async (req) => {
         tags: Array.from(new Set([...(L.tags || []), "presale-website"])),
         status: "New Lead",
         lead_type: "Pre-Sale",
-        assigned_to: "Uzair Muhammad",
+        assigned_to: assignee,
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
       }).select("id").single();

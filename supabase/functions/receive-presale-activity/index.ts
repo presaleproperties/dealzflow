@@ -99,7 +99,12 @@ Deno.serve(async (req) => {
   if (!body?.type) {
     return jsonResp({ error: "missing_type" }, 400);
   }
-  if (!body.lead_email && !body.lead_phone) {
+  // Allow batches that only carry presale_user_id (anonymous-but-known visitor)
+  const metaPre: any = body.metadata ?? {};
+  const presaleUserIdEarly: string | null =
+    metaPre?.presale_user_id ?? metaPre?.visitor_id ?? null;
+
+  if (!body.lead_email && !body.lead_phone && !presaleUserIdEarly) {
     return jsonResp({ error: "missing_lead_identifier" }, 400);
   }
 
@@ -109,7 +114,7 @@ Deno.serve(async (req) => {
   const phone = body.lead_phone?.trim() ?? null;
   const occurredAt = body.occurred_at ?? new Date().toISOString();
 
-  // Find matching CRM contact by email first, then phone
+  // Identity stitch order: presale_user_id → email → phone
   let contact:
     | {
         id: string;
@@ -119,7 +124,15 @@ Deno.serve(async (req) => {
       }
     | null = null;
 
-  if (email) {
+  if (presaleUserIdEarly) {
+    const { data } = await supabase
+      .from("crm_contacts")
+      .select("id, first_name, last_name, assigned_to")
+      .eq("presale_user_id", presaleUserIdEarly)
+      .maybeSingle();
+    if (data) contact = data as typeof contact;
+  }
+  if (!contact && email) {
     const { data } = await supabase
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
@@ -134,6 +147,15 @@ Deno.serve(async (req) => {
       .eq("phone", phone)
       .maybeSingle();
     if (data) contact = data as typeof contact;
+  }
+
+  // Backfill presale_user_id on the contact when stitched via email/phone
+  if (contact && presaleUserIdEarly) {
+    await supabase
+      .from("crm_contacts")
+      .update({ presale_user_id: presaleUserIdEarly })
+      .eq("id", contact.id)
+      .is("presale_user_id", null);
   }
 
   // Insert the event (always, even if no contact match — useful for
@@ -162,8 +184,8 @@ Deno.serve(async (req) => {
     return jsonResp({ error: insertErr.message }, 500);
   }
 
-  // Lead identifier present but no CRM match — flag so admin can investigate
-  // (renamed contact, wrong email cased on form, missing import, etc.)
+  // Lead identifier present but no CRM match — flag so admin can investigate.
+  // Skip noise when we only have a presale_user_id (anonymous web visitor).
   if (!contact && (email || phone)) {
     await notifySyncFailure(
       supabase,
@@ -183,11 +205,12 @@ Deno.serve(async (req) => {
 
   const meta: any = body.metadata ?? {};
   const behavior: any = meta?.behavior ?? null;
-  const presaleUserId: string | null =
-    meta?.presale_user_id ?? meta?.visitor_id ?? null;
+  const presaleUserId: string | null = presaleUserIdEarly;
 
-  if (behavior && contact) {
-    const cId = contact.id;
+  // Store behavior even when no contact yet — orphan rows get stitched later
+  // by the identity-stitch cron once a contact is created/linked.
+  if (behavior && (contact || presaleUserId)) {
+    const cId = contact?.id ?? null;
 
     const forms = Array.isArray(behavior.forms) ? behavior.forms : [];
     const views = Array.isArray(behavior.views) ? behavior.views : [];
@@ -215,9 +238,11 @@ Deno.serve(async (req) => {
       return data?.length ?? 0;
     }
 
-    // Stable event_id per row so re-deliveries don't duplicate
+    // Stable event_id per row so re-deliveries don't duplicate. Falls back
+    // to presale_user_id when no contact yet (orphan rows get stitched later).
+    const idScope = cId ?? presaleUserId ?? email ?? phone ?? "anon";
     const stableId = (kind: string, key: string) =>
-      `${cId}:${kind}:${key}`;
+      `${idScope}:${kind}:${key}`;
 
     expanded.forms = await bulkUpsert(
       "crm_lead_behavior_forms",
@@ -305,7 +330,7 @@ Deno.serve(async (req) => {
         ] as string[],
       ),
     );
-    if (newProjects.length) {
+    if (newProjects.length && cId) {
       const { data: cur } = await supabase
         .from("crm_contacts")
         .select("projects, project, tags, presale_user_id")
@@ -324,7 +349,6 @@ Deno.serve(async (req) => {
         .from("crm_contacts")
         .update({
           projects: merged,
-          // only set top-level project if blank, never overwrite manual edits
           project: cur?.project || newProjects[0],
           tags: newTags,
           presale_user_id: cur?.presale_user_id || presaleUserId,

@@ -5318,6 +5318,7 @@ export type Database = {
         Args: { _agent_user_id: string }
         Returns: undefined
       }
+      crm_stitch_orphan_behavior: { Args: never; Returns: Json }
       crm_team_admin_update_member: {
         Args: {
           _display_name?: string
