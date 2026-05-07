@@ -325,6 +325,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           floor_plans: attachFloorPlans,
           pricing: attachPricing,
         },
+        ctas: {
+          brochure: ctaBrochure,
+          project_details: ctaProjectDetails,
+          call_now: ctaCallNow,
+        },
       },
     });
     setSending(false);
