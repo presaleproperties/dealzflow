@@ -474,7 +474,7 @@ export default function CrmLeadsPage() {
         {/* Main content */}
         <div
           ref={mobileScrollRef}
-          className="flex-1 min-w-0 max-w-full space-y-3 sm:space-y-4 overflow-y-auto overflow-x-hidden pr-1"
+          className="flex-1 min-w-0 max-w-full space-y-2 sm:space-y-3 overflow-y-auto overflow-x-hidden pr-1"
           style={{ paddingBottom: 'var(--bottom-nav-pad, 0px)' }}
         >
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
@@ -606,8 +606,6 @@ export default function CrmLeadsPage() {
             </div>
           )}
 
-
-
           {segments.length > 0 && (
             <div className={`${isMobile ? 'hidden' : 'flex'} items-center gap-3`}>
               <div className="flex-1 min-w-0">
@@ -695,54 +693,53 @@ export default function CrmLeadsPage() {
               >
                 Manage
               </Button>
-              <div className="hidden sm:flex items-center flex-shrink-0 ml-2">
-                <div className="flex items-center gap-1 pr-2 mr-2 border-r border-border/60">
-                  <Button
-                    variant={filtersExpanded ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-9 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
-                    onClick={() => setFiltersExpanded(!filtersExpanded)}
-                    title="Filters"
-                  >
-                    <Filter className="w-4 h-4" />
-                    <span className="hidden lg:inline">Filters</span>
-                    {activeFilterCount > 0 && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">{activeFilterCount}</Badge>
-                    )}
-                  </Button>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
-                        title="Columns"
-                      >
-                        <Settings2 className="w-4 h-4" />
-                        <span className="hidden lg:inline">Columns</span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="end" className="w-48 p-2">
-                      <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
-                      {ALL_COLUMN_KEYS.map(col => (
-                        <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
-                          <Checkbox
-                            checked={visibleColumns.has(col.key)}
-                            onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
-                            disabled={'locked' in col && col.locked}
-                          />
-                          {col.label}
-                        </label>
-                      ))}
-                    </PopoverContent>
-                  </Popover>
-                </div>
+              <div className="hidden sm:flex items-center flex-shrink-0 ml-2 gap-1">
+                <Button
+                  variant={filtersExpanded ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-8 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
+                  onClick={() => setFiltersExpanded(!filtersExpanded)}
+                  title="Filters"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">Filters</span>
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">{activeFilterCount}</Badge>
+                  )}
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2.5 gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground"
+                      title="Columns"
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      <span className="hidden lg:inline">Columns</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-48 p-2">
+                    <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
+                    {ALL_COLUMN_KEYS.map(col => (
+                      <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={visibleColumns.has(col.key)}
+                          onCheckedChange={() => !('locked' in col && col.locked) && toggleColumn(col.key)}
+                          disabled={'locked' in col && col.locked}
+                        />
+                        {col.label}
+                      </label>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+                <span className="mx-1 h-5 w-px bg-border/60" aria-hidden="true" />
                 <Button
                   onClick={() => setShowAdd(true)}
                   size="sm"
-                  className="h-9 px-5 bg-primary text-primary-foreground gap-1.5 font-semibold shadow-sm hover:shadow-md transition-shadow"
+                  className="h-8 px-4 bg-primary text-primary-foreground gap-1.5 font-semibold shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <Plus className="w-4 h-4" /> Add Lead
+                  <Plus className="w-3.5 h-3.5" /> Add Lead
                 </Button>
               </div>
             </div>

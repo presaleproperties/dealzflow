@@ -96,10 +96,10 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
             const dy = Math.abs(e.clientY - start.y);
             if (dx < 5 && dy < 5) onOpen(contact.id);
           }}
-          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
+          className={`group bg-card rounded-lg border border-border px-2.5 py-2 mb-1.5 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
         >
           {/* Header: name + assigned avatar */}
-          <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
@@ -128,7 +128,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
 
           {/* Budget — primary metric */}
           {budget && (
-            <div className="flex items-baseline gap-1.5 mb-2">
+            <div className="flex items-baseline gap-1.5 mb-1.5">
               <span className="text-[14px] font-bold text-foreground tabular-nums leading-none">{budget}</span>
               <span className="text-[9px] text-muted-foreground uppercase tracking-wide">budget</span>
             </div>
@@ -136,7 +136,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
 
           {/* Tags row: project + city + pre-approved */}
           {(contact.project || cityPref || isPreApproved) && (
-            <div className="flex flex-wrap items-center gap-1 mb-2">
+            <div className="flex flex-wrap items-center gap-1 mb-1.5">
               {contact.project && (
                 <Badge
                   variant="outline"
@@ -165,7 +165,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
           )}
 
           {/* Footer: stage age, activity, contact icons */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/40">
+          <div className="flex items-center justify-between pt-1.5 border-t border-border/40">
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span style={daysColor ? { color: daysColor, fontWeight: 600 } : undefined}>
                 {days !== null ? `${days}d` : '—'}
@@ -427,7 +427,7 @@ export function PipelineKanban() {
                   >
                     {/* Column header */}
                     <div
-                      className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-t-xl border-b"
+                      className="flex items-center justify-between px-3 py-1.5 sm:py-2 rounded-t-xl border-b"
                       style={{ borderColor: colors.border }}
                     >
                       <span className="text-xs font-semibold text-foreground">
