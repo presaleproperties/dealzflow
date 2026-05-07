@@ -35,6 +35,40 @@ export function useCrmContactEngagement(contactId: string | undefined, email?: s
   });
 }
 
+export function useCrmContactViews(contactId: string | undefined, email?: string | null) {
+  return useQuery({
+    queryKey: ['crm-contact-views', contactId, email ?? null],
+    queryFn: async () => {
+      if (!contactId && !email) return [];
+      let q = supabase.from('crm_lead_behavior_views').select('*').order('viewed_at', { ascending: false }).limit(100);
+      if (contactId && email) q = q.or(`contact_id.eq.${contactId},email.eq.${email}`);
+      else if (contactId) q = q.eq('contact_id', contactId);
+      else if (email) q = q.eq('email', email);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!(contactId || email),
+  });
+}
+
+export function useCrmContactSessions(contactId: string | undefined, email?: string | null) {
+  return useQuery({
+    queryKey: ['crm-contact-sessions', contactId, email ?? null],
+    queryFn: async () => {
+      if (!contactId && !email) return [];
+      let q = supabase.from('crm_lead_behavior_sessions').select('*').order('started_at', { ascending: false }).limit(50);
+      if (contactId && email) q = q.or(`contact_id.eq.${contactId},email.eq.${email}`);
+      else if (contactId) q = q.eq('contact_id', contactId);
+      else if (email) q = q.eq('email', email);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!(contactId || email),
+  });
+}
+
 export function useCrmContactActivityEvents(contactId: string | undefined) {
   return useQuery({
     queryKey: ['crm-contact-activity-events', contactId],
