@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
           template_name: log?.template_type,
           link_url: targetUrl,
           occurred_at: nowIso,
-          metadata: { tracking_id: trackingId },
+          metadata: { tracking_id: trackingId, button: buttonKind ?? null },
         });
       }
     }
