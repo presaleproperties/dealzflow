@@ -427,7 +427,7 @@ export function PipelineKanban() {
                   >
                     {/* Column header */}
                     <div
-                      className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-t-xl border-b"
+                      className="flex items-center justify-between px-3 py-1.5 sm:py-2 rounded-t-xl border-b"
                       style={{ borderColor: colors.border }}
                     >
                       <span className="text-xs font-semibold text-foreground">
