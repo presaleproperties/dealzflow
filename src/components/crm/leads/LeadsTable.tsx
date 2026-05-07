@@ -189,14 +189,13 @@ function InlineTagsCell({
               {shown.map((tag, i) => {
                 const c = TAG_COLORS[i % TAG_COLORS.length];
                 return (
-                  <Badge
+                  <Pill
                     key={tag}
-                    variant="outline"
-                    className="border-0 text-[10.5px] font-medium whitespace-nowrap px-2 py-0.5 max-w-[120px] overflow-hidden text-ellipsis block shrink"
+                    truncate
                     style={{ background: c.bg, color: c.color }}
                   >
-                    <span className="block truncate">{tag}</span>
-                  </Badge>
+                    {tag}
+                  </Pill>
                 );
               })}
               {extra > 0 && <span className="text-[10.5px] text-muted-foreground font-medium shrink-0">+{extra}</span>}
