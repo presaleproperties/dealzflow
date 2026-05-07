@@ -697,7 +697,6 @@ export default function CrmLeadsPage() {
               </Button>
               <div className="hidden sm:flex items-center flex-shrink-0 ml-2">
                 <div className="flex items-center gap-1 pr-2 mr-2 border-r border-border/60">
-                  {/* Sort dropdown removed — sorting is controlled directly via column headers in the table. */}
                   <Button
                     variant={filtersExpanded ? 'secondary' : 'ghost'}
                     size="sm"
