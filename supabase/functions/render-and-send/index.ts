@@ -205,22 +205,36 @@ Deno.serve(async (req) => {
     return json({ error: "contact_has_no_email" }, 400);
   }
 
-  // (b) template
-  const { data: template, error: templateErr } = await supabase
-    .from("crm_email_templates")
-    .select("id, name, subject, body_html, merge_tags")
-    .eq("slug", template_slug)
-    .maybeSingle();
-  if (templateErr || !template) return json({ error: "template_not_found" }, 404);
+  // (b) template — auto-templates served by Presale do NOT live in
+  // crm_email_templates (they're rendered remotely). For everything else
+  // we need the local row for subject/body fallbacks.
+  const AUTO_TEMPLATE_SLUGS = new Set([
+    "auto_project_details_docs",
+    "auto_agent_followup",
+  ]);
+  const isAutoTemplate = AUTO_TEMPLATE_SLUGS.has(template_slug);
 
-  let bridgeProjectSlug = project_slug;
-  const { data: projectBySlug } = await supabase
+  let template: { id?: string; name?: string; subject?: string | null; body_html?: string | null; merge_tags?: unknown } | null = null;
+  if (!isAutoTemplate) {
+    const { data: tpl, error: templateErr } = await supabase
+      .from("crm_email_templates")
+      .select("id, name, subject, body_html, merge_tags")
+      .eq("slug", template_slug)
+      .maybeSingle();
+    if (templateErr || !tpl) return json({ error: "template_not_found" }, 404);
+    template = tpl;
+  }
+
+  // Pull richer project metadata for auto-templates AND for bridge fallback.
+  const { data: projectRow } = await supabase
     .from("crm_projects")
-    .select("presale_slug")
+    .select("slug, presale_slug, name, city, developer, price_from, completion_date, website_url, marketing_url, brochure_url, floor_plans_url, pricing_url")
     .eq("slug", project_slug)
     .maybeSingle();
-  if (projectBySlug?.presale_slug) {
-    bridgeProjectSlug = projectBySlug.presale_slug;
+
+  let bridgeProjectSlug = project_slug;
+  if (projectRow?.presale_slug) {
+    bridgeProjectSlug = projectRow.presale_slug;
   }
 
   // (c) bridge-render-email (POST)
