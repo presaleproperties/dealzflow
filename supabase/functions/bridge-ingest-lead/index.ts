@@ -100,6 +100,7 @@ interface IngestRequest {
     signup_completed_at?: string;     // ISO timestamp
 
     tags?: string[];
+    agent_slug?: string;             // optional: route to a specific agent
     metadata?: Record<string, any>;   // any extra fields → stored in presale_metadata
   };
   behavior?: BehaviorPayload;
