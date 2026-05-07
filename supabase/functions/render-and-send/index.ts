@@ -89,10 +89,13 @@ function injectPersonalNote(html: string, noteHtml: string): string {
 
 /** Convert HTML → plain text for multipart fallback. Preserves links as
  *  "text (url)" and keeps paragraph breaks. */
-/** Remove the smallest <table>…</table> block that contains an <a href> matching the predicate.
- *  Used to strip CTA buttons (Brochure / Project Details / Call Now) that the
- *  bridge always renders, when the agent has toggled them off in the composer. */
-function stripButtonByHref(html: string, match: (href: string) => boolean): string {
+/** Remove the smallest <table>…</table> block that contains an <a> whose
+ *  href OR inner text matches the predicate. Used to strip CTA buttons
+ *  (Project Details / Call Now / etc.) when toggled off in the composer. */
+function stripButtonBy(
+  html: string,
+  match: (href: string, label: string) => boolean,
+): string {
   let result = html;
   for (let pass = 0; pass < 8; pass++) {
     const lower = result.toLowerCase();
