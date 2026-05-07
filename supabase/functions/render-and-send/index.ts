@@ -331,8 +331,8 @@ Deno.serve(async (req) => {
       return json({ error: "bridge_unreachable", detail: (e as Error).message }, 502);
     }
   } else {
-
-    renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
+    try {
+      renderRes = await fetch(`${BRIDGE_URL}/bridge-render-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
