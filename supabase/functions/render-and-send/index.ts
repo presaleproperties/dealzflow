@@ -89,18 +89,23 @@ function injectPersonalNote(html: string, noteHtml: string): string {
 
 /** Convert HTML → plain text for multipart fallback. Preserves links as
  *  "text (url)" and keeps paragraph breaks. */
-/** Remove the smallest <table>…</table> block that contains an <a href> matching the predicate.
- *  Used to strip CTA buttons (Brochure / Project Details / Call Now) that the
- *  bridge always renders, when the agent has toggled them off in the composer. */
-function stripButtonByHref(html: string, match: (href: string) => boolean): string {
+/** Remove the smallest <table>…</table> block that contains an <a> whose
+ *  href OR inner text matches the predicate. Used to strip CTA buttons
+ *  (Project Details / Call Now / etc.) when toggled off in the composer. */
+function stripButtonBy(
+  html: string,
+  match: (href: string, label: string) => boolean,
+): string {
   let result = html;
   for (let pass = 0; pass < 8; pass++) {
     const lower = result.toLowerCase();
-    const aRe = /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    const aRe = /<a\s[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     let m: RegExpExecArray | null;
     let removedThisPass = false;
     while ((m = aRe.exec(result)) !== null) {
-      if (!match(m[1])) continue;
+      const href = m[1];
+      const label = m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (!match(href, label)) continue;
       const aStart = m.index;
       const tableOpenIdx = lower.lastIndexOf("<table", aStart);
       if (tableOpenIdx < 0) continue;
@@ -421,9 +426,15 @@ Deno.serve(async (req) => {
           (bridgeProjectSlug
             ? `https://presaleproperties.com/projects/${bridgeProjectSlug}`
             : undefined),
-        brochureUrl: brochureUrlOverride || resolvedAttachmentsForBridge.brochure?.url || bridgeProject.first_brochure_url || projectRow?.brochure_url || undefined,
-        floorplanUrl: resolvedAttachmentsForBridge.floor_plans?.url || bridgeProject.first_floorplan_url || projectRow?.floor_plans_url || undefined,
-        pricingUrl: resolvedAttachmentsForBridge.pricing?.url || bridgeProject.first_pricing_sheet_url || projectRow?.pricing_url || undefined,
+        brochureUrl: attachments.brochure
+          ? (brochureUrlOverride || resolvedAttachmentsForBridge.brochure?.url || bridgeProject.first_brochure_url || projectRow?.brochure_url || undefined)
+          : (brochureUrlOverride || undefined),
+        floorplanUrl: attachments.floor_plans
+          ? (resolvedAttachmentsForBridge.floor_plans?.url || bridgeProject.first_floorplan_url || projectRow?.floor_plans_url || undefined)
+          : undefined,
+        pricingUrl: attachments.pricing
+          ? (resolvedAttachmentsForBridge.pricing?.url || bridgeProject.first_pricing_sheet_url || projectRow?.pricing_url || undefined)
+          : undefined,
       },
     };
 
@@ -538,44 +549,54 @@ Deno.serve(async (req) => {
     html_final = injectPersonalNote(html_final, noteHtml);
   }
   // Strip CTA buttons the agent toggled off in the composer.
-  if (!ctaBrochure) {
-    html_final = stripButtonByHref(html_final, (h) =>
-      /\.pdf(\?|$)/i.test(h) || /brochure/i.test(h),
-    );
-  }
+  // Match by button label (Presale buttons use predictable copy) AND by
+  // href shape, so this works regardless of underlying URL pattern.
   if (!ctaProjectDetails) {
-    html_final = stripButtonByHref(html_final, (h) =>
-      /presaleproperties\.com\/projects?\//i.test(h),
-    );
+    html_final = stripButtonBy(html_final, (href, label) => {
+      const lbl = label.toLowerCase();
+      if (/view\s+project\s+details?/.test(lbl)) return true;
+      if (/presaleproperties\.com\/projects?\//i.test(href)) return true;
+      // marketing_url is also the projectUrl we passed to bridge
+      if (projectDetailsUrlOverride && href === projectDetailsUrlOverride) return true;
+      return false;
+    });
   }
   if (!ctaCallNow) {
-    html_final = stripButtonByHref(html_final, (h) => /^tel:/i.test(h));
+    html_final = stripButtonBy(html_final, (href, label) => {
+      if (/^tel:/i.test(href)) return true;
+      if (/^call\s+now$/i.test(label)) return true;
+      return false;
+    });
   }
+  // Note: brochure / floor plans / pricing buttons are controlled by the
+  // Attachments toggles, which decide whether we even pass the URL to the
+  // bridge — no post-strip needed.
+
   // ─── Click + open tracking ───────────────────────────────────────────────
-  // Generate a tracking_id, classify each CTA link as brochure / floor_plans
-  // / pricing / project_details / call so click events identify the button,
-  // then route every external <a href> through crm-email-track. Append a 1×1
-  // open pixel.
   const TRACK_BASE = `${SUPABASE_URL}/functions/v1/crm-email-track`;
   const trackingId = crypto.randomUUID();
-  const classifyButton = (href: string): string => {
+  const classifyButton = (href: string, label: string): string => {
     const h = href.toLowerCase();
-    if (h.startsWith("tel:")) return "call";
-    if (/floor[-_]?plan/.test(h)) return "floor_plans";
-    if (/(price|pricing)/.test(h)) return "pricing";
-    if (/\.pdf(\?|$)/.test(h) || /brochure/.test(h)) return "brochure";
-    if (/presaleproperties\.com\/projects?\//.test(h)) return "project_details";
+    const l = label.toLowerCase();
+    if (h.startsWith("tel:") || /^call\s+now$/.test(l)) return "call";
+    if (/floor[-_]?plan/.test(h) || /floor\s*plan/.test(l)) return "floor_plans";
+    if (/(price|pricing)/.test(h) || /pricing/.test(l)) return "pricing";
+    if (/brochure/.test(l) || /brochure/.test(h)) return "brochure";
+    if (/project\s+details?/.test(l) || /presaleproperties\.com\/projects?\//.test(h)) return "project_details";
+    if (/\.pdf(\?|$)/.test(h)) return "brochure";
     return "link";
   };
-  // Click rewrite — skip mailto, anchors, already-tracked. Pass tel: through
-  // unchanged (most clients can't redirect tel: via 302).
+
+  // Click rewrite — match the full <a>…</a> so we can use button label for
+  // accurate per-button classification. Skip already-tracked links.
   html_final = html_final.replace(
-    /<a\b([^>]*?)href=(["'])(https?:\/\/[^"']+)\2/gi,
-    (_m, attrs, q, href) => {
-      if (href.includes("/crm-email-track")) return `<a${attrs}href=${q}${href}${q}`;
-      const btn = classifyButton(href);
+    /<a\b([^>]*?)href=(["'])(https?:\/\/[^"']+)\2([^>]*)>([\s\S]*?)<\/a>/gi,
+    (_m, preAttrs, q, href, postAttrs, inner) => {
+      if (href.includes("/crm-email-track")) return _m;
+      const label = String(inner).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      const btn = classifyButton(href, label);
       const tracked = `${TRACK_BASE}?a=click&t=${encodeURIComponent(trackingId)}&b=${encodeURIComponent(btn)}&u=${encodeURIComponent(href)}`;
-      return `<a${attrs}href=${q}${tracked}${q}`;
+      return `<a${preAttrs}href=${q}${tracked}${q}${postAttrs}>${inner}</a>`;
     },
   );
   // Open pixel

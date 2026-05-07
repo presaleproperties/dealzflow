@@ -149,12 +149,12 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [attachBrochure, setAttachBrochure] = useState(false);
   const [attachFloorPlans, setAttachFloorPlans] = useState(false);
   const [attachPricing, setAttachPricing] = useState(false);
-  // CTA button toggles (default ON — match Presale auto-template)
-  const [ctaBrochure, setCtaBrochure] = useState(true);
+  // CTA button toggles (default ON — match Presale auto-template).
+  // Brochure / Floor Plans / Pricing buttons are governed by the Attachments
+  // toggles below — no separate CTA toggle for them.
   const [ctaProjectDetails, setCtaProjectDetails] = useState(true);
   const [ctaCallNow, setCtaCallNow] = useState(true);
-  // CTA URL overrides (per-email; blank = use Presale default)
-  const [brochureUrlOverride, setBrochureUrlOverride] = useState<string>('');
+  // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
 
   // ─── Recipient signal: last email + open count ────────────────────────
@@ -238,12 +238,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             pricing: attachPricing,
           },
           ctas: {
-            brochure: ctaBrochure,
             project_details: ctaProjectDetails,
             call_now: ctaCallNow,
           },
           cta_overrides: {
-            brochure_url: brochureUrlOverride.trim() || null,
             project_details_url: projectDetailsUrlOverride.trim() || null,
           },
         },
@@ -259,14 +257,13 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow, brochureUrlOverride, projectDetailsUrlOverride]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaProjectDetails, ctaCallNow, projectDetailsUrlOverride]);
 
   // ─── Reset attachment toggles + URL overrides when project changes ──────
   useEffect(() => {
     setAttachBrochure(false);
     setAttachFloorPlans(false);
     setAttachPricing(false);
-    setBrochureUrlOverride('');
     setProjectDetailsUrlOverride('');
   }, [projectSlug]);
 
@@ -335,12 +332,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           pricing: attachPricing,
         },
         ctas: {
-          brochure: ctaBrochure,
           project_details: ctaProjectDetails,
           call_now: ctaCallNow,
         },
         cta_overrides: {
-          brochure_url: brochureUrlOverride.trim() || null,
           project_details_url: projectDetailsUrlOverride.trim() || null,
         },
       },
@@ -462,22 +457,6 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               <div className="rounded-md border border-border divide-y divide-border">
                 <div className="px-3 py-2.5 space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm">View Brochure</div>
-                    <Switch checked={ctaBrochure} onCheckedChange={setCtaBrochure} />
-                  </div>
-                  {ctaBrochure && (
-                    <Input
-                      type="url"
-                      inputMode="url"
-                      placeholder="Override brochure link (optional) — https://…"
-                      value={brochureUrlOverride}
-                      onChange={(e) => setBrochureUrlOverride(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                  )}
-                </div>
-                <div className="px-3 py-2.5 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
                     <div className="text-sm">View Project Details</div>
                     <Switch checked={ctaProjectDetails} onCheckedChange={setCtaProjectDetails} />
                   </div>
@@ -498,7 +477,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1.5">
-                Toggle buttons on/off and optionally override the link per email. Leave blank to use the Presale default.
+                Brochure / Floor Plans / Pricing buttons are controlled by the Attachments toggles above.
               </div>
             </Field>
 
