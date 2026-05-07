@@ -392,7 +392,7 @@ export default function WebhookValidationPage() {
             <div className="space-y-3">
               <div className="rounded-md border p-3 text-sm space-y-1">
                 <div className="font-medium">
-                  {probe.data.contact?.name ?? (
+                  {probe.data.contact ? `${probe.data.contact.first_name ?? ""} ${probe.data.contact.last_name ?? ""}`.trim() || probe.data.contact.email : (
                     <span className="text-muted-foreground">No CRM contact for {submittedEmail}</span>
                   )}
                 </div>
