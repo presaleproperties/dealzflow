@@ -128,7 +128,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
 
           {/* Budget — primary metric */}
           {budget && (
-            <div className="flex items-baseline gap-1.5 mb-2">
+            <div className="flex items-baseline gap-1.5 mb-1.5">
               <span className="text-[14px] font-bold text-foreground tabular-nums leading-none">{budget}</span>
               <span className="text-[9px] text-muted-foreground uppercase tracking-wide">budget</span>
             </div>
