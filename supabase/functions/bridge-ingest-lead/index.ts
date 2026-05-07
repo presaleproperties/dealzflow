@@ -199,6 +199,7 @@ Deno.serve(async (req) => {
 
       contactId = existing.id;
     } else {
+      const assignee = await pickAssignee(supabase, L.agent_slug);
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
         last_name: L.last_name || "Lead",
@@ -228,7 +229,10 @@ Deno.serve(async (req) => {
         tags: Array.from(new Set([...(L.tags || []), "presale-website"])),
         status: "New Lead",
         lead_type: "Pre-Sale",
-        assigned_to: "Uzair Muhammad",
+        assigned_to: assignee,
+        sync_source: "presale",
+        lofty_synced_at: new Date().toISOString(),
+      }).select("id").single();
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
       }).select("id").single();
