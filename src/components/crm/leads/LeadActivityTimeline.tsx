@@ -17,6 +17,8 @@ import {
   useCrmContactForms,
   useCrmContactEngagement,
   useCrmContactActivityEvents,
+  useCrmContactViews,
+  useCrmContactSessions,
 } from '@/hooks/useCrmLeadCommunications';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { cn } from '@/lib/utils';
@@ -117,6 +119,8 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
   const { data: forms = [] } = useCrmContactForms(contactId, email);
   const { data: engagement = [] } = useCrmContactEngagement(contactId, email);
   const { data: activityEvents = [] } = useCrmContactActivityEvents(contactId);
+  const { data: views = [] } = useCrmContactViews(contactId, email);
+  const { data: sessions = [] } = useCrmContactSessions(contactId, email);
   const addMessage = useAddCrmMessage();
 
   const [noteText, setNoteText] = useState('');
@@ -252,7 +256,32 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
       });
     });
 
-    // Showings
+    // Property views (Presale behavior)
+    views.forEach((v: any) => {
+      entries.push({
+        id: `view-${v.id}`,
+        kind: 'engagement',
+        icon: Eye,
+        tone: TONES.engagement,
+        title: v.property_name ? `Viewed ${v.property_name}` : 'Property view',
+        subtitle: v.duration_seconds ? `${Math.round(v.duration_seconds)}s on page` : undefined,
+        time: new Date(v.viewed_at || v.created_at),
+      });
+    });
+
+    // Sessions (Presale behavior) — only meaningful ones
+    sessions.forEach((s: any) => {
+      if ((s.pages_viewed ?? 0) < 2 && (s.duration_seconds ?? 0) < 30) return;
+      entries.push({
+        id: `sess-${s.id}`,
+        kind: 'engagement',
+        icon: Globe,
+        tone: TONES.engagement,
+        title: `Site visit · ${s.pages_viewed ?? 1} page${(s.pages_viewed ?? 1) === 1 ? '' : 's'}`,
+        subtitle: s.utm_source ? `via ${s.utm_source}` : s.referrer || undefined,
+        time: new Date(s.started_at || s.created_at),
+      });
+    });
     showings.forEach((s: any) => {
       entries.push({
         id: `showing-${s.id}`,
