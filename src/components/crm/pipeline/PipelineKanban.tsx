@@ -99,7 +99,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
           className={`group bg-card rounded-lg border border-border px-2.5 py-2 mb-1.5 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
         >
           {/* Header: name + assigned avatar */}
-          <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
