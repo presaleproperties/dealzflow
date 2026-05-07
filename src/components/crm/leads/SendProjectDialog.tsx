@@ -264,7 +264,6 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     setAttachBrochure(false);
     setAttachFloorPlans(false);
     setAttachPricing(false);
-    setBrochureUrlOverride('');
     setProjectDetailsUrlOverride('');
   }, [projectSlug]);
 
