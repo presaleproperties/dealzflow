@@ -858,15 +858,25 @@ function MessagingPanel() {
     [templates],
   );
   if (isLoading) {
-    return <Card className="p-8 text-center text-sm text-muted-foreground">Loading templates…</Card>;
+    return <div className="p-8 text-center text-sm text-muted-foreground">Loading templates…</div>;
   }
   return (
-    <Card className="p-6 text-center text-sm text-muted-foreground space-y-3">
-      <div>SMS templates now live in the Messages workspace, with live preview, merge-tag picker, and "Send to me" testing.</div>
+    <div className="max-w-md mx-auto mt-12 text-center space-y-4">
+      <div className="w-12 h-12 mx-auto rounded-full bg-muted/60 flex items-center justify-center">
+        <MessageSquare className="w-5 h-5 opacity-50" />
+      </div>
+      <div className="space-y-1">
+        <div className="text-[14px] font-medium text-foreground">SMS templates have moved</div>
+        <div className="text-[12.5px] text-muted-foreground">
+          They live in the Messages workspace with live preview, merge tags, and "Send to me" testing.
+        </div>
+      </div>
       <Button asChild size="sm" variant="outline">
         <Link to="/crm/sms">Open SMS templates →</Link>
       </Button>
-      <div className="text-[11px]">{smsTemplates.length} template{smsTemplates.length === 1 ? '' : 's'} available</div>
-    </Card>
+      <div className="text-[11px] text-muted-foreground/70">
+        {smsTemplates.length} template{smsTemplates.length === 1 ? '' : 's'} available
+      </div>
+    </div>
   );
 }
