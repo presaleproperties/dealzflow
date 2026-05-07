@@ -285,6 +285,46 @@ Deno.serve(async (req) => {
       ? new Date(projectRow.completion_date as string).getUTCFullYear().toString()
       : null;
 
+    // Fetch richer project data (hero image, deposit, completion month/year,
+    // developer) from the Presale bridge so the rendered email matches the
+    // version leads receive when they sign up on presaleproperties.com.
+    let bridgeProject: Record<string, any> = {};
+    if (bridgeProjectSlug) {
+      try {
+        const r = await fetch(`${BRIDGE_URL}/bridge-get-project?slug=${encodeURIComponent(bridgeProjectSlug)}`, {
+          method: "GET",
+          headers: {
+            "x-bridge-secret": BRIDGE_SECRET,
+            "Authorization": `Bearer ${PRESALE_ANON_KEY}`,
+            "apikey": PRESALE_ANON_KEY,
+          },
+        });
+        if (r.ok) {
+          const j = await r.json();
+          bridgeProject = (j?.project ?? j ?? {}) as Record<string, any>;
+        }
+      } catch (e) {
+        console.warn("[render-and-send] bridge-get-project failed", (e as Error).message);
+      }
+    }
+
+    const heroImage =
+      bridgeProject.featured_image ||
+      bridgeProject.hero_image ||
+      (Array.isArray(bridgeProject.gallery_images) ? bridgeProject.gallery_images[0] : null) ||
+      undefined;
+
+    const monthName = (m: number) => ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1] ?? "";
+    const completionStr =
+      bridgeProject.completion_month && bridgeProject.completion_year
+        ? `${monthName(Number(bridgeProject.completion_month))} ${bridgeProject.completion_year}`
+        : (bridgeProject.completion_year ? String(bridgeProject.completion_year) : completionYear ?? undefined);
+
+    const startingPrice =
+      formatPrice(bridgeProject.starting_price as number | null) ||
+      formatPrice(projectRow?.price_from as number | null) ||
+      undefined;
+
     const autoBody = {
       template_id: template_slug,
       recipient_name: contact.first_name || "there",
@@ -296,20 +336,22 @@ Deno.serve(async (req) => {
             email: agentEmail || undefined,
           },
       project: {
-        projectName: projectRow?.name ?? project_slug,
-        city: projectRow?.city ?? undefined,
-        developerName: projectRow?.developer ?? undefined,
-        startingPrice: formatPrice(projectRow?.price_from as number | null) ?? undefined,
-        completion: completionYear ?? undefined,
+        projectName: bridgeProject.name || projectRow?.name || project_slug,
+        city: bridgeProject.city || projectRow?.city || undefined,
+        developerName: bridgeProject.developer_name || (bridgeProject.developer as any)?.name || projectRow?.developer || undefined,
+        startingPrice,
+        deposit: bridgeProject.deposit_structure || undefined,
+        completion: completionStr,
+        heroImage,
         projectUrl:
           projectRow?.marketing_url ||
           projectRow?.website_url ||
           (bridgeProjectSlug
             ? `https://presaleproperties.com/projects/${bridgeProjectSlug}`
             : undefined),
-        brochureUrl: resolvedAttachmentsForBridge.brochure?.url || projectRow?.brochure_url || undefined,
-        floorplanUrl: resolvedAttachmentsForBridge.floor_plans?.url || projectRow?.floor_plans_url || undefined,
-        pricingUrl: resolvedAttachmentsForBridge.pricing?.url || projectRow?.pricing_url || undefined,
+        brochureUrl: resolvedAttachmentsForBridge.brochure?.url || bridgeProject.first_brochure_url || projectRow?.brochure_url || undefined,
+        floorplanUrl: resolvedAttachmentsForBridge.floor_plans?.url || bridgeProject.first_floorplan_url || projectRow?.floor_plans_url || undefined,
+        pricingUrl: resolvedAttachmentsForBridge.pricing?.url || bridgeProject.first_pricing_sheet_url || projectRow?.pricing_url || undefined,
       },
     };
 
