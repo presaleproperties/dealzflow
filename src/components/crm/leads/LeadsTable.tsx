@@ -294,7 +294,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'reg', sortKey: 'created_at', label: 'Reg', width: '90px' },
   { key: 'project', sortKey: 'project', label: 'Projects', width: '160px' },
   { key: 'source', sortKey: 'source', label: 'Source', width: '130px' },
-  { key: 'pipeline', label: 'Pipeline', width: '160px' },
+  { key: 'pipeline', sortKey: 'status', label: 'Pipeline', width: '160px' },
   { key: 'tags', label: 'Tags', width: '200px' },
   { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent', width: '180px' },
   { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Activity', width: '130px' },
