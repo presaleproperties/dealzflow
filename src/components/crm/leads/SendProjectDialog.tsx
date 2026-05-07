@@ -261,11 +261,13 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     return () => window.clearTimeout(previewTimer.current);
   }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow, brochureUrlOverride, projectDetailsUrlOverride]);
 
-  // ─── Reset attachment toggles when project changes ───────────────────────
+  // ─── Reset attachment toggles + URL overrides when project changes ──────
   useEffect(() => {
     setAttachBrochure(false);
     setAttachFloorPlans(false);
     setAttachPricing(false);
+    setBrochureUrlOverride('');
+    setProjectDetailsUrlOverride('');
   }, [projectSlug]);
 
   // ─── Upload helper ───────────────────────────────────────────────────────
