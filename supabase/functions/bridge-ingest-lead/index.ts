@@ -234,9 +234,6 @@ Deno.serve(async (req) => {
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
       }).select("id").single();
-        sync_source: "presale",
-        lofty_synced_at: new Date().toISOString(),
-      }).select("id").single();
 
       if (insErr) throw insErr;
       contactId = created.id;
