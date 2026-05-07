@@ -274,16 +274,31 @@ Deno.serve(async (req) => {
   // The bridge already renders the full Presale-styled email — including
   // the "Your Requested Documents" card with VIEW BROCHURE / VIEW FLOOR
   // PLANS / VIEW PRICING buttons (we passed the resolved doc URLs above)
-  // and the inline agent block. Nothing to post-process.
-  const html_final = html_rendered;
+  // and the inline agent block.
+  // We post-process to inject the agent's personal note as a styled block
+  // above the project card, and to honor the agent's optional subject
+  // override from the composer.
+  const noteHtml = renderPersonalNoteBlock(personal_note);
+  let html_final = html_rendered;
+  if (noteHtml) {
+    html_final = injectPersonalNote(html_final, noteHtml);
+  }
+  const subject_final = (subject_override?.trim() || subject_rendered || "").trim();
+
+  // Plain-text fallback — generated from the final HTML so links + the
+  // personal note are preserved. Improves deliverability + Apple Mail
+  // privacy-preview accuracy.
+  const text_final = text_rendered && text_rendered.trim().length > 0
+    ? text_rendered
+    : htmlToPlainText(html_final);
 
   // (d) dry run — preview only
   if (dry_run) {
     return json({
       ok: true,
-      subject: subject_rendered,
+      subject: subject_final,
       html: html_final,
-      text: text_rendered,
+      text: text_final,
       attachments: Object.entries(resolvedAttachmentsForBridge).map(([kind, a]) => ({
         kind,
         url: a.url,
@@ -307,8 +322,13 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         action: "send_reply",
         to: contact.email,
-        subject: subject_rendered,
+        subject: subject_final,
         body_html: html_final,
+        body_text: text_final,
+        // Force replies to land in the agent's CRM inbox (so threads show
+        // up in the Lead detail), even when Gmail is connected to a
+        // different mailbox alias.
+        reply_to_override: agentEmail || undefined,
         contact_id,
       }),
     });
