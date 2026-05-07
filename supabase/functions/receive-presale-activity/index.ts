@@ -207,8 +207,10 @@ Deno.serve(async (req) => {
   const behavior: any = meta?.behavior ?? null;
   const presaleUserId: string | null = presaleUserIdEarly;
 
-  if (behavior && contact) {
-    const cId = contact.id;
+  // Store behavior even when no contact yet — orphan rows get stitched later
+  // by the identity-stitch cron once a contact is created/linked.
+  if (behavior && (contact || presaleUserId)) {
+    const cId = contact?.id ?? null;
 
     const forms = Array.isArray(behavior.forms) ? behavior.forms : [];
     const views = Array.isArray(behavior.views) ? behavior.views : [];
