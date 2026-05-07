@@ -5273,6 +5273,10 @@ export type Database = {
         Args: { _contact_id: string; _user_id: string }
         Returns: boolean
       }
+      crm_cta_label: {
+        Args: { button_key: string; url: string }
+        Returns: string
+      }
       crm_distinct_sources: {
         Args: never
         Returns: {
