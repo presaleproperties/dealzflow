@@ -113,16 +113,24 @@ async function notifySyncFailure(
       .map((r: any) => r.user_id)
       .filter(Boolean);
     if (!userIds.length) return;
-    await supabase.from("crm_notifications").insert(
-      userIds.map((u: string) => ({
-        user_id: u,
-        title: `⚠️ Presale sync issue: ${reason}`,
-        body: detail.slice(0, 500),
-        type: "presale_sync_error",
-        link_to: link,
-        is_read: false,
-      })),
-    );
+    const title = `⚠️ Presale sync issue: ${reason}`;
+    const body = detail.slice(0, 500);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const rows: any[] = [];
+    for (const u of userIds) {
+      const { data: existing } = await supabase
+        .from("crm_notifications")
+        .select("id")
+        .eq("user_id", u)
+        .eq("type", "presale_sync_error")
+        .eq("title", title)
+        .eq("body", body)
+        .gte("created_at", since)
+        .limit(1)
+        .maybeSingle();
+      if (!existing) rows.push({ user_id: u, title, body, type: "presale_sync_error", link_to: link, is_read: false });
+    }
+    if (rows.length) await supabase.from("crm_notifications").insert(rows);
   } catch (e) {
     console.error("[receive-presale-activity] notifySyncFailure failed:", e);
   }
