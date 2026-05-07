@@ -426,9 +426,15 @@ Deno.serve(async (req) => {
           (bridgeProjectSlug
             ? `https://presaleproperties.com/projects/${bridgeProjectSlug}`
             : undefined),
-        brochureUrl: brochureUrlOverride || resolvedAttachmentsForBridge.brochure?.url || bridgeProject.first_brochure_url || projectRow?.brochure_url || undefined,
-        floorplanUrl: resolvedAttachmentsForBridge.floor_plans?.url || bridgeProject.first_floorplan_url || projectRow?.floor_plans_url || undefined,
-        pricingUrl: resolvedAttachmentsForBridge.pricing?.url || bridgeProject.first_pricing_sheet_url || projectRow?.pricing_url || undefined,
+        brochureUrl: attachments.brochure
+          ? (brochureUrlOverride || resolvedAttachmentsForBridge.brochure?.url || bridgeProject.first_brochure_url || projectRow?.brochure_url || undefined)
+          : (brochureUrlOverride || undefined),
+        floorplanUrl: attachments.floor_plans
+          ? (resolvedAttachmentsForBridge.floor_plans?.url || bridgeProject.first_floorplan_url || projectRow?.floor_plans_url || undefined)
+          : undefined,
+        pricingUrl: attachments.pricing
+          ? (resolvedAttachmentsForBridge.pricing?.url || bridgeProject.first_pricing_sheet_url || projectRow?.pricing_url || undefined)
+          : undefined,
       },
     };
 
