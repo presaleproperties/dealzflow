@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   MessageCircle, Mail, CalendarDays, CheckCircle, StickyNote, Send,
   MailOpen, MousePointerClick, FileText, Eye, Phone, MessageSquare, ChevronRight,
+  Download, Building2, DollarSign, Map, Instagram, Facebook, Youtube, Globe, PhoneCall,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO, isThisWeek, isThisYear } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,32 @@ function clamp(s?: string | null, n = 160) {
   if (!s) return undefined;
   const t = s.replace(/\s+/g, ' ').trim();
   return t.length > n ? t.slice(0, n) + '…' : t;
+}
+
+/**
+ * Resolve a click-event into a friendly CTA name + icon.
+ * Recipients pressed a labeled button — show the label/intent, never the raw URL.
+ */
+function resolveCta(buttonKey: string | undefined, url: string | undefined): { label: string; icon: typeof MousePointerClick } {
+  const key = (buttonKey || '').toLowerCase();
+  const u = (url || '').toLowerCase();
+
+  // Explicit button kinds set by render-and-send tracker
+  if (key === 'brochure') return { label: 'Brochure', icon: Download };
+  if (key === 'floor_plans' || key === 'floorplans' || key === 'floor_plan') return { label: 'Floor Plans', icon: Map };
+  if (key === 'pricing' || key === 'price_list') return { label: 'Pricing', icon: DollarSign };
+  if (key === 'project_details' || key === 'view_project_details') return { label: 'Project Details', icon: Building2 };
+  if (key === 'call' || u.startsWith('tel:')) return { label: 'Call Now', icon: PhoneCall };
+
+  // URL-based fallbacks for older logs / signature links
+  if (u.includes('instagram.com')) return { label: 'Instagram', icon: Instagram };
+  if (u.includes('facebook.com')) return { label: 'Facebook', icon: Facebook };
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return { label: 'YouTube', icon: Youtube };
+  if (u.endsWith('.pdf') || u.includes('/brochures/')) return { label: 'Brochure', icon: Download };
+  if (u.includes('floor') || u.includes('floorplan')) return { label: 'Floor Plans', icon: Map };
+  if (u.includes('pricing') || u.includes('price-list')) return { label: 'Pricing', icon: DollarSign };
+  if (u.includes('presaleproperties.com/projects/')) return { label: 'Project Details', icon: Building2 };
+  return { label: 'Link', icon: Globe };
 }
 
 export function LeadActivityTimeline({ contactId }: { contactId: string }) {
@@ -181,20 +208,18 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
       });
     });
 
-    // Engagement (opens / clicks)
+    // Engagement (opens / clicks) — show CTA name + icon, never the raw URL
     engagement.forEach((ev: any) => {
       const t = String(ev.event_type || '').toLowerCase();
       const isClick = t.includes('click');
+      const cta = isClick ? resolveCta(ev.metadata?.button, ev.link_url) : null;
       entries.push({
         id: `eng-${ev.id}`,
         kind: 'engagement',
-        icon: isClick ? MousePointerClick : MailOpen,
+        icon: isClick ? cta!.icon : MailOpen,
         tone: TONES.engagement,
-        title: isClick
-          ? `Clicked ${ev.metadata?.button ? `"${ev.metadata.button}"` : 'a link'}`
-          : 'Opened email',
+        title: isClick ? `Clicked ${cta!.label}` : 'Opened email',
         subtitle: ev.template_name || ev.campaign_name || undefined,
-        detail: ev.link_url || undefined,
         time: new Date(ev.occurred_at || ev.created_at),
       });
     });
