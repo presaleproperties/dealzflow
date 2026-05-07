@@ -242,6 +242,10 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             project_details: ctaProjectDetails,
             call_now: ctaCallNow,
           },
+          cta_overrides: {
+            brochure_url: brochureUrlOverride.trim() || null,
+            project_details_url: projectDetailsUrlOverride.trim() || null,
+          },
         },
       });
       if (error || !data?.ok) {
@@ -255,7 +259,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
       setPreviewLoading(false);
     }, 350);
     return () => window.clearTimeout(previewTimer.current);
-  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow]);
+  }, [open, contact.id, projectSlug, templateSlug, subjectOverride, personalNote, attachBrochure, attachFloorPlans, attachPricing, ctaBrochure, ctaProjectDetails, ctaCallNow, brochureUrlOverride, projectDetailsUrlOverride]);
 
   // ─── Reset attachment toggles when project changes ───────────────────────
   useEffect(() => {
