@@ -10,6 +10,7 @@ import { usePaginatedCrmContacts } from '@/hooks/usePaginatedCrmContacts';
 import type { SortKey, SortDir } from '@/hooks/usePaginatedCrmContacts';
 import { useCrmLeadSegments, useReorderCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { computeSegmentCounts } from '@/lib/segmentMatching';
+import { applyClientFilters } from '@/lib/clientContactFilters';
 import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
@@ -116,13 +117,7 @@ export default function CrmLeadsPage() {
   // Quick view state
   const [activeViewId, setActiveViewId] = useState<QuickViewId>('__all');
 
-  // View counts
-  const viewCounts = useMemo(() => {
-    return {
-      '__all':    allContacts.length,
-      '__closed': allContacts.filter(c => c.status === 'Closed').length,
-    } as Record<QuickViewId, number>;
-  }, [allContacts]);
+  // View counts (computed below after filteredAllContacts is available)
 
   // Segments
   const { data: segments = [] } = useCrmLeadSegments();
@@ -158,8 +153,7 @@ export default function CrmLeadsPage() {
     return Object.keys(f).length > 0 ? f : undefined;
   }, [activeView]);
 
-  // Segment counts — uses same first-match-wins logic as Pipeline Kanban
-  const segmentCounts = useMemo(() => computeSegmentCounts(allContacts, segments), [allContacts, segments]);
+  // (segment + view counts are computed below, after filter state is declared)
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
@@ -193,6 +187,47 @@ export default function CrmLeadsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(() => !!searchParams.get('search'));
+
+  // ── Live counts that react to active filters ──
+  // Pill counts (segments + view counts) reflect the user's current filter set
+  // EXCEPT the segment itself — otherwise selecting one segment would zero
+  // out every other pill. Saved-view filters ARE applied so switching to e.g.
+  // "Mine" updates every pill count.
+  const filteredAllContacts = useMemo(
+    () => applyClientFilters(allContacts, {
+      search: debouncedSearch,
+      contactType: filterContactType,
+      statuses: filterStatus,
+      sources: filterSource,
+      agents: filterAgent,
+      projects: filterProject,
+      leadTypes: filterLeadType,
+      languages: filterLanguage,
+      tags: filterTags,
+      excludeTags: filterExcludeTags,
+      propertyTypes: filterPropertyType,
+      cities: filterCity,
+      preApproved: filterPreApproved,
+      campaigns: filterCampaign,
+      letterFilter,
+      uncontacted7: !!activeView.filters._uncontacted_7,
+      stale30: !!activeView.filters._stale_30,
+    }),
+    [allContacts, debouncedSearch, filterContactType, filterStatus, filterSource,
+     filterAgent, filterProject, filterLeadType, filterLanguage, filterTags,
+     filterExcludeTags, filterPropertyType, filterCity, filterPreApproved,
+     filterCampaign, letterFilter, activeView],
+  );
+
+  const viewCounts = useMemo(() => ({
+    '__all':    filteredAllContacts.length,
+    '__closed': filteredAllContacts.filter(c => c.status === 'Closed').length,
+  }) as Record<QuickViewId, number>, [filteredAllContacts]);
+
+  const segmentCounts = useMemo(
+    () => computeSegmentCounts(filteredAllContacts, segments),
+    [filteredAllContacts, segments],
+  );
 
   // Mobile-only: collapse the title row on scroll, infinite scroll accumulator, sort sheet
   const mobileScrollRef = useRef<HTMLDivElement>(null);
