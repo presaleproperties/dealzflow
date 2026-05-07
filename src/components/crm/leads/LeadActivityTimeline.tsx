@@ -79,6 +79,32 @@ function clamp(s?: string | null, n = 160) {
   return t.length > n ? t.slice(0, n) + '…' : t;
 }
 
+/**
+ * Resolve a click-event into a friendly CTA name + icon.
+ * Recipients pressed a labeled button — show the label/intent, never the raw URL.
+ */
+function resolveCta(buttonKey: string | undefined, url: string | undefined): { label: string; icon: typeof MousePointerClick } {
+  const key = (buttonKey || '').toLowerCase();
+  const u = (url || '').toLowerCase();
+
+  // Explicit button kinds set by render-and-send tracker
+  if (key === 'brochure') return { label: 'Brochure', icon: Download };
+  if (key === 'floor_plans' || key === 'floorplans' || key === 'floor_plan') return { label: 'Floor Plans', icon: Map };
+  if (key === 'pricing' || key === 'price_list') return { label: 'Pricing', icon: DollarSign };
+  if (key === 'project_details' || key === 'view_project_details') return { label: 'Project Details', icon: Building2 };
+  if (key === 'call' || u.startsWith('tel:')) return { label: 'Call Now', icon: PhoneCall };
+
+  // URL-based fallbacks for older logs / signature links
+  if (u.includes('instagram.com')) return { label: 'Instagram', icon: Instagram };
+  if (u.includes('facebook.com')) return { label: 'Facebook', icon: Facebook };
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return { label: 'YouTube', icon: Youtube };
+  if (u.endsWith('.pdf') || u.includes('/brochures/')) return { label: 'Brochure', icon: Download };
+  if (u.includes('floor') || u.includes('floorplan')) return { label: 'Floor Plans', icon: Map };
+  if (u.includes('pricing') || u.includes('price-list')) return { label: 'Pricing', icon: DollarSign };
+  if (u.includes('presaleproperties.com/projects/')) return { label: 'Project Details', icon: Building2 };
+  return { label: 'Link', icon: Globe };
+}
+
 export function LeadActivityTimeline({ contactId }: { contactId: string }) {
   const { data: contact } = useCrmContact(contactId);
   const email = (contact as any)?.email ?? null;
