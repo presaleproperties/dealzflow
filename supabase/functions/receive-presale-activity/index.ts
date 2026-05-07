@@ -166,6 +166,7 @@ Deno.serve(async (req) => {
   const email = body.lead_email?.trim().toLowerCase() ?? null;
   const phone = body.lead_phone?.trim() ?? null;
   const occurredAt = body.occurred_at ?? new Date().toISOString();
+  const meta: any = body.metadata ?? {};
 
   // Identity stitch order: presale_user_id → email → phone
   let contact:
@@ -200,6 +201,56 @@ Deno.serve(async (req) => {
       .eq("phone", phone)
       .maybeSingle();
     if (data) contact = data as typeof contact;
+  }
+
+  // Presale sometimes sends new-lead lifecycle events to this activity webhook
+  // instead of bridge-ingest-lead. Treat those as real CRM leads, then continue
+  // recording the originating activity against the newly created/merged contact.
+  if (!contact && LEAD_LIFECYCLE_EVENTS.has(body.type) && (email || phone)) {
+    const { first_name, last_name } = splitName(meta.name ?? meta.full_name);
+    const assignee = await pickAssignee(supabase, body.agent_slug ?? meta.agent_slug ?? null);
+    const leadEmail = email ?? cleanEmail(meta.email);
+    const leadPhone = phone ?? cleanPhone(meta.phone);
+    const source = meta.source === "presale_properties_bulk_sync"
+      ? "presaleproperties.com"
+      : (typeof meta.source === "string" ? meta.source : "presaleproperties.com");
+    const leadSource = typeof meta.lead_source === "string" ? meta.lead_source : null;
+    const projects = [body.project_slug, meta.project, meta.property_name, meta.project_name].filter(Boolean) as string[];
+
+    const { data: created, error: createErr } = await supabase
+      .from("crm_contacts")
+      .insert({
+        first_name,
+        last_name,
+        email: leadEmail,
+        phone: leadPhone,
+        presale_user_id: presaleUserIdEarly,
+        source,
+        campaign_source: leadSource,
+        project: projects[0] ?? null,
+        projects: Array.from(new Set(projects)),
+        presale_metadata: meta,
+        tags: Array.from(new Set(["presale-website", leadSource].filter(Boolean))),
+        status: "New Lead",
+        lead_type: "Pre-Sale",
+        assigned_to: assignee,
+        sync_source: "presale",
+        lofty_synced_at: occurredAt,
+        last_activity_at: occurredAt,
+        ai_summary_stale: true,
+      })
+      .select("id, first_name, last_name, assigned_to")
+      .single();
+
+    if (createErr) {
+      await notifySyncFailure(
+        supabase,
+        "lead create failed",
+        `${body.type} for ${leadEmail ?? leadPhone}: ${createErr.message}`,
+      );
+      return jsonResp({ error: createErr.message }, 500);
+    }
+    contact = created as typeof contact;
   }
 
   // Backfill presale_user_id on the contact when stitched via email/phone
@@ -256,7 +307,6 @@ Deno.serve(async (req) => {
   let expanded = { forms: 0, views: 0, sessions: 0, engagement: 0 };
   let projectsAppended: string[] = [];
 
-  const meta: any = body.metadata ?? {};
   const behavior: any = meta?.behavior ?? null;
   const presaleUserId: string | null = presaleUserIdEarly;
 
