@@ -6,10 +6,11 @@ import CrmChatThreadPage from './CrmChatThreadPage';
 /**
  * Two-pane chat shell.
  *
- * Desktop (lg+): left pane = thread list (always visible), right pane = open
- * conversation or empty state. Mirrors a normal email/messenger inbox.
+ * Tablet+ (md+): left pane = thread list (always visible), right pane = open
+ * conversation or empty state. Mirrors a normal email/messenger inbox and
+ * makes iPad portrait/landscape feel native instead of a stretched phone.
  *
- * Mobile (<lg): falls back to the original single-pane behavior — list on
+ * Phone (<md): falls back to the original single-pane behavior — list on
  * `/crm/chats`, full thread on `/crm/chats/:conversationId`. This preserves
  * the mobile UX (back button, swipe, FAB) and keeps the spacing tokens
  * untouched.
@@ -20,15 +21,15 @@ export default function CrmChatsShell() {
 
   return (
     <>
-      {/* ---------- MOBILE (single pane) ---------- */}
-      <div className="lg:hidden flex flex-1 min-h-0 h-full flex-col">
+      {/* ---------- PHONE (single pane) ---------- */}
+      <div className="md:hidden flex flex-1 min-h-0 h-full flex-col">
         {hasThread ? <CrmChatThreadPage /> : <CrmChatsPage />}
       </div>
 
-      {/* ---------- DESKTOP (two pane) ---------- */}
-      <div className="hidden lg:flex flex-1 min-h-0 h-full -mx-4 -my-4">
+      {/* ---------- TABLET / DESKTOP (two pane) ---------- */}
+      <div className="hidden md:flex flex-1 min-h-0 h-full -mx-4 -my-4">
         {/* Left: list (fixed width) */}
-        <aside className="w-[380px] xl:w-[420px] shrink-0 border-r border-border/60 bg-background flex flex-col min-h-0 overflow-hidden">
+        <aside className="w-[320px] lg:w-[380px] xl:w-[420px] shrink-0 border-r border-border/60 bg-background flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
             <CrmChatsPage />
           </div>
