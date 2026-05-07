@@ -16,6 +16,10 @@ import { normalizeCrmContactArrays } from '@/lib/crmMultiValue';
  */
 const LITE_COLUMNS = [
   'id',
+  'first_name',
+  'last_name',
+  'email',
+  'phone',
   'status',
   'source',
   'lead_type',
@@ -27,7 +31,10 @@ const LITE_COLUMNS = [
   'contact_type',
   'assigned_to',
   'city_pref',
+  'property_type_pref',
+  'is_pre_approved',
   'campaign_source',
+  'last_touch_at',
 ].join(',');
 
 export function useCrmContactsLite() {
