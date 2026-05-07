@@ -310,7 +310,7 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
     });
 
     return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
-  }, [messages, emails, smsRows, engagement, forms, activityEvents, showings, tasks, email]);
+  }, [messages, emails, smsRows, engagement, forms, activityEvents, views, sessions, showings, tasks, email]);
 
   const filtered = useMemo(
     () => filter === 'all' ? timeline : timeline.filter(e => e.kind === filter),
