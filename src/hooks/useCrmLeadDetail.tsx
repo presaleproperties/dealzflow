@@ -167,6 +167,10 @@ export function useUpdateCrmContact() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contact', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      // Leads table reads from a paginated query key — must invalidate that too,
+      // otherwise inline edits (tags, status, etc.) appear to "not save".
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-tags'] });
       queryClient.invalidateQueries({ queryKey: ['crm-notes', id] });
     },
     onError: (err: Error) => toast.error(err.message),
