@@ -177,9 +177,26 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   const presaleSnapshot = (teamAgent?.presale_snapshot ?? {}) as Record<string, unknown>;
+  // Email → Presale agent_slug map (per Presale auto-templates spec).
+  // Used as a safety net so the auto-template signature is always the
+  // correct agent even if presale_snapshot.slug isn't seeded yet.
+  const EMAIL_TO_PRESALE_SLUG: Record<string, string> = {
+    "info@meetuzair.com": "uzair-muhammad-prec",
+    "ravish@presaleproperties.com": "ravish-passy",
+    "sarb@presaleproperties.com": "sarb-grewal",
+    "admin@presaleproperties.com": "zara-malik",
+  };
+  const senderEmailLc = (
+    (typeof presaleSnapshot.email === "string" && presaleSnapshot.email) ||
+    teamAgent?.email ||
+    teamAgent?.gmail_address ||
+    user.email ||
+    ""
+  ).toLowerCase();
   const agentSlug =
     (typeof presaleSnapshot.slug === "string" && presaleSnapshot.slug) ||
     teamAgent?.slug ||
+    EMAIL_TO_PRESALE_SLUG[senderEmailLc] ||
     null;
   const agentEmail =
     (typeof presaleSnapshot.email === "string" && presaleSnapshot.email) ||
