@@ -25,7 +25,7 @@ import { Pill } from '@/components/crm/shared/Pill';
 import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { usePrefetchLead } from '@/hooks/usePrefetchCrm';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
