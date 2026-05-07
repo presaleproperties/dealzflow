@@ -286,7 +286,7 @@ export function TopNav() {
                         strokeWidth={2.2}
                       />
                       {/* Bridge under trigger to keep hover continuous into menu */}
-                      {isOpen && <span className="absolute left-0 right-0 -bottom-2 h-2" aria-hidden />}
+                      {isOpen && <span className="absolute left-0 right-0 -bottom-3 h-3" aria-hidden />}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
