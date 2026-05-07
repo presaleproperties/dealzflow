@@ -444,6 +444,27 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </Field>
 
+            {/* CTA buttons — show / hide each call-to-action */}
+            <Field label="Call-to-action buttons">
+              <div className="rounded-md border border-border divide-y divide-border">
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="text-sm">View Brochure</div>
+                  <Switch checked={ctaBrochure} onCheckedChange={setCtaBrochure} />
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="text-sm">View Project Details</div>
+                  <Switch checked={ctaProjectDetails} onCheckedChange={setCtaProjectDetails} />
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="text-sm">Call Now</div>
+                  <Switch checked={ctaCallNow} onCheckedChange={setCtaCallNow} />
+                </div>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1.5">
+                Hide individual buttons that appear in the Presale-styled email body.
+              </div>
+            </Field>
+
             {/* Channel: email only (SMS removed) */}
 
             {/* Follow-up toggle */}
