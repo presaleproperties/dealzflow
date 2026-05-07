@@ -422,9 +422,9 @@ export function PipelineKanban() {
                       <span className="text-xs font-semibold text-foreground">
                         {seg.emoji ? `${seg.emoji} ` : ''}{seg.name}
                       </span>
-                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 min-w-[20px] justify-center">
+                      <Pill tone="muted" size="sm" className="tabular-nums justify-center min-w-[24px]">
                         {segContacts.length}
-                      </Badge>
+                      </Pill>
                     </div>
 
                     {/* Droppable area */}

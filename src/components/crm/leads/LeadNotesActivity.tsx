@@ -265,7 +265,7 @@ export function LeadNotesActivity({ contactId }: { contactId: string }) {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={cn(
-              'px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border',
+              'px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none transition-colors border inline-flex items-center',
               filter === f.key
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
