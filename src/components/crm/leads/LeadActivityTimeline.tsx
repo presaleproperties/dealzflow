@@ -208,20 +208,18 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
       });
     });
 
-    // Engagement (opens / clicks)
+    // Engagement (opens / clicks) — show CTA name + icon, never the raw URL
     engagement.forEach((ev: any) => {
       const t = String(ev.event_type || '').toLowerCase();
       const isClick = t.includes('click');
+      const cta = isClick ? resolveCta(ev.metadata?.button, ev.link_url) : null;
       entries.push({
         id: `eng-${ev.id}`,
         kind: 'engagement',
-        icon: isClick ? MousePointerClick : MailOpen,
+        icon: isClick ? cta!.icon : MailOpen,
         tone: TONES.engagement,
-        title: isClick
-          ? `Clicked ${ev.metadata?.button ? `"${ev.metadata.button}"` : 'a link'}`
-          : 'Opened email',
+        title: isClick ? `Clicked ${cta!.label}` : 'Opened email',
         subtitle: ev.template_name || ev.campaign_name || undefined,
-        detail: ev.link_url || undefined,
         time: new Date(ev.occurred_at || ev.created_at),
       });
     });
