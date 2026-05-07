@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   MessageCircle, Mail, CalendarDays, CheckCircle, StickyNote, Send,
   MailOpen, MousePointerClick, FileText, Eye, Phone, MessageSquare, ChevronRight,
+  Download, Building2, DollarSign, Map, Instagram, Facebook, Youtube, Globe, PhoneCall,
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO, isThisWeek, isThisYear } from 'date-fns';
 import { Button } from '@/components/ui/button';
