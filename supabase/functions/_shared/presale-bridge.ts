@@ -143,7 +143,13 @@ export const presaleBridge = {
   }) =>
     call<BridgeRenderedEmail>("bridge-render-email", {
       method: "POST",
-      body: params,
+      body: {
+        ...params,
+        project_slug: params.projectSlug,
+        agent_slug: params.agentSlug,
+        template_style: params.templateStyle,
+        lead_name: params.leadName,
+      },
     }),
 };
 
