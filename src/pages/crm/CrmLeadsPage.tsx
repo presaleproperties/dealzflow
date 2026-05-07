@@ -474,7 +474,7 @@ export default function CrmLeadsPage() {
         {/* Main content */}
         <div
           ref={mobileScrollRef}
-          className="flex-1 min-w-0 max-w-full space-y-3 sm:space-y-4 overflow-y-auto overflow-x-hidden pr-1"
+          className="flex-1 min-w-0 max-w-full space-y-2 sm:space-y-3 overflow-y-auto overflow-x-hidden pr-1"
           style={{ paddingBottom: 'var(--bottom-nav-pad, 0px)' }}
         >
           {/* Mobile header — premium editorial: gold underline tabs + minimal text chips */}
