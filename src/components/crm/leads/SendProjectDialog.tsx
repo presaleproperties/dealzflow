@@ -149,12 +149,12 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [attachBrochure, setAttachBrochure] = useState(false);
   const [attachFloorPlans, setAttachFloorPlans] = useState(false);
   const [attachPricing, setAttachPricing] = useState(false);
-  // CTA button toggles (default ON — match Presale auto-template)
-  const [ctaBrochure, setCtaBrochure] = useState(true);
+  // CTA button toggles (default ON — match Presale auto-template).
+  // Brochure / Floor Plans / Pricing buttons are governed by the Attachments
+  // toggles below — no separate CTA toggle for them.
   const [ctaProjectDetails, setCtaProjectDetails] = useState(true);
   const [ctaCallNow, setCtaCallNow] = useState(true);
-  // CTA URL overrides (per-email; blank = use Presale default)
-  const [brochureUrlOverride, setBrochureUrlOverride] = useState<string>('');
+  // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
 
   // ─── Recipient signal: last email + open count ────────────────────────
