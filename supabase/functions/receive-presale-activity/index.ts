@@ -154,7 +154,22 @@ Deno.serve(async (req) => {
     .single();
 
   if (insertErr) {
+    await notifySyncFailure(
+      supabase,
+      "event insert failed",
+      `${body.type} for ${email ?? phone ?? "unknown lead"}: ${insertErr.message}`,
+    );
     return jsonResp({ error: insertErr.message }, 500);
+  }
+
+  // Lead identifier present but no CRM match — flag so admin can investigate
+  // (renamed contact, wrong email cased on form, missing import, etc.)
+  if (!contact && (email || phone)) {
+    await notifySyncFailure(
+      supabase,
+      "lead not matched",
+      `Presale sent ${body.type} for ${email ?? phone} but no CRM contact matched. Event was stored for back-fill.`,
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
