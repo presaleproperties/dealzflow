@@ -415,26 +415,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </Field>
 
-            {/* Channel tabs */}
-            <Field label="Channel">
-              <Tabs value={channel} onValueChange={(v) => setChannel(v as 'email' | 'sms')}>
-                <TabsList className="grid grid-cols-2 w-full">
-                  <TabsTrigger value="email" className="gap-1.5"><Mail className="w-3.5 h-3.5" /> Email</TabsTrigger>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <TabsTrigger value="sms" disabled className="gap-1.5 w-full">
-                            <MessageSquare className="w-3.5 h-3.5" /> SMS
-                          </TabsTrigger>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>SMS sends in Prompt 3</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TabsList>
-              </Tabs>
-            </Field>
+            {/* Channel: email only (SMS removed) */}
 
             {/* Follow-up toggle */}
             <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
