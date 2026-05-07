@@ -669,6 +669,7 @@ Deno.serve(async (req) => {
       direction: "outbound",
       gmail_message_id,
       gmail_thread_id,
+      tracking_id: trackingId,
     })
     .select("id")
     .single();
