@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Plus } from 'lucide-react';
 import { LeadStatusBadge } from './LeadStatusBadge';
+import { Pill } from '@/components/crm/shared/Pill';
 import { SwipeRow } from './SwipeRow';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
