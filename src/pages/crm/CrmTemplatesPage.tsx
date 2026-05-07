@@ -47,19 +47,29 @@ export default function CrmTemplatesPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="border-b border-border bg-gradient-to-br from-card via-card to-muted/30 px-4 sm:px-6 py-4 shrink-0">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shrink-0">
-              <FileText className="h-5 w-5 text-primary" />
+      <div className="border-b border-border/60 px-4 sm:px-8 py-5 shrink-0">
+        <div className="max-w-[1400px] mx-auto flex items-end justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold mb-1">
+              Library
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Templates</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Browse, duplicate and ship email templates — for you, your team, and the live Presale catalog.
-              </p>
-            </div>
+            <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight leading-none">
+              Templates
+            </h1>
+            <p className="text-[12.5px] text-muted-foreground mt-1.5 max-w-xl">
+              One library across your drafts, the team, and the live Presale catalog.
+            </p>
           </div>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as 'email' | 'messaging')}>
+            <TabsList className="h-9 bg-muted/60 p-1">
+              <TabsTrigger value="email" className="h-7 gap-1.5 text-xs px-3">
+                <Mail className="w-3.5 h-3.5" /> Email
+              </TabsTrigger>
+              <TabsTrigger value="messaging" className="h-7 gap-1.5 text-xs px-3">
+                <MessageSquare className="w-3.5 h-3.5" /> SMS
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 
@@ -67,21 +77,11 @@ export default function CrmTemplatesPage() {
         className="flex-1 overflow-hidden"
         style={{ paddingBottom: 'var(--bottom-nav-pad, 0px)' }}
       >
-        <div className="max-w-[1400px] mx-auto h-full px-4 sm:px-6 py-4">
+        <div className="max-w-[1400px] mx-auto h-full px-4 sm:px-8 py-5">
           <Tabs value={tab} onValueChange={(v) => setTab(v as 'email' | 'messaging')} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 max-w-md mb-3 shrink-0">
-              <TabsTrigger value="email" className="gap-1.5">
-                <Mail className="w-3.5 h-3.5" /> Email
-              </TabsTrigger>
-              <TabsTrigger value="messaging" className="gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5" /> SMS
-              </TabsTrigger>
-            </TabsList>
-
             <TabsContent value="email" className="flex-1 overflow-hidden mt-0">
               <EmailTemplatesPanel />
             </TabsContent>
-
             <TabsContent value="messaging" className="mt-0">
               <MessagingPanel />
             </TabsContent>
