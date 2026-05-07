@@ -457,22 +457,6 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               <div className="rounded-md border border-border divide-y divide-border">
                 <div className="px-3 py-2.5 space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm">View Brochure</div>
-                    <Switch checked={ctaBrochure} onCheckedChange={setCtaBrochure} />
-                  </div>
-                  {ctaBrochure && (
-                    <Input
-                      type="url"
-                      inputMode="url"
-                      placeholder="Override brochure link (optional) — https://…"
-                      value={brochureUrlOverride}
-                      onChange={(e) => setBrochureUrlOverride(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                  )}
-                </div>
-                <div className="px-3 py-2.5 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
                     <div className="text-sm">View Project Details</div>
                     <Switch checked={ctaProjectDetails} onCheckedChange={setCtaProjectDetails} />
                   </div>
@@ -493,7 +477,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1.5">
-                Toggle buttons on/off and optionally override the link per email. Leave blank to use the Presale default.
+                Brochure / Floor Plans / Pricing buttons are controlled by the Attachments toggles above.
               </div>
             </Field>
 
