@@ -151,22 +151,25 @@ Deno.serve(async (req) => {
 
         // Find existing by lofty_id, then email, then phone
         let existingId: string | null = null;
-        const byLofty = await supabase.from("crm_contacts").select("id").eq("lofty_id", lofty_id).maybeSingle();
-        if (byLofty.data) existingId = byLofty.data.id;
+        let existingTags: string[] = [];
+        const byLofty = await supabase.from("crm_contacts").select("id, tags").eq("lofty_id", lofty_id).maybeSingle();
+        if (byLofty.data) { existingId = byLofty.data.id; existingTags = byLofty.data.tags || []; }
         if (!existingId && email) {
-          const byEmail = await supabase.from("crm_contacts").select("id").eq("email", email).maybeSingle();
-          if (byEmail.data) existingId = byEmail.data.id;
+          const byEmail = await supabase.from("crm_contacts").select("id, tags").eq("email", email).maybeSingle();
+          if (byEmail.data) { existingId = byEmail.data.id; existingTags = byEmail.data.tags || []; }
         }
         if (!existingId && phone) {
-          const byPhone = await supabase.from("crm_contacts").select("id").eq("phone", phone).maybeSingle();
-          if (byPhone.data) existingId = byPhone.data.id;
+          const byPhone = await supabase.from("crm_contacts").select("id, tags").eq("phone", phone).maybeSingle();
+          if (byPhone.data) { existingId = byPhone.data.id; existingTags = byPhone.data.tags || []; }
         }
 
         try {
           if (existingId) {
-            // Don't overwrite Dealzflow-managed fields
-            const { status: _s, ...safe } = upsertRow;
-            const { error } = await supabase.from("crm_contacts").update(safe).eq("id", existingId);
+            // Don't overwrite Dealzflow-managed fields (status) and MERGE tags
+            // so manually-added tags are never wiped by a Lofty refresh.
+            const { status: _s, tags: _t, ...safe } = upsertRow;
+            const mergedTags = Array.from(new Set([...(existingTags || []), ...tags]));
+            const { error } = await supabase.from("crm_contacts").update({ ...safe, tags: mergedTags }).eq("id", existingId);
             if (error) throw error;
             updated++;
           } else {
