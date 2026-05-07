@@ -96,7 +96,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
             const dy = Math.abs(e.clientY - start.y);
             if (dx < 5 && dy < 5) onOpen(contact.id);
           }}
-          className={`group bg-card rounded-lg border border-border p-3 mb-2 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
+          className={`group bg-card rounded-lg border border-border px-2.5 py-2 mb-1.5 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
         >
           {/* Header: name + assigned avatar */}
           <div className="flex items-start justify-between gap-2 mb-2">
