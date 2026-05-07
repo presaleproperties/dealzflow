@@ -153,6 +153,9 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [ctaBrochure, setCtaBrochure] = useState(true);
   const [ctaProjectDetails, setCtaProjectDetails] = useState(true);
   const [ctaCallNow, setCtaCallNow] = useState(true);
+  // CTA URL overrides (per-email; blank = use Presale default)
+  const [brochureUrlOverride, setBrochureUrlOverride] = useState<string>('');
+  const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
 
   // ─── Recipient signal: last email + open count ────────────────────────
   const { data: lastEmail } = useQuery({
