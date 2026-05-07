@@ -169,6 +169,17 @@ Deno.serve(async (req) => {
     return jsonResp({ error: "missing_lead_identifier" }, 400);
   }
 
+  // Skip events from internal Presale accounts — they pollute the activity feed
+  const INTERNAL_EMAILS = new Set([
+    "info@presaleproperties.com",
+    "admin@presaleproperties.com",
+    "noreply@presaleproperties.com",
+    "no-reply@presaleproperties.com",
+  ]);
+  if (body.lead_email && INTERNAL_EMAILS.has(body.lead_email.trim().toLowerCase())) {
+    return jsonResp({ ok: true, skipped: "internal_email" });
+  }
+
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   const email = body.lead_email?.trim().toLowerCase() ?? null;
