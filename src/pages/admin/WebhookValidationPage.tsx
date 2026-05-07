@@ -143,7 +143,7 @@ function useLeadProbe(emailRaw: string) {
     queryFn: async () => {
       const { data: contact } = await supabase
         .from("crm_contacts")
-        .select("id, name, email, phone, source, created_at, presale_user_id")
+        .select("id, first_name, last_name, email, phone, source, created_at, presale_user_id")
         .eq("email", email)
         .maybeSingle();
 
