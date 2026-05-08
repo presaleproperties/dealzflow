@@ -119,20 +119,20 @@ export default function CrmSmsCenterPage() {
   }, [numbers, settings, channelLogs]);
 
   const TAB_META: Record<string, { label: string; subtitle: string; icon: typeof Inbox }> = {
-    inbox:    { label: 'Inbox',    subtitle: 'One-on-one conversations with leads.',         icon: Inbox },
-    send:     { label: 'Send',     subtitle: 'Compose a blast, browse templates, view history.', icon: Send },
-    settings: { label: 'Settings', subtitle: 'Numbers, opt-outs, quiet hours, deliverability.',  icon: SettingsIcon },
+    inbox:     { label: 'Inbox',     subtitle: 'One-on-one conversations with leads.',         icon: Inbox },
+    templates: { label: 'Templates', subtitle: 'Reusable SMS snippets with merge tags.',       icon: MessageSquare },
+    history:   { label: 'History',   subtitle: 'Past blasts with delivery + reply stats.',     icon: Clock },
+    settings:  { label: 'Settings',  subtitle: 'Numbers, opt-outs, quiet hours, deliverability.', icon: SettingsIcon },
   };
   const active = TAB_META[tab] ?? TAB_META.inbox;
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      {/* ============ Compact header — tabs + status chips only ============ */}
+      {/* ============ Compact header — tabs + New Blast + status chips ============ */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        {/* Segmented pill tabs — matches /crm/email aesthetic */}
         <div className="-mx-1 overflow-x-auto no-scrollbar">
           <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
-            {(['inbox', 'send', 'settings'] as const).map(v => {
+            {(['inbox', 'templates', 'history', 'settings'] as const).map(v => {
               const meta = TAB_META[v];
               const isActive = tab === v;
               return (
@@ -154,7 +154,6 @@ export default function CrmSmsCenterPage() {
           </div>
         </div>
 
-        {/* Inline status chips */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {failed24h.length > 0 && (
             <button
@@ -171,10 +170,13 @@ export default function CrmSmsCenterPage() {
               {scheduledQueue.length} scheduled · {format(new Date(scheduledQueue[0].scheduled_for!), 'MMM d, h:mm a')}
             </span>
           )}
+          <Button size="sm" className="h-8 gap-1.5" onClick={() => setComposerOpen(true)}>
+            <Send className="w-3.5 h-3.5" />
+            New Blast
+          </Button>
         </div>
       </div>
 
-      {/* No-number gate banner */}
       {numbers.length === 0 && !settings?.messaging_service_sid && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3">
           <MessageSquare className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
@@ -188,38 +190,51 @@ export default function CrmSmsCenterPage() {
         </div>
       )}
 
-      {/* ============ Tab content (controlled by buttons above) ============ */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="sr-only">
           <TabsTrigger value="inbox">Inbox</TabsTrigger>
-          <TabsTrigger value="send">Send</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
-        {/* ============ INBOX ============ */}
         <TabsContent value="inbox" className="mt-4">
           <MessagingCenter channel="sms" onChannelChange={() => { /* SMS-only */ }} />
         </TabsContent>
 
-        {/* ============ SEND (blast composer + history + templates) ============ */}
-        <TabsContent value="send" className="mt-4 space-y-4">
-          <SendTab
-            templates={templates}
-            campaigns={campaigns}
-            recipients={filteredRecipients}
-            reachable={reachable}
-            optedOutCount={optedOutCount}
-            fStatuses={fStatuses} setFStatuses={setFStatuses}
-            fSources={fSources} setFSources={setFSources}
-            fAgents={fAgents} setFAgents={setFAgents}
-            fTags={fTags} setFTags={setFTags}
-            toggleArr={toggleArr}
-            onLaunchBlast={launchBlast}
-            onPreviewRecipients={() => setPreviewOpen(true)}
-          />
+        <TabsContent value="templates" className="mt-4">
+          <TemplatesTab templates={templates} />
         </TabsContent>
 
-        {/* ============ SETTINGS (checklist + numbers + templates + opt-outs + stats) ============ */}
+        <TabsContent value="history" className="mt-4 space-y-2">
+          {campaigns.length === 0 ? (
+            <Card className="p-8 text-center text-sm text-muted-foreground">
+              No SMS blasts yet. Click <strong>New Blast</strong> to send your first one.
+            </Card>
+          ) : (
+            campaigns.map(c => (
+              <Card key={c.id} className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-medium truncate">{c.name}</h3>
+                      <CampaignStatusBadge status={c.status} />
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{c.body}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <span><Users className="w-3 h-3 inline mr-1" />{c.recipients_count} recipients</span>
+                      {c.scheduled_for && <span><Calendar className="w-3 h-3 inline mr-1" />{format(new Date(c.scheduled_for), 'MMM d, h:mm a')}</span>}
+                      <span>{c.delivered_count}/{c.recipients_count} delivered</span>
+                      {c.failed_count > 0 && <span className="text-red-600">{c.failed_count} failed</span>}
+                      {c.reply_count > 0 && <span className="text-primary">{c.reply_count} replies</span>}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-4 space-y-4">
           <SettingsTab
             checklist={checklist}
