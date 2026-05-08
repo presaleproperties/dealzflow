@@ -398,10 +398,10 @@ function WhatsAppBubble({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div className={cn('flex group', isOutbound ? 'justify-end pr-2' : 'justify-start pl-2', sameAsPrev ? 'mt-[2px]' : 'mt-1.5')}>
-          <div className="relative max-w-[78%] sm:max-w-[65%]">
+          <div className="relative max-w-[85%] sm:max-w-[72%] lg:max-w-[65%] min-w-0">
             <div
               className={cn(
-                'relative px-2.5 pt-1.5 pb-1 text-[14.5px] leading-snug msg-pop-in',
+                'relative px-2.5 pt-2 pb-1.5 text-[14.5px] leading-[1.45] msg-pop-in',
                 isOutbound ? 'wa-bubble-out' : 'wa-bubble-in',
                 // WhatsApp tail goes on the FIRST bubble in a run (top corner) — opposite of iMessage
                 isOutbound
@@ -436,7 +436,7 @@ function WhatsAppBubble({
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap break-words pr-[64px]">
+              <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto pr-[64px]">
                 <HighlightedText text={text} query={highlight} />
               </div>
 
