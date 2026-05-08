@@ -552,7 +552,13 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopyHtml}>
                 <Copy className="w-3.5 h-3.5" /> Copy HTML
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => { setFullPreview(false); setSendTestOpen(true); }}
+                disabled={!subject.trim() || !htmlContent.trim()}
+              >
                 <Send className="w-3.5 h-3.5" /> Send Test Email
               </Button>
             </div>
@@ -585,6 +591,16 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Send-test dialog (uses persisted HTML so signature is included) */}
+      <SendTestDialog
+        open={sendTestOpen}
+        onOpenChange={setSendTestOpen}
+        templateId={template?.id ?? null}
+        subject={subject}
+        html={persistableHtml}
+        defaultEmail={agent?.email ?? null}
+      />
     </div>
   );
 }
