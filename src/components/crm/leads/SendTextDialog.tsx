@@ -315,7 +315,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <h2 className="text-[15px] sm:text-base font-bold uppercase tracking-wider truncate">
-              Send {channel === 'whatsapp' ? 'WhatsApp' : 'Text'}
+              {isMass ? `Mass ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'} · ${reachable.length}` : `Send ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'}`}
             </h2>
             <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted shrink-0">
               <button
