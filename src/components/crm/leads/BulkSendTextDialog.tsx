@@ -158,13 +158,19 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("p-0 overflow-hidden", audiencePicker ? "max-w-3xl" : "max-w-2xl")}>
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className={cn(
+        "p-0 overflow-hidden rounded-2xl border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]",
+        audiencePicker ? "max-w-3xl" : "max-w-2xl",
+      )}>
+        <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/60 bg-gradient-to-b from-card to-card/95">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/80">
+            Mass Send · {channel === 'whatsapp' ? 'WhatsApp' : 'SMS / MMS'}
+          </p>
+          <DialogTitle className="flex items-center gap-2 text-[15px] font-semibold tracking-tight mt-0.5">
             <Users className="w-4 h-4 text-primary" />
-            Send mass {channel === 'whatsapp' ? 'WhatsApp' : 'text'}
+            Sending to {reachable.length.toLocaleString()} {reachable.length === 1 ? 'recipient' : 'recipients'}
           </DialogTitle>
-          <div className="flex items-center gap-1 mt-2 p-0.5 rounded-md bg-muted w-fit">
+          <div className="flex items-center gap-1 mt-2.5 p-0.5 rounded-md bg-muted w-fit">
             <button
               onClick={() => setChannel('sms')}
               className={cn(
@@ -217,18 +223,40 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
           )}
 
           {/* Recipients summary */}
-          <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-muted/40 border border-border">
-            <Badge variant="outline" className="font-medium">
-              {reachable.length} recipients
-            </Badge>
-            {skippedNoPhone > 0 && (
-              <Badge variant="outline" className="text-amber-600 border-amber-600/30">
-                {skippedNoPhone} skipped (no phone)
+          <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                Recipients
+              </span>
+              <Badge variant="outline" className="font-semibold tabular-nums text-[11px]">
+                {reachable.length}
               </Badge>
+              {skippedNoPhone > 0 && (
+                <Badge variant="outline" className="text-amber-600 border-amber-500/40 text-[10.5px]">
+                  {skippedNoPhone} skipped · no phone
+                </Badge>
+              )}
+              <span className="text-[10.5px] text-muted-foreground ml-auto">
+                Opt-outs auto-excluded · Quiet hours respected
+              </span>
+            </div>
+            {reachable.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {reachable.slice(0, 10).map(r => (
+                  <span
+                    key={r.id}
+                    className="inline-flex items-center h-5 px-2 rounded-full bg-background border border-border/60 text-[10.5px] font-medium text-foreground/85"
+                  >
+                    {[r.first_name, r.last_name].filter(Boolean).join(' ') || r.phone}
+                  </span>
+                ))}
+                {reachable.length > 10 && (
+                  <span className="text-[10.5px] text-muted-foreground px-1 self-center">
+                    +{reachable.length - 10} more
+                  </span>
+                )}
+              </div>
             )}
-            <span className="text-xs text-muted-foreground ml-auto">
-              Opt-outs auto-excluded · Quiet hours respected
-            </span>
           </div>
 
           {/* Campaign name */}
