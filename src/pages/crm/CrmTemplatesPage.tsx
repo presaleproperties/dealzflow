@@ -266,14 +266,14 @@ function EmailTemplatesPanel() {
       {/* ======================== LEFT RAIL ======================== */}
       <aside className="hidden lg:flex flex-col gap-4 overflow-hidden">
         <div className="space-y-1.5">
-          <Button size="sm" className="w-full gap-1.5 h-9 font-medium" onClick={() => { setCloneDraft(null); setCreating(true); }}>
+          <Button size="sm" className="w-full gap-1.5 h-9 font-medium" onClick={() => { openHub('new'); }}>
             <Plus className="w-3.5 h-3.5" /> New template
           </Button>
           <Button
             size="sm"
             variant="ghost"
             className="w-full gap-1.5 h-8 text-[12px] text-muted-foreground hover:text-foreground"
-            onClick={() => { setCloneDraft(null); setCreating(true); }}
+            onClick={() => { openHub('new'); }}
           >
             <Sparkles className="w-3.5 h-3.5 text-primary" /> Draft with AI
           </Button>
@@ -384,7 +384,7 @@ function EmailTemplatesPanel() {
                 className="h-9 pl-8 text-sm"
               />
             </div>
-            <Button size="sm" onClick={() => { setCloneDraft(null); setCreating(true); }} className="shrink-0">
+            <Button size="sm" onClick={() => { openHub('new'); }} className="shrink-0">
               <Plus className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -433,7 +433,7 @@ function EmailTemplatesPanel() {
                     ? 'Nothing matches those filters.'
                     : 'No templates yet.'}
                 </div>
-                <Button size="sm" variant="outline" onClick={() => { setCloneDraft(null); setCreating(true); }}>
+                <Button size="sm" variant="outline" onClick={() => { openHub('new'); }}>
                   <Plus className="w-3.5 h-3.5 mr-1" /> New template
                 </Button>
               </div>
@@ -447,7 +447,7 @@ function EmailTemplatesPanel() {
                     item={u}
                     selected={selected?.id === u.id}
                     onSelect={() => setSelectedKey(u.id)}
-                    onEdit={u.kind === 'local' ? () => setEditing(u.tpl) : undefined}
+                    onEdit={u.kind === 'local' ? () => openHub('edit', u.tpl.id) : undefined}
                     onToggleFav={u.kind === 'local'
                       ? () => toggleFav.mutate({ id: u.tpl.id, is_favorite: !u.tpl.is_favorite })
                       : undefined}
@@ -473,7 +473,7 @@ function EmailTemplatesPanel() {
           {selected ? (
             <PreviewPane
               item={selected}
-              onEdit={selected.kind === 'local' ? () => setEditing(selected.tpl) : undefined}
+              onEdit={selected.kind === 'local' ? () => openHub('edit', selected.tpl.id) : undefined}
               onClone={() => {
                 if (selected.kind === 'local') duplicate.mutate(selected.tpl);
                 else cloneToLibrary(selected.asset);
