@@ -15,7 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  useSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
+  useSendSms, useBulkSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
   SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
@@ -44,6 +44,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Pre-select a channel (e.g. 'whatsapp' from the WhatsApp action button). */
   initialChannel?: MessagingChannel;
+  /** Additional recipients for mass-send. When the total count is >1, the
+   *  composer routes through `bulk-send-sms` (personalized server-side). The
+   *  primary `contact` drives the live variable preview. */
+  extraContacts?: CrmContact[];
+  /** Fired after a successful send (single or mass). */
+  onSent?: () => void;
 }
 
 function formatPhoneDisplay(phone?: string | null): string {
@@ -58,9 +64,10 @@ function formatPhoneDisplay(phone?: string | null): string {
   return phone;
 }
 
-export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms' }: Props) {
+export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms', extraContacts, onSent }: Props) {
   const { user } = useAuth();
   const sendSms = useSendSms();
+  const bulkSendSms = useBulkSendSms();
   const { data: templates = [] } = useSmsTemplates();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
@@ -225,15 +232,54 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     }).eq('id', tplId).then(() => {}, () => {});
   }
 
-  const canSend = !!contact.phone && body.trim().length > 0 && !sendSms.isPending && !isOptedOut;
+  /** Combined recipient list — primary contact first then any extras passed
+   *  in for mass-send. De-duplicated by id, must have a phone. */
+  const allRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    const out: CrmContact[] = [];
+    for (const c of [contact, ...(extraContacts ?? [])]) {
+      if (!c) continue;
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      out.push(c);
+    }
+    return out;
+  }, [contact, extraContacts]);
+  const reachable = useMemo(
+    () => allRecipients.filter(c => !!c.phone && c.phone.replace(/\D/g, '').length >= 8),
+    [allRecipients],
+  );
+  const skippedNoPhone = allRecipients.length - reachable.length;
+  const isMass = reachable.length > 1;
+  const isPending = sendSms.isPending || bulkSendSms.isPending;
+  const canSend = isMass
+    ? reachable.length > 0 && body.trim().length > 0 && !isPending
+    : !!contact.phone && body.trim().length > 0 && !isPending && !isOptedOut;
 
   function handleSend() {
-    if (!contact.phone) {
-      toast.error('This lead has no phone number');
-      return;
-    }
     if (scheduled && !scheduledFor) {
       toast.error('Pick a scheduled time');
+      return;
+    }
+    if (isMass) {
+      if (reachable.length === 0) {
+        toast.error('No recipients with valid phone numbers');
+        return;
+      }
+      bulkSendSms.mutate({
+        name: `Blast — ${new Date().toLocaleDateString()}`,
+        body,
+        media_urls: mediaUrls,
+        contact_ids: reachable.map(r => r.id),
+        scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
+        channel,
+      }, {
+        onSuccess: () => { onSent?.(); onOpenChange(false); },
+      });
+      return;
+    }
+    if (!contact.phone) {
+      toast.error('This lead has no phone number');
       return;
     }
     sendSms.mutate({
@@ -245,7 +291,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       channel,
       scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
     }, {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => { onSent?.(); onOpenChange(false); },
     });
   }
 
@@ -269,7 +315,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <h2 className="text-[15px] sm:text-base font-bold uppercase tracking-wider truncate">
-              Send {channel === 'whatsapp' ? 'WhatsApp' : 'Text'}
+              {isMass ? `Mass ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'} · ${reachable.length}` : `Send ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'}`}
             </h2>
             <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted shrink-0">
               <button
@@ -343,25 +389,62 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             )}
           </div>
 
-          {/* To row */}
-          <div className="flex items-center gap-3 px-5 sm:px-8 h-11 sm:h-14 border-b">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
-              <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
-              {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
-            </div>
+          {/* To row — single chip when 1 recipient, chip rail + Mass badge when many */}
+          <div className="flex items-center gap-2 px-5 sm:px-8 min-h-11 sm:min-h-14 py-2 border-b flex-wrap">
+            {!isMass ? (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
+                <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
+                {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
+              </div>
+            ) : (
+              <>
+                {reachable.slice(0, 8).map(r => {
+                  const initial = (r.first_name?.[0] ?? r.phone?.[0] ?? '?').toUpperCase();
+                  const label = [r.first_name, r.last_name].filter(Boolean).join(' ') || formatPhoneDisplay(r.phone) || 'Lead';
+                  return (
+                    <span
+                      key={r.id}
+                      title={formatPhoneDisplay(r.phone)}
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full"
+                    >
+                      <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">{initial}</span>
+                      <span className="truncate max-w-[140px]">{label}</span>
+                    </span>
+                  );
+                })}
+                {reachable.length > 8 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-[11.5px] font-medium">
+                    +{reachable.length - 8} more
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                  Mass · {reachable.length}
+                </span>
+                {skippedNoPhone > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-[10.5px] font-medium">
+                    {skippedNoPhone} skipped · no phone
+                  </span>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Opt-out / no phone warning */}
-          {!contact.phone && (
+          {/* Opt-out / no phone warning (single-recipient only) */}
+          {!isMass && !contact.phone && (
             <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive">No phone number on file for this lead. Add one to send a text.</p>
             </div>
           )}
-          {isOptedOut && (
+          {!isMass && isOptedOut && (
             <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive font-medium">This contact has opted out (replied STOP). Sending is blocked.</p>
+            </div>
+          )}
+          {isMass && (
+            <div className="flex items-start gap-2 px-5 sm:px-8 py-2 bg-muted/30 border-b text-[11px] text-muted-foreground">
+              <span>Opt-outs auto-excluded · Quiet hours respected · Personalized per recipient</span>
             </div>
           )}
 
@@ -612,12 +695,12 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             disabled={!canSend}
             className="min-w-[110px]"
           >
-            {sendSms.isPending ? (
+            {isPending ? (
               <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Sending</>
             ) : scheduled ? (
-              <><Calendar className="h-4 w-4 mr-1.5" />Schedule</>
+              <><Calendar className="h-4 w-4 mr-1.5" />{isMass ? `Schedule ${reachable.length}` : 'Schedule'}</>
             ) : (
-              <><Send className="h-4 w-4 mr-1.5" />Send</>
+              <><Send className="h-4 w-4 mr-1.5" />{isMass ? `Send to ${reachable.length}` : 'Send'}</>
             )}
           </Button>
         </div>
