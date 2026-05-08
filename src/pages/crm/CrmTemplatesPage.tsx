@@ -22,8 +22,7 @@ import { Link } from 'react-router-dom';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { renderWithSampleData } from '@/lib/emailVariables';
-import { AgentHubLinks } from '@/lib/agentHub';
-import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
+import { openAgentHub } from '@/lib/agentHub';
 
 // ===================================================================
 // Page shell
@@ -82,13 +81,12 @@ export default function CrmTemplatesPage() {
 }
 
 function OpenAgentHubButton() {
-  const agentSlug = usePresaleAgentStore((s) => s.agent?.slug ?? null);
   return (
     <Button
       size="sm"
       className="gap-1.5 h-9"
-      onClick={() => window.open(AgentHubLinks.templates(agentSlug), '_blank', 'noopener,noreferrer')}
-      title="Edit & build templates in Presale Agent Hub"
+      onClick={() => openAgentHub('/dashboard/email-builder')}
+      title="One-click sign-in to Presale Agent Hub"
     >
       <ExternalLink className="w-3.5 h-3.5" />
       <span className="hidden sm:inline">Open Agent Hub</span>
@@ -128,12 +126,9 @@ function EmailTemplatesPanel() {
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
 
-  const agentSlug = usePresaleAgentStore((s) => s.agent?.slug ?? null);
-  const openHubEdit = (key?: string) => {
-    const url = key
-      ? AgentHubLinks.editTemplate(key, agentSlug)
-      : AgentHubLinks.templates(agentSlug);
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const openHubEdit = (_key?: string) => {
+    // Deep-link to specific template is a v2; for now just open the builder.
+    openAgentHub('/dashboard/email-builder');
   };
 
   const all: UnifiedTemplate[] = useMemo(() => {
