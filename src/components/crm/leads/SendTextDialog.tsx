@@ -232,15 +232,54 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     }).eq('id', tplId).then(() => {}, () => {});
   }
 
-  const canSend = !!contact.phone && body.trim().length > 0 && !sendSms.isPending && !isOptedOut;
+  /** Combined recipient list — primary contact first then any extras passed
+   *  in for mass-send. De-duplicated by id, must have a phone. */
+  const allRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    const out: CrmContact[] = [];
+    for (const c of [contact, ...(extraContacts ?? [])]) {
+      if (!c) continue;
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      out.push(c);
+    }
+    return out;
+  }, [contact, extraContacts]);
+  const reachable = useMemo(
+    () => allRecipients.filter(c => !!c.phone && c.phone.replace(/\D/g, '').length >= 8),
+    [allRecipients],
+  );
+  const skippedNoPhone = allRecipients.length - reachable.length;
+  const isMass = reachable.length > 1;
+  const isPending = sendSms.isPending || bulkSendSms.isPending;
+  const canSend = isMass
+    ? reachable.length > 0 && body.trim().length > 0 && !isPending
+    : !!contact.phone && body.trim().length > 0 && !isPending && !isOptedOut;
 
   function handleSend() {
-    if (!contact.phone) {
-      toast.error('This lead has no phone number');
-      return;
-    }
     if (scheduled && !scheduledFor) {
       toast.error('Pick a scheduled time');
+      return;
+    }
+    if (isMass) {
+      if (reachable.length === 0) {
+        toast.error('No recipients with valid phone numbers');
+        return;
+      }
+      bulkSendSms.mutate({
+        name: `Blast — ${new Date().toLocaleDateString()}`,
+        body,
+        media_urls: mediaUrls,
+        contact_ids: reachable.map(r => r.id),
+        scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
+        channel,
+      }, {
+        onSuccess: () => { onSent?.(); onOpenChange(false); },
+      });
+      return;
+    }
+    if (!contact.phone) {
+      toast.error('This lead has no phone number');
       return;
     }
     sendSms.mutate({
@@ -252,7 +291,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       channel,
       scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
     }, {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => { onSent?.(); onOpenChange(false); },
     });
   }
 
