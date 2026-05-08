@@ -1445,14 +1445,53 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
 .native-icon { -webkit-user-drag: none; pointer-events: auto; }
 
 /* ------------------------------------------------------------------
-   Agent signature — responsive rendering
-   Signatures are authored in Presale as fixed-width <table> layouts.
-   On mobile we stack the cells so headshot/text don't get cramped;
-   desktop keeps the authored layout untouched.
+   Agent signature — compact, tasteful sign-off
+   Presale authors signatures as oversized table layouts (140px+ headshot,
+   display-sized name). We rein them in so they read as a polished
+   sign-off in the CRM rather than dominating the message.
    ------------------------------------------------------------------ */
-.agent-signature-block { max-width: 100%; }
+.agent-signature-block {
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.45;
+  color: hsl(var(--foreground));
+}
 .agent-signature-block table { border-collapse: collapse; max-width: 100%; }
+.agent-signature-block td, .agent-signature-block th { vertical-align: top; }
 .agent-signature-block img { max-width: 100%; height: auto; }
+
+/* Cap the headshot — Presale ships it ~140px+ which dwarfs short emails */
+.agent-signature-block img[src*="headshot"],
+.agent-signature-block img[alt*="headshot" i],
+.agent-signature-block img[width] {
+  width: 64px !important;
+  height: 64px !important;
+  max-width: 64px !important;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* Tone down display-sized name */
+.agent-signature-block h1,
+.agent-signature-block h2,
+.agent-signature-block h3 {
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  margin: 0 0 2px !important;
+}
+
+/* Soften heavy left accent bar */
+.agent-signature-block td[style*="border-left"],
+.agent-signature-block div[style*="border-left"] {
+  border-left-width: 2px !important;
+  padding-left: 10px !important;
+}
+
+.agent-signature-block p { margin: 2px 0 !important; font-size: 12.5px !important; }
+.agent-signature-block a { color: hsl(var(--primary)); text-decoration: none; }
+.agent-signature-block a:hover { text-decoration: underline; }
 
 @media (max-width: 520px) {
   .agent-signature-block table,
@@ -1462,14 +1501,31 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
   .agent-signature-block th {
     display: block !important;
     width: 100% !important;
-    padding: 4px 0 !important;
+    padding: 3px 0 !important;
     text-align: left !important;
   }
   .agent-signature-block td[align="center"],
-  .agent-signature-block th[align="center"] { text-align: center !important; }
-  .agent-signature-block img[width] { width: auto !important; max-width: 88px !important; }
-  .agent-signature-block { font-size: 13.5px; line-height: 1.5; }
-  .agent-signature-block p { margin: .35em 0 !important; }
+  .agent-signature-block th[align="center"] { text-align: left !important; }
+  .agent-signature-block img[src*="headshot"],
+  .agent-signature-block img[alt*="headshot" i],
+  .agent-signature-block img[width] {
+    width: 52px !important;
+    height: 52px !important;
+    max-width: 52px !important;
+    margin-bottom: 6px;
+  }
+  .agent-signature-block { font-size: 12.5px; }
+  .agent-signature-block h1,
+  .agent-signature-block h2,
+  .agent-signature-block h3 { font-size: 13.5px !important; }
+  .agent-signature-block td[style*="border-left"],
+  .agent-signature-block div[style*="border-left"] {
+    border-left: 0 !important;
+    padding-left: 0 !important;
+    border-top: 1px solid hsl(var(--border)) !important;
+    padding-top: 8px !important;
+    margin-top: 8px !important;
+  }
 }
 
 /* Hide scrollbar but keep scrollability — used by horizontally-scrollable tab strips */
