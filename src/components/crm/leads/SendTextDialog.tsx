@@ -695,12 +695,12 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             disabled={!canSend}
             className="min-w-[110px]"
           >
-            {sendSms.isPending ? (
+            {isPending ? (
               <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Sending</>
             ) : scheduled ? (
-              <><Calendar className="h-4 w-4 mr-1.5" />Schedule</>
+              <><Calendar className="h-4 w-4 mr-1.5" />{isMass ? `Schedule ${reachable.length}` : 'Schedule'}</>
             ) : (
-              <><Send className="h-4 w-4 mr-1.5" />Send</>
+              <><Send className="h-4 w-4 mr-1.5" />{isMass ? `Send to ${reachable.length}` : 'Send'}</>
             )}
           </Button>
         </div>
