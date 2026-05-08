@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle, History, Cloud, CloudOff } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle, History, Cloud, CloudOff, Cloud as CloudIcon, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,8 @@ import { SenderIdentityField } from './SenderIdentityField';
 import { SendTestDialog } from './SendTestDialog';
 import { SyncHistoryList } from './SyncHistoryList';
 import { useTemplateAutosave } from '@/hooks/useTemplateAutosave';
+import { PresaleProjectPicker } from '@/components/presale/PresaleProjectPicker';
+import { bridgeClient, type BridgeProjectFull } from '@/lib/presaleBridgeClient';
 
 const CATEGORIES = [
   { value: 'project_launch', label: 'Project Launch' },
@@ -41,6 +43,12 @@ const CATEGORIES = [
 
 const PROJECT_OPTIONS = ['eden', 'rail_district', 'mason', 'the_era', 'concord_gardens', 'park_george'];
 const AREA_OPTIONS = ['surrey', 'langley', 'burnaby', 'coquitlam', 'vancouver', 'richmond'];
+const PRESALE_STYLES: { value: string; label: string }[] = [
+  { value: 'modern', label: 'Modern' },
+  { value: 'editorial', label: 'Editorial' },
+  { value: 'classic', label: 'Classic' },
+  { value: 'minimal', label: 'Minimal' },
+];
 
 function detectMergeTags(html: string): string[] {
   const matches = html.match(/\{\{[a-zA-Z_]+\}\}/g);
@@ -59,7 +67,6 @@ interface TemplateDraft {
 
 interface Props {
   template: EmailTemplate | null;
-  /** Optional starting values when creating a new template (e.g. cloning a Presale asset). */
   initialDraft?: TemplateDraft;
   onClose: () => void;
   onSendCampaign?: (tpl: EmailTemplate) => void;
@@ -84,13 +91,19 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   const [previewWidth, setPreviewWidth] = useState<'desktop' | 'mobile'>('desktop');
   const [fullPreview, setFullPreview] = useState(false);
   const [withSampleData, setWithSampleData] = useState(true);
-  // ON by default for new drafts; for an existing template, ON only if it
-  // already has a stamped signature block (so we never silently mutate
-  // legacy templates that have a manually-pasted signature).
   const [appendSignature, setAppendSignature] = useState<boolean>(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [sendTestOpen, setSendTestOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  // ---- Live Presale preview state ----
+  const [previewMode, setPreviewMode] = useState<'local' | 'presale'>('local');
+  const [presaleProject, setPresaleProject] = useState<BridgeProjectFull | null>(null);
+  const [presaleStyle, setPresaleStyle] = useState<string>('modern');
+  const [presaleLoading, setPresaleLoading] = useState(false);
+  const [presaleError, setPresaleError] = useState<string | null>(null);
+  const [presaleHtml, setPresaleHtml] = useState<string>('');
+  const [presaleSubject, setPresaleSubject] = useState<string>('');
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
@@ -107,8 +120,6 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
       setName(template.name);
       setSubject(template.subject ?? '');
       setPreviewText(template.preview_text ?? '');
-      // Strip any stamped block while editing so the textarea stays clean;
-      // it gets re-applied at save time when the toggle is on.
       setHtmlContent(stripSignatureBlock(tplHtml));
       setCategory(template.category ?? 'custom');
       setProjectTags(template.project_tags ?? []);
@@ -131,34 +142,62 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
       const doc = ref.current.contentDocument;
       if (doc) {
         doc.open();
-        doc.write(html || '<p style="color:#888;font-family:sans-serif;padding:20px;">Paste your HTML email code here...</p>');
+        doc.write(html || '<p style="color:#888;font-family:sans-serif;padding:20px;">Paste your HTML email code here…</p>');
         doc.close();
       }
     }
   }, []);
 
-  // Compose preview = body + (optional) signature, then render sample data
   const composedHtml = useMemo(
     () => (appendSignature && signatureHtml ? applySignatureBlock(htmlContent, signatureHtml) : htmlContent),
     [htmlContent, appendSignature, signatureHtml],
   );
-  const renderedHtml = useMemo(
+  const localPreviewHtml = useMemo(
     () => (withSampleData ? renderWithSampleData(composedHtml) : composedHtml),
     [composedHtml, withSampleData],
   );
+  const renderedHtml = previewMode === 'presale' && presaleHtml ? presaleHtml : localPreviewHtml;
 
   useEffect(() => { updateIframe(iframeRef, renderedHtml); }, [renderedHtml, previewWidth, updateIframe]);
   useEffect(() => { if (fullPreview) updateIframe(fullIframeRef, renderedHtml); }, [renderedHtml, fullPreview, updateIframe]);
 
-  /** Insert a snippet at the caret of whichever input was last focused. */
+  const fetchPresaleRender = useCallback(async () => {
+    if (!presaleProject?.slug) return;
+    if (!agent?.slug) {
+      setPresaleError('Your Presale agent identity is not loaded yet.');
+      return;
+    }
+    setPresaleLoading(true);
+    setPresaleError(null);
+    try {
+      const result = await bridgeClient.renderEmail({
+        projectSlug: presaleProject.slug,
+        agentSlug: agent.slug,
+        templateStyle: presaleStyle,
+        leadName: 'Alex Sample',
+      });
+      setPresaleHtml(result.html ?? '');
+      setPresaleSubject(result.subject ?? '');
+    } catch (e) {
+      setPresaleError((e as Error).message);
+      setPresaleHtml('');
+    } finally {
+      setPresaleLoading(false);
+    }
+  }, [presaleProject, presaleStyle, agent?.slug]);
+
+  // Auto-fetch when entering Presale mode or changing project/style
+  useEffect(() => {
+    if (previewMode === 'presale' && presaleProject?.slug) fetchPresaleRender();
+  }, [previewMode, presaleProject?.slug, presaleStyle, fetchPresaleRender]);
+
   const insertSnippet = useCallback((snippet: string) => {
     if (lastFocused.current === 'subject') {
       const el = subjectRef.current;
       if (!el) { setSubject(s => s + snippet); return; }
       const start = el.selectionStart ?? subject.length;
       const end = el.selectionEnd ?? subject.length;
-      const next = subject.slice(0, start) + snippet + subject.slice(end);
-      setSubject(next);
+      setSubject(subject.slice(0, start) + snippet + subject.slice(end));
       requestAnimationFrame(() => {
         el.focus();
         el.selectionStart = el.selectionEnd = start + snippet.length;
@@ -169,16 +208,13 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
     if (!el) { setHtmlContent(h => h + snippet); return; }
     const start = el.selectionStart ?? htmlContent.length;
     const end = el.selectionEnd ?? htmlContent.length;
-    const next = htmlContent.slice(0, start) + snippet + htmlContent.slice(end);
-    setHtmlContent(next);
+    setHtmlContent(htmlContent.slice(0, start) + snippet + htmlContent.slice(end));
     requestAnimationFrame(() => {
       el.focus();
       el.selectionStart = el.selectionEnd = start + snippet.length;
     });
   }, [htmlContent, subject]);
 
-
-  // What we actually persist (signature stamped or stripped)
   const persistableHtml = useMemo(
     () => (appendSignature && signatureHtml ? applySignatureBlock(htmlContent, signatureHtml) : stripSignatureBlock(htmlContent)),
     [htmlContent, appendSignature, signatureHtml],
@@ -230,14 +266,20 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
     toast.success('Template duplicated');
   };
 
+  const handleAdoptPresaleHtml = () => {
+    if (!presaleHtml) return;
+    setHtmlContent(stripSignatureBlock(presaleHtml));
+    if (presaleSubject) setSubject(presaleSubject);
+    setPreviewMode('local');
+    toast.success('Presale render copied into editor');
+  };
+
   const toggleTag = (tag: string, list: string[], setList: (v: string[]) => void) => {
     setList(list.includes(tag) ? list.filter(t => t !== tag) : [...list, tag]);
   };
 
   const saving = createTemplate.isPending || updateTemplate.isPending;
 
-  // Local autosave so accidental closes / reloads don't lose work. Explicit
-  // Save still writes to the database — this is just the rescue copy.
   const draftKey = template?.id ?? 'new-template';
   const draftSnapshot = useMemo(
     () => ({ name, subject, previewText, htmlContent, category, projectTags, areaTags, appendSignature }),
@@ -245,17 +287,21 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   );
   const { dirty, clear: clearDraft } = useTemplateAutosave(draftKey, draftSnapshot);
 
+  const displaySubject = previewMode === 'presale' && presaleSubject
+    ? presaleSubject
+    : (withSampleData ? renderWithSampleData(subject).replace(/<[^>]+>/g, '') : subject);
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100dvh-80px)] min-h-0">
       {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-2 px-1 pb-3 border-b border-border/40">
+        <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={onClose}>
             <ArrowLeft className="w-4 h-4" /> Back
           </Button>
-          <h1 className="text-lg font-bold text-foreground">{isEdit ? 'Edit Template' : 'New Template'}</h1>
+          <h1 className="text-base font-bold text-foreground truncate">{isEdit ? (name || 'Edit Template') : 'New Template'}</h1>
           {isEdit && template?.source && (
-            <Badge variant="outline" className="text-[10px]">Source: {template.source}</Badge>
+            <Badge variant="outline" className="text-[10px]">{template.source}</Badge>
           )}
           <span
             className={`inline-flex items-center gap-1 text-[10.5px] px-1.5 py-0.5 rounded border ${
@@ -269,7 +315,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             {dirty ? 'Unsaved' : 'Saved'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <AIAssistMenu
             html={htmlContent}
             subject={subject}
@@ -305,7 +351,6 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             className="gap-1.5"
             onClick={() => setSendTestOpen(true)}
             disabled={!subject.trim() || !htmlContent.trim()}
-            title="Send a test of this draft to your inbox"
           >
             <Send className="w-3.5 h-3.5" /> Send test
           </Button>
@@ -315,53 +360,53 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             disabled={saving || !name.trim()}
             className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : isEdit ? 'Update' : 'Save Template'}
+            <Save className="w-3.5 h-3.5" /> {saving ? 'Saving…' : isEdit ? 'Update' : 'Save Template'}
           </Button>
         </div>
       </div>
 
-      {/* Split view: form / preview / variables */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_280px] gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
-        {/* Left — Form */}
-        <div className="space-y-4 bg-card/50 border border-border/40 rounded-xl p-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
+      {/* True 3-pane: Inspector | Editor | Preview */}
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)_minmax(0,520px)] gap-4 flex-1 min-h-0 pt-3">
+        {/* LEFT — Inspector */}
+        <aside className="space-y-4 bg-card/50 border border-border/40 rounded-xl p-4 overflow-y-auto min-h-0">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Inspector</div>
           <SenderIdentityField />
-          <div>
-            <Label>Template Name *</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Eden Phase 2 - VIP Launch" className="h-9" />
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Subject Line</Label>
-              <Input
-                ref={subjectRef}
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                onFocus={() => { lastFocused.current = 'subject'; }}
-                placeholder="Email subject — supports {{lead.first_name}}"
-                className="h-9"
-              />
-            </div>
-            <div>
-              <Label>Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label className="text-xs">Template Name *</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Eden Phase 2 — VIP Launch" className="h-9 mt-1" />
           </div>
 
           <div>
-            <Label>Preview Text</Label>
-            <Input value={previewText} onChange={e => setPreviewText(e.target.value)} placeholder="Text shown in inbox preview" className="h-9" />
+            <Label className="text-xs">Subject Line</Label>
+            <Input
+              ref={subjectRef}
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
+              onFocus={() => { lastFocused.current = 'subject'; }}
+              placeholder="Supports {{lead.first_name}}"
+              className="h-9 mt-1"
+            />
           </div>
 
-          {/* Project Tags */}
+          <div>
+            <Label className="text-xs">Preview Text</Label>
+            <Input value={previewText} onChange={e => setPreviewText(e.target.value)} placeholder="Inbox preview snippet" className="h-9 mt-1" />
+          </div>
+
+          <div>
+            <Label className="text-xs">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <Label className="text-xs">Project Tags</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               {PROJECT_OPTIONS.map(p => (
                 <Badge
                   key={p}
@@ -375,10 +420,9 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             </div>
           </div>
 
-          {/* Area Tags */}
           <div>
             <Label className="text-xs">Area Tags</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               {AREA_OPTIONS.map(a => (
                 <Badge
                   key={a}
@@ -392,34 +436,14 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             </div>
           </div>
 
-          {/* HTML Editor */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <Label>HTML Content</Label>
-              <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 text-muted-foreground" onClick={handleCopyHtml}>
-                <Copy className="w-3 h-3" /> Copy HTML
-              </Button>
-            </div>
-            <Textarea
-              ref={htmlRef}
-              value={htmlContent}
-              onChange={e => setHtmlContent(e.target.value)}
-              onFocus={() => { lastFocused.current = 'html'; }}
-              placeholder="Paste your HTML email code here..."
-              className="min-h-[300px] font-mono text-xs bg-zinc-950 text-green-400 border-border/40 leading-relaxed"
-              spellCheck={false}
-            />
-          </div>
-
-          {/* Brand signature — keeps every saved template on-brand */}
           <div className="rounded-md border border-border/50 bg-muted/20 p-3 space-y-2">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <Label className="text-xs font-semibold text-foreground">Append my signature</Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[10.5px] text-muted-foreground mt-0.5">
                   {signatureHtml
-                    ? 'Stamps your headshot, name, brokerage and contact details below the email body when saved or sent.'
-                    : 'Set up your signature in Settings → Signature to enable this.'}
+                    ? 'Stamps your headshot, name, brokerage and contact below the body.'
+                    : 'Set up your signature in Settings → Signature.'}
                 </p>
               </div>
               <Switch
@@ -428,19 +452,12 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
                 onCheckedChange={setAppendSignature}
               />
             </div>
-            {appendSignature && signatureHtml && (
-              <div
-                className="rounded border border-border/40 bg-background p-2 max-h-[120px] overflow-auto text-[11px]"
-                dangerouslySetInnerHTML={{ __html: signatureHtml }}
-              />
-            )}
           </div>
 
-          {/* Merge tags */}
           {mergeTags.length > 0 && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Variables in use</Label>
-              <div className="flex flex-wrap gap-1.5">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Variables in use</Label>
+              <div className="flex flex-wrap gap-1">
                 {mergeTags.map(tag => (
                   <Badge key={tag} variant="secondary" className="text-[10px] font-mono">{tag}</Badge>
                 ))}
@@ -451,7 +468,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           {unknownTokens.length > 0 && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5 space-y-1">
               <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                <AlertTriangle className="w-3 h-3" /> Unknown variables — these won’t be replaced when sent:
+                <AlertTriangle className="w-3 h-3" /> Unknown variables
               </p>
               <div className="flex flex-wrap gap-1">
                 {unknownTokens.map(t => (
@@ -461,7 +478,6 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
             </div>
           )}
 
-          {/* Sync history — pulls/pushes/test sends for this template */}
           {isEdit && template && (
             <Collapsible open={showHistory} onOpenChange={setShowHistory}>
               <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
@@ -475,11 +491,38 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               </CollapsibleContent>
             </Collapsible>
           )}
-        </div>
-        <div className="space-y-2">
+        </aside>
+
+        {/* CENTER — Editor */}
+        <section className="flex flex-col gap-2 bg-card/50 border border-border/40 rounded-xl p-3 min-h-0">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Live Preview</Label>
             <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">HTML Editor</span>
+              <span className="text-[10.5px] text-muted-foreground/70">{htmlContent.length.toLocaleString()} chars</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <VariablePicker onInsert={insertSnippet} />
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={handleCopyHtml}>
+                <Copy className="w-3 h-3" /> Copy
+              </Button>
+            </div>
+          </div>
+          <Textarea
+            ref={htmlRef}
+            value={htmlContent}
+            onChange={e => setHtmlContent(e.target.value)}
+            onFocus={() => { lastFocused.current = 'html'; }}
+            placeholder="Paste your HTML email code here…"
+            className="flex-1 min-h-0 font-mono text-xs bg-zinc-950 text-green-400 border-border/40 leading-relaxed resize-none"
+            spellCheck={false}
+          />
+        </section>
+
+        {/* RIGHT — Preview (Local | Live Presale) */}
+        <section className="flex flex-col gap-2 bg-card/50 border border-border/40 rounded-xl p-3 min-h-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Preview</span>
+            <div className="flex items-center gap-1">
               <div className="flex items-center gap-0.5 rounded-lg border border-border/60 bg-muted/30 p-0.5">
                 <button
                   onClick={() => setPreviewWidth('desktop')}
@@ -494,59 +537,122 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
                   <Smartphone className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <Button
-                variant={withSampleData ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 gap-1 text-[10px]"
-                onClick={() => setWithSampleData(v => !v)}
-                title="Replace variables with example data"
-              >
-                <EyeIcon className="w-3 h-3" /> {withSampleData ? 'Sample data' : 'Raw'}
-              </Button>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setFullPreview(true)}>
                 <Maximize2 className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>
 
-          {/* Subject + preview text bar */}
-          {(subject || previewText) && (
-            <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5 space-y-0.5">
-              {subject && <p className="text-xs font-semibold text-foreground truncate">Subject: {withSampleData ? renderWithSampleData(subject).replace(/<[^>]+>/g, '') : subject}</p>}
-              {previewText && <p className="text-[11px] text-muted-foreground truncate">Preview: {previewText}</p>}
+          {/* Mode toggle: Local vs Live (Presale) */}
+          <div className="flex items-center gap-0.5 rounded-lg border border-border/60 bg-muted/30 p-0.5 self-start">
+            <button
+              onClick={() => setPreviewMode('local')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${previewMode === 'local' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Local draft
+            </button>
+            <button
+              onClick={() => setPreviewMode('presale')}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium inline-flex items-center gap-1 transition-colors ${previewMode === 'presale' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <CloudIcon className="w-3 h-3" /> Live · Presale
+            </button>
+          </div>
+
+          {previewMode === 'local' ? (
+            <Button
+              variant={withSampleData ? 'default' : 'outline'}
+              size="sm"
+              className="h-7 gap-1 text-[10.5px] self-start"
+              onClick={() => setWithSampleData(v => !v)}
+              title="Replace variables with example data"
+            >
+              <EyeIcon className="w-3 h-3" /> {withSampleData ? 'Sample data' : 'Raw merge tags'}
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-md border border-border/40 bg-muted/20 p-2">
+              <div className="flex-1 min-w-0">
+                <PresaleProjectPicker
+                  value={presaleProject?.slug}
+                  initialLabel={presaleProject?.name}
+                  onSelect={(p) => setPresaleProject(p)}
+                  placeholder="Pick a Presale project to render…"
+                />
+              </div>
+              <Select value={presaleStyle} onValueChange={setPresaleStyle}>
+                <SelectTrigger className="h-9 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRESALE_STYLES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0"
+                onClick={fetchPresaleRender}
+                disabled={!presaleProject?.slug || presaleLoading}
+                title="Re-render from Presale"
+              >
+                {presaleLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              </Button>
             </div>
           )}
 
-          <div className="flex justify-center">
+          {previewMode === 'presale' && presaleError && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-[11px] text-destructive">
+              {presaleError}
+            </div>
+          )}
+
+          {(displaySubject || previewText) && (
+            <div className="rounded-lg border border-border/40 bg-muted/20 p-2 space-y-0.5">
+              {displaySubject && <p className="text-[11.5px] font-semibold text-foreground truncate">Subject: {displaySubject}</p>}
+              {previewText && <p className="text-[10.5px] text-muted-foreground truncate">Preview: {previewText}</p>}
+            </div>
+          )}
+
+          <div className="flex-1 min-h-0 flex justify-center overflow-auto">
             <div
-              className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all"
-              style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%' }}
+              className="rounded-lg border border-border/40 bg-white overflow-hidden transition-all w-full"
+              style={{ width: previewWidth === 'desktop' ? '100%' : '375px', maxWidth: '100%', minHeight: '100%' }}
             >
-              <iframe
-                ref={iframeRef}
-                title="Template Preview"
-                className="w-full border-0"
-                style={{ height: 'calc(100dvh - 320px)' }}
-                sandbox="allow-same-origin"
-              />
+              {previewMode === 'presale' && presaleLoading && !presaleHtml ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-xs gap-2 py-12">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Rendering from Presale…
+                </div>
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  title="Template Preview"
+                  className="w-full h-full border-0"
+                  style={{ minHeight: '500px' }}
+                  sandbox="allow-same-origin"
+                />
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Far right — Variable picker */}
-        <div className="space-y-2 lg:sticky lg:top-4 self-start">
-          <VariablePicker onInsert={insertSnippet} />
-        </div>
+          {previewMode === 'presale' && presaleHtml && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 self-start"
+              onClick={handleAdoptPresaleHtml}
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy this render into editor
+            </Button>
+          )}
+        </section>
       </div>
 
       {/* Full-screen preview modal */}
       <Dialog open={fullPreview} onOpenChange={setFullPreview}>
-        <DialogContent className="max-w-[95vw] h-[90vh] p-0 gap-0" aria-describedby={undefined}>
+        <DialogContent className="max-w-[95vw] h-[90vh] p-0 gap-0 flex flex-col" aria-describedby={undefined}>
           <DialogTitle className="sr-only">Template Preview</DialogTitle>
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 bg-card">
-            <div className="space-y-0.5">
-              {subject && <p className="text-sm font-semibold text-foreground">{subject}</p>}
-              {previewText && <p className="text-xs text-muted-foreground">{previewText}</p>}
+            <div className="space-y-0.5 min-w-0">
+              {displaySubject && <p className="text-sm font-semibold text-foreground truncate">{displaySubject}</p>}
+              {previewText && <p className="text-xs text-muted-foreground truncate">{previewText}</p>}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopyHtml}>
@@ -574,7 +680,6 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
         </DialogContent>
       </Dialog>
 
-      {/* Archive confirmation */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -592,7 +697,6 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Send-test dialog (uses persisted HTML so signature is included) */}
       <SendTestDialog
         open={sendTestOpen}
         onOpenChange={setSendTestOpen}
