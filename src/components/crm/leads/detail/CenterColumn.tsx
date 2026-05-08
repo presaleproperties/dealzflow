@@ -241,7 +241,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         {/* Import conversation utility row — quieter on mobile */}
-        <div className="px-3 md:px-0 -mt-1 flex flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1.5">
+        <div className="hidden md:flex px-3 md:px-0 -mt-1 flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1.5">
           <button
             type="button"
             onClick={handlePullFromLofty}
