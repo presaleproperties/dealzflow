@@ -52,18 +52,18 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
   const tint = isInbound ? '210 90% 55%' : '45 90% 55%';
 
   return (
-    <div className="group relative flex gap-3">
+    <div className="group relative flex gap-2.5 md:gap-3">
       {/* Timeline dot */}
       <div
-        className="relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 border bg-background"
+        className="relative z-10 flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full flex-shrink-0 border bg-background"
         style={{
           borderColor: `hsl(${tint} / 0.45)`,
           background: `hsl(${tint} / 0.10)`,
         }}
       >
         {isInbound
-          ? <ArrowDownLeft className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
-          : <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
+          ? <ArrowDownLeft className="w-3 h-3 md:w-3.5 md:h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
+          : <ArrowUpRight className="w-3 h-3 md:w-3.5 md:h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
         }
       </div>
 
@@ -72,14 +72,14 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
         type="button"
         onClick={onOpen}
         className={cn(
-          'flex-1 min-w-0 text-left rounded-lg border bg-card px-3.5 py-3 transition-all',
-          'border-border/50 hover:border-primary/40 hover:bg-muted/30 cursor-pointer',
+          'flex-1 min-w-0 text-left rounded-xl md:rounded-lg border bg-card px-3 py-2.5 md:px-3.5 md:py-3 transition-all',
+          'border-border/50 active:bg-muted/40 md:hover:border-primary/40 md:hover:bg-muted/30 cursor-pointer',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         )}
       >
-        {/* Meta row */}
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground min-w-0">
+        {/* Meta row — denser on mobile (date hidden, day header shows it) */}
+        <div className="flex items-center justify-between gap-2 mb-1.5 md:mb-2">
+          <div className="flex items-center gap-1.5 md:gap-2 text-[11px] uppercase tracking-wider text-muted-foreground min-w-0">
             <span
               className="font-semibold px-1.5 py-0.5 rounded text-[10px]"
               style={{
@@ -90,35 +90,38 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
               {isInbound ? 'Received' : 'Sent'}
             </span>
             <span className="opacity-30">·</span>
-            <span className="shrink-0 normal-case tracking-normal text-xs">{dateLabel} · {time}</span>
+            <span className="shrink-0 normal-case tracking-normal text-[11px] md:text-xs tabular-nums">
+              <span className="md:hidden">{time}</span>
+              <span className="hidden md:inline">{dateLabel} · {time}</span>
+            </span>
             {!isInbound && email.sent_by && (
-              <>
+              <span className="hidden md:inline-flex items-center gap-2">
                 <span className="opacity-30">·</span>
                 <AgentBadge userId={email.sent_by} prefix="by" />
-              </>
+              </span>
             )}
             {opens > 0 && !isInbound && (
               <>
                 <span className="opacity-30">·</span>
-                <span className="inline-flex items-center gap-1 text-emerald-600 normal-case tracking-normal text-xs">
+                <span className="inline-flex items-center gap-1 text-emerald-600 normal-case tracking-normal text-[11px] md:text-xs">
                   <Eye className="w-3 h-3" />
                   {opens}
                 </span>
               </>
             )}
           </div>
-          <span className="text-[11px] text-primary font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="hidden md:inline text-[11px] text-primary font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
             Open →
           </span>
         </div>
 
-        {/* Subject — styled as a hyperlink so it reads as "tap to open thread" */}
+        {/* Subject — no leading icon on mobile (saves a column) */}
         <div className="flex items-start gap-2">
-          <MailOpen className="w-4 h-4 text-primary/70 shrink-0 mt-0.5" />
+          <MailOpen className="hidden md:block w-4 h-4 text-primary/70 shrink-0 mt-0.5" />
           <h4
             className={cn(
-              'text-[14px] font-semibold leading-snug break-words line-clamp-2 flex-1',
-              'text-primary underline decoration-primary/30 underline-offset-[3px] decoration-[1.5px]',
+              'text-[13.5px] md:text-[14px] font-semibold leading-snug break-words line-clamp-2 flex-1',
+              'text-foreground md:text-primary md:underline md:decoration-primary/30 md:underline-offset-[3px] md:decoration-[1.5px]',
               'group-hover:decoration-primary group-hover:text-primary transition-colors',
             )}
           >
@@ -131,7 +134,7 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
 
         {/* Counterparty */}
         {counterpart && (
-          <p className="text-[12px] text-muted-foreground mt-1 ml-6 truncate">
+          <p className="text-[11.5px] md:text-[12px] text-muted-foreground mt-1 md:ml-6 truncate">
             <span className="text-muted-foreground/70">{isInbound ? 'From' : 'To'}</span>{' '}
             <span className="text-foreground/80">{counterpart}</span>
           </p>
@@ -139,7 +142,7 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
 
         {/* Preview snippet */}
         {preview && (
-          <p className="text-[13px] text-muted-foreground mt-2 ml-6 leading-relaxed line-clamp-2">
+          <p className="text-[12.5px] md:text-[13px] text-muted-foreground mt-1.5 md:mt-2 md:ml-6 leading-relaxed line-clamp-2">
             {preview}
           </p>
         )}
