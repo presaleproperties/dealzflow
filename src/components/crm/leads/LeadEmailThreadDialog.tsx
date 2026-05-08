@@ -614,69 +614,133 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MessageCard({ message, isLatest, contactEmail }: { message: ThreadMessage; isLatest: boolean; contactEmail?: string | null }) {
+function initialsFor(name?: string | null, email?: string | null): string {
+  const base = (name || email || '?').trim();
+  const parts = base.split(/[\s@._-]+/).filter(Boolean);
+  return ((parts[0]?.[0] || '?') + (parts[1]?.[0] || '')).toUpperCase();
+}
+
+function MessageCard({
+  message, isLatest, contactEmail, defaultExpanded = true,
+}: { message: ThreadMessage; isLatest: boolean; contactEmail?: string | null; defaultExpanded?: boolean }) {
   const inbound = message.direction === 'inbound';
   const srcDoc = useMemo(() => buildSrcDoc(message.bodyHtml, message.bodyText), [message.bodyHtml, message.bodyText]);
   const fromAddr = message.fromEmail || (inbound ? contactEmail : 'You');
   const toAddr = message.toEmail || (inbound ? 'You' : contactEmail);
+  const fromLabel = message.fromName || message.fromEmail || (inbound ? contactEmail : 'You');
+  const initials = initialsFor(message.fromName, message.fromEmail || (inbound ? contactEmail : 'You'));
+
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const snippet = useMemo(() => {
+    const t = (message.bodyText || message.bodyHtml?.replace(/<[^>]*>/g, ' ') || '').replace(/\s+/g, ' ').trim();
+    return t.slice(0, 140);
+  }, [message.bodyText, message.bodyHtml]);
 
   return (
     <article className={cn(
-      'rounded-xl border bg-card overflow-hidden shadow-sm',
-      isLatest ? 'border-border' : 'border-border/60',
+      'rounded-xl border bg-card overflow-hidden transition-shadow',
+      isLatest ? 'border-border shadow-sm' : 'border-border/60',
     )}>
-      <header className="px-4 py-3 border-b border-border/60 bg-muted/10">
-        <div className="flex items-start gap-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left px-4 py-2.5 border-b border-border/60 bg-muted/10 hover:bg-muted/20 transition-colors"
+      >
+        <div className="flex items-start gap-2.5">
           <div className={cn(
-            'w-8 h-8 rounded-lg border flex items-center justify-center shrink-0',
-            inbound ? 'bg-blue-500/10 border-blue-500/30 text-blue-600' : 'bg-primary/10 border-primary/30 text-primary',
+            'w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10.5px] font-semibold',
+            inbound ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-primary/15 text-primary',
           )}>
-            {inbound ? <ArrowDownLeft className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="text-[9.5px] uppercase tracking-wider">
-                {inbound ? 'Received' : 'Sent'}
-              </Badge>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[12px] font-semibold text-foreground truncate max-w-[200px]">
+                {fromLabel}
+              </span>
+              <Pill size="sm" tone={inbound ? 'info' : 'primary'} className="!gap-0.5">
+                {inbound
+                  ? <ArrowDownLeft className="w-2.5 h-2.5" />
+                  : <ArrowUpRight className="w-2.5 h-2.5" />}
+                {inbound ? 'In' : 'Out'}
+              </Pill>
               {!inbound && (message.openCount ?? 0) > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-600 inline-flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
+                <Pill size="sm" tone="success" className="!gap-0.5">
+                  <Eye className="w-2.5 h-2.5" />
                   {message.openCount}
-                </span>
+                </Pill>
               )}
               {!inbound && (message.clickCount ?? 0) > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-purple-500/10 text-purple-600 inline-flex items-center gap-1">
-                  <MousePointerClick className="w-3 h-3" />
+                <Pill size="sm" className="!gap-0.5 bg-purple-500/15 text-purple-700 dark:text-purple-300">
+                  <MousePointerClick className="w-2.5 h-2.5" />
                   {message.clickCount}
-                </span>
+                </Pill>
               )}
-              <span className="text-[10.5px] text-muted-foreground ml-auto tabular-nums">
-                {format(parseISO(message.ts), 'EEE, MMM d · h:mm a')}
+              <span className="text-[10.5px] text-muted-foreground ml-auto tabular-nums whitespace-nowrap">
+                {format(parseISO(message.ts), 'MMM d · h:mm a')}
               </span>
             </div>
-            <div className="mt-1.5 grid grid-cols-[40px_1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
-              <span className="text-muted-foreground uppercase text-[9.5px] tracking-wider pt-0.5">From</span>
-              <span className="text-foreground truncate">{fromAddr || '—'}</span>
-              <span className="text-muted-foreground uppercase text-[9.5px] tracking-wider pt-0.5">To</span>
-              <span className="text-foreground truncate">{toAddr || '—'}</span>
-              {message.cc && (<>
-                <span className="text-muted-foreground uppercase text-[9.5px] tracking-wider pt-0.5">CC</span>
-                <span className="text-foreground truncate">{message.cc}</span>
-              </>)}
-            </div>
+            {expanded ? (
+              <div className="mt-1 text-[11px] text-muted-foreground truncate">
+                to {toAddr || '—'}{message.cc ? ` · cc ${message.cc}` : ''}
+              </div>
+            ) : (
+              <div className="mt-1 text-[11.5px] text-muted-foreground truncate">
+                {snippet || '(no body)'}
+              </div>
+            )}
           </div>
         </div>
-      </header>
-      <div className="bg-white">
-        <iframe
-          title={`Email body ${message.id}`}
-          srcDoc={srcDoc}
-          className="w-full border-0 block"
-          style={{ height: isLatest ? 480 : 280 }}
-          sandbox="allow-same-origin allow-popups"
-        />
-      </div>
+      </button>
+      {expanded && (
+        <div className="bg-white">
+          <AutoSizingFrame srcDoc={srcDoc} title={`Email body ${message.id}`} />
+        </div>
+      )}
     </article>
+  );
+}
+
+function AutoSizingFrame({ srcDoc, title }: { srcDoc: string; title: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(320);
+  useEffect(() => {
+    const frame = ref.current;
+    if (!frame) return;
+    let ro: ResizeObserver | null = null;
+    const onLoad = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (!doc) return;
+        const measure = () => {
+          const h = Math.max(doc.body?.scrollHeight ?? 0, doc.documentElement?.scrollHeight ?? 0);
+          if (h > 0) setHeight(Math.min(h + 8, 1200));
+        };
+        measure();
+        if ('ResizeObserver' in window && doc.body) {
+          ro = new ResizeObserver(measure);
+          ro.observe(doc.body);
+        }
+        doc.querySelectorAll('img').forEach((img) => {
+          if (!(img as HTMLImageElement).complete) {
+            img.addEventListener('load', measure, { once: true });
+            img.addEventListener('error', measure, { once: true });
+          }
+        });
+      } catch { /* noop */ }
+    };
+    frame.addEventListener('load', onLoad);
+    return () => { frame.removeEventListener('load', onLoad); ro?.disconnect(); };
+  }, [srcDoc]);
+  return (
+    <iframe
+      ref={ref}
+      title={title}
+      srcDoc={srcDoc}
+      className="w-full border-0 block"
+      style={{ height: `${height}px`, minHeight: 200 }}
+      sandbox="allow-same-origin allow-popups"
+    />
   );
 }
 
