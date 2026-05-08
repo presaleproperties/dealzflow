@@ -96,6 +96,22 @@ export default function CrmTemplatesPage() {
   );
 }
 
+function OpenAgentHubButton({ size = 'sm' }: { size?: 'sm' | 'default' }) {
+  const agentSlug = usePresaleAgentStore((s) => s.agent?.slug ?? null);
+  return (
+    <Button
+      size={size}
+      variant="outline"
+      className="gap-1.5 h-9"
+      onClick={() => window.open(AgentHubLinks.templates(agentSlug), '_blank', 'noopener,noreferrer')}
+      title="Edit & build templates in Presale Agent Hub"
+    >
+      <ExternalLink className="w-3.5 h-3.5" />
+      <span className="hidden sm:inline">Open Agent Hub</span>
+    </Button>
+  );
+}
+
 // ===================================================================
 // Two-pane email panel: Library rail + Preview pane
 // ===================================================================
