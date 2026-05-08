@@ -396,10 +396,11 @@ function IMessageBubble({
               className={cn(
                 'relative px-3.5 py-[7px] text-[15px] leading-[1.32] msg-pop-in rounded-[18px]',
                 isOutbound ? 'imsg-bubble-out' : 'imsg-bubble-in',
-                // shape: tighten the adjoining corner when same sender continues
+                // shape: tighten the adjoining corner when same sender continues;
+                // square off the tail-side bottom corner on last-in-run so the SVG tail blends seamlessly
                 isOutbound
-                  ? cn(sameAsPrev && 'rounded-tr-[4px]', sameAsNext && 'rounded-br-[4px]')
-                  : cn(sameAsPrev && 'rounded-tl-[4px]', sameAsNext && 'rounded-bl-[4px]'),
+                  ? cn(sameAsPrev && 'rounded-tr-[4px]', sameAsNext ? 'rounded-br-[4px]' : 'rounded-br-[6px]', isLastInRun && 'rounded-br-[6px]')
+                  : cn(sameAsPrev && 'rounded-tl-[4px]', sameAsNext ? 'rounded-bl-[4px]' : 'rounded-bl-[6px]', isLastInRun && 'rounded-bl-[6px]'),
                 (isOptimistic || isScheduled) && 'opacity-70',
               )}
             >
