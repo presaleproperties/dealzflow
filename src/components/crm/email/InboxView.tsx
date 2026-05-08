@@ -554,10 +554,6 @@ export default function InboxView() {
               <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
               <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
-              <div className="w-px h-5 bg-border mx-1" />
-              <ToolbarBtn icon={Reply} label="Reply" onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }} />
-              <ToolbarBtn icon={Forward} label="Forward" />
-              <ToolbarBtn icon={Star} label="Flag" />
               <div className="ml-auto flex items-center gap-1">
                 {selectedThread.contact_id && (
                   <Button asChild size="sm" variant="ghost" className="h-7 text-xs gap-1.5">
