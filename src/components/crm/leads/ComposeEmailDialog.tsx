@@ -483,33 +483,45 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       });
       toast.success('Email logged');
       clearEmailDraft(draftScope);
+      onSent?.();
       onOpenChange(false);
       return;
     }
 
     try {
-      await sendBridge.mutateAsync({
-        to: contact.email!,
-        cc: cc.trim() || undefined,
-        bcc: bcc.trim() || undefined,
-        subject: renderedSubject,
-        html: finalHtml,
-        contact_id: contact.id,
-      });
-      // NOTE: do NOT manually insert into crm_messages here. The DB trigger
-      // `trg_crm_sync_email_log_to_messages` automatically creates a properly-
-      // linked chat message (with source_table='crm_email_log' + source_id) so
-      // the chat thread can render the full HTML body via emailLogMap. Inserting
-      // a second row here would create an orphan with stripped text and break
-      // the rendered email bubble (no subject, no HTML, no quoted thread).
+      if (isMass) {
+        // Mass-send routes through the edge function so each recipient gets a
+        // personalized copy (variables replaced server-side per row).
+        await massSend.mutateAsync({
+          recipient_ids: allRecipients.map((c) => c.id),
+          subject: subject.trim(),
+          body_html: bodyHtml,
+          append_signature: appendSignature,
+          signature_id: appendSignature ? selectedSignatureId : null,
+          cc: cc.trim() || null,
+          bcc: bcc.trim() || null,
+        });
+      } else {
+        await sendBridge.mutateAsync({
+          to: contact.email!,
+          cc: cc.trim() || undefined,
+          bcc: bcc.trim() || undefined,
+          subject: renderedSubject,
+          html: finalHtml,
+          contact_id: contact.id,
+        });
+      }
+      // For single send the DB trigger creates the chat message; mass-send is
+      // logged server-side. Never manually insert here.
       clearEmailDraft(draftScope);
+      onSent?.();
       onOpenChange(false);
     } catch {
       /* toast handled in hook */
     }
   };
 
-  const isPending = sendBridge.isPending || addMessage.isPending;
+  const isPending = sendBridge.isPending || addMessage.isPending || massSend.isPending;
 
   /* Keyboard shortcut: ⌘+Enter / Ctrl+Enter sends from anywhere in the dialog */
   useEffect(() => {
