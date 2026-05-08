@@ -210,17 +210,19 @@ export default function InboxView() {
     ]);
   };
 
-  const archiveThread = async (threadId: string) => {
+  const archiveThread = async (threadId: string, forceUnarchive?: boolean) => {
     try {
+      const thread = (threadsQuery.data ?? []).find(t => t.id === threadId);
+      const shouldUnarchive = forceUnarchive ?? !!thread?.is_archived;
       await supabase.functions.invoke('gmail-actions', {
-        body: { action: 'archive', thread_db_id: threadId },
+        body: { action: shouldUnarchive ? 'unarchive' : 'archive', thread_db_id: threadId },
       });
       triggerHaptic('success');
-      toast.success('Archived');
-      if (selectedThreadId === threadId) setSelectedThreadId(null);
+      toast.success(shouldUnarchive ? 'Moved to Inbox' : 'Archived');
+      if (selectedThreadId === threadId && !shouldUnarchive) setSelectedThreadId(null);
       qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
     } catch (e: any) {
-      toast.error(e?.message ?? 'Archive failed');
+      toast.error(e?.message ?? 'Action failed');
     }
   };
 
@@ -551,7 +553,11 @@ export default function InboxView() {
                 {listCollapsed ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
               </Button>
               <div className="w-px h-5 bg-border mx-1" />
-              <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
+              <ToolbarBtn
+                icon={selectedThread.is_archived ? Inbox : Archive}
+                label={selectedThread.is_archived ? 'Move to Inbox' : 'Archive'}
+                onClick={archive}
+              />
               <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="ml-auto flex items-center gap-1">
