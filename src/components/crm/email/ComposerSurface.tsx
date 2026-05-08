@@ -582,11 +582,11 @@ export function ComposerSurface({
             <>
               <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
                 <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Cc</Label>
-                <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
+                <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" autoComplete="email" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
               <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
                 <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Bcc</Label>
-                <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
+                <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" autoComplete="email" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
             </>
           )}
