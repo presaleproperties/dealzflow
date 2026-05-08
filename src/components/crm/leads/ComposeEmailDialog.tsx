@@ -778,7 +778,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
           {/* Desktop slim title bar */}
           <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
             <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
-              New Message
+              {isMass ? `Mass Email · ${allRecipients.length} recipients` : 'New Message'}
             </DialogTitle>
           </DialogHeader>
 
