@@ -422,7 +422,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   };
 
   const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
-  const canSend = !!contact.email && subject.trim() && bodyText;
+  /** Combined recipient list: primary contact first, then any extras passed in
+   *  for mass-send. De-duplicated by id and filtered to those with an email. */
+  const allRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    const out: CrmContact[] = [];
+    for (const c of [contact, ...(extraContacts ?? [])]) {
+      if (!c || !c.email) continue;
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      out.push(c);
+    }
+    return out;
+  }, [contact, extraContacts]);
+  const isMass = allRecipients.length > 1;
+  const canSend = allRecipients.length > 0 && subject.trim() && bodyText;
 
   const openSaveDialog = () => {
     if (!bodyText) {
