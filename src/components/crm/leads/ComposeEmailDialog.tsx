@@ -212,6 +212,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       setEditingSignature(false);
       setSigDraft('');
       autoSignaturePreviewedRef.current = false;
+      setShowSignaturePreviewMobile(false);
     }
   }, [open]);
 
@@ -1117,10 +1118,43 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                               />
                             </div>
                           ) : (
-                            // Signature renders inline as a continuation of the body on every
-                            // viewport — no border seam, no "Show signature" gate. Reads as one
-                            // unified message exactly like Apple Mail / Gmail mobile.
-                            <SignatureInlineFrame html={activeSignatureHtml} />
+                            <>
+                              {/* Desktop: signature renders inline as continuation of body. */}
+                              <div className="hidden sm:block">
+                                <SignatureInlineFrame html={activeSignatureHtml} />
+                              </div>
+                              {/* Mobile: collapsed pill — keeps the typing area dominant.
+                                  Tap to reveal the stacked (headshot-on-top) preview. */}
+                              <div className="sm:hidden border-t border-border/40">
+                                {!showSignaturePreviewMobile ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowSignaturePreviewMobile(true)}
+                                    className="w-full flex items-center justify-between px-4 py-2.5 text-[11.5px] text-muted-foreground hover:text-foreground active:bg-muted/30 transition-colors"
+                                  >
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                                      Signature appended · tap to preview
+                                    </span>
+                                    <span className="text-[10.5px] uppercase tracking-[0.08em]">Show</span>
+                                  </button>
+                                ) : (
+                                  <div className="relative">
+                                    <div className="flex items-center justify-between px-4 py-2 border-b border-border/30 bg-muted/20">
+                                      <span className="text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground font-semibold">Signature preview</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowSignaturePreviewMobile(false)}
+                                        className="text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+                                      >
+                                        Hide
+                                      </button>
+                                    </div>
+                                    <SignatureInlineFrame html={activeSignatureHtml} />
+                                  </div>
+                                )}
+                              </div>
+                            </>
                           )
                         ) : null
                       }

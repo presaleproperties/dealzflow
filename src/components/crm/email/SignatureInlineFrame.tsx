@@ -55,27 +55,27 @@ export function SignatureInlineFrame({ html }: { html: string }) {
     img{max-width:100%;height:auto;display:block}
     table{border-collapse:collapse;max-width:100%}
     td,th{vertical-align:top}
-    /* Mobile: keep the authored 2-column "headshot | text" layout side by side
-       so it reads as one tight signature block. Cap the headshot, tighten
-       padding, and never let a cell exceed viewport width. */
+    /* Mobile: stack the authored 2-column "headshot | text" layout vertically
+       so the headshot sits on top (matches the Settings preview) and the
+       contact lines read full-width below. */
     @media (max-width: 520px){
       html,body{padding:0 14px !important}
-      body{font-size:13px;line-height:1.5}
-      p{margin:.35em 0}
-      table{width:100% !important;table-layout:fixed !important}
-      td,th{padding:2px 6px !important;vertical-align:middle !important;word-break:break-word}
-      /* First cell (headshot) — compact width, image left-aligned.
-         IMPORTANT: do NOT force border-radius — preserve the signature's
-         authored shape (square / rounded-square per the template). */
-      tr > td:first-child, tr > th:first-child{width:96px !important;padding-left:0 !important}
+      body{font-size:13px;line-height:1.55;text-align:center}
+      p{margin:.3em 0}
+      table{width:100% !important;table-layout:auto !important;display:block !important}
+      tbody, thead, tfoot{display:block !important;width:100% !important}
+      tr{display:block !important;width:100% !important}
+      td,th{display:block !important;width:100% !important;padding:2px 0 !important;vertical-align:middle !important;word-break:break-word;text-align:center !important}
+      /* First cell (headshot) — centered, capped, stacks on top.
+         Preserve authored border-radius (square / rounded square). */
+      tr > td:first-child, tr > th:first-child{padding:0 0 8px 0 !important}
       tr > td:first-child img, tr > th:first-child img{
-        width:88px !important;height:88px !important;max-width:88px !important;
-        object-fit:cover !important;margin:0 !important;
+        width:80px !important;height:80px !important;max-width:80px !important;
+        object-fit:cover !important;margin:0 auto !important;display:block !important;
       }
-      /* Any other inline images (logos, badges) — keep modest */
-      img{max-width:100% !important;height:auto !important}
-      /* Trim oversized brand logos that some signatures embed full-width */
-      tr > td:not(:first-child) img[width]{max-width:120px !important;width:auto !important;height:auto !important}
+      /* Trim oversized brand logos */
+      img{max-width:100% !important;height:auto !important;margin-left:auto !important;margin-right:auto !important}
+      tr > td:not(:first-child) img[width]{max-width:100px !important;width:auto !important;height:auto !important}
     }
   </style></head><body>${html}</body></html>`;
 
