@@ -639,12 +639,11 @@ export default function CrmChatsPage() {
                   <div
                     onPointerEnter={() => { prefetchThread(t.id); setCursor(idx); }}
                     onTouchStart={() => prefetchThread(t.id)}
-                    className={`group w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors outline-none relative ${
-                      isActive ? 'bg-primary/10 hover:bg-primary/15'
-                      : isCursor ? 'bg-muted/40'
-                      : isSelected ? 'bg-primary/8'
-                      : 'hover:bg-muted/30 active:bg-muted/50'
-                    }`}>
+                    data-active={isActive || undefined}
+                    data-unread={isUnread || undefined}
+                    className={`inbox-row group items-center !gap-3 ${
+                      isCursor && !isActive ? 'bg-muted/40' : ''
+                    } ${isSelected && !isActive ? 'bg-primary/[0.05]' : ''}`}>
                     {/* Bulk-select checkbox replaces avatar in select mode */}
                     {selectMode ? (
                       <button
