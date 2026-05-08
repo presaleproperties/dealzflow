@@ -4,7 +4,7 @@
 // (folder picker + sync), pull-to-refresh, swipe-to-archive on rows,
 // auto-grow reply field with `enterKeyHint=send` and ⌘/Ctrl+Enter to send.
 // Pulls from crm_email_threads + crm_gmail_messages (per-user, via RLS).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
@@ -15,12 +15,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
+import { InboxShortcutsHelp } from '@/components/crm/inbox/InboxShortcutsHelp';
 import {
   Inbox, Search, RefreshCcw, Archive, MailOpen, Send, ExternalLink,
   Loader2, CheckCheck, Reply, Star, Trash2, Forward, Paperclip,
   ChevronLeft, ChevronDown,
 } from 'lucide-react';
-import { format, isToday, isYesterday, isThisYear } from 'date-fns';
+import { format, isToday, isYesterday, isThisYear, isThisWeek } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsCompact } from '@/hooks/use-mobile';
@@ -63,6 +65,7 @@ function smartTime(d: string | Date) {
   const date = new Date(d);
   if (isToday(date)) return format(date, 'h:mm a');
   if (isYesterday(date)) return 'Yesterday';
+  if (isThisWeek(date, { weekStartsOn: 1 })) return format(date, 'EEE');
   if (isThisYear(date)) return format(date, 'MMM d');
   return format(date, 'MM/dd/yy');
 }
