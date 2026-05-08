@@ -16,6 +16,7 @@ import {
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { triggerHaptic } from '@/lib/haptics';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useEmailSettings } from '@/hooks/useEmailSettings';
@@ -422,6 +423,7 @@ export function ComposerSurface({
     void (async () => {
       try {
         await sendBridge.mutateAsync(args);
+        triggerHaptic('success');
       } catch { /* hook handles toast */ }
     })();
   };
@@ -458,6 +460,7 @@ export function ComposerSurface({
       resetComposer();
       onClearRecipients?.();
       onSent?.();
+      triggerHaptic('success');
     } catch { /* hook handles toast */ }
   };
 
@@ -582,11 +585,11 @@ export function ComposerSurface({
             <>
               <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
                 <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Cc</Label>
-                <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
+                <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="cc@example.com" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" autoComplete="email" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
               <div className="grid grid-cols-[60px_1fr] items-center gap-3 py-2.5">
                 <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold">Bcc</Label>
-                <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
+                <Input value={bcc} onChange={(e) => setBcc(e.target.value)} placeholder="bcc@example.com" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" autoComplete="email" className="h-8 text-[12.5px] border-0 px-0 shadow-none focus-visible:ring-0 bg-transparent" />
               </div>
             </>
           )}
@@ -854,7 +857,7 @@ export function ComposerSurface({
 
       {/* Footer — premium sticky action bar. On mobile the Send button gets full-bleed prominence
           (Apple-Mail / Gmail mobile-style) so the primary CTA is unmistakable. */}
-      <div className="px-3 py-2 lg:px-6 lg:py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <div className="px-3 py-2 lg:px-6 lg:py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'max(0.5rem, calc(env(safe-area-inset-bottom) + var(--bottom-nav-pad, 0px)))' }}>
         <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">Signature</span>
@@ -926,7 +929,7 @@ export function ComposerSurface({
           <div className="hidden lg:block h-6 w-px bg-border/60 mx-1" />
           {savedAt && (
             <span
-              className="hidden lg:inline text-[11px] text-muted-foreground/80 tabular-nums mr-1"
+              className="text-[10.5px] lg:text-[11px] text-muted-foreground/80 tabular-nums mr-1"
               title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}
             >
               Saved

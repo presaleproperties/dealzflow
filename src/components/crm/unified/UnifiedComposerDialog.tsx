@@ -58,7 +58,8 @@ export function UnifiedComposerDialog({
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
-        className="max-w-4xl w-[min(960px,95vw)] h-[min(85vh,900px)] p-0 overflow-hidden flex flex-col"
+        hideMobileHandle
+        className="mobile-fullbleed max-w-4xl w-[min(960px,95vw)] h-[min(85vh,900px)] p-0 overflow-hidden flex flex-col"
       >
         <div className="flex-1 min-h-0 overflow-hidden">
           <UnifiedComposer
