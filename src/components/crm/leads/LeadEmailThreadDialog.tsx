@@ -39,6 +39,7 @@ import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { useAuth } from '@/hooks/useAuth';
 import { AgentSignatureBlock } from '@/components/agent/AgentSignatureBlock';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -283,7 +284,34 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
 
   const lastInThread = activeThread?.messages[activeThread.messages.length - 1] ?? null;
 
+  // On mobile we hand replies off to the canonical ComposeEmailDialog instead
+  // of an inline panel — gives the agent the same premium full-screen surface
+  // they get from "New email", with quoted history pre-baked into the body.
+  const [mobileComposeOpen, setMobileComposeOpen] = useState(false);
+  const [mobileComposeSubject, setMobileComposeSubject] = useState('');
+  const [mobileComposeBody, setMobileComposeBody] = useState('');
+
+  const buildReplyContext = () => {
+    if (!lastInThread) return null;
+    const subject = lastInThread.subject?.toLowerCase().startsWith('re:')
+      ? lastInThread.subject
+      : `Re: ${lastInThread.subject ?? ''}`.trim();
+    const quotedHeader = `${format(parseISO(lastInThread.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')} ${lastInThread.fromName || lastInThread.fromEmail || ''} wrote:`;
+    const quotedBody = (lastInThread.bodyHtml || `<p>${escapeHtml(lastInThread.bodyText || '')}</p>`);
+    const body = `<p></p><p></p><div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:4px 14px;margin:14px 0;"><div style="margin-bottom:8px;color:#888;">${escapeHtml(quotedHeader)}</div>${quotedBody}</div>`;
+    return { subject: subject || '(no subject)', body };
+  };
+
   const handleStartReply = () => {
+    // Mobile → defer to the unified ComposeEmailDialog for parity with "New email".
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      const ctx = buildReplyContext();
+      if (!ctx) return;
+      setMobileComposeSubject(ctx.subject);
+      setMobileComposeBody(ctx.body);
+      setMobileComposeOpen(true);
+      return;
+    }
     setReplyOpen(true);
     setReplyHtml('<p></p><p></p>');
     requestAnimationFrame(() => {
@@ -362,21 +390,25 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           {threads.length} thread{threads.length === 1 ? '' : 's'} with this lead
         </DialogDescription>
 
-        {/* Header bar */}
-        <div className="flex items-center justify-between px-4 md:px-5 py-2.5 md:py-3 border-b border-border/70 bg-gradient-to-b from-card to-card/95 flex-shrink-0">
+        {/* Header bar — Mail-style on mobile (single line, no eyebrow), full identity on desktop */}
+        <div className="flex items-center justify-between px-3 md:px-5 py-2 md:py-3 border-b border-border/70 bg-card/95 md:bg-gradient-to-b md:from-card md:to-card/95 backdrop-blur flex-shrink-0">
           <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
             <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11.5px] font-semibold shrink-0">
               {headerInitials}
             </div>
             <div className="min-w-0 leading-tight">
+              {/* Desktop: eyebrow + name. Mobile: just the name + thread count for cleanliness. */}
               <div className="flex items-center gap-2">
-                <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="hidden md:inline text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   {replyOpen ? 'Reply' : 'Email'}
                 </span>
-                <span className="h-3 w-px bg-border" />
-                <span className="text-[13px] font-semibold text-foreground truncate max-w-[180px] md:max-w-[280px]">
+                <span className="hidden md:inline h-3 w-px bg-border" />
+                <span className="text-[14px] md:text-[13px] font-semibold text-foreground truncate max-w-[200px] md:max-w-[280px]">
                   {fullName}
                 </span>
+                {activeThread && activeThread.messages.length > 1 && (
+                  <span className="md:hidden text-[11px] text-muted-foreground tabular-nums">· {activeThread.messages.length}</span>
+                )}
               </div>
               {contact.email && (
                 <div className="text-[11px] text-muted-foreground truncate max-w-[220px] md:max-w-[360px]">
@@ -571,12 +603,12 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                       />
                     ))}
 
-                    {/* Quiet "tap to reply" prompt when composer is closed */}
+                    {/* Desktop: dashed inline CTA. Mobile gets a floating gold pill (rendered below). */}
                     {!replyOpen && contact.email && (
                       <button
                         type="button"
                         onClick={handleStartReply}
-                        className="w-full mt-4 group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-border/70 bg-card/50 hover:bg-card hover:border-border transition-colors text-left"
+                        className="hidden md:flex w-full mt-4 group items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-border/70 bg-card/50 hover:bg-card hover:border-border transition-colors text-left"
                       >
                         <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                           <Reply className="w-3.5 h-3.5" />
@@ -681,7 +713,38 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             )}
           </main>
         </div>
+
+        {/* Mobile floating Reply pill — gold, thumb-reachable, sits above safe-area. */}
+        {!replyOpen && contact.email && activeThread && (
+          <button
+            type="button"
+            onClick={handleStartReply}
+            className="md:hidden absolute right-4 z-30 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)] active:scale-95 transition-transform"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+            aria-label="Reply"
+          >
+            <Reply className="w-4 h-4" />
+            Reply
+          </button>
+        )}
       </DialogContent>
+
+      {/* Mobile: open the canonical composer for replies — single source of truth. */}
+      {mobileComposeOpen && (
+        <ComposeEmailDialog
+          contact={contact}
+          open={mobileComposeOpen}
+          onOpenChange={(o) => {
+            setMobileComposeOpen(o);
+            if (!o) {
+              setMobileComposeSubject('');
+              setMobileComposeBody('');
+            }
+          }}
+          initialSubject={mobileComposeSubject}
+          initialBodyHtml={mobileComposeBody}
+        />
+      )}
     </Dialog>
   );
 }

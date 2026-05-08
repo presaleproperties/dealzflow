@@ -744,43 +744,26 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
               keyboard pushes the dialog up. */}
           <DialogHeader
-            className="md:hidden px-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2"
-            style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: '0.5rem' }}
+            className="md:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top))', paddingBottom: '0.375rem' }}
           >
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="text-[15px] font-semibold text-primary hover:opacity-80 active:opacity-60 px-3 py-2 -ml-1 rounded-md min-h-[40px] min-w-[64px] text-left"
+              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-3 py-1.5 rounded-md min-h-[34px] text-left"
               disabled={isPending}
               aria-label="Close composer"
             >
               Cancel
             </button>
-            <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
-              {isMass ? `Mass Email · ${allRecipients.length}` : 'New Message'}
+            <DialogTitle className="text-[13.5px] font-semibold tracking-tight text-foreground truncate">
+              {isMass ? `Mass · ${allRecipients.length}` : 'New Message'}
             </DialogTitle>
-            {/* Spacer to keep title centered (matches Cancel min-width) */}
             <span className="w-[64px] shrink-0" aria-hidden />
           </DialogHeader>
 
-          {/* Mobile sub-header: recipient identity (or recipient count for mass) */}
-          <div className="md:hidden px-3 py-2 border-b border-border/60 bg-background/60 shrink-0 flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-semibold shrink-0">
-              {isMass ? allRecipients.length : (contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">
-                {isMass
-                  ? `${allRecipients.length} recipients · personalized`
-                  : ([contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email || 'Unknown')}
-              </p>
-              <p className="text-[11px] text-muted-foreground truncate leading-tight">
-                {isMass
-                  ? allRecipients.slice(0, 3).map((r) => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email).join(', ') + (allRecipients.length > 3 ? '…' : '')
-                  : (contact.email ?? 'No email on file')}
-              </p>
-            </div>
-          </div>
+          {/* (Mobile sub-header removed — the To row already names the recipient,
+              keeping vertical real estate for the editor.) */}
 
           {/* Desktop slim title bar */}
           <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
@@ -948,15 +931,19 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
             {/* Main composer column — single continuous surface, mail-app feel */}
             <div className="flex flex-col overflow-hidden min-h-0 bg-background">
-              {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail */}
-              <div className="px-3 sm:px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
-                <RecipientRow label="From">
-                  <span className="text-[13px] text-foreground/80 truncate">
-                    {emailSettings?.sender_name
-                      ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>`
-                      : (user?.email ?? '')}
-                  </span>
-                </RecipientRow>
+              {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail.
+                  "From" is desktop-only; on mobile you always send as yourself, so we hide it
+                  to free vertical space. */}
+              <div className="px-3 sm:px-5 pt-1 sm:pt-2 pb-0.5 sm:pb-1 border-b border-border/60 shrink-0">
+                <div className="hidden md:block">
+                  <RecipientRow label="From">
+                    <span className="text-[13px] text-foreground/80 truncate">
+                      {emailSettings?.sender_name
+                        ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>`
+                        : (user?.email ?? '')}
+                    </span>
+                  </RecipientRow>
+                </div>
                 <RecipientRow
                   label="To"
                   trailing={
@@ -1123,37 +1110,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                               <div className="hidden sm:block">
                                 <SignatureInlineFrame html={activeSignatureHtml} />
                               </div>
-                              {/* Mobile: collapsed pill — keeps the typing area dominant.
-                                  Tap to reveal the stacked (headshot-on-top) preview. */}
-                              <div className="sm:hidden border-t border-border/40">
-                                {!showSignaturePreviewMobile ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowSignaturePreviewMobile(true)}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 text-[11.5px] text-muted-foreground hover:text-foreground active:bg-muted/30 transition-colors"
-                                  >
-                                    <span className="inline-flex items-center gap-1.5">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-                                      Signature appended · tap to preview
-                                    </span>
-                                    <span className="text-[10.5px] uppercase tracking-[0.08em]">Show</span>
-                                  </button>
-                                ) : (
-                                  <div className="relative">
-                                    <div className="flex items-center justify-between px-4 py-2 border-b border-border/30 bg-muted/20">
-                                      <span className="text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground font-semibold">Signature preview</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => setShowSignaturePreviewMobile(false)}
-                                        className="text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-                                      >
-                                        Hide
-                                      </button>
-                                    </div>
-                                    <SignatureInlineFrame html={activeSignatureHtml} />
-                                  </div>
-                                )}
-                              </div>
+                              {/* Mobile: signature is managed via the bottom action bar selector
+                                  and revealed in the Preview tab — no inline footer to keep the
+                                  editor visually clean. */}
                             </>
                           )
                         ) : null
