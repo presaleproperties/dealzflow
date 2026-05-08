@@ -183,12 +183,18 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         </AlertDialogContent>
       </AlertDialog>
 
-      <BulkSendTextDialog
-        open={showBulkText}
-        onOpenChange={setShowBulkText}
-        contactIds={selectedIds}
-        onComplete={onClearSelection}
-      />
+      {/* Mass text — opens the canonical SendTextDialog with the first
+          selected lead as primary and the rest as extras. >1 recipient routes
+          through `bulk-send-sms` (personalized server-side) automatically. */}
+      {showBulkText && selectedContacts.length > 0 && (
+        <SendTextDialog
+          contact={selectedContacts[0]}
+          extraContacts={selectedContacts.slice(1)}
+          open={showBulkText}
+          onOpenChange={setShowBulkText}
+          onSent={onClearSelection}
+        />
+      )}
 
       {/* Mass email — opens the canonical composer with the selected leads
           pre-loaded as recipients. >1 recipient routes through the
