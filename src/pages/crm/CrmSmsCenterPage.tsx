@@ -249,54 +249,14 @@ export default function CrmSmsCenterPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ============ Bulk send dialog ============ */}
+      {/* ============ Bulk send dialog (single composer surface) ============ */}
       <BulkSendTextDialog
         open={composerOpen}
         onOpenChange={setComposerOpen}
-        contactIds={composerIds}
+        contactIds={[]}
+        audiencePicker
         defaultChannel="sms"
       />
-
-      {/* ============ Recipient preview drawer ============ */}
-      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
-        <SheetContent className="w-full sm:max-w-md flex flex-col">
-          <SheetHeader>
-            <SheetTitle>Recipient preview</SheetTitle>
-            <SheetDescription>
-              {reachable.length} will receive · {optedOutCount} opted out · {filteredRecipients.length} matched filters
-            </SheetDescription>
-          </SheetHeader>
-          <ScrollArea className="flex-1 -mx-6 px-6">
-            <div className="divide-y divide-border">
-              {filteredRecipients.length === 0 && (
-                <div className="text-sm text-muted-foreground py-8 text-center">No recipients match.</div>
-              )}
-              {filteredRecipients.map(c => {
-                const isOpt = optOutPhones.has((c.phone || '').replace(/\D/g, '').slice(-10));
-                return (
-                  <div key={c.id} className="py-2.5 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">
-                        {`${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unknown'}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground font-mono">{c.phone}</div>
-                    </div>
-                    {isOpt ? (
-                      <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400">
-                        Opted out
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-600/30">
-                        Will send
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
 
       {/* ============ Failed-sends drawer ============ */}
       <Sheet open={failedDrawerOpen} onOpenChange={setFailedDrawerOpen}>
