@@ -429,6 +429,7 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
 function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
   const { data: agents = [] } = useTeamAgents();
   const current = agents.find((a) => a.name === contact.assigned_to);
+  const firstName = (name: string) => name.split(/\s+/)[0] ?? name;
   return (
     <div onClick={e => e.stopPropagation()}>
       <Select
@@ -438,21 +439,21 @@ function InlineAgentCell({ contact, updateContact }: { contact: CrmContact; upda
           toast.success(`Assigned → ${v}`);
         }}
       >
-        <SelectTrigger className="h-8 border-0 bg-transparent p-0 text-[12px] shadow-none hover:bg-muted/40 rounded-md px-2 w-full min-w-0 max-w-full text-muted-foreground gap-1.5 [&>svg]:shrink-0 [&>span]:!flex [&>span]:!items-center [&>span]:min-w-0 [&>span]:flex-1">
+        <SelectTrigger className="h-9 border-0 bg-transparent p-0 text-[12.5px] shadow-none hover:bg-muted/40 rounded-md px-1.5 w-full min-w-0 max-w-full text-foreground gap-2 [&>svg]:shrink-0 [&>svg]:opacity-50 [&>span]:!flex [&>span]:!items-center [&>span]:min-w-0 [&>span]:flex-1">
           {current ? (
-            <span className="items-center gap-1.5 min-w-0 flex-1 whitespace-nowrap leading-none">
-              <AgentAvatar name={current.name} headshotUrl={current.headshot_url} focalY={current.focal_y} size={18} />
-              <span className="min-w-0 truncate whitespace-nowrap leading-none">{current.name}</span>
+            <span className="items-center gap-2 min-w-0 flex-1 whitespace-nowrap leading-none">
+              <AgentAvatar name={current.name} headshotUrl={current.headshot_url} focalY={current.focal_y} size={26} />
+              <span className="min-w-0 truncate whitespace-nowrap leading-none font-medium">{firstName(current.name)}</span>
             </span>
           ) : (
             <SelectValue placeholder="Unassigned" />
           )}
         </SelectTrigger>
-        <SelectContent className="min-w-[200px]">
+        <SelectContent className="min-w-[220px]">
           {agents.map(a => (
             <SelectItem key={a.id} value={a.name} className="text-xs whitespace-nowrap">
               <span className="inline-flex items-center gap-2 whitespace-nowrap leading-none">
-                <AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={20} />
+                <AgentAvatar name={a.name} headshotUrl={a.headshot_url} focalY={a.focal_y} size={22} />
                 <span className="whitespace-nowrap leading-none">{a.name}</span>
               </span>
             </SelectItem>
