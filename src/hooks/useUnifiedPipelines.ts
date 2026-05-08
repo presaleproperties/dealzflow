@@ -6,10 +6,8 @@
  * All pipelines come from the `crm_lead_segments` table. The "All Leads"
  * catch-all segment (no filter_config) is excluded because it isn't a stage.
  *
- * Picking a pipeline writes BOTH `status` and `lead_type` from that segment's
- * filter_config — matching the Pipeline Kanban drag-drop behavior — so the same
- * action on any page produces the same result and the lead is reflected
- * everywhere instantly (useUpdateCrmContact invalidates `crm-contacts`).
+ * Picking a pipeline writes the canonical `pipeline_segment_id` first, plus the
+ * legacy status/lead_type fields for reports and older filters.
  */
 import { useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,6 +34,11 @@ export function useActivePipelineFor(contact: CrmContact | null | undefined) {
   const { pipelines } = useUnifiedPipelines();
   return useMemo<LeadSegment | null>(() => {
     if (!contact) return null;
+    const canonical = (contact as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+    if (canonical) {
+      const direct = pipelines.find(seg => seg.id === canonical);
+      if (direct) return direct;
+    }
     for (const seg of pipelines) {
       if (contactMatchesSegment(contact, seg.filter_config)) return seg;
     }
@@ -45,8 +48,8 @@ export function useActivePipelineFor(contact: CrmContact | null | undefined) {
 
 /**
  * Apply a pipeline segment to a contact. Writes status + lead_type from the
- * segment's filter_config (whichever the segment defines) and invalidates the
- * contact lists / pipeline / dashboard so every surface refreshes.
+ * segment's filter_config for compatibility, but `pipeline_segment_id` is the
+ * canonical source of truth used by every CRM surface.
  */
 export function useSetContactPipeline() {
   const qc = useQueryClient();
@@ -59,7 +62,7 @@ export function useSetContactPipeline() {
       segment: LeadSegment;
     }) => {
       const fc = segment.filter_config as Record<string, unknown>;
-      const updates: Record<string, unknown> = {};
+      const updates: Record<string, unknown> = { pipeline_segment_id: segment.id };
       if (Array.isArray(fc.status) && (fc.status as string[]).length > 0) {
         updates.status = (fc.status as string[])[0];
         updates.status_changed_at = new Date().toISOString();
@@ -76,7 +79,9 @@ export function useSetContactPipeline() {
       return updates;
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-contact'] });
       qc.invalidateQueries({ queryKey: ['crm-contacts'] });
+      qc.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
       qc.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
       qc.invalidateQueries({ queryKey: ['crm-segment-counts'] });
       qc.invalidateQueries({ queryKey: ['crm-pipeline-snapshot'] });
