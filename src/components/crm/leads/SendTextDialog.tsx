@@ -15,7 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  useSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
+  useSendSms, useBulkSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
   SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
