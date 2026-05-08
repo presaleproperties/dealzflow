@@ -53,3 +53,25 @@ export function useIsCompact() {
 
   return isCompact;
 }
+
+const getIsTablet = () => {
+  if (typeof window === "undefined") return false;
+  const w = window.innerWidth;
+  return w >= TABLET_MIN && w <= TABLET_MAX;
+};
+
+export function useIsTablet() {
+  const [isTablet, setIsTablet] = React.useState<boolean>(getIsTablet);
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(
+      `(min-width: ${TABLET_MIN}px) and (max-width: ${TABLET_MAX}px)`
+    );
+    const onChange = () => setIsTablet(getIsTablet());
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isTablet;
+}
