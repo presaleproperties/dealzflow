@@ -385,26 +385,13 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            {!replyOpen && lastInThread && contact.email && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleStartReply}
-                className="h-8 text-[12px] gap-1.5"
-              >
-                <Reply className="w-3.5 h-3.5" /> Reply
-                <kbd className="ml-0.5 hidden sm:inline-flex items-center px-1 rounded bg-muted text-[9.5px] font-mono text-muted-foreground">R</kbd>
-              </Button>
-            )}
-            <button
-              onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col md:flex-row">
