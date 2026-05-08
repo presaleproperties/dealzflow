@@ -79,7 +79,7 @@ function ReplyButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12.5px] font-medium border transition-all',
+        'inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium border transition-all',
         tone === 'primary'
           ? 'border-primary/30 text-primary bg-primary/5 hover:bg-primary/10'
           : 'border-border text-foreground/80 hover:border-primary/30 hover:text-foreground',
