@@ -1546,3 +1546,131 @@ function RecipientRow({
     </div>
   );
 }
+
+/* ─────────────────────── Inline recipient picker ────────────────────────
+ * Replaces the dedicated "Who are you emailing?" launcher dialog. Renders
+ * straight inside the To row so the agent never sees a 2-step modal flow.
+ * Type → live search across CRM contacts with an email; Enter or click to
+ * pick. Free-text email (with `@`) is accepted as a one-off ad-hoc recipient.
+ */
+function InlineRecipientPicker({ onPick }: { onPick: (c: CrmContact) => void }) {
+  const { data: contacts = [], isLoading } = useCrmContacts();
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 30);
+    return () => clearTimeout(t);
+  }, []);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const withEmail = (contacts as CrmContact[]).filter((c) => !!c.email);
+    if (!q) return withEmail.slice(0, 8);
+    return withEmail
+      .filter((c) => {
+        const name = `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim().toLowerCase();
+        return (
+          name.includes(q) ||
+          (c.email ?? '').toLowerCase().includes(q) ||
+          (c.phone ?? '').toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 10);
+  }, [contacts, query]);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  const commitFreeText = () => {
+    const v = query.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return false;
+    onPick({
+      id: `adhoc:${v}`,
+      first_name: '',
+      last_name: '',
+      email: v,
+    } as unknown as CrmContact);
+    return true;
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, Math.max(results.length - 1, 0))); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (results[activeIdx]) { onPick(results[activeIdx]); return; }
+      commitFreeText();
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <input
+        ref={inputRef}
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onKeyDown={onKeyDown}
+        placeholder="Type a name, email or phone…"
+        className="w-full bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+      />
+      {open && (results.length > 0 || query.trim()) && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+          {isLoading && (
+            <div className="px-3 py-2 text-[11.5px] text-muted-foreground flex items-center gap-2">
+              <Loader2 className="w-3 h-3 animate-spin" /> Loading contacts…
+            </div>
+          )}
+          <ul className="max-h-[300px] overflow-y-auto">
+            {results.map((c, i) => {
+              const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email || 'Unnamed lead';
+              const isActive = i === activeIdx;
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); onPick(c); }}
+                    onMouseEnter={() => setActiveIdx(i)}
+                    className={cn(
+                      'w-full text-left px-3 py-2 flex items-center gap-2.5 text-[12.5px]',
+                      isActive ? 'bg-muted/70' : 'hover:bg-muted/40',
+                    )}
+                  >
+                    <span className="h-6 w-6 rounded-full bg-primary/15 text-primary text-[10px] font-semibold inline-flex items-center justify-center shrink-0">
+                      {(c.first_name?.[0] ?? c.email?.[0] ?? '?').toUpperCase()}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <div className="truncate font-medium text-foreground">{name}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{c.email}</div>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            {results.length === 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query.trim()) && (
+              <li>
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); commitFreeText(); }}
+                  className="w-full text-left px-3 py-2 text-[12.5px] hover:bg-muted/50"
+                >
+                  Send to <span className="font-medium text-foreground">{query.trim()}</span> (one-off)
+                </button>
+              </li>
+            )}
+            {results.length === 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query.trim()) && (
+              <li className="px-3 py-2 text-[11.5px] text-muted-foreground">
+                No matches — type a full email to send one-off
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
