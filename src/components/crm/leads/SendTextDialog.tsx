@@ -389,25 +389,62 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             )}
           </div>
 
-          {/* To row */}
-          <div className="flex items-center gap-3 px-5 sm:px-8 h-11 sm:h-14 border-b">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
-              <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
-              {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
-            </div>
+          {/* To row — single chip when 1 recipient, chip rail + Mass badge when many */}
+          <div className="flex items-center gap-2 px-5 sm:px-8 min-h-11 sm:min-h-14 py-2 border-b flex-wrap">
+            {!isMass ? (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border min-w-0">
+                <span className="text-xs sm:text-sm font-medium tracking-wide truncate">{fullName}</span>
+                {contact.phone && <span className="text-[11px] sm:text-xs text-muted-foreground font-mono shrink-0">{formatPhoneDisplay(contact.phone)}</span>}
+              </div>
+            ) : (
+              <>
+                {reachable.slice(0, 8).map(r => {
+                  const initial = (r.first_name?.[0] ?? r.phone?.[0] ?? '?').toUpperCase();
+                  const label = [r.first_name, r.last_name].filter(Boolean).join(' ') || formatPhoneDisplay(r.phone) || 'Lead';
+                  return (
+                    <span
+                      key={r.id}
+                      title={formatPhoneDisplay(r.phone)}
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full"
+                    >
+                      <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">{initial}</span>
+                      <span className="truncate max-w-[140px]">{label}</span>
+                    </span>
+                  );
+                })}
+                {reachable.length > 8 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-[11.5px] font-medium">
+                    +{reachable.length - 8} more
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                  Mass · {reachable.length}
+                </span>
+                {skippedNoPhone > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-[10.5px] font-medium">
+                    {skippedNoPhone} skipped · no phone
+                  </span>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Opt-out / no phone warning */}
-          {!contact.phone && (
+          {/* Opt-out / no phone warning (single-recipient only) */}
+          {!isMass && !contact.phone && (
             <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive">No phone number on file for this lead. Add one to send a text.</p>
             </div>
           )}
-          {isOptedOut && (
+          {!isMass && isOptedOut && (
             <div className="flex items-start gap-2 px-5 sm:px-8 py-2.5 bg-destructive/10 border-b border-destructive/20">
               <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-xs text-destructive font-medium">This contact has opted out (replied STOP). Sending is blocked.</p>
+            </div>
+          )}
+          {isMass && (
+            <div className="flex items-start gap-2 px-5 sm:px-8 py-2 bg-muted/30 border-b text-[11px] text-muted-foreground">
+              <span>Opt-outs auto-excluded · Quiet hours respected · Personalized per recipient</span>
             </div>
           )}
 
