@@ -1,7 +1,10 @@
 // Unified Inbox — native-mail style (Apple Mail / Outlook).
-// 3-pane layout: folder rail • message list • reading pane.
+// Desktop: 3-pane layout (folder rail • message list • reading pane).
+// Mobile (< md): list-or-detail stack with back chevron, mobile top bar
+// (folder picker + sync), pull-to-refresh, swipe-to-archive on rows,
+// auto-grow reply field with `enterKeyHint=send` and ⌘/Ctrl+Enter to send.
 // Pulls from crm_email_threads + crm_gmail_messages (per-user, via RLS).
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
@@ -11,13 +14,20 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import {
   Inbox, Search, RefreshCcw, Archive, MailOpen, Send, ExternalLink,
   Loader2, CheckCheck, Reply, Star, Trash2, Forward, Paperclip,
+  ChevronLeft, ChevronDown,
 } from 'lucide-react';
 import { format, isToday, isYesterday, isThisYear } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useIsCompact } from '@/hooks/use-mobile';
+import { triggerHaptic } from '@/lib/haptics';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
 
 type Thread = {
   id: string;
@@ -65,6 +75,7 @@ function initials(name?: string | null, email?: string | null) {
 
 export default function InboxView() {
   const qc = useQueryClient();
+  const isCompact = useIsCompact();
   const [search, setSearch] = useState('');
   const [folder, setFolder] = useState<Folder>('inbox');
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
@@ -114,12 +125,14 @@ export default function InboxView() {
     );
   }, [threadsQuery.data, search]);
 
-  // Auto-select first
+  // Auto-select first — desktop only. On mobile the user enters the
+  // thread by tapping (list-or-detail UX).
   useEffect(() => {
+    if (isCompact) return;
     if (!selectedThreadId && filteredThreads.length > 0) {
       setSelectedThreadId(filteredThreads[0].id);
     }
-  }, [filteredThreads, selectedThreadId]);
+  }, [filteredThreads, selectedThreadId, isCompact]);
 
   const messagesQuery = useQuery({
     queryKey: ['crm-inbox-messages', selectedThreadId],
@@ -162,19 +175,31 @@ export default function InboxView() {
     } finally { setSyncing(false); }
   };
 
-  const archive = async () => {
-    if (!selectedThread) return;
+  // Pull-to-refresh handler — fast refetch, no toast spam.
+  const handlePullRefresh = async () => {
+    triggerHaptic('light');
+    await Promise.allSettled([
+      qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] }),
+      // Best-effort live sync
+      supabase.functions.invoke('gmail-actions', { body: { action: 'sync_now' } }).catch(() => {}),
+    ]);
+  };
+
+  const archiveThread = async (threadId: string) => {
     try {
       await supabase.functions.invoke('gmail-actions', {
-        body: { action: 'archive', thread_db_id: selectedThread.id },
+        body: { action: 'archive', thread_db_id: threadId },
       });
+      triggerHaptic('success');
       toast.success('Archived');
-      setSelectedThreadId(null);
+      if (selectedThreadId === threadId) setSelectedThreadId(null);
       qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
     } catch (e: any) {
       toast.error(e?.message ?? 'Archive failed');
     }
   };
+
+  const archive = async () => { if (selectedThread) await archiveThread(selectedThread.id); };
 
   const sendReply = async () => {
     if (!selectedThread || !reply.trim()) return;
@@ -183,6 +208,7 @@ export default function InboxView() {
       await supabase.functions.invoke('gmail-actions', {
         body: { action: 'send_reply', thread_db_id: selectedThread.id, body_text: reply },
       });
+      triggerHaptic('success');
       toast.success('Reply sent');
       setReply('');
       setTimeout(() => {
@@ -203,9 +229,47 @@ export default function InboxView() {
     { id: 'archive', label: 'Archive', icon: Archive },
   ];
 
+  // ───────────────── Mobile (list-or-detail) ─────────────────
+  if (isCompact) {
+    const showingDetail = !!selectedThread;
+    return (
+      <div className="flex flex-col min-h-0 h-full bg-background">
+        {!showingDetail ? (
+          <MobileThreadList
+            folder={folder}
+            folders={folders}
+            onFolderChange={(f) => { setFolder(f); setSelectedThreadId(null); }}
+            search={search}
+            onSearchChange={setSearch}
+            threads={filteredThreads}
+            isLoading={threadsQuery.isLoading}
+            onPick={(id) => { triggerHaptic('selection'); setSelectedThreadId(id); }}
+            onSync={sync}
+            syncing={syncing}
+            onPullRefresh={handlePullRefresh}
+            onArchive={archiveThread}
+          />
+        ) : (
+          <MobileThreadDetail
+            thread={selectedThread!}
+            messages={messagesQuery.data ?? []}
+            isLoading={messagesQuery.isLoading}
+            onBack={() => setSelectedThreadId(null)}
+            onArchive={archive}
+            reply={reply}
+            onReplyChange={setReply}
+            onSend={sendReply}
+            sending={sending}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ───────────────── Desktop (3-pane) ─────────────────
   return (
     <div className="grid grid-cols-1 md:grid-cols-[180px_320px_1fr] lg:grid-cols-[200px_360px_1fr] min-h-0 h-full rounded-xl border border-border overflow-hidden bg-background shadow-sm">
-      {/* ───────────────── Folder rail ───────────────── */}
+      {/* Folder rail */}
       <aside className="hidden md:flex flex-col border-r border-border bg-muted/20 px-3 py-4 gap-6 min-h-0">
         <div className="px-2">
           <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-2">
@@ -252,7 +316,7 @@ export default function InboxView() {
         </div>
       </aside>
 
-      {/* ───────────────── Message list ───────────────── */}
+      {/* Message list */}
       <section className="flex flex-col min-h-0 border-r border-border bg-card">
         <div className="px-3.5 py-3 border-b border-border space-y-2.5">
           <div className="flex items-center justify-between">
@@ -269,6 +333,11 @@ export default function InboxView() {
               placeholder="Search messages…"
               value={search}
               onChange={e => setSearch(e.target.value)}
+              type="search"
+              inputMode="search"
+              enterKeyHint="search"
+              autoCapitalize="off"
+              autoCorrect="off"
               className="h-8 pl-8 text-xs bg-muted/40 border-transparent focus-visible:bg-background focus-visible:border-border"
             />
           </div>
@@ -298,7 +367,6 @@ export default function InboxView() {
                           : 'hover:bg-muted/40',
                       )}
                     >
-                      {/* unread dot */}
                       <div className="pt-1.5 w-2 shrink-0 flex justify-center">
                         {isUnread && <span className="h-2 w-2 rounded-full bg-primary" />}
                       </div>
@@ -341,7 +409,7 @@ export default function InboxView() {
         </ScrollArea>
       </section>
 
-      {/* ───────────────── Reading pane ───────────────── */}
+      {/* Reading pane */}
       <main className="flex flex-col min-h-0 bg-background">
         {!selectedThread ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-8">
@@ -353,7 +421,6 @@ export default function InboxView() {
           </div>
         ) : (
           <>
-            {/* Action toolbar */}
             <div className="h-12 border-b border-border flex items-center px-2 gap-0.5 bg-muted/10">
               <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
@@ -373,7 +440,6 @@ export default function InboxView() {
               </div>
             </div>
 
-            {/* Subject header */}
             <div className="px-8 pt-6 pb-4 border-b border-border">
               <h1 className="text-xl font-semibold tracking-tight text-foreground leading-snug">
                 {selectedThread.subject || '(no subject)'}
@@ -383,7 +449,6 @@ export default function InboxView() {
               </p>
             </div>
 
-            {/* Conversation */}
             <ScrollArea className="flex-1 min-h-0">
               <div className="px-8 py-6 space-y-4 max-w-3xl">
                 {messagesQuery.isLoading ? (
@@ -396,7 +461,6 @@ export default function InboxView() {
               </div>
             </ScrollArea>
 
-            {/* Reply composer */}
             <div className="border-t border-border px-6 py-3 bg-muted/10">
               <div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden">
                 <div className="flex items-center gap-2 px-3 h-8 border-b border-border/60 bg-muted/20">
@@ -408,8 +472,12 @@ export default function InboxView() {
                 <Textarea
                   value={reply}
                   onChange={e => setReply(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
+                  }}
                   placeholder="Write your reply…"
                   rows={3}
+                  enterKeyHint="send"
                   className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none"
                 />
                 <div className="flex items-center justify-between px-3 py-2 border-t border-border/60 bg-muted/10">
@@ -432,6 +500,311 @@ export default function InboxView() {
   );
 }
 
+// ───────────────── Mobile sub-components ─────────────────
+
+function MobileThreadList({
+  folder, folders, onFolderChange, search, onSearchChange, threads, isLoading,
+  onPick, onSync, syncing, onPullRefresh, onArchive,
+}: {
+  folder: Folder;
+  folders: { id: Folder; label: string; icon: typeof Inbox; count?: number }[];
+  onFolderChange: (f: Folder) => void;
+  search: string;
+  onSearchChange: (s: string) => void;
+  threads: Thread[];
+  isLoading: boolean;
+  onPick: (id: string) => void;
+  onSync: () => void;
+  syncing: boolean;
+  onPullRefresh: () => Promise<void>;
+  onArchive: (id: string) => void | Promise<void>;
+}) {
+  const active = folders.find((f) => f.id === folder) ?? folders[0];
+  const FolderIcon = active.icon;
+  return (
+    <div className="flex flex-col min-h-0 h-full">
+      {/* Mobile top bar */}
+      <header
+        className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur-sm px-3 pt-2 pb-2 space-y-2"
+        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))' }}
+      >
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[13px] font-semibold text-foreground hover:bg-muted/60 transition-colors"
+              >
+                <FolderIcon className="h-3.5 w-3.5 text-primary" />
+                {active.label}
+                {active.count ? (
+                  <span className="ml-1 text-[10px] tabular-nums px-1.5 h-4 rounded-full inline-flex items-center bg-primary text-primary-foreground">
+                    {active.count}
+                  </span>
+                ) : null}
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" sideOffset={4} className="w-56 p-1">
+              {folders.map((f) => {
+                const Icon = f.icon;
+                const isActive = f.id === folder;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => { triggerHaptic('selection'); onFolderChange(f.id); }}
+                    className={cn(
+                      'w-full flex items-center gap-2.5 h-9 px-2 rounded-md text-[13px] text-left transition-colors',
+                      isActive ? 'bg-foreground/[0.07] text-foreground font-medium' : 'text-foreground/80 hover:bg-muted/50',
+                    )}
+                  >
+                    <Icon className={cn('h-3.5 w-3.5 shrink-0', isActive && 'text-primary')} />
+                    <span className="flex-1 truncate">{f.label}</span>
+                    {f.count ? (
+                      <span className="text-[10px] tabular-nums px-1.5 h-4 rounded-full inline-flex items-center bg-muted text-muted-foreground">
+                        {f.count}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </PopoverContent>
+          </Popover>
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onSync}
+              disabled={syncing}
+              aria-label="Sync inbox"
+              className="h-9 w-9"
+            >
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4 text-muted-foreground" />}
+            </Button>
+          </div>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search mail…"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
+            autoCapitalize="off"
+            autoCorrect="off"
+            className="h-9 pl-8 text-[13px] bg-muted/40 border-transparent focus-visible:bg-background focus-visible:border-border"
+          />
+        </div>
+      </header>
+
+      {/* List with PTR */}
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 'var(--bottom-nav-pad)' }}>
+        <PullToRefresh onRefresh={onPullRefresh}>
+          {isLoading ? (
+            <div className="p-3 space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            </div>
+          ) : threads.length === 0 ? (
+            <EmptyInbox onSync={onSync} />
+          ) : (
+            <ul className="divide-y divide-border/50">
+              {threads.map((t) => (
+                <SwipeableThreadRow key={t.id} thread={t} onPick={() => onPick(t.id)} onArchive={() => onArchive(t.id)} />
+              ))}
+            </ul>
+          )}
+        </PullToRefresh>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Touch swipe-left to archive. Uses native pointer math (no extra deps).
+ * Threshold: 96px reveals action; release past 160px archives.
+ */
+function SwipeableThreadRow({
+  thread, onPick, onArchive,
+}: { thread: Thread; onPick: () => void; onArchive: () => void | Promise<void> }) {
+  const isUnread = thread.unread_count > 0;
+  const [dx, setDx] = useState(0);
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const swiping = useRef(false);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    swiping.current = false;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startX.current == null || startY.current == null) return;
+    const cdx = e.touches[0].clientX - startX.current;
+    const cdy = e.touches[0].clientY - startY.current;
+    if (!swiping.current) {
+      if (Math.abs(cdx) > 8 && Math.abs(cdx) > Math.abs(cdy) * 1.4) swiping.current = true;
+      else return;
+    }
+    if (cdx < 0) setDx(Math.max(cdx, -200));
+  };
+  const onTouchEnd = () => {
+    if (dx <= -160) {
+      triggerHaptic('success');
+      void onArchive();
+      setDx(0);
+    } else {
+      setDx(0);
+    }
+    startX.current = startY.current = null;
+    swiping.current = false;
+  };
+
+  const archiveOpacity = Math.min(1, Math.abs(dx) / 96);
+
+  return (
+    <li className="relative overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      {/* Archive action surface */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 bg-amber-500/90 text-white"
+        style={{ width: Math.abs(dx), opacity: archiveOpacity }}
+        aria-hidden
+      >
+        <Archive className="h-5 w-5" />
+      </div>
+      <button
+        onClick={onPick}
+        className="relative w-full text-left px-4 py-3.5 flex gap-2.5 bg-background active:bg-muted/40 transition-colors"
+        style={{ transform: `translateX(${dx}px)`, transition: swiping.current ? 'none' : 'transform 200ms ease' }}
+      >
+        <div className="pt-1.5 w-2 shrink-0 flex justify-center">
+          {isUnread && <span className="h-2 w-2 rounded-full bg-primary" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span className={cn(
+              'flex-1 truncate text-[14px]',
+              isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/85',
+            )}>
+              {thread.last_message_from || thread.participants[0] || 'Unknown'}
+            </span>
+            <span className={cn(
+              'text-[11px] tabular-nums shrink-0',
+              isUnread ? 'text-primary font-medium' : 'text-muted-foreground',
+            )}>
+              {smartTime(thread.last_message_at)}
+            </span>
+          </div>
+          <div className={cn(
+            'truncate text-[13px] mt-0.5',
+            isUnread ? 'text-foreground/90 font-medium' : 'text-foreground/70',
+          )}>
+            {thread.subject || '(no subject)'}
+          </div>
+          <p className="text-[12px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
+            {thread.last_message_snippet || '—'}
+          </p>
+        </div>
+      </button>
+    </li>
+  );
+}
+
+function MobileThreadDetail({
+  thread, messages, isLoading, onBack, onArchive,
+  reply, onReplyChange, onSend, sending,
+}: {
+  thread: Thread;
+  messages: Msg[];
+  isLoading: boolean;
+  onBack: () => void;
+  onArchive: () => void | Promise<void>;
+  reply: string;
+  onReplyChange: (s: string) => void;
+  onSend: () => void | Promise<void>;
+  sending: boolean;
+}) {
+  // Auto-grow reply textarea (cap height so it never eats the screen).
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const ta = taRef.current; if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
+  }, [reply]);
+
+  return (
+    <div className="flex flex-col min-h-0 h-full bg-background">
+      <header
+        className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur-sm flex items-center gap-1 px-1 py-2"
+        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))' }}
+      >
+        <Button size="icon" variant="ghost" onClick={onBack} className="h-9 w-9" aria-label="Back to inbox">
+          <ChevronLeft className="h-5 w-5 text-primary" />
+        </Button>
+        <div className="flex-1 min-w-0 px-1">
+          <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold truncate">
+            {thread.message_count} {thread.message_count === 1 ? 'message' : 'messages'}
+          </div>
+          <div className="text-[14px] font-semibold tracking-tight truncate">
+            {thread.subject || '(no subject)'}
+          </div>
+        </div>
+        <Button size="icon" variant="ghost" onClick={onArchive} className="h-9 w-9" aria-label="Archive">
+          <Archive className="h-4 w-4 text-muted-foreground" />
+        </Button>
+        {thread.contact_id && (
+          <Button asChild size="icon" variant="ghost" className="h-9 w-9" aria-label="Open lead">
+            <Link to={`/crm/leads/${thread.contact_id}`}>
+              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            </Link>
+          </Button>
+        )}
+      </header>
+
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          messages.map((m) => <MessageCard key={m.id} msg={m} compact />)
+        )}
+      </div>
+
+      <div
+        className="shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-md px-3 pt-2"
+        style={{ paddingBottom: 'max(0.5rem, calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px)))' }}
+      >
+        <div className="rounded-2xl border border-border/70 bg-background shadow-sm overflow-hidden">
+          <Textarea
+            ref={taRef}
+            value={reply}
+            onChange={(e) => onReplyChange(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void onSend(); }
+            }}
+            placeholder={`Reply to ${thread.last_message_from || thread.participants[0] || ''}…`}
+            rows={1}
+            enterKeyHint="send"
+            className="text-[14px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none px-3.5 py-3 min-h-[44px] max-h-[180px]"
+          />
+          <div className="flex items-center justify-between px-2 pb-2">
+            <span className="text-[10.5px] text-muted-foreground/70 px-1.5">⌘+Enter to send</span>
+            <Button
+              size="sm"
+              onClick={onSend}
+              disabled={sending || !reply.trim()}
+              className="h-9 gap-1.5 px-4 rounded-xl text-[13px] font-semibold"
+            >
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Send
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ToolbarBtn({ icon: Icon, label, onClick }: { icon: typeof Inbox; label: string; onClick?: () => void }) {
   return (
     <Button
@@ -446,12 +819,12 @@ function ToolbarBtn({ icon: Icon, label, onClick }: { icon: typeof Inbox; label:
   );
 }
 
-function MessageCard({ msg }: { msg: Msg }) {
+function MessageCard({ msg, compact = false }: { msg: Msg; compact?: boolean }) {
   const inbound = msg.direction === 'inbound';
   const senderName = inbound ? (msg.from_name || msg.from_email) : 'You';
   return (
     <article className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-      <header className="flex items-start gap-3 px-4 py-3 border-b border-border/60">
+      <header className={cn('flex items-start gap-3 border-b border-border/60', compact ? 'px-3 py-2.5' : 'px-4 py-3')}>
         <div className={cn(
           'h-9 w-9 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0',
           inbound ? 'bg-muted text-foreground/80' : 'bg-primary/15 text-primary',
@@ -465,18 +838,25 @@ function MessageCard({ msg }: { msg: Msg }) {
             {!inbound && <CheckCheck className="h-3 w-3 text-primary/70" />}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
-            to {msg.to_emails?.join(', ') || '—'} · {format(new Date(msg.internal_date), 'MMM d, yyyy h:mm a')}
+            {compact
+              ? format(new Date(msg.internal_date), 'MMM d · h:mm a')
+              : <>to {msg.to_emails?.join(', ') || '—'} · {format(new Date(msg.internal_date), 'MMM d, yyyy h:mm a')}</>}
           </div>
         </div>
       </header>
-      <div className="px-5 py-4">
+      <div className={cn(compact ? 'px-3.5 py-3' : 'px-5 py-4')}>
         {msg.body_html ? (
           <div
-            className="prose prose-sm max-w-none text-foreground/90 text-[13.5px] leading-relaxed [&_a]:text-primary [&_*]:!my-1.5"
+            className={cn(
+              'prose prose-sm max-w-none text-foreground/90 leading-relaxed [&_a]:text-primary [&_*]:!my-1.5',
+              // Mobile-safe clamping for marketing emails
+              '[&_img]:max-w-full [&_img]:h-auto [&_table]:!max-w-full [&_table]:!w-auto [&_pre]:overflow-x-auto',
+              compact ? 'text-[13.5px]' : 'text-[13.5px]',
+            )}
             dangerouslySetInnerHTML={{ __html: sanitize(msg.body_html) }}
           />
         ) : (
-          <p className="text-[13.5px] text-foreground/90 whitespace-pre-wrap leading-relaxed">
+          <p className={cn('whitespace-pre-wrap leading-relaxed text-foreground/90', compact ? 'text-[13.5px]' : 'text-[13.5px]')}>
             {msg.body_text || msg.snippet || ''}
           </p>
         )}
