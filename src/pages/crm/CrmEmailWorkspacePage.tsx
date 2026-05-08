@@ -1,8 +1,10 @@
 // CRM Email — single unified hub.
 // Top-level segmented control: Inbox · Templates · Campaigns · Flows · Stats · Health.
-// "New Email" button (top-right) opens the wide UnifiedComposerDialog — the
-// same focused 960×85vh composer used everywhere in the CRM, so writers stop
-// fighting the cramped 3-rail surface that used to live here.
+// "New Email" button (top-right) opens NewEmailLauncherDialog (lead picker)
+// which then mounts the SAME `<ComposeEmailDialog />` used by every other
+// surface in the CRM (lead detail blue CTA, leads table, contacts page,
+// chat thread, quick actions). One composer everywhere — never re-add a
+// second design.
 
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -10,7 +12,7 @@ import {
   Mail, Workflow, Megaphone, BarChart3, Activity, Inbox, PenSquare, Sparkles,
 } from 'lucide-react';
 import InboxView from '@/components/crm/email/InboxView';
-import { UnifiedComposerDialog } from '@/components/crm/unified/UnifiedComposerDialog';
+import { NewEmailLauncherDialog } from '@/components/crm/email/NewEmailLauncherDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
