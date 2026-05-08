@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import DOMPurify from 'dompurify';
+import { EmailMessageView } from '@/components/crm/chats/EmailMessageView';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -982,58 +982,29 @@ function ToolbarBtn({ icon: Icon, label, onClick }: { icon: typeof Inbox; label:
 
 function MessageCard({ msg, compact = false }: { msg: Msg; compact?: boolean }) {
   const inbound = msg.direction === 'inbound';
-  const senderName = inbound ? (msg.from_name || msg.from_email) : 'You';
+  const senderName = inbound
+    ? (msg.from_name || msg.from_email || 'Unknown')
+    : (msg.from_name || 'You');
+  const toEmail = msg.to_emails?.[0] ?? null;
   return (
-    <article className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-      <header className={cn('flex items-start gap-3 border-b border-border/60', compact ? 'px-3 py-2.5' : 'px-4 py-3')}>
-        <div className={cn(
-          'h-9 w-9 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0',
-          inbound ? 'bg-muted text-foreground/80' : 'bg-primary/15 text-primary',
-        )}>
-          {initials(msg.from_name, msg.from_email)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-[13px] font-semibold text-foreground">{senderName}</span>
-            <span className="text-[11px] text-muted-foreground truncate">&lt;{msg.from_email}&gt;</span>
-            {!inbound && <CheckCheck className="h-3 w-3 text-primary/70" />}
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            {compact
-              ? format(new Date(msg.internal_date), 'MMM d · h:mm a')
-              : <>to {msg.to_emails?.join(', ') || '—'} · {format(new Date(msg.internal_date), 'MMM d, yyyy h:mm a')}</>}
-          </div>
-        </div>
-      </header>
-      <div className={cn(compact ? 'px-3.5 py-3' : 'px-5 py-4')}>
-        {msg.body_html ? (
-          <div
-            className={cn(
-              'prose prose-sm max-w-none text-foreground/90 leading-relaxed [&_a]:text-primary [&_*]:!my-1.5',
-              // Mobile-safe clamping for marketing emails
-              '[&_img]:max-w-full [&_img]:h-auto [&_table]:!max-w-full [&_table]:!w-auto [&_pre]:overflow-x-auto',
-              compact ? 'text-[13.5px]' : 'text-[13.5px]',
-            )}
-            dangerouslySetInnerHTML={{ __html: sanitize(msg.body_html) }}
-          />
-        ) : (
-          <p className={cn('whitespace-pre-wrap leading-relaxed text-foreground/90', compact ? 'text-[13.5px]' : 'text-[13.5px]')}>
-            {msg.body_text || msg.snippet || ''}
-          </p>
-        )}
-      </div>
-    </article>
+    <EmailMessageView
+      id={msg.id}
+      direction={msg.direction}
+      fromName={senderName}
+      fromEmail={msg.from_email}
+      toEmail={toEmail}
+      subject={msg.subject}
+      createdAt={msg.internal_date}
+      html={msg.body_html}
+      text={msg.body_text || msg.snippet || ''}
+      defaultExpanded
+      accentColor={inbound ? 'hsl(220 75% 55%)' : 'hsl(var(--primary))'}
+    />
   );
 }
+// `compact` is now ignored — EmailMessageView handles its own responsive sizing
+// so the preview matches the chat-thread renderer exactly.
 
-function sanitize(html: string): string {
-  return DOMPurify.sanitize(html, {
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'meta', 'link', 'base'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'formaction'],
-    ALLOW_DATA_ATTR: false,
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|cid):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-  });
-}
 
 // EmptyInbox replaced by shared `<InboxEmpty kind="email" />`.
 
