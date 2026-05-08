@@ -348,16 +348,6 @@ export default function LeadDetailPage() {
               onShowing={() => setShowShowing(true)}
             />
           </div>
-          <LeadReplyBar
-            hasPhone={!!c.phone}
-            hasEmail={!!c.email}
-            onSms={() => { setTextChannel('sms'); setShowText(true); }}
-            onEmail={() => setShowEmail(true)}
-            onWhatsApp={() => {
-              void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
-            }}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-          />
         </div>
 
         <PanelEdgeHandle
