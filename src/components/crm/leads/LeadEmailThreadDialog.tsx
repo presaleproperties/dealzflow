@@ -596,13 +596,13 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
 
                 {/* Anchored reply composer — sticky at bottom while open */}
                 {replyOpen && (
-                  <div ref={composerRef} className="flex-shrink-0 border-t-2 border-primary/30 bg-card shadow-[0_-12px_30px_-15px_hsl(var(--foreground)/0.18)] max-h-[58%] overflow-y-auto">
-                    {/* Compact header — "Replying to ..." context */}
-                    <div className="px-5 py-2.5 border-b border-border/60 bg-muted/30 flex items-center justify-between gap-3 sticky top-0 z-10 backdrop-blur">
+                  <div ref={composerRef} className="flex-shrink-0 border-t border-border/70 bg-gradient-to-b from-card to-card/98 shadow-[0_-16px_40px_-20px_hsl(var(--foreground)/0.22)] max-h-[62%] overflow-y-auto">
+                    {/* Refined header */}
+                    <div className="px-4 md:px-5 py-2 border-b border-border/60 bg-card/80 flex items-center justify-between gap-3 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-card/70">
                       <div className="min-w-0 flex items-center gap-2 text-[11.5px]">
-                        <Pill size="sm" tone="primary" className="!gap-0.5">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/12 text-primary text-[10px] font-semibold uppercase tracking-[0.08em]">
                           <Reply className="w-2.5 h-2.5" /> Reply
-                        </Pill>
+                        </span>
                         <span className="text-muted-foreground truncate">
                           to <span className="text-foreground font-medium">{contact.email}</span>
                         </span>
@@ -615,12 +615,17 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                       </button>
                     </div>
 
-                    <div className="px-5 pt-4 pb-2">
-                      <RichTextEditor content={replyHtml} onChange={setReplyHtml} placeholder="Write your reply..." />
+                    {/* Editor surface — framed card so the input area feels intentional */}
+                    <div className="px-3 md:px-5 pt-3 md:pt-4 pb-2">
+                      <div className="rounded-xl border border-border/70 bg-background focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition-all overflow-hidden">
+                        <div className="px-3 md:px-4 py-2.5 md:py-3 min-h-[140px] md:min-h-[160px]">
+                          <RichTextEditor content={replyHtml} onChange={setReplyHtml} placeholder="Write your reply..." />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Compact disclosure row — signature + quoted side-by-side */}
-                    <div className="px-5 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <div className="px-4 md:px-5 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
                       {defaultSig && (
                         <details className="group">
                           <summary className="list-none cursor-pointer text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground inline-flex items-center gap-1.5 hover:text-foreground">
@@ -650,21 +655,23 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                       )}
                     </div>
 
-                    <div className="px-5 py-3 border-t border-border/60 flex items-center justify-between gap-2 bg-muted/10 sticky bottom-0 backdrop-blur">
-                      <div className="text-[10.5px] text-muted-foreground hidden sm:block">
+                    {/* Action bar */}
+                    <div className="px-4 md:px-5 py-2.5 md:py-3 border-t border-border/60 flex items-center justify-between gap-2 bg-card/60 sticky bottom-0 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+                      <div className="text-[10.5px] text-muted-foreground hidden sm:block truncate">
                         Sending as <span className="text-foreground font-medium">{user?.email}</span>
                       </div>
                       <div className="flex items-center gap-2 ml-auto">
-                        <Button variant="ghost" onClick={() => setReplyOpen(false)} className="h-9">
+                        <Button variant="ghost" onClick={() => setReplyOpen(false)} className="h-9 text-[12.5px]">
                           Cancel
                         </Button>
                         <Button
                           onClick={handleSendReply}
                           disabled={sendBridge.isPending}
-                          className="h-9 gap-2 shadow-sm"
+                          className="h-9 gap-2 shadow-sm px-4"
                         >
                           {sendBridge.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                          Send Reply
+                          <span className="hidden sm:inline">Send Reply</span>
+                          <span className="sm:hidden">Send</span>
                         </Button>
                       </div>
                     </div>
