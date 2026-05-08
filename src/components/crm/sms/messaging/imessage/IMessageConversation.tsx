@@ -435,7 +435,7 @@ function IMessageBubble({
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
+              <div className="min-w-0 max-w-full whitespace-pre-wrap break-words break-all [overflow-wrap:anywhere] [word-break:break-word] hyphens-auto">
                 <HighlightedText text={text} query={highlight} />
               </div>
 
