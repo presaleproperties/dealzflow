@@ -18,6 +18,7 @@ export type CrmContact = {
   postal_code: string | null;
   source: string | null;
   status: string | null;
+  pipeline_segment_id?: string | null;
   project: string | null;
   projects: string[];
   assigned_to: string | null;
