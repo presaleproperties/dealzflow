@@ -120,14 +120,14 @@ export function LeftSidebar({
   return (
     <div className="space-y-7">
       {/* Identity card — read-only display; tap ⋯ menu to edit everything in a side drawer */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 lg:p-6 space-y-4">
-        <div className="flex items-start gap-2 min-w-0">
-          <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-[20px] sm:text-[22px] lg:text-[26px] font-bold text-foreground leading-[1.1] tracking-[-0.02em] break-words">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <h1 className="text-[26px] sm:text-[28px] font-bold text-foreground leading-[1.05] tracking-[-0.02em] break-words">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
             {contact.source && (
-              <p className="text-[12.5px] text-muted-foreground font-medium truncate">
+              <p className="text-[13px] text-muted-foreground font-medium truncate">
                 {contact.source}
               </p>
             )}
@@ -135,9 +135,9 @@ export function LeftSidebar({
               const types = (leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : []).slice(0, 3);
               if (types.length === 0) return null;
               return (
-                <div className="flex flex-wrap gap-1 pt-0.5">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {types.map((t) => (
-                    <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground border border-border rounded-full px-2 py-0.5 leading-none whitespace-nowrap">
+                    <span key={t} className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground border border-border rounded-full px-2.5 py-1">
                       {LEAD_TYPE_LABELS[t] || t}
                     </span>
                   ))}
@@ -172,26 +172,26 @@ export function LeftSidebar({
         </div>
 
         {(contact.phone || contact.email) && (
-          <div className="space-y-1.5 pt-3 border-t border-border/60">
+          <div className="space-y-2 pt-4 border-t border-border/60">
             {contact.phone && (
-              <div className="flex items-center justify-between gap-2 group min-w-0">
+              <div className="flex items-center justify-between gap-2 group">
                 <a
                   href={`tel:${contact.phone}`}
-                  className="flex items-center gap-2 min-w-0 flex-1 text-[13.5px] sm:text-[14px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" strokeWidth={1.75} />
+                  <Phone className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate font-medium tabular-nums">{formatPhone(contact.phone)}</span>
                 </a>
                 <CopyButton value={contact.phone} label="phone" />
               </div>
             )}
             {contact.email && (
-              <div className="flex items-center justify-between gap-2 group min-w-0">
+              <div className="flex items-center justify-between gap-2 group">
                 <a
                   href={`mailto:${contact.email}`}
-                  className="flex items-center gap-2 min-w-0 flex-1 text-[13.5px] sm:text-[14px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" strokeWidth={1.75} />
+                  <Mail className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate">{contact.email}</span>
                 </a>
                 <CopyButton value={contact.email} label="email" />
@@ -240,7 +240,7 @@ export function LeftSidebar({
       </AlertDialog>
 
       {showActionRow && (
-        <div data-lead-quick-actions className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
             onClick={onCall}
             disabled={!contact.phone}
@@ -322,7 +322,7 @@ export function LeftSidebar({
       {/* Insight */}
       <div className="space-y-2.5">
         <SectionHeader>Insight</SectionHeader>
-        <div data-lead-insight-grid className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           <InsightCard
             value={<span style={{ color: leadScore.color }}>{leadScore.score}</span>}
             label="Score"
