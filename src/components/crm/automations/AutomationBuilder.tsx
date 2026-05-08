@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Mail, MessageCircle, Clock, UserPlus, RefreshCw, Tag, CheckSquare, Bell,
+  Mail, MessageSquare, Clock, UserPlus, RefreshCw, Tag, CheckSquare, Bell,
   Plus, Trash2, ArrowDown, Zap, ChevronRight, Sparkles, Save, ArrowLeft,
+  GitBranch, Webhook,
 } from 'lucide-react';
 import { TRIGGER_TYPES, ACTION_TYPES, useCreateAutomation, useUpdateAutomation, useCrmAutomationSteps } from '@/hooks/useCrmAutomations';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
@@ -18,9 +19,9 @@ import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmAutomation } from '@/hooks/useCrmAutomations';
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
-  send_email: Mail, send_whatsapp: MessageCircle, wait: Clock,
+  send_email: Mail, send_sms: MessageSquare, wait: Clock,
   assign_agent: UserPlus, update_status: RefreshCw, add_tag: Tag, create_task: CheckSquare,
-  send_notification: Bell,
+  send_notification: Bell, branch_if: GitBranch, ai_draft_email: Sparkles, webhook: Webhook,
 };
 
 const TRIGGER_ICONS: Record<string, React.ElementType> = {
@@ -29,24 +30,28 @@ const TRIGGER_ICONS: Record<string, React.ElementType> = {
 
 const ACTION_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   send_email: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-500' },
-  send_whatsapp: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-500' },
+  send_sms: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-500' },
   wait: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-500' },
   assign_agent: { bg: 'bg-violet-500/10', border: 'border-violet-500/30', text: 'text-violet-500' },
   update_status: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-500' },
   add_tag: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-500' },
   create_task: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-500' },
   send_notification: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-500' },
+  branch_if: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-500' },
+  ai_draft_email: { bg: 'bg-primary/10', border: 'border-primary/30', text: 'text-primary' },
+  webhook: { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400' },
 };
 
-type StepDraft = { action_type: string; action_config: Record<string, unknown> };
+type StepDraft = { action_type: string; action_config: Record<string, unknown>; delay_hours?: number; exit_condition?: string | null };
 
 interface Props {
   editing: CrmAutomation | null;
   templatePrefill?: { name: string; description?: string; trigger_type: string; trigger_config: Record<string, unknown> | {}; steps: { action_type: string; action_config: Record<string, unknown> }[] } | null;
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export function AutomationBuilder({ editing, templatePrefill, onClose }: Props) {
+export function AutomationBuilder({ editing, templatePrefill, onClose, embedded }: Props) {
   const [name, setName] = useState('');
   const { data: agents = [] } = useTeamAgents();
   const [description, setDescription] = useState('');
@@ -292,6 +297,62 @@ export function AutomationBuilder({ editing, templatePrefill, onClose }: Props) 
               onChange={e => updateActionConfig(idx, 'message', e.target.value)} />
           </div>
         )}
+        {action.action_type === 'send_sms' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">SMS Body</Label>
+            <Textarea rows={3} placeholder="Hi {{first_name}}, …"
+              value={(action.action_config.body as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'body', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Tokens: {'{{first_name}}'}, {'{{source}}'}, {'{{status}}'}</p>
+          </div>
+        )}
+        {action.action_type === 'branch_if' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">If field…</Label>
+            <Select value={(action.action_config.field as string) ?? 'source'}
+              onValueChange={v => updateActionConfig(idx, 'field', v)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="source">Source</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="tag">Has tag</SelectItem>
+                <SelectItem value="has_email">Has email</SelectItem>
+                <SelectItem value="has_phone">Has phone</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={(action.action_config.op as string) ?? 'equals'}
+              onValueChange={v => updateActionConfig(idx, 'op', v)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="equals">equals</SelectItem>
+                <SelectItem value="not_equals">does not equal</SelectItem>
+                <SelectItem value="contains">contains</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input className="h-9" placeholder="Value"
+              value={(action.action_config.value as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'value', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Convention: the next step runs on YES; the step after that runs on NO.</p>
+          </div>
+        )}
+        {action.action_type === 'ai_draft_email' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">AI Goal / Prompt</Label>
+            <Textarea rows={3} placeholder="Warm follow-up after 3 days of no reply, mention pre-sale launch…"
+              value={(action.action_config.goal as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'goal', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">A draft is saved as a note on the lead for the assigned agent to review.</p>
+          </div>
+        )}
+        {action.action_type === 'webhook' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">POST URL</Label>
+            <Input className="h-9" placeholder="https://hook.example.com/…"
+              value={(action.action_config.url as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'url', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Receives the full lead JSON. Useful for Zapier/Make/n8n bridges.</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -301,9 +362,11 @@ export function AutomationBuilder({ editing, templatePrefill, onClose }: Props) 
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          {!embedded && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <Sparkles className="h-4 w-4 text-primary" />
           </div>

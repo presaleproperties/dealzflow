@@ -46,13 +46,17 @@ export const TRIGGER_TYPES = [
 ] as const;
 
 export const ACTION_TYPES = [
-  { value: 'send_email', label: 'Send Email', icon: 'Mail' },
-  { value: 'wait', label: 'Wait', icon: 'Clock' },
-  { value: 'assign_agent', label: 'Assign Agent', icon: 'UserPlus' },
-  { value: 'update_status', label: 'Update Status', icon: 'RefreshCw' },
-  { value: 'add_tag', label: 'Add Tag', icon: 'Tag' },
-  { value: 'create_task', label: 'Create Task', icon: 'CheckSquare' },
-  { value: 'send_notification', label: 'Send Notification', icon: 'Bell' },
+  { value: 'send_email', label: 'Send Email', icon: 'Mail', group: 'Communication' },
+  { value: 'send_sms', label: 'Send SMS', icon: 'MessageSquare', group: 'Communication' },
+  { value: 'wait', label: 'Wait / Delay', icon: 'Clock', group: 'Flow' },
+  { value: 'branch_if', label: 'If / Then Branch', icon: 'GitBranch', group: 'Flow' },
+  { value: 'assign_agent', label: 'Assign Agent', icon: 'UserPlus', group: 'CRM' },
+  { value: 'update_status', label: 'Update Status', icon: 'RefreshCw', group: 'CRM' },
+  { value: 'add_tag', label: 'Add Tag', icon: 'Tag', group: 'CRM' },
+  { value: 'create_task', label: 'Create Task', icon: 'CheckSquare', group: 'CRM' },
+  { value: 'send_notification', label: 'Notify Agent', icon: 'Bell', group: 'CRM' },
+  { value: 'ai_draft_email', label: 'AI: Draft Email', icon: 'Sparkles', group: 'AI' },
+  { value: 'webhook', label: 'Webhook (POST)', icon: 'Webhook', group: 'Integrations' },
 ] as const;
 
 export const AUTOMATION_TEMPLATES = [
@@ -111,6 +115,15 @@ export const AUTOMATION_TEMPLATES = [
     icon: 'RefreshCw',
   },
 ] as const;
+
+function deriveDelayHours(action_type: string, cfg: Record<string, unknown>): number {
+  if (action_type !== 'wait') return 0;
+  const amount = Number(cfg.amount ?? 0);
+  const unit = String(cfg.unit ?? 'hours');
+  if (unit === 'minutes') return Math.max(0, Math.round(amount / 60));
+  if (unit === 'days') return Math.max(0, amount * 24);
+  return Math.max(0, amount);
+}
 
 export function useCrmAutomations() {
   return useQuery({
@@ -196,7 +209,11 @@ export function useCreateAutomation() {
       if (autoErr) throw autoErr;
 
       if (payload.steps.length > 0) {
-        const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: auto.id, action_config: s.action_config as unknown as Json }));
+        const stepsWithId = payload.steps.map(s => ({
+          ...s, automation_id: auto.id,
+          action_config: s.action_config as unknown as Json,
+          delay_hours: deriveDelayHours(s.action_type, s.action_config),
+        }));
         const { error: stepsErr } = await supabase.from('crm_automation_steps').insert(stepsWithId);
         if (stepsErr) throw stepsErr;
       }
@@ -229,7 +246,7 @@ export function useUpdateAutomation() {
       if (payload.steps) {
         await supabase.from('crm_automation_steps').delete().eq('automation_id', payload.id);
         if (payload.steps.length > 0) {
-          const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: payload.id, action_config: s.action_config as unknown as Json }));
+          const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: payload.id, action_config: s.action_config as unknown as Json, delay_hours: deriveDelayHours(s.action_type, s.action_config) }));
           const { error: stepsErr } = await supabase.from('crm_automation_steps').insert(stepsWithId);
           if (stepsErr) throw stepsErr;
         }
@@ -272,5 +289,135 @@ export function useDeleteAutomation() {
       toast.success('Automation deleted');
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+// ==================== Enrollments + Run Log ====================
+
+export type CrmAutomationEnrollment = {
+  id: string;
+  automation_id: string;
+  contact_id: string;
+  status: string;
+  current_step_order: number;
+  next_step_due_at: string | null;
+  enrolled_at: string;
+  exited_at: string | null;
+  exit_reason: string | null;
+  contact?: { first_name: string; last_name: string; email: string | null } | null;
+};
+
+export type CrmAutomationRunLog = {
+  id: string;
+  enrollment_id: string | null;
+  automation_id: string;
+  contact_id: string | null;
+  step_order: number;
+  action_type: string;
+  action_result: string;
+  error_message: string | null;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+  contact?: { first_name: string; last_name: string } | null;
+};
+
+export function useAutomationEnrollments(automationId: string | null, status: 'active' | 'all' = 'active') {
+  return useQuery({
+    queryKey: ['crm-automation-enrollments', automationId, status],
+    queryFn: async () => {
+      if (!automationId) return [];
+      let q = supabase.from('crm_automation_enrollments').select('*').eq('automation_id', automationId);
+      if (status === 'active') q = q.eq('status', 'active');
+      const { data, error } = await q.order('enrolled_at', { ascending: false }).limit(200);
+      if (error) throw error;
+      const ids = [...new Set((data ?? []).map(d => d.contact_id).filter(Boolean))] as string[];
+      let map: Record<string, { first_name: string; last_name: string; email: string | null }> = {};
+      if (ids.length) {
+        const { data: cs } = await supabase
+          .from('crm_contacts').select('id, first_name, last_name, email').in('id', ids);
+        (cs ?? []).forEach(c => { map[c.id] = c; });
+      }
+      return (data ?? []).map(d => ({ ...d, contact: d.contact_id ? map[d.contact_id] ?? null : null })) as CrmAutomationEnrollment[];
+    },
+    enabled: !!automationId,
+  });
+}
+
+export function useAutomationRunLog(automationId: string | null) {
+  return useQuery({
+    queryKey: ['crm-automation-run-log', automationId],
+    queryFn: async () => {
+      if (!automationId) return [];
+      const { data, error } = await supabase
+        .from('crm_automation_run_log')
+        .select('*')
+        .eq('automation_id', automationId)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      const ids = [...new Set((data ?? []).map(d => d.contact_id).filter(Boolean))] as string[];
+      let map: Record<string, { first_name: string; last_name: string }> = {};
+      if (ids.length) {
+        const { data: cs } = await supabase.from('crm_contacts').select('id, first_name, last_name').in('id', ids);
+        (cs ?? []).forEach(c => { map[c.id] = c; });
+      }
+      return (data ?? []).map(d => ({ ...d, contact: d.contact_id ? map[d.contact_id] ?? null : null })) as CrmAutomationRunLog[];
+    },
+    enabled: !!automationId,
+  });
+}
+
+export function useEnrollContacts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ automationId, contactIds }: { automationId: string; contactIds: string[] }) => {
+      const { data, error } = await supabase.functions.invoke('enroll-in-automation', {
+        body: { automation_id: automationId, contact_ids: contactIds },
+      });
+      if (error) throw error;
+      return data as { ok: boolean; enrolled: number; skipped: number; failed: number };
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['crm-automation-enrollments'] });
+      qc.invalidateQueries({ queryKey: ['crm-automations'] });
+      const parts: string[] = [];
+      if (data.enrolled) parts.push(`${data.enrolled} enrolled`);
+      if (data.skipped) parts.push(`${data.skipped} already active`);
+      if (data.failed) parts.push(`${data.failed} failed`);
+      toast.success(parts.join(' · ') || 'Done');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useUnenrollContacts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (enrollmentIds: string[]) => {
+      const { data, error } = await supabase.functions.invoke('unenroll-from-automation', {
+        body: { enrollment_ids: enrollmentIds },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-automation-enrollments'] });
+      toast.success('Unenrolled');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useRunAutomationNow() {
+  return useMutation({
+    mutationFn: async (enrollmentId?: string) => {
+      const { data, error } = await supabase.functions.invoke('process-automations', {
+        body: enrollmentId ? { enrollment_id: enrollmentId } : { limit: 20 },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (d: { processed?: number }) => toast.success(`Tick ran · processed ${d?.processed ?? 0}`),
+    onError: (e: Error) => toast.error(e.message),
   });
 }
