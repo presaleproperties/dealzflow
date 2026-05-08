@@ -296,6 +296,7 @@ export default function InboxView() {
             syncing={syncing}
             onPullRefresh={handlePullRefresh}
             onArchive={archiveThread}
+            onMarkUnread={markUnread}
           />
         ) : (
           <MobileThreadDetail
@@ -545,7 +546,7 @@ export default function InboxView() {
 
 function MobileThreadList({
   folder, folders, onFolderChange, search, onSearchChange, threads, isLoading,
-  onPick, onSync, syncing, onPullRefresh, onArchive,
+  onPick, onSync, syncing, onPullRefresh, onArchive, onMarkUnread,
 }: {
   folder: Folder;
   folders: { id: Folder; label: string; icon: typeof Inbox; count?: number }[];
@@ -559,6 +560,7 @@ function MobileThreadList({
   syncing: boolean;
   onPullRefresh: () => Promise<void>;
   onArchive: (id: string) => void | Promise<void>;
+  onMarkUnread: (id: string) => void | Promise<void>;
 }) {
   const active = folders.find((f) => f.id === folder) ?? folders[0];
   const FolderIcon = active.icon;
@@ -644,15 +646,30 @@ function MobileThreadList({
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 'var(--bottom-nav-pad)' }}>
         <PullToRefresh onRefresh={onPullRefresh}>
           {isLoading ? (
-            <div className="p-3 space-y-2">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            <div>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="inbox-row-skeleton">
+                  <div className="w-2" />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="h-3 w-1/3 rounded bg-muted/60" />
+                    <div className="h-3 w-3/4 rounded bg-muted/40" />
+                    <div className="h-2.5 w-full rounded bg-muted/30" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : threads.length === 0 ? (
-            <EmptyInbox onSync={onSync} />
+            <InboxEmpty kind="email" onAction={onSync} />
           ) : (
-            <ul className="divide-y divide-border/50">
+            <ul>
               {threads.map((t) => (
-                <SwipeableThreadRow key={t.id} thread={t} onPick={() => onPick(t.id)} onArchive={() => onArchive(t.id)} />
+                <SwipeableThreadRow
+                  key={t.id}
+                  thread={t}
+                  onPick={() => onPick(t.id)}
+                  onArchive={() => onArchive(t.id)}
+                  onMarkUnread={() => onMarkUnread(t.id)}
+                />
               ))}
             </ul>
           )}
