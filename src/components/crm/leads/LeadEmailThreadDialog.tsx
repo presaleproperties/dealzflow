@@ -713,6 +713,20 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             )}
           </main>
         </div>
+
+        {/* Mobile floating Reply pill — gold, thumb-reachable, sits above safe-area. */}
+        {!replyOpen && contact.email && activeThread && (
+          <button
+            type="button"
+            onClick={handleStartReply}
+            className="md:hidden absolute right-4 z-30 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)] active:scale-95 transition-transform"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+            aria-label="Reply"
+          >
+            <Reply className="w-4 h-4" />
+            Reply
+          </button>
+        )}
       </DialogContent>
 
       {/* Mobile: open the canonical composer for replies — single source of truth. */}
