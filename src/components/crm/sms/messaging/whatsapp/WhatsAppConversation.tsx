@@ -411,15 +411,15 @@ function WhatsAppBubble({
               )}
               style={{ minWidth: 80 }}
             >
-              {/* Shark-fin tail (only on first-in-run) */}
+              {/* Shark-fin tail — flush against the top corner, sits fully outside the bubble so multi-line wraps don't peek through */}
               {isFirstInRun && (
                 isOutbound ? (
-                  <svg viewBox="0 0 8 13" className="absolute -right-[7px] top-0 w-2 h-3.5 pointer-events-none" aria-hidden>
-                    <path d="M0 0 L8 0 L0 13 Z" className="fill-[#d9fdd3] dark:fill-[#005c4b]" />
+                  <svg viewBox="0 0 8 13" className="absolute right-[-7px] top-0 w-2 h-3.5 pointer-events-none" aria-hidden>
+                    <path d="M0 0 L8 0 L0 8 Z" className="fill-[#d9fdd3] dark:fill-[#005c4b]" />
                   </svg>
                 ) : (
-                  <svg viewBox="0 0 8 13" className="absolute -left-[7px] top-0 w-2 h-3.5 pointer-events-none" aria-hidden>
-                    <path d="M8 0 L0 0 L8 13 Z" className="fill-white dark:fill-[#202c33]" />
+                  <svg viewBox="0 0 8 13" className="absolute left-[-7px] top-0 w-2 h-3.5 pointer-events-none" aria-hidden>
+                    <path d="M8 0 L0 0 L8 8 Z" className="fill-white dark:fill-[#202c33]" />
                   </svg>
                 )
               )}
