@@ -210,17 +210,19 @@ export default function InboxView() {
     ]);
   };
 
-  const archiveThread = async (threadId: string) => {
+  const archiveThread = async (threadId: string, forceUnarchive?: boolean) => {
     try {
+      const thread = (threadsQuery.data ?? []).find(t => t.id === threadId);
+      const shouldUnarchive = forceUnarchive ?? !!thread?.is_archived;
       await supabase.functions.invoke('gmail-actions', {
-        body: { action: 'archive', thread_db_id: threadId },
+        body: { action: shouldUnarchive ? 'unarchive' : 'archive', thread_db_id: threadId },
       });
       triggerHaptic('success');
-      toast.success('Archived');
-      if (selectedThreadId === threadId) setSelectedThreadId(null);
+      toast.success(shouldUnarchive ? 'Moved to Inbox' : 'Archived');
+      if (selectedThreadId === threadId && !shouldUnarchive) setSelectedThreadId(null);
       qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
     } catch (e: any) {
-      toast.error(e?.message ?? 'Archive failed');
+      toast.error(e?.message ?? 'Action failed');
     }
   };
 
