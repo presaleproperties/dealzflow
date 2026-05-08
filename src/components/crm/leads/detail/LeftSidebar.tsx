@@ -240,7 +240,7 @@ export function LeftSidebar({
       </AlertDialog>
 
       {showActionRow && (
-        <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div data-lead-quick-actions className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
             onClick={onCall}
             disabled={!contact.phone}
@@ -322,7 +322,7 @@ export function LeftSidebar({
       {/* Insight */}
       <div className="space-y-2.5">
         <SectionHeader>Insight</SectionHeader>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div data-lead-insight-grid className="grid grid-cols-3 gap-1.5">
           <InsightCard
             value={<span style={{ color: leadScore.color }}>{leadScore.score}</span>}
             label="Score"

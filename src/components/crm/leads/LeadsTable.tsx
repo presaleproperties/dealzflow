@@ -928,7 +928,7 @@ export function LeadsTable({
           </table>
         </TooltipProvider>
       </div>
-      <div className="sticky bottom-0 z-20 -mx-1 mt-2 px-3 py-1 bg-background/90 backdrop-blur-md border-t border-border/60">
+      <div className="sticky bottom-0 z-20 -mx-1 mt-2 px-3 py-1 bg-background/90 backdrop-blur-md border-t border-border/60" style={{ paddingBottom: 'calc(0.25rem + var(--bottom-nav-pad, 0px))' }}>
         <PaginationBar page={page} pageSize={pageSize} totalCount={totalCount} isFetching={isFetching}
           onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} isMobile={false} />
       </div>

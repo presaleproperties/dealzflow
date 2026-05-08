@@ -1,86 +1,53 @@
-## Inbox UX polish — Email + Chats (unified)
+Tablet polish pass. Strategy stays "mobile shell on tablet" — bottom nav + drilldowns — but every screen below gets denser, with caps on widths so wide iPad canvases stop looking sparse. Phone (<768px) is unchanged; only the `md:` (≥768px) range inside the mobile shell is tightened.
 
-A focused pass to make both `/crm/email` (Inbox view) and `/crm/chats` feel like one product: same density, same scanability, same triage shortcuts, and full mobile parity.
+A new `--tablet:` helper utility (`@media (min-width:768px) and (max-width:1023px)`) is added to `src/index.css` so tablet-only tweaks don't bleed into desktop. All edits below use it.
 
-### Scope (what changes, what doesn't)
+## 1. Leads list (`/crm/leads`)
+File: `src/pages/crm/CrmLeadsLayout` table + pagination footer
 
-| Touched | Not touched |
-|---|---|
-| `InboxView.tsx` (email 3-pane + mobile) | Composer (`ComposeEmailDialog` — already canonical) |
-| `CrmEmailWorkspacePage.tsx` (header tabs) | Email backend / Gmail edge fns |
-| `CrmChatsPage.tsx` (list + filter rail) | SMS sending logic / Twilio |
-| `CrmChatThreadPage.tsx` (thread header + composer) | Bubble component (already polished) |
-| `src/index.css` — shared `inbox-*` tokens | Routing, RLS, data shape |
+- Cap table content width at `max-w-[760px] mx-auto` on tablet so the list reads like a centered column instead of a stretched table.
+- Shrink filter chip row gap (`gap-1.5`) and make "Add Lead" + "Manage" buttons `h-9 text-sm` on tablet (currently inherit desktop sizing).
+- Pagination footer: the bug where row 11 peeks through under the sticky pager — increase scroll-container `pb-` to match pager height + safe-area.
+- Hide the "Sort ↑↓" arrows in column headers (NAME, REG, PIPELINE) on tablet — they collide with column titles in the narrow grid.
 
----
+## 2. Lead detail (`/crm/leads/:id`)
+File: `src/components/crm/leads/detail/LeftColumn.tsx`, `CenterColumn.tsx`, `MobileHeader.tsx`
 
-### 1. Shared design tokens (one look, both inboxes)
+- **Header strip** (Quick Reply / Book Showing / 4/6992 pager): collapse to a single row with `text-sm`, hide "LEAD" badge, move pager arrows next to the title at tablet so they stop wrapping.
+- **Action tiles** (CALL/TEXT/WHATSAPP/EMAIL): currently render as huge 2×2 grid using mobile sizing. On tablet switch to a single horizontal row of 4 chips (`h-11`, label inline next to icon). Saves ~140px vertical.
+- **PIPELINE STAGE / INSIGHT** cards: drop card padding from `p-4` to `p-3`, reduce score number from `text-2xl` to `text-xl`, put SCORE / LAST ACTIVITY / IN PIPELINE on a single horizontal row instead of 3 stacked cards.
+- **Contact card**: shrink avatar/title block padding on tablet (`p-3`).
 
-Add to `src/index.css`:
+## 3. Chats (`/crm/chats`)
+File: `src/components/crm/chats/ChatsHeader.tsx` (or equivalent), `ChatsList.tsx`
 
-- `--inbox-row-py`, `--inbox-row-px`, `--inbox-rail-w` (desktop 240, mobile sheet)
-- `.inbox-row` / `.inbox-row[data-unread]` — base row, bold sender + accent dot when unread
-- `.inbox-meta` — 11px tabular muted timestamps
-- `.inbox-snippet` — 12.5px clamp-2, color-shift on unread
-- `.inbox-pane-header` — sticky 48px header with backdrop blur
+- The two integration health cards (Email connected / SMS ready) collapse to a single 28px pill row on tablet: green/red dot + "Email · SMS connected · checked 1m ago" — tap to expand. Reclaims ~120px.
+- Conversation rows: cap width at `max-w-[640px]` on tablet so avatars+names don't stretch awkwardly.
 
-Both inboxes consume the same classes → instant consistency.
+## 4. Pipeline Kanban (`/crm/pipeline`)
+File: `src/components/crm/pipeline/MobileKanban.tsx` (or wherever the swipe-pager lives)
 
-### 2. Email Inbox (`InboxView.tsx`)
+- At tablet width, show **2 columns side-by-side** instead of one full-width column with a dot pager. Each column gets `w-[48%]`. The dot pager hides at `md:`.
 
-Desktop:
-- Folder rail width 200 → **220**, add subtle dividers between sections, move "Sync" button into header (free up rail bottom)
-- Message list: bump row to 64px min-height, larger sender (14px), tighter snippet line-height, **keyboard nav** (`j`/`k` move, `e` archive, `r` reply, `/` focus search, `g i` inbox)
-- Reading pane: subject 20px → **22px**, sender card with avatar + tone-based color, "open lead" pill moved next to subject
-- Reply box: gains **template chips** row (top 3 templates), "Suggest reply" placeholder hook (no AI call yet — just visual), Send button promoted to primary tone
+## 5. Calendar (`/crm/calendar`)
+File: `src/pages/crm/CrmCalendar.tsx` or `MobileCalendar.tsx`
 
-Mobile:
-- Top bar collapses on scroll (Apple Mail style) — title shrinks, search hides until pull-down
-- Swipe gestures: left = archive (already), **right = mark unread/read**
-- Floating compose FAB removed (Quick Actions is the canonical "+" per memory)
-- Auto-grow reply already there — add "scroll to bottom on send" + better disabled state
+- Move "Book Showing" button into the same row as `May 2026` title on tablet (it currently consumes its own row). 
+- Cap event card width (`max-w-[760px] mx-auto`) and reduce vertical gap between events from `gap-3` to `gap-2`.
 
-### 3. Chats (`CrmChatsPage.tsx` + `CrmChatThreadPage.tsx`)
+## 6. Email composer / `/crm/email`
+File: `src/components/crm/leads/ComposeEmailDialog.tsx` (already mobile-tuned)
 
-Desktop:
-- Conversation list adopts the same `.inbox-row` styling so it visually matches Email
-- Filter chips (`All / Email / Text`) moved into the same header pattern as Email
-- Thread header: avatar + name + sub-line (channel · last seen), single overflow menu instead of scattered buttons
+- Cap dialog width at `max-w-[680px]` on tablet (currently full-screen). Centered modal feels native at iPad width.
+- Cap signature preview card width to match.
 
-Mobile:
-- Match Email's collapsing top bar
-- Conversation row: 14px name, channel pill on right, snippet 12.5px clamp-2
-- Thread page: keep bubble polish; restyle composer to match Email reply box (rounded-2xl, send button promoted)
+## Technical notes
+- `useIsMobile()` stays at `<1024` — no behavioral change to which layout renders.
+- All edits gated by either Tailwind `md:` (≥768) without a `lg:` reset, or the new `tablet:` helper that scopes to 768–1023 only.
+- No business logic changes; presentation only.
+- Memory update: add a "Tablet Polish v1" memory listing the `tablet:` helper and the cap widths so future work doesn't reintroduce sparse layouts.
 
-### 4. Cross-cutting polish
-
-- Empty states: replace centered icon stacks with **illustrated empty card** (single component `<InboxEmpty kind="email" | "chats" />`)
-- Loading: replace shadcn skeleton blocks with shimmer rows that mirror real row layout (less janky)
-- Unread accent: use `bg-primary` dot (3px) + bold sender, never both color shifts at once
-- Timestamps: smartTime upgrade — show `h:mm a` today, `Yesterday`, weekday this week, `MMM d` else (already done in chats; harmonize email)
-- Keyboard help: small `?` key opens a cheat-sheet popover
-
-### Recommendations not implemented (call-outs only)
-
-- Threaded chat view across channels (one contact = one thread, email + SMS interleaved) — bigger refactor, separate task
-- AI "smart reply" chips — needs Lovable AI gateway wiring; flag in code as TODO
-- Snooze UI is partially built (`useCrmInboxFlags`) — surface in row context menu
-
-### Files to edit
-
-```text
-src/index.css                                  + ~60 lines (inbox-* tokens)
-src/components/crm/email/InboxView.tsx         density, kbd nav, mobile collapsing header
-src/pages/crm/CrmEmailWorkspacePage.tsx        minor header consistency
-src/pages/crm/CrmChatsPage.tsx                 row styling + mobile parity
-src/pages/crm/CrmChatThreadPage.tsx            header + composer polish
-src/components/crm/inbox/InboxEmpty.tsx        NEW shared empty-state component
-src/components/crm/inbox/InboxShortcutsHelp.tsx NEW kbd cheat-sheet popover
-```
-
-### Approach
-
-Roll out in 3 sequential commits (so each is independently reviewable):
-1. Tokens + shared empty + Email desktop polish
-2. Email mobile collapsing header + swipe-right + kbd nav
-3. Chats list + thread header alignment to new tokens
+## Out of scope
+- Restructuring nav (still mobile bottom-nav).
+- Desktop (≥1024) untouched.
+- No new components beyond cosmetic tweaks.
