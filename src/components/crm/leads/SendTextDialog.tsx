@@ -64,9 +64,10 @@ function formatPhoneDisplay(phone?: string | null): string {
   return phone;
 }
 
-export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms' }: Props) {
+export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms', extraContacts, onSent }: Props) {
   const { user } = useAuth();
   const sendSms = useSendSms();
+  const bulkSendSms = useBulkSendSms();
   const { data: templates = [] } = useSmsTemplates();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: isOptedOut } = useIsPhoneOptedOut(contact.phone);
