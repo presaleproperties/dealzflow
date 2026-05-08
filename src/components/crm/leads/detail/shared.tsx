@@ -4,7 +4,7 @@ import { CopyButton } from './CopyButton';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 
 export function SectionHeader({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{children}</h3>;
+  return <h3 className="text-[11.5px] font-semibold text-muted-foreground uppercase tracking-[0.14em]">{children}</h3>;
 }
 
 export function InsightCard({
@@ -19,10 +19,10 @@ export function InsightCard({
   accent?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-card px-2.5 py-2.5 text-center space-y-1">
-      <p className="text-[17px] font-bold text-foreground leading-none tabular-nums">{value}</p>
-      <p className="text-[10px] text-muted-foreground leading-tight uppercase tracking-[0.1em] font-medium">{label}</p>
-      {sublabel && <p className="text-[9.5px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
+    <div className="rounded-xl border border-border/70 bg-card px-2.5 py-3 text-center space-y-1.5">
+      <p className="text-[22px] font-bold text-foreground leading-none tabular-nums tracking-tight">{value}</p>
+      <p className="text-[10.5px] text-muted-foreground leading-tight uppercase tracking-[0.1em] font-semibold">{label}</p>
+      {sublabel && <p className="text-[10px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
     </div>
   );
 }
