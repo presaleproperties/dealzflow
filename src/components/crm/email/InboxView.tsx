@@ -1006,14 +1006,6 @@ function MessageCard({ msg, compact = false }: { msg: Msg; compact?: boolean }) 
 // `compact` is now ignored — EmailMessageView handles its own responsive sizing
 // so the preview matches the chat-thread renderer exactly.
 
-function sanitize(html: string): string {
-  return DOMPurify.sanitize(html, {
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'meta', 'link', 'base'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'formaction'],
-    ALLOW_DATA_ATTR: false,
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|cid):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-  });
-}
 
 // EmptyInbox replaced by shared `<InboxEmpty kind="email" />`.
 
