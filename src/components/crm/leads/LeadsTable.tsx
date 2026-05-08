@@ -9,7 +9,7 @@ import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useCrmTags } from '@/hooks/useCrmTags';
-import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
+import { useActivePipelineFor, useSetContactPipeline, useUnifiedPipelines } from '@/hooks/useUnifiedPipelines';
 import { useColumnWidths, useColumnResizer } from '@/hooks/useColumnWidths';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -351,30 +351,10 @@ function ResizableHeaderCell({
  * Picking a segment writes both `status` and `lead_type` from its
  * filter_config (matching the Kanban drag-drop behavior).
  */
-function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; updateContact: ReturnType<typeof useUpdateCrmContact> }) {
-  const { data: segments = [] } = useCrmLeadSegments();
-
-  // Pipeline-eligible segments (exclude the "All Leads" catch-all)
-  const pipelineSegments = useMemo(
-    () => segments.filter(s => s.filter_config && Object.keys(s.filter_config).length > 0),
-    [segments],
-  );
-
-  // Determine which segment this contact currently belongs to (first match wins,
-  // mirroring the Pipeline Kanban). Falls back to a label derived from status.
-  const activeSeg = useMemo(() => {
-    for (const seg of pipelineSegments) {
-      const fc = seg.filter_config as Record<string, unknown>;
-      const statusOk = !fc.status || (Array.isArray(fc.status) && (fc.status as string[]).includes(contact.status ?? ''));
-      const wantedTypes = Array.isArray(fc.lead_type) ? (fc.lead_type as string[]) : null;
-      const contactTypes: string[] = (((contact as any).lead_types as string[] | undefined)?.length)
-        ? ((contact as any).lead_types as string[])
-        : contact.lead_type ? [contact.lead_type] : [];
-      const typeOk = !wantedTypes || wantedTypes.some(w => contactTypes.includes(w));
-      if (statusOk && typeOk) return seg;
-    }
-    return null;
-  }, [pipelineSegments, contact]);
+function InlineStatusCell({ contact }: { contact: CrmContact }) {
+  const { pipelines: pipelineSegments } = useUnifiedPipelines();
+  const activeSeg = useActivePipelineFor(contact);
+  const setPipeline = useSetContactPipeline();
 
   const displayLabel = activeSeg?.name ?? (contact.status ?? 'New Leads');
   const displayColor = activeSeg?.color ?? 'hsl(var(--muted-foreground))';
@@ -382,20 +362,7 @@ function InlineStatusCell({ contact, updateContact }: { contact: CrmContact; upd
   const onPick = (segId: string) => {
     const seg = pipelineSegments.find(s => s.id === segId);
     if (!seg) return;
-    const fc = seg.filter_config as Record<string, unknown>;
-    const updates: Record<string, unknown> = {};
-    const oldValues: Record<string, unknown> = {};
-    if (Array.isArray(fc.status) && (fc.status as string[]).length > 0) {
-      updates.status = (fc.status as string[])[0];
-      updates.status_changed_at = new Date().toISOString();
-      oldValues.status = contact.status;
-    }
-    if (Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
-      updates.lead_type = (fc.lead_type as string[])[0];
-      oldValues.lead_type = contact.lead_type;
-    }
-    if (Object.keys(updates).length === 0) return;
-    updateContact.mutate({ id: contact.id, updates, oldValues });
+    setPipeline.mutate({ contact, segment: seg });
     toast.success(`Pipeline → ${seg.name}`);
   };
 
