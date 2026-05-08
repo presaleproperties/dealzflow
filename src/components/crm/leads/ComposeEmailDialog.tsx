@@ -1211,7 +1211,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   ) : (
                     <Send className="h-[15px] w-[15px]" />
                   )}
-                  {isPending ? 'Sending' : 'Send'}
+                  {isPending ? 'Sending' : isMass ? `Send ${allRecipients.length}` : 'Send'}
                 </button>
               </div>
 
