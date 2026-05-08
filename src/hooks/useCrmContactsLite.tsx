@@ -21,6 +21,7 @@ const LITE_COLUMNS = [
   'email',
   'phone',
   'status',
+  'pipeline_segment_id',
   'source',
   'lead_type',
   'lead_types',
