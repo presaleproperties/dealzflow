@@ -4,7 +4,7 @@
 // (folder picker + sync), pull-to-refresh, swipe-to-archive on rows,
 // auto-grow reply field with `enterKeyHint=send` and ⌘/Ctrl+Enter to send.
 // Pulls from crm_email_threads + crm_gmail_messages (per-user, via RLS).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
@@ -15,12 +15,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
+import { InboxShortcutsHelp } from '@/components/crm/inbox/InboxShortcutsHelp';
 import {
   Inbox, Search, RefreshCcw, Archive, MailOpen, Send, ExternalLink,
   Loader2, CheckCheck, Reply, Star, Trash2, Forward, Paperclip,
   ChevronLeft, ChevronDown,
 } from 'lucide-react';
-import { format, isToday, isYesterday, isThisYear } from 'date-fns';
+import { format, isToday, isYesterday, isThisYear, isThisWeek } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsCompact } from '@/hooks/use-mobile';
@@ -63,6 +65,7 @@ function smartTime(d: string | Date) {
   const date = new Date(d);
   if (isToday(date)) return format(date, 'h:mm a');
   if (isYesterday(date)) return 'Yesterday';
+  if (isThisWeek(date, { weekStartsOn: 1 })) return format(date, 'EEE');
   if (isThisYear(date)) return format(date, 'MMM d');
   return format(date, 'MM/dd/yy');
 }
@@ -229,6 +232,51 @@ export default function InboxView() {
     { id: 'archive', label: 'Archive', icon: Archive },
   ];
 
+  // Mark thread as unread (gmail-actions: mark_unread)
+  const markUnread = useCallback(async (threadId: string) => {
+    try {
+      await supabase.functions.invoke('gmail-actions', {
+        body: { action: 'mark_unread', thread_db_id: threadId },
+      });
+      triggerHaptic('selection');
+      qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
+    } catch (e: any) {
+      // Soft-fail: not all backends support mark_unread; show a hint.
+      toast.message('Mark unread is not available yet');
+      console.warn('mark_unread failed', e);
+    }
+  }, [qc]);
+
+  // Keyboard navigation (desktop only). Ignore when typing into an input.
+  useEffect(() => {
+    if (isCompact) return;
+    const onKey = (e: KeyboardEvent) => {
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) {
+        // Only allow Cmd/Ctrl+Enter to escape into Send (handled where the textarea lives)
+        return;
+      }
+      const list = filteredThreads;
+      if (e.key === '/') { e.preventDefault(); (document.querySelector('input[type="search"]') as HTMLInputElement | null)?.focus(); return; }
+      if (e.key === '?') { e.preventDefault(); (document.querySelector('[aria-label="Keyboard shortcuts"]') as HTMLButtonElement | null)?.click(); return; }
+      if (!list.length) return;
+      const idx = Math.max(0, list.findIndex(t => t.id === selectedThreadId));
+      if (e.key === 'j') { e.preventDefault(); setSelectedThreadId(list[Math.min(list.length - 1, idx + 1)].id); }
+      else if (e.key === 'k') { e.preventDefault(); setSelectedThreadId(list[Math.max(0, idx - 1)].id); }
+      else if (e.key === 'e' && selectedThread) { e.preventDefault(); void archiveThread(selectedThread.id); }
+      else if (e.key === 'u' && selectedThread) { e.preventDefault(); void markUnread(selectedThread.id); }
+      else if (e.key === 'r' && selectedThread) {
+        e.preventDefault();
+        const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
+        ta?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredThreads, selectedThreadId, selectedThread?.id, isCompact, markUnread]);
+
+
   // ───────────────── Mobile (list-or-detail) ─────────────────
   if (isCompact) {
     const showingDetail = !!selectedThread;
@@ -248,6 +296,7 @@ export default function InboxView() {
             syncing={syncing}
             onPullRefresh={handlePullRefresh}
             onArchive={archiveThread}
+            onMarkUnread={markUnread}
           />
         ) : (
           <MobileThreadDetail
@@ -319,18 +368,21 @@ export default function InboxView() {
       {/* Message list */}
       <section className="flex flex-col min-h-0 border-r border-border bg-card">
         <div className="px-3.5 py-3 border-b border-border space-y-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold tracking-tight text-foreground capitalize">
               {folder}
             </h2>
-            <span className="text-[10.5px] text-muted-foreground tabular-nums">
-              {filteredThreads.length} {filteredThreads.length === 1 ? 'message' : 'messages'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10.5px] text-muted-foreground tabular-nums">
+                {filteredThreads.length} {filteredThreads.length === 1 ? 'message' : 'messages'}
+              </span>
+              <InboxShortcutsHelp />
+            </div>
           </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search messages…"
+              placeholder="Search messages…  (press /)"
               value={search}
               onChange={e => setSearch(e.target.value)}
               type="search"
@@ -345,11 +397,20 @@ export default function InboxView() {
 
         <ScrollArea className="flex-1 min-h-0">
           {threadsQuery.isLoading ? (
-            <div className="p-3 space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            <div>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="inbox-row-skeleton">
+                  <div className="w-2" />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="h-3 w-1/3 rounded bg-muted/60" />
+                    <div className="h-3 w-3/4 rounded bg-muted/40" />
+                    <div className="h-2.5 w-full rounded bg-muted/30" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredThreads.length === 0 ? (
-            <EmptyInbox onSync={sync} />
+            <InboxEmpty kind="email" onAction={sync} />
           ) : (
             <ul>
               {filteredThreads.map(t => {
@@ -359,43 +420,28 @@ export default function InboxView() {
                   <li key={t.id}>
                     <button
                       onClick={() => setSelectedThreadId(t.id)}
-                      className={cn(
-                        'w-full text-left px-3.5 py-3 transition-colors flex gap-2 border-l-2 border-transparent',
-                        'border-b border-border/50',
-                        isActive
-                          ? 'bg-primary/[0.06] border-l-primary'
-                          : 'hover:bg-muted/40',
-                      )}
+                      className="inbox-row"
+                      data-active={isActive}
+                      data-unread={isUnread}
                     >
-                      <div className="pt-1.5 w-2 shrink-0 flex justify-center">
-                        {isUnread && <span className="h-2 w-2 rounded-full bg-primary" />}
-                      </div>
+                      <span className="inbox-row__dot" data-hidden={!isUnread} aria-hidden />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <span className={cn(
-                            'flex-1 truncate text-[13px]',
-                            isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/85',
-                          )}>
+                          <span className="inbox-row__sender">
                             {t.last_message_from || t.participants[0] || 'Unknown'}
                           </span>
-                          <span className={cn(
-                            'text-[10.5px] tabular-nums shrink-0',
-                            isUnread ? 'text-primary font-medium' : 'text-muted-foreground',
-                          )}>
+                          <span className="inbox-row__time">
                             {smartTime(t.last_message_at)}
                           </span>
                         </div>
-                        <div className={cn(
-                          'truncate text-[12.5px] mt-0.5',
-                          isUnread ? 'text-foreground/90 font-medium' : 'text-foreground/70',
-                        )}>
+                        <div className="inbox-row__subject">
                           {t.subject || '(no subject)'}
                         </div>
-                        <p className="text-[11.5px] text-muted-foreground truncate mt-0.5 leading-snug">
+                        <p className="inbox-row__snippet">
                           {t.last_message_snippet || '—'}
                         </p>
                         {t.message_count > 1 && (
-                          <span className="inline-flex items-center mt-1 text-[10px] text-muted-foreground/80 tabular-nums">
+                          <span className="inbox-row__meta">
                             {t.message_count} messages
                           </span>
                         )}
@@ -412,17 +458,12 @@ export default function InboxView() {
       {/* Reading pane */}
       <main className="flex flex-col min-h-0 bg-background">
         {!selectedThread ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-8">
-            <MailOpen className="h-10 w-10 text-muted-foreground/40" strokeWidth={1.25} />
-            <p className="text-sm text-muted-foreground">No message selected</p>
-            <p className="text-xs text-muted-foreground/70 max-w-[28ch]">
-              Pick a conversation from the list to read it here.
-            </p>
-          </div>
+          <InboxEmpty kind="email" />
         ) : (
           <>
             <div className="h-12 border-b border-border flex items-center px-2 gap-0.5 bg-muted/10">
               <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
+              <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="w-px h-5 bg-border mx-1" />
               <ToolbarBtn icon={Reply} label="Reply" />
@@ -441,10 +482,10 @@ export default function InboxView() {
             </div>
 
             <div className="px-8 pt-6 pb-4 border-b border-border">
-              <h1 className="text-xl font-semibold tracking-tight text-foreground leading-snug">
+              <h1 className="text-[22px] font-semibold tracking-tight text-foreground leading-snug">
                 {selectedThread.subject || '(no subject)'}
               </h1>
-              <p className="text-[11px] text-muted-foreground mt-1.5 truncate">
+              <p className="text-[11.5px] text-muted-foreground mt-1.5 truncate">
                 {selectedThread.message_count} {selectedThread.message_count === 1 ? 'message' : 'messages'} · {selectedThread.participants.join(', ')}
               </p>
             </div>
@@ -470,12 +511,13 @@ export default function InboxView() {
                   </span>
                 </div>
                 <Textarea
+                  data-inbox-reply
                   value={reply}
                   onChange={e => setReply(e.target.value)}
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
                   }}
-                  placeholder="Write your reply…"
+                  placeholder="Write your reply…  (⌘+Enter to send)"
                   rows={3}
                   enterKeyHint="send"
                   className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none"
@@ -504,7 +546,7 @@ export default function InboxView() {
 
 function MobileThreadList({
   folder, folders, onFolderChange, search, onSearchChange, threads, isLoading,
-  onPick, onSync, syncing, onPullRefresh, onArchive,
+  onPick, onSync, syncing, onPullRefresh, onArchive, onMarkUnread,
 }: {
   folder: Folder;
   folders: { id: Folder; label: string; icon: typeof Inbox; count?: number }[];
@@ -518,6 +560,7 @@ function MobileThreadList({
   syncing: boolean;
   onPullRefresh: () => Promise<void>;
   onArchive: (id: string) => void | Promise<void>;
+  onMarkUnread: (id: string) => void | Promise<void>;
 }) {
   const active = folders.find((f) => f.id === folder) ?? folders[0];
   const FolderIcon = active.icon;
@@ -603,15 +646,30 @@ function MobileThreadList({
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 'var(--bottom-nav-pad)' }}>
         <PullToRefresh onRefresh={onPullRefresh}>
           {isLoading ? (
-            <div className="p-3 space-y-2">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            <div>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="inbox-row-skeleton">
+                  <div className="w-2" />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="h-3 w-1/3 rounded bg-muted/60" />
+                    <div className="h-3 w-3/4 rounded bg-muted/40" />
+                    <div className="h-2.5 w-full rounded bg-muted/30" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : threads.length === 0 ? (
-            <EmptyInbox onSync={onSync} />
+            <InboxEmpty kind="email" onAction={onSync} />
           ) : (
-            <ul className="divide-y divide-border/50">
+            <ul>
               {threads.map((t) => (
-                <SwipeableThreadRow key={t.id} thread={t} onPick={() => onPick(t.id)} onArchive={() => onArchive(t.id)} />
+                <SwipeableThreadRow
+                  key={t.id}
+                  thread={t}
+                  onPick={() => onPick(t.id)}
+                  onArchive={() => onArchive(t.id)}
+                  onMarkUnread={() => onMarkUnread(t.id)}
+                />
               ))}
             </ul>
           )}
@@ -622,12 +680,12 @@ function MobileThreadList({
 }
 
 /**
- * Touch swipe-left to archive. Uses native pointer math (no extra deps).
- * Threshold: 96px reveals action; release past 160px archives.
+ * Touch swipe-left = archive, swipe-right = toggle unread.
+ * Threshold: 96px reveals action; release past 160px commits.
  */
 function SwipeableThreadRow({
-  thread, onPick, onArchive,
-}: { thread: Thread; onPick: () => void; onArchive: () => void | Promise<void> }) {
+  thread, onPick, onArchive, onMarkUnread,
+}: { thread: Thread; onPick: () => void; onArchive: () => void | Promise<void>; onMarkUnread: () => void | Promise<void> }) {
   const isUnread = thread.unread_count > 0;
   const [dx, setDx] = useState(0);
   const startX = useRef<number | null>(null);
@@ -647,64 +705,58 @@ function SwipeableThreadRow({
       if (Math.abs(cdx) > 8 && Math.abs(cdx) > Math.abs(cdy) * 1.4) swiping.current = true;
       else return;
     }
-    if (cdx < 0) setDx(Math.max(cdx, -200));
+    setDx(Math.max(-200, Math.min(200, cdx)));
   };
   const onTouchEnd = () => {
     if (dx <= -160) {
       triggerHaptic('success');
       void onArchive();
-      setDx(0);
-    } else {
-      setDx(0);
+    } else if (dx >= 160) {
+      triggerHaptic('selection');
+      void onMarkUnread();
     }
+    setDx(0);
     startX.current = startY.current = null;
     swiping.current = false;
   };
 
-  const archiveOpacity = Math.min(1, Math.abs(dx) / 96);
+  const archiveOpacity = dx < 0 ? Math.min(1, Math.abs(dx) / 96) : 0;
+  const unreadOpacity = dx > 0 ? Math.min(1, dx / 96) : 0;
 
   return (
-    <li className="relative overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-      {/* Archive action surface */}
+    <li className="relative overflow-hidden border-b border-border/40" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      {/* Right swipe: mark unread (left side reveal) */}
+      <div
+        className="absolute inset-y-0 left-0 flex items-center justify-start pl-5 bg-primary text-primary-foreground"
+        style={{ width: Math.max(0, dx), opacity: unreadOpacity }}
+        aria-hidden
+      >
+        <MailOpen className="h-5 w-5" />
+      </div>
+      {/* Left swipe: archive (right side reveal) */}
       <div
         className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 bg-amber-500/90 text-white"
-        style={{ width: Math.abs(dx), opacity: archiveOpacity }}
+        style={{ width: Math.max(0, -dx), opacity: archiveOpacity }}
         aria-hidden
       >
         <Archive className="h-5 w-5" />
       </div>
       <button
         onClick={onPick}
-        className="relative w-full text-left px-4 py-3.5 flex gap-2.5 bg-background active:bg-muted/40 transition-colors"
+        className="inbox-row bg-background"
+        data-unread={isUnread}
         style={{ transform: `translateX(${dx}px)`, transition: swiping.current ? 'none' : 'transform 200ms ease' }}
       >
-        <div className="pt-1.5 w-2 shrink-0 flex justify-center">
-          {isUnread && <span className="h-2 w-2 rounded-full bg-primary" />}
-        </div>
+        <span className="inbox-row__dot" data-hidden={!isUnread} aria-hidden />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className={cn(
-              'flex-1 truncate text-[14px]',
-              isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/85',
-            )}>
+            <span className="inbox-row__sender">
               {thread.last_message_from || thread.participants[0] || 'Unknown'}
             </span>
-            <span className={cn(
-              'text-[11px] tabular-nums shrink-0',
-              isUnread ? 'text-primary font-medium' : 'text-muted-foreground',
-            )}>
-              {smartTime(thread.last_message_at)}
-            </span>
+            <span className="inbox-row__time">{smartTime(thread.last_message_at)}</span>
           </div>
-          <div className={cn(
-            'truncate text-[13px] mt-0.5',
-            isUnread ? 'text-foreground/90 font-medium' : 'text-foreground/70',
-          )}>
-            {thread.subject || '(no subject)'}
-          </div>
-          <p className="text-[12px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
-            {thread.last_message_snippet || '—'}
-          </p>
+          <div className="inbox-row__subject">{thread.subject || '(no subject)'}</div>
+          <p className="inbox-row__snippet">{thread.last_message_snippet || '—'}</p>
         </div>
       </button>
     </li>
@@ -874,18 +926,5 @@ function sanitize(html: string): string {
   });
 }
 
-function EmptyInbox({ onSync }: { onSync: () => void }) {
-  return (
-    <div className="p-8 text-center space-y-3">
-      <MailOpen className="h-8 w-8 text-muted-foreground/50 mx-auto" strokeWidth={1.25} />
-      <p className="text-sm text-foreground/80">No conversations yet.</p>
-      <p className="text-xs text-muted-foreground">
-        Connect Gmail in Settings → Integrations to sync your inbox.
-      </p>
-      <Button size="sm" variant="outline" onClick={onSync} className="gap-1.5">
-        <RefreshCcw className="h-3.5 w-3.5" />
-        Try sync
-      </Button>
-    </div>
-  );
-}
+// EmptyInbox replaced by shared `<InboxEmpty kind="email" />`.
+

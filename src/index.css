@@ -1816,3 +1816,59 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
   .ui-spinner { animation-duration: 1.4s !important; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   INBOX SYSTEM — shared between /crm/email and /crm/chats.
+   ════════════════════════════════════════════════════════════ */
+@layer components {
+  :root {
+    --inbox-row-px: 14px;
+    --inbox-row-py: 12px;
+    --inbox-rail-w: 220px;
+    --inbox-pane-h: 48px;
+  }
+
+  .inbox-pane-header {
+    @apply sticky top-0 z-10 flex items-center gap-2 px-3 border-b border-border/60 bg-background/85 backdrop-blur-md;
+    height: var(--inbox-pane-h);
+  }
+
+  .inbox-row {
+    @apply relative w-full text-left flex gap-2.5 transition-colors border-b border-border/40;
+    @apply hover:bg-muted/40 active:bg-muted/60;
+    padding: var(--inbox-row-py) var(--inbox-row-px);
+  }
+  .inbox-row[data-active='true'] {
+    @apply bg-primary/[0.06];
+    box-shadow: inset 2px 0 0 hsl(var(--primary));
+  }
+  .inbox-row[data-unread='true'] .inbox-row__sender { @apply font-semibold text-foreground; }
+  .inbox-row[data-unread='true'] .inbox-row__subject { @apply text-foreground/90 font-medium; }
+  .inbox-row[data-unread='true'] .inbox-row__time { @apply text-primary font-medium; }
+  .inbox-row__dot { @apply mt-2 h-2 w-2 rounded-full shrink-0; background: hsl(var(--primary)); }
+  .inbox-row__dot[data-hidden='true'] { @apply invisible; }
+  .inbox-row__sender { @apply flex-1 truncate text-[14px] font-medium text-foreground/85; }
+  .inbox-row__time   { @apply text-[11px] tabular-nums shrink-0 text-muted-foreground; }
+  .inbox-row__subject{ @apply truncate text-[13px] mt-0.5 text-foreground/75; }
+  .inbox-row__snippet{ @apply text-[12.5px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug; }
+  .inbox-row__meta   { @apply inline-flex items-center mt-1 text-[10.5px] text-muted-foreground/80 tabular-nums; }
+
+  .inbox-row-skeleton {
+    @apply relative overflow-hidden border-b border-border/40 flex gap-2.5;
+    padding: var(--inbox-row-py) var(--inbox-row-px);
+  }
+  .inbox-row-skeleton::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, hsl(var(--muted) / 0.4), transparent);
+    animation: inboxShimmer 1.4s linear infinite;
+  }
+  @keyframes inboxShimmer {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+
+  .inbox-kbd {
+    @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded border border-border bg-muted/60 text-[10px] font-medium text-muted-foreground tabular-nums;
+  }
+}
+
