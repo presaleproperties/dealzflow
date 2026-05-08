@@ -857,7 +857,7 @@ export function ComposerSurface({
 
       {/* Footer — premium sticky action bar. On mobile the Send button gets full-bleed prominence
           (Apple-Mail / Gmail mobile-style) so the primary CTA is unmistakable. */}
-      <div className="px-3 py-2 lg:px-6 lg:py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <div className="px-3 py-2 lg:px-6 lg:py-3.5 border-t border-border/50 bg-gradient-to-b from-card to-card/80 backdrop-blur-md flex items-center justify-between gap-3 flex-wrap shrink-0 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'max(0.5rem, calc(env(safe-area-inset-bottom) + var(--bottom-nav-pad, 0px)))' }}>
         <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 font-semibold">Signature</span>
