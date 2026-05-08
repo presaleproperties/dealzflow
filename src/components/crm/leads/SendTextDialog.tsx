@@ -559,11 +559,12 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                     </span>
                   )}
                 </div>
-                {/* Secondary "manage" — only shown when at least 1 attachment exists, or to paste a URL */}
+                {/* Secondary "manage" — only shown when at least 1 attachment exists */}
+                {mediaUrls.length > 0 && (
                 <Popover open={mediaOpen} onOpenChange={setMediaOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 px-2 text-[11px] text-muted-foreground" title="Manage attachments">
-                      {mediaUrls.length > 0 ? `${mediaUrls.length} file${mediaUrls.length > 1 ? 's' : ''}` : 'URL'}
+                      {mediaUrls.length} file{mediaUrls.length > 1 ? 's' : ''}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-80 p-3 space-y-2">
@@ -609,6 +610,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                     <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each · drag, paste, or tap the paperclip</p>
                   </PopoverContent>
                 </Popover>
+                )}
 
                 {/* Variables */}
                 <Popover open={varOpen} onOpenChange={setVarOpen}>
