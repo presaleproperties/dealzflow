@@ -1,101 +1,66 @@
-# Templates Overhaul — Presale-style Email Builder
 
-Greenlit defaults (from my flagged issues, since you said "build it"):
+## Scheduler Audit & Overhaul
 
-1. **Bulk sends stay on `crm-mass-send-email`.** `bridge-send-email` is used **only** for "Send test to myself / one address." No bulk through bridge — protects merge tags, suppression, audit logs, agent-of-record.
-2. **AI: `template-ai-assist` stays the default.** Bridge AI exposed as a secondary "Ask Presale AI" toggle (only if `BRIDGE_SECRET` returns AI capability).
-3. **Editor lives inside `/crm/templates`** as a new full-screen detail mode (replaces the current preview pane when a template is opened with "Edit"). No new route — back button returns to grid. Mobile: stacked single-column with sticky preview FAB.
-4. **`BRIDGE_SECRET` is already set** ✅ (also `PRESALE_BRIDGE_SECRET` + `PRESALE_BRIDGE_URL`). No new secret needed.
+After reading every scheduler file (page, 9 panels, hook, 2 public pages, 12 edge functions), here is what's broken or missing and what I'll ship.
 
----
+### Critical bugs found
 
-## Scope
+1. **Broken cancel/reschedule links in every transactional email.** `scheduler-send-emails` builds URLs as `/book/{slug}/cancel?...` and `/book/{slug}/{event}?reschedule=...`, but the actual public routes are `/r/{slug}/...`. Every confirmation, reminder, and cancellation email currently sends 404 links.
+2. **No `/r/:slug/cancel` route exists.** Even with the URL fixed, invitees have no way to cancel themselves — there's no page to handle `?b=<id>`.
+3. **Booking detail = `alert()` dialog.** Both `SchedulerBookingsPanel` and `SchedulerCalendarPanel` use raw `alert()` to show booking details — no link to the lead, no email/SMS actions, no reschedule for the agent.
+4. **Public confirmation hides everything useful.** After a booking the success screen shows date + name only. No location/meeting link, no "add to calendar" .ics, no cancel/reschedule links — invitees email the agent asking "where's the meeting?".
+5. **`confirm()` and `alert()` in public booking flow.** Errors like `slot_taken` / `stripe_not_configured` use `alert()`. Looks broken on a premium booking page.
 
-### A. Three-pane builder (desktop ≥1280px)
+### CRM integration gaps
 
-```text
-┌───────────┬──────────────────────────┬──────────────┐
-│ Inspector │ Editor (subject + body)  │ Live Preview │
-│  240px    │  flexible                │  420px       │
-└───────────┴──────────────────────────┴──────────────┘
-```
+6. **No way to share a booking link from a lead.** `LeadQuickActions`, `ShowingsTab`, email composer, and SMS composer have zero scheduler awareness. Agents have to leave the lead and copy from `/crm/scheduler`.
+7. **Lead detail doesn't show the lead's bookings.** Bookings are written to `crm_scheduler_bookings` with `contact_id` set, but `ShowingsTab` only renders legacy showings. Bookings disappear from the lead's view.
+8. **No "Send booking link" merge token in emails/SMS.** Templates can't reference `{{booking_link}}` or `{{booking_link:event-slug}}`.
 
-- **Inspector (left)**: name, category, scope (Mine / Team — locked unless admin), language, project tags, area tags, merge-tag picker (suggestions only — free typing still allowed), sender identity (locked to caller; admins can override via dropdown).
-- **Editor (center)**: subject input + rich HTML body (existing `TemplateEditor` extracted/extended). Toolbar: AI assist menu (improve / shorten / lengthen / tone / translate / generate / subject lines), insert merge tag, insert link, undo/redo.
-- **Preview (right)**: rendered with `renderWithSampleData` locally on every keystroke. "Final preview" button hits `bridge-proxy` with `endpoint=render-email` (debounced, manual). Toggle: desktop / mobile preview.
+### Polish & UX
 
-### B. Sender identity (locked)
+9. `SchedulerCalendarPanel` only loads `upcoming` + `past` (100 cap) — calendar view misses older months when navigating. Events should refetch on `datesSet`.
+10. Bookings list has no empty-state CTA ("Share your link to get bookings").
+11. No availability "date overrides" UI even though the table + edge function support it (block off vacation days, holiday hours).
+12. Onboarding dialog claims "5 starter event types installed" but never actually seeds them — relies on a DB trigger we should verify and surface clearly.
+13. Profile slug save: no uniqueness check, raw Postgres error surfaces on collision.
 
-- Resolved from caller's `crm_team` row → `presale_snapshot` (existing `usePresaleAgentMe`).
-- Read-only chip for non-admins. Admins get a `<Select>` listing team members. Selected agent's slug is forwarded as `agent_slug` to test sends and AI prompts.
+### What I'll ship (3 phases)
 
-### C. AI assist
+**Phase 1 — Fix the critical bugs (highest priority)**
+- Fix `scheduler-send-emails` to emit `/r/{slug}/...` URLs (use `PUBLIC_BASE` + `/r/`), and make `PUBLIC_BASE` resolve from request origin / env so it works on `dealzflow.ca`, preview, and `commissioniq.lovable.app`.
+- New page `src/pages/public/PublicBookingCancelPage.tsx` mounted at `/r/:teamSlug/cancel?b=<id>` — fetches booking summary, shows date/time + reason field + "Cancel my booking" button, calls `scheduler-cancel`.
+- Upgrade public confirmation screen: show meeting link / address / phone instructions, "Add to Google Calendar" + "Download .ics" buttons (build .ics client-side), and the cancel/reschedule links.
+- Replace every `alert()` / `confirm()` in `PublicBookingPage` with inline error banners (toast-style div, gold/amber accent, matches editorial style).
 
-- Default: `template-ai-assist` (existing). Wire all 7 actions via `<AIDiffDialog>` accept/reject (already exists).
-- Secondary "Ask Presale AI" button under the AI menu — disabled if `bridge-status` doesn't report AI capability. When enabled, calls `bridge-proxy` with `endpoint=ai-template-assist`.
+**Phase 2 — CRM integration (the "seamless" part the user asked for)**
+- New `src/components/crm/leads/SendBookingLinkDialog.tsx`: agent picks any of their active event types, optionally pre-fills invitee name/email/phone from the lead, generates the URL (with `?prefill_name=…&prefill_email=…&prefill_phone=…`), and offers Copy / Email / SMS actions. Email/SMS hand off to the existing `ComposeEmailDialog` / SMS composer with the link pre-inserted.
+- Wire `PublicBookingPage` to read `prefill_*` query params into the form fields.
+- New "Share booking link" entry in `LeadQuickActions` (gold accent, between Email and Showing).
+- Replace `ShowingsTab` content with a unified list that merges legacy `crm_showings` + `crm_scheduler_bookings` for the contact, sorted by date, with status pills. Add "Send booking link" CTA at top.
+- Add `{{booking_link}}` and `{{booking_link:event-slug}}` merge tokens to both client (`renderForRecipient`) and server (`crm-mass-send-email/renderForLead`) renderers, resolving against the sending agent's slug. (Per the Email Merge Syntax memory.)
 
-### D. Test sends
+**Phase 3 — Scheduler dashboard polish**
+- Replace `SchedulerBookingsPanel`'s `alert()` with a proper booking detail sheet (Sheet from shadcn): full invitee info, custom answers, location, status pill, link to `/crm/leads/{contact_id}`, Copy meeting link, Reschedule (opens public reschedule URL in new tab), Cancel (with reason prompt), Resend confirmation.
+- Same sheet wired to `SchedulerCalendarPanel`'s `eventClick`. Calendar refetches bookings on `datesSet` (use a date-ranged query instead of `upcoming/past`).
+- Empty state on bookings tab: when `total === 0`, show illustrated empty card with Copy Link + "Send to a lead" buttons.
+- Add a compact "Date overrides" card to `SchedulerAvailabilityPanel`: list upcoming overrides, "Add date off" / "Add custom hours for date" buttons writing to `crm_scheduler_availability_overrides`.
+- Slug uniqueness check on save (catch Postgres `23505` unique violation, show "That URL is taken — try another").
 
-- "Send test" splits to: (1) myself, (2) custom address. Goes through new edge fn `template-send-test` → wraps subject + body in branded HTML + `<AgentSignatureBlock />` + sample merge data → `bridge-proxy endpoint=send-test-email`. Logs to `crm_template_sync_log` (see G).
+### Out of scope (not touching this round)
 
-### E. Autosave
+- Stripe payment flow (already works, no reported issues).
+- Google Calendar OAuth (already in place, `scheduler-onboarding` step 3).
+- Reminders cron (`scheduler-reminders` is already wired and running).
+- Daily digest (`scheduler-daily-digest` is already wired).
+- Mobile-specific scheduler page (the `/crm/scheduler` page is desktop-first; mobile gets bottom-nav route into the same page).
 
-- Local draft autosave every 3s to `localStorage` keyed by template id (or `new:<uuid>` for unsaved).
-- Save button = explicit `useUpdateTemplate` / `useCreateTemplate`. On save, if scope is `team:presale` and presale push enabled, also call `push-template-to-presale` (existing).
-- Dirty indicator pill in header. `beforeunload` warns on dirty close.
+### Technical notes
 
-### F. Mobile (≤768px)
+- All transactional URLs become origin-aware: edge function reads `req.headers.get('origin')` falling back to `Deno.env.get('PUBLIC_BASE_URL')` falling back to `https://dealzflow.ca`. Falls back gracefully when called server-to-server.
+- Booking detail sheet reuses existing `<Sheet>` + `<Pill>` primitives (per CRM Pill Primitive memory). No new components beyond the dialog and the sheet.
+- `.ics` generation is pure client-side (no edge fn needed).
+- Per the user's "prompt-before-automated-changes" memory: I will NOT auto-add starter event types — I'll keep the existing trigger behavior and just clarify the onboarding copy.
+- No new tables. Uses existing `crm_scheduler_*` tables and `crm_showings`.
 
-- Stacked single-column: Inspector accordion (collapsed), Editor full-width, Preview hidden behind floating FAB → opens preview as bottom-sheet.
-
-### G. Sync log
-
-- New table `crm_template_sync_log` (mirrors `crm_source_events` shape):
-  - `id`, `template_id`, `direction` (pull/push/test), `status`, `bridge_endpoint`, `payload_summary`, `error`, `created_at`, `actor_id`.
-- RLS: same gating as `crm_email_templates` (own scope visible; admins see all).
-- Inspector exposes a "Sync history" tab showing last 10 events for the open template.
-
----
-
-## Files
-
-### New
-- `src/components/crm/templates/builder/TemplateBuilder.tsx` — 3-pane shell
-- `src/components/crm/templates/builder/InspectorPane.tsx`
-- `src/components/crm/templates/builder/EditorPane.tsx`
-- `src/components/crm/templates/builder/PreviewPane.tsx`
-- `src/components/crm/templates/builder/SenderIdentityField.tsx`
-- `src/components/crm/templates/builder/MergeTagPicker.tsx`
-- `src/components/crm/templates/builder/SendTestDialog.tsx`
-- `src/components/crm/templates/builder/SyncHistoryList.tsx`
-- `src/hooks/useTemplateAutosave.ts`
-- `src/hooks/useTemplateSyncLog.ts`
-- `supabase/functions/template-send-test/index.ts`
-
-### Edited
-- `src/pages/crm/CrmTemplatesPage.tsx` — when a template is selected with "Open", render `<TemplateBuilder />` in place of the preview column (full-bleed)
-- `src/components/crm/templates/TemplateEditor.tsx` — extract reusable subject + body editor, used by `EditorPane`
-- `mem://index.md` + new `mem://features/crm/templates-builder-v2.md`
-
-### Migration
-- Create `crm_template_sync_log` table + RLS + index on (template_id, created_at desc).
-
----
-
-## Out of scope (intentionally)
-
-- Replacing `crm-mass-send-email` — bulk sends stay on existing pipeline.
-- New `/crm/templates/builder/:slug` route — handled in-place.
-- Removing `merge_tags` array — kept as picker source, not a closed list.
-- Bridge `bridge-save-template` autosave — local autosave only; explicit save pushes to bridge if team scope.
-
----
-
-## Validation
-
-- Open existing template → 3-pane renders, AI assist menu opens, preview updates on keystroke.
-- Edit subject/body → autosave indicator flips dirty → save persists → no second composer appears.
-- Send test to myself → email arrives with branded template + signature.
-- Non-admin opens team template → Sender chip locked to their identity.
-- Mobile ≤768px → single column, preview FAB opens sheet.
-- Sync history tab shows test-send + push events.
+Estimated: ~14 file edits, 2 new files, 1 edge fn fix, 0 migrations.
