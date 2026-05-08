@@ -391,41 +391,35 @@ function IMessageBubble({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div className={cn('flex group', isOutbound ? 'justify-end pr-3' : 'justify-start pl-3', sameAsPrev ? 'mt-[2px]' : 'mt-1.5')}>
-          <div className="relative max-w-[75%] sm:max-w-[62%]">
+          <div className="relative max-w-[78%] sm:max-w-[60%]">
             <div
               className={cn(
-                'relative px-3.5 py-1.5 text-[15px] leading-[1.32] msg-pop-in',
+                'relative px-3.5 py-[7px] text-[15px] leading-[1.32] msg-pop-in rounded-[18px]',
                 isOutbound ? 'imsg-bubble-out' : 'imsg-bubble-in',
-                // shape: full radius unless adjoining a same-sender bubble
+                // shape: tighten the adjoining corner when same sender continues
                 isOutbound
-                  ? cn('rounded-[20px]', sameAsPrev && 'rounded-tr-[6px]', sameAsNext && 'rounded-br-[6px]')
-                  : cn('rounded-[20px]', sameAsPrev && 'rounded-tl-[6px]', sameAsNext && 'rounded-bl-[6px]'),
+                  ? cn(sameAsPrev && 'rounded-tr-[4px]', sameAsNext && 'rounded-br-[4px]')
+                  : cn(sameAsPrev && 'rounded-tl-[4px]', sameAsNext && 'rounded-bl-[4px]'),
                 (isOptimistic || isScheduled) && 'opacity-70',
               )}
             >
-              {/* SVG bubble tail — only on last-in-run */}
+              {/* SVG bubble tail — only on last-in-run, color follows bubble via currentColor */}
               {isLastInRun && (
                 isOutbound ? (
                   <svg
                     viewBox="0 0 18 18"
-                    className="absolute -right-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
+                    className="imsg-tail-out absolute -right-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
                     aria-hidden
                   >
-                    <path d="M0 18 C 8 18, 14 12, 18 0 L 18 18 Z" fill="url(#imsg-out-grad)" />
-                    <defs>
-                      <linearGradient id="imsg-out-grad" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stopColor="#0066f5" />
-                        <stop offset="100%" stopColor="#0a74ff" />
-                      </linearGradient>
-                    </defs>
+                    <path d="M0 18 C 8 18, 14 12, 18 0 L 18 18 Z" fill="currentColor" />
                   </svg>
                 ) : (
                   <svg
                     viewBox="0 0 18 18"
-                    className="absolute -left-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
+                    className="imsg-tail-in absolute -left-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
                     aria-hidden
                   >
-                    <path d="M18 18 C 10 18, 4 12, 0 0 L 0 18 Z" className="fill-[hsl(220_14%_93%)] dark:fill-[hsl(222_16%_20%)]" />
+                    <path d="M18 18 C 10 18, 4 12, 0 0 L 0 18 Z" fill="currentColor" />
                   </svg>
                 )
               )}

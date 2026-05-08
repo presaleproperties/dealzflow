@@ -401,12 +401,12 @@ function WhatsAppBubble({
           <div className="relative max-w-[78%] sm:max-w-[65%]">
             <div
               className={cn(
-                'relative px-2 pt-1.5 pb-1 text-[14.5px] leading-snug msg-pop-in',
+                'relative px-2.5 pt-1.5 pb-1 text-[14.5px] leading-snug msg-pop-in',
                 isOutbound ? 'wa-bubble-out' : 'wa-bubble-in',
                 // WhatsApp tail goes on the FIRST bubble in a run (top corner) — opposite of iMessage
                 isOutbound
-                  ? cn('rounded-lg', isFirstInRun ? 'rounded-tr-none' : 'rounded-tr-lg')
-                  : cn('rounded-lg', isFirstInRun ? 'rounded-tl-none' : 'rounded-tl-lg'),
+                  ? cn('rounded-[14px]', isFirstInRun ? 'rounded-tr-[2px]' : 'rounded-tr-[14px]')
+                  : cn('rounded-[14px]', isFirstInRun ? 'rounded-tl-[2px]' : 'rounded-tl-[14px]'),
                 (isOptimistic || isScheduled) && 'opacity-70',
               )}
               style={{ minWidth: 80 }}

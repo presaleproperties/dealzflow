@@ -701,10 +701,11 @@
       linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 25% 5%) 100%);
   }
   .imsg-bubble-out {
-    background: linear-gradient(180deg, #2a96ff 0%, #0a74ff 55%, #0066f5 100%);
+    background: #0b84ff;
     color: #ffffff;
-    box-shadow: 0 1px 1.5px hsl(212 90% 25% / 0.18);
-    text-shadow: 0 0.5px 0 hsl(212 90% 18% / 0.18);
+    box-shadow:
+      0 1px 0 hsl(212 90% 30% / 0.10),
+      inset 0 1px 0 hsl(0 0% 100% / 0.10);
     -webkit-font-smoothing: antialiased;
   }
   .imsg-bubble-out a {
@@ -714,24 +715,28 @@
     text-underline-offset: 2px;
   }
   .imsg-bubble-in {
-    background: hsl(220 14% 93%);
+    background: hsl(220 14% 92%);
     color: hsl(222 25% 10%);
-    box-shadow: 0 1px 1px hsl(220 15% 20% / 0.06);
+    box-shadow: 0 1px 1px hsl(220 15% 20% / 0.05);
     -webkit-font-smoothing: antialiased;
   }
   .imsg-bubble-in a {
-    color: #0a74ff;
+    color: #0b84ff;
     text-decoration: underline;
     text-underline-offset: 2px;
   }
   .dark .imsg-bubble-in {
-    background: hsl(222 16% 22%);
-    color: hsl(220 14% 94%);
-    box-shadow: 0 1px 1px hsl(0 0% 0% / 0.22);
+    background: hsl(222 12% 18%);
+    color: hsl(220 14% 96%);
+    box-shadow: 0 1px 1px hsl(0 0% 0% / 0.30);
   }
   .dark .imsg-bubble-in a {
     color: #5ab0ff;
   }
+  /* Tail colors track the bubble fill via currentColor on the SVG path */
+  .imsg-tail-out { color: #0b84ff; }
+  .imsg-tail-in  { color: hsl(220 14% 92%); }
+  .dark .imsg-tail-in { color: hsl(222 12% 18%); }
   .imsg-header {
     background: hsl(var(--background) / 0.78);
     backdrop-filter: saturate(180%) blur(20px);
@@ -840,11 +845,10 @@
 
   /* ── Bubble enter animation ── */
   @keyframes msg-pop-in {
-    0%   { opacity: 0; transform: translateY(6px) scale(0.94); }
-    60%  { opacity: 1; transform: translateY(0)   scale(1.015); }
-    100% { opacity: 1; transform: translateY(0)   scale(1); }
+    0%   { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
-  .msg-pop-in { animation: msg-pop-in 280ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .msg-pop-in { animation: msg-pop-in 200ms cubic-bezier(0.22, 1, 0.36, 1); }
   @media (prefers-reduced-motion: reduce) {
     .msg-pop-in { animation: none; }
   }
