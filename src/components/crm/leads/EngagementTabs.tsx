@@ -7,7 +7,8 @@ import { LiveActivityTimeline } from '@/components/presale/LiveActivityTimeline'
 import { PresaleLeadBehaviorTimeline } from '@/components/presale/PresaleLeadBehaviorTimeline';
 import { PresaleActivityWidget } from '@/components/crm/leads/PresaleActivityWidget';
 import { PresaleSignupSourceCard } from '@/components/crm/leads/PresaleSignupSourceCard';
-import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { cn } from '@/lib/utils';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -165,11 +166,11 @@ export function EngagementTabs({ contact }: Props) {
         )}
       </div>
 
-      <EmailPreviewDialog
-        email={previewEmail}
+      <LeadEmailThreadDialog
+        contact={contact}
         open={!!previewEmail}
         onOpenChange={(o) => !o && setPreviewEmail(null)}
-        contactEmail={contact.email}
+        initialEmailId={previewEmail ? `log-${previewEmail.id}` : null}
       />
     </div>
   );

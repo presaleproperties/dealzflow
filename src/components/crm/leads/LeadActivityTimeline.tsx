@@ -20,7 +20,8 @@ import {
   useCrmContactViews,
   useCrmContactSessions,
 } from '@/hooks/useCrmLeadCommunications';
-import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { cn } from '@/lib/utils';
 
 type Kind = 'email' | 'sms' | 'engagement' | 'form' | 'showing' | 'task' | 'note' | 'system';
@@ -525,12 +526,14 @@ export function LeadActivityTimeline({ contactId }: { contactId: string }) {
         )}
       </div>
 
-      <EmailPreviewDialog
-        email={previewEmail}
-        open={!!previewEmail}
-        onOpenChange={(o) => !o && setPreviewEmail(null)}
-        contactEmail={email}
-      />
+      {contact && (
+        <LeadEmailThreadDialog
+          contact={contact as any}
+          open={!!previewEmail}
+          onOpenChange={(o) => !o && setPreviewEmail(null)}
+          initialEmailId={previewEmail ? `log-${previewEmail.id}` : null}
+        />
+      )}
     </div>
   );
 }

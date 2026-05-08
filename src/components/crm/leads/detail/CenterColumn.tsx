@@ -423,18 +423,14 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         <ShowingsTab contactId={contact.id} showings={showings as CrmShowing[]} />
       </TabsContent>
 
-      <EmailPreviewDialog
-        email={previewEmail}
-        open={!!previewEmail}
-        onOpenChange={(o) => !o && setPreviewEmail(null)}
-        contactEmail={contact.email}
-      />
-
       <LeadEmailThreadDialog
         contact={contact}
-        open={threadOpen}
-        onOpenChange={(o) => { setThreadOpen(o); if (!o) setThreadInitialId(null); }}
-        initialEmailId={threadInitialId}
+        open={threadOpen || !!previewEmail}
+        onOpenChange={(o) => {
+          setThreadOpen(o);
+          if (!o) { setThreadInitialId(null); setPreviewEmail(null); }
+        }}
+        initialEmailId={threadInitialId ?? (previewEmail ? `log-${previewEmail.id}` : null)}
       />
 
       <ImportConversationDialog
