@@ -306,9 +306,11 @@ export function AutomationBuilder({ editing, templatePrefill, onClose, embedded 
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          {!embedded && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
