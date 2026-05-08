@@ -245,11 +245,6 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   );
   const { dirty, clear: clearDraft } = useTemplateAutosave(draftKey, draftSnapshot);
 
-  const handleSaveAndClear = useCallback(async () => {
-    await handleSave();
-    clearDraft();
-  }, [handleSave, clearDraft]);
-
   return (
     <div className="space-y-4">
       {/* Top bar */}
