@@ -1,0 +1,3 @@
+UPDATE crm_lead_segments SET filter_config = jsonb_set(filter_config, '{lead_type}', '["Pre-Sale","presale","Presale"]'::jsonb) WHERE name = 'Presale';
+UPDATE crm_lead_segments SET filter_config = jsonb_set(filter_config, '{lead_type}', '["Re-Sale","resale","Resale"]'::jsonb) WHERE name = 'Resale';
+UPDATE crm_lead_segments SET filter_config = jsonb_set(filter_config, '{lead_type}', '["Commercial","commercial"]'::jsonb) WHERE name = 'Commercial';
