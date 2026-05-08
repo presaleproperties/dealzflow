@@ -257,6 +257,17 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           {isEdit && template?.source && (
             <Badge variant="outline" className="text-[10px]">Source: {template.source}</Badge>
           )}
+          <span
+            className={`inline-flex items-center gap-1 text-[10.5px] px-1.5 py-0.5 rounded border ${
+              dirty
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400'
+            }`}
+            title={dirty ? 'Unsaved changes — autosaved locally' : 'All changes saved'}
+          >
+            {dirty ? <CloudOff className="w-2.5 h-2.5" /> : <Cloud className="w-2.5 h-2.5" />}
+            {dirty ? 'Unsaved' : 'Saved'}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <AIAssistMenu
@@ -288,7 +299,22 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               </Button>
             </>
           )}
-          <Button size="sm" onClick={handleSave} disabled={saving || !name.trim()} className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setSendTestOpen(true)}
+            disabled={!subject.trim() || !htmlContent.trim()}
+            title="Send a test of this draft to your inbox"
+          >
+            <Send className="w-3.5 h-3.5" /> Send test
+          </Button>
+          <Button
+            size="sm"
+            onClick={async () => { await handleSave(); clearDraft(); }}
+            disabled={saving || !name.trim()}
+            className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
             <Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : isEdit ? 'Update' : 'Save Template'}
           </Button>
         </div>
