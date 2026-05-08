@@ -200,7 +200,11 @@ export function useCreateAutomation() {
       if (autoErr) throw autoErr;
 
       if (payload.steps.length > 0) {
-        const stepsWithId = payload.steps.map(s => ({ ...s, automation_id: auto.id, action_config: s.action_config as unknown as Json }));
+        const stepsWithId = payload.steps.map(s => ({
+          ...s, automation_id: auto.id,
+          action_config: s.action_config as unknown as Json,
+          delay_hours: deriveDelayHours(s.action_type, s.action_config),
+        }));
         const { error: stepsErr } = await supabase.from('crm_automation_steps').insert(stepsWithId);
         if (stepsErr) throw stepsErr;
       }
