@@ -89,6 +89,8 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   // legacy templates that have a manually-pasted signature).
   const [appendSignature, setAppendSignature] = useState<boolean>(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sendTestOpen, setSendTestOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
