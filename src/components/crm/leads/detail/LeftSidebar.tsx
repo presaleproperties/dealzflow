@@ -27,6 +27,7 @@ import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { LEAD_STATUSES, LEAD_TYPES, LEAD_TYPE_LABELS, LEAD_SOURCES } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
+import { useUnifiedPipelines, useActivePipelineFor, useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
@@ -81,21 +82,13 @@ export function LeftSidebar({
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
   const { data: librarySources = [] } = useCrmSources();
-  const { data: leadSegments = [] } = useCrmLeadSegments();
-  // Pipeline stages aligned with the Leads/Pipeline pages: pull from
-  // crm_lead_segments where the segment is a pure status filter.
-  const stageOptions = (() => {
-    const fromSegments = leadSegments
-      .filter((s) => {
-        const cfg = s.filter_config as { status?: unknown } | null;
-        return Array.isArray(cfg?.status) && (cfg!.status as string[]).length === 1;
-      })
-      .map((s) => ((s.filter_config as { status: string[] }).status[0]));
-    const set = new Set<string>(fromSegments);
-    // Always preserve current value so existing leads aren't orphaned visually.
-    if (contact.status) set.add(contact.status);
-    return Array.from(set);
-  })();
+  // Unified pipelines — same source of truth as the Pipeline Kanban + Leads
+  // list dropdown. Picking a pipeline writes BOTH status + lead_type from the
+  // segment's filter_config so the lead lands in the correct column on every
+  // surface instantly.
+  const { pipelines } = useUnifiedPipelines();
+  const activePipeline = useActivePipelineFor(contact);
+  const setPipeline = useSetContactPipeline();
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
@@ -289,22 +282,36 @@ export function LeftSidebar({
         </div>
       )}
 
-      {/* Pipeline Stage */}
+      {/* Pipeline Stage — unified across Pipeline Kanban + Leads list */}
       <div className="space-y-2">
         <SectionHeader>Pipeline Stage</SectionHeader>
         {isMobile ? (
           <MobileEditRow
             label="Stage"
-            value={contact.status ?? 'New Lead'}
+            value={activePipeline?.name ?? contact.status ?? 'New Lead'}
             onClick={() => setDrawer('status')}
           />
         ) : (
-          <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
+          <Select
+            value={activePipeline?.id ?? ''}
+            onValueChange={(segId) => {
+              const seg = pipelines.find(p => p.id === segId);
+              if (seg) setPipeline.mutate({ contact, segment: seg });
+            }}
+          >
             <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
-              <SelectValue />
+              <SelectValue placeholder={contact.status ?? 'New Lead'} />
             </SelectTrigger>
             <SelectContent>
-              {stageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {pipelines.map(seg => (
+                <SelectItem key={seg.id} value={seg.id}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
+                    {seg.emoji && <span>{seg.emoji}</span>}
+                    {seg.name}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         )}
@@ -655,9 +662,12 @@ export function LeftSidebar({
             <MobileMultiPickerDrawer
               open={drawer === 'status'} onOpenChange={(o) => !o && closeDrawer()}
               title="Pipeline Stage"
-              options={stageOptions.map(s => ({ value: s, label: s }))}
-              value={contact.status ? [contact.status] : []}
-              onChange={(next) => saveWithLog('status', next[0] ?? 'New Lead')}
+              options={pipelines.map(p => ({ value: p.id, label: `${p.emoji ? p.emoji + ' ' : ''}${p.name}` }))}
+              value={activePipeline ? [activePipeline.id] : []}
+              onChange={(next) => {
+                const seg = pipelines.find(p => p.id === next[0]);
+                if (seg) setPipeline.mutate({ contact, segment: seg });
+              }}
             />
             <MobileMultiPickerDrawer
               open={drawer === 'assigned_to'} onOpenChange={(o) => !o && closeDrawer()}

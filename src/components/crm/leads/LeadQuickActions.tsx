@@ -3,7 +3,7 @@ import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
-import { LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useUnifiedPipelines, useActivePipelineFor, useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -15,13 +15,17 @@ import { SendTextDialog } from './SendTextDialog';
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
   const { data: agents = [] } = useTeamAgents();
+  const { pipelines } = useUnifiedPipelines();
+  const activePipeline = useActivePipelineFor(contact);
+  const setPipeline = useSetContactPipeline();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showSms, setShowSms] = useState(false);
 
-  const handleStatusChange = (status: string) => {
-    updateContact.mutate({ id: contact.id, updates: { status, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
+  const handlePipelineChange = (segId: string) => {
+    const seg = pipelines.find(p => p.id === segId);
+    if (seg) setPipeline.mutate({ contact, segment: seg });
   };
 
   const handleAgentChange = (agent: string) => {
@@ -59,10 +63,20 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
         <div className="space-y-2 pt-1">
           <div className="flex items-center gap-2">
             <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <Select value={contact.status ?? 'New Lead'} onValueChange={handleStatusChange}>
-              <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
+            <Select value={activePipeline?.id ?? ''} onValueChange={handlePipelineChange}>
+              <SelectTrigger className="h-8 text-xs flex-1">
+                <SelectValue placeholder={contact.status ?? 'New Lead'} />
+              </SelectTrigger>
               <SelectContent>
-                {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {pipelines.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+                      {p.emoji && <span>{p.emoji}</span>}
+                      {p.name}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
