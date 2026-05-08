@@ -72,7 +72,12 @@ interface Props {
   extraContacts?: CrmContact[];
   /** Fired after a successful send (single or mass). */
   onSent?: () => void;
+  /** When the composer is opened with a stub/empty contact (id === '__pick__'),
+   *  the To row renders an inline autocomplete instead of a pill. Picking a
+   *  result calls this so the parent can swap the real contact in. */
+  onPickContact?: (c: CrmContact) => void;
 }
+
 
 type Mode = 'edit' | 'html' | 'preview';
 type AnyTpl = CrmEmailTemplate & { __isBridge?: boolean };
@@ -101,7 +106,7 @@ const isRichSignatureHtml = (html: string) =>
   /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
   || /<[a-z][^>]*\sstyle\s*=/i.test(html);
 
-export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc, extraContacts, onSent }: Props) {
+export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc, extraContacts, onSent, onPickContact }: Props) {
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
