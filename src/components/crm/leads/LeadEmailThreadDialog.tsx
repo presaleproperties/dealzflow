@@ -485,25 +485,25 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           </aside>
 
           {/* Right pane — thread + composer */}
-          <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-background">
+          <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-muted/10">
             {!activeThread ? (
               <div className="flex-1 flex items-center justify-center text-muted-foreground text-[13px]">
                 Select a thread to view the conversation.
               </div>
             ) : (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                {/* Thread header — From / To / Subject */}
-                <div className="px-6 py-3 border-b border-border/70 bg-card/95 sticky top-0 z-10 backdrop-blur">
+              <>
+                {/* Thread header — sticky, refined hierarchy */}
+                <div className="px-6 py-3.5 border-b border-border/70 bg-card/95 backdrop-blur flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-[14.5px] font-semibold text-foreground leading-snug truncate">
+                      <h2 className="text-[15.5px] font-semibold text-foreground leading-snug truncate tracking-[-0.005em]">
                         {activeThread.subject}
                       </h2>
-                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-                        <span>{activeThread.messages.length} message{activeThread.messages.length === 1 ? '' : 's'}</span>
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <span className="tabular-nums">{activeThread.messages.length} message{activeThread.messages.length === 1 ? '' : 's'}</span>
                         {lastInThread && (
                           <>
-                            <span>·</span>
+                            <span className="text-muted-foreground/40">·</span>
                             <span className="tabular-nums">last {formatDistanceToNow(parseISO(lastInThread.ts), { addSuffix: true })}</span>
                           </>
                         )}
@@ -514,7 +514,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                         size="sm"
                         onClick={handleStartReply}
                         disabled={!lastInThread || !contact.email}
-                        className="gap-1.5 h-8 text-[12px]"
+                        className="gap-1.5 h-8 text-[12px] shadow-sm"
                       >
                         <Reply className="w-3.5 h-3.5" /> Reply
                         <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
@@ -523,94 +523,119 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                   </div>
                 </div>
 
-                {/* Messages — chronological */}
-                <div className="px-6 py-4 space-y-3">
-                  {activeThread.messages.map((m, idx) => (
-                    <MessageCard
-                      key={m.id}
-                      message={m}
-                      isLatest={idx === activeThread.messages.length - 1}
-                      contactEmail={contact.email}
-                      defaultExpanded={idx === activeThread.messages.length - 1}
-                    />
-                  ))}
+                {/* Scrollable thread body */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="px-6 py-5 space-y-2.5 max-w-[920px] mx-auto">
+                    {activeThread.messages.map((m, idx) => (
+                      <MessageCard
+                        key={m.id}
+                        message={m}
+                        isLatest={idx === activeThread.messages.length - 1}
+                        contactEmail={contact.email}
+                        defaultExpanded={idx === activeThread.messages.length - 1}
+                      />
+                    ))}
+
+                    {/* Quiet "tap to reply" prompt when composer is closed */}
+                    {!replyOpen && contact.email && (
+                      <button
+                        type="button"
+                        onClick={handleStartReply}
+                        className="w-full mt-4 group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-border/70 bg-card/50 hover:bg-card hover:border-border transition-colors text-left"
+                      >
+                        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <Reply className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[12.5px] font-medium text-foreground">Reply to {lastInThread?.fromName || contact.email}</div>
+                          <div className="text-[11px] text-muted-foreground">Press R or click here to draft a response</div>
+                        </div>
+                        <span className="text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground group-hover:text-foreground transition-colors">Reply</span>
+                      </button>
+                    )}
+                    {!contact.email && (
+                      <div className="text-[11.5px] text-muted-foreground text-center py-4">No email on file for this lead.</div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Inline reply composer */}
-                <div ref={composerRef} className="px-6 pb-6">
-                  {!replyOpen ? (
-                    !contact.email ? (
-                      <div className="text-[11.5px] text-muted-foreground">No email on file for this lead.</div>
-                    ) : null
-                  ) : (
-                    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-border/70 flex items-center justify-between bg-muted/20">
-                        <div className="text-[11.5px] text-muted-foreground">
-                          To <span className="text-foreground font-medium">{contact.email}</span>
-                        </div>
-                        <button
-                          onClick={() => setReplyOpen(false)}
-                          className="text-[11px] text-muted-foreground hover:text-foreground"
-                        >
-                          Discard
-                        </button>
+                {/* Anchored reply composer — sticky at bottom while open */}
+                {replyOpen && (
+                  <div ref={composerRef} className="flex-shrink-0 border-t-2 border-primary/30 bg-card shadow-[0_-12px_30px_-15px_hsl(var(--foreground)/0.18)] max-h-[58%] overflow-y-auto">
+                    {/* Compact header — "Replying to ..." context */}
+                    <div className="px-5 py-2.5 border-b border-border/60 bg-muted/30 flex items-center justify-between gap-3 sticky top-0 z-10 backdrop-blur">
+                      <div className="min-w-0 flex items-center gap-2 text-[11.5px]">
+                        <Pill size="sm" tone="primary" className="!gap-0.5">
+                          <Reply className="w-2.5 h-2.5" /> Reply
+                        </Pill>
+                        <span className="text-muted-foreground truncate">
+                          to <span className="text-foreground font-medium">{contact.email}</span>
+                        </span>
                       </div>
-                      <div className="p-4">
-                        <RichTextEditor content={replyHtml} onChange={setReplyHtml} placeholder="Write your reply..." />
-                      </div>
+                      <button
+                        onClick={() => setReplyOpen(false)}
+                        className="text-[11px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                      >
+                        Discard
+                      </button>
+                    </div>
 
-                      {/* Signature preview */}
+                    <div className="px-5 pt-4 pb-2">
+                      <RichTextEditor content={replyHtml} onChange={setReplyHtml} placeholder="Write your reply..." />
+                    </div>
+
+                    {/* Compact disclosure row — signature + quoted side-by-side */}
+                    <div className="px-5 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
                       {defaultSig && (
-                        <div className="px-4 pb-3">
-                          <details className="group">
-                            <summary className="list-none cursor-pointer text-[11px] uppercase tracking-[0.1em] text-muted-foreground inline-flex items-center gap-1.5 hover:text-foreground">
-                              <span className="group-open:rotate-90 transition-transform inline-block">▸</span>
-                              Signature
-                            </summary>
-                            <div className="mt-2 p-3 rounded-md border border-border/60 bg-background overflow-hidden">
-                              <AgentSignatureBlock html={defaultSig} />
-                            </div>
-                          </details>
-                        </div>
+                        <details className="group">
+                          <summary className="list-none cursor-pointer text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground inline-flex items-center gap-1.5 hover:text-foreground">
+                            <span className="group-open:rotate-90 transition-transform inline-block">▸</span>
+                            Signature
+                          </summary>
+                          <div className="mt-2 p-3 rounded-md border border-border/60 bg-background overflow-hidden max-w-[560px]">
+                            <AgentSignatureBlock html={defaultSig} />
+                          </div>
+                        </details>
                       )}
-
-                      {/* Quoted history preview */}
                       {lastInThread && (
-                        <div className="px-4 pb-3">
-                          <details className="group">
-                            <summary className="list-none cursor-pointer text-[11px] uppercase tracking-[0.1em] text-muted-foreground inline-flex items-center gap-1.5 hover:text-foreground">
-                              <span className="group-open:rotate-90 transition-transform inline-block">▸</span>
-                              Quoted message
-                            </summary>
-                            <div className="mt-2 p-3 rounded-md border-l-2 border-border bg-muted/20 text-[12px] text-muted-foreground max-h-48 overflow-y-auto">
-                              <div className="mb-2 text-[10.5px]">
-                                {format(parseISO(lastInThread.ts), 'MMM d, yyyy h:mm a')} · {lastInThread.fromName || lastInThread.fromEmail || '—'}
-                              </div>
-                              <div className="line-clamp-6 whitespace-pre-wrap">
-                                {(lastInThread.bodyText || '').slice(0, 600) || '(rich content quoted in send)'}
-                              </div>
+                        <details className="group">
+                          <summary className="list-none cursor-pointer text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground inline-flex items-center gap-1.5 hover:text-foreground">
+                            <span className="group-open:rotate-90 transition-transform inline-block">▸</span>
+                            Quoted message
+                          </summary>
+                          <div className="mt-2 p-3 rounded-md border-l-2 border-border bg-muted/20 text-[12px] text-muted-foreground max-h-48 max-w-[560px] overflow-y-auto">
+                            <div className="mb-2 text-[10.5px]">
+                              {format(parseISO(lastInThread.ts), 'MMM d, yyyy h:mm a')} · {lastInThread.fromName || lastInThread.fromEmail || '—'}
                             </div>
-                          </details>
-                        </div>
+                            <div className="line-clamp-6 whitespace-pre-wrap">
+                              {(lastInThread.bodyText || '').slice(0, 600) || '(rich content quoted in send)'}
+                            </div>
+                          </div>
+                        </details>
                       )}
+                    </div>
 
-                      <div className="px-4 py-3 border-t border-border/70 flex items-center justify-end gap-2 bg-muted/10">
+                    <div className="px-5 py-3 border-t border-border/60 flex items-center justify-between gap-2 bg-muted/10 sticky bottom-0 backdrop-blur">
+                      <div className="text-[10.5px] text-muted-foreground hidden sm:block">
+                        Sending as <span className="text-foreground font-medium">{user?.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-auto">
                         <Button variant="ghost" onClick={() => setReplyOpen(false)} className="h-9">
                           Cancel
                         </Button>
                         <Button
                           onClick={handleSendReply}
                           disabled={sendBridge.isPending}
-                          className="h-9 gap-2"
+                          className="h-9 gap-2 shadow-sm"
                         >
                           {sendBridge.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                           Send Reply
                         </Button>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </main>
         </div>
