@@ -118,16 +118,16 @@ export function LeftSidebar({
   const loftySyncedAt = contactExt.lofty_synced_at as string | undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Identity card — read-only display; tap ⋯ menu to edit everything in a side drawer */}
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5">
         <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-[20px] font-bold text-foreground leading-[1.15] tracking-tight truncate">
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <h1 className="text-[26px] sm:text-[28px] font-bold text-foreground leading-[1.05] tracking-[-0.02em] break-words">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
             {contact.source && (
-              <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-muted-foreground truncate">
+              <p className="text-[13px] text-muted-foreground font-medium truncate">
                 {contact.source}
               </p>
             )}
@@ -135,9 +135,9 @@ export function LeftSidebar({
               const types = (leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : []).slice(0, 3);
               if (types.length === 0) return null;
               return (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {types.map((t) => (
-                    <span key={t} className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground border border-border rounded-md px-2 py-1">
+                    <span key={t} className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground border border-border rounded-full px-2.5 py-1">
                       {LEAD_TYPE_LABELS[t] || t}
                     </span>
                   ))}
@@ -172,26 +172,26 @@ export function LeftSidebar({
         </div>
 
         {(contact.phone || contact.email) && (
-          <div className="space-y-1.5 pt-3 border-t border-border/60">
+          <div className="space-y-2 pt-4 border-t border-border/60">
             {contact.phone && (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 group">
                 <a
                   href={`tel:${contact.phone}`}
-                  className="flex items-center gap-2 min-w-0 text-[13px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <Phone className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate font-medium tabular-nums">{formatPhone(contact.phone)}</span>
                 </a>
                 <CopyButton value={contact.phone} label="phone" />
               </div>
             )}
             {contact.email && (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 group">
                 <a
                   href={`mailto:${contact.email}`}
-                  className="flex items-center gap-2 min-w-0 text-[13px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <Mail className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate">{contact.email}</span>
                 </a>
                 <CopyButton value={contact.email} label="email" />
@@ -244,40 +244,40 @@ export function LeftSidebar({
           <button
             onClick={onCall}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-emerald-500/5 border border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-emerald-500/5 border border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Call"
           >
-            <Phone className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" strokeWidth={2} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 group-hover:text-emerald-700">Call</span>
+            <Phone className="w-[18px] h-[18px] text-emerald-600 group-hover:scale-110 transition-transform" strokeWidth={1.9} />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700/85 group-hover:text-emerald-700">Call</span>
           </button>
           <button
             onClick={onSms}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-sky-500/5 border border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-sky-500/5 border border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Text"
           >
-            <Send className="w-4 h-4 text-sky-500 group-hover:scale-110 transition-transform" strokeWidth={2} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-600/80 group-hover:text-sky-600">Text</span>
+            <Send className="w-[18px] h-[18px] text-sky-500 group-hover:scale-110 transition-transform" strokeWidth={1.9} />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sky-600/85 group-hover:text-sky-600">Text</span>
           </button>
           {onWhatsApp && (
             <button
               onClick={onWhatsApp}
               disabled={!contact.phone}
-              className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-[#25D366]/10 border border-[#25D366]/40 hover:border-[#25D366]/70 hover:bg-[#25D366]/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-[#25D366]/10 border border-[#25D366]/40 hover:border-[#25D366]/70 hover:bg-[#25D366]/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="WhatsApp"
             >
-              <MessageCircle className="w-4 h-4 text-[#1DA851] group-hover:scale-110 transition-transform" strokeWidth={2} />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#1DA851]/90 group-hover:text-[#1DA851]">WhatsApp</span>
+              <MessageCircle className="w-[18px] h-[18px] text-[#1DA851] group-hover:scale-110 transition-transform" strokeWidth={1.9} />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1DA851]/95 group-hover:text-[#1DA851]">WhatsApp</span>
             </button>
           )}
           <button
             onClick={onEmail}
             disabled={!contact.email}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-blue-700/5 border border-blue-700/30 hover:border-blue-700/60 hover:bg-blue-700/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-blue-700/5 border border-blue-700/30 hover:border-blue-700/60 hover:bg-blue-700/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Email"
           >
-            <Mail className="w-4 h-4 text-blue-700 group-hover:scale-110 transition-transform" strokeWidth={2} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700/80 group-hover:text-blue-700">Email</span>
+            <Mail className="w-[18px] h-[18px] text-blue-700 group-hover:scale-110 transition-transform" strokeWidth={1.9} />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-700/85 group-hover:text-blue-700">Email</span>
           </button>
         </div>
       )}
@@ -393,7 +393,7 @@ export function LeftSidebar({
           ) : (
             <>
               <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
-                <span className="text-xs text-muted-foreground shrink-0">Source</span>
+                <span className="text-[12.5px] text-muted-foreground shrink-0 font-medium">Source</span>
                 <div className="flex-1 min-w-0 flex justify-end">
                   <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
                 </div>
@@ -432,7 +432,7 @@ export function LeftSidebar({
 
               {/* City + Language — multi-select to match mobile */}
               <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground shrink-0 pt-1">City</span>
+                <span className="text-[12.5px] text-muted-foreground shrink-0 pt-1 font-medium">City</span>
                 <div className="flex-1 min-w-0">
                   <InlineLibraryPicker
                     selected={contact.city ? contact.city.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
@@ -444,7 +444,7 @@ export function LeftSidebar({
                 </div>
               </div>
               <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground shrink-0 pt-1">Language</span>
+                <span className="text-[12.5px] text-muted-foreground shrink-0 pt-1 font-medium">Language</span>
                 <div className="flex-1 min-w-0">
                   <InlineLibraryPicker
                     selected={contact.language ? contact.language.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
@@ -459,8 +459,8 @@ export function LeftSidebar({
               <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />
 
               <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground">Budget</span>
-                <span className="text-[13px] text-foreground font-medium tabular-nums">
+                <span className="text-[12.5px] text-muted-foreground font-medium">Budget</span>
+                <span className="text-[13.5px] text-foreground font-medium tabular-nums">
                   {contact.budget_min != null ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max != null ? formatCurrency(Number(contact.budget_max)) : '—'}
                 </span>
               </div>
@@ -474,8 +474,8 @@ export function LeftSidebar({
             const validCreated = created && !isNaN(created.getTime());
             return (
               <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground">Registered</span>
-                <span className="text-[13px] text-foreground tabular-nums">
+                <span className="text-[12.5px] text-muted-foreground font-medium">Registered</span>
+                <span className="text-[13.5px] text-foreground tabular-nums">
                   {validCreated ? format(created, 'MMM d, yyyy') : '—'}
                 </span>
               </div>
@@ -486,12 +486,12 @@ export function LeftSidebar({
             <>
               {loftyId && (
                 <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                  <span className="text-xs text-muted-foreground">Lofty ID</span>
+                  <span className="text-[12.5px] text-muted-foreground font-medium">Lofty ID</span>
                   <span className="text-[11px] font-mono text-muted-foreground/80 truncate max-w-[140px]">{loftyId}</span>
                 </div>
               )}
               <div className="flex items-center justify-between gap-3 py-2">
-                <span className="text-xs text-muted-foreground">Synced</span>
+                <span className="text-[12.5px] text-muted-foreground font-medium">Synced</span>
                 <span className="text-[11px] text-muted-foreground/80">
                   {(() => {
                     if (!loftySyncedAt) return 'via Lofty';
