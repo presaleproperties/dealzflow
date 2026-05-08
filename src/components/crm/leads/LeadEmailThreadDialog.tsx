@@ -410,8 +410,9 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             </div>
 
             <div className="p-4">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-3">
-                Recent Communications ({threads.length})
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/80 mb-2.5 flex items-center justify-between">
+                <span>Threads</span>
+                <span className="text-muted-foreground/60 tabular-nums normal-case tracking-normal">{threads.length}</span>
               </h3>
               {isLoading && threads.length === 0 ? (
                 <div className="space-y-2">
