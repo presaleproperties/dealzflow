@@ -289,8 +289,11 @@ export default function InboxView() {
       else if (e.key === 'u' && selectedThread) { e.preventDefault(); void markUnread(selectedThread.id); }
       else if (e.key === 'r' && selectedThread) {
         e.preventDefault();
-        const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
-        ta?.focus();
+        setReplyOpen(true);
+        setTimeout(() => {
+          const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
+          ta?.focus();
+        }, 30);
       }
     };
     window.addEventListener('keydown', onKey);
