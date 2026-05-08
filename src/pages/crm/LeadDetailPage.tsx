@@ -24,7 +24,7 @@ import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
 import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
-import { LeadReplyBar } from '@/components/crm/leads/detail/LeadReplyBar';
+
 import type { LeadScore } from '@/components/crm/leads/detail/types';
 
 export default function LeadDetailPage() {
