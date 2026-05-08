@@ -46,13 +46,17 @@ export const TRIGGER_TYPES = [
 ] as const;
 
 export const ACTION_TYPES = [
-  { value: 'send_email', label: 'Send Email', icon: 'Mail' },
-  { value: 'wait', label: 'Wait', icon: 'Clock' },
-  { value: 'assign_agent', label: 'Assign Agent', icon: 'UserPlus' },
-  { value: 'update_status', label: 'Update Status', icon: 'RefreshCw' },
-  { value: 'add_tag', label: 'Add Tag', icon: 'Tag' },
-  { value: 'create_task', label: 'Create Task', icon: 'CheckSquare' },
-  { value: 'send_notification', label: 'Send Notification', icon: 'Bell' },
+  { value: 'send_email', label: 'Send Email', icon: 'Mail', group: 'Communication' },
+  { value: 'send_sms', label: 'Send SMS', icon: 'MessageSquare', group: 'Communication' },
+  { value: 'wait', label: 'Wait / Delay', icon: 'Clock', group: 'Flow' },
+  { value: 'branch_if', label: 'If / Then Branch', icon: 'GitBranch', group: 'Flow' },
+  { value: 'assign_agent', label: 'Assign Agent', icon: 'UserPlus', group: 'CRM' },
+  { value: 'update_status', label: 'Update Status', icon: 'RefreshCw', group: 'CRM' },
+  { value: 'add_tag', label: 'Add Tag', icon: 'Tag', group: 'CRM' },
+  { value: 'create_task', label: 'Create Task', icon: 'CheckSquare', group: 'CRM' },
+  { value: 'send_notification', label: 'Notify Agent', icon: 'Bell', group: 'CRM' },
+  { value: 'ai_draft_email', label: 'AI: Draft Email', icon: 'Sparkles', group: 'AI' },
+  { value: 'webhook', label: 'Webhook (POST)', icon: 'Webhook', group: 'Integrations' },
 ] as const;
 
 export const AUTOMATION_TEMPLATES = [
