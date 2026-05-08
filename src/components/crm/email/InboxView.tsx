@@ -20,7 +20,8 @@ import { InboxShortcutsHelp } from '@/components/crm/inbox/InboxShortcutsHelp';
 import {
   Inbox, Search, RefreshCcw, Archive, MailOpen, Send, ExternalLink,
   Loader2, CheckCheck, Reply, Star, Trash2, Forward, Paperclip,
-  ChevronLeft, ChevronDown,
+  ChevronLeft, ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen,
+  PanelRightClose, PanelRightOpen, X,
 } from 'lucide-react';
 import { format, isToday, isYesterday, isThisYear, isThisWeek } from 'date-fns';
 import { toast } from 'sonner';
@@ -85,6 +86,27 @@ export default function InboxView() {
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  // Collapsible panes — persisted so the user's "focus mode" sticks.
+  const [foldersCollapsed, setFoldersCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('inbox.foldersCollapsed') === '1'; } catch { return false; }
+  });
+  const [listCollapsed, setListCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('inbox.listCollapsed') === '1'; } catch { return false; }
+  });
+  // Reply box starts as a slim trigger; expands when the user wants to reply.
+  const [replyOpen, setReplyOpen] = useState(false);
+  const replyRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => { try { localStorage.setItem('inbox.foldersCollapsed', foldersCollapsed ? '1' : '0'); } catch {} }, [foldersCollapsed]);
+  useEffect(() => { try { localStorage.setItem('inbox.listCollapsed', listCollapsed ? '1' : '0'); } catch {} }, [listCollapsed]);
+  // Reset reply state when switching threads.
+  useEffect(() => { setReplyOpen(false); setReply(''); }, [selectedThreadId]);
+  // Auto-grow expanded reply textarea.
+  useEffect(() => {
+    if (!replyOpen) return;
+    const ta = replyRef.current; if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(Math.max(ta.scrollHeight, 96), 320) + 'px';
+  }, [reply, replyOpen]);
 
   const threadsQuery = useQuery({
     queryKey: ['crm-inbox-threads', folder],
@@ -267,8 +289,11 @@ export default function InboxView() {
       else if (e.key === 'u' && selectedThread) { e.preventDefault(); void markUnread(selectedThread.id); }
       else if (e.key === 'r' && selectedThread) {
         e.preventDefault();
-        const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
-        ta?.focus();
+        setReplyOpen(true);
+        setTimeout(() => {
+          const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
+          ta?.focus();
+        }, 30);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -316,57 +341,110 @@ export default function InboxView() {
   }
 
   // ───────────────── Desktop (3-pane) ─────────────────
+  // Dynamic grid template lets users collapse either side pane.
+  const gridCols = [
+    foldersCollapsed ? '52px' : '200px',
+    listCollapsed ? '0px' : '360px',
+    '1fr',
+  ].join(' ');
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[180px_320px_1fr] lg:grid-cols-[200px_360px_1fr] min-h-0 h-full rounded-xl border border-border overflow-hidden bg-background shadow-sm">
-      {/* Folder rail */}
-      <aside className="hidden md:flex flex-col border-r border-border bg-muted/20 px-3 py-4 gap-6 min-h-0">
-        <div className="px-2">
-          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-2">
-            Mailbox
-          </div>
-          <nav className="flex flex-col gap-0.5">
-            {folders.map(f => {
-              const active = folder === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => { setFolder(f.id); setSelectedThreadId(null); }}
-                  className={cn(
-                    'flex items-center gap-2.5 h-8 px-2 rounded-md text-[13px] transition-colors text-left',
-                    active
-                      ? 'bg-foreground/[0.07] text-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground/90',
-                  )}
-                >
-                  <f.icon className={cn('h-3.5 w-3.5 shrink-0', active && 'text-primary')} />
-                  <span className="flex-1 truncate">{f.label}</span>
-                  {f.count ? (
+    <div
+      className="grid grid-cols-1 min-h-0 h-full rounded-xl border border-border overflow-hidden bg-background shadow-sm"
+      style={{ gridTemplateColumns: gridCols }}
+    >
+      {/* Folder rail (collapsible) */}
+      <aside
+        className={cn(
+          'hidden md:flex flex-col border-r border-border bg-muted/20 py-3 gap-4 min-h-0 transition-[padding] duration-200',
+          foldersCollapsed ? 'px-1.5 items-center' : 'px-3',
+        )}
+      >
+        <div className={cn('flex items-center', foldersCollapsed ? 'justify-center w-full' : 'justify-between px-2')}>
+          {!foldersCollapsed && (
+            <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">
+              Mailbox
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setFoldersCollapsed(v => !v)}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            aria-label={foldersCollapsed ? 'Expand folders' : 'Collapse folders'}
+            title={foldersCollapsed ? 'Expand folders' : 'Collapse folders'}
+          >
+            {foldersCollapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+        <nav className={cn('flex flex-col gap-0.5', foldersCollapsed ? 'w-full items-center' : 'px-2')}>
+          {folders.map(f => {
+            const active = folder === f.id;
+            return (
+              <button
+                key={f.id}
+                onClick={() => { setFolder(f.id); setSelectedThreadId(null); }}
+                title={f.label}
+                aria-label={f.label}
+                className={cn(
+                  'relative flex items-center rounded-md text-[13px] transition-colors text-left',
+                  foldersCollapsed ? 'h-9 w-9 justify-center' : 'gap-2.5 h-8 px-2 w-full',
+                  active
+                    ? 'bg-foreground/[0.07] text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground/90',
+                )}
+              >
+                <f.icon className={cn('h-4 w-4 shrink-0', active && 'text-primary')} />
+                {!foldersCollapsed && <span className="flex-1 truncate">{f.label}</span>}
+                {f.count ? (
+                  foldersCollapsed ? (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] text-[9px] tabular-nums px-1 rounded-full inline-flex items-center justify-center bg-primary text-primary-foreground">
+                      {f.count}
+                    </span>
+                  ) : (
                     <span className={cn(
                       'text-[10px] tabular-nums px-1.5 h-4 rounded-full inline-flex items-center',
                       active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
                     )}>{f.count}</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="mt-auto px-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={sync}
-            disabled={syncing}
-            className="w-full h-8 gap-1.5 text-xs justify-start"
-          >
-            {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-            {syncing ? 'Syncing…' : 'Sync inbox'}
-          </Button>
+                  )
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+        <div className={cn('mt-auto', foldersCollapsed ? 'w-full flex justify-center' : 'px-2')}>
+          {foldersCollapsed ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={sync}
+              disabled={syncing}
+              aria-label="Sync inbox"
+              className="h-9 w-9"
+            >
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4 text-muted-foreground" />}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={sync}
+              disabled={syncing}
+              className="w-full h-8 gap-1.5 text-xs justify-start"
+            >
+              {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+              {syncing ? 'Syncing…' : 'Sync inbox'}
+            </Button>
+          )}
         </div>
       </aside>
 
-      {/* Message list */}
-      <section className="flex flex-col min-h-0 border-r border-border bg-card">
+      {/* Message list (collapsible) */}
+      <section
+        className={cn(
+          'flex flex-col min-h-0 border-r border-border bg-card overflow-hidden transition-opacity duration-150',
+          listCollapsed && 'opacity-0 pointer-events-none',
+        )}
+      >
         <div className="px-3.5 py-3 border-b border-border space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold tracking-tight text-foreground capitalize">
@@ -462,11 +540,22 @@ export default function InboxView() {
         ) : (
           <>
             <div className="h-12 border-b border-border flex items-center px-2 gap-0.5 bg-muted/10">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setListCollapsed(v => !v)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                aria-label={listCollapsed ? 'Show message list' : 'Hide message list'}
+                title={listCollapsed ? 'Show message list (focus mode off)' : 'Hide message list (focus mode)'}
+              >
+                {listCollapsed ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
+              </Button>
+              <div className="w-px h-5 bg-border mx-1" />
               <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
               <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="w-px h-5 bg-border mx-1" />
-              <ToolbarBtn icon={Reply} label="Reply" />
+              <ToolbarBtn icon={Reply} label="Reply" onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }} />
               <ToolbarBtn icon={Forward} label="Forward" />
               <ToolbarBtn icon={Star} label="Flag" />
               <div className="ml-auto flex items-center gap-1">
@@ -491,7 +580,7 @@ export default function InboxView() {
             </div>
 
             <ScrollArea className="flex-1 min-h-0">
-              <div className="px-8 py-6 space-y-4 max-w-3xl">
+              <div className={cn('px-8 py-6 space-y-4 mx-auto', listCollapsed ? 'max-w-4xl' : 'max-w-3xl')}>
                 {messagesQuery.isLoading ? (
                   <Skeleton className="h-32 w-full" />
                 ) : (
@@ -502,38 +591,66 @@ export default function InboxView() {
               </div>
             </ScrollArea>
 
-            <div className="border-t border-border px-6 py-3 bg-muted/10">
-              <div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden">
-                <div className="flex items-center gap-2 px-3 h-8 border-b border-border/60 bg-muted/20">
-                  <Reply className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">
-                    Reply to {selectedThread.last_message_from || selectedThread.participants[0]}
+            {/* Reply: starts as a slim trigger; expands when user wants to reply. */}
+            <div className="border-t border-border bg-muted/10">
+              {!replyOpen ? (
+                <button
+                  type="button"
+                  onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+                  className="w-full flex items-center gap-2.5 px-6 h-11 text-left text-[12.5px] text-muted-foreground hover:bg-muted/30 transition-colors"
+                >
+                  <Reply className="h-3.5 w-3.5" />
+                  <span className="flex-1 truncate">
+                    Reply to {selectedThread.last_message_from || selectedThread.participants[0]}…
                   </span>
-                </div>
-                <Textarea
-                  data-inbox-reply
-                  value={reply}
-                  onChange={e => setReply(e.target.value)}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
-                  }}
-                  placeholder="Write your reply…  (⌘+Enter to send)"
-                  rows={3}
-                  enterKeyHint="send"
-                  className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none"
-                />
-                <div className="flex items-center justify-between px-3 py-2 border-t border-border/60 bg-muted/10">
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" disabled>
-                      <Paperclip className="h-3.5 w-3.5" />
-                    </Button>
+                  <span className="text-[10.5px] text-muted-foreground/70 hidden md:inline">press R</span>
+                </button>
+              ) : (
+                <div className="px-6 py-3">
+                  <div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 h-8 border-b border-border/60 bg-muted/20">
+                      <Reply className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[11px] text-muted-foreground flex-1 truncate">
+                        Reply to {selectedThread.last_message_from || selectedThread.participants[0]}
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => { setReplyOpen(false); setReply(''); }}
+                        className="h-6 w-6 text-muted-foreground"
+                        aria-label="Close reply"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <Textarea
+                      ref={replyRef}
+                      data-inbox-reply
+                      value={reply}
+                      onChange={e => setReply(e.target.value)}
+                      onKeyDown={(e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
+                        if (e.key === 'Escape' && !reply.trim()) { e.preventDefault(); setReplyOpen(false); }
+                      }}
+                      placeholder="Write your reply…  (⌘+Enter to send · Esc to close)"
+                      rows={3}
+                      enterKeyHint="send"
+                      className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none min-h-[96px] max-h-[320px]"
+                    />
+                    <div className="flex items-center justify-between px-3 py-2 border-t border-border/60 bg-muted/10">
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" disabled>
+                          <Paperclip className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <Button size="sm" onClick={sendReply} disabled={sending || !reply.trim()} className="h-7 gap-1.5 text-xs">
+                        {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                        Send
+                      </Button>
+                    </div>
                   </div>
-                  <Button size="sm" onClick={sendReply} disabled={sending || !reply.trim()} className="h-7 gap-1.5 text-xs">
-                    {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                    Send
-                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           </>
         )}
