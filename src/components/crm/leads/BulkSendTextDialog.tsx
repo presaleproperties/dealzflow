@@ -89,9 +89,9 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
   }, [open]); // eslint-disable-line
 
   const recipients = useMemo(() => {
-    const set = new Set(contactIds);
+    const set = new Set(effectiveIds);
     return allContacts.filter(c => set.has(c.id));
-  }, [allContacts, contactIds]);
+  }, [allContacts, effectiveIds]);
 
   const reachable = useMemo(
     () => recipients.filter(r => !!r.phone && r.phone.replace(/\D/g, '').length >= 8),
