@@ -155,7 +155,7 @@ export default function PublicBookingPage() {
           setSubmitting(false);
           return;
         }
-        setConfirmation(json.confirmation);
+        setConfirmation({ ...json.confirmation, booking_id: json.booking_id || rescheduleId || null });
         setStep(3);
         setSubmitting(false);
         return;
@@ -208,7 +208,7 @@ export default function PublicBookingPage() {
         setSubmitting(false);
         return;
       }
-      setConfirmation(json.confirmation);
+      setConfirmation({ ...json.confirmation, booking_id: json.booking_id || rescheduleId || null });
       setStep(3);
     } catch (e) {
       setSubmitError('Network error. Please try again.');
@@ -506,6 +506,13 @@ export default function PublicBookingPage() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <div className="mt-1 px-3 py-2.5 rounded-md text-[12.5px] bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      <span>{submitError}</span>
                     </div>
                   )}
 
