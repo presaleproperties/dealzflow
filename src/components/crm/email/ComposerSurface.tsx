@@ -423,6 +423,7 @@ export function ComposerSurface({
     void (async () => {
       try {
         await sendBridge.mutateAsync(args);
+        triggerHaptic('success');
       } catch { /* hook handles toast */ }
     })();
   };
