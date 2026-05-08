@@ -16,12 +16,12 @@ const PRIMARY: Tab[] = [
   { label: 'Pipeline', path: '/crm/pipeline' },
   { label: 'Email',    path: '/crm/email' },
   { label: 'SMS',      path: '/crm/sms', ownerAdminOnly: true },
-  { label: 'Calendar', path: '/crm/calendar' },
+  { label: 'Calendar',  path: '/crm/calendar' },
+  { label: 'Templates', path: '/crm/templates' },
 ];
 
 // Overflow — everything else lives behind a single "More" menu.
 const OVERFLOW: Tab[] = [
-  { label: 'Templates',    path: '/crm/templates' },
   { label: 'Scheduler',    path: '/crm/scheduler' },
   { label: 'Behavior',     path: '/crm/behavior',     ownerOnly: true },
   { label: 'Reports',      path: '/crm/reports',      ownerOnly: true },
