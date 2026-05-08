@@ -324,6 +324,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_280px] gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
         {/* Left — Form */}
         <div className="space-y-4 bg-card/50 border border-border/40 rounded-xl p-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
+          <SenderIdentityField />
           <div>
             <Label>Template Name *</Label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Eden Phase 2 - VIP Launch" className="h-9" />
