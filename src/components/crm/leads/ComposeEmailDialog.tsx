@@ -932,15 +932,19 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
             {/* Main composer column — single continuous surface, mail-app feel */}
             <div className="flex flex-col overflow-hidden min-h-0 bg-background">
-              {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail */}
-              <div className="px-3 sm:px-5 pt-2 pb-1 border-b border-border/60 shrink-0">
-                <RecipientRow label="From">
-                  <span className="text-[13px] text-foreground/80 truncate">
-                    {emailSettings?.sender_name
-                      ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>`
-                      : (user?.email ?? '')}
-                  </span>
-                </RecipientRow>
+              {/* Recipient rows — borderless, hairline-separated, like Apple Mail / Gmail.
+                  "From" is desktop-only; on mobile you always send as yourself, so we hide it
+                  to free vertical space. */}
+              <div className="px-3 sm:px-5 pt-1 sm:pt-2 pb-0.5 sm:pb-1 border-b border-border/60 shrink-0">
+                <div className="hidden md:block">
+                  <RecipientRow label="From">
+                    <span className="text-[13px] text-foreground/80 truncate">
+                      {emailSettings?.sender_name
+                        ? `${emailSettings.sender_name} <${emailSettings.reply_to ?? user?.email ?? ''}>`
+                        : (user?.email ?? '')}
+                    </span>
+                  </RecipientRow>
+                </div>
                 <RecipientRow
                   label="To"
                   trailing={
