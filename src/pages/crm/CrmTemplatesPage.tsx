@@ -488,21 +488,7 @@ function EmailTemplatesPanel() {
         </aside>
       </main>
 
-      {/* Editor dialog */}
-      <Dialog
-        open={creating || !!editing}
-        onOpenChange={(o) => {
-          if (!o) { setEditing(null); setCreating(false); setCloneDraft(null); }
-        }}
-      >
-        <DialogContent className="max-w-[98vw] w-[98vw] h-[96vh] max-h-[96vh] overflow-y-auto p-4 sm:p-5">
-          <TemplateEditor
-            template={editing}
-            initialDraft={!editing && creating ? cloneDraft ?? undefined : undefined}
-            onClose={() => { setEditing(null); setCreating(false); setCloneDraft(null); }}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Editing happens in Agent Hub — no in-CRM editor */}
 
       {/* Archive confirm */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
