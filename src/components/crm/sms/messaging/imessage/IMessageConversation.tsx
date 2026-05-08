@@ -444,6 +444,71 @@ function IMessageBubble({
               )}
             </div>
 
+            {/* Tapback above bubble */}
+            {reaction && (
+              <div
+                className={cn(
+                  'absolute -top-2.5 px-1.5 py-0.5 rounded-full bg-background border border-border shadow-sm text-[12px] cursor-pointer',
+                  isOutbound ? '-left-1' : '-right-1',
+                )}
+                onClick={() => threadState.setReaction(m.id, null)}
+                title="Remove tapback"
+              >
+                {reaction}
+              </div>
+            )}
+
+            {/* Hover tapback popover */}
+            <div
+              className={cn(
+                'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10',
+                isOutbound ? '-left-9' : '-right-9',
+              )}
+            >
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background border border-border shadow-sm">
+                    <Smile className="w-3.5 h-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="center" className="w-auto p-1.5 rounded-2xl">
+                  <div className="flex gap-0.5">
+                    {REACTION_EMOJIS.map(e => (
+                      <button
+                        key={e}
+                        onClick={() => threadState.setReaction(m.id, e === reaction ? null : e)}
+                        className={cn(
+                          'h-9 w-9 rounded-full hover:bg-muted text-base transition-transform hover:scale-110',
+                          reaction === e && 'bg-primary/15',
+                        )}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Editorial meta row: time + status under run */}
+            {isLastInRun && (
+              <div className={cn('mt-1 flex items-center gap-1.5 px-1', isOutbound ? 'justify-end' : 'justify-start')}>
+                <span className="text-[10.5px] text-muted-foreground/80 tabular-nums tracking-wide uppercase">
+                  {format(new Date(m.sent_at), 'h:mm a')}
+                </span>
+                {isOutbound && (
+                  <>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-[10.5px] text-muted-foreground/80 flex items-center gap-1">
+                      <StatusIcon status={m.status} />
+                      {statusLabel(m.status, m.scheduled_for)}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-44">
         <ContextMenuItem onClick={() => onReply(m)} className="gap-2">
