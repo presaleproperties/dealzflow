@@ -560,7 +560,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
 
                 {/* Scrollable thread body */}
                 <div className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="px-6 py-5 space-y-2.5 max-w-[920px] mx-auto">
+                  <div className="px-3 md:px-6 py-3 md:py-5 space-y-2.5 max-w-[920px] mx-auto pb-[calc(env(safe-area-inset-bottom)+12px)]">
                     {activeThread.messages.map((m, idx) => (
                       <MessageCard
                         key={m.id}
