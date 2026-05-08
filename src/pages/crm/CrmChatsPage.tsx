@@ -613,7 +613,7 @@ export default function CrmChatsPage() {
             onAction={search ? undefined : () => navigate('/crm/leads')}
           />
         ) : (
-          <ul ref={listRef} className="divide-y divide-border/40" role="listbox" aria-label="Conversations">
+          <ul ref={listRef} role="listbox" aria-label="Conversations">
             {filtered.map((t, idx) => {
               const { Icon, color, label: chLabel } = channelChip(t.channel);
               const name = formatContactName(t.first_name, t.last_name) || t.email || t.phone || 'Unknown';
