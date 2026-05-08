@@ -46,7 +46,7 @@ export default function CrmSmsCenterPage() {
   const { data: optOuts = [] } = useSmsOptOuts();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: settings } = useSmsSettings();
-  const { data: allContacts = [] } = useCrmContacts();
+  // contacts now fetched inside <BulkSendTextDialog audiencePicker />
   const { data: logs = [] } = useAllSmsLog({ limit: 1000 });
 
   // SMS-only filter (WhatsApp removed)
@@ -58,51 +58,8 @@ export default function CrmSmsCenterPage() {
   const [statsRange, setStatsRange] = useState<'7d' | '30d' | 'all'>('7d');
   const [failedDrawerOpen, setFailedDrawerOpen] = useState(false);
 
-  // Composer (bulk)
+  // Composer (single dialog — only compose surface)
   const [composerOpen, setComposerOpen] = useState(false);
-  const [composerIds, setComposerIds] = useState<string[]>([]);
-
-  // Recipient preview drawer
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  // Filters for new blast
-  const [fStatuses, setFStatuses] = useState<string[]>([]);
-  const [fSources, setFSources] = useState<string[]>([]);
-  const [fAgents, setFAgents] = useState<string[]>([]);
-  const [fTags, setFTags] = useState<string>('');
-
-  const filteredRecipients = useMemo(() => {
-    const tagsArr = fTags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
-    return allContacts.filter(c => {
-      if (!c.phone) return false;
-      if (fStatuses.length && !fStatuses.includes(c.status || '')) return false;
-      if (fSources.length && !fSources.includes(c.source || '')) return false;
-      if (fAgents.length && !fAgents.includes(c.assigned_to || '')) return false;
-      if (tagsArr.length && !(c.tags || []).some(t => tagsArr.includes(t.toLowerCase()))) return false;
-      return true;
-    });
-  }, [allContacts, fStatuses, fSources, fAgents, fTags]);
-
-  // Opt-out aware reachable count
-  const optOutPhones = useMemo(
-    () => new Set(optOuts.filter(o => !o.re_opted_in_at).map(o => (o.phone || '').replace(/\D/g, '').slice(-10))),
-    [optOuts],
-  );
-  const reachable = useMemo(
-    () => filteredRecipients.filter(c => !optOutPhones.has((c.phone || '').replace(/\D/g, '').slice(-10))),
-    [filteredRecipients, optOutPhones],
-  );
-  const optedOutCount = filteredRecipients.length - reachable.length;
-
-  const toggleArr = (arr: string[], v: string, set: (a: string[]) => void) => {
-    set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
-  };
-
-  const launchBlast = () => {
-    if (reachable.length === 0) return;
-    setComposerIds(reachable.map(c => c.id));
-    setComposerOpen(true);
-  };
 
   // ─── Stats (range-aware) ─────────────────────────────────────
   const since = useMemo(() => {
@@ -162,20 +119,20 @@ export default function CrmSmsCenterPage() {
   }, [numbers, settings, channelLogs]);
 
   const TAB_META: Record<string, { label: string; subtitle: string; icon: typeof Inbox }> = {
-    inbox:    { label: 'Inbox',    subtitle: 'One-on-one conversations with leads.',         icon: Inbox },
-    send:     { label: 'Send',     subtitle: 'Compose a blast, browse templates, view history.', icon: Send },
-    settings: { label: 'Settings', subtitle: 'Numbers, opt-outs, quiet hours, deliverability.',  icon: SettingsIcon },
+    inbox:     { label: 'Inbox',     subtitle: 'One-on-one conversations with leads.',         icon: Inbox },
+    templates: { label: 'Templates', subtitle: 'Reusable SMS snippets with merge tags.',       icon: MessageSquare },
+    history:   { label: 'History',   subtitle: 'Past blasts with delivery + reply stats.',     icon: Clock },
+    settings:  { label: 'Settings',  subtitle: 'Numbers, opt-outs, quiet hours, deliverability.', icon: SettingsIcon },
   };
   const active = TAB_META[tab] ?? TAB_META.inbox;
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      {/* ============ Compact header — tabs + status chips only ============ */}
+      {/* ============ Compact header — tabs + New Blast + status chips ============ */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        {/* Segmented pill tabs — matches /crm/email aesthetic */}
         <div className="-mx-1 overflow-x-auto no-scrollbar">
           <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
-            {(['inbox', 'send', 'settings'] as const).map(v => {
+            {(['inbox', 'templates', 'history', 'settings'] as const).map(v => {
               const meta = TAB_META[v];
               const isActive = tab === v;
               return (
@@ -197,7 +154,6 @@ export default function CrmSmsCenterPage() {
           </div>
         </div>
 
-        {/* Inline status chips */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {failed24h.length > 0 && (
             <button
@@ -214,10 +170,13 @@ export default function CrmSmsCenterPage() {
               {scheduledQueue.length} scheduled · {format(new Date(scheduledQueue[0].scheduled_for!), 'MMM d, h:mm a')}
             </span>
           )}
+          <Button size="sm" className="h-8 gap-1.5" onClick={() => setComposerOpen(true)}>
+            <Send className="w-3.5 h-3.5" />
+            New Blast
+          </Button>
         </div>
       </div>
 
-      {/* No-number gate banner */}
       {numbers.length === 0 && !settings?.messaging_service_sid && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3">
           <MessageSquare className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
@@ -231,38 +190,51 @@ export default function CrmSmsCenterPage() {
         </div>
       )}
 
-      {/* ============ Tab content (controlled by buttons above) ============ */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="sr-only">
           <TabsTrigger value="inbox">Inbox</TabsTrigger>
-          <TabsTrigger value="send">Send</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
-        {/* ============ INBOX ============ */}
         <TabsContent value="inbox" className="mt-4">
           <MessagingCenter channel="sms" onChannelChange={() => { /* SMS-only */ }} />
         </TabsContent>
 
-        {/* ============ SEND (blast composer + history + templates) ============ */}
-        <TabsContent value="send" className="mt-4 space-y-4">
-          <SendTab
-            templates={templates}
-            campaigns={campaigns}
-            recipients={filteredRecipients}
-            reachable={reachable}
-            optedOutCount={optedOutCount}
-            fStatuses={fStatuses} setFStatuses={setFStatuses}
-            fSources={fSources} setFSources={setFSources}
-            fAgents={fAgents} setFAgents={setFAgents}
-            fTags={fTags} setFTags={setFTags}
-            toggleArr={toggleArr}
-            onLaunchBlast={launchBlast}
-            onPreviewRecipients={() => setPreviewOpen(true)}
-          />
+        <TabsContent value="templates" className="mt-4">
+          <TemplatesTab templates={templates} />
         </TabsContent>
 
-        {/* ============ SETTINGS (checklist + numbers + templates + opt-outs + stats) ============ */}
+        <TabsContent value="history" className="mt-4 space-y-2">
+          {campaigns.length === 0 ? (
+            <Card className="p-8 text-center text-sm text-muted-foreground">
+              No SMS blasts yet. Click <strong>New Blast</strong> to send your first one.
+            </Card>
+          ) : (
+            campaigns.map(c => (
+              <Card key={c.id} className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-medium truncate">{c.name}</h3>
+                      <CampaignStatusBadge status={c.status} />
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{c.body}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <span><Users className="w-3 h-3 inline mr-1" />{c.recipients_count} recipients</span>
+                      {c.scheduled_for && <span><Calendar className="w-3 h-3 inline mr-1" />{format(new Date(c.scheduled_for), 'MMM d, h:mm a')}</span>}
+                      <span>{c.delivered_count}/{c.recipients_count} delivered</span>
+                      {c.failed_count > 0 && <span className="text-red-600">{c.failed_count} failed</span>}
+                      {c.reply_count > 0 && <span className="text-primary">{c.reply_count} replies</span>}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-4 space-y-4">
           <SettingsTab
             checklist={checklist}
@@ -277,54 +249,14 @@ export default function CrmSmsCenterPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ============ Bulk send dialog ============ */}
+      {/* ============ Bulk send dialog (single composer surface) ============ */}
       <BulkSendTextDialog
         open={composerOpen}
         onOpenChange={setComposerOpen}
-        contactIds={composerIds}
+        contactIds={[]}
+        audiencePicker
         defaultChannel="sms"
       />
-
-      {/* ============ Recipient preview drawer ============ */}
-      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
-        <SheetContent className="w-full sm:max-w-md flex flex-col">
-          <SheetHeader>
-            <SheetTitle>Recipient preview</SheetTitle>
-            <SheetDescription>
-              {reachable.length} will receive · {optedOutCount} opted out · {filteredRecipients.length} matched filters
-            </SheetDescription>
-          </SheetHeader>
-          <ScrollArea className="flex-1 -mx-6 px-6">
-            <div className="divide-y divide-border">
-              {filteredRecipients.length === 0 && (
-                <div className="text-sm text-muted-foreground py-8 text-center">No recipients match.</div>
-              )}
-              {filteredRecipients.map(c => {
-                const isOpt = optOutPhones.has((c.phone || '').replace(/\D/g, '').slice(-10));
-                return (
-                  <div key={c.id} className="py-2.5 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">
-                        {`${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unknown'}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground font-mono">{c.phone}</div>
-                    </div>
-                    {isOpt ? (
-                      <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400">
-                        Opted out
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-600/30">
-                        Will send
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
 
       {/* ============ Failed-sends drawer ============ */}
       <Sheet open={failedDrawerOpen} onOpenChange={setFailedDrawerOpen}>
@@ -366,108 +298,7 @@ export default function CrmSmsCenterPage() {
   );
 }
 
-// ════════════════════════════════════════════════════════════════════
-// SEND tab
-// ════════════════════════════════════════════════════════════════════
-function SendTab({
-  templates, campaigns, recipients, reachable, optedOutCount,
-  fStatuses, setFStatuses, fSources, setFSources, fAgents, setFAgents, fTags, setFTags,
-  toggleArr, onLaunchBlast, onPreviewRecipients,
-}: {
-  templates: any[]; campaigns: any[];
-  recipients: any[]; reachable: any[]; optedOutCount: number;
-  fStatuses: string[]; setFStatuses: (a: string[]) => void;
-  fSources: string[]; setFSources: (a: string[]) => void;
-  fAgents: string[]; setFAgents: (a: string[]) => void;
-  fTags: string; setFTags: (s: string) => void;
-  toggleArr: (a: string[], v: string, s: (a: string[]) => void) => void;
-  onLaunchBlast: () => void;
-  onPreviewRecipients: () => void;
-}) {
-  const [view, setView] = useState<'compose' | 'history' | 'templates'>('compose');
-  const agentNames = useAgentNames();
-  return (
-    <>
-      <SubTabBar
-        value={view}
-        onChange={(v) => setView(v as any)}
-        options={[
-          { value: 'compose', label: 'New blast', icon: Send },
-          { value: 'templates', label: `Templates (${templates.length})`, icon: MessageSquare },
-          { value: 'history', label: `History (${campaigns.length})`, icon: Clock },
-        ]}
-      />
-
-      {view === 'compose' && (
-        <Card className="p-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold">Pick who gets the message</h2>
-          </div>
-
-          <FilterRow label="Pipeline stage" options={LEAD_STATUSES} selected={fStatuses} onToggle={(v) => toggleArr(fStatuses, v, setFStatuses)} />
-          <FilterRow label="Lead source" options={LEAD_SOURCES} selected={fSources} onToggle={(v) => toggleArr(fSources, v, setFSources)} />
-          <FilterRow label="Assigned to" options={agentNames} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Tags (comma-separated)</Label>
-            <Input value={fTags} onChange={(e) => setFTags(e.target.value)} placeholder="vip, hot-lead, newsletter" />
-          </div>
-
-          {/* Summary */}
-          <div className="rounded-lg border border-border bg-muted/20 p-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
-            <span><strong className="text-foreground">{reachable.length}</strong> will receive</span>
-            {optedOutCount > 0 && <span className="text-amber-700 dark:text-amber-400">{optedOutCount} opted out — skipped</span>}
-            <span className="text-muted-foreground">{recipients.length - reachable.length - optedOutCount === 0 ? '' : `${recipients.length} matched`}</span>
-            <Button variant="ghost" size="sm" className="ml-auto h-7 text-[11px]" onClick={onPreviewRecipients} disabled={recipients.length === 0}>
-              <Eye className="w-3 h-3 mr-1" /> Preview list
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-border">
-            <Button onClick={onLaunchBlast} disabled={reachable.length === 0} size="sm">
-              <Send className="w-3.5 h-3.5 mr-1.5" />
-              Compose blast ({reachable.length})
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {view === 'templates' && <TemplatesTab templates={templates} />}
-
-      {view === 'history' && (
-        <div className="space-y-2">
-          {campaigns.length === 0 ? (
-            <Card className="p-8 text-center text-sm text-muted-foreground">
-              No SMS blasts yet. Switch to <strong>New blast</strong> to send your first one.
-            </Card>
-          ) : (
-            campaigns.map(c => (
-              <Card key={c.id} className="p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium truncate">{c.name}</h3>
-                      <CampaignStatusBadge status={c.status} />
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{c.body}</p>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
-                      <span><Users className="w-3 h-3 inline mr-1" />{c.recipients_count} recipients</span>
-                      {c.scheduled_for && <span><Calendar className="w-3 h-3 inline mr-1" />{format(new Date(c.scheduled_for), 'MMM d, h:mm a')}</span>}
-                      <span>{c.delivered_count}/{c.recipients_count} delivered</span>
-                      {c.failed_count > 0 && <span className="text-red-600">{c.failed_count} failed</span>}
-                      {c.reply_count > 0 && <span className="text-primary">{c.reply_count} replies</span>}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-      )}
-    </>
-  );
-}
+// SEND tab removed — single composer surface is <BulkSendTextDialog audiencePicker />.
 
 // ════════════════════════════════════════════════════════════════════
 // SETTINGS tab — checklist + numbers + templates + opt-outs + stats

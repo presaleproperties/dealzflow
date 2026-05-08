@@ -8,28 +8,62 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users, MessageSquare } from 'lucide-react';
+import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users, MessageSquare, Filter, ChevronDown } from 'lucide-react';
 import {
-  useBulkSendSms, useSmsTemplates, SMS_VARIABLES, smsSegments, type MessagingChannel,
+  useBulkSendSms, useSmsTemplates, useSmsOptOuts, SMS_VARIABLES, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
 import { cn } from '@/lib/utils';
-import { useCrmContacts } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-resolved recipient ids. Ignored when `audiencePicker` is true. */
   contactIds: string[];
   onComplete?: () => void;
   defaultChannel?: MessagingChannel;
+  /** When true, show in-dialog audience filter (pipeline / source / agent / tags). */
+  audiencePicker?: boolean;
 }
 
-export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete, defaultChannel = 'sms' }: Props) {
+export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete, defaultChannel = 'sms', audiencePicker = false }: Props) {
   const bulkSend = useBulkSendSms();
   const [channel, setChannel] = useState<MessagingChannel>(defaultChannel);
   const { data: templates = [] } = useSmsTemplates();
   const { data: allContacts = [] } = useCrmContacts();
+  const { data: optOuts = [] } = useSmsOptOuts();
+  const agentNames = useAgentNames();
+
+  // Audience filters (only used when audiencePicker=true)
+  const [fStatuses, setFStatuses] = useState<string[]>([]);
+  const [fSources, setFSources] = useState<string[]>([]);
+  const [fAgents, setFAgents] = useState<string[]>([]);
+  const [fTags, setFTags] = useState<string>('');
+  const [audienceOpen, setAudienceOpen] = useState(true);
+  const toggleArr = (arr: string[], v: string, set: (a: string[]) => void) => {
+    set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
+  };
+  const optOutPhones = useMemo(
+    () => new Set(optOuts.filter(o => !o.re_opted_in_at).map(o => (o.phone || '').replace(/\D/g, '').slice(-10))),
+    [optOuts],
+  );
+  const audienceIds = useMemo(() => {
+    if (!audiencePicker) return null;
+    const tagsArr = fTags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    return allContacts.filter(c => {
+      if (!c.phone) return false;
+      if (optOutPhones.has((c.phone || '').replace(/\D/g, '').slice(-10))) return false;
+      if (fStatuses.length && !fStatuses.includes(c.status || '')) return false;
+      if (fSources.length && !fSources.includes(c.source || '')) return false;
+      if (fAgents.length && !fAgents.includes(c.assigned_to || '')) return false;
+      if (tagsArr.length && !(c.tags || []).some(t => tagsArr.includes(t.toLowerCase()))) return false;
+      return true;
+    }).map(c => c.id);
+  }, [audiencePicker, allContacts, optOutPhones, fStatuses, fSources, fAgents, fTags]);
+  const effectiveIds = audiencePicker ? (audienceIds || []) : contactIds;
 
   const [name, setName] = useState('');
   const [body, setBody] = useState('');
@@ -55,9 +89,9 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
   }, [open]); // eslint-disable-line
 
   const recipients = useMemo(() => {
-    const set = new Set(contactIds);
+    const set = new Set(effectiveIds);
     return allContacts.filter(c => set.has(c.id));
-  }, [allContacts, contactIds]);
+  }, [allContacts, effectiveIds]);
 
   const reachable = useMemo(
     () => recipients.filter(r => !!r.phone && r.phone.replace(/\D/g, '').length >= 8),
@@ -124,7 +158,7 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+      <DialogContent className={cn("p-0 overflow-hidden", audiencePicker ? "max-w-3xl" : "max-w-2xl")}>
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
@@ -152,7 +186,36 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
           </div>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="px-5 py-4 space-y-4 max-h-[78vh] overflow-y-auto">
+          {/* Audience picker (in-dialog) */}
+          {audiencePicker && (
+            <div className="rounded-lg border border-border bg-muted/20">
+              <button
+                type="button"
+                onClick={() => setAudienceOpen(o => !o)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
+              >
+                <Filter className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold">Audience</span>
+                <Badge variant="outline" className="text-[10px] font-medium">
+                  {effectiveIds.length} match
+                </Badge>
+                <ChevronDown className={cn("w-3.5 h-3.5 ml-auto text-muted-foreground transition-transform", audienceOpen && "rotate-180")} />
+              </button>
+              {audienceOpen && (
+                <div className="px-3 pb-3 space-y-2.5 border-t border-border/60">
+                  <AudienceRow label="Pipeline" options={LEAD_STATUSES} selected={fStatuses} onToggle={(v) => toggleArr(fStatuses, v, setFStatuses)} />
+                  <AudienceRow label="Source" options={LEAD_SOURCES} selected={fSources} onToggle={(v) => toggleArr(fSources, v, setFSources)} />
+                  <AudienceRow label="Assigned" options={agentNames} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Tags</Label>
+                    <Input value={fTags} onChange={(e) => setFTags(e.target.value)} placeholder="vip, hot-lead" className="h-8 text-xs" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Recipients summary */}
           <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-muted/40 border border-border">
             <Badge variant="outline" className="font-medium">
@@ -332,5 +395,33 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AudienceRow({ label, options, selected, onToggle }: { label: string; options: readonly string[]; selected: string[]; onToggle: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</Label>
+      <div className="flex flex-wrap gap-1">
+        {options.map(opt => {
+          const active = selected.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onToggle(opt)}
+              className={cn(
+                'px-2 py-0.5 rounded-full text-[11px] border transition-colors',
+                active
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background border-border text-muted-foreground hover:text-foreground hover:border-foreground/30',
+              )}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
