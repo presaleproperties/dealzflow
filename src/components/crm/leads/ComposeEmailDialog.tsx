@@ -55,6 +55,7 @@ import { EMAIL_VARIABLES, EMAIL_VARIABLE_GROUPS, renderForRecipient } from '@/li
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { useCrmContacts } from '@/hooks/useCrmContacts';
 import type { CrmEmailTemplate } from '@/hooks/useCrmEmail';
 
 interface Props {
