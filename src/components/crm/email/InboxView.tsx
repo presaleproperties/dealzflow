@@ -652,40 +652,6 @@ export default function InboxView() {
                 </div>
               )}
             </div>
-
-            <div className="border-t border-border px-6 py-3 bg-muted/10">
-              <div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden">
-                <div className="flex items-center gap-2 px-3 h-8 border-b border-border/60 bg-muted/20">
-                  <Reply className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">
-                    Reply to {selectedThread.last_message_from || selectedThread.participants[0]}
-                  </span>
-                </div>
-                <Textarea
-                  data-inbox-reply
-                  value={reply}
-                  onChange={e => setReply(e.target.value)}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
-                  }}
-                  placeholder="Write your reply…  (⌘+Enter to send)"
-                  rows={3}
-                  enterKeyHint="send"
-                  className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none"
-                />
-                <div className="flex items-center justify-between px-3 py-2 border-t border-border/60 bg-muted/10">
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" disabled>
-                      <Paperclip className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  <Button size="sm" onClick={sendReply} disabled={sending || !reply.trim()} className="h-7 gap-1.5 text-xs">
-                    {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                    Send
-                  </Button>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </main>
