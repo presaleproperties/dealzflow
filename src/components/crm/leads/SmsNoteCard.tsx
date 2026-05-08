@@ -34,18 +34,18 @@ export function SmsNoteCard({ message, onOpen }: Props) {
   const body = (message.body ?? '').trim();
 
   return (
-    <div className="group relative flex gap-3">
+    <div className="group relative flex gap-2.5 md:gap-3">
       {/* Timeline dot */}
       <div
-        className="relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 border bg-background"
+        className="relative z-10 flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full flex-shrink-0 border bg-background"
         style={{
           borderColor: `hsl(${tint} / 0.45)`,
           background: `hsl(${tint} / 0.10)`,
         }}
       >
         {isInbound
-          ? <ArrowDownLeft className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
-          : <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
+          ? <ArrowDownLeft className="w-3 h-3 md:w-3.5 md:h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
+          : <ArrowUpRight className="w-3 h-3 md:w-3.5 md:h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
         }
       </div>
 
@@ -55,15 +55,15 @@ export function SmsNoteCard({ message, onOpen }: Props) {
         onClick={onOpen}
         disabled={!onOpen}
         className={cn(
-          'flex-1 min-w-0 text-left rounded-lg border bg-card px-3.5 py-3 transition-all',
+          'flex-1 min-w-0 text-left rounded-xl md:rounded-lg border bg-card px-3 py-2.5 md:px-3.5 md:py-3 transition-all',
           'border-border/50',
-          onOpen && 'hover:border-primary/40 hover:bg-muted/30 cursor-pointer',
+          onOpen && 'active:bg-muted/40 md:hover:border-primary/40 md:hover:bg-muted/30 cursor-pointer',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         )}
       >
-        {/* Meta row */}
+        {/* Meta row — denser on mobile */}
         <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground min-w-0 flex-wrap">
+          <div className="flex items-center gap-1.5 md:gap-2 text-[11px] uppercase tracking-wider text-muted-foreground min-w-0 flex-wrap">
             <span
               className="font-semibold px-1.5 py-0.5 rounded text-[10px]"
               style={{
@@ -71,20 +71,23 @@ export function SmsNoteCard({ message, onOpen }: Props) {
                 color: `hsl(${tint})`,
               }}
             >
-              {channel} · {isInbound ? 'Received' : 'Sent'}
+              {channel} · {isInbound ? 'In' : 'Out'}
             </span>
             <span className="opacity-30">·</span>
-            <span className="shrink-0 normal-case tracking-normal text-xs">{dateLabel} · {time}</span>
+            <span className="shrink-0 normal-case tracking-normal text-[11px] md:text-xs tabular-nums">
+              <span className="md:hidden">{time}</span>
+              <span className="hidden md:inline">{dateLabel} · {time}</span>
+            </span>
             {!isInbound && message.user_id && (
-              <>
+              <span className="hidden md:inline-flex items-center gap-2">
                 <span className="opacity-30">·</span>
                 <AgentBadge userId={message.user_id} prefix="by" />
-              </>
+              </span>
             )}
             {failed && (
               <>
                 <span className="opacity-30">·</span>
-                <span className="inline-flex items-center gap-1 text-destructive normal-case tracking-normal text-xs">
+                <span className="inline-flex items-center gap-1 text-destructive normal-case tracking-normal text-[11px] md:text-xs">
                   <AlertTriangle className="w-3 h-3" />
                   Failed
                 </span>
@@ -93,16 +96,16 @@ export function SmsNoteCard({ message, onOpen }: Props) {
           </div>
         </div>
 
-        {/* Body */}
+        {/* Body — drop leading icon on mobile to gain horizontal space */}
         <div className="flex items-start gap-2">
-          <MessageSquare className="w-4 h-4 text-foreground/50 shrink-0 mt-0.5" />
+          <MessageSquare className="hidden md:block w-4 h-4 text-foreground/50 shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
             {body ? (
-              <p className="text-[13.5px] text-foreground leading-relaxed whitespace-pre-wrap break-words line-clamp-4">
+              <p className="text-[13px] md:text-[13.5px] text-foreground leading-relaxed whitespace-pre-wrap break-words line-clamp-4">
                 {body}
               </p>
             ) : (
-              <p className="text-[13px] text-muted-foreground italic">
+              <p className="text-[12.5px] md:text-[13px] text-muted-foreground italic">
                 {mediaCount > 0 ? `${mediaCount} attachment${mediaCount === 1 ? '' : 's'}` : '(empty message)'}
               </p>
             )}
@@ -118,7 +121,7 @@ export function SmsNoteCard({ message, onOpen }: Props) {
               </p>
             )}
             {counterpart && (
-              <p className="text-[11.5px] text-muted-foreground mt-1.5 truncate">
+              <p className="text-[11px] md:text-[11.5px] text-muted-foreground mt-1 md:mt-1.5 truncate">
                 <span className="text-muted-foreground/70">{isInbound ? 'From' : 'To'}</span>{' '}
                 <span className="text-foreground/80">{counterpart}</span>
               </p>
