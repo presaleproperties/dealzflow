@@ -44,6 +44,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Pre-select a channel (e.g. 'whatsapp' from the WhatsApp action button). */
   initialChannel?: MessagingChannel;
+  /** Additional recipients for mass-send. When the total count is >1, the
+   *  composer routes through `bulk-send-sms` (personalized server-side). The
+   *  primary `contact` drives the live variable preview. */
+  extraContacts?: CrmContact[];
+  /** Fired after a successful send (single or mass). */
+  onSent?: () => void;
 }
 
 function formatPhoneDisplay(phone?: string | null): string {
