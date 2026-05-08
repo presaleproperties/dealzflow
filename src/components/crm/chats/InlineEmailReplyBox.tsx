@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Send, Sparkles, Loader2, MoreHorizontal } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { useEmailSignatures } from '@/hooks/useEmailSignatures';
