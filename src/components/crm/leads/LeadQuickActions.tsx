@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare } from 'lucide-react';
+import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
@@ -11,6 +11,7 @@ import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { SendTextDialog } from './SendTextDialog';
+import { SendBookingLinkDialog } from './SendBookingLinkDialog';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
@@ -22,6 +23,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showSms, setShowSms] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
 
   const handlePipelineChange = (segId: string) => {
     const seg = pipelines.find(p => p.id === segId);
@@ -57,6 +59,13 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             title={contact.phone ? 'Send SMS' : 'No phone number on file'}
           >
             <MessageSquare className="w-3.5 h-3.5" style={{ color: 'hsl(160 60% 40%)' }} /> Send SMS
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            className="h-9 text-xs gap-1.5 justify-start col-span-2"
+            onClick={() => setShowBooking(true)}
+          >
+            <Link2 className="w-3.5 h-3.5 text-primary" /> Send Booking Link
           </Button>
         </div>
 
@@ -96,6 +105,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
       <SendTextDialog contact={contact} open={showSms} onOpenChange={setShowSms} initialChannel="sms" />
+      <SendBookingLinkDialog contact={contact} open={showBooking} onOpenChange={setShowBooking} />
     </>
   );
 }
