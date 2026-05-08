@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle, History, Cloud, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,11 @@ import { usePresaleAgent } from '@/stores/usePresaleAgent';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SenderIdentityField } from './SenderIdentityField';
+import { SendTestDialog } from './SendTestDialog';
+import { SyncHistoryList } from './SyncHistoryList';
+import { useTemplateAutosave } from '@/hooks/useTemplateAutosave';
 
 const CATEGORIES = [
   { value: 'project_launch', label: 'Project Launch' },
