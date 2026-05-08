@@ -308,8 +308,8 @@
   }
 }
 
-/* Pro Max / Plus / Pro Max iPhones — give the UI more room to breathe */
-@media (min-width: 414px) and (max-width: 1023px) {
+/* Pro Max / Plus iPhones — give the UI more room to breathe */
+@media (min-width: 414px) and (max-width: 767px) {
   :root {
     --device-scale: 1.06;
     --device-pad-x: 20px;
@@ -318,7 +318,20 @@
   }
 }
 
-/* Desktop / tablet — ignore the device scale */
+/* Tablet (iPad portrait/landscape) — the mobile UI scaled up. Bigger
+   type, airier padding, and pages get centered with a max-width so
+   line-length stays comfortable instead of stretching to 1024px. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --device-scale: 1.14;
+    --device-pad-x: 28px;
+    --device-pad-y: 22px;
+    --device-gap: 26px;
+    --m-content-max: 720px;
+  }
+}
+
+/* Desktop — ignore the device scale */
 @media (min-width: 1024px) {
   :root {
     --device-scale: 1;
@@ -1285,6 +1298,21 @@
     padding-right: var(--m-page-pad-x);
     padding-top: var(--m-page-pad-y);
     padding-bottom: var(--bottom-nav-pad, 0px);
+    /* On tablet, center the column and cap the line length so the
+       mobile UI feels intentional at iPad widths instead of stretched. */
+    max-width: var(--m-content-max, none);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Same centering treatment for the lead detail mobile shell and any
+     other top-level mobile screen wrapper that doesn't use .m-page. */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    [data-mobile-shell="true"] {
+      max-width: var(--m-content-max, 720px);
+      margin-left: auto;
+      margin-right: auto;
+    }
   }
 
   /* Page title — used at the top of every primary mobile screen. */
