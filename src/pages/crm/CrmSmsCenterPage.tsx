@@ -46,7 +46,7 @@ export default function CrmSmsCenterPage() {
   const { data: optOuts = [] } = useSmsOptOuts();
   const { data: numbers = [] } = useSmsNumbers();
   const { data: settings } = useSmsSettings();
-  const { data: allContacts = [] } = useCrmContacts();
+  // contacts now fetched inside <BulkSendTextDialog audiencePicker />
   const { data: logs = [] } = useAllSmsLog({ limit: 1000 });
 
   // SMS-only filter (WhatsApp removed)
