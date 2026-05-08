@@ -662,9 +662,12 @@ export function LeftSidebar({
             <MobileMultiPickerDrawer
               open={drawer === 'status'} onOpenChange={(o) => !o && closeDrawer()}
               title="Pipeline Stage"
-              options={stageOptions.map(s => ({ value: s, label: s }))}
-              value={contact.status ? [contact.status] : []}
-              onChange={(next) => saveWithLog('status', next[0] ?? 'New Lead')}
+              options={pipelines.map(p => ({ value: p.id, label: `${p.emoji ? p.emoji + ' ' : ''}${p.name}` }))}
+              value={activePipeline ? [activePipeline.id] : []}
+              onChange={(next) => {
+                const seg = pipelines.find(p => p.id === next[0]);
+                if (seg) setPipeline.mutate({ contact, segment: seg });
+              }}
             />
             <MobileMultiPickerDrawer
               open={drawer === 'assigned_to'} onOpenChange={(o) => !o && closeDrawer()}
