@@ -350,10 +350,12 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   const isLoading = (logLoading || gmailLoading) && allMessages.length === 0;
   const fullName = formatContactName(contact.first_name, contact.last_name);
 
+  const headerInitials = initialsFor(fullName, contact.email);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[1280px] w-[96vw] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col"
+        className="max-w-[1280px] w-[96vw] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-2xl border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
       >
         <DialogTitle className="sr-only">Email thread with {fullName}</DialogTitle>
         <DialogDescription className="sr-only">
@@ -361,14 +363,27 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         </DialogDescription>
 
         {/* Header bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/70 bg-card flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/70 bg-gradient-to-b from-card to-card/95 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-foreground">
-              {replyOpen ? 'Reply' : 'Email Thread'}
-            </span>
-            <span className="text-[11px] text-muted-foreground truncate">
-              · {fullName}
-            </span>
+            <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11.5px] font-semibold shrink-0">
+              {headerInitials}
+            </div>
+            <div className="min-w-0 leading-tight">
+              <div className="flex items-center gap-2">
+                <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  {replyOpen ? 'Reply' : 'Email'}
+                </span>
+                <span className="h-3 w-px bg-border" />
+                <span className="text-[13px] font-semibold text-foreground truncate max-w-[280px]">
+                  {fullName}
+                </span>
+              </div>
+              {contact.email && (
+                <div className="text-[11px] text-muted-foreground truncate max-w-[360px]">
+                  {contact.email}
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={() => onOpenChange(false)}
@@ -382,11 +397,11 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         <div className="flex-1 min-h-0 flex flex-col md:flex-row">
           {/* Left rail — lead context + recent threads */}
           <aside className="w-full md:w-[300px] lg:w-[340px] flex-shrink-0 border-r border-border/70 bg-muted/20 overflow-y-auto">
-            <div className="p-5 border-b border-border/70">
-              <h2 className="text-[20px] font-bold leading-tight text-foreground tracking-tight uppercase">
-                {fullName}
-              </h2>
-              <dl className="mt-4 space-y-1.5 text-[12.5px]">
+            <div className="p-4 border-b border-border/70">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/80 mb-2">
+                Lead
+              </h3>
+              <dl className="space-y-1.5 text-[12.5px]">
                 <Field label="Type" value={contact.contact_type ?? '—'} />
                 <Field label="Phone" value={contact.phone ?? '—'} />
                 <Field label="Pipeline" value={contact.status ?? '—'} />
@@ -395,8 +410,9 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             </div>
 
             <div className="p-4">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-3">
-                Recent Communications ({threads.length})
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/80 mb-2.5 flex items-center justify-between">
+                <span>Threads</span>
+                <span className="text-muted-foreground/60 tabular-nums normal-case tracking-normal">{threads.length}</span>
               </h3>
               {isLoading && threads.length === 0 ? (
                 <div className="space-y-2">
