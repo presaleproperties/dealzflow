@@ -20,7 +20,8 @@ import { InboxShortcutsHelp } from '@/components/crm/inbox/InboxShortcutsHelp';
 import {
   Inbox, Search, RefreshCcw, Archive, MailOpen, Send, ExternalLink,
   Loader2, CheckCheck, Reply, Star, Trash2, Forward, Paperclip,
-  ChevronLeft, ChevronDown,
+  ChevronLeft, ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen,
+  PanelRightClose, PanelRightOpen, X,
 } from 'lucide-react';
 import { format, isToday, isYesterday, isThisYear, isThisWeek } from 'date-fns';
 import { toast } from 'sonner';
