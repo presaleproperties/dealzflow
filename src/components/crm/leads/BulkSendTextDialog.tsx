@@ -8,28 +8,62 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users, MessageSquare } from 'lucide-react';
+import { Variable, FileText, Image as ImageIcon, Send, Loader2, Calendar, AlertTriangle, X, Users, MessageSquare, Filter, ChevronDown } from 'lucide-react';
 import {
-  useBulkSendSms, useSmsTemplates, SMS_VARIABLES, smsSegments, type MessagingChannel,
+  useBulkSendSms, useSmsTemplates, useSmsOptOuts, SMS_VARIABLES, smsSegments, type MessagingChannel,
 } from '@/hooks/useSms';
 import { cn } from '@/lib/utils';
-import { useCrmContacts } from '@/hooks/useCrmContacts';
+import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useAgentNames } from '@/hooks/useTeamAgents';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-resolved recipient ids. Ignored when `audiencePicker` is true. */
   contactIds: string[];
   onComplete?: () => void;
   defaultChannel?: MessagingChannel;
+  /** When true, show in-dialog audience filter (pipeline / source / agent / tags). */
+  audiencePicker?: boolean;
 }
 
-export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete, defaultChannel = 'sms' }: Props) {
+export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete, defaultChannel = 'sms', audiencePicker = false }: Props) {
   const bulkSend = useBulkSendSms();
   const [channel, setChannel] = useState<MessagingChannel>(defaultChannel);
   const { data: templates = [] } = useSmsTemplates();
   const { data: allContacts = [] } = useCrmContacts();
+  const { data: optOuts = [] } = useSmsOptOuts();
+  const agentNames = useAgentNames();
+
+  // Audience filters (only used when audiencePicker=true)
+  const [fStatuses, setFStatuses] = useState<string[]>([]);
+  const [fSources, setFSources] = useState<string[]>([]);
+  const [fAgents, setFAgents] = useState<string[]>([]);
+  const [fTags, setFTags] = useState<string>('');
+  const [audienceOpen, setAudienceOpen] = useState(true);
+  const toggleArr = (arr: string[], v: string, set: (a: string[]) => void) => {
+    set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
+  };
+  const optOutPhones = useMemo(
+    () => new Set(optOuts.filter(o => !o.re_opted_in_at).map(o => (o.phone || '').replace(/\D/g, '').slice(-10))),
+    [optOuts],
+  );
+  const audienceIds = useMemo(() => {
+    if (!audiencePicker) return null;
+    const tagsArr = fTags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    return allContacts.filter(c => {
+      if (!c.phone) return false;
+      if (optOutPhones.has((c.phone || '').replace(/\D/g, '').slice(-10))) return false;
+      if (fStatuses.length && !fStatuses.includes(c.status || '')) return false;
+      if (fSources.length && !fSources.includes(c.source || '')) return false;
+      if (fAgents.length && !fAgents.includes(c.assigned_to || '')) return false;
+      if (tagsArr.length && !(c.tags || []).some(t => tagsArr.includes(t.toLowerCase()))) return false;
+      return true;
+    }).map(c => c.id);
+  }, [audiencePicker, allContacts, optOutPhones, fStatuses, fSources, fAgents, fTags]);
+  const effectiveIds = audiencePicker ? (audienceIds || []) : contactIds;
 
   const [name, setName] = useState('');
   const [body, setBody] = useState('');
