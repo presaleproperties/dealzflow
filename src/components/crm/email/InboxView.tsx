@@ -367,18 +367,21 @@ export default function InboxView() {
       {/* Message list */}
       <section className="flex flex-col min-h-0 border-r border-border bg-card">
         <div className="px-3.5 py-3 border-b border-border space-y-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold tracking-tight text-foreground capitalize">
               {folder}
             </h2>
-            <span className="text-[10.5px] text-muted-foreground tabular-nums">
-              {filteredThreads.length} {filteredThreads.length === 1 ? 'message' : 'messages'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10.5px] text-muted-foreground tabular-nums">
+                {filteredThreads.length} {filteredThreads.length === 1 ? 'message' : 'messages'}
+              </span>
+              <InboxShortcutsHelp />
+            </div>
           </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search messages…"
+              placeholder="Search messages…  (press /)"
               value={search}
               onChange={e => setSearch(e.target.value)}
               type="search"
@@ -393,11 +396,20 @@ export default function InboxView() {
 
         <ScrollArea className="flex-1 min-h-0">
           {threadsQuery.isLoading ? (
-            <div className="p-3 space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+            <div>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="inbox-row-skeleton">
+                  <div className="w-2" />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="h-3 w-1/3 rounded bg-muted/60" />
+                    <div className="h-3 w-3/4 rounded bg-muted/40" />
+                    <div className="h-2.5 w-full rounded bg-muted/30" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredThreads.length === 0 ? (
-            <EmptyInbox onSync={sync} />
+            <InboxEmpty kind="email" onAction={sync} />
           ) : (
             <ul>
               {filteredThreads.map(t => {
@@ -407,43 +419,28 @@ export default function InboxView() {
                   <li key={t.id}>
                     <button
                       onClick={() => setSelectedThreadId(t.id)}
-                      className={cn(
-                        'w-full text-left px-3.5 py-3 transition-colors flex gap-2 border-l-2 border-transparent',
-                        'border-b border-border/50',
-                        isActive
-                          ? 'bg-primary/[0.06] border-l-primary'
-                          : 'hover:bg-muted/40',
-                      )}
+                      className="inbox-row"
+                      data-active={isActive}
+                      data-unread={isUnread}
                     >
-                      <div className="pt-1.5 w-2 shrink-0 flex justify-center">
-                        {isUnread && <span className="h-2 w-2 rounded-full bg-primary" />}
-                      </div>
+                      <span className="inbox-row__dot" data-hidden={!isUnread} aria-hidden />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <span className={cn(
-                            'flex-1 truncate text-[13px]',
-                            isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/85',
-                          )}>
+                          <span className="inbox-row__sender">
                             {t.last_message_from || t.participants[0] || 'Unknown'}
                           </span>
-                          <span className={cn(
-                            'text-[10.5px] tabular-nums shrink-0',
-                            isUnread ? 'text-primary font-medium' : 'text-muted-foreground',
-                          )}>
+                          <span className="inbox-row__time">
                             {smartTime(t.last_message_at)}
                           </span>
                         </div>
-                        <div className={cn(
-                          'truncate text-[12.5px] mt-0.5',
-                          isUnread ? 'text-foreground/90 font-medium' : 'text-foreground/70',
-                        )}>
+                        <div className="inbox-row__subject">
                           {t.subject || '(no subject)'}
                         </div>
-                        <p className="text-[11.5px] text-muted-foreground truncate mt-0.5 leading-snug">
+                        <p className="inbox-row__snippet">
                           {t.last_message_snippet || '—'}
                         </p>
                         {t.message_count > 1 && (
-                          <span className="inline-flex items-center mt-1 text-[10px] text-muted-foreground/80 tabular-nums">
+                          <span className="inbox-row__meta">
                             {t.message_count} messages
                           </span>
                         )}
