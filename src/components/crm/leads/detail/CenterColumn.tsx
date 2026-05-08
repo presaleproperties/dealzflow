@@ -220,20 +220,9 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   return (
     <Tabs defaultValue="overview" className="flex flex-col h-full">
 
-      {/* Inner tab strip — desktop only. On mobile the parent already has Details/Activity/Insights tabs. */}
-      <TabsList className="hidden md:flex w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
-        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[12px] px-4 py-2.5 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
-          Activity
-        </TabsTrigger>
-        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[12px] px-4 py-2.5 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
-          Appointments
-          {showings.length > 0 && (
-            <span className="ml-2 text-[10px] bg-muted text-foreground/80 rounded-full px-1.5 py-0.5 font-semibold normal-case tracking-normal tabular-nums">
-              {showings.length}
-            </span>
-          )}
-        </TabsTrigger>
-      </TabsList>
+      {/* Inner tab strip removed — Appointments now lives as a collapsible card
+          inside the Activity feed (see below) so the activity content can rise to
+          the top of the column without a redundant tab bar above it. */}
 
       <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-2.5 md:p-6 space-y-2.5 md:space-y-5">
         <div className="px-3 md:px-0">
