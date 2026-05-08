@@ -239,8 +239,26 @@ export function useSendSms() {
         return queueForLater('offline');
       }
 
-      const invoke = (body: SendSmsArgs & { client_dedupe_id: string }) =>
-        supabase.functions.invoke('send-sms', { body });
+      // Wrap invoke so non-2xx responses surface the JSON body (code + message)
+      // instead of the generic "Edge Function returned a non-2xx status code".
+      const invoke = async (body: SendSmsArgs & { client_dedupe_id: string }) => {
+        const res = await supabase.functions.invoke('send-sms', { body });
+        if (res.error && (res.error as any).context?.json) {
+          try {
+            const parsed = await (res.error as any).context.json();
+            return { data: parsed, error: null as any };
+          } catch {
+            try {
+              const txt = await (res.error as any).context.text?.();
+              if (txt) {
+                try { return { data: JSON.parse(txt), error: null as any }; }
+                catch { return { data: { error: txt }, error: null as any }; }
+              }
+            } catch { /* ignore */ }
+          }
+        }
+        return res;
+      };
 
       let data: any;
       let error: any;
