@@ -115,7 +115,23 @@ export function useBridgeSendEmail() {
       if (data?.scheduled) {
         toast.success('Email scheduled');
       } else if (data?.queued) {
-        toast.success('Email queued', { description: 'Delivery will retry automatically if Gmail or the bridge is busy.' });
+        // Queued path almost always means the sender's Gmail isn't connected.
+        // Surface the real reason + CTA instead of a vague "server busy" line.
+        if (data?.reason === 'inbox_not_connected') {
+          toast.warning('Email queued — connect your inbox', {
+            description: data?.message
+              || "Your Gmail isn't connected yet. Go to Settings → Email → Connect Gmail to send immediately.",
+            duration: 8000,
+            action: {
+              label: 'Connect',
+              onClick: () => { window.location.href = '/crm/settings?tab=email'; },
+            },
+          });
+        } else {
+          toast.success('Email queued', {
+            description: data?.message || 'It will send on the next queue cycle.',
+          });
+        }
       } else {
         toast.success('Email sent');
       }
