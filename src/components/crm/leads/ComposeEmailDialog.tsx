@@ -1382,7 +1382,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                     ) : (
                       <Send className="h-3.5 w-3.5" />
                     )}
-                    {isPending ? 'Sending...' : logOnly ? 'Log Email' : 'Send Email'}
+                    {isPending ? 'Sending...' : logOnly ? 'Log Email' : isMass ? `Send to ${allRecipients.length}` : 'Send Email'}
                   </Button>
                 </div>
               </div>
