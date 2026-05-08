@@ -51,7 +51,7 @@ interface Props {
   embedded?: boolean;
 }
 
-export function AutomationBuilder({ editing, templatePrefill, onClose }: Props) {
+export function AutomationBuilder({ editing, templatePrefill, onClose, embedded }: Props) {
   const [name, setName] = useState('');
   const { data: agents = [] } = useTeamAgents();
   const [description, setDescription] = useState('');
