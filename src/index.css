@@ -1092,6 +1092,9 @@
     body[data-section="crm"] .text-lg  { font-size: 14.5px; line-height: 1.4; font-weight: 600; }
     /* Bracketed sizes occasionally used for KPI numbers — keep readable but consistent. */
     body[data-section="crm"] .text-\[28px\] { font-size: 22px !important; line-height: 1.2; font-weight: 600; letter-spacing: -0.012em; }
+    body[data-section="crm"] .text-\[24px\] { font-size: 20px !important; line-height: 1.2; font-weight: 600; letter-spacing: -0.012em; }
+    body[data-section="crm"] .text-\[22px\] { font-size: 19px !important; line-height: 1.2; font-weight: 600; letter-spacing: -0.012em; }
+    body[data-section="crm"] .text-\[20px\] { font-size: 17px !important; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
     /* Soften any stray font-bold to semibold for editorial consistency. */
     body[data-section="crm"] .font-bold { font-weight: 600; }
 
