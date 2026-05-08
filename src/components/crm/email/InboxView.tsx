@@ -481,6 +481,7 @@ export default function InboxView() {
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="inbox-row-skeleton">
                   <div className="w-2" />
+                  <div className="h-8 w-8 rounded-full bg-muted/50 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="h-3 w-1/3 rounded bg-muted/60" />
                     <div className="h-3 w-3/4 rounded bg-muted/40" />
