@@ -384,14 +384,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                 <StickyNote className="w-4 h-4 text-muted-foreground" />
               </div>
               <p className="text-sm font-medium text-foreground/80">No activity yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Add a note above to get started</p>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile-only Appointments accordion — replaces the desktop inner tab */}
+        {/* Appointments — collapsible card available on all viewports now that
+            the inner tab strip has been removed. */}
         {showings.length > 0 && (
-          <details className="md:hidden mt-4 mx-4 md:mx-0 group rounded-xl border border-border bg-card/50 overflow-hidden">
+          <details className="mt-4 mx-4 md:mx-0 group rounded-xl border border-border bg-card/50 overflow-hidden">
             <summary className="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/80">
               <span className="flex items-center gap-2">
                 Appointments
@@ -408,9 +404,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         )}
       </TabsContent>
 
-      <TabsContent value="showings" className="flex-1 overflow-y-auto mt-0 p-3 md:p-6">
-        <ShowingsTab contactId={contact.id} showings={showings as CrmShowing[]} />
-      </TabsContent>
+      {/* (Standalone Showings TabsContent removed — accordion above is the single surface.) */}
 
       <LeadEmailThreadDialog
         contact={contact}
