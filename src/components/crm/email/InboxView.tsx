@@ -680,12 +680,12 @@ function MobileThreadList({
 }
 
 /**
- * Touch swipe-left to archive. Uses native pointer math (no extra deps).
- * Threshold: 96px reveals action; release past 160px archives.
+ * Touch swipe-left = archive, swipe-right = toggle unread.
+ * Threshold: 96px reveals action; release past 160px commits.
  */
 function SwipeableThreadRow({
-  thread, onPick, onArchive,
-}: { thread: Thread; onPick: () => void; onArchive: () => void | Promise<void> }) {
+  thread, onPick, onArchive, onMarkUnread,
+}: { thread: Thread; onPick: () => void; onArchive: () => void | Promise<void>; onMarkUnread: () => void | Promise<void> }) {
   const isUnread = thread.unread_count > 0;
   const [dx, setDx] = useState(0);
   const startX = useRef<number | null>(null);
@@ -705,64 +705,58 @@ function SwipeableThreadRow({
       if (Math.abs(cdx) > 8 && Math.abs(cdx) > Math.abs(cdy) * 1.4) swiping.current = true;
       else return;
     }
-    if (cdx < 0) setDx(Math.max(cdx, -200));
+    setDx(Math.max(-200, Math.min(200, cdx)));
   };
   const onTouchEnd = () => {
     if (dx <= -160) {
       triggerHaptic('success');
       void onArchive();
-      setDx(0);
-    } else {
-      setDx(0);
+    } else if (dx >= 160) {
+      triggerHaptic('selection');
+      void onMarkUnread();
     }
+    setDx(0);
     startX.current = startY.current = null;
     swiping.current = false;
   };
 
-  const archiveOpacity = Math.min(1, Math.abs(dx) / 96);
+  const archiveOpacity = dx < 0 ? Math.min(1, Math.abs(dx) / 96) : 0;
+  const unreadOpacity = dx > 0 ? Math.min(1, dx / 96) : 0;
 
   return (
-    <li className="relative overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-      {/* Archive action surface */}
+    <li className="relative overflow-hidden border-b border-border/40" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      {/* Right swipe: mark unread (left side reveal) */}
+      <div
+        className="absolute inset-y-0 left-0 flex items-center justify-start pl-5 bg-primary text-primary-foreground"
+        style={{ width: Math.max(0, dx), opacity: unreadOpacity }}
+        aria-hidden
+      >
+        <MailOpen className="h-5 w-5" />
+      </div>
+      {/* Left swipe: archive (right side reveal) */}
       <div
         className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 bg-amber-500/90 text-white"
-        style={{ width: Math.abs(dx), opacity: archiveOpacity }}
+        style={{ width: Math.max(0, -dx), opacity: archiveOpacity }}
         aria-hidden
       >
         <Archive className="h-5 w-5" />
       </div>
       <button
         onClick={onPick}
-        className="relative w-full text-left px-4 py-3.5 flex gap-2.5 bg-background active:bg-muted/40 transition-colors"
+        className="inbox-row bg-background"
+        data-unread={isUnread}
         style={{ transform: `translateX(${dx}px)`, transition: swiping.current ? 'none' : 'transform 200ms ease' }}
       >
-        <div className="pt-1.5 w-2 shrink-0 flex justify-center">
-          {isUnread && <span className="h-2 w-2 rounded-full bg-primary" />}
-        </div>
+        <span className="inbox-row__dot" data-hidden={!isUnread} aria-hidden />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className={cn(
-              'flex-1 truncate text-[14px]',
-              isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/85',
-            )}>
+            <span className="inbox-row__sender">
               {thread.last_message_from || thread.participants[0] || 'Unknown'}
             </span>
-            <span className={cn(
-              'text-[11px] tabular-nums shrink-0',
-              isUnread ? 'text-primary font-medium' : 'text-muted-foreground',
-            )}>
-              {smartTime(thread.last_message_at)}
-            </span>
+            <span className="inbox-row__time">{smartTime(thread.last_message_at)}</span>
           </div>
-          <div className={cn(
-            'truncate text-[13px] mt-0.5',
-            isUnread ? 'text-foreground/90 font-medium' : 'text-foreground/70',
-          )}>
-            {thread.subject || '(no subject)'}
-          </div>
-          <p className="text-[12px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
-            {thread.last_message_snippet || '—'}
-          </p>
+          <div className="inbox-row__subject">{thread.subject || '(no subject)'}</div>
+          <p className="inbox-row__snippet">{thread.last_message_snippet || '—'}</p>
         </div>
       </button>
     </li>
