@@ -14,7 +14,7 @@ import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
-import { BulkSendTextDialog } from './BulkSendTextDialog';
+import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
