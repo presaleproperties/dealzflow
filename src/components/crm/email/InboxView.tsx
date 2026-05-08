@@ -1009,10 +1009,12 @@ function ToolbarBtn({ icon: Icon, label, onClick }: { icon: typeof Inbox; label:
       variant="ghost"
       size="sm"
       onClick={onClick}
-      className="h-8 px-2.5 text-[12px] gap-1.5 text-foreground/80 hover:text-foreground"
+      title={label}
+      aria-label={label}
+      className="h-8 px-2 md:px-2.5 text-[12px] gap-1.5 text-foreground/75 hover:text-foreground hover:bg-muted/60"
     >
       <Icon className="h-3.5 w-3.5" />
-      <span className="hidden lg:inline">{label}</span>
+      <span className="hidden md:inline">{label}</span>
     </Button>
   );
 }
