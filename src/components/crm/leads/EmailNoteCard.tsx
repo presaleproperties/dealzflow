@@ -26,21 +26,27 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
   const counterpart = isInbound ? fromAddr : toAddr;
 
   // Plain-text preview from whichever body field exists. Strip HTML tags,
+  // strip out quoted reply history (everything after "On ... wrote:" or `>` lines),
   // collapse whitespace, then truncate.
   const rawBody = email.body_html || email.body || email.body_text || '';
-  const preview = rawBody
+  const stripped = rawBody
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 180);
+    .replace(/&gt;/g, '>');
+  // Cut at the first attribution line / quote marker
+  const attribCut = stripped.search(/\bon\s+\w{3},?\s+\w{3}\s+\d{1,2},?\s+\d{4}[^.]*?\bwrote:/i);
+  const quoteCut = stripped.search(/(^|\s)>+\s*\S/);
+  const cuts = [attribCut, quoteCut].filter((n) => n >= 0);
+  const cutAt = cuts.length ? Math.min(...cuts) : -1;
+  const fresh = (cutAt > 20 ? stripped.slice(0, cutAt) : stripped);
+  const preview = fresh.replace(/\s+/g, ' ').trim().slice(0, 180);
 
   const opens = email.open_count ?? 0;
   const tint = isInbound ? '210 90% 55%' : '45 90% 55%';
