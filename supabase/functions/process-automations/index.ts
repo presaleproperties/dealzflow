@@ -395,7 +395,7 @@ async function executeAction(
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (!authorize(req)) return json({ error: "unauthorized" }, 401);
+  if (!(await authorize(req))) return json({ error: "unauthorized" }, 401);
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
