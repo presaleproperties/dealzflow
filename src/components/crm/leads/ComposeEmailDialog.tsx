@@ -956,12 +956,37 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                     </button>
                   }
                 >
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full">
-                    <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">
-                      {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
-                    </span>
-                    <span className="truncate">{contact.email ?? 'No email on file'}</span>
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 max-w-full">
+                    {allRecipients.length === 0 && (
+                      <span className="text-[12.5px] text-muted-foreground/60">No recipient</span>
+                    )}
+                    {allRecipients.slice(0, 6).map((r) => {
+                      const initial = (r.first_name?.[0] ?? r.email?.[0] ?? '?').toUpperCase();
+                      const label = [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email || 'Unknown';
+                      return (
+                        <span
+                          key={r.id}
+                          title={r.email ?? undefined}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full"
+                        >
+                          <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">
+                            {initial}
+                          </span>
+                          <span className="truncate max-w-[140px]">{label}</span>
+                        </span>
+                      );
+                    })}
+                    {allRecipients.length > 6 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-[11.5px] font-medium">
+                        +{allRecipients.length - 6} more
+                      </span>
+                    )}
+                    {isMass && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                        Mass · {allRecipients.length}
+                      </span>
+                    )}
+                  </div>
                 </RecipientRow>
                 {showCcBcc && (
                   <>
