@@ -410,42 +410,54 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                   No emails yet.
                 </div>
               ) : (
-                <ul className="space-y-1.5">
+                <ul className="space-y-1">
                   {threads.map(t => {
                     const last = t.messages[t.messages.length - 1];
                     const isActive = t.key === activeThread?.key;
+                    const lastDir = last.direction;
                     return (
                       <li key={t.key}>
                         <button
                           onClick={() => setActiveKey(t.key)}
                           className={cn(
-                            'w-full text-left p-2.5 rounded-md border transition-colors group',
+                            'w-full text-left px-2.5 py-2 rounded-md border transition-colors group relative',
                             isActive
                               ? 'bg-card border-border shadow-sm'
                               : 'border-transparent hover:bg-card hover:border-border/60',
                           )}
                         >
+                          {isActive && (
+                            <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-primary" />
+                          )}
                           <div className="flex items-start gap-2">
+                            <div className={cn(
+                              'w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5',
+                              lastDir === 'inbound'
+                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-600'
+                                : 'bg-primary/10 border-primary/30 text-primary',
+                            )}>
+                              {lastDir === 'inbound'
+                                ? <ArrowDownLeft className="w-3 h-3" />
+                                : <ArrowUpRight className="w-3 h-3" />}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[12.5px] font-semibold text-foreground line-clamp-2 leading-snug">
+                              <p className="text-[12px] font-semibold text-foreground line-clamp-1 leading-snug">
                                 {t.subject}
                               </p>
-                              <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
-                                <span className="truncate">
-                                  {last.direction === 'inbound' ? (last.fromName || last.fromEmail) : 'You'}
+                              <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+                                <span className="truncate flex-1">
+                                  {lastDir === 'inbound' ? (last.fromName || last.fromEmail) : 'You'}
                                 </span>
-                                <span>·</span>
                                 <span className="tabular-nums whitespace-nowrap">
-                                  {format(parseISO(last.ts), 'MMM d, h:mm a')}
+                                  {formatDistanceToNow(parseISO(last.ts), { addSuffix: false })}
                                 </span>
                                 {t.messages.length > 1 && (
-                                  <span className="ml-auto px-1.5 py-px rounded bg-muted text-[10px] tabular-nums">
+                                  <span className="px-1 py-px rounded bg-muted text-[9.5px] tabular-nums font-medium">
                                     {t.messages.length}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <ChevronRight className={cn('w-3.5 h-3.5 mt-0.5 shrink-0 transition-opacity', isActive ? 'opacity-100 text-foreground' : 'opacity-0 group-hover:opacity-50')} />
                           </div>
                         </button>
                       </li>
