@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2 } from 'lucide-react';
+import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
@@ -12,6 +12,8 @@ import { CreateTaskDialog } from './CreateTaskDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { SendTextDialog } from './SendTextDialog';
 import { SendBookingLinkDialog } from './SendBookingLinkDialog';
+import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
+import { formatContactName } from '@/lib/format';
 
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
@@ -24,6 +26,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const [showEmail, setShowEmail] = useState(false);
   const [showSms, setShowSms] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
+  const [showEnroll, setShowEnroll] = useState(false);
 
   const handlePipelineChange = (segId: string) => {
     const seg = pipelines.find(p => p.id === segId);
@@ -67,6 +70,13 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
           >
             <Link2 className="w-3.5 h-3.5 text-primary" /> Send Booking Link
           </Button>
+          <Button
+            variant="outline" size="sm"
+            className="h-9 text-xs gap-1.5 justify-start col-span-2"
+            onClick={() => setShowEnroll(true)}
+          >
+            <Zap className="w-3.5 h-3.5" style={{ color: 'hsl(45 90% 55%)' }} /> Enroll in Automation
+          </Button>
         </div>
 
         <div className="space-y-2 pt-1">
@@ -106,6 +116,12 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
       <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
       <SendTextDialog contact={contact} open={showSms} onOpenChange={setShowSms} initialChannel="sms" />
       <SendBookingLinkDialog contact={contact} open={showBooking} onOpenChange={setShowBooking} />
+      <EnrollInAutomationDialog
+        open={showEnroll}
+        onOpenChange={setShowEnroll}
+        contactIds={[contact.id]}
+        contactNames={[formatContactName(contact.first_name, contact.last_name)]}
+      />
     </>
   );
 }
