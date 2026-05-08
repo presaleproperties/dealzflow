@@ -15,7 +15,7 @@ import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { BulkSendTextDialog } from './BulkSendTextDialog';
-import { UnifiedComposerDialog } from '@/components/crm/unified/UnifiedComposerDialog';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
