@@ -457,17 +457,12 @@ export default function InboxView() {
       {/* Reading pane */}
       <main className="flex flex-col min-h-0 bg-background">
         {!selectedThread ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-8">
-            <MailOpen className="h-10 w-10 text-muted-foreground/40" strokeWidth={1.25} />
-            <p className="text-sm text-muted-foreground">No message selected</p>
-            <p className="text-xs text-muted-foreground/70 max-w-[28ch]">
-              Pick a conversation from the list to read it here.
-            </p>
-          </div>
+          <InboxEmpty kind="email" />
         ) : (
           <>
             <div className="h-12 border-b border-border flex items-center px-2 gap-0.5 bg-muted/10">
               <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
+              <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="w-px h-5 bg-border mx-1" />
               <ToolbarBtn icon={Reply} label="Reply" />
@@ -486,10 +481,10 @@ export default function InboxView() {
             </div>
 
             <div className="px-8 pt-6 pb-4 border-b border-border">
-              <h1 className="text-xl font-semibold tracking-tight text-foreground leading-snug">
+              <h1 className="text-[22px] font-semibold tracking-tight text-foreground leading-snug">
                 {selectedThread.subject || '(no subject)'}
               </h1>
-              <p className="text-[11px] text-muted-foreground mt-1.5 truncate">
+              <p className="text-[11.5px] text-muted-foreground mt-1.5 truncate">
                 {selectedThread.message_count} {selectedThread.message_count === 1 ? 'message' : 'messages'} · {selectedThread.participants.join(', ')}
               </p>
             </div>
@@ -515,12 +510,13 @@ export default function InboxView() {
                   </span>
                 </div>
                 <Textarea
+                  data-inbox-reply
                   value={reply}
                   onChange={e => setReply(e.target.value)}
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
                   }}
-                  placeholder="Write your reply…"
+                  placeholder="Write your reply…  (⌘+Enter to send)"
                   rows={3}
                   enterKeyHint="send"
                   className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none"
