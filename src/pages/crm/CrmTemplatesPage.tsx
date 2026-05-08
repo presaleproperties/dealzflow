@@ -162,12 +162,18 @@ function EmailTemplatesPanel() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  const [editing, setEditing] = useState<EmailTemplate | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [cloneDraft, setCloneDraft] = useState<{
-    name: string; subject: string | null; html_content: string; category: string;
-    project_tags: string[]; area_tags: string[];
-  } | null>(null);
+  const agentSlug = usePresaleAgentStore((s) => s.agent?.slug ?? null);
+
+  const openHub = (path: 'home' | 'new' | 'edit', tplKey?: string) => {
+    const url =
+      path === 'new'
+        ? AgentHubLinks.newTemplate(agentSlug)
+        : path === 'edit' && tplKey
+        ? AgentHubLinks.editTemplate(tplKey, agentSlug)
+        : AgentHubLinks.templates(agentSlug);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const [pendingDelete, setPendingDelete] = useState<EmailTemplate | null>(null);
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
