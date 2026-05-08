@@ -124,7 +124,7 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
   // Collapsed state — single-line "Reply by email…" launcher
   if (!expanded) {
     return (
-      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] flex items-center gap-2">
+      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
         <button
           type="button"
           onClick={() => {
@@ -133,21 +133,11 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
               return;
             }
             setExpanded(true);
-            // Focus body shortly after expand
             setTimeout(() => bodyRef.current?.focus(), 30);
           }}
-          className="flex-1 h-11 rounded-full bg-muted/60 border border-border text-left px-4 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted active:scale-[0.99] transition-all"
+          className="w-full h-11 rounded-full bg-muted/60 border border-border text-left px-4 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted active:scale-[0.99] transition-all"
         >
           Reply by email…
-        </button>
-        <button
-          type="button"
-          onClick={onOpenFull}
-          aria-label="Open full editor"
-          title="Open full editor"
-          className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border transition-colors"
-        >
-          <Sparkles className="w-4 h-4" />
         </button>
       </div>
     );
