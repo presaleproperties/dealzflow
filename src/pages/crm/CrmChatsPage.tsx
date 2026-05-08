@@ -594,34 +594,23 @@ export default function CrmChatsPage() {
       {/* Thread list */}
       <div className="flex-1 -mx-3 sm:-mx-4">
         {isLoading ? (
-          <ul className="divide-y divide-border/40">
+          <ul>
             {Array.from({ length: 6 }).map((_, i) => (
-              <li key={i} className="flex items-center gap-3 px-4 py-3.5">
-                <div className="skeleton w-12 h-12 rounded-full shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="skeleton-line w-1/3" />
-                  <div className="skeleton-line w-2/3" />
+              <li key={i} className="inbox-row-skeleton">
+                <div className="w-12 h-12 rounded-full shrink-0 bg-muted/50" />
+                <div className="flex-1 space-y-1.5 self-center">
+                  <div className="h-3 w-1/3 rounded bg-muted/60" />
+                  <div className="h-3 w-2/3 rounded bg-muted/40" />
                 </div>
               </li>
             ))}
           </ul>
         ) : filtered.length === 0 ? (
-          <div className="px-6 py-20 text-center flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 flex items-center justify-center mb-4">
-              <Sparkles className="w-7 h-7 text-primary" strokeWidth={1.6} />
-            </div>
-            <div className="text-[15px] font-semibold text-foreground mb-1.5 tracking-tight">
-              {search ? 'No matches found' : showArchived ? 'No archived threads' : 'Your inbox is clear'}
-            </div>
-            <p className="text-[13px] text-muted-foreground mb-5 max-w-[260px] leading-relaxed">
-              {search ? 'Try a different name, email, or keyword.' : 'Start a conversation with a lead to see threads appear here.'}
-            </p>
-            {!search && (
-              <Button asChild variant="outline" size="sm" className="rounded-full">
-                <Link to="/crm/leads">Browse leads</Link>
-              </Button>
-            )}
-          </div>
+          <InboxEmpty
+            kind="chats"
+            actionLabel={search ? undefined : 'Browse leads'}
+            onAction={search ? undefined : () => navigate('/crm/leads')}
+          />
         ) : (
           <ul ref={listRef} className="divide-y divide-border/40" role="listbox" aria-label="Conversations">
             {filtered.map((t, idx) => {
