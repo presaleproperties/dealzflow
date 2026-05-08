@@ -116,6 +116,15 @@ export const AUTOMATION_TEMPLATES = [
   },
 ] as const;
 
+function deriveDelayHours(action_type: string, cfg: Record<string, unknown>): number {
+  if (action_type !== 'wait') return 0;
+  const amount = Number(cfg.amount ?? 0);
+  const unit = String(cfg.unit ?? 'hours');
+  if (unit === 'minutes') return Math.max(0, Math.round(amount / 60));
+  if (unit === 'days') return Math.max(0, amount * 24);
+  return Math.max(0, amount);
+}
+
 export function useCrmAutomations() {
   return useQuery({
     queryKey: ['crm-automations'],
