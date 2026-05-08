@@ -91,27 +91,32 @@ serve(async (req) => {
       return json({ ok: true, count: targets.length });
     }
 
-    // ── archive (remove INBOX label) ──────────────────────────────────
-    if (action === "archive") {
-      const ids: string[] = body.gmail_message_ids ?? [];
+    // ── archive / unarchive (toggle INBOX label) ──────────────────────
+    if (action === "archive" || action === "unarchive") {
+      const isArchive = action === "archive";
+      let ids: string[] = body.gmail_message_ids ?? [];
+      // If only thread_db_id was passed, resolve all gmail message ids in it
+      if ((!ids || ids.length === 0) && body.thread_db_id) {
+        const { data: msgs } = await supabase
+          .from("crm_gmail_messages")
+          .select("gmail_message_id")
+          .eq("user_id", userId)
+          .eq("thread_id", body.thread_db_id);
+        ids = (msgs ?? []).map((m: any) => m.gmail_message_id).filter(Boolean);
+      }
       for (const id of ids) {
         await fetch(`${GMAIL_API}/messages/${id}/modify`, {
           method: "POST",
           headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ removeLabelIds: ["INBOX"] }),
+          body: JSON.stringify(
+            isArchive ? { removeLabelIds: ["INBOX"] } : { addLabelIds: ["INBOX"] },
+          ),
         });
       }
-      // mirror in DB
-      await supabase
-        .from("crm_gmail_messages")
-        .update({ labels: [] }) // simplified; sync will refresh
-        .eq("user_id", userId)
-        .in("gmail_message_id", ids);
-      // Mark thread archived if all msgs were inbox
       if (body.thread_db_id) {
         await supabase
           .from("crm_email_threads")
-          .update({ is_archived: true })
+          .update({ is_archived: isArchive })
           .eq("id", body.thread_db_id)
           .eq("user_id", userId);
       }
