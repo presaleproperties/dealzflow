@@ -212,6 +212,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       setEditingSignature(false);
       setSigDraft('');
       autoSignaturePreviewedRef.current = false;
+      setShowSignaturePreviewMobile(false);
     }
   }, [open]);
 
