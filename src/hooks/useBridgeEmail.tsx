@@ -104,8 +104,14 @@ export function useBridgeSendEmail() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: SendArgs) => {
+      // Immediate sends go straight through Gmail (synchronous). Only
+      // scheduled (`send_at`) sends are queued. We never set queue_only here —
+      // doing so was making every "Send" land in crm_email_schedule and
+      // surface a misleading "delivery will retry" toast even when Gmail
+      // was healthy. The bridge-send-email edge fn falls back to the queue
+      // automatically if the inbox is genuinely disconnected.
       const { data, error } = await supabase.functions.invoke('bridge-send-email', {
-        body: { ...args, queue_only: !args.send_at },
+        body: args,
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
