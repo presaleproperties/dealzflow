@@ -189,6 +189,17 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         contactIds={selectedIds}
         onComplete={onClearSelection}
       />
+
+      {/* Mass email — opens the canonical composer with the selected leads
+          pre-loaded as recipients. >1 recipient routes through the
+          mass-send confirmation flow automatically. */}
+      <UnifiedComposerDialog
+        open={showBulkEmail}
+        onOpenChange={setShowBulkEmail}
+        contacts={selectedContacts}
+        mode={selectedContacts.length > 1 ? 'bulk' : 'new'}
+        onSent={onClearSelection}
+      />
     </>
 
   );
