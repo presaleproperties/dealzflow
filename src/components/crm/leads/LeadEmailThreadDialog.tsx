@@ -350,10 +350,12 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   const isLoading = (logLoading || gmailLoading) && allMessages.length === 0;
   const fullName = formatContactName(contact.first_name, contact.last_name);
 
+  const headerInitials = initialsFor(fullName, contact.email);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[1280px] w-[96vw] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col"
+        className="max-w-[1280px] w-[96vw] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-2xl border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
       >
         <DialogTitle className="sr-only">Email thread with {fullName}</DialogTitle>
         <DialogDescription className="sr-only">
@@ -361,22 +363,48 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         </DialogDescription>
 
         {/* Header bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/70 bg-card flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/70 bg-gradient-to-b from-card to-card/95 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-foreground">
-              {replyOpen ? 'Reply' : 'Email Thread'}
-            </span>
-            <span className="text-[11px] text-muted-foreground truncate">
-              · {fullName}
-            </span>
+            <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11.5px] font-semibold shrink-0">
+              {headerInitials}
+            </div>
+            <div className="min-w-0 leading-tight">
+              <div className="flex items-center gap-2">
+                <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  {replyOpen ? 'Reply' : 'Email'}
+                </span>
+                <span className="h-3 w-px bg-border" />
+                <span className="text-[13px] font-semibold text-foreground truncate max-w-[280px]">
+                  {fullName}
+                </span>
+              </div>
+              {contact.email && (
+                <div className="text-[11px] text-muted-foreground truncate max-w-[360px]">
+                  {contact.email}
+                </div>
+              )}
+            </div>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {!replyOpen && lastInThread && contact.email && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleStartReply}
+                className="h-8 text-[12px] gap-1.5"
+              >
+                <Reply className="w-3.5 h-3.5" /> Reply
+                <kbd className="ml-0.5 hidden sm:inline-flex items-center px-1 rounded bg-muted text-[9.5px] font-mono text-muted-foreground">R</kbd>
+              </Button>
+            )}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col md:flex-row">
