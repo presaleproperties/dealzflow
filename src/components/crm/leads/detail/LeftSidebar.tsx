@@ -81,6 +81,21 @@ export function LeftSidebar({
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
   const { data: librarySources = [] } = useCrmSources();
+  const { data: leadSegments = [] } = useCrmLeadSegments();
+  // Pipeline stages aligned with the Leads/Pipeline pages: pull from
+  // crm_lead_segments where the segment is a pure status filter.
+  const stageOptions = (() => {
+    const fromSegments = leadSegments
+      .filter((s) => {
+        const cfg = s.filter_config as { status?: unknown } | null;
+        return Array.isArray(cfg?.status) && (cfg!.status as string[]).length === 1;
+      })
+      .map((s) => ((s.filter_config as { status: string[] }).status[0]));
+    const set = new Set<string>(fromSegments);
+    // Always preserve current value so existing leads aren't orphaned visually.
+    if (contact.status) set.add(contact.status);
+    return Array.from(set);
+  })();
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
