@@ -36,16 +36,21 @@ export const ResponsiveDialogContent = React.forwardRef<
 >(({ className, children, hideMobileHandle, ...rest }, ref) => {
   const isMobile = useIsMobile();
   if (isMobile) {
+    // Detect "fullBleed" by class flag — full-screen sheet (no rounded top, no
+    // backdrop padding, no handle). Used for native-feel composer dialogs.
+    const isFullBleed = typeof className === 'string' && className.includes('mobile-fullbleed');
     return (
       <SheetContent
         side="bottom"
         className={cn(
-          'rounded-t-2xl max-h-[94vh] flex flex-col',
+          isFullBleed
+            ? 'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col'
+            : 'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
-        style={{ paddingTop: 'var(--composer-top-pad)' }}
+        style={isFullBleed ? undefined : { paddingTop: 'var(--composer-top-pad)' }}
       >
-        {!hideMobileHandle && (
+        {!hideMobileHandle && !isFullBleed && (
           <div className="flex justify-center pt-1 pb-1.5 shrink-0 pointer-events-none">
             <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
           </div>
