@@ -393,7 +393,7 @@ export function LeftSidebar({
           ) : (
             <>
               <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40 group">
-                <span className="text-xs text-muted-foreground shrink-0">Source</span>
+                <span className="text-[12.5px] text-muted-foreground shrink-0 font-medium">Source</span>
                 <div className="flex-1 min-w-0 flex justify-end">
                   <SourcePicker value={contact.source} onChange={(v) => save('source', v)} />
                 </div>
@@ -432,7 +432,7 @@ export function LeftSidebar({
 
               {/* City + Language — multi-select to match mobile */}
               <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground shrink-0 pt-1">City</span>
+                <span className="text-[12.5px] text-muted-foreground shrink-0 pt-1 font-medium">City</span>
                 <div className="flex-1 min-w-0">
                   <InlineLibraryPicker
                     selected={contact.city ? contact.city.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
@@ -444,7 +444,7 @@ export function LeftSidebar({
                 </div>
               </div>
               <div className="flex items-start justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground shrink-0 pt-1">Language</span>
+                <span className="text-[12.5px] text-muted-foreground shrink-0 pt-1 font-medium">Language</span>
                 <div className="flex-1 min-w-0">
                   <InlineLibraryPicker
                     selected={contact.language ? contact.language.split(/\s*\|\s*|,\s*/).filter(Boolean) : []}
@@ -459,8 +459,8 @@ export function LeftSidebar({
               <DetailRow label="Beds" value={contact.bedrooms_preferred} field="bedrooms_preferred" contactId={contact.id} />
 
               <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground">Budget</span>
-                <span className="text-[13px] text-foreground font-medium tabular-nums">
+                <span className="text-[12.5px] text-muted-foreground font-medium">Budget</span>
+                <span className="text-[13.5px] text-foreground font-medium tabular-nums">
                   {contact.budget_min != null ? formatCurrency(Number(contact.budget_min)) : '—'} – {contact.budget_max != null ? formatCurrency(Number(contact.budget_max)) : '—'}
                 </span>
               </div>
@@ -474,8 +474,8 @@ export function LeftSidebar({
             const validCreated = created && !isNaN(created.getTime());
             return (
               <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                <span className="text-xs text-muted-foreground">Registered</span>
-                <span className="text-[13px] text-foreground tabular-nums">
+                <span className="text-[12.5px] text-muted-foreground font-medium">Registered</span>
+                <span className="text-[13.5px] text-foreground tabular-nums">
                   {validCreated ? format(created, 'MMM d, yyyy') : '—'}
                 </span>
               </div>
@@ -486,12 +486,12 @@ export function LeftSidebar({
             <>
               {loftyId && (
                 <div className="flex items-center justify-between gap-3 py-2 border-b border-border/40">
-                  <span className="text-xs text-muted-foreground">Lofty ID</span>
+                  <span className="text-[12.5px] text-muted-foreground font-medium">Lofty ID</span>
                   <span className="text-[11px] font-mono text-muted-foreground/80 truncate max-w-[140px]">{loftyId}</span>
                 </div>
               )}
               <div className="flex items-center justify-between gap-3 py-2">
-                <span className="text-xs text-muted-foreground">Synced</span>
+                <span className="text-[12.5px] text-muted-foreground font-medium">Synced</span>
                 <span className="text-[11px] text-muted-foreground/80">
                   {(() => {
                     if (!loftySyncedAt) return 'via Lofty';
