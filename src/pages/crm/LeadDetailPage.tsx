@@ -24,7 +24,7 @@ import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
 import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
-import { LeadReplyBar } from '@/components/crm/leads/detail/LeadReplyBar';
+
 import type { LeadScore } from '@/components/crm/leads/detail/types';
 
 export default function LeadDetailPage() {
@@ -348,16 +348,6 @@ export default function LeadDetailPage() {
               onShowing={() => setShowShowing(true)}
             />
           </div>
-          <LeadReplyBar
-            hasPhone={!!c.phone}
-            hasEmail={!!c.email}
-            onSms={() => { setTextChannel('sms'); setShowText(true); }}
-            onEmail={() => setShowEmail(true)}
-            onWhatsApp={() => {
-              void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
-            }}
-            onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
-          />
         </div>
 
         <PanelEdgeHandle
