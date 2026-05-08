@@ -232,6 +232,51 @@ export default function InboxView() {
     { id: 'archive', label: 'Archive', icon: Archive },
   ];
 
+  // Mark thread as unread (gmail-actions: mark_unread)
+  const markUnread = useCallback(async (threadId: string) => {
+    try {
+      await supabase.functions.invoke('gmail-actions', {
+        body: { action: 'mark_unread', thread_db_id: threadId },
+      });
+      triggerHaptic('selection');
+      qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
+    } catch (e: any) {
+      // Soft-fail: not all backends support mark_unread; show a hint.
+      toast.message('Mark unread is not available yet');
+      console.warn('mark_unread failed', e);
+    }
+  }, [qc]);
+
+  // Keyboard navigation (desktop only). Ignore when typing into an input.
+  useEffect(() => {
+    if (isCompact) return;
+    const onKey = (e: KeyboardEvent) => {
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) {
+        // Only allow Cmd/Ctrl+Enter to escape into Send (handled where the textarea lives)
+        return;
+      }
+      const list = filteredThreads;
+      if (e.key === '/') { e.preventDefault(); (document.querySelector('input[type="search"]') as HTMLInputElement | null)?.focus(); return; }
+      if (e.key === '?') { e.preventDefault(); (document.querySelector('[aria-label="Keyboard shortcuts"]') as HTMLButtonElement | null)?.click(); return; }
+      if (!list.length) return;
+      const idx = Math.max(0, list.findIndex(t => t.id === selectedThreadId));
+      if (e.key === 'j') { e.preventDefault(); setSelectedThreadId(list[Math.min(list.length - 1, idx + 1)].id); }
+      else if (e.key === 'k') { e.preventDefault(); setSelectedThreadId(list[Math.max(0, idx - 1)].id); }
+      else if (e.key === 'e' && selectedThread) { e.preventDefault(); void archiveThread(selectedThread.id); }
+      else if (e.key === 'u' && selectedThread) { e.preventDefault(); void markUnread(selectedThread.id); }
+      else if (e.key === 'r' && selectedThread) {
+        e.preventDefault();
+        const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
+        ta?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredThreads, selectedThreadId, selectedThread?.id, isCompact, markUnread]);
+
+
   // ───────────────── Mobile (list-or-detail) ─────────────────
   if (isCompact) {
     const showingDetail = !!selectedThread;
