@@ -655,7 +655,7 @@ export function LeftSidebar({
             <MobileMultiPickerDrawer
               open={drawer === 'status'} onOpenChange={(o) => !o && closeDrawer()}
               title="Pipeline Stage"
-              options={LEAD_STATUSES.map(s => ({ value: s, label: s }))}
+              options={stageOptions.map(s => ({ value: s, label: s }))}
               value={contact.status ? [contact.status] : []}
               onChange={(next) => saveWithLog('status', next[0] ?? 'New Lead')}
             />
