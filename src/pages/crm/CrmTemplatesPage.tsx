@@ -3,13 +3,13 @@ import {
   Mail, MessageSquare, Plus, Search, FileText, Star, Pencil,
   Copy as CopyIcon, Trash2, Send, Eye, RefreshCw, AlertCircle,
   CheckCircle2, Sparkles, ArrowUpRight, Users, User, X, Filter,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -29,7 +29,6 @@ import {
   type EmailTemplate,
 } from '@/hooks/useEmailTemplates';
 import { useBridgeTemplates, type BridgeTemplate } from '@/hooks/useBridgeEmail';
-import { TemplateEditor } from '@/components/crm/templates/TemplateEditor';
 import { useSmsTemplates } from '@/hooks/useSms';
 import { Link } from 'react-router-dom';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
@@ -38,6 +37,8 @@ import { toast } from 'sonner';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { stripSignatureBlock } from '@/lib/templateSignature';
 import { renderWithSampleData } from '@/lib/emailVariables';
+import { AgentHubLinks } from '@/lib/agentHub';
+import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 
 // ===================================================================
 // Page shell
@@ -57,19 +58,22 @@ export default function CrmTemplatesPage() {
               Templates
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5 max-w-xl">
-              One library across your drafts, the team, and the live Presale catalog.
+              Read-only mirror of your Agent Hub library. Build & edit templates in Agent Hub.
             </p>
           </div>
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'email' | 'messaging')}>
-            <TabsList className="h-9 bg-muted/60 p-1">
-              <TabsTrigger value="email" className="h-7 gap-1.5 text-xs px-3">
-                <Mail className="w-3.5 h-3.5" /> Email
-              </TabsTrigger>
-              <TabsTrigger value="messaging" className="h-7 gap-1.5 text-xs px-3">
-                <MessageSquare className="w-3.5 h-3.5" /> SMS
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as 'email' | 'messaging')}>
+              <TabsList className="h-9 bg-muted/60 p-1">
+                <TabsTrigger value="email" className="h-7 gap-1.5 text-xs px-3">
+                  <Mail className="w-3.5 h-3.5" /> Email
+                </TabsTrigger>
+                <TabsTrigger value="messaging" className="h-7 gap-1.5 text-xs px-3">
+                  <MessageSquare className="w-3.5 h-3.5" /> SMS
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <OpenAgentHubButton />
+          </div>
         </div>
       </div>
 
@@ -89,6 +93,22 @@ export default function CrmTemplatesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function OpenAgentHubButton({ size = 'sm' }: { size?: 'sm' | 'default' }) {
+  const agentSlug = usePresaleAgentStore((s) => s.agent?.slug ?? null);
+  return (
+    <Button
+      size={size}
+      variant="outline"
+      className="gap-1.5 h-9"
+      onClick={() => window.open(AgentHubLinks.templates(agentSlug), '_blank', 'noopener,noreferrer')}
+      title="Edit & build templates in Presale Agent Hub"
+    >
+      <ExternalLink className="w-3.5 h-3.5" />
+      <span className="hidden sm:inline">Open Agent Hub</span>
+    </Button>
   );
 }
 
@@ -161,12 +181,18 @@ function EmailTemplatesPanel() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  const [editing, setEditing] = useState<EmailTemplate | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [cloneDraft, setCloneDraft] = useState<{
-    name: string; subject: string | null; html_content: string; category: string;
-    project_tags: string[]; area_tags: string[];
-  } | null>(null);
+  const agentSlug = usePresaleAgentStore((s) => s.agent?.slug ?? null);
+
+  const openHub = (path: 'home' | 'new' | 'edit', tplKey?: string) => {
+    const url =
+      path === 'new'
+        ? AgentHubLinks.newTemplate(agentSlug)
+        : path === 'edit' && tplKey
+        ? AgentHubLinks.editTemplate(tplKey, agentSlug)
+        : AgentHubLinks.templates(agentSlug);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const [pendingDelete, setPendingDelete] = useState<EmailTemplate | null>(null);
   const [previewAsset, setPreviewAsset] = useState<BridgeTemplate | null>(null);
   const [sendAsset, setSendAsset] = useState<BridgeTemplate | null>(null);
@@ -240,16 +266,10 @@ function EmailTemplatesPanel() {
     return filtered[0] ?? null;
   }, [filtered, selectedKey]);
 
-  const cloneToLibrary = (asset: BridgeTemplate) => {
-    setCloneDraft({
-      name: `${asset.name} (Copy)`,
-      subject: asset.subject ?? null,
-      html_content: stripSignatureBlock(asset.body_html || ''),
-      category: 'project_launch',
-      project_tags: [],
-      area_tags: [],
-    });
-    setCreating(true);
+  const cloneToLibrary = (_asset: BridgeTemplate) => {
+    // Cloning is now an Agent Hub action — the CRM library is read-only.
+    openHub('home');
+    toast.message('Open in Agent Hub to duplicate or remix this template.');
   };
 
   const isLoading = localQ.isLoading || bridgeQ.isLoading;
@@ -265,14 +285,14 @@ function EmailTemplatesPanel() {
       {/* ======================== LEFT RAIL ======================== */}
       <aside className="hidden lg:flex flex-col gap-4 overflow-hidden">
         <div className="space-y-1.5">
-          <Button size="sm" className="w-full gap-1.5 h-9 font-medium" onClick={() => { setCloneDraft(null); setCreating(true); }}>
+          <Button size="sm" className="w-full gap-1.5 h-9 font-medium" onClick={() => { openHub('new'); }}>
             <Plus className="w-3.5 h-3.5" /> New template
           </Button>
           <Button
             size="sm"
             variant="ghost"
             className="w-full gap-1.5 h-8 text-[12px] text-muted-foreground hover:text-foreground"
-            onClick={() => { setCloneDraft(null); setCreating(true); }}
+            onClick={() => { openHub('new'); }}
           >
             <Sparkles className="w-3.5 h-3.5 text-primary" /> Draft with AI
           </Button>
@@ -383,7 +403,7 @@ function EmailTemplatesPanel() {
                 className="h-9 pl-8 text-sm"
               />
             </div>
-            <Button size="sm" onClick={() => { setCloneDraft(null); setCreating(true); }} className="shrink-0">
+            <Button size="sm" onClick={() => { openHub('new'); }} className="shrink-0">
               <Plus className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -432,7 +452,7 @@ function EmailTemplatesPanel() {
                     ? 'Nothing matches those filters.'
                     : 'No templates yet.'}
                 </div>
-                <Button size="sm" variant="outline" onClick={() => { setCloneDraft(null); setCreating(true); }}>
+                <Button size="sm" variant="outline" onClick={() => { openHub('new'); }}>
                   <Plus className="w-3.5 h-3.5 mr-1" /> New template
                 </Button>
               </div>
@@ -446,7 +466,7 @@ function EmailTemplatesPanel() {
                     item={u}
                     selected={selected?.id === u.id}
                     onSelect={() => setSelectedKey(u.id)}
-                    onEdit={u.kind === 'local' ? () => setEditing(u.tpl) : undefined}
+                    onEdit={u.kind === 'local' ? () => openHub('edit', u.tpl.id) : undefined}
                     onToggleFav={u.kind === 'local'
                       ? () => toggleFav.mutate({ id: u.tpl.id, is_favorite: !u.tpl.is_favorite })
                       : undefined}
@@ -472,7 +492,7 @@ function EmailTemplatesPanel() {
           {selected ? (
             <PreviewPane
               item={selected}
-              onEdit={selected.kind === 'local' ? () => setEditing(selected.tpl) : undefined}
+              onEdit={selected.kind === 'local' ? () => openHub('edit', selected.tpl.id) : undefined}
               onClone={() => {
                 if (selected.kind === 'local') duplicate.mutate(selected.tpl);
                 else cloneToLibrary(selected.asset);
@@ -487,21 +507,7 @@ function EmailTemplatesPanel() {
         </aside>
       </main>
 
-      {/* Editor dialog */}
-      <Dialog
-        open={creating || !!editing}
-        onOpenChange={(o) => {
-          if (!o) { setEditing(null); setCreating(false); setCloneDraft(null); }
-        }}
-      >
-        <DialogContent className="max-w-[98vw] w-[98vw] h-[96vh] max-h-[96vh] overflow-y-auto p-4 sm:p-5">
-          <TemplateEditor
-            template={editing}
-            initialDraft={!editing && creating ? cloneDraft ?? undefined : undefined}
-            onClose={() => { setEditing(null); setCreating(false); setCloneDraft(null); }}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Editing happens in Agent Hub — no in-CRM editor */}
 
       {/* Archive confirm */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
