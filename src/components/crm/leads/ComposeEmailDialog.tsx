@@ -45,6 +45,7 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useAuth } from '@/hooks/useAuth';
 import { useBridgeSendEmail, useBridgeTemplates } from '@/hooks/useBridgeEmail';
 import { useCrmEmailTemplates, useCreateTemplate } from '@/hooks/useCrmEmail';
+import { useMassSendEmail } from '@/hooks/useMassSendEmail';
 import { TemplatePicker } from '@/components/crm/email/TemplatePicker';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { SignatureInlineFrame } from '@/components/crm/email/SignatureInlineFrame';
@@ -65,6 +66,12 @@ interface Props {
   initialSubject?: string;
   initialBodyHtml?: string;
   initialCc?: string;
+  /** Additional recipients for mass-send. When the total count is >1, the
+   *  composer routes through `crm-mass-send-email` (personalized server-side).
+   *  The primary `contact` drives the live variable preview. */
+  extraContacts?: CrmContact[];
+  /** Fired after a successful send (single or mass). */
+  onSent?: () => void;
 }
 
 type Mode = 'edit' | 'html' | 'preview';
@@ -94,10 +101,11 @@ const isRichSignatureHtml = (html: string) =>
   /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
   || /<[a-z][^>]*\sstyle\s*=/i.test(html);
 
-export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc }: Props) {
+export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc, extraContacts, onSent }: Props) {
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
+  const massSend = useMassSendEmail();
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
   const { data: signatures = [] } = useEmailSignatures();
@@ -414,7 +422,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   };
 
   const bodyText = bodyHtml.replace(/<[^>]*>/g, '').trim();
-  const canSend = !!contact.email && subject.trim() && bodyText;
+  /** Combined recipient list: primary contact first, then any extras passed in
+   *  for mass-send. De-duplicated by id and filtered to those with an email. */
+  const allRecipients = useMemo(() => {
+    const seen = new Set<string>();
+    const out: CrmContact[] = [];
+    for (const c of [contact, ...(extraContacts ?? [])]) {
+      if (!c || !c.email) continue;
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      out.push(c);
+    }
+    return out;
+  }, [contact, extraContacts]);
+  const isMass = allRecipients.length > 1;
+  const canSend = allRecipients.length > 0 && subject.trim() && bodyText;
 
   const openSaveDialog = () => {
     if (!bodyText) {
@@ -461,33 +483,45 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       });
       toast.success('Email logged');
       clearEmailDraft(draftScope);
+      onSent?.();
       onOpenChange(false);
       return;
     }
 
     try {
-      await sendBridge.mutateAsync({
-        to: contact.email!,
-        cc: cc.trim() || undefined,
-        bcc: bcc.trim() || undefined,
-        subject: renderedSubject,
-        html: finalHtml,
-        contact_id: contact.id,
-      });
-      // NOTE: do NOT manually insert into crm_messages here. The DB trigger
-      // `trg_crm_sync_email_log_to_messages` automatically creates a properly-
-      // linked chat message (with source_table='crm_email_log' + source_id) so
-      // the chat thread can render the full HTML body via emailLogMap. Inserting
-      // a second row here would create an orphan with stripped text and break
-      // the rendered email bubble (no subject, no HTML, no quoted thread).
+      if (isMass) {
+        // Mass-send routes through the edge function so each recipient gets a
+        // personalized copy (variables replaced server-side per row).
+        await massSend.mutateAsync({
+          recipient_ids: allRecipients.map((c) => c.id),
+          subject: subject.trim(),
+          body_html: bodyHtml,
+          append_signature: appendSignature,
+          signature_id: appendSignature ? selectedSignatureId : null,
+          cc: cc.trim() || null,
+          bcc: bcc.trim() || null,
+        });
+      } else {
+        await sendBridge.mutateAsync({
+          to: contact.email!,
+          cc: cc.trim() || undefined,
+          bcc: bcc.trim() || undefined,
+          subject: renderedSubject,
+          html: finalHtml,
+          contact_id: contact.id,
+        });
+      }
+      // For single send the DB trigger creates the chat message; mass-send is
+      // logged server-side. Never manually insert here.
       clearEmailDraft(draftScope);
+      onSent?.();
       onOpenChange(false);
     } catch {
       /* toast handled in hook */
     }
   };
 
-  const isPending = sendBridge.isPending || addMessage.isPending;
+  const isPending = sendBridge.isPending || addMessage.isPending || massSend.isPending;
 
   /* Keyboard shortcut: ⌘+Enter / Ctrl+Enter sends from anywhere in the dialog */
   useEffect(() => {
@@ -716,29 +750,35 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Cancel
             </button>
             <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
-              New Message
+              {isMass ? `Mass Email · ${allRecipients.length}` : 'New Message'}
             </DialogTitle>
             {/* Spacer to keep title centered (matches Cancel min-width) */}
             <span className="w-[64px] shrink-0" aria-hidden />
           </DialogHeader>
 
-          {/* Mobile sub-header: just recipient identity (Templates moved to single bottom bar to remove duplication) */}
+          {/* Mobile sub-header: recipient identity (or recipient count for mass) */}
           <div className="md:hidden px-3 py-2 border-b border-border/60 bg-background/60 shrink-0 flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-semibold shrink-0">
-              {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
+              {isMass ? allRecipients.length : (contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">
-                {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email || 'Unknown'}
+                {isMass
+                  ? `${allRecipients.length} recipients · personalized`
+                  : ([contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email || 'Unknown')}
               </p>
-              <p className="text-[11px] text-muted-foreground truncate leading-tight">{contact.email ?? 'No email on file'}</p>
+              <p className="text-[11px] text-muted-foreground truncate leading-tight">
+                {isMass
+                  ? allRecipients.slice(0, 3).map((r) => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email).join(', ') + (allRecipients.length > 3 ? '…' : '')
+                  : (contact.email ?? 'No email on file')}
+              </p>
             </div>
           </div>
 
           {/* Desktop slim title bar */}
           <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
             <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
-              New Message
+              {isMass ? `Mass Email · ${allRecipients.length} recipients` : 'New Message'}
             </DialogTitle>
           </DialogHeader>
 
@@ -922,12 +962,37 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                     </button>
                   }
                 >
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full">
-                    <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">
-                      {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
-                    </span>
-                    <span className="truncate">{contact.email ?? 'No email on file'}</span>
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 max-w-full">
+                    {allRecipients.length === 0 && (
+                      <span className="text-[12.5px] text-muted-foreground/60">No recipient</span>
+                    )}
+                    {allRecipients.slice(0, 6).map((r) => {
+                      const initial = (r.first_name?.[0] ?? r.email?.[0] ?? '?').toUpperCase();
+                      const label = [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email || 'Unknown';
+                      return (
+                        <span
+                          key={r.id}
+                          title={r.email ?? undefined}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[12.5px] text-foreground max-w-full"
+                        >
+                          <span className="h-4 w-4 rounded-full bg-primary/15 text-primary text-[9px] font-semibold inline-flex items-center justify-center shrink-0">
+                            {initial}
+                          </span>
+                          <span className="truncate max-w-[140px]">{label}</span>
+                        </span>
+                      );
+                    })}
+                    {allRecipients.length > 6 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-[11.5px] font-medium">
+                        +{allRecipients.length - 6} more
+                      </span>
+                    )}
+                    {isMass && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                        Mass · {allRecipients.length}
+                      </span>
+                    )}
+                  </div>
                 </RecipientRow>
                 {showCcBcc && (
                   <>
@@ -1152,7 +1217,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   ) : (
                     <Send className="h-[15px] w-[15px]" />
                   )}
-                  {isPending ? 'Sending' : 'Send'}
+                  {isPending ? 'Sending' : isMass ? `Send ${allRecipients.length}` : 'Send'}
                 </button>
               </div>
 
@@ -1323,7 +1388,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                     ) : (
                       <Send className="h-3.5 w-3.5" />
                     )}
-                    {isPending ? 'Sending...' : logOnly ? 'Log Email' : 'Send Email'}
+                    {isPending ? 'Sending...' : logOnly ? 'Log Email' : isMass ? `Send to ${allRecipients.length}` : 'Send Email'}
                   </Button>
                 </div>
               </div>

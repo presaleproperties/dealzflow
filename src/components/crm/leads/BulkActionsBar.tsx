@@ -15,7 +15,7 @@ import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { BulkSendTextDialog } from './BulkSendTextDialog';
-import { UnifiedComposerDialog } from '@/components/crm/unified/UnifiedComposerDialog';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -193,13 +193,15 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
       {/* Mass email — opens the canonical composer with the selected leads
           pre-loaded as recipients. >1 recipient routes through the
           mass-send confirmation flow automatically. */}
-      <UnifiedComposerDialog
-        open={showBulkEmail}
-        onOpenChange={setShowBulkEmail}
-        contacts={selectedContacts}
-        mode={selectedContacts.length > 1 ? 'bulk' : 'new'}
-        onSent={onClearSelection}
-      />
+      {showBulkEmail && selectedContacts.length > 0 && (
+        <ComposeEmailDialog
+          contact={selectedContacts[0]}
+          extraContacts={selectedContacts.slice(1)}
+          open={showBulkEmail}
+          onOpenChange={setShowBulkEmail}
+          onSent={onClearSelection}
+        />
+      )}
     </>
 
   );
