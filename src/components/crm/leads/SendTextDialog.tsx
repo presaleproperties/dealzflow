@@ -610,6 +610,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                     <p className="text-[10px] text-muted-foreground">Up to 10 attachments · 5 MB max each · drag, paste, or tap the paperclip</p>
                   </PopoverContent>
                 </Popover>
+                )}
 
                 {/* Variables */}
                 <Popover open={varOpen} onOpenChange={setVarOpen}>
