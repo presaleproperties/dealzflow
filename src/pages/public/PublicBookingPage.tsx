@@ -232,21 +232,87 @@ export default function PublicBookingPage() {
 
   // SUCCESS view
   if (step === 3 && confirmation) {
+    const startIso = confirmation.start_at;
+    const endIso = confirmation.end_at || new Date(new Date(startIso).getTime() + (evt.duration_min || 30) * 60_000).toISOString();
+    const locLabel =
+      confirmation.location_type === 'video' ? 'Video call'
+      : confirmation.location_type === 'in_person' ? 'In person'
+      : confirmation.location_type === 'phone' ? 'Phone call'
+      : 'Meeting';
+    const locDetail = confirmation.location_value
+      || (confirmation.location_type === 'phone' ? `${confirmation.agent_name} will call you` : null);
+    const icsEvent = {
+      uid: `booking-${Math.random().toString(36).slice(2)}`,
+      title: `${confirmation.event_title} — ${confirmation.agent_name}`,
+      startIso, endIso,
+      description: locDetail ? `${locLabel}: ${locDetail}` : locLabel,
+      location: confirmation.location_value || undefined,
+    };
+    const cancelHref = `/r/${teamSlug}/cancel?b=${confirmation.booking_id || ''}`;
+    const rescheduleHref = `/r/${teamSlug}/${eventSlug}?reschedule=${confirmation.booking_id || ''}`;
+
     return (
-      <div className="min-h-dvh flex items-center justify-center px-6 py-12" style={{ background: BG, fontFamily: SANS }}>
-        <div className="max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
-            <Check className="w-7 h-7 text-emerald-600" />
-          </div>
-          <h1 className="text-[32px] mb-2" style={{ fontFamily: SERIF, color: '#1a1a1a', fontWeight: 500 }}>You're booked</h1>
-          <p className="text-stone-600 text-[14px] mb-6">A confirmation has been sent to your email.</p>
-          <div className="bg-white border border-stone-200 rounded-xl p-5 text-left space-y-2 shadow-sm">
-            <div className="text-[12px] uppercase tracking-[0.18em] text-stone-400">{confirmation.event_title}</div>
-            <div className="text-[16px] font-medium text-stone-900">
-              {format(new Date(confirmation.start_at), 'EEEE, MMMM d')} · {format(new Date(confirmation.start_at), 'h:mm a')}
+      <div className="min-h-dvh flex items-center justify-center px-5 py-12" style={{ background: BG, fontFamily: SANS }}>
+        <div className="max-w-md w-full">
+          <div className="text-center">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
+              <Check className="w-7 h-7 text-emerald-600" />
             </div>
-            <div className="text-[12px] text-stone-500">with {confirmation.agent_name}</div>
+            <h1 className="text-[30px] mb-1.5" style={{ fontFamily: SERIF, color: '#1a1a1a', fontWeight: 500 }}>You're booked</h1>
+            {email && (
+              <p className="text-stone-600 text-[13.5px] mb-6">A confirmation has been sent to {email}.</p>
+            )}
           </div>
+
+          <div className="bg-white border border-stone-200 rounded-xl p-5 text-left space-y-3 shadow-sm">
+            <div>
+              <div className="text-[10.5px] uppercase tracking-[0.18em] text-stone-400">{confirmation.event_title}</div>
+              <div className="text-[16px] font-medium text-stone-900 mt-1">
+                {format(new Date(startIso), 'EEEE, MMMM d')} · {format(new Date(startIso), 'h:mm a')}
+              </div>
+              <div className="text-[12.5px] text-stone-500 mt-0.5">with {confirmation.agent_name}</div>
+            </div>
+
+            <div className="pt-3 border-t" style={{ borderColor: '#e7e2d6' }}>
+              <div className="text-[10.5px] uppercase tracking-[0.18em] text-stone-400 mb-1">Where</div>
+              <div className="text-[13.5px] text-stone-800 flex items-start gap-2">
+                <Icon className="w-3.5 h-3.5 mt-1 shrink-0 text-stone-500" />
+                <div>
+                  <div className="font-medium">{locLabel}</div>
+                  {locDetail && (
+                    confirmation.location_type === 'video' && /^https?:\/\//.test(locDetail)
+                      ? <a href={locDetail} target="_blank" rel="noreferrer" className="text-[12.5px] underline underline-offset-2 break-all" style={{ color: GOLD }}>{locDetail}</a>
+                      : <div className="text-[12.5px] text-stone-500">{locDetail}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Add to calendar */}
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <a
+              href={googleCalendarUrl(icsEvent)} target="_blank" rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-stone-200 bg-white text-[12.5px] font-medium text-stone-700 hover:border-[#D7A542] hover:text-stone-900 transition-colors"
+            >
+              <CalendarPlus className="w-3.5 h-3.5" /> Google Calendar
+            </a>
+            <button
+              onClick={() => downloadIcs(`${confirmation.event_title}.ics`, icsEvent)}
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-stone-200 bg-white text-[12.5px] font-medium text-stone-700 hover:border-[#D7A542] hover:text-stone-900 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" /> Apple / Outlook
+            </button>
+          </div>
+
+          {/* Manage */}
+          {confirmation.booking_id && (
+            <div className="mt-5 flex items-center justify-center gap-4 text-[12px]">
+              <Link to={rescheduleHref} className="text-stone-500 hover:text-stone-900 underline underline-offset-4">Reschedule</Link>
+              <span className="text-stone-300">·</span>
+              <Link to={cancelHref} className="text-stone-500 hover:text-stone-900 underline underline-offset-4">Cancel booking</Link>
+            </div>
+          )}
         </div>
       </div>
     );
