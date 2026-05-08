@@ -3740,6 +3740,50 @@ export type Database = {
           },
         ]
       }
+      crm_template_sync_log: {
+        Row: {
+          actor_id: string | null
+          bridge_endpoint: string | null
+          created_at: string
+          direction: string
+          error: string | null
+          id: string
+          payload_summary: Json | null
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          bridge_endpoint?: string | null
+          created_at?: string
+          direction: string
+          error?: string | null
+          id?: string
+          payload_summary?: Json | null
+          status: string
+          template_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          bridge_endpoint?: string | null
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          payload_summary?: Json | null
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_template_sync_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_timeline_link_clicks: {
         Row: {
           clicked_at: string

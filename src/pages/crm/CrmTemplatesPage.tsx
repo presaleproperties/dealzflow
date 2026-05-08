@@ -494,7 +494,7 @@ function EmailTemplatesPanel() {
           if (!o) { setEditing(null); setCreating(false); setCloneDraft(null); }
         }}
       >
-        <DialogContent className="max-w-6xl w-[96vw] max-h-[92vh] overflow-y-auto p-4">
+        <DialogContent className="max-w-[98vw] w-[98vw] h-[96vh] max-h-[96vh] overflow-y-auto p-4 sm:p-5">
           <TemplateEditor
             template={editing}
             initialDraft={!editing && creating ? cloneDraft ?? undefined : undefined}

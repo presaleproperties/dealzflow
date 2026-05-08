@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Maximize2, Copy, Send, X, Save, Trash2, Mail, Eye as EyeIcon, AlertTriangle, History, Cloud, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,11 @@ import { usePresaleAgent } from '@/stores/usePresaleAgent';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SenderIdentityField } from './SenderIdentityField';
+import { SendTestDialog } from './SendTestDialog';
+import { SyncHistoryList } from './SyncHistoryList';
+import { useTemplateAutosave } from '@/hooks/useTemplateAutosave';
 
 const CATEGORIES = [
   { value: 'project_launch', label: 'Project Launch' },
@@ -84,6 +89,8 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
   // legacy templates that have a manually-pasted signature).
   const [appendSignature, setAppendSignature] = useState<boolean>(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sendTestOpen, setSendTestOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullIframeRef = useRef<HTMLIFrameElement>(null);
@@ -229,6 +236,15 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
 
   const saving = createTemplate.isPending || updateTemplate.isPending;
 
+  // Local autosave so accidental closes / reloads don't lose work. Explicit
+  // Save still writes to the database — this is just the rescue copy.
+  const draftKey = template?.id ?? 'new-template';
+  const draftSnapshot = useMemo(
+    () => ({ name, subject, previewText, htmlContent, category, projectTags, areaTags, appendSignature }),
+    [name, subject, previewText, htmlContent, category, projectTags, areaTags, appendSignature],
+  );
+  const { dirty, clear: clearDraft } = useTemplateAutosave(draftKey, draftSnapshot);
+
   return (
     <div className="space-y-4">
       {/* Top bar */}
@@ -241,6 +257,17 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           {isEdit && template?.source && (
             <Badge variant="outline" className="text-[10px]">Source: {template.source}</Badge>
           )}
+          <span
+            className={`inline-flex items-center gap-1 text-[10.5px] px-1.5 py-0.5 rounded border ${
+              dirty
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400'
+            }`}
+            title={dirty ? 'Unsaved changes — autosaved locally' : 'All changes saved'}
+          >
+            {dirty ? <CloudOff className="w-2.5 h-2.5" /> : <Cloud className="w-2.5 h-2.5" />}
+            {dirty ? 'Unsaved' : 'Saved'}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <AIAssistMenu
@@ -272,7 +299,22 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               </Button>
             </>
           )}
-          <Button size="sm" onClick={handleSave} disabled={saving || !name.trim()} className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setSendTestOpen(true)}
+            disabled={!subject.trim() || !htmlContent.trim()}
+            title="Send a test of this draft to your inbox"
+          >
+            <Send className="w-3.5 h-3.5" /> Send test
+          </Button>
+          <Button
+            size="sm"
+            onClick={async () => { await handleSave(); clearDraft(); }}
+            disabled={saving || !name.trim()}
+            className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
             <Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : isEdit ? 'Update' : 'Save Template'}
           </Button>
         </div>
@@ -282,6 +324,7 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_280px] gap-4" style={{ minHeight: 'calc(100dvh - 220px)' }}>
         {/* Left — Form */}
         <div className="space-y-4 bg-card/50 border border-border/40 rounded-xl p-4 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
+          <SenderIdentityField />
           <div>
             <Label>Template Name *</Label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Eden Phase 2 - VIP Launch" className="h-9" />
@@ -417,9 +460,22 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               </div>
             </div>
           )}
-        </div>
 
-        {/* Right — Live Preview */}
+          {/* Sync history — pulls/pushes/test sends for this template */}
+          {isEdit && template && (
+            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+              <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+                <span className="inline-flex items-center gap-1.5">
+                  <History className="w-3 h-3" /> Sync history
+                </span>
+                <span className="opacity-60">{showHistory ? 'Hide' : 'Show'}</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <SyncHistoryList templateId={template.id} />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs font-semibold">Live Preview</Label>
@@ -496,7 +552,13 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               <Button variant="outline" size="sm" className="gap-1.5" onClick={handleCopyHtml}>
                 <Copy className="w-3.5 h-3.5" /> Copy HTML
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => { setFullPreview(false); setSendTestOpen(true); }}
+                disabled={!subject.trim() || !htmlContent.trim()}
+              >
                 <Send className="w-3.5 h-3.5" /> Send Test Email
               </Button>
             </div>
@@ -529,6 +591,16 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Send-test dialog (uses persisted HTML so signature is included) */}
+      <SendTestDialog
+        open={sendTestOpen}
+        onOpenChange={setSendTestOpen}
+        templateId={template?.id ?? null}
+        subject={subject}
+        html={persistableHtml}
+        defaultEmail={agent?.email ?? null}
+      />
     </div>
   );
 }
