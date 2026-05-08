@@ -33,6 +33,7 @@ import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmConta
 import { useAgentNames } from '@/hooks/useTeamAgents';
 import { BulkSendTextDialog } from '@/components/crm/leads/BulkSendTextDialog';
 import { MessagingCenter } from '@/components/crm/sms/MessagingCenter';
+import { SmsLiveStatusBar } from '@/components/crm/shared/LiveStatusBar';
 import { format, formatDistanceToNow, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -128,6 +129,7 @@ export default function CrmSmsCenterPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
+      <SmsLiveStatusBar />
       {/* ============ Compact header — tabs + New Blast + status chips ============ */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="-mx-1 overflow-x-auto no-scrollbar">
