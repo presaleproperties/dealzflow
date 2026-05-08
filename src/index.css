@@ -683,75 +683,73 @@
   }
 
   /* ════════════════════════════════════════════════════════════
-     iMESSAGE SURFACE
+     SMS SURFACE — Editorial Minimal
+     Brand: Plus Jakarta Sans · Gold (#D7A542) outbound · hairline borders
+     No gradients, no iOS blue, no tail SVGs.
      ════════════════════════════════════════════════════════════ */
   .imsg-font {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-      "Helvetica Neue", system-ui, sans-serif;
-    letter-spacing: -0.012em;
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    letter-spacing: -0.005em;
+    font-feature-settings: "ss01", "cv11";
   }
   .imsg-bg {
-    background:
-      radial-gradient(1200px 800px at 50% -200px, hsl(var(--primary) / 0.04), transparent 60%),
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.25) 100%);
+    background: hsl(var(--background));
   }
   .dark .imsg-bg {
-    background:
-      radial-gradient(1200px 800px at 50% -200px, hsl(var(--primary) / 0.06), transparent 60%),
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 25% 5%) 100%);
+    background: hsl(var(--background));
   }
+  /* Outbound — brand gold, dark legible text */
   .imsg-bubble-out {
-    background: #0b84ff;
-    color: #ffffff;
-    box-shadow:
-      0 1px 0 hsl(212 90% 30% / 0.10),
-      inset 0 1px 0 hsl(0 0% 100% / 0.10);
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(var(--primary) / 0.85);
+    box-shadow: none;
     -webkit-font-smoothing: antialiased;
   }
   .imsg-bubble-out a {
-    color: #ffffff;
+    color: hsl(var(--primary-foreground));
     text-decoration: underline;
-    text-decoration-color: hsl(0 0% 100% / 0.55);
+    text-decoration-color: hsl(var(--primary-foreground) / 0.5);
     text-underline-offset: 2px;
   }
+  /* Inbound — neutral card with hairline border */
   .imsg-bubble-in {
-    background: hsl(220 14% 92%);
-    color: hsl(222 25% 10%);
-    box-shadow: 0 1px 1px hsl(220 15% 20% / 0.05);
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    box-shadow: none;
     -webkit-font-smoothing: antialiased;
   }
   .imsg-bubble-in a {
-    color: #0b84ff;
+    color: hsl(var(--primary));
     text-decoration: underline;
     text-underline-offset: 2px;
   }
   .dark .imsg-bubble-in {
-    background: hsl(222 12% 18%);
-    color: hsl(220 14% 96%);
-    box-shadow: 0 1px 1px hsl(0 0% 0% / 0.30);
+    background: hsl(var(--muted) / 0.45);
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
   }
-  .dark .imsg-bubble-in a {
-    color: #5ab0ff;
-  }
-  /* Tail colors track the bubble fill via currentColor on the SVG path */
-  .imsg-tail-out { color: #0b84ff; }
-  .imsg-tail-in  { color: hsl(220 14% 92%); }
-  .dark .imsg-tail-in { color: hsl(222 12% 18%); }
+  .dark .imsg-bubble-in a { color: hsl(var(--primary)); }
+  /* Legacy tail colors retained but tails are no longer rendered. */
+  .imsg-tail-out, .imsg-tail-in, .dark .imsg-tail-in { display: none !important; }
+
   .imsg-header {
-    background: hsl(var(--background) / 0.78);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid hsl(var(--border) / 0.55);
+    background: hsl(var(--background) / 0.82);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    border-bottom: 1px solid hsl(var(--border));
   }
   .imsg-composer-pill {
     background: hsl(var(--background));
     border: 1px solid hsl(var(--border));
-    border-radius: 9999px;
-    transition: border-color 0.18s ease;
+    border-radius: 14px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
   .imsg-composer-pill:focus-within {
-    border-color: hsl(212 90% 60% / 0.55);
-    box-shadow: 0 0 0 3px hsl(212 90% 60% / 0.12);
+    border-color: hsl(var(--primary) / 0.55);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
   }
 
   /* ════════════════════════════════════════════════════════════
