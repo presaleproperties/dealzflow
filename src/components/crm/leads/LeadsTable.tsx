@@ -526,7 +526,7 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
       );
     }
     case 'pipeline':
-      return <InlineStatusCell contact={contact} updateContact={updateContact} />;
+      return <InlineStatusCell contact={contact} />;
     case 'tags':
       return <InlineTagsCell contact={contact} tagLibrary={tagLibrary} updateContact={updateContact} />;
     case 'assigned_to':
