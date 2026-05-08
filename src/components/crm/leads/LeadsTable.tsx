@@ -471,8 +471,8 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
       const leadType = (contact as any).lead_type as string | null;
       const typeStyle = CONTACT_TYPE_STYLES[contact.contact_type] ?? CONTACT_TYPE_STYLES.lead;
       return (
-        <div className="flex flex-col min-w-0">
-          <span className="font-semibold text-[14px] text-foreground truncate inline-flex items-center gap-1.5">
+        <div className="flex flex-col min-w-0 gap-0.5">
+          <span className="font-semibold text-[15.5px] leading-[1.2] tracking-[-0.005em] text-foreground truncate inline-flex items-center gap-1.5">
             {formatContactName(contact.first_name, contact.last_name)}
             {contact.contact_type === 'past_client' && getMissingFields(contact).length > 0 && (
               <TooltipProvider delayDuration={200}>
@@ -487,7 +487,7 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
               </TooltipProvider>
             )}
           </span>
-          <span className="text-[11px] text-muted-foreground font-medium">
+          <span className="text-[11.5px] text-muted-foreground font-medium uppercase tracking-[0.04em]">
             {leadType ? (LEAD_TYPE_LABELS[leadType] ?? leadType) : typeStyle.label}
           </span>
         </div>
@@ -495,9 +495,9 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
     }
     case 'contactInfo':
       return (
-        <div className="flex flex-col text-[12px] text-muted-foreground gap-0.5">
-          <span className="truncate max-w-[220px] text-foreground/80">{formatEmail(contact.email) || '—'}</span>
-          <span className="tabular-nums">{formatPhone(contact.phone) || '—'}</span>
+        <div className="flex flex-col text-[13px] gap-0.5">
+          <span className="truncate max-w-[220px] text-foreground/85">{formatEmail(contact.email) || '—'}</span>
+          <span className="tabular-nums text-muted-foreground">{formatPhone(contact.phone) || '—'}</span>
         </div>
       );
     case 'reg':
