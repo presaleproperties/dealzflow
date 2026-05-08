@@ -16,6 +16,7 @@ import {
 import { useCrmProjects, type CrmProject } from '@/hooks/useCrmProjects';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { triggerHaptic } from '@/lib/haptics';
 import { supabase } from '@/integrations/supabase/client';
 
 import { useEmailSettings } from '@/hooks/useEmailSettings';
