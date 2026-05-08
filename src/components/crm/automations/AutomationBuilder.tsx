@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Mail, MessageCircle, Clock, UserPlus, RefreshCw, Tag, CheckSquare, Bell,
+  Mail, MessageSquare, Clock, UserPlus, RefreshCw, Tag, CheckSquare, Bell,
   Plus, Trash2, ArrowDown, Zap, ChevronRight, Sparkles, Save, ArrowLeft,
+  GitBranch, Webhook,
 } from 'lucide-react';
 import { TRIGGER_TYPES, ACTION_TYPES, useCreateAutomation, useUpdateAutomation, useCrmAutomationSteps } from '@/hooks/useCrmAutomations';
 import { useCrmEmailTemplates } from '@/hooks/useCrmEmail';
@@ -18,9 +19,9 @@ import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import type { CrmAutomation } from '@/hooks/useCrmAutomations';
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
-  send_email: Mail, send_whatsapp: MessageCircle, wait: Clock,
+  send_email: Mail, send_sms: MessageSquare, wait: Clock,
   assign_agent: UserPlus, update_status: RefreshCw, add_tag: Tag, create_task: CheckSquare,
-  send_notification: Bell,
+  send_notification: Bell, branch_if: GitBranch, ai_draft_email: Sparkles, webhook: Webhook,
 };
 
 const TRIGGER_ICONS: Record<string, React.ElementType> = {
@@ -29,21 +30,25 @@ const TRIGGER_ICONS: Record<string, React.ElementType> = {
 
 const ACTION_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   send_email: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-500' },
-  send_whatsapp: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-500' },
+  send_sms: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-500' },
   wait: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-500' },
   assign_agent: { bg: 'bg-violet-500/10', border: 'border-violet-500/30', text: 'text-violet-500' },
   update_status: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-500' },
   add_tag: { bg: 'bg-pink-500/10', border: 'border-pink-500/30', text: 'text-pink-500' },
   create_task: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-500' },
   send_notification: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-500' },
+  branch_if: { bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-500' },
+  ai_draft_email: { bg: 'bg-primary/10', border: 'border-primary/30', text: 'text-primary' },
+  webhook: { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400' },
 };
 
-type StepDraft = { action_type: string; action_config: Record<string, unknown> };
+type StepDraft = { action_type: string; action_config: Record<string, unknown>; delay_hours?: number; exit_condition?: string | null };
 
 interface Props {
   editing: CrmAutomation | null;
   templatePrefill?: { name: string; description?: string; trigger_type: string; trigger_config: Record<string, unknown> | {}; steps: { action_type: string; action_config: Record<string, unknown> }[] } | null;
   onClose: () => void;
+  embedded?: boolean;
 }
 
 export function AutomationBuilder({ editing, templatePrefill, onClose }: Props) {
