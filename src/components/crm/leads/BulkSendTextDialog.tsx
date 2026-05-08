@@ -186,7 +186,36 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
           </div>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="px-5 py-4 space-y-4 max-h-[78vh] overflow-y-auto">
+          {/* Audience picker (in-dialog) */}
+          {audiencePicker && (
+            <div className="rounded-lg border border-border bg-muted/20">
+              <button
+                type="button"
+                onClick={() => setAudienceOpen(o => !o)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
+              >
+                <Filter className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold">Audience</span>
+                <Badge variant="outline" className="text-[10px] font-medium">
+                  {effectiveIds.length} match
+                </Badge>
+                <ChevronDown className={cn("w-3.5 h-3.5 ml-auto text-muted-foreground transition-transform", audienceOpen && "rotate-180")} />
+              </button>
+              {audienceOpen && (
+                <div className="px-3 pb-3 space-y-2.5 border-t border-border/60">
+                  <AudienceRow label="Pipeline" options={LEAD_STATUSES} selected={fStatuses} onToggle={(v) => toggleArr(fStatuses, v, setFStatuses)} />
+                  <AudienceRow label="Source" options={LEAD_SOURCES} selected={fSources} onToggle={(v) => toggleArr(fSources, v, setFSources)} />
+                  <AudienceRow label="Assigned" options={agentNames} selected={fAgents} onToggle={(v) => toggleArr(fAgents, v, setFAgents)} />
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Tags</Label>
+                    <Input value={fTags} onChange={(e) => setFTags(e.target.value)} placeholder="vip, hot-lead" className="h-8 text-xs" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Recipients summary */}
           <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-muted/40 border border-border">
             <Badge variant="outline" className="font-medium">
