@@ -580,7 +580,7 @@ export default function InboxView() {
             </div>
 
             <ScrollArea className="flex-1 min-h-0">
-              <div className="px-8 py-6 space-y-4 max-w-3xl">
+              <div className={cn('px-8 py-6 space-y-4 mx-auto', listCollapsed ? 'max-w-4xl' : 'max-w-3xl')}>
                 {messagesQuery.isLoading ? (
                   <Skeleton className="h-32 w-full" />
                 ) : (
@@ -590,6 +590,68 @@ export default function InboxView() {
                 )}
               </div>
             </ScrollArea>
+
+            {/* Reply: starts as a slim trigger; expands when user wants to reply. */}
+            <div className="border-t border-border bg-muted/10">
+              {!replyOpen ? (
+                <button
+                  type="button"
+                  onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+                  className="w-full flex items-center gap-2.5 px-6 h-11 text-left text-[12.5px] text-muted-foreground hover:bg-muted/30 transition-colors"
+                >
+                  <Reply className="h-3.5 w-3.5" />
+                  <span className="flex-1 truncate">
+                    Reply to {selectedThread.last_message_from || selectedThread.participants[0]}…
+                  </span>
+                  <span className="text-[10.5px] text-muted-foreground/70 hidden md:inline">press R</span>
+                </button>
+              ) : (
+                <div className="px-6 py-3">
+                  <div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 h-8 border-b border-border/60 bg-muted/20">
+                      <Reply className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[11px] text-muted-foreground flex-1 truncate">
+                        Reply to {selectedThread.last_message_from || selectedThread.participants[0]}
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => { setReplyOpen(false); setReply(''); }}
+                        className="h-6 w-6 text-muted-foreground"
+                        aria-label="Close reply"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <Textarea
+                      ref={replyRef}
+                      data-inbox-reply
+                      value={reply}
+                      onChange={e => setReply(e.target.value)}
+                      onKeyDown={(e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void sendReply(); }
+                        if (e.key === 'Escape' && !reply.trim()) { e.preventDefault(); setReplyOpen(false); }
+                      }}
+                      placeholder="Write your reply…  (⌘+Enter to send · Esc to close)"
+                      rows={3}
+                      enterKeyHint="send"
+                      className="text-[13px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none min-h-[96px] max-h-[320px]"
+                    />
+                    <div className="flex items-center justify-between px-3 py-2 border-t border-border/60 bg-muted/10">
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" disabled>
+                          <Paperclip className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <Button size="sm" onClick={sendReply} disabled={sending || !reply.trim()} className="h-7 gap-1.5 text-xs">
+                        {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                        Send
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="border-t border-border px-6 py-3 bg-muted/10">
               <div className="rounded-lg border border-border bg-background shadow-sm overflow-hidden">
