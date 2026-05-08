@@ -1133,6 +1133,39 @@
     /* ── Dialog headers ────────────────────────────────────────────
        Dialog titles default to text-lg; bring them in line. */
     body[data-section="crm"] [role="dialog"] h2 { font-size: 15.5px; font-weight: 600; }
+
+    /* ── Form controls & buttons (desktop) ─────────────────────────
+       Normalize heights so inputs, selects, dropdown triggers, and
+       buttons line up on a single 34px baseline. Sizing utilities
+       (h-7/h-9/h-10/h-11) used ad-hoc across the CRM are coerced to
+       the canonical baseline; explicit `size="sm"` / `size="lg"` and
+       icon-only buttons are preserved. */
+    body[data-section="crm"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    body[data-section="crm"] select,
+    body[data-section="crm"] [data-slot="select-trigger"],
+    body[data-section="crm"] [role="combobox"]:not([class*="w-"][class*="h-"]),
+    body[data-section="crm"] button[data-slot="button"]:not([class*="size-"]):not([class*="h-7"]):not([class*="h-6"]) {
+      height: 34px;
+      min-height: 34px;
+      font-size: 13.5px;
+      line-height: 1.2;
+    }
+    /* Textareas keep auto height but match horizontal padding rhythm. */
+    body[data-section="crm"] textarea {
+      font-size: 13.5px;
+      line-height: 1.45;
+      min-height: 68px;
+    }
+    /* Small variant — used in toolbars, filter rows. */
+    body[data-section="crm"] button[data-size="sm"],
+    body[data-section="crm"] .h-8 input,
+    body[data-section="crm"] input.h-8,
+    body[data-section="crm"] [data-slot="select-trigger"].h-8 {
+      height: 30px !important;
+      min-height: 30px !important;
+    }
+    /* Icon-only buttons stay square. */
+    body[data-section="crm"] button[data-size="icon"] { width: 34px; height: 34px; min-height: 34px; }
   }
 
   /* ── CRM mobile polish (<1024px) ───────────────────────────────
