@@ -710,6 +710,23 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           </main>
         </div>
       </DialogContent>
+
+      {/* Mobile: open the canonical composer for replies — single source of truth. */}
+      {mobileComposeOpen && (
+        <ComposeEmailDialog
+          contact={contact}
+          open={mobileComposeOpen}
+          onOpenChange={(o) => {
+            setMobileComposeOpen(o);
+            if (!o) {
+              setMobileComposeSubject('');
+              setMobileComposeBody('');
+            }
+          }}
+          initialSubject={mobileComposeSubject}
+          initialBodyHtml={mobileComposeBody}
+        />
+      )}
     </Dialog>
   );
 }
