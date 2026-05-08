@@ -346,7 +346,7 @@ export default function CrmChatsPage() {
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
-      <div className="px-3 sm:px-4 pt-2 space-y-1.5">
+      <div className="px-3 sm:px-4 pt-2 space-y-1.5" data-chats-health-row>
         <EmailLiveStatusBar />
         <SmsLiveStatusBar />
       </div>
