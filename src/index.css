@@ -1216,6 +1216,27 @@
 
     /* Dialog titles — keep under control on mobile. */
     body[data-section="crm"] [role="dialog"] h2 { font-size: 15px; font-weight: 600; }
+
+    /* ── Form controls & buttons (mobile) ──────────────────────────
+       Phones get a slightly taller 36px baseline for tap-friendly
+       targets while still feeling compact. m-* tokens still own
+       list/row rhythm; this only normalizes loose form controls. */
+    body[data-section="crm"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.m-input),
+    body[data-section="crm"] select,
+    body[data-section="crm"] [data-slot="select-trigger"],
+    body[data-section="crm"] [role="combobox"]:not([class*="w-"][class*="h-"]),
+    body[data-section="crm"] button[data-slot="button"]:not([class*="size-"]):not([class*="h-7"]):not([class*="h-6"]):not(.m-fab) {
+      height: 36px;
+      min-height: 36px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+    body[data-section="crm"] textarea:not(.m-textarea) {
+      font-size: 14px;
+      line-height: 1.45;
+      min-height: 72px;
+    }
+    body[data-section="crm"] button[data-size="icon"] { width: 36px; height: 36px; min-height: 36px; }
   }
 
   /* ──────────────────────────────────────────────────────────────
