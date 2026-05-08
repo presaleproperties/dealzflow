@@ -926,18 +926,5 @@ function sanitize(html: string): string {
   });
 }
 
-function EmptyInbox({ onSync }: { onSync: () => void }) {
-  return (
-    <div className="p-8 text-center space-y-3">
-      <MailOpen className="h-8 w-8 text-muted-foreground/50 mx-auto" strokeWidth={1.25} />
-      <p className="text-sm text-foreground/80">No conversations yet.</p>
-      <p className="text-xs text-muted-foreground">
-        Connect Gmail in Settings → Integrations to sync your inbox.
-      </p>
-      <Button size="sm" variant="outline" onClick={onSync} className="gap-1.5">
-        <RefreshCcw className="h-3.5 w-3.5" />
-        Try sync
-      </Button>
-    </div>
-  );
-}
+// EmptyInbox replaced by shared `<InboxEmpty kind="email" />`.
+
