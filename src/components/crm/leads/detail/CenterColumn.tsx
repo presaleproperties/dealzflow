@@ -222,13 +222,13 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
       {/* Inner tab strip — desktop only. On mobile the parent already has Details/Activity/Insights tabs. */}
       <TabsList className="hidden md:flex w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 flex-shrink-0 px-5">
-        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
+        <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[12px] px-4 py-2.5 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Activity
         </TabsTrigger>
-        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[13px] px-4 py-3 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
+        <TabsTrigger value="showings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[12px] px-4 py-2.5 font-semibold uppercase tracking-[0.08em] text-muted-foreground data-[state=active]:text-foreground">
           Appointments
           {showings.length > 0 && (
-            <span className="ml-2 text-[11px] bg-muted text-foreground/80 rounded-full px-2 py-0.5 font-semibold normal-case tracking-normal tabular-nums">
+            <span className="ml-2 text-[10px] bg-muted text-foreground/80 rounded-full px-1.5 py-0.5 font-semibold normal-case tracking-normal tabular-nums">
               {showings.length}
             </span>
           )}
@@ -246,7 +246,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
             type="button"
             onClick={handlePullFromLofty}
             disabled={pullingLofty}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
             title="Pulls emails, texts and calls for this lead from the Lofty API"
           >
             {pullingLofty
@@ -258,7 +258,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <button
             type="button"
             onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
             title="Paste a conversation from anywhere — AI will parse it"
           >
             <Sparkles className="w-3 h-3" />

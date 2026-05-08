@@ -123,7 +123,7 @@ export function LeftSidebar({
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-2xl font-bold text-foreground leading-[1.15] tracking-tight truncate">
+            <h1 className="text-[20px] font-bold text-foreground leading-[1.15] tracking-tight truncate">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
             {contact.source && (

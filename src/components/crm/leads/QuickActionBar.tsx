@@ -214,7 +214,7 @@ export function QuickActionBar({ contact }: Props) {
               disabled={disabled}
               title={disabled ? `Lead is missing ${m.key === 'email' ? 'email' : 'phone'}` : undefined}
               className={cn(
-                'group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold whitespace-nowrap transition-all border',
+                'group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11.5px] font-semibold whitespace-nowrap transition-all border',
                 active ? 'shadow-sm' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-card',
                 disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground',
               )}
