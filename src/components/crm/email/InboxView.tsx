@@ -540,11 +540,22 @@ export default function InboxView() {
         ) : (
           <>
             <div className="h-12 border-b border-border flex items-center px-2 gap-0.5 bg-muted/10">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setListCollapsed(v => !v)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                aria-label={listCollapsed ? 'Show message list' : 'Hide message list'}
+                title={listCollapsed ? 'Show message list (focus mode off)' : 'Hide message list (focus mode)'}
+              >
+                {listCollapsed ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
+              </Button>
+              <div className="w-px h-5 bg-border mx-1" />
               <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
               <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="w-px h-5 bg-border mx-1" />
-              <ToolbarBtn icon={Reply} label="Reply" />
+              <ToolbarBtn icon={Reply} label="Reply" onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }} />
               <ToolbarBtn icon={Forward} label="Forward" />
               <ToolbarBtn icon={Star} label="Flag" />
               <div className="ml-auto flex items-center gap-1">
