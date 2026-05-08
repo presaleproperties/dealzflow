@@ -355,7 +355,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[1280px] w-[96vw] h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-2xl border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
+        className="max-w-[1280px] w-screen md:w-[96vw] h-[100dvh] md:h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none md:rounded-2xl border-0 md:border border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
       >
         <DialogTitle className="sr-only">Email thread with {fullName}</DialogTitle>
         <DialogDescription className="sr-only">
@@ -363,8 +363,8 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         </DialogDescription>
 
         {/* Header bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/70 bg-gradient-to-b from-card to-card/95 flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center justify-between px-4 md:px-5 py-2.5 md:py-3 border-b border-border/70 bg-gradient-to-b from-card to-card/95 flex-shrink-0">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
             <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11.5px] font-semibold shrink-0">
               {headerInitials}
             </div>
@@ -374,12 +374,12 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                   {replyOpen ? 'Reply' : 'Email'}
                 </span>
                 <span className="h-3 w-px bg-border" />
-                <span className="text-[13px] font-semibold text-foreground truncate max-w-[280px]">
+                <span className="text-[13px] font-semibold text-foreground truncate max-w-[180px] md:max-w-[280px]">
                   {fullName}
                 </span>
               </div>
               {contact.email && (
-                <div className="text-[11px] text-muted-foreground truncate max-w-[360px]">
+                <div className="text-[11px] text-muted-foreground truncate max-w-[220px] md:max-w-[360px]">
                   {contact.email}
                 </div>
               )}
@@ -394,9 +394,44 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           </button>
         </div>
 
+        {/* Mobile thread switcher — horizontal scroll strip, only shown if 2+ threads */}
+        {threads.length > 1 && (
+          <div className="md:hidden flex-shrink-0 border-b border-border/70 bg-card/60 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1.5 px-3 py-2 min-w-max">
+              {threads.map(t => {
+                const last = t.messages[t.messages.length - 1];
+                const isActive = t.key === activeThread?.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setActiveKey(t.key)}
+                    className={cn(
+                      'shrink-0 px-3 py-1.5 rounded-full text-[11.5px] font-medium border transition-colors flex items-center gap-1.5 max-w-[200px]',
+                      isActive
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-card text-muted-foreground border-border hover:text-foreground',
+                    )}
+                  >
+                    {last.direction === 'inbound'
+                      ? <ArrowDownLeft className="w-3 h-3 shrink-0 opacity-70" />
+                      : <ArrowUpRight className="w-3 h-3 shrink-0 opacity-70" />}
+                    <span className="truncate">{t.subject}</span>
+                    {t.messages.length > 1 && (
+                      <span className={cn(
+                        'tabular-nums text-[9.5px] px-1 rounded',
+                        isActive ? 'bg-background/20' : 'bg-muted',
+                      )}>{t.messages.length}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 min-h-0 flex flex-col md:flex-row">
-          {/* Left rail — lead context + recent threads */}
-          <aside className="w-full md:w-[300px] lg:w-[340px] flex-shrink-0 border-r border-border/70 bg-muted/20 overflow-y-auto">
+          {/* Left rail — desktop only. On mobile the strip above replaces this. */}
+          <aside className="hidden md:flex md:w-[300px] lg:w-[340px] flex-shrink-0 border-r border-border/70 bg-muted/20 overflow-y-auto flex-col">
             <div className="p-4 border-b border-border/70">
               <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/80 mb-2">
                 Lead
@@ -525,7 +560,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
 
                 {/* Scrollable thread body */}
                 <div className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="px-6 py-5 space-y-2.5 max-w-[920px] mx-auto">
+                  <div className="px-3 md:px-6 py-3 md:py-5 space-y-2.5 max-w-[920px] mx-auto pb-[calc(env(safe-area-inset-bottom)+12px)]">
                     {activeThread.messages.map((m, idx) => (
                       <MessageCard
                         key={m.id}
