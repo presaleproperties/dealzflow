@@ -247,16 +247,10 @@ function EmailTemplatesPanel() {
     return filtered[0] ?? null;
   }, [filtered, selectedKey]);
 
-  const cloneToLibrary = (asset: BridgeTemplate) => {
-    setCloneDraft({
-      name: `${asset.name} (Copy)`,
-      subject: asset.subject ?? null,
-      html_content: stripSignatureBlock(asset.body_html || ''),
-      category: 'project_launch',
-      project_tags: [],
-      area_tags: [],
-    });
-    setCreating(true);
+  const cloneToLibrary = (_asset: BridgeTemplate) => {
+    // Cloning is now an Agent Hub action — the CRM library is read-only.
+    openHub('home');
+    toast.message('Open in Agent Hub to duplicate or remix this template.');
   };
 
   const isLoading = localQ.isLoading || bridgeQ.isLoading;
