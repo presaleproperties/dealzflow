@@ -553,7 +553,11 @@ export default function InboxView() {
                 {listCollapsed ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
               </Button>
               <div className="w-px h-5 bg-border mx-1" />
-              <ToolbarBtn icon={Archive} label="Archive" onClick={archive} />
+              <ToolbarBtn
+                icon={selectedThread.is_archived ? Inbox : Archive}
+                label={selectedThread.is_archived ? 'Move to Inbox' : 'Archive'}
+                onClick={archive}
+              />
               <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="ml-auto flex items-center gap-1">
