@@ -12,7 +12,7 @@ import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSms
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
-import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { useOpenChat } from '@/hooks/useOpenChat';
@@ -423,18 +423,14 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         <ShowingsTab contactId={contact.id} showings={showings as CrmShowing[]} />
       </TabsContent>
 
-      <EmailPreviewDialog
-        email={previewEmail}
-        open={!!previewEmail}
-        onOpenChange={(o) => !o && setPreviewEmail(null)}
-        contactEmail={contact.email}
-      />
-
       <LeadEmailThreadDialog
         contact={contact}
-        open={threadOpen}
-        onOpenChange={(o) => { setThreadOpen(o); if (!o) setThreadInitialId(null); }}
-        initialEmailId={threadInitialId}
+        open={threadOpen || !!previewEmail}
+        onOpenChange={(o) => {
+          setThreadOpen(o);
+          if (!o) { setThreadInitialId(null); setPreviewEmail(null); }
+        }}
+        initialEmailId={threadInitialId ?? (previewEmail ? `log-${previewEmail.id}` : null)}
       />
 
       <ImportConversationDialog

@@ -28,8 +28,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Pill } from '@/components/crm/shared/Pill';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
@@ -39,8 +39,8 @@ import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { useAuth } from '@/hooks/useAuth';
 import { AgentSignatureBlock } from '@/components/agent/AgentSignatureBlock';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
-import { format, parseISO } from 'date-fns';
-import { X, Reply, ChevronRight, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick } from 'lucide-react';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
+import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -291,6 +291,25 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
     });
   };
 
+  // Keyboard: "R" to reply, Esc handled by Dialog itself.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (t as any)?.isContentEditable) return;
+      if (e.key === 'r' || e.key === 'R') {
+        if (!replyOpen && lastInThread && contact.email) {
+          e.preventDefault();
+          handleStartReply();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, replyOpen, lastInThread, contact.email]);
+
+
   const handleSendReply = async () => {
     if (!contact.email) { toast.error('This lead has no email address'); return; }
     const bodyText = replyHtml.replace(/<[^>]*>/g, '').trim();
@@ -391,42 +410,54 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                   No emails yet.
                 </div>
               ) : (
-                <ul className="space-y-1.5">
+                <ul className="space-y-1">
                   {threads.map(t => {
                     const last = t.messages[t.messages.length - 1];
                     const isActive = t.key === activeThread?.key;
+                    const lastDir = last.direction;
                     return (
                       <li key={t.key}>
                         <button
                           onClick={() => setActiveKey(t.key)}
                           className={cn(
-                            'w-full text-left p-2.5 rounded-md border transition-colors group',
+                            'w-full text-left px-2.5 py-2 rounded-md border transition-colors group relative',
                             isActive
                               ? 'bg-card border-border shadow-sm'
                               : 'border-transparent hover:bg-card hover:border-border/60',
                           )}
                         >
+                          {isActive && (
+                            <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-primary" />
+                          )}
                           <div className="flex items-start gap-2">
+                            <div className={cn(
+                              'w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5',
+                              lastDir === 'inbound'
+                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-600'
+                                : 'bg-primary/10 border-primary/30 text-primary',
+                            )}>
+                              {lastDir === 'inbound'
+                                ? <ArrowDownLeft className="w-3 h-3" />
+                                : <ArrowUpRight className="w-3 h-3" />}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[12.5px] font-semibold text-foreground line-clamp-2 leading-snug">
+                              <p className="text-[12px] font-semibold text-foreground line-clamp-1 leading-snug">
                                 {t.subject}
                               </p>
-                              <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
-                                <span className="truncate">
-                                  {last.direction === 'inbound' ? (last.fromName || last.fromEmail) : 'You'}
+                              <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+                                <span className="truncate flex-1">
+                                  {lastDir === 'inbound' ? (last.fromName || last.fromEmail) : 'You'}
                                 </span>
-                                <span>·</span>
                                 <span className="tabular-nums whitespace-nowrap">
-                                  {format(parseISO(last.ts), 'MMM d, h:mm a')}
+                                  {formatDistanceToNow(parseISO(last.ts), { addSuffix: false })}
                                 </span>
                                 {t.messages.length > 1 && (
-                                  <span className="ml-auto px-1.5 py-px rounded bg-muted text-[10px] tabular-nums">
+                                  <span className="px-1 py-px rounded bg-muted text-[9.5px] tabular-nums font-medium">
                                     {t.messages.length}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <ChevronRight className={cn('w-3.5 h-3.5 mt-0.5 shrink-0 transition-opacity', isActive ? 'opacity-100 text-foreground' : 'opacity-0 group-hover:opacity-50')} />
                           </div>
                         </button>
                       </li>
@@ -446,23 +477,45 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             ) : (
               <div className="flex-1 min-h-0 overflow-y-auto">
                 {/* Thread header — From / To / Subject */}
-                <div className="px-6 py-4 border-b border-border/70 bg-card sticky top-0 z-10 backdrop-blur">
-                  <h2 className="text-[15px] font-semibold text-foreground leading-snug">
-                    {activeThread.subject}
-                  </h2>
-                  <div className="mt-1 text-[11.5px] text-muted-foreground">
-                    {activeThread.messages.length} message{activeThread.messages.length === 1 ? '' : 's'}
+                <div className="px-6 py-3 border-b border-border/70 bg-card/95 sticky top-0 z-10 backdrop-blur">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-[14.5px] font-semibold text-foreground leading-snug truncate">
+                        {activeThread.subject}
+                      </h2>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{activeThread.messages.length} message{activeThread.messages.length === 1 ? '' : 's'}</span>
+                        {lastInThread && (
+                          <>
+                            <span>·</span>
+                            <span className="tabular-nums">last {formatDistanceToNow(parseISO(lastInThread.ts), { addSuffix: true })}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {!replyOpen && (
+                      <Button
+                        size="sm"
+                        onClick={handleStartReply}
+                        disabled={!lastInThread || !contact.email}
+                        className="gap-1.5 h-8 text-[12px]"
+                      >
+                        <Reply className="w-3.5 h-3.5" /> Reply
+                        <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
+                      </Button>
+                    )}
                   </div>
                 </div>
 
                 {/* Messages — chronological */}
-                <div className="px-6 py-5 space-y-4">
+                <div className="px-6 py-4 space-y-3">
                   {activeThread.messages.map((m, idx) => (
                     <MessageCard
                       key={m.id}
                       message={m}
                       isLatest={idx === activeThread.messages.length - 1}
                       contactEmail={contact.email}
+                      defaultExpanded={idx === activeThread.messages.length - 1}
                     />
                   ))}
                 </div>
@@ -470,18 +523,9 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                 {/* Inline reply composer */}
                 <div ref={composerRef} className="px-6 pb-6">
                   {!replyOpen ? (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={handleStartReply}
-                        disabled={!lastInThread || !contact.email}
-                        className="gap-2 h-10"
-                      >
-                        <Reply className="w-4 h-4" /> Reply
-                      </Button>
-                      {!contact.email && (
-                        <span className="text-[11.5px] text-muted-foreground">No email on file for this lead.</span>
-                      )}
-                    </div>
+                    !contact.email ? (
+                      <div className="text-[11.5px] text-muted-foreground">No email on file for this lead.</div>
+                    ) : null
                   ) : (
                     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/70 flex items-center justify-between bg-muted/20">
@@ -570,69 +614,133 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MessageCard({ message, isLatest, contactEmail }: { message: ThreadMessage; isLatest: boolean; contactEmail?: string | null }) {
+function initialsFor(name?: string | null, email?: string | null): string {
+  const base = (name || email || '?').trim();
+  const parts = base.split(/[\s@._-]+/).filter(Boolean);
+  return ((parts[0]?.[0] || '?') + (parts[1]?.[0] || '')).toUpperCase();
+}
+
+function MessageCard({
+  message, isLatest, contactEmail, defaultExpanded = true,
+}: { message: ThreadMessage; isLatest: boolean; contactEmail?: string | null; defaultExpanded?: boolean }) {
   const inbound = message.direction === 'inbound';
   const srcDoc = useMemo(() => buildSrcDoc(message.bodyHtml, message.bodyText), [message.bodyHtml, message.bodyText]);
   const fromAddr = message.fromEmail || (inbound ? contactEmail : 'You');
   const toAddr = message.toEmail || (inbound ? 'You' : contactEmail);
+  const fromLabel = message.fromName || message.fromEmail || (inbound ? contactEmail : 'You');
+  const initials = initialsFor(message.fromName, message.fromEmail || (inbound ? contactEmail : 'You'));
+
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const snippet = useMemo(() => {
+    const t = (message.bodyText || message.bodyHtml?.replace(/<[^>]*>/g, ' ') || '').replace(/\s+/g, ' ').trim();
+    return t.slice(0, 140);
+  }, [message.bodyText, message.bodyHtml]);
 
   return (
     <article className={cn(
-      'rounded-xl border bg-card overflow-hidden shadow-sm',
-      isLatest ? 'border-border' : 'border-border/60',
+      'rounded-xl border bg-card overflow-hidden transition-shadow',
+      isLatest ? 'border-border shadow-sm' : 'border-border/60',
     )}>
-      <header className="px-4 py-3 border-b border-border/60 bg-muted/10">
-        <div className="flex items-start gap-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left px-4 py-2.5 border-b border-border/60 bg-muted/10 hover:bg-muted/20 transition-colors"
+      >
+        <div className="flex items-start gap-2.5">
           <div className={cn(
-            'w-8 h-8 rounded-lg border flex items-center justify-center shrink-0',
-            inbound ? 'bg-blue-500/10 border-blue-500/30 text-blue-600' : 'bg-primary/10 border-primary/30 text-primary',
+            'w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10.5px] font-semibold',
+            inbound ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-primary/15 text-primary',
           )}>
-            {inbound ? <ArrowDownLeft className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="text-[9.5px] uppercase tracking-wider">
-                {inbound ? 'Received' : 'Sent'}
-              </Badge>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[12px] font-semibold text-foreground truncate max-w-[200px]">
+                {fromLabel}
+              </span>
+              <Pill size="sm" tone={inbound ? 'info' : 'primary'} className="!gap-0.5">
+                {inbound
+                  ? <ArrowDownLeft className="w-2.5 h-2.5" />
+                  : <ArrowUpRight className="w-2.5 h-2.5" />}
+                {inbound ? 'In' : 'Out'}
+              </Pill>
               {!inbound && (message.openCount ?? 0) > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-600 inline-flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
+                <Pill size="sm" tone="success" className="!gap-0.5">
+                  <Eye className="w-2.5 h-2.5" />
                   {message.openCount}
-                </span>
+                </Pill>
               )}
               {!inbound && (message.clickCount ?? 0) > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-purple-500/10 text-purple-600 inline-flex items-center gap-1">
-                  <MousePointerClick className="w-3 h-3" />
+                <Pill size="sm" className="!gap-0.5 bg-purple-500/15 text-purple-700 dark:text-purple-300">
+                  <MousePointerClick className="w-2.5 h-2.5" />
                   {message.clickCount}
-                </span>
+                </Pill>
               )}
-              <span className="text-[10.5px] text-muted-foreground ml-auto tabular-nums">
-                {format(parseISO(message.ts), 'EEE, MMM d · h:mm a')}
+              <span className="text-[10.5px] text-muted-foreground ml-auto tabular-nums whitespace-nowrap">
+                {format(parseISO(message.ts), 'MMM d · h:mm a')}
               </span>
             </div>
-            <div className="mt-1.5 grid grid-cols-[40px_1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
-              <span className="text-muted-foreground uppercase text-[9.5px] tracking-wider pt-0.5">From</span>
-              <span className="text-foreground truncate">{fromAddr || '—'}</span>
-              <span className="text-muted-foreground uppercase text-[9.5px] tracking-wider pt-0.5">To</span>
-              <span className="text-foreground truncate">{toAddr || '—'}</span>
-              {message.cc && (<>
-                <span className="text-muted-foreground uppercase text-[9.5px] tracking-wider pt-0.5">CC</span>
-                <span className="text-foreground truncate">{message.cc}</span>
-              </>)}
-            </div>
+            {expanded ? (
+              <div className="mt-1 text-[11px] text-muted-foreground truncate">
+                to {toAddr || '—'}{message.cc ? ` · cc ${message.cc}` : ''}
+              </div>
+            ) : (
+              <div className="mt-1 text-[11.5px] text-muted-foreground truncate">
+                {snippet || '(no body)'}
+              </div>
+            )}
           </div>
         </div>
-      </header>
-      <div className="bg-white">
-        <iframe
-          title={`Email body ${message.id}`}
-          srcDoc={srcDoc}
-          className="w-full border-0 block"
-          style={{ height: isLatest ? 480 : 280 }}
-          sandbox="allow-same-origin allow-popups"
-        />
-      </div>
+      </button>
+      {expanded && (
+        <div className="bg-white">
+          <AutoSizingFrame srcDoc={srcDoc} title={`Email body ${message.id}`} />
+        </div>
+      )}
     </article>
+  );
+}
+
+function AutoSizingFrame({ srcDoc, title }: { srcDoc: string; title: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(320);
+  useEffect(() => {
+    const frame = ref.current;
+    if (!frame) return;
+    let ro: ResizeObserver | null = null;
+    const onLoad = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (!doc) return;
+        const measure = () => {
+          const h = Math.max(doc.body?.scrollHeight ?? 0, doc.documentElement?.scrollHeight ?? 0);
+          if (h > 0) setHeight(Math.min(h + 8, 1200));
+        };
+        measure();
+        if ('ResizeObserver' in window && doc.body) {
+          ro = new ResizeObserver(measure);
+          ro.observe(doc.body);
+        }
+        doc.querySelectorAll('img').forEach((img) => {
+          if (!(img as HTMLImageElement).complete) {
+            img.addEventListener('load', measure, { once: true });
+            img.addEventListener('error', measure, { once: true });
+          }
+        });
+      } catch { /* noop */ }
+    };
+    frame.addEventListener('load', onLoad);
+    return () => { frame.removeEventListener('load', onLoad); ro?.disconnect(); };
+  }, [srcDoc]);
+  return (
+    <iframe
+      ref={ref}
+      title={title}
+      srcDoc={srcDoc}
+      className="w-full border-0 block"
+      style={{ height: `${height}px`, minHeight: 200 }}
+      sandbox="allow-same-origin allow-popups"
+    />
   );
 }
 
