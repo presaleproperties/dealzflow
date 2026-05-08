@@ -26,6 +26,7 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { LEAD_STATUSES, LEAD_TYPES, LEAD_TYPE_LABELS, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { FRASER_VALLEY_CITIES, CRM_LANGUAGES } from '@/lib/crmConstants';
@@ -80,6 +81,21 @@ export function LeftSidebar({
   const { data: projectLib = [] } = useCrmProjects();
   const { data: leadTypeLib = [] } = useCrmLeadTypes();
   const { data: librarySources = [] } = useCrmSources();
+  const { data: leadSegments = [] } = useCrmLeadSegments();
+  // Pipeline stages aligned with the Leads/Pipeline pages: pull from
+  // crm_lead_segments where the segment is a pure status filter.
+  const stageOptions = (() => {
+    const fromSegments = leadSegments
+      .filter((s) => {
+        const cfg = s.filter_config as { status?: unknown } | null;
+        return Array.isArray(cfg?.status) && (cfg!.status as string[]).length === 1;
+      })
+      .map((s) => ((s.filter_config as { status: string[] }).status[0]));
+    const set = new Set<string>(fromSegments);
+    // Always preserve current value so existing leads aren't orphaned visually.
+    if (contact.status) set.add(contact.status);
+    return Array.from(set);
+  })();
   const createTag = useCreateCrmTag();
   const createProject = useCreateCrmProject();
   const createLeadType = useCreateCrmLeadType();
@@ -288,7 +304,7 @@ export function LeftSidebar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {stageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
@@ -639,7 +655,7 @@ export function LeftSidebar({
             <MobileMultiPickerDrawer
               open={drawer === 'status'} onOpenChange={(o) => !o && closeDrawer()}
               title="Pipeline Stage"
-              options={LEAD_STATUSES.map(s => ({ value: s, label: s }))}
+              options={stageOptions.map(s => ({ value: s, label: s }))}
               value={contact.status ? [contact.status] : []}
               onChange={(next) => saveWithLog('status', next[0] ?? 'New Lead')}
             />
