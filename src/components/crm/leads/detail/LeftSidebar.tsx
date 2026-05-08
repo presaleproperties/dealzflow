@@ -304,7 +304,7 @@ export function LeftSidebar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {LEAD_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {stageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
