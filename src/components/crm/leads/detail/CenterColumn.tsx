@@ -229,32 +229,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
-        {/* Import conversation utility row — quieter on mobile */}
-        <div className="hidden md:flex px-3 md:px-0 -mt-1 flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1.5">
-          <button
-            type="button"
-            onClick={handlePullFromLofty}
-            disabled={pullingLofty}
-            className="inline-flex items-center gap-1.5 text-[10.5px] md:text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
-            title="Pulls emails, texts and calls for this lead from the Lofty API"
-          >
-            {pullingLofty
-              ? <Loader2 className="w-3 h-3 animate-spin" />
-              : <Download className="w-3 h-3" />}
-            {pullingLofty ? 'Pulling…' : 'Pull from Lofty'}
-          </button>
-          <span className="text-muted-foreground/30 text-[10px]">·</span>
-          <button
-            type="button"
-            onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 text-[10.5px] md:text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
-            title="Paste a conversation from anywhere — AI will parse it"
-          >
-            <Sparkles className="w-3 h-3" />
-            Paste conversation
-          </button>
-        </div>
-
         {/* Filter strip */}
         <div className="px-3 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none -mx-1 md:mx-0">
           <div className="flex items-center gap-1 md:gap-1.5 md:flex-wrap min-w-max md:min-w-0 px-1 md:px-0">
