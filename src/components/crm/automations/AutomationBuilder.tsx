@@ -297,6 +297,62 @@ export function AutomationBuilder({ editing, templatePrefill, onClose, embedded 
               onChange={e => updateActionConfig(idx, 'message', e.target.value)} />
           </div>
         )}
+        {action.action_type === 'send_sms' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">SMS Body</Label>
+            <Textarea rows={3} placeholder="Hi {{first_name}}, …"
+              value={(action.action_config.body as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'body', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Tokens: {'{{first_name}}'}, {'{{source}}'}, {'{{status}}'}</p>
+          </div>
+        )}
+        {action.action_type === 'branch_if' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">If field…</Label>
+            <Select value={(action.action_config.field as string) ?? 'source'}
+              onValueChange={v => updateActionConfig(idx, 'field', v)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="source">Source</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="tag">Has tag</SelectItem>
+                <SelectItem value="has_email">Has email</SelectItem>
+                <SelectItem value="has_phone">Has phone</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={(action.action_config.op as string) ?? 'equals'}
+              onValueChange={v => updateActionConfig(idx, 'op', v)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="equals">equals</SelectItem>
+                <SelectItem value="not_equals">does not equal</SelectItem>
+                <SelectItem value="contains">contains</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input className="h-9" placeholder="Value"
+              value={(action.action_config.value as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'value', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Convention: the next step runs on YES; the step after that runs on NO.</p>
+          </div>
+        )}
+        {action.action_type === 'ai_draft_email' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">AI Goal / Prompt</Label>
+            <Textarea rows={3} placeholder="Warm follow-up after 3 days of no reply, mention pre-sale launch…"
+              value={(action.action_config.goal as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'goal', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">A draft is saved as a note on the lead for the assigned agent to review.</p>
+          </div>
+        )}
+        {action.action_type === 'webhook' && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium">POST URL</Label>
+            <Input className="h-9" placeholder="https://hook.example.com/…"
+              value={(action.action_config.url as string) ?? ''}
+              onChange={e => updateActionConfig(idx, 'url', e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Receives the full lead JSON. Useful for Zapier/Make/n8n bridges.</p>
+          </div>
+        )}
       </div>
     );
   };
