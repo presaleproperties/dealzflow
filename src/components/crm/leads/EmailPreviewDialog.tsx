@@ -48,6 +48,7 @@ const BASE_STYLES = `
     color: #1a1a1a;
     padding: 28px 32px;
     word-wrap: break-word;
+    overflow-wrap: anywhere;
     -webkit-font-smoothing: antialiased;
   }
   p { margin: 0 0 14px; }
@@ -56,32 +57,70 @@ const BASE_STYLES = `
   table { max-width: 100% !important; border-collapse: collapse; }
   td, th { padding: 4px 8px; }
   h1,h2,h3,h4 { line-height: 1.3; margin: 20px 0 10px; font-weight: 600; }
-  blockquote { border-left: 3px solid #e5e5e5; margin: 12px 0; padding: 4px 14px; color: #555; }
+  blockquote { border-left: 3px solid #d4d4d8; margin: 12px 0; padding: 4px 14px; color: #555; background: #fafafa; }
   ul, ol { padding-left: 22px; margin: 0 0 14px; }
   hr { border: 0; border-top: 1px solid #eee; margin: 18px 0; }
   pre, code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
   pre { background: #f6f7f9; padding: 10px 12px; border-radius: 6px; overflow-x: auto; }
+  details.quoted { margin-top: 16px; }
+  details.quoted > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: #6b7280; padding: 6px 12px; border-radius: 999px; background: #f3f4f6; user-select: none; }
+  details.quoted > summary::-webkit-details-marker { display: none; }
+  details.quoted > summary:hover { background: #e5e7eb; color: #111827; }
+  details.quoted[open] > summary { margin-bottom: 12px; }
+  .quoted-body { border-left: 3px solid #e5e7eb; padding: 10px 16px; color: #6b7280; background: #fafafa; border-radius: 0 8px 8px 0; }
+  .quoted-body p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; }
 `;
+
+/**
+ * Split plain-text email into "new" content vs "quoted history".
+ * Heuristics: an "On <date>... wrote:" attribution OR lines starting with `>`
+ * (possibly nested `> > >`) mark the boundary.
+ */
+function splitPlainTextReply(plain: string): { fresh: string; quoted: string } {
+  const lines = plain.split(/\r?\n/);
+  const attributionRe = /^\s*(on\s+.+?\bwrote:|-{2,}\s*original message\s*-{2,}|from:\s+.+@.+)/i;
+  const quoteRe = /^\s*(>\s*)+/;
+  let cutIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (attributionRe.test(lines[i]) || quoteRe.test(lines[i])) { cutIdx = i; break; }
+  }
+  if (cutIdx === -1) {
+    // Mid-paragraph attribution (no preceding newline)
+    const m = plain.match(/\bon\s+\w{3},?\s+\w{3}\s+\d{1,2},?\s+\d{4}[^.]*?\bwrote:/i);
+    if (m && m.index !== undefined) {
+      return { fresh: plain.slice(0, m.index).trimEnd(), quoted: plain.slice(m.index).trim() };
+    }
+    return { fresh: plain.trim(), quoted: '' };
+  }
+  return {
+    fresh: lines.slice(0, cutIdx).join('\n').trim(),
+    quoted: lines.slice(cutIdx).join('\n').trim(),
+  };
+}
+
+function plainBlockToHtml(text: string, opts?: { stripQuoteMarks?: boolean }): string {
+  if (!text) return '';
+  const cleaned = opts?.stripQuoteMarks
+    ? text.split(/\r?\n/).map(l => l.replace(/^\s*(>\s*)+/, '')).join('\n')
+    : text;
+  return cleaned
+    .split(/\n{2,}/)
+    .map(p => `<p>${linkify(escapeHtml(p)).replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+}
 
 export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: Props) {
   const isInbound = email?.direction === 'inbound';
   const rawBody = (email?.body_html || email?.body || '').trim();
   const plainBody = (email?.body_text || '').trim();
 
-  // Detect whether `body` contains HTML markup. If not, treat it as plain text.
   const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(rawBody);
   const html = looksLikeHtml ? rawBody : '';
   const plain = looksLikeHtml ? plainBody : (rawBody || plainBody);
 
-  // Build the iframe document as a single string. We use srcDoc rather than
-  // document.write because srcDoc is far more reliable across browsers when
-  // the iframe is sandboxed (which we want for safety).
   const srcDoc = useMemo(() => {
     const styleTag = `<style>${BASE_STYLES}</style>`;
     if (html) {
-      // If the email already includes a full <html> document, inject our
-      // stylesheet into <head> so headers, footers, and tables render
-      // consistently. If <head> is missing, add one.
       if (/<html[\s>]/i.test(html)) {
         if (/<head[\s>]/i.test(html)) {
           return html.replace(/<head([^>]*)>/i, `<head$1>${styleTag}`);
@@ -91,11 +130,13 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
       return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${html}</body></html>`;
     }
     if (plain) {
-      const paragraphs = plain
-        .split(/\n{2,}/)
-        .map(p => `<p>${linkify(escapeHtml(p)).replace(/\n/g, '<br/>')}</p>`)
-        .join('');
-      return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${paragraphs}</body></html>`;
+      const { fresh, quoted } = splitPlainTextReply(plain);
+      const freshHtml = plainBlockToHtml(fresh || plain);
+      const quotedHtml = quoted ? plainBlockToHtml(quoted, { stripQuoteMarks: true }) : '';
+      const body = quotedHtml
+        ? `${freshHtml}<details class="quoted"><summary>··· Show quoted history</summary><div class="quoted-body">${quotedHtml}</div></details>`
+        : freshHtml;
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${body}</body></html>`;
     }
     return `<!DOCTYPE html><html><head>${styleTag}</head><body><p style="color:#888">(No body recorded for this email.)</p></body></html>`;
   }, [html, plain]);
