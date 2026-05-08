@@ -158,7 +158,7 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+      <DialogContent className={cn("p-0 overflow-hidden", audiencePicker ? "max-w-3xl" : "max-w-2xl")}>
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
