@@ -130,6 +130,7 @@ export default function PublicBookingPage() {
   const submit = async () => {
     if (!selectedSlot || !name || (!email && !phone) || missingRequiredAnswers) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const answerPayload = customQuestions
         .map((q) => ({ key: q.key, text: q.text, answer: answers[q.key] || null }))
@@ -143,10 +144,14 @@ export default function PublicBookingPage() {
         });
         const json = await res.json();
         if (!res.ok) {
-          alert(json.error === 'slot_taken' ? 'That slot was just taken. Please pick another.' :
-                json.error === 'already_cancelled' ? 'This booking has already been cancelled.' :
-                'Could not reschedule. Please try again.');
-          if (json.error === 'slot_taken') { setSelectedSlot(null); setStep(1); }
+          if (json.error === 'slot_taken') {
+            setSubmitError('That time was just taken. Please pick another.');
+            setSelectedSlot(null); setStep(1);
+          } else if (json.error === 'already_cancelled') {
+            setSubmitError('This booking has already been cancelled.');
+          } else {
+            setSubmitError('We couldn\'t reschedule. Please try again.');
+          }
           setSubmitting(false);
           return;
         }
@@ -171,9 +176,9 @@ export default function PublicBookingPage() {
         });
         const json = await res.json();
         if (!res.ok || !json.url) {
-          alert(json.error === 'stripe_not_configured'
-            ? 'Payments are not yet set up for this account. Please contact the agent.'
-            : 'Could not start checkout. Please try again.');
+          setSubmitError(json.error === 'stripe_not_configured'
+            ? 'Payments aren\'t set up for this account yet. Please contact the agent.'
+            : 'We couldn\'t start checkout. Please try again.');
           setSubmitting(false);
           return;
         }
@@ -195,11 +200,10 @@ export default function PublicBookingPage() {
       const json = await res.json();
       if (!res.ok) {
         if (json.error === 'slot_taken') {
-          alert('Sorry, that slot was just taken. Please pick another time.');
-          setSelectedSlot(null);
-          setStep(1);
+          setSubmitError('That time was just taken. Please pick another.');
+          setSelectedSlot(null); setStep(1);
         } else {
-          alert('Could not book. Please try again.');
+          setSubmitError('We couldn\'t book that time. Please try again.');
         }
         setSubmitting(false);
         return;
@@ -207,7 +211,7 @@ export default function PublicBookingPage() {
       setConfirmation(json.confirmation);
       setStep(3);
     } catch (e) {
-      alert('Network error. Please try again.');
+      setSubmitError('Network error. Please try again.');
     } finally { setSubmitting(false); }
   };
 
