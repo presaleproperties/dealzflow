@@ -404,23 +404,24 @@ function IMessageBubble({
                 (isOptimistic || isScheduled) && 'opacity-70',
               )}
             >
-              {/* SVG bubble tail — only on last-in-run, color follows bubble via currentColor */}
+              {/* SVG bubble tail — sits flush at the bubble's bottom corner so it never paints over wrapped lines above */}
               {isLastInRun && (
                 isOutbound ? (
                   <svg
-                    viewBox="0 0 18 18"
-                    className="imsg-tail-out absolute -right-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
+                    viewBox="0 0 12 16"
+                    className="imsg-tail-out absolute right-[-6px] bottom-0 w-[12px] h-[16px] pointer-events-none"
                     aria-hidden
                   >
-                    <path d="M0 18 C 8 18, 14 12, 18 0 L 18 18 Z" fill="currentColor" />
+                    {/* anchor at bubble's bottom-right; curve outward then back to baseline */}
+                    <path d="M0 16 C 0 8, 4 4, 12 0 C 9 8, 6 14, 2 16 Z" fill="currentColor" />
                   </svg>
                 ) : (
                   <svg
-                    viewBox="0 0 18 18"
-                    className="imsg-tail-in absolute -left-[5px] bottom-0 w-[18px] h-[18px] pointer-events-none"
+                    viewBox="0 0 12 16"
+                    className="imsg-tail-in absolute left-[-6px] bottom-0 w-[12px] h-[16px] pointer-events-none"
                     aria-hidden
                   >
-                    <path d="M18 18 C 10 18, 4 12, 0 0 L 0 18 Z" fill="currentColor" />
+                    <path d="M12 16 C 12 8, 8 4, 0 0 C 3 8, 6 14, 10 16 Z" fill="currentColor" />
                   </svg>
                 )
               )}
