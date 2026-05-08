@@ -42,33 +42,33 @@ function Shell({
   return (
     <div
       className={cn(
-        'rounded-md border bg-card/40 text-[12.5px]',
+        'rounded-md border bg-card/30 text-[12px]',
         tone === 'fail' && 'border-red-500/30',
         tone === 'warn' && 'border-amber-500/30',
-        tone === 'ok'   && 'border-border/60',
+        tone === 'ok'   && 'border-border/50',
       )}
     >
       <button
         type="button"
         onClick={() => children && setOpen(o => !o)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-1.5 text-left',
+          'w-full flex items-center gap-2.5 px-2.5 py-1 text-left',
           children ? 'cursor-pointer' : 'cursor-default',
         )}
       >
         <Dot tone={tone} />
-        <span className="font-medium text-foreground">{title}</span>
+        <span className="font-medium text-foreground/90 truncate">{title}</span>
         {detail && (
-          <span className="text-muted-foreground truncate">— {detail}</span>
+          <span className="text-muted-foreground truncate hidden sm:inline">— {detail}</span>
         )}
-        <span className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
-          {checked && <span className="hidden sm:inline">checked {checked}</span>}
+        <span className="ml-auto flex items-center gap-1.5 text-[10.5px] text-muted-foreground/70">
+          {checked && tone !== 'ok' && <span className="hidden md:inline">checked {checked}</span>}
           {onRefresh && (
             <span
               role="button"
               tabIndex={0}
               onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-              className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-muted/60"
+              className="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-muted/60 text-muted-foreground/80 hover:text-foreground"
               aria-label="Re-check"
             >
               {isFetching
