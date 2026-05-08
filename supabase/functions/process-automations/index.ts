@@ -69,13 +69,22 @@ interface Contact {
   tags: string[] | null;
 }
 
-function authorize(req: Request): boolean {
+async function authorize(req: Request): Promise<boolean> {
   const h = req.headers.get("Authorization") ?? "";
   if (!h.startsWith("Bearer ")) return false;
   const token = h.slice(7).trim();
   if (CRON_SECRET && token === CRON_SECRET) return true;
   if (token === SERVICE_KEY) return true;
-  return false;
+  try {
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: h } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: who } = await userClient.auth.getUser();
+    if (!who?.user?.id) return false;
+    const { data: isAdmin } = await userClient.rpc("is_crm_admin" as never, { _user_id: who.user.id } as never);
+    return !!isAdmin;
+  } catch { return false; }
 }
 
 function normalizeAction(t: string): string {
