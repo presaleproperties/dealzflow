@@ -1,15 +1,21 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare } from 'lucide-react';
-import { useBulkUpdateContacts, useBulkDeleteContacts, useBulkAddTagsToContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import {
+  useBulkUpdateContacts,
+  useBulkDeleteContacts,
+  useBulkAddTagsToContacts,
+  useCrmContacts,
+  LEAD_STATUSES,
+} from '@/hooks/useCrmContacts';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { BulkSendTextDialog } from './BulkSendTextDialog';
+import { UnifiedComposerDialog } from '@/components/crm/unified/UnifiedComposerDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -21,26 +27,35 @@ interface BulkActionsBarProps {
 }
 
 export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBarProps) {
-  const navigate = useNavigate();
   const bulkUpdate = useBulkUpdateContacts();
   const bulkDelete = useBulkDeleteContacts();
   const bulkAddTags = useBulkAddTagsToContacts();
   const { data: tagLib = [] } = useCrmTags();
   const { data: agents = [] } = useTeamAgents();
+  const { data: allContacts = [] } = useCrmContacts();
   const createTag = useCreateCrmTag();
   const [showDelete, setShowDelete] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [pendingTags, setPendingTags] = useState<string[]>([]);
   const [showBulkText, setShowBulkText] = useState(false);
+  const [showBulkEmail, setShowBulkEmail] = useState(false);
 
   const count = selectedIds.length;
+
+  // Resolve full contact rows for the selected IDs so the composer gets real
+  // CrmContact objects (with email/name) up-front. Selection order is
+  // preserved so the recipient chip rail reads naturally.
+  const selectedContacts = useMemo(() => {
+    const map = new Map(allContacts.map((c) => [c.id, c]));
+    return selectedIds
+      .map((id) => map.get(id))
+      .filter((c): c is NonNullable<typeof c> => !!c);
+  }, [selectedIds, allContacts]);
+
   if (count === 0) return null;
 
   const handleSendEmail = () => {
-    // Hand off the filtered/selected lead IDs to the Email Center compose tab.
-    // ComposeTab reads ?contactIds=... and treats them as a fixed campaign recipient list.
-    const ids = selectedIds.join(',');
-    navigate(`/crm/email?tab=compose&contactIds=${encodeURIComponent(ids)}`);
+    setShowBulkEmail(true);
   };
 
   const handleAssign = (agent: string) => {
@@ -173,6 +188,17 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
         onOpenChange={setShowBulkText}
         contactIds={selectedIds}
         onComplete={onClearSelection}
+      />
+
+      {/* Mass email — opens the canonical composer with the selected leads
+          pre-loaded as recipients. >1 recipient routes through the
+          mass-send confirmation flow automatically. */}
+      <UnifiedComposerDialog
+        open={showBulkEmail}
+        onOpenChange={setShowBulkEmail}
+        contacts={selectedContacts}
+        mode={selectedContacts.length > 1 ? 'bulk' : 'new'}
+        onSent={onClearSelection}
       />
     </>
 
