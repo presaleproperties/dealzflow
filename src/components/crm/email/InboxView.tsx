@@ -496,6 +496,7 @@ export default function InboxView() {
               {filteredThreads.map(t => {
                 const isActive = selectedThreadId === t.id;
                 const isUnread = t.unread_count > 0;
+                const senderLabel = t.last_message_from || t.participants[0] || 'Unknown';
                 return (
                   <li key={t.id}>
                     <button
@@ -505,11 +506,20 @@ export default function InboxView() {
                       data-unread={isUnread}
                     >
                       <span className="inbox-row__dot" data-hidden={!isUnread} aria-hidden />
+                      <span
+                        className={cn(
+                          'h-8 w-8 shrink-0 rounded-full inline-flex items-center justify-center text-[11px] font-semibold mt-0.5',
+                          isUnread
+                            ? 'bg-primary/15 text-primary ring-1 ring-primary/20'
+                            : 'bg-muted/60 text-muted-foreground',
+                        )}
+                        aria-hidden
+                      >
+                        {initials(senderLabel)}
+                      </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <span className="inbox-row__sender">
-                            {t.last_message_from || t.participants[0] || 'Unknown'}
-                          </span>
+                          <span className="inbox-row__sender">{senderLabel}</span>
                           <span className="inbox-row__time">
                             {smartTime(t.last_message_at)}
                           </span>
