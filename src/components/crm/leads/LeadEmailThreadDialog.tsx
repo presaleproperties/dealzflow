@@ -527,12 +527,6 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                       <div className="text-[11.5px] text-muted-foreground">No email on file for this lead.</div>
                     ) : null
                   ) : (
-                      </Button>
-                      {!contact.email && (
-                        <span className="text-[11.5px] text-muted-foreground">No email on file for this lead.</span>
-                      )}
-                    </div>
-                  ) : (
                     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/70 flex items-center justify-between bg-muted/20">
                         <div className="text-[11.5px] text-muted-foreground">
