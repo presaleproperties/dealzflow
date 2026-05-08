@@ -15,13 +15,17 @@ import { SendTextDialog } from './SendTextDialog';
 export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
   const { data: agents = [] } = useTeamAgents();
+  const { pipelines } = useUnifiedPipelines();
+  const activePipeline = useActivePipelineFor(contact);
+  const setPipeline = useSetContactPipeline();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showSms, setShowSms] = useState(false);
 
-  const handleStatusChange = (status: string) => {
-    updateContact.mutate({ id: contact.id, updates: { status, status_changed_at: new Date().toISOString() }, oldValues: { status: contact.status } });
+  const handlePipelineChange = (segId: string) => {
+    const seg = pipelines.find(p => p.id === segId);
+    if (seg) setPipeline.mutate({ contact, segment: seg });
   };
 
   const handleAgentChange = (agent: string) => {
