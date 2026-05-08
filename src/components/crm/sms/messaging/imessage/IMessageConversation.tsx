@@ -391,10 +391,10 @@ function IMessageBubble({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div className={cn('flex group', isOutbound ? 'justify-end pr-3' : 'justify-start pl-3', sameAsPrev ? 'mt-[2px]' : 'mt-1.5')}>
-          <div className="relative max-w-[78%] sm:max-w-[60%]">
+          <div className="relative max-w-[82%] sm:max-w-[68%] lg:max-w-[60%] min-w-0">
             <div
               className={cn(
-                'relative px-3.5 py-[7px] text-[15px] leading-[1.32] msg-pop-in rounded-[18px]',
+                'relative px-3.5 py-2 text-[15px] leading-[1.42] msg-pop-in rounded-[18px]',
                 isOutbound ? 'imsg-bubble-out' : 'imsg-bubble-in',
                 // shape: tighten the adjoining corner when same sender continues;
                 // square off the tail-side bottom corner on last-in-run so the SVG tail blends seamlessly
@@ -435,7 +435,7 @@ function IMessageBubble({
                 </div>
               )}
 
-              <div className="whitespace-pre-wrap break-words">
+              <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
                 <HighlightedText text={text} query={highlight} />
               </div>
 
