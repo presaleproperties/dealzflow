@@ -460,9 +460,22 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
               </div>
             </div>
           )}
-        </div>
 
-        {/* Right — Live Preview */}
+          {/* Sync history — pulls/pushes/test sends for this template */}
+          {isEdit && template && (
+            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+              <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+                <span className="inline-flex items-center gap-1.5">
+                  <History className="w-3 h-3" /> Sync history
+                </span>
+                <span className="opacity-60">{showHistory ? 'Hide' : 'Show'}</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <SyncHistoryList templateId={template.id} />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs font-semibold">Live Preview</Label>
