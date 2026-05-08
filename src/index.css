@@ -1095,12 +1095,31 @@
     /* Soften any stray font-bold to semibold for editorial consistency. */
     body[data-section="crm"] .font-bold { font-weight: 600; }
 
-    /* ── Pills & Badges ────────────────────────────────────────────
-       Force every chip-like surface (Badge, Pill, status chips) to a
-       single height + radius so rows line up. */
+    /* ── Pills & Badges (desktop) ──────────────────────────────────
+       Snap every chip-like surface (Badge, Pill, ad-hoc status chip)
+       to one canonical spec so they align in tables, dialogs, and
+       lead headers. Spec mirrors <Pill size="sm">. */
     body[data-section="crm"] .badge,
-    body[data-section="crm"] [class*="rounded-full"][class*="px-2"]:not(button):not(a):not(input) {
-      line-height: 1;
+    body[data-section="crm"] span[class*="rounded-full"][class*="px-"]:not(button):not(a):not(input):not([class*="w-"]):not([class*="h-"]),
+    body[data-section="crm"] div[class*="rounded-full"][class*="px-"]:not(button):not(a):not(input):not([class*="w-"]):not([class*="h-"]) {
+      font-size: 10.5px !important;
+      font-weight: 500 !important;
+      line-height: 1 !important;
+      padding-top: 2px !important;
+      padding-bottom: 2px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+      border-radius: 9999px !important;
+      letter-spacing: -0.005em;
+    }
+    /* Slightly larger size for chips that opt in (text-[11px], text-xs, text-sm). */
+    body[data-section="crm"] .badge.text-\[11px\],
+    body[data-section="crm"] span[class*="rounded-full"][class*="text-\[11px\]"],
+    body[data-section="crm"] span[class*="rounded-full"][class*="text-xs"],
+    body[data-section="crm"] span[class*="rounded-full"][class*="text-sm"] {
+      font-size: 11px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
     }
 
     /* ── Cards ─────────────────────────────────────────────────────
