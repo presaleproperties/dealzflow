@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check, CreditCard } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Phone, Video, ChevronLeft, ChevronRight, Check, CreditCard, AlertCircle, CalendarPlus, Download, X as XIcon } from 'lucide-react';
 import { addDays, format, startOfDay, isSameDay, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore } from 'date-fns';
 import { useOgMeta } from '@/lib/useOgMeta';
+import { downloadIcs, googleCalendarUrl } from '@/lib/scheduler-ics';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -28,13 +29,15 @@ export default function PublicBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [notes, setNotes] = useState('');
+  // Prefill from agent-shared link (?prefill_name=&prefill_email=&prefill_phone=&prefill_notes=)
+  const [name, setName] = useState(() => searchParams.get('prefill_name') || '');
+  const [email, setEmail] = useState(() => searchParams.get('prefill_email') || '');
+  const [phone, setPhone] = useState(() => searchParams.get('prefill_phone') || '');
+  const [notes, setNotes] = useState(() => searchParams.get('prefill_notes') || '');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<any>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const inviteeTz = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Vancouver', []
