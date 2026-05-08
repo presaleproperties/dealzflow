@@ -282,22 +282,36 @@ export function LeftSidebar({
         </div>
       )}
 
-      {/* Pipeline Stage */}
+      {/* Pipeline Stage — unified across Pipeline Kanban + Leads list */}
       <div className="space-y-2">
         <SectionHeader>Pipeline Stage</SectionHeader>
         {isMobile ? (
           <MobileEditRow
             label="Stage"
-            value={contact.status ?? 'New Lead'}
+            value={activePipeline?.name ?? contact.status ?? 'New Lead'}
             onClick={() => setDrawer('status')}
           />
         ) : (
-          <Select value={contact.status ?? 'New Lead'} onValueChange={(v) => saveWithLog('status', v)}>
+          <Select
+            value={activePipeline?.id ?? ''}
+            onValueChange={(segId) => {
+              const seg = pipelines.find(p => p.id === segId);
+              if (seg) setPipeline.mutate({ contact, segment: seg });
+            }}
+          >
             <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
-              <SelectValue />
+              <SelectValue placeholder={contact.status ?? 'New Lead'} />
             </SelectTrigger>
             <SelectContent>
-              {stageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {pipelines.map(seg => (
+                <SelectItem key={seg.id} value={seg.id}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
+                    {seg.emoji && <span>{seg.emoji}</span>}
+                    {seg.name}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         )}
