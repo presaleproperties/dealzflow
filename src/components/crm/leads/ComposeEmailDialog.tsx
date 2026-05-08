@@ -66,6 +66,12 @@ interface Props {
   initialSubject?: string;
   initialBodyHtml?: string;
   initialCc?: string;
+  /** Additional recipients for mass-send. When the total count is >1, the
+   *  composer routes through `crm-mass-send-email` (personalized server-side).
+   *  The primary `contact` drives the live variable preview. */
+  extraContacts?: CrmContact[];
+  /** Fired after a successful send (single or mass). */
+  onSent?: () => void;
 }
 
 type Mode = 'edit' | 'html' | 'preview';
