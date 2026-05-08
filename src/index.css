@@ -1048,36 +1048,35 @@
      ────────────────────────────────────────────────────────────── */
   @media (min-width: 1024px) {
     body[data-section="crm"] {
-      font-size: 16px;
-      line-height: 1.6;
+      font-size: 14px;
+      line-height: 1.55;
     }
-    /* Lift the most common small utilities a full step for easier scanning. */
-    body[data-section="crm"] .text-xs   { font-size: 13.5px; line-height: 1.55; }
-    body[data-section="crm"] .text-sm   { font-size: 15px;   line-height: 1.6;  }
-    body[data-section="crm"] .text-base { font-size: 16px;   line-height: 1.6;  }
-    body[data-section="crm"] .text-\[13px\] { font-size: 14px !important; }
-    body[data-section="crm"] .text-\[14px\] { font-size: 15px !important; }
-    body[data-section="crm"] .text-\[15px\] { font-size: 16px !important; }
+    /* Slightly tighter scale — feels editorial, less heavy. */
+    body[data-section="crm"] .text-xs   { font-size: 12px;   line-height: 1.5;  }
+    body[data-section="crm"] .text-sm   { font-size: 13.5px; line-height: 1.55; }
+    body[data-section="crm"] .text-base { font-size: 14px;   line-height: 1.55; }
+    body[data-section="crm"] .text-\[13px\] { font-size: 12.5px !important; }
+    body[data-section="crm"] .text-\[14px\] { font-size: 13px !important; }
+    body[data-section="crm"] .text-\[15px\] { font-size: 13.5px !important; }
 
-    /* Airier table rows. */
+    /* Tighter table rows. */
     body[data-section="crm"] table th,
     body[data-section="crm"] table td {
-      padding-top: 15px;
-      padding-bottom: 15px;
-      font-size: 15px;
+      padding-top: 11px;
+      padding-bottom: 11px;
+      font-size: 13px;
     }
-    body[data-section="crm"] table th { font-size: 13px; letter-spacing: 0.04em; }
+    body[data-section="crm"] table th { font-size: 11.5px; letter-spacing: 0.05em; }
 
-    /* Card interiors — give cards a touch more padding so dense
-       Quick Actions / Lead Detail / Settings stop feeling boxed-in. */
+    /* Card interiors. */
     body[data-section="crm"] .crm-card,
-    body[data-section="crm"] .card-premium { padding: 1.375rem; }
+    body[data-section="crm"] .card-premium { padding: 1.125rem; }
 
-    /* Form controls inside CRM — match the bumped body size. */
+    /* Form controls inside CRM. */
     body[data-section="crm"] input,
     body[data-section="crm"] textarea,
     body[data-section="crm"] select,
-    body[data-section="crm"] button { font-size: 15px; }
+    body[data-section="crm"] button { font-size: 13.5px; }
   }
 
   /* ──────────────────────────────────────────────────────────────
