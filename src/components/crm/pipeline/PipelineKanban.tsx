@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useCrmContacts, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { formatContactName } from '@/lib/format';
-import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
+import { useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -190,7 +190,7 @@ export function PipelineKanban() {
     contacts.forEach(c => { if (c.assigned_to) agents.add(c.assigned_to); });
     return Array.from(agents).sort();
   }, [contacts]);
-  const updateContact = useUpdateCrmContact();
+  const setContactPipeline = useSetContactPipeline();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -236,6 +236,11 @@ export function PipelineKanban() {
     pipelineSegments.forEach(s => { map[s.id] = []; });
 
     filtered.forEach(c => {
+      const canonicalSegmentId = (c as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+      if (canonicalSegmentId && map[canonicalSegmentId]) {
+        map[canonicalSegmentId].push(c);
+        return;
+      }
       for (const seg of pipelineSegments) {
         if (contactMatchesSegment(c, seg.filter_config)) {
           map[seg.id].push(c);
@@ -269,39 +274,20 @@ export function PipelineKanban() {
     if (!contact || !targetSeg) return;
     if (result.source.droppableId === targetSegId) return;
 
-    // Build update payload from target segment's filter_config
-    const updates: Record<string, unknown> = {};
-    const oldValues: Record<string, unknown> = {};
-    const fc = targetSeg.filter_config;
-
-    if (fc.status && Array.isArray(fc.status) && (fc.status as string[]).length > 0) {
-      updates.status = (fc.status as string[])[0];
-      oldValues.status = contact.status;
-      updates.status_changed_at = new Date().toISOString();
-      updates.stage_changed_at = new Date().toISOString();
-    }
-    if (fc.lead_type && Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
-      updates.lead_type = (fc.lead_type as string[])[0];
-      oldValues.lead_type = contact.lead_type;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      toast.info(`"${targetSeg.name}" has no stage rules — drop ignored.`);
-      return;
-    }
+    const optimisticContact = { ...contact, pipeline_segment_id: targetSeg.id } as CrmContact;
 
     // Optimistic update so the card visibly stays in the new column
     const prev = queryClient.getQueryData<CrmContact[]>(['crm-contacts']);
     if (prev) {
       queryClient.setQueryData<CrmContact[]>(
         ['crm-contacts'],
-        prev.map(c => c.id === contactId ? { ...c, ...(updates as Partial<CrmContact>) } : c)
+        prev.map(c => c.id === contactId ? optimisticContact : c)
       );
     }
 
     const name = formatContactName(contact.first_name, contact.last_name);
-    updateContact.mutate(
-      { id: contactId, updates, oldValues },
+    setContactPipeline.mutate(
+      { contact, segment: targetSeg },
       {
         onSuccess: () => toast.success(`Moved ${name} to ${targetSeg.name}`, { duration: 2000 }),
         onError: () => {
