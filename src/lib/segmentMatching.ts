@@ -27,6 +27,10 @@ import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
 export function contactMatchesSegment(contact: CrmContact, filter: Record<string, unknown>): boolean {
   if (!filter || Object.keys(filter).length === 0) return true;
 
+  const canonicalSegmentId = (contact as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+  const filterSegmentId = typeof filter.pipeline_segment_id === 'string' ? filter.pipeline_segment_id : null;
+  if (filterSegmentId) return canonicalSegmentId === filterSegmentId;
+
   // ── Strict keys ──
   if (filter.status && Array.isArray(filter.status) && (filter.status as string[]).length > 0) {
     if (!(filter.status as string[]).includes(contact.status ?? '')) return false;
@@ -92,6 +96,11 @@ export function assignContactsToSegments(
   pipelineSegments.forEach(s => { map[s.id] = []; });
 
   contacts.forEach(c => {
+    const canonicalSegmentId = (c as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+    if (canonicalSegmentId && map[canonicalSegmentId]) {
+      map[canonicalSegmentId].push(c);
+      return;
+    }
     for (const seg of pipelineSegments) {
       if (contactMatchesSegment(c, seg.filter_config)) {
         map[seg.id].push(c);

@@ -28,6 +28,9 @@ function caseVariants(values: string[]): string[] {
 
 function applyJsonFilters(query: any, filters: Record<string, unknown>) {
   if (!filters || Object.keys(filters).length === 0) return query;
+  if (filters.pipeline_segment_id && typeof filters.pipeline_segment_id === 'string') {
+    query = query.eq('pipeline_segment_id', filters.pipeline_segment_id);
+  }
   if (filters.status && Array.isArray(filters.status) && (filters.status as string[]).length > 0) {
     query = query.in('status', filters.status as string[]);
   }

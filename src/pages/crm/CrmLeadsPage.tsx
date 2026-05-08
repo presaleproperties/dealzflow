@@ -301,7 +301,9 @@ export default function CrmLeadsPage() {
       letterFilter,
       pipelineView,
       savedViewFilters: savedViewFilters,
-      segmentFilters: activeSegment?.filter_config as Record<string, unknown> | undefined,
+      segmentFilters: activeSegment && Object.keys(activeSegment.filter_config).length > 0
+        ? { pipeline_segment_id: activeSegment.id }
+        : undefined,
       uncontacted7: !!activeView.filters._uncontacted_7,
       stale30: !!activeView.filters._stale_30,
       highScore: !!activeView.filters._high_score,
