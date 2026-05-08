@@ -105,6 +105,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
+  const massSend = useMassSendEmail();
   const createTemplate = useCreateTemplate();
   const { data: emailSettings } = useEmailSettings();
   const { data: signatures = [] } = useEmailSignatures();
