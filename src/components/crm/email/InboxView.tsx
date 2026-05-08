@@ -552,13 +552,19 @@ export default function InboxView() {
               >
                 {listCollapsed ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
               </Button>
-              <div className="w-px h-5 bg-border mx-1" />
+              <div className="w-px h-5 bg-border/70 mx-1.5" />
               <ToolbarBtn
                 icon={selectedThread.is_archived ? Inbox : Archive}
                 label={selectedThread.is_archived ? 'Move to Inbox' : 'Archive'}
                 onClick={archive}
               />
               <ToolbarBtn icon={MailOpen} label="Mark unread" onClick={() => selectedThread && void markUnread(selectedThread.id)} />
+              <div className="w-px h-5 bg-border/70 mx-1" />
+              <ToolbarBtn
+                icon={Reply}
+                label="Reply"
+                onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+              />
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="ml-auto flex items-center gap-1">
                 {selectedThread.contact_id && (
@@ -572,13 +578,36 @@ export default function InboxView() {
               </div>
             </div>
 
-            <div className="px-8 pt-6 pb-4 border-b border-border">
-              <h1 className="text-[22px] font-semibold tracking-tight text-foreground leading-snug">
-                {selectedThread.subject || '(no subject)'}
-              </h1>
-              <p className="text-[11.5px] text-muted-foreground mt-1.5 truncate">
-                {selectedThread.message_count} {selectedThread.message_count === 1 ? 'message' : 'messages'} · {selectedThread.participants.join(', ')}
-              </p>
+            {/* Subject hero — sender block + title + meta line */}
+            <div className="px-8 pt-6 pb-5 border-b border-border">
+              <div className="flex items-start gap-3.5">
+                <span className="h-10 w-10 shrink-0 rounded-full bg-primary/10 text-primary text-[13px] font-semibold inline-flex items-center justify-center ring-1 ring-primary/15">
+                  {initials(selectedThread.last_message_from, selectedThread.participants[0])}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-[20px] font-semibold tracking-tight text-foreground leading-snug">
+                    {selectedThread.subject || '(no subject)'}
+                  </h1>
+                  <div className="mt-1.5 flex items-center flex-wrap gap-x-2 gap-y-1 text-[11.5px] text-muted-foreground">
+                    <span className="font-medium text-foreground/80 truncate max-w-[260px]">
+                      {selectedThread.last_message_from || selectedThread.participants[0] || 'Unknown'}
+                    </span>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="tabular-nums">{smartTime(selectedThread.last_message_at)}</span>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="tabular-nums">{selectedThread.message_count} {selectedThread.message_count === 1 ? 'message' : 'messages'}</span>
+                    {selectedThread.participants.length > 1 && (
+                      <>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className="truncate max-w-[360px]" title={selectedThread.participants.join(', ')}>
+                          {selectedThread.participants.slice(0, 2).join(', ')}
+                          {selectedThread.participants.length > 2 && ` +${selectedThread.participants.length - 2}`}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <ScrollArea className="flex-1 min-h-0">
@@ -599,13 +628,15 @@ export default function InboxView() {
                 <button
                   type="button"
                   onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
-                  className="w-full flex items-center gap-2.5 px-6 h-11 text-left text-[12.5px] text-muted-foreground hover:bg-muted/30 transition-colors"
+                  className="group w-full flex items-center gap-3 px-6 h-12 text-left text-[12.5px] text-muted-foreground hover:bg-muted/40 transition-colors"
                 >
-                  <Reply className="h-3.5 w-3.5" />
-                  <span className="flex-1 truncate">
-                    Reply to {selectedThread.last_message_from || selectedThread.participants[0]}…
+                  <span className="h-7 w-7 shrink-0 rounded-full bg-primary/10 text-primary text-[10.5px] font-semibold inline-flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                    <Reply className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-[10.5px] text-muted-foreground/70 hidden md:inline">press R</span>
+                  <span className="flex-1 truncate">
+                    Reply to <span className="text-foreground/85 font-medium">{selectedThread.last_message_from || selectedThread.participants[0]}</span>…
+                  </span>
+                  <span className="text-[10.5px] text-muted-foreground/60 hidden md:inline tracking-wide">press R</span>
                 </button>
               ) : (
                 <div className="px-6 py-3">
