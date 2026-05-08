@@ -970,7 +970,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                 >
                   <div className="flex flex-wrap items-center gap-1.5 max-w-full">
                     {allRecipients.length === 0 && (
-                      <span className="text-[12.5px] text-muted-foreground/60">No recipient</span>
+                      onPickContact ? (
+                        <InlineRecipientPicker onPick={onPickContact} />
+                      ) : (
+                        <span className="text-[12.5px] text-muted-foreground/60">No recipient</span>
+                      )
                     )}
                     {allRecipients.slice(0, 6).map((r) => {
                       const initial = (r.first_name?.[0] ?? r.email?.[0] ?? '?').toUpperCase();
