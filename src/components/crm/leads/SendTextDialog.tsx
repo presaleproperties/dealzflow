@@ -50,6 +50,8 @@ interface Props {
   extraContacts?: CrmContact[];
   /** Fired after a successful send (single or mass). */
   onSent?: () => void;
+  /** Optional pre-filled message body (e.g. when sharing a booking link). */
+  initialBody?: string;
 }
 
 function formatPhoneDisplay(phone?: string | null): string {
@@ -64,7 +66,7 @@ function formatPhoneDisplay(phone?: string | null): string {
   return phone;
 }
 
-export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms', extraContacts, onSent }: Props) {
+export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms', extraContacts, onSent, initialBody }: Props) {
   const { user } = useAuth();
   const sendSms = useSendSms();
   const bulkSendSms = useBulkSendSms();
@@ -74,7 +76,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const { data: projects = [] } = useCrmProjects();
 
   const [channel, setChannel] = useState<MessagingChannel>(initialChannel);
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(initialBody || '');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [scheduled, setScheduled] = useState(false);
   const [scheduledFor, setScheduledFor] = useState('');
@@ -93,6 +95,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   useEffect(() => {
     if (open) {
       setChannel(initialChannel);
+      if (initialBody) setBody(initialBody);
     } else {
       setBody('');
       setMediaUrls([]);
@@ -100,7 +103,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       setScheduledFor('');
       setFromOverride('');
     }
-  }, [open, initialChannel]);
+  }, [open, initialChannel, initialBody]);
 
   // Resolve sender display
   const myNumber = useMemo(() => numbers.find(n => n.user_id === user?.id && n.is_active), [numbers, user]);
