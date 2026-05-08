@@ -53,6 +53,11 @@ export function MobilePipelineView() {
         const name = formatContactName(c.first_name, c.last_name).toLowerCase();
         if (!name.includes(q) && !(c.email?.toLowerCase().includes(q)) && !(c.phone || '').includes(q)) return;
       }
+      const canonicalSegmentId = (c as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+      if (canonicalSegmentId && map[canonicalSegmentId]) {
+        map[canonicalSegmentId].push(c);
+        return;
+      }
       for (const seg of pipelineSegments) {
         if (contactMatchesSegment(c, seg.filter_config)) { map[seg.id].push(c); break; }
       }
