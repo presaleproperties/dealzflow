@@ -1617,7 +1617,19 @@ function InlineRecipientPicker({ onPick }: { onPick: (c: CrmContact) => void }) 
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         onKeyDown={onKeyDown}
         placeholder="Type a name, email or phone…"
-        className="w-full bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+        type="search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        name={`recipient-search-${Math.random().toString(36).slice(2, 8)}`}
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
+        className="w-full bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
       {open && (results.length > 0 || query.trim()) && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
