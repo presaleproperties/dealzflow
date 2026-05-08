@@ -236,6 +236,20 @@ export function TemplateEditor({ template, initialDraft, onClose, onSendCampaign
 
   const saving = createTemplate.isPending || updateTemplate.isPending;
 
+  // Local autosave so accidental closes / reloads don't lose work. Explicit
+  // Save still writes to the database — this is just the rescue copy.
+  const draftKey = template?.id ?? 'new-template';
+  const draftSnapshot = useMemo(
+    () => ({ name, subject, previewText, htmlContent, category, projectTags, areaTags, appendSignature }),
+    [name, subject, previewText, htmlContent, category, projectTags, areaTags, appendSignature],
+  );
+  const { dirty, clear: clearDraft } = useTemplateAutosave(draftKey, draftSnapshot);
+
+  const handleSaveAndClear = useCallback(async () => {
+    await handleSave();
+    clearDraft();
+  }, [handleSave, clearDraft]);
+
   return (
     <div className="space-y-4">
       {/* Top bar */}
