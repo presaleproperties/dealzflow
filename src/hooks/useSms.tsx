@@ -260,28 +260,17 @@ export function useSendSms() {
         return res;
       };
 
+      // Manual sends from the UI ALWAYS bypass quiet-hour throttling.
+      // Quiet hours are intended for automations / scheduled blasts only —
+      // an agent typing a message is an explicit human action and should
+      // never be blocked by a time window.
       let data: any;
       let error: any;
       try {
-        ({ data, error } = await invoke({ ...args, client_dedupe_id: dedupeId }));
+        ({ data, error } = await invoke({ ...args, skip_quiet_hours: true, client_dedupe_id: dedupeId }));
       } catch (networkErr: any) {
         // True transport failure (fetch threw). Queue and report success.
         return queueForLater('network-error', networkErr?.message);
-      }
-
-      // QUIET_HOURS prompt path (unchanged behavior)
-      const quietMsg = (data?.code === 'QUIET_HOURS' && data?.error)
-        || (error?.message?.includes('QUIET_HOURS') ? 'Quiet hours are in effect.' : '')
-        || (error?.message?.includes('Quiet hours') ? error.message : '');
-
-      if (quietMsg && !args.skip_quiet_hours && typeof window !== 'undefined') {
-        const ok = await confirmQuietHours(quietMsg);
-        if (!ok) throw new Error('Send cancelled (quiet hours).');
-        try {
-          ({ data, error } = await invoke({ ...args, skip_quiet_hours: true, client_dedupe_id: dedupeId }));
-        } catch (networkErr: any) {
-          return queueForLater('network-error', networkErr?.message);
-        }
       }
 
       if (error) {
