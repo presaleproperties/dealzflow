@@ -246,7 +246,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
             type="button"
             onClick={handlePullFromLofty}
             disabled={pullingLofty}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
             title="Pulls emails, texts and calls for this lead from the Lofty API"
           >
             {pullingLofty
@@ -258,7 +258,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <button
             type="button"
             onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
             title="Paste a conversation from anywhere — AI will parse it"
           >
             <Sparkles className="w-3 h-3" />
