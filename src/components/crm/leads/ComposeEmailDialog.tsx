@@ -744,22 +744,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
               keyboard pushes the dialog up. */}
           <DialogHeader
-            className="md:hidden px-2 border-b border-border bg-background shrink-0 space-y-0 flex-row items-center justify-between gap-2"
-            style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: '0.5rem' }}
+            className="md:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top))', paddingBottom: '0.375rem' }}
           >
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="text-[15px] font-semibold text-primary hover:opacity-80 active:opacity-60 px-3 py-2 -ml-1 rounded-md min-h-[40px] min-w-[64px] text-left"
+              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-3 py-1.5 rounded-md min-h-[34px] text-left"
               disabled={isPending}
               aria-label="Close composer"
             >
               Cancel
             </button>
-            <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
-              {isMass ? `Mass Email · ${allRecipients.length}` : 'New Message'}
+            <DialogTitle className="text-[13.5px] font-semibold tracking-tight text-foreground truncate">
+              {isMass ? `Mass · ${allRecipients.length}` : 'New Message'}
             </DialogTitle>
-            {/* Spacer to keep title centered (matches Cancel min-width) */}
             <span className="w-[64px] shrink-0" aria-hidden />
           </DialogHeader>
 
