@@ -39,6 +39,7 @@ import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { useAuth } from '@/hooks/useAuth';
 import { AgentSignatureBlock } from '@/components/agent/AgentSignatureBlock';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick } from 'lucide-react';
 import { cn } from '@/lib/utils';
