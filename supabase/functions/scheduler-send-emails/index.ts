@@ -19,7 +19,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const PUBLIC_BASE = "https://dealzflow.ca";
+// Resolve at call time so the URL is correct on dealzflow.ca, the preview, or any
+// custom domain. Order: explicit env override → request origin (when invoked over HTTP)
+// → dealzflow.ca fallback. Note: when invoked server-to-server (no Origin header) we
+// land on the env override or the production fallback, which is what we want.
+function resolvePublicBase(req: Request): string {
+  const env = Deno.env.get("PUBLIC_BASE_URL")?.replace(/\/+$/, "");
+  if (env) return env;
+  const origin = req.headers.get("origin")?.replace(/\/+$/, "");
+  if (origin && /^https?:\/\//.test(origin)) return origin;
+  return "https://dealzflow.ca";
+}
 
 type Kind = "invitee_confirmation" | "agent_notification" | "invitee_cancellation" | "agent_cancellation" | "reminder";
 
@@ -87,8 +97,9 @@ Deno.serve(async (req) => {
     const agentName = agentRow.display_name || agentRow.email || "Your agent";
     const teamSlug = agentRow.slug;
 
-    const cancelUrl = teamSlug ? `${PUBLIC_BASE}/book/${teamSlug}/cancel?b=${booking.id}` : null;
-    const rescheduleUrl = teamSlug && evtRow.slug ? `${PUBLIC_BASE}/book/${teamSlug}/${evtRow.slug}?reschedule=${booking.id}` : null;
+    const PUBLIC_BASE = resolvePublicBase(req);
+    const cancelUrl = teamSlug ? `${PUBLIC_BASE}/r/${teamSlug}/cancel?b=${booking.id}` : null;
+    const rescheduleUrl = teamSlug && evtRow.slug ? `${PUBLIC_BASE}/r/${teamSlug}/${evtRow.slug}?reschedule=${booking.id}` : null;
 
     const ctx = {
       agentName,

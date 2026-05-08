@@ -89,6 +89,7 @@ const CrmSchedulerPage = lazy(() => import("./pages/crm/CrmSchedulerPage"));
 const PublicAgentLandingPage = lazy(() => import("./pages/public/PublicAgentLandingPage"));
 const PublicBookingPage = lazy(() => import("./pages/public/PublicBookingPage"));
 const PublicBookingPaidPage = lazy(() => import("./pages/public/PublicBookingPaidPage"));
+const PublicBookingCancelPage = lazy(() => import("./pages/public/PublicBookingCancelPage"));
 
 import { idbPersister } from "./lib/queryPersister";
 
@@ -288,9 +289,11 @@ const App = () => (
 
                     {/* Public booking pages — no auth. /r/ is the neutral short URL; /book/ kept as alias. */}
                     <Route path="/r/:teamSlug" element={<PublicAgentLandingPage />} />
+                    <Route path="/r/:teamSlug/cancel" element={<PublicBookingCancelPage />} />
                     <Route path="/r/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
                     <Route path="/r/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
                     <Route path="/book/:teamSlug" element={<PublicAgentLandingPage />} />
+                    <Route path="/book/:teamSlug/cancel" element={<PublicBookingCancelPage />} />
                     <Route path="/book/:teamSlug/:eventSlug" element={<PublicBookingPage />} />
                     <Route path="/book/:teamSlug/:eventSlug/paid" element={<PublicBookingPaidPage />} />
 
