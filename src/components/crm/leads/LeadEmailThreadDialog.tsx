@@ -284,7 +284,34 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
 
   const lastInThread = activeThread?.messages[activeThread.messages.length - 1] ?? null;
 
+  // On mobile we hand replies off to the canonical ComposeEmailDialog instead
+  // of an inline panel — gives the agent the same premium full-screen surface
+  // they get from "New email", with quoted history pre-baked into the body.
+  const [mobileComposeOpen, setMobileComposeOpen] = useState(false);
+  const [mobileComposeSubject, setMobileComposeSubject] = useState('');
+  const [mobileComposeBody, setMobileComposeBody] = useState('');
+
+  const buildReplyContext = () => {
+    if (!lastInThread) return null;
+    const subject = lastInThread.subject?.toLowerCase().startsWith('re:')
+      ? lastInThread.subject
+      : `Re: ${lastInThread.subject ?? ''}`.trim();
+    const quotedHeader = `${format(parseISO(lastInThread.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')} ${lastInThread.fromName || lastInThread.fromEmail || ''} wrote:`;
+    const quotedBody = (lastInThread.bodyHtml || `<p>${escapeHtml(lastInThread.bodyText || '')}</p>`);
+    const body = `<p></p><p></p><div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:4px 14px;margin:14px 0;"><div style="margin-bottom:8px;color:#888;">${escapeHtml(quotedHeader)}</div>${quotedBody}</div>`;
+    return { subject: subject || '(no subject)', body };
+  };
+
   const handleStartReply = () => {
+    // Mobile → defer to the unified ComposeEmailDialog for parity with "New email".
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      const ctx = buildReplyContext();
+      if (!ctx) return;
+      setMobileComposeSubject(ctx.subject);
+      setMobileComposeBody(ctx.body);
+      setMobileComposeOpen(true);
+      return;
+    }
     setReplyOpen(true);
     setReplyHtml('<p></p><p></p>');
     requestAnimationFrame(() => {
