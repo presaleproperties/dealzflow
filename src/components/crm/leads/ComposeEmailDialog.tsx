@@ -1625,7 +1625,7 @@ function InlineRecipientPicker({ onPick }: { onPick: (c: CrmContact) => void }) 
         className="w-full bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
       {open && (results.length > 0 || query.trim()) && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+        <div className="absolute left-0 top-full mt-1 z-50 w-[min(420px,calc(100vw-2rem))] rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
           {isLoading && (
             <div className="px-3 py-2 text-[11.5px] text-muted-foreground flex items-center gap-2">
               <Loader2 className="w-3 h-3 animate-spin" /> Loading contacts…
