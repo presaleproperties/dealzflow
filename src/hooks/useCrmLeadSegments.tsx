@@ -143,7 +143,9 @@ export function useSegmentCounts(
         segments.map(async (seg) => {
           let query = supabase.from('crm_contacts').select('id', { count: 'exact', head: true });
           query = applyFilters(query, baseFilters);
-          query = applyFilters(query, seg.filter_config);
+          if (seg.filter_config && Object.keys(seg.filter_config).length > 0) {
+            query = query.eq('pipeline_segment_id', seg.id);
+          }
           const { count, error } = await query;
           return { id: seg.id, count: error ? 0 : (count ?? 0) };
         }),
@@ -161,6 +163,10 @@ export function useSegmentCounts(
 
 function applyFilters(query: any, filters: Record<string, unknown>) {
   if (!filters || Object.keys(filters).length === 0) return query;
+
+  if (filters.pipeline_segment_id && typeof filters.pipeline_segment_id === 'string') {
+    query = query.eq('pipeline_segment_id', filters.pipeline_segment_id);
+  }
 
   if (filters.status && Array.isArray(filters.status) && (filters.status as string[]).length > 0) {
     query = query.in('status', filters.status as string[]);
