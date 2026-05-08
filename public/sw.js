@@ -6,7 +6,7 @@
 
 // Bump VERSION on any deploy that ships safe-area / layout fixes that
 // must invalidate the cached /assets/* CSS chunks.
-const VERSION = "v5-2026-05-07-purge-old-dealzflow";
+const VERSION = "v6-2026-05-08-scheduler-automations";
 const CACHE_NAME = `dealzflow-assets-${VERSION}`;
 
 self.addEventListener("install", (event) => {
