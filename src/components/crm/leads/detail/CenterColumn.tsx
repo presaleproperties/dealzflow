@@ -384,6 +384,11 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                 <StickyNote className="w-4 h-4 text-muted-foreground" />
               </div>
               <p className="text-sm font-medium text-foreground/80">No activity yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Add a note above to get started</p>
+            </div>
+          )}
+        </div>
+
         {/* Appointments — collapsible card available on all viewports now that
             the inner tab strip has been removed. */}
         {showings.length > 0 && (
