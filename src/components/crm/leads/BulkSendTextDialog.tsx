@@ -397,3 +397,31 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
     </Dialog>
   );
 }
+
+function AudienceRow({ label, options, selected, onToggle }: { label: string; options: readonly string[]; selected: string[]; onToggle: (v: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</Label>
+      <div className="flex flex-wrap gap-1">
+        {options.map(opt => {
+          const active = selected.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onToggle(opt)}
+              className={cn(
+                'px-2 py-0.5 rounded-full text-[11px] border transition-colors',
+                active
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background border-border text-muted-foreground hover:text-foreground hover:border-foreground/30',
+              )}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
