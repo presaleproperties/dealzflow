@@ -410,11 +410,11 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         <div className="flex-1 min-h-0 flex flex-col md:flex-row">
           {/* Left rail — lead context + recent threads */}
           <aside className="w-full md:w-[300px] lg:w-[340px] flex-shrink-0 border-r border-border/70 bg-muted/20 overflow-y-auto">
-            <div className="p-5 border-b border-border/70">
-              <h2 className="text-[20px] font-bold leading-tight text-foreground tracking-tight uppercase">
-                {fullName}
-              </h2>
-              <dl className="mt-4 space-y-1.5 text-[12.5px]">
+            <div className="p-4 border-b border-border/70">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/80 mb-2">
+                Lead
+              </h3>
+              <dl className="space-y-1.5 text-[12.5px]">
                 <Field label="Type" value={contact.contact_type ?? '—'} />
                 <Field label="Phone" value={contact.phone ?? '—'} />
                 <Field label="Pipeline" value={contact.status ?? '—'} />
