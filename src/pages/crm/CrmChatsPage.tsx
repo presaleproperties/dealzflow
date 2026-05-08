@@ -17,6 +17,7 @@ import { formatContactName } from '@/lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
 
 /**
  * Strip HTML, collapse whitespace, decode common entities so email previews
