@@ -3,13 +3,13 @@ import {
   Mail, MessageSquare, Plus, Search, FileText, Star, Pencil,
   Copy as CopyIcon, Trash2, Send, Eye, RefreshCw, AlertCircle,
   CheckCircle2, Sparkles, ArrowUpRight, Users, User, X, Filter,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -29,7 +29,6 @@ import {
   type EmailTemplate,
 } from '@/hooks/useEmailTemplates';
 import { useBridgeTemplates, type BridgeTemplate } from '@/hooks/useBridgeEmail';
-import { TemplateEditor } from '@/components/crm/templates/TemplateEditor';
 import { useSmsTemplates } from '@/hooks/useSms';
 import { Link } from 'react-router-dom';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
@@ -38,6 +37,8 @@ import { toast } from 'sonner';
 import { PresaleTemplatePreviewDialog } from '@/components/crm/marketing/PresaleTemplatePreviewDialog';
 import { stripSignatureBlock } from '@/lib/templateSignature';
 import { renderWithSampleData } from '@/lib/emailVariables';
+import { AgentHubLinks } from '@/lib/agentHub';
+import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
 
 // ===================================================================
 // Page shell
