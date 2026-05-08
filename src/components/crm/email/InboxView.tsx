@@ -341,57 +341,110 @@ export default function InboxView() {
   }
 
   // ───────────────── Desktop (3-pane) ─────────────────
+  // Dynamic grid template lets users collapse either side pane.
+  const gridCols = [
+    foldersCollapsed ? '52px' : '200px',
+    listCollapsed ? '0px' : '360px',
+    '1fr',
+  ].join(' ');
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[180px_320px_1fr] lg:grid-cols-[200px_360px_1fr] min-h-0 h-full rounded-xl border border-border overflow-hidden bg-background shadow-sm">
-      {/* Folder rail */}
-      <aside className="hidden md:flex flex-col border-r border-border bg-muted/20 px-3 py-4 gap-6 min-h-0">
-        <div className="px-2">
-          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-2">
-            Mailbox
-          </div>
-          <nav className="flex flex-col gap-0.5">
-            {folders.map(f => {
-              const active = folder === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => { setFolder(f.id); setSelectedThreadId(null); }}
-                  className={cn(
-                    'flex items-center gap-2.5 h-8 px-2 rounded-md text-[13px] transition-colors text-left',
-                    active
-                      ? 'bg-foreground/[0.07] text-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground/90',
-                  )}
-                >
-                  <f.icon className={cn('h-3.5 w-3.5 shrink-0', active && 'text-primary')} />
-                  <span className="flex-1 truncate">{f.label}</span>
-                  {f.count ? (
+    <div
+      className="grid grid-cols-1 min-h-0 h-full rounded-xl border border-border overflow-hidden bg-background shadow-sm"
+      style={{ gridTemplateColumns: gridCols }}
+    >
+      {/* Folder rail (collapsible) */}
+      <aside
+        className={cn(
+          'hidden md:flex flex-col border-r border-border bg-muted/20 py-3 gap-4 min-h-0 transition-[padding] duration-200',
+          foldersCollapsed ? 'px-1.5 items-center' : 'px-3',
+        )}
+      >
+        <div className={cn('flex items-center', foldersCollapsed ? 'justify-center w-full' : 'justify-between px-2')}>
+          {!foldersCollapsed && (
+            <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">
+              Mailbox
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setFoldersCollapsed(v => !v)}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            aria-label={foldersCollapsed ? 'Expand folders' : 'Collapse folders'}
+            title={foldersCollapsed ? 'Expand folders' : 'Collapse folders'}
+          >
+            {foldersCollapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+        <nav className={cn('flex flex-col gap-0.5', foldersCollapsed ? 'w-full items-center' : 'px-2')}>
+          {folders.map(f => {
+            const active = folder === f.id;
+            return (
+              <button
+                key={f.id}
+                onClick={() => { setFolder(f.id); setSelectedThreadId(null); }}
+                title={f.label}
+                aria-label={f.label}
+                className={cn(
+                  'relative flex items-center rounded-md text-[13px] transition-colors text-left',
+                  foldersCollapsed ? 'h-9 w-9 justify-center' : 'gap-2.5 h-8 px-2 w-full',
+                  active
+                    ? 'bg-foreground/[0.07] text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground/90',
+                )}
+              >
+                <f.icon className={cn('h-4 w-4 shrink-0', active && 'text-primary')} />
+                {!foldersCollapsed && <span className="flex-1 truncate">{f.label}</span>}
+                {f.count ? (
+                  foldersCollapsed ? (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] text-[9px] tabular-nums px-1 rounded-full inline-flex items-center justify-center bg-primary text-primary-foreground">
+                      {f.count}
+                    </span>
+                  ) : (
                     <span className={cn(
                       'text-[10px] tabular-nums px-1.5 h-4 rounded-full inline-flex items-center',
                       active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
                     )}>{f.count}</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="mt-auto px-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={sync}
-            disabled={syncing}
-            className="w-full h-8 gap-1.5 text-xs justify-start"
-          >
-            {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-            {syncing ? 'Syncing…' : 'Sync inbox'}
-          </Button>
+                  )
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+        <div className={cn('mt-auto', foldersCollapsed ? 'w-full flex justify-center' : 'px-2')}>
+          {foldersCollapsed ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={sync}
+              disabled={syncing}
+              aria-label="Sync inbox"
+              className="h-9 w-9"
+            >
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4 text-muted-foreground" />}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={sync}
+              disabled={syncing}
+              className="w-full h-8 gap-1.5 text-xs justify-start"
+            >
+              {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+              {syncing ? 'Syncing…' : 'Sync inbox'}
+            </Button>
+          )}
         </div>
       </aside>
 
-      {/* Message list */}
-      <section className="flex flex-col min-h-0 border-r border-border bg-card">
+      {/* Message list (collapsible) */}
+      <section
+        className={cn(
+          'flex flex-col min-h-0 border-r border-border bg-card overflow-hidden transition-opacity duration-150',
+          listCollapsed && 'opacity-0 pointer-events-none',
+        )}
+      >
         <div className="px-3.5 py-3 border-b border-border space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold tracking-tight text-foreground capitalize">
