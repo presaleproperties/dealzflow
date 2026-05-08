@@ -45,8 +45,8 @@ export function DetailRow({
   const autoCopyable =
     copyable ?? (type === 'email' || /phone|email/i.test(field));
   return (
-    <div className="flex items-center justify-between gap-2 py-2 border-b border-border/40 group">
-      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+    <div className="flex items-center justify-between gap-2 py-2.5 border-b border-border/40 group">
+      <span className="text-[12.5px] text-muted-foreground shrink-0 font-medium">{label}</span>
       <div className="flex-1 min-w-0 flex items-center justify-end gap-1">
         <InlineEditField
           value={value}
@@ -55,7 +55,7 @@ export function DetailRow({
           type={type}
           options={options}
           displayFormatter={displayFormatter}
-          className="text-[13px] text-right truncate max-w-full"
+          className="text-[13.5px] text-right truncate max-w-full"
         />
         {autoCopyable && value && <CopyButton value={value} label={label} />}
       </div>
