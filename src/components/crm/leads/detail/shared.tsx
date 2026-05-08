@@ -19,10 +19,10 @@ export function InsightCard({
   accent?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-card px-2.5 py-3 text-center space-y-1.5">
-      <p className="text-[22px] font-bold text-foreground leading-none tabular-nums tracking-tight">{value}</p>
-      <p className="text-[10.5px] text-muted-foreground leading-tight uppercase tracking-[0.1em] font-semibold">{label}</p>
-      {sublabel && <p className="text-[10px] font-semibold leading-tight tracking-wider" style={{ color: accent }}>{sublabel}</p>}
+    <div className="min-w-0 rounded-xl border border-border/70 bg-card px-2 py-2.5 text-center flex flex-col items-center justify-center gap-1 min-h-[74px]">
+      <p className="w-full text-[18px] sm:text-[20px] font-bold text-foreground leading-none tabular-nums tracking-tight truncate">{value}</p>
+      <p className="w-full text-[10px] text-muted-foreground leading-tight uppercase tracking-[0.08em] font-semibold truncate">{label}</p>
+      {sublabel && <p className="w-full text-[9.5px] font-semibold leading-tight tracking-wider truncate" style={{ color: accent }}>{sublabel}</p>}
     </div>
   );
 }
