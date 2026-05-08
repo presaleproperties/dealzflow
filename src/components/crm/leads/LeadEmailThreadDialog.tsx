@@ -390,21 +390,25 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           {threads.length} thread{threads.length === 1 ? '' : 's'} with this lead
         </DialogDescription>
 
-        {/* Header bar */}
-        <div className="flex items-center justify-between px-4 md:px-5 py-2.5 md:py-3 border-b border-border/70 bg-gradient-to-b from-card to-card/95 flex-shrink-0">
+        {/* Header bar — Mail-style on mobile (single line, no eyebrow), full identity on desktop */}
+        <div className="flex items-center justify-between px-3 md:px-5 py-2 md:py-3 border-b border-border/70 bg-card/95 md:bg-gradient-to-b md:from-card md:to-card/95 backdrop-blur flex-shrink-0">
           <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
             <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11.5px] font-semibold shrink-0">
               {headerInitials}
             </div>
             <div className="min-w-0 leading-tight">
+              {/* Desktop: eyebrow + name. Mobile: just the name + thread count for cleanliness. */}
               <div className="flex items-center gap-2">
-                <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="hidden md:inline text-[10.5px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   {replyOpen ? 'Reply' : 'Email'}
                 </span>
-                <span className="h-3 w-px bg-border" />
-                <span className="text-[13px] font-semibold text-foreground truncate max-w-[180px] md:max-w-[280px]">
+                <span className="hidden md:inline h-3 w-px bg-border" />
+                <span className="text-[14px] md:text-[13px] font-semibold text-foreground truncate max-w-[200px] md:max-w-[280px]">
                   {fullName}
                 </span>
+                {activeThread && activeThread.messages.length > 1 && (
+                  <span className="md:hidden text-[11px] text-muted-foreground tabular-nums">· {activeThread.messages.length}</span>
+                )}
               </div>
               {contact.email && (
                 <div className="text-[11px] text-muted-foreground truncate max-w-[220px] md:max-w-[360px]">
