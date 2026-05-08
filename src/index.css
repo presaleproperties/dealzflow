@@ -1116,6 +1116,46 @@
     body[data-section="crm"] [role="dialog"] h2 { font-size: 15.5px; font-weight: 600; }
   }
 
+  /* ── CRM mobile polish (<1024px) ───────────────────────────────
+     Mirror the desktop editorial scale on phones/tablets so the
+     look-and-feel stays consistent across breakpoints. The mobile
+     m-* design tokens still own list/row rhythm — this layer only
+     normalizes loose headings, KPI numbers, and chip line-heights
+     that pages set ad-hoc. */
+  @media (max-width: 1023.98px) {
+    body[data-section="crm"] {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    /* Tame sweeping size utilities used in headers across CRM pages.
+       The m-page-title class wins via specificity where applied. */
+    body[data-section="crm"] h1:not(.m-page-title),
+    body[data-section="crm"] .text-3xl { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.012em; }
+    body[data-section="crm"] h2:not(.m-page-title),
+    body[data-section="crm"] .text-2xl { font-size: 17px; line-height: 1.3;  font-weight: 600; letter-spacing: -0.01em; }
+    body[data-section="crm"] h3,
+    body[data-section="crm"] .text-xl  { font-size: 15.5px; line-height: 1.35; font-weight: 600; letter-spacing: -0.005em; }
+    body[data-section="crm"] h4,
+    body[data-section="crm"] .text-lg  { font-size: 14px; line-height: 1.4;  font-weight: 600; }
+    body[data-section="crm"] .text-\[28px\] { font-size: 20px !important; line-height: 1.2; font-weight: 600; letter-spacing: -0.012em; }
+    body[data-section="crm"] .font-bold { font-weight: 600; }
+
+    /* Chip baselines so pill rows align with adjacent text. */
+    body[data-section="crm"] [class*="rounded-full"][class*="px-2"]:not(button):not(a):not(input) {
+      line-height: 1;
+    }
+
+    /* Card radius parity with desktop. */
+    body[data-section="crm"] .crm-card,
+    body[data-section="crm"] .card-premium,
+    body[data-section="crm"] [data-slot="card"] {
+      border-radius: 12px;
+    }
+
+    /* Dialog titles — keep under control on mobile. */
+    body[data-section="crm"] [role="dialog"] h2 { font-size: 15px; font-weight: 600; }
+  }
+
   /* ──────────────────────────────────────────────────────────────
      Lofty-derived mobile design system (v1)
      Source of truth for spacing, sizing, and rhythm on phones.
