@@ -390,53 +390,30 @@ function IMessageBubble({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className={cn('flex group', isOutbound ? 'justify-end pr-3' : 'justify-start pl-3', sameAsPrev ? 'mt-[2px]' : 'mt-1.5')}>
-          <div className="relative max-w-[82%] sm:max-w-[68%] lg:max-w-[60%] min-w-0">
+        <div className={cn('flex group', isOutbound ? 'justify-end pr-2' : 'justify-start pl-2', sameAsPrev ? 'mt-[3px]' : 'mt-2')}>
+          <div className={cn('relative max-w-[78%] sm:max-w-[64%] lg:max-w-[56%] min-w-0 flex flex-col', isOutbound ? 'items-end' : 'items-start')}>
             <div
               className={cn(
-                'relative px-3.5 py-2 text-[15px] leading-[1.42] msg-pop-in rounded-[18px]',
+                'relative px-3.5 py-[7px] text-[14.5px] leading-[1.45] msg-pop-in rounded-[14px] tracking-[-0.005em]',
                 isOutbound ? 'imsg-bubble-out' : 'imsg-bubble-in',
-                // shape: tighten the adjoining corner when same sender continues;
-                // square off the tail-side bottom corner on last-in-run so the SVG tail blends seamlessly
+                // Editorial grouping: tighten only the adjoining corner so a run reads as one block.
                 isOutbound
-                  ? cn(sameAsPrev && 'rounded-tr-[4px]', sameAsNext ? 'rounded-br-[4px]' : 'rounded-br-[6px]', isLastInRun && 'rounded-br-[6px]')
-                  : cn(sameAsPrev && 'rounded-tl-[4px]', sameAsNext ? 'rounded-bl-[4px]' : 'rounded-bl-[6px]', isLastInRun && 'rounded-bl-[6px]'),
+                  ? cn(sameAsPrev && 'rounded-tr-[6px]', sameAsNext && 'rounded-br-[6px]')
+                  : cn(sameAsPrev && 'rounded-tl-[6px]', sameAsNext && 'rounded-bl-[6px]'),
                 (isOptimistic || isScheduled) && 'opacity-70',
               )}
             >
-              {/* SVG bubble tail — sits flush at the bubble's bottom corner so it never paints over wrapped lines above */}
-              {isLastInRun && (
-                isOutbound ? (
-                  <svg
-                    viewBox="0 0 12 16"
-                    className="imsg-tail-out absolute right-[-6px] bottom-0 w-[12px] h-[16px] pointer-events-none"
-                    aria-hidden
-                  >
-                    {/* anchor at bubble's bottom-right; curve outward then back to baseline */}
-                    <path d="M0 16 C 0 8, 4 4, 12 0 C 9 8, 6 14, 2 16 Z" fill="currentColor" />
-                  </svg>
-                ) : (
-                  <svg
-                    viewBox="0 0 12 16"
-                    className="imsg-tail-in absolute left-[-6px] bottom-0 w-[12px] h-[16px] pointer-events-none"
-                    aria-hidden
-                  >
-                    <path d="M12 16 C 12 8, 8 4, 0 0 C 3 8, 6 14, 10 16 Z" fill="currentColor" />
-                  </svg>
-                )
-              )}
-
               {/* Quoted reply */}
               {quote && (
                 <div className={cn(
-                  'mb-1 pl-2 border-l-2 text-[12.5px] italic line-clamp-2 opacity-80',
-                  isOutbound ? 'border-white/40' : 'border-foreground/30',
+                  'mb-1 pl-2 border-l-2 text-[12px] line-clamp-2 opacity-80',
+                  isOutbound ? 'border-primary-foreground/40' : 'border-foreground/25',
                 )}>
                   {quote}
                 </div>
               )}
 
-              <div className="min-w-0 max-w-full whitespace-pre-wrap break-words break-all [overflow-wrap:anywhere] [word-break:break-word] hyphens-auto">
+              <div className="min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
                 <HighlightedText text={text} query={highlight} />
               </div>
 
@@ -447,7 +424,7 @@ function IMessageBubble({
                     if (isImg) {
                       return (
                         <a key={idx} href={u} target="_blank" rel="noreferrer">
-                          <img src={u} className="rounded-lg max-h-40 object-cover" alt="attachment" />
+                          <img src={u} className="rounded-md max-h-40 object-cover" alt="attachment" />
                         </a>
                       );
                     }
@@ -456,7 +433,7 @@ function IMessageBubble({
                         key={idx} href={u} target="_blank" rel="noreferrer"
                         className={cn(
                           'flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded-md',
-                          isOutbound ? 'bg-white/15 hover:bg-white/25' : 'bg-background/60 hover:bg-background',
+                          isOutbound ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted/60 hover:bg-muted',
                         )}
                       >
                         <FileText className="w-3 h-3" /> Attachment
@@ -467,63 +444,6 @@ function IMessageBubble({
               )}
             </div>
 
-            {/* Tapback above bubble (iMessage style) */}
-            {reaction && (
-              <div
-                className={cn(
-                  'absolute -top-2.5 px-1.5 py-0.5 rounded-full bg-background border border-border shadow-sm text-[12px] cursor-pointer',
-                  isOutbound ? '-left-1' : '-right-1',
-                )}
-                onClick={() => threadState.setReaction(m.id, null)}
-                title="Remove tapback"
-              >
-                {reaction}
-              </div>
-            )}
-
-            {/* Hover tapback popover */}
-            <div
-              className={cn(
-                'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10',
-                isOutbound ? '-left-9' : '-right-9',
-              )}
-            >
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-background border border-border shadow-sm">
-                    <Smile className="w-3.5 h-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="center" className="w-auto p-1.5 rounded-2xl">
-                  <div className="flex gap-0.5">
-                    {REACTION_EMOJIS.map(e => (
-                      <button
-                        key={e}
-                        onClick={() => threadState.setReaction(m.id, e === reaction ? null : e)}
-                        className={cn(
-                          'h-9 w-9 rounded-full hover:bg-muted text-base transition-transform hover:scale-110',
-                          reaction === e && 'bg-primary/15',
-                        )}
-                      >
-                        {e}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Status under last outbound bubble */}
-            {isOutbound && isLastInRun && (
-              <div className="flex justify-end mt-0.5 mr-1.5">
-                <span className="text-[10.5px] text-muted-foreground flex items-center gap-1 font-medium">
-                  <StatusIcon status={m.status} />
-                  {statusLabel(m.status, m.scheduled_for)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-44">
         <ContextMenuItem onClick={() => onReply(m)} className="gap-2">
