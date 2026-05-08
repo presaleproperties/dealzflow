@@ -78,17 +78,66 @@ type ThreadMessage = {
 const IFRAME_STYLES = `
   :root { color-scheme: light; }
   html, body { margin: 0; padding: 0; background: #ffffff; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Plus Jakarta Sans", Roboto, sans-serif; font-size: 14.5px; line-height: 1.6; color: #1a1a1a; padding: 18px 22px; word-wrap: break-word; -webkit-font-smoothing: antialiased; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Plus Jakarta Sans", Roboto, sans-serif; font-size: 14.5px; line-height: 1.6; color: #1a1a1a; padding: 18px 22px; word-wrap: break-word; overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
   p { margin: 0 0 12px; }
   a { color: hsl(220 90% 50%); text-decoration: underline; }
   img { max-width: 100%; height: auto; border-radius: 4px; }
   table { max-width: 100% !important; border-collapse: collapse; }
-  blockquote { border-left: 3px solid #e5e5e5; margin: 12px 0; padding: 4px 14px; color: #555; }
+  blockquote { border-left: 3px solid #d4d4d8; margin: 12px 0; padding: 4px 14px; color: #555; background: #fafafa; }
   hr { border: 0; border-top: 1px solid #eee; margin: 18px 0; }
+  details.quoted { margin-top: 14px; }
+  details.quoted > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; padding: 4px 10px; border-radius: 999px; background: #f3f4f6; user-select: none; }
+  details.quoted > summary::-webkit-details-marker { display: none; }
+  details.quoted > summary:hover { background: #e5e7eb; color: #111827; }
+  details.quoted[open] > summary { margin-bottom: 10px; }
+  .quoted-body { border-left: 3px solid #e5e7eb; padding: 8px 14px; color: #6b7280; background: #fafafa; border-radius: 0 6px 6px 0; }
+  .quoted-body p { margin: 0 0 8px; font-size: 13.5px; }
 `;
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+/**
+ * Split plain-text email into "new" content vs "quoted history".
+ * Heuristics: a line that matches an "On <date>... wrote:" attribution OR
+ * starts with `>` (possibly nested `> > >`) marks the boundary. Everything
+ * from the first such line onwards is treated as quoted history.
+ */
+function splitPlainTextReply(plain: string): { fresh: string; quoted: string } {
+  const lines = plain.split(/\r?\n/);
+  const attributionRe = /^\s*(on\s+.+?\bwrote:|-{2,}\s*original message\s*-{2,}|from:\s+.+@.+)/i;
+  const quoteRe = /^\s*(>\s*)+/;
+  let cutIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i];
+    if (attributionRe.test(ln) || quoteRe.test(ln)) { cutIdx = i; break; }
+  }
+  // Also handle the common case where the attribution is mid-paragraph (no newline before it)
+  if (cutIdx === -1) {
+    const m = plain.match(/\bon\s+\w{3},?\s+\w{3}\s+\d{1,2},?\s+\d{4}[^.]*?\bwrote:/i);
+    if (m && m.index !== undefined) {
+      const before = plain.slice(0, m.index).trimEnd();
+      const after = plain.slice(m.index).trim();
+      return { fresh: before, quoted: after };
+    }
+    return { fresh: plain.trim(), quoted: '' };
+  }
+  return {
+    fresh: lines.slice(0, cutIdx).join('\n').trim(),
+    quoted: lines.slice(cutIdx).join('\n').trim(),
+  };
+}
+
+function plainToHtml(text: string, opts?: { stripQuoteMarks?: boolean }): string {
+  if (!text) return '';
+  const cleaned = opts?.stripQuoteMarks
+    ? text.split(/\r?\n/).map(l => l.replace(/^\s*(>\s*)+/, '')).join('\n')
+    : text;
+  return cleaned
+    .split(/\n{2,}/)
+    .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
+    .join('');
 }
 
 function buildSrcDoc(html: string | null, text: string | null): string {
@@ -104,8 +153,15 @@ function buildSrcDoc(html: string | null, text: string | null): string {
   }
   const plain = (text || raw || '').trim();
   if (!plain) return `<!DOCTYPE html><html><head>${styleTag}</head><body><p style="color:#888">(No body.)</p></body></html>`;
-  const paragraphs = plain.split(/\n{2,}/).map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`).join('');
-  return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${paragraphs}</body></html>`;
+
+  const { fresh, quoted } = splitPlainTextReply(plain);
+  const freshHtml = plainToHtml(fresh || plain);
+  const quotedHtml = quoted ? plainToHtml(quoted, { stripQuoteMarks: true }) : '';
+  const body = quotedHtml
+    ? `${freshHtml}<details class="quoted"><summary>··· Show quoted history</summary><div class="quoted-body">${quotedHtml}</div></details>`
+    : freshHtml;
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">${styleTag}</head><body>${body}</body></html>`;
 }
 
 export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmailId }: Props) {
