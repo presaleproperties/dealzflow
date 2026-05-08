@@ -58,19 +58,22 @@ export default function CrmTemplatesPage() {
               Templates
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5 max-w-xl">
-              One library across your drafts, the team, and the live Presale catalog.
+              Read-only mirror of your Agent Hub library. Build & edit templates in Agent Hub.
             </p>
           </div>
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'email' | 'messaging')}>
-            <TabsList className="h-9 bg-muted/60 p-1">
-              <TabsTrigger value="email" className="h-7 gap-1.5 text-xs px-3">
-                <Mail className="w-3.5 h-3.5" /> Email
-              </TabsTrigger>
-              <TabsTrigger value="messaging" className="h-7 gap-1.5 text-xs px-3">
-                <MessageSquare className="w-3.5 h-3.5" /> SMS
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as 'email' | 'messaging')}>
+              <TabsList className="h-9 bg-muted/60 p-1">
+                <TabsTrigger value="email" className="h-7 gap-1.5 text-xs px-3">
+                  <Mail className="w-3.5 h-3.5" /> Email
+                </TabsTrigger>
+                <TabsTrigger value="messaging" className="h-7 gap-1.5 text-xs px-3">
+                  <MessageSquare className="w-3.5 h-3.5" /> SMS
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <OpenAgentHubButton />
+          </div>
         </div>
       </div>
 
