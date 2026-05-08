@@ -58,51 +58,8 @@ export default function CrmSmsCenterPage() {
   const [statsRange, setStatsRange] = useState<'7d' | '30d' | 'all'>('7d');
   const [failedDrawerOpen, setFailedDrawerOpen] = useState(false);
 
-  // Composer (bulk)
+  // Composer (single dialog — only compose surface)
   const [composerOpen, setComposerOpen] = useState(false);
-  const [composerIds, setComposerIds] = useState<string[]>([]);
-
-  // Recipient preview drawer
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  // Filters for new blast
-  const [fStatuses, setFStatuses] = useState<string[]>([]);
-  const [fSources, setFSources] = useState<string[]>([]);
-  const [fAgents, setFAgents] = useState<string[]>([]);
-  const [fTags, setFTags] = useState<string>('');
-
-  const filteredRecipients = useMemo(() => {
-    const tagsArr = fTags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
-    return allContacts.filter(c => {
-      if (!c.phone) return false;
-      if (fStatuses.length && !fStatuses.includes(c.status || '')) return false;
-      if (fSources.length && !fSources.includes(c.source || '')) return false;
-      if (fAgents.length && !fAgents.includes(c.assigned_to || '')) return false;
-      if (tagsArr.length && !(c.tags || []).some(t => tagsArr.includes(t.toLowerCase()))) return false;
-      return true;
-    });
-  }, [allContacts, fStatuses, fSources, fAgents, fTags]);
-
-  // Opt-out aware reachable count
-  const optOutPhones = useMemo(
-    () => new Set(optOuts.filter(o => !o.re_opted_in_at).map(o => (o.phone || '').replace(/\D/g, '').slice(-10))),
-    [optOuts],
-  );
-  const reachable = useMemo(
-    () => filteredRecipients.filter(c => !optOutPhones.has((c.phone || '').replace(/\D/g, '').slice(-10))),
-    [filteredRecipients, optOutPhones],
-  );
-  const optedOutCount = filteredRecipients.length - reachable.length;
-
-  const toggleArr = (arr: string[], v: string, set: (a: string[]) => void) => {
-    set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]);
-  };
-
-  const launchBlast = () => {
-    if (reachable.length === 0) return;
-    setComposerIds(reachable.map(c => c.id));
-    setComposerOpen(true);
-  };
 
   // ─── Stats (range-aware) ─────────────────────────────────────
   const since = useMemo(() => {
