@@ -395,6 +395,62 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_automation_enrollments: {
+        Row: {
+          automation_id: string
+          contact_id: string
+          created_at: string
+          current_step_order: number
+          enrolled_at: string
+          exit_reason: string | null
+          exited_at: string | null
+          id: string
+          next_step_due_at: string | null
+          project_slug: string | null
+          status: string
+          trigger_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          automation_id: string
+          contact_id: string
+          created_at?: string
+          current_step_order?: number
+          enrolled_at?: string
+          exit_reason?: string | null
+          exited_at?: string | null
+          id?: string
+          next_step_due_at?: string | null
+          project_slug?: string | null
+          status?: string
+          trigger_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          automation_id?: string
+          contact_id?: string
+          created_at?: string
+          current_step_order?: number
+          enrolled_at?: string
+          exit_reason?: string | null
+          exited_at?: string | null
+          id?: string
+          next_step_due_at?: string | null
+          project_slug?: string | null
+          status?: string
+          trigger_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_automation_enrollments_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "crm_automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_automation_logs: {
         Row: {
           action_result: string
@@ -457,6 +513,60 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_automation_run_log: {
+        Row: {
+          action_result: string
+          action_type: string
+          automation_id: string
+          contact_id: string | null
+          created_at: string
+          enrollment_id: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          step_order: number
+        }
+        Insert: {
+          action_result?: string
+          action_type: string
+          automation_id: string
+          contact_id?: string | null
+          created_at?: string
+          enrollment_id?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          step_order: number
+        }
+        Update: {
+          action_result?: string
+          action_type?: string
+          automation_id?: string
+          contact_id?: string | null
+          created_at?: string
+          enrollment_id?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_automation_run_log_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "crm_automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_automation_run_log_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_automation_enrollments"
             referencedColumns: ["id"]
           },
         ]
@@ -5431,6 +5541,14 @@ export type Database = {
       }
       encrypt_api_credential: {
         Args: { passphrase: string; plaintext: string }
+        Returns: string
+      }
+      enroll_in_automation: {
+        Args: {
+          p_automation_id: string
+          p_contact_id: string
+          p_trigger_data?: Json
+        }
         Returns: string
       }
       find_potential_duplicate: {
