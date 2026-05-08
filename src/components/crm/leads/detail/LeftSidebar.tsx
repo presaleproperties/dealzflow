@@ -172,26 +172,26 @@ export function LeftSidebar({
         </div>
 
         {(contact.phone || contact.email) && (
-          <div className="space-y-2 pt-4 border-t border-border/60">
+          <div className="space-y-1.5 pt-3 border-t border-border/60">
             {contact.phone && (
-              <div className="flex items-center justify-between gap-2 group">
+              <div className="flex items-center justify-between gap-2 group min-w-0">
                 <a
                   href={`tel:${contact.phone}`}
-                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2 min-w-0 flex-1 text-[13.5px] sm:text-[14px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Phone className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
+                  <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate font-medium tabular-nums">{formatPhone(contact.phone)}</span>
                 </a>
                 <CopyButton value={contact.phone} label="phone" />
               </div>
             )}
             {contact.email && (
-              <div className="flex items-center justify-between gap-2 group">
+              <div className="flex items-center justify-between gap-2 group min-w-0">
                 <a
                   href={`mailto:${contact.email}`}
-                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2 min-w-0 flex-1 text-[13.5px] sm:text-[14px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
+                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate">{contact.email}</span>
                 </a>
                 <CopyButton value={contact.email} label="email" />
