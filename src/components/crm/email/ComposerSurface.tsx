@@ -460,6 +460,7 @@ export function ComposerSurface({
       resetComposer();
       onClearRecipients?.();
       onSent?.();
+      triggerHaptic('success');
     } catch { /* hook handles toast */ }
   };
 
