@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import InboxView from '@/components/crm/email/InboxView';
 import { NewEmailLauncherDialog } from '@/components/crm/email/NewEmailLauncherDialog';
+import { EmailLiveStatusBar } from '@/components/crm/shared/LiveStatusBar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -71,6 +72,7 @@ export default function CrmEmailWorkspacePage() {
       className="flex flex-col h-full min-h-0 lg:h-[calc(100dvh-140px)] lg:min-h-[600px]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
+      <div className="mb-2"><EmailLiveStatusBar /></div>
       {/* Editorial header — segmented tabs + primary "New Email" CTA */}
       <div className="mb-3 flex items-center gap-3">
         <div className="flex-1 -mx-1 overflow-x-auto no-scrollbar">
