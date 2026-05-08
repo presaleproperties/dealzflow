@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare } from 'lucide-react';
+import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare, Zap } from 'lucide-react';
 import {
   useBulkUpdateContacts,
   useBulkDeleteContacts,
@@ -16,6 +16,8 @@ import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
+import { formatContactName } from '@/lib/format';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -39,6 +41,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
   const [pendingTags, setPendingTags] = useState<string[]>([]);
   const [showBulkText, setShowBulkText] = useState(false);
   const [showBulkEmail, setShowBulkEmail] = useState(false);
+  const [showEnroll, setShowEnroll] = useState(false);
 
   const count = selectedIds.length;
 
@@ -165,6 +168,16 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           </PopoverContent>
         </Popover>
 
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowEnroll(true)}
+          className="h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+        >
+          <Zap className="w-3.5 h-3.5" />
+          Enroll in Automation
+        </Button>
+
         <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setShowDelete(true)}>
           <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
         </Button>
@@ -208,6 +221,13 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           onSent={onClearSelection}
         />
       )}
+
+      <EnrollInAutomationDialog
+        open={showEnroll}
+        onOpenChange={(o) => { setShowEnroll(o); if (!o) onClearSelection(); }}
+        contactIds={selectedIds}
+        contactNames={selectedContacts.map((c) => formatContactName(c.first_name, c.last_name))}
+      />
     </>
 
   );
