@@ -750,22 +750,28 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Cancel
             </button>
             <DialogTitle className="text-[15px] font-semibold tracking-tight text-foreground truncate">
-              New Message
+              {isMass ? `Mass Email · ${allRecipients.length}` : 'New Message'}
             </DialogTitle>
             {/* Spacer to keep title centered (matches Cancel min-width) */}
             <span className="w-[64px] shrink-0" aria-hidden />
           </DialogHeader>
 
-          {/* Mobile sub-header: just recipient identity (Templates moved to single bottom bar to remove duplication) */}
+          {/* Mobile sub-header: recipient identity (or recipient count for mass) */}
           <div className="md:hidden px-3 py-2 border-b border-border/60 bg-background/60 shrink-0 flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[11px] font-semibold shrink-0">
-              {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
+              {isMass ? allRecipients.length : (contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[12.5px] font-semibold text-foreground truncate leading-tight">
-                {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email || 'Unknown'}
+                {isMass
+                  ? `${allRecipients.length} recipients · personalized`
+                  : ([contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.email || 'Unknown')}
               </p>
-              <p className="text-[11px] text-muted-foreground truncate leading-tight">{contact.email ?? 'No email on file'}</p>
+              <p className="text-[11px] text-muted-foreground truncate leading-tight">
+                {isMass
+                  ? allRecipients.slice(0, 3).map((r) => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email).join(', ') + (allRecipients.length > 3 ? '…' : '')
+                  : (contact.email ?? 'No email on file')}
+              </p>
             </div>
           </div>
 
