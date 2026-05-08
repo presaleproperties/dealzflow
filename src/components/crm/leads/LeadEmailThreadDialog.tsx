@@ -477,23 +477,45 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             ) : (
               <div className="flex-1 min-h-0 overflow-y-auto">
                 {/* Thread header — From / To / Subject */}
-                <div className="px-6 py-4 border-b border-border/70 bg-card sticky top-0 z-10 backdrop-blur">
-                  <h2 className="text-[15px] font-semibold text-foreground leading-snug">
-                    {activeThread.subject}
-                  </h2>
-                  <div className="mt-1 text-[11.5px] text-muted-foreground">
-                    {activeThread.messages.length} message{activeThread.messages.length === 1 ? '' : 's'}
+                <div className="px-6 py-3 border-b border-border/70 bg-card/95 sticky top-0 z-10 backdrop-blur">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-[14.5px] font-semibold text-foreground leading-snug truncate">
+                        {activeThread.subject}
+                      </h2>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{activeThread.messages.length} message{activeThread.messages.length === 1 ? '' : 's'}</span>
+                        {lastInThread && (
+                          <>
+                            <span>·</span>
+                            <span className="tabular-nums">last {formatDistanceToNow(parseISO(lastInThread.ts), { addSuffix: true })}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {!replyOpen && (
+                      <Button
+                        size="sm"
+                        onClick={handleStartReply}
+                        disabled={!lastInThread || !contact.email}
+                        className="gap-1.5 h-8 text-[12px]"
+                      >
+                        <Reply className="w-3.5 h-3.5" /> Reply
+                        <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
+                      </Button>
+                    )}
                   </div>
                 </div>
 
                 {/* Messages — chronological */}
-                <div className="px-6 py-5 space-y-4">
+                <div className="px-6 py-4 space-y-3">
                   {activeThread.messages.map((m, idx) => (
                     <MessageCard
                       key={m.id}
                       message={m}
                       isLatest={idx === activeThread.messages.length - 1}
                       contactEmail={contact.email}
+                      defaultExpanded={idx === activeThread.messages.length - 1}
                     />
                   ))}
                 </div>
@@ -501,13 +523,10 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                 {/* Inline reply composer */}
                 <div ref={composerRef} className="px-6 pb-6">
                   {!replyOpen ? (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={handleStartReply}
-                        disabled={!lastInThread || !contact.email}
-                        className="gap-2 h-10"
-                      >
-                        <Reply className="w-4 h-4" /> Reply
+                    !contact.email ? (
+                      <div className="text-[11.5px] text-muted-foreground">No email on file for this lead.</div>
+                    ) : null
+                  ) : (
                       </Button>
                       {!contact.email && (
                         <span className="text-[11.5px] text-muted-foreground">No email on file for this lead.</span>
