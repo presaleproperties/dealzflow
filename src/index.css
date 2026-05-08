@@ -1097,10 +1097,6 @@
     body[data-section="crm"] .text-\[20px\] { font-size: 17px !important; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
     /* Soften any stray font-bold to semibold for editorial consistency. */
     body[data-section="crm"] .font-bold { font-weight: 600; }
-    /* Common ad-hoc heights coerced to canonical baselines so toolbars,
-       dialog inputs, and search rows align across the CRM. */
-    body[data-section="crm"] .h-11,
-    body[data-section="crm"] .h-12 { height: 36px !important; min-height: 36px !important; }
 
     /* ── Pills & Badges (desktop) ──────────────────────────────────
        Snap every chip-like surface (Badge, Pill, ad-hoc status chip)
