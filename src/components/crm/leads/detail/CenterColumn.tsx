@@ -235,59 +235,59 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-3 md:p-6 space-y-3 md:space-y-5">
-        <div className="px-4 md:px-0">
+      <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0 px-0 py-2.5 md:p-6 space-y-2.5 md:space-y-5">
+        <div className="px-3 md:px-0">
           <QuickActionBar contact={contact} />
         </div>
 
-        {/* Import conversation from another CRM (Lofty etc.) */}
-        <div className="px-4 md:px-0 -mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {/* Import conversation utility row — quieter on mobile */}
+        <div className="px-3 md:px-0 -mt-1 flex flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1.5">
           <button
             type="button"
             onClick={handlePullFromLofty}
             disabled={pullingLofty}
-            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
+            className="inline-flex items-center gap-1.5 text-[10.5px] md:text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-progress"
             title="Pulls emails, texts and calls for this lead from the Lofty API"
           >
             {pullingLofty
               ? <Loader2 className="w-3 h-3 animate-spin" />
               : <Download className="w-3 h-3" />}
-            {pullingLofty ? 'Pulling from Lofty…' : 'Pull from Lofty (API)'}
+            {pullingLofty ? 'Pulling…' : 'Pull from Lofty'}
           </button>
           <span className="text-muted-foreground/30 text-[10px]">·</span>
           <button
             type="button"
             onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-[10.5px] md:text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors"
             title="Paste a conversation from anywhere — AI will parse it"
           >
             <Sparkles className="w-3 h-3" />
-            Paste conversation (AI)
+            Paste conversation
           </button>
         </div>
 
-        {/* Filter strip — single horizontal scroll row on mobile, wrap on desktop */}
-        <div className="px-4 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none">
-          <div className="flex items-center gap-1.5 md:flex-wrap min-w-max md:min-w-0">
+        {/* Filter strip */}
+        <div className="px-3 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none -mx-1 md:mx-0">
+          <div className="flex items-center gap-1 md:gap-1.5 md:flex-wrap min-w-max md:min-w-0 px-1 md:px-0">
             {filters.map(f => (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
                 className={cn(
-                  'shrink-0 px-3 py-1.5 rounded-full text-[11px] md:text-xs font-semibold transition-all uppercase tracking-[0.08em]',
+                  'shrink-0 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-[11px] md:text-xs font-semibold transition-all uppercase tracking-[0.08em]',
                   filter === f.key
                     ? 'bg-foreground text-background'
                     : 'bg-muted/40 md:bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50',
                 )}
               >
                 {f.label}
-                {counts[f.key] > 0 && <span className="ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
+                {counts[f.key] > 0 && <span className="ml-1 md:ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="relative space-y-1.5 px-4 md:px-0">
+        <div className="relative space-y-1.5 px-3 md:px-0">
           {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
             <div className="hidden md:block absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
           )}
