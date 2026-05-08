@@ -1159,9 +1159,19 @@
     body[data-section="crm"] .text-\[28px\] { font-size: 20px !important; line-height: 1.2; font-weight: 600; letter-spacing: -0.012em; }
     body[data-section="crm"] .font-bold { font-weight: 600; }
 
-    /* Chip baselines so pill rows align with adjacent text. */
-    body[data-section="crm"] [class*="rounded-full"][class*="px-2"]:not(button):not(a):not(input) {
-      line-height: 1;
+    /* Chip parity with desktop spec — same canonical Pill sm size. */
+    body[data-section="crm"] .badge,
+    body[data-section="crm"] span[class*="rounded-full"][class*="px-"]:not(button):not(a):not(input):not([class*="w-"]):not([class*="h-"]),
+    body[data-section="crm"] div[class*="rounded-full"][class*="px-"]:not(button):not(a):not(input):not([class*="w-"]):not([class*="h-"]) {
+      font-size: 10.5px !important;
+      font-weight: 500 !important;
+      line-height: 1 !important;
+      padding-top: 2px !important;
+      padding-bottom: 2px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+      border-radius: 9999px !important;
+      letter-spacing: -0.005em;
     }
 
     /* Card radius parity with desktop. */
