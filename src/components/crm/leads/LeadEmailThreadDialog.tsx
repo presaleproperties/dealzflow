@@ -291,6 +291,25 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
     });
   };
 
+  // Keyboard: "R" to reply, Esc handled by Dialog itself.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (t as any)?.isContentEditable) return;
+      if (e.key === 'r' || e.key === 'R') {
+        if (!replyOpen && lastInThread && contact.email) {
+          e.preventDefault();
+          handleStartReply();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, replyOpen, lastInThread, contact.email]);
+
+
   const handleSendReply = async () => {
     if (!contact.email) { toast.error('This lead has no email address'); return; }
     const bodyText = replyHtml.replace(/<[^>]*>/g, '').trim();
