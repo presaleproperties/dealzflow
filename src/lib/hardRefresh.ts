@@ -15,7 +15,7 @@
  *  - Optional: localStorage version markers
  */
 
-export const BUILD_ID = "2026-05-07-purge-old-dealzflow-1";
+export const BUILD_ID = "2026-05-08-scheduler-automations-1";
 const BUILD_ID_KEY = "__app_build_id";
 
 export async function hardRefresh(): Promise<void> {
