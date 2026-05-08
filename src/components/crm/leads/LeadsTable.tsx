@@ -296,7 +296,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { key: 'source', sortKey: 'source', label: 'Source', width: '130px' },
   { key: 'pipeline', sortKey: 'status', label: 'Pipeline', width: '160px' },
   { key: 'tags', label: 'Tags', width: '200px' },
-  { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent', width: '180px' },
+  { key: 'assigned_to', sortKey: 'assigned_to', label: 'Agent', width: '120px' },
   { key: 'last_touch_at', sortKey: 'last_touch_at', label: 'Last Activity', width: '130px' },
   { key: 'created_at', sortKey: 'created_at', label: 'Added', width: '110px' },
   { key: 'campaign_source', label: 'Campaign', width: '160px' },
