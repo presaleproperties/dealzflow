@@ -635,6 +635,7 @@ export type Database = {
           phone: string | null
           phone_normalized: string | null
           phone_secondary: string | null
+          pipeline_segment_id: string | null
           postal_code: string | null
           presale_metadata: Json | null
           presale_user_id: string | null
@@ -698,6 +699,7 @@ export type Database = {
           phone?: string | null
           phone_normalized?: string | null
           phone_secondary?: string | null
+          pipeline_segment_id?: string | null
           postal_code?: string | null
           presale_metadata?: Json | null
           presale_user_id?: string | null
@@ -761,6 +763,7 @@ export type Database = {
           phone?: string | null
           phone_normalized?: string | null
           phone_secondary?: string | null
+          pipeline_segment_id?: string | null
           postal_code?: string | null
           presale_metadata?: Json | null
           presale_user_id?: string | null
@@ -779,7 +782,15 @@ export type Database = {
           timeframe?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_pipeline_segment_id_fkey"
+            columns: ["pipeline_segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_lead_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_conversations: {
         Row: {
@@ -5211,6 +5222,13 @@ export type Database = {
       }
       crm_can_see_contact_id: {
         Args: { _contact_id: string; _user_id: string }
+        Returns: boolean
+      }
+      crm_contact_matches_pipeline_filter: {
+        Args: {
+          _contact: Database["public"]["Tables"]["crm_contacts"]["Row"]
+          _filter: Json
+        }
         Returns: boolean
       }
       crm_cta_label: {
