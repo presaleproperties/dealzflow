@@ -111,8 +111,8 @@ export default function CrmEmailWorkspacePage() {
         )}
       </div>
 
-      {/* Single composer surface — same wide dialog used across the CRM. */}
-      <UnifiedComposerDialog
+      {/* Lead picker → hands off to the canonical ComposeEmailDialog. */}
+      <NewEmailLauncherDialog
         open={composerOpen}
         onOpenChange={setComposerOpen}
       />
