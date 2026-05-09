@@ -219,8 +219,9 @@ export function LeftSidebar({
                 e.preventDefault();
                 setDeleting(true);
                 try {
-                  const { error } = await supabase.from('crm_contacts').delete().eq('id', contact.id);
+                  const { data, error } = await supabase.rpc('crm_delete_contact', { p_contact_id: contact.id });
                   if (error) throw error;
+                  if (data !== true) throw new Error('Lead was not deleted (no permission or already gone)');
                   toast.success('Lead deleted');
                   queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
                   setDeleteOpen(false);
