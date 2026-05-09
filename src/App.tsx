@@ -26,6 +26,7 @@ import { EmailIdentitySetupDialog } from "@/components/email/EmailIdentitySetupD
 import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner";
 import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
+import { useLiveNotificationToasts } from "@/hooks/useLiveNotificationToasts";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
 // Auth + the most common landing destinations stay eager so first paint is
@@ -199,6 +200,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   usePresaleAgentSync();
   usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
+  useLiveNotificationToasts();
   return (
     <>
       {children}
