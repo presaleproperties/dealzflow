@@ -31,12 +31,12 @@ const ALL_ACTIONS = [
 export default function BridgeStatusPage() {
   const [params, setParams] = useState({
     q: "vancouver",
-    slug: "",
-    agentSlug: "",
-    projectSlug: "",
+    slug: "century-city",
+    agentSlug: "sarb@presaleproperties.com",
+    projectSlug: "century-city",
     templateStyle: "modern",
     leadName: "Test Lead",
-    email: "",
+    email: "test@example.com",
     phone: "",
   });
   const [results, setResults] = useState<Record<string, ResultRow>>({});
