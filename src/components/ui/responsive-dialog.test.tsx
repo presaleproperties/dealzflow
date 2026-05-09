@@ -110,12 +110,12 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     delete (window as { visualViewport?: unknown }).visualViewport;
   });
 
-  it("pins drawer top to visualViewport.offsetTop so the header never drifts behind the notch", async () => {
+  it("pins fullscreen composer chrome to the screen top while only the usable height follows the keyboard", async () => {
     const { vv, fire } = mockVisualViewport();
 
     const { container } = render(
       <ResponsiveDialog open onOpenChange={() => {}}>
-        <ResponsiveDialogContent className="mobile-drawer" aria-describedby={undefined}>
+        <ResponsiveDialogContent className="mobile-truly-fullscreen mobile-drawer" aria-describedby={undefined}>
           <div data-testid="header">Header</div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>,
@@ -128,11 +128,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     expect(drawer).toBeTruthy();
 
     // ── 1. Keyboard CLOSED ────────────────────────────────────────────────
-    // jsdom mangles the numeric values inside calc() during CSSOM
-    // serialization, so we can't assert the literal `top` string. We CAN
-    // assert the components that prove the visualViewport math is running:
-    // `bottom`, the `data-keyboard-open` attribute, and the CSS vars.
-    expect(drawer!.style.top).toContain('--composer-viewport-top');
+    expect(drawer!.style.top).toBe('0px');
     expect(drawer!.style.height).toContain('--composer-viewport-height');
     expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
@@ -153,6 +149,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
+    expect(drawer!.style.top).toBe('0px');
     expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.style.getPropertyValue('--composer-viewport-top'))
       .toBe('120px');
