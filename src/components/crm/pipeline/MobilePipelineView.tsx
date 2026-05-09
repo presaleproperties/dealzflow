@@ -1,15 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Flame, Phone, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
+import { useMyAgentName } from '@/hooks/useTeamAgents';
 import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
+
+const AGENT_FILTER_KEY = 'crm.pipeline.agentFilter.v1';
 
 const SEGMENT_DOT: Record<string, string> = {
   'New Leads':      'hsl(var(--primary))',
