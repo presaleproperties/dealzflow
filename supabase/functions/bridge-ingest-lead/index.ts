@@ -357,17 +357,36 @@ Deno.serve(async (req) => {
       console.warn("[bridge-ingest-lead] log_source_event failed (non-fatal):", e);
     }
 
-    // Dedup by email/phone first. Presale visitor/session ids can be reused in
-    // the same browser during testing, so they must not override a different
-    // submitted email/phone identity.
+    // Dedup via the identity vault first (matches against any email or phone
+    // this contact has EVER used, not just the current primary). Falls back to
+    // a direct lookup so we don't regress if the vault is empty.
     let existing: any = null;
+    let matchedOn: string | null = null;
     if (email || phone) {
-      const { data } = await supabase.from("crm_contacts")
-        .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
-        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
-        .order("created_at", { ascending: true })
-        .limit(1).maybeSingle();
-      existing = data;
+      try {
+        const { data: resolved } = await supabase.rpc("crm_resolve_contact_identity", {
+          _email: email || null,
+          _phone: phone || null,
+        });
+        const hit = Array.isArray(resolved) ? resolved[0] : resolved;
+        if (hit?.contact_id) {
+          matchedOn = hit.matched_on ?? null;
+          const { data } = await supabase.from("crm_contacts")
+            .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+            .eq("id", hit.contact_id).maybeSingle();
+          existing = data;
+        }
+      } catch (e) {
+        console.warn("[bridge-ingest-lead] resolver RPC failed, falling back:", e);
+      }
+      if (!existing) {
+        const { data } = await supabase.from("crm_contacts")
+          .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+          .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+          .order("created_at", { ascending: true })
+          .limit(1).maybeSingle();
+        existing = data;
+      }
     }
     if (!existing) {
       const { data } = await supabase.from("crm_contacts")
