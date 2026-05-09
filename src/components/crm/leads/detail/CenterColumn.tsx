@@ -550,12 +550,21 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
       <LeadEmailThreadDialog
         contact={contact}
-        open={threadOpen || !!previewEmail}
+        open={threadOpen}
         onOpenChange={(o) => {
           setThreadOpen(o);
-          if (!o) { setThreadInitialId(null); setPreviewEmail(null); }
+          if (!o) setThreadInitialId(null);
         }}
-        initialEmailId={threadInitialId ?? (previewEmail ? `log-${previewEmail.id}` : null)}
+        initialEmailId={threadInitialId}
+      />
+
+      {/* Standalone preview for emails that aren't in crm_email_log
+          (e.g. Presale-pushed auto-responses with rendered body_html). */}
+      <EmailPreviewDialog
+        email={previewEmail}
+        open={!!previewEmail}
+        onOpenChange={(o) => { if (!o) setPreviewEmail(null); }}
+        contactEmail={contact.email}
       />
 
       <ImportConversationDialog
