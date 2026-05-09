@@ -814,6 +814,32 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           initialBodyHtml={mobileComposeBody}
         />
       )}
+
+      {/* Forward composer — recipient is unknown, opens with __pick__ stub so the
+          agent picks the destination lead inside the canonical composer. The send
+          flows through bridge-send-email which writes to crm_email_log → timeline. */}
+      {forwardOpen && (
+        <ComposeEmailDialog
+          contact={(forwardPicked ?? ({
+            id: '__pick__',
+            first_name: '',
+            last_name: '',
+            email: null,
+          } as unknown as CrmContact))}
+          open={forwardOpen}
+          onOpenChange={(o) => {
+            setForwardOpen(o);
+            if (!o) {
+              setForwardSubject('');
+              setForwardBody('');
+              setForwardPicked(null);
+            }
+          }}
+          initialSubject={forwardSubject}
+          initialBodyHtml={forwardBody}
+          onPickContact={(c) => setForwardPicked(c)}
+        />
+      )}
     </Dialog>
   );
 }
