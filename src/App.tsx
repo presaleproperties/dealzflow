@@ -57,6 +57,7 @@ const AcceptInvitePage = lazy(() => import("./pages/AcceptInvitePage"));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const ApiDocsPage = lazy(() => import("./pages/ApiDocsPage"));
 const BridgeStatusPage = lazy(() => import("./pages/admin/BridgeStatusPage"));
+const PresaleWebhookLogPage = lazy(() => import("./pages/admin/PresaleWebhookLogPage"));
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const WebhookValidationPage = lazy(() => import("./pages/admin/WebhookValidationPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
@@ -260,6 +261,7 @@ const App = () => (
                     <Route path="/admin/bridge-status" element={<AdminRoute><BridgeStatusPage /></AdminRoute>} />
                     <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
                     <Route path="/admin/webhook-validation" element={<AdminRoute><WebhookValidationPage /></AdminRoute>} />
+                    <Route path="/admin/presale-webhooks" element={<AdminRoute><PresaleWebhookLogPage /></AdminRoute>} />
                     <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                     <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
                     <Route path="/dev/responsive" element={<ProtectedRoute><ResponsiveChecklistPage /></ProtectedRoute>} />

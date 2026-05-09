@@ -43,6 +43,20 @@ export function TaskRow({ task }: { task: CrmTask }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const isPresaleTask = !!task.presale_task_id;
+  const isClaimed = task.status === 'claimed' || !!task.claimed_at;
+  const claim = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('crm_claim_task', { _task_id: task.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-contact-tasks', task.contact_id] });
+      toast.success('Task claimed — presale notified');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className={cn(
       'flex items-start gap-2.5 p-3 rounded-lg bg-card border transition-colors',
@@ -62,7 +76,20 @@ export function TaskRow({ task }: { task: CrmTask }) {
           </p>
         )}
       </div>
-      {task.priority === 'high' && (
+      {isPresaleTask && !isClaimed && task.status !== 'completed' && (
+        <button
+          type="button"
+          disabled={claim.isPending}
+          onClick={() => claim.mutate()}
+          className="text-[10px] font-semibold uppercase tracking-wider shrink-0 px-2 py-1 rounded border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+        >
+          {claim.isPending ? 'Claiming…' : 'Claim'}
+        </button>
+      )}
+      {isClaimed && (
+        <span className="text-[10px] font-semibold uppercase tracking-wider shrink-0 text-muted-foreground">Claimed</span>
+      )}
+      {task.priority === 'high' && !isPresaleTask && (
         <span className="text-[10px] text-destructive font-semibold uppercase tracking-wider shrink-0">High</span>
       )}
     </div>

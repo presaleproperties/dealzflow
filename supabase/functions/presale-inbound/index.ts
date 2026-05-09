@@ -99,10 +99,9 @@ async function emitActivityEvent(
   if (!contactId) return;
   await supabase.from("crm_activity_events").insert({
     contact_id: contactId,
-    event_type: eventType,
-    source: "presale",
+    type: eventType,
     occurred_at: occurredAt,
-    metadata,
+    metadata: { source: "presale", ...metadata },
   }).then((r: any) => r.error && console.warn(
     "[presale-inbound] activity insert", r.error.message,
   ));
@@ -191,12 +190,13 @@ async function handleBookingScheduled(supabase: any, payload: any, occurredAt: s
   const contactId = await upsertMinimalContact(supabase, payload);
   if (!contactId) return { ok: false, error: "no_contact_match" };
 
+  const when = new Date(payload.scheduled_at ?? occurredAt);
   await supabase.from("crm_showings").insert({
     contact_id: contactId,
-    scheduled_at: payload.scheduled_at ?? occurredAt,
-    showing_type: payload.appointment_type ?? "consultation",
+    showing_date: when.toISOString().slice(0, 10),
+    showing_time: when.toISOString().slice(11, 19),
     status: "scheduled",
-    notes: payload.notes ?? null,
+    notes: payload.notes ?? `Source: presale (${payload.appointment_type ?? "consultation"})`,
     project: payload.project_name ?? null,
   }).then((r: any) => r.error && console.warn(
     "[presale-inbound] showing insert", r.error.message,

@@ -16,7 +16,18 @@ const FALLBACK_AGENT = "Uzair Muhammad";
 // then email/presale_email local-part, then display_name slugified). If no
 // explicit slug match, defaults to the team owner — the team lead handles
 // triage and re-assigns from there.
-async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<string> {
+async function pickAssignee(
+  supabase: any,
+  agentSlug?: string | null,
+  assignedAgentId?: string | null,
+): Promise<string> {
+  // 0) Upstream round-robin: presale.com may send assigned_agent_id directly.
+  if (assignedAgentId) {
+    const { data: byId } = await supabase
+      .from("crm_team").select("display_name, is_active")
+      .eq("id", assignedAgentId).maybeSingle();
+    if (byId?.display_name && byId.is_active !== false) return byId.display_name;
+  }
   // 1) Try agent_slug → crm_team
   if (agentSlug) {
     const wanted = agentSlug.trim().toLowerCase();
@@ -160,6 +171,7 @@ interface IngestRequest {
 
     tags?: string[];
     agent_slug?: string;             // optional: route to a specific agent
+    assigned_agent_id?: string;      // upstream round-robin from presale.com
     metadata?: Record<string, any>;   // any extra fields → stored in presale_metadata
   };
   behavior?: BehaviorPayload;
@@ -268,7 +280,7 @@ Deno.serve(async (req) => {
 
       contactId = existing.id;
     } else {
-      const assignee = await pickAssignee(supabase, L.agent_slug);
+      const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null);
       const newTags = buildTags(null, L.tags, meta);
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
