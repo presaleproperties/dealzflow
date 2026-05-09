@@ -314,19 +314,19 @@ export function MobileChatSendView({
       )}
 
       {/* From / To info strip — hairline row above the composer, like the reference */}
-      <div className="shrink-0 px-3 py-2 border-t border-border/40 flex items-center justify-between gap-2 text-[11.5px] text-muted-foreground bg-background">
-        <span className="truncate">
-          <span className="text-muted-foreground/70">From:</span>{' '}
-          <span className="text-foreground/80 font-medium tabular-nums">
-            {fromNumber ? formatPhone(fromNumber) : 'Default number'}
+      <div className="shrink-0 px-3 py-1.5 border-t border-border/40 flex items-center gap-3 text-[11px] text-muted-foreground bg-background">
+        <span className="flex-1 min-w-0 flex items-baseline gap-1 truncate">
+          <span className="text-muted-foreground/60 uppercase tracking-wider text-[9.5px] font-semibold shrink-0">From</span>
+          <span className="text-foreground/80 font-medium tabular-nums truncate">
+            {fromNumber ? formatPhone(fromNumber) : 'Default'}
           </span>
         </span>
-        <span className="text-border">|</span>
-        <span className="truncate text-right">
-          <span className="text-muted-foreground/70">To:</span>{' '}
+        <span className="h-3 w-px bg-border shrink-0" aria-hidden />
+        <span className="flex-1 min-w-0 flex items-baseline gap-1 justify-end truncate">
+          <span className="text-muted-foreground/60 uppercase tracking-wider text-[9.5px] font-semibold shrink-0">To</span>
           <span
             className={cn(
-              'font-medium tabular-nums',
+              'font-medium tabular-nums truncate',
               isOptedOut ? 'text-destructive' : 'text-foreground/80',
             )}
           >
