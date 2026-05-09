@@ -35,6 +35,41 @@ export const ResponsiveDialogContent = React.forwardRef<
   ResponsiveDialogContentProps
 >(({ className, children, hideMobileHandle, ...rest }, ref) => {
   const isMobile = useIsMobile();
+  const classNameString = typeof className === 'string' ? className : '';
+  const isDrawer = classNameString.includes('mobile-fullbleed') || classNameString.includes('mobile-drawer');
+  const isTrulyFullScreen = classNameString.includes('mobile-truly-fullscreen');
+  const [drawerViewportStyle, setDrawerViewportStyle] = React.useState<React.CSSProperties>({});
+
+  React.useEffect(() => {
+    if (!isMobile || !isDrawer || isTrulyFullScreen || typeof window === 'undefined') return;
+
+    const updateViewportVars = () => {
+      const viewport = window.visualViewport;
+      const visualTop = viewport?.offsetTop ?? 0;
+      const visualHeight = viewport?.height ?? window.innerHeight;
+      const visualBottom = visualTop + visualHeight;
+      const keyboardBottom = Math.max(0, window.innerHeight - visualBottom);
+      const topClearance = Math.max(60, visualTop + 8);
+
+      setDrawerViewportStyle({
+        top: `${topClearance}px`,
+        bottom: `${keyboardBottom}px`,
+        height: 'auto',
+        maxHeight: 'none',
+      });
+    };
+
+    updateViewportVars();
+    window.visualViewport?.addEventListener('resize', updateViewportVars);
+    window.visualViewport?.addEventListener('scroll', updateViewportVars);
+    window.addEventListener('resize', updateViewportVars);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', updateViewportVars);
+      window.visualViewport?.removeEventListener('scroll', updateViewportVars);
+      window.removeEventListener('resize', updateViewportVars);
+    };
+  }, [isMobile, isDrawer, isTrulyFullScreen]);
+
   if (isMobile) {
     // `mobile-fullbleed` (legacy flag) and `mobile-drawer` (new) both render
     // a premium bottom-drawer: rounded top, capped at 96dvh so the iOS
@@ -42,20 +77,16 @@ export const ResponsiveDialogContent = React.forwardRef<
     // padding so footer actions never tuck under the floating bottom-nav.
     // Use `mobile-truly-fullscreen` for the rare case where you really
     // want to paint behind the status bar.
-    const isDrawer =
-      typeof className === 'string' &&
-      (className.includes('mobile-fullbleed') || className.includes('mobile-drawer'));
-    const isTrulyFullScreen =
-      typeof className === 'string' && className.includes('mobile-truly-fullscreen');
-
     if (isTrulyFullScreen) {
       return (
         <SheetContent
+          ref={ref}
           side="bottom"
           className={cn(
             'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col',
             className,
           )}
+          {...(rest as any)}
         >
           {children}
         </SheetContent>
@@ -64,14 +95,16 @@ export const ResponsiveDialogContent = React.forwardRef<
 
     return (
       <SheetContent
+        ref={ref}
         side="bottom"
         className={cn(
           isDrawer
-            ? 'p-0 w-screen rounded-t-3xl border-0 border-t border-border/60 shadow-2xl flex flex-col max-h-[96dvh] h-[96dvh]'
+            ? 'p-0 w-screen rounded-t-3xl border-0 border-t border-border/60 shadow-2xl flex flex-col'
             : 'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
-        style={isDrawer ? undefined : { paddingTop: 'var(--composer-top-pad)' }}
+        style={isDrawer ? { ...drawerViewportStyle, ...(rest as any).style } : { paddingTop: 'var(--composer-top-pad)', ...(rest as any).style }}
+        {...(rest as any)}
       >
         {!hideMobileHandle && (
           <div className="flex justify-center pt-2 pb-1 shrink-0 pointer-events-none">
