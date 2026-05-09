@@ -742,6 +742,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             )}
           </Button>
         </div>
+        </>
+        )}
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
