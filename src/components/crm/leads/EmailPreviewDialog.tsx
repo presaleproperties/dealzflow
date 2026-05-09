@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail, Reply } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 
 /**
