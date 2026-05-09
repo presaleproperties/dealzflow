@@ -240,10 +240,20 @@ export function LeadTimelineV2({
             computeItemKey={(_i, row) => row.key}
             itemContent={(_index, row) => {
               if (row.kind === 'header') {
+                const Chevron = row.collapsed ? ChevronRight : ChevronDown;
                 return (
-                  <p className="bg-background py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    {format(row.date, 'EEEE, MMM d')}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => toggleDay(row.dayKey)}
+                    className="group flex w-full items-center gap-1.5 bg-background py-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
+                    aria-expanded={!row.collapsed}
+                  >
+                    <Chevron className="h-3 w-3 opacity-70 transition-transform group-hover:opacity-100" />
+                    <span>{format(row.date, 'EEEE, MMM d')}</span>
+                    <span className="ml-1 rounded-full bg-muted/50 px-1.5 py-px text-[9.5px] font-medium normal-case tracking-normal text-muted-foreground/80">
+                      {row.count}
+                    </span>
+                  </button>
                 );
               }
               return (
