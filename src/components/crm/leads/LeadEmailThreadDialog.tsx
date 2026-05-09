@@ -213,6 +213,17 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
       bodyText: m.body_text ?? m.snippet ?? null,
       ts: m.internal_date,
       source: 'gmail',
+      attachments: m.has_attachments && Array.isArray(m.attachment_meta)
+        ? (m.attachment_meta as any[])
+            .filter((a) => a && a.attachment_id && a.filename)
+            .map((a) => ({
+              filename: String(a.filename),
+              mime: String(a.mime ?? 'application/octet-stream'),
+              size: Number(a.size ?? 0),
+              attachment_id: String(a.attachment_id),
+              gmail_message_id: m.gmail_message_id ?? null,
+            }))
+        : [],
     }));
     const fromLog: ThreadMessage[] = (emailLog ?? []).map((e: any) => ({
       id: `log-${e.id}`,
