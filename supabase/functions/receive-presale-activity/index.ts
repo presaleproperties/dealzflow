@@ -145,11 +145,8 @@ Deno.serve(async (req) => {
     return jsonResp({ error: "method_not_allowed" }, 405);
   }
 
-  // Auth via shared bridge secret
-  const provided = req.headers.get("x-bridge-secret") ?? "";
-  if (!BRIDGE_SECRET || provided !== BRIDGE_SECRET) {
-    return jsonResp({ error: "unauthorized" }, 401);
-  }
+  const authFail = requireBridgeSecret(req);
+  if (authFail) return authFail;
 
   let body: IncomingEvent;
   try {
