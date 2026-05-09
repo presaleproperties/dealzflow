@@ -26,8 +26,6 @@ import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 import { LeadTimelineV2 } from '@/components/crm/leads/timeline/LeadTimelineV2';
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
-type ViewMode = 'classic' | 'v2';
-const VIEW_KEY = 'crm-lead-timeline-view';
 
 interface Props {
   contact: CrmContact;
@@ -156,12 +154,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    try {
-      const v = localStorage.getItem(VIEW_KEY);
-      return v === 'v2' ? 'v2' : 'classic';
-    } catch { return 'classic'; }
-  });
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
@@ -285,172 +277,11 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
-        {/* View toggle: Classic vs Unified Timeline v2 (beta) */}
         <div className="px-3 md:px-0">
-          <div className="inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-muted/30 p-0.5">
-            {(['classic', 'v2'] as ViewMode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setViewMode(m);
-                  try { localStorage.setItem(VIEW_KEY, m); } catch {}
-                }}
-                className={cn(
-                  'rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors',
-                  viewMode === m
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {m === 'classic' ? 'Classic' : 'Timeline v2 · Beta'}
-              </button>
-            ))}
-          </div>
+          <LeadTimelineV2 contactId={contact.id} />
         </div>
 
-        {viewMode === 'v2' ? (
-          <div className="px-3 md:px-0">
-            <LeadTimelineV2 contactId={contact.id} />
-          </div>
-        ) : (
-        <>
-        {/* Filter strip */}
-        <div className="px-3 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none -mx-1 md:mx-0">
-          <div className="flex items-center gap-1 md:gap-1.5 md:flex-wrap min-w-max md:min-w-0 px-1 md:px-0">
-            {filters.map(f => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={cn(
-                  'shrink-0 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-[11px] md:text-xs font-semibold transition-all uppercase tracking-[0.08em]',
-                  filter === f.key
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted/40 md:bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50',
-                )}
-              >
-                {f.label}
-                {counts[f.key] > 0 && <span className="ml-1 md:ml-1.5 opacity-60 normal-case tracking-normal tabular-nums">{counts[f.key]}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative space-y-1.5 px-3 md:px-0">
-          {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
-            <div className="hidden md:block absolute left-[13px] top-4 bottom-4 w-px bg-border/40" />
-          )}
-
-          {pinnedNotes.length === 0 && (
-            <div className="mb-4 md:mb-5 md:pl-9">
-              <GenerateAiSummaryButton contactId={contact.id} hasExisting={false} />
-            </div>
-          )}
-
-          {pinnedNotes.length > 0 && (
-            <div className="space-y-2 mb-4 md:mb-5">
-              <div className="flex items-center gap-1.5 md:pl-9">
-                <span className="text-[10.5px] md:text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.12em]">Pinned</span>
-              </div>
-              {pinnedNotes.map(note => {
-                if (note.note_type === 'ai_summary') {
-                  return (
-                    <AiSummaryCard
-                      key={note.id}
-                      note={note}
-                      contactId={contact.id}
-                      isStale={(contact as any).ai_summary_stale}
-                    />
-                  );
-                }
-                const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
-                if (emailRow) {
-                  return (
-                    <EmailNoteCard
-                      key={note.id}
-                      email={emailRow}
-                      contactEmail={contact.email}
-                      onOpen={() => setPreviewEmail(emailRow)}
-                    />
-                  );
-                }
-                const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
-                if (smsRow) {
-                  return <SmsNoteCard key={note.id} message={smsRow} onOpen={() => openSmsThread(smsRow)} />;
-                }
-                return (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    isOwn={note.user_id === currentUserId}
-                    contactId={contact.id}
-                    editingId={editingId}
-                    editContent={editContent}
-                    onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
-                    onCancelEdit={() => setEditingId(null)}
-                    onSaveEdit={handleEditSave}
-                    setEditContent={setEditContent}
-                    onOpenEmail={handleOpenEmail}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {groupedNotes.map(group => (
-            <div key={group.label} className="space-y-2 mb-4 md:mb-5">
-              {/* Sticky day divider on mobile so users always know where they are */}
-              <div className="md:pl-9 sticky top-0 md:static z-10 bg-background/95 md:bg-transparent backdrop-blur md:backdrop-blur-none -mx-4 md:mx-0 px-4 md:px-0 py-1 md:py-0 border-b md:border-b-0 border-border/40">
-                <span className="text-[10.5px] md:text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">{group.label}</span>
-              </div>
-              {group.notes.map(note => {
-                const emailRow = note.id.startsWith('email-') ? emailById.get(note.id) : null;
-                if (emailRow) {
-                  return (
-                    <EmailNoteCard
-                      key={note.id}
-                      email={emailRow}
-                      contactEmail={contact.email}
-                      onOpen={() => setPreviewEmail(emailRow)}
-                    />
-                  );
-                }
-                const smsRow = note.id.startsWith('sms-') ? smsById.get(note.id) : null;
-                if (smsRow) {
-                  return <SmsNoteCard key={note.id} message={smsRow} onOpen={() => openSmsThread(smsRow)} />;
-                }
-                return (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    isOwn={note.user_id === currentUserId}
-                    contactId={contact.id}
-                    editingId={editingId}
-                    editContent={editContent}
-                    onSetEditing={(id, content) => { setEditingId(id); setEditContent(content); }}
-                    onCancelEdit={() => setEditingId(null)}
-                    onSaveEdit={handleEditSave}
-                    setEditContent={setEditContent}
-                    onOpenEmail={handleOpenEmail}
-                  />
-                );
-              })}
-            </div>
-          ))}
-
-          {filteredNotes.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
-              <div className="w-10 h-10 rounded-full border border-border/60 flex items-center justify-center mb-3">
-                <StickyNote className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium text-foreground/80">No activity yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Add a note above to get started</p>
-            </div>
-          )}
-        </div>
-
-        {/* Appointments — collapsible card available on all viewports now that
-            the inner tab strip has been removed. */}
+        {/* Appointments — collapsible card */}
         {showings.length > 0 && (
           <details className="mt-4 mx-4 md:mx-0 group rounded-xl border border-border bg-card/50 overflow-hidden">
             <summary className="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/80">
@@ -466,8 +297,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
               <ShowingsTab contactId={contact.id} showings={showings as CrmShowing[]} />
             </div>
           </details>
-        )}
-        </>
         )}
       </TabsContent>
 
