@@ -576,7 +576,9 @@ export async function processPresaleActivity(
     );
   }
 
-  // ── Hot-lead computation ─────────────────────────────────────────────────
+  // ── Hot-lead computation + return-visit detection + score recompute ─────
+  let returnVisitGap: string | null = null;
+  let isReturnVisit = false;
   if (contact) {
     let hotReason: string | null = null;
     const t = ev.type.toLowerCase();
@@ -602,7 +604,39 @@ export async function processPresaleActivity(
       if ((count ?? 0) >= 2) hotReason = "activity_burst_7d";
     }
 
-    const updates: Record<string, unknown> = { last_activity_at: occurredAt };
+    // Return-visit: prior last_activity_at older than 2h, and current event is a session/view/form
+    const RETURN_TYPES = new Set(["behavior_batch", "session_start", "page_view", "form_submission", "contact_form"]);
+    const { data: prior } = await supabase
+      .from("crm_contacts")
+      .select("last_activity_at, visit_count")
+      .eq("id", contact.id)
+      .maybeSingle();
+    const priorLast = (prior as any)?.last_activity_at ?? null;
+    const visitCountPrev = Number((prior as any)?.visit_count ?? 0);
+    if (priorLast && RETURN_TYPES.has(ev.type)) {
+      const gapMs = Date.now() - new Date(priorLast).getTime();
+      if (gapMs >= 2 * 60 * 60 * 1000) {
+        isReturnVisit = true;
+        returnVisitGap = humanGap(priorLast);
+      }
+    }
+
+    // Recompute engagement score (cheap, decayed)
+    let newScore = 0;
+    try {
+      const { data: scoreData } = await supabase.rpc("crm_compute_engagement_score", { _contact_id: contact.id });
+      newScore = Number(scoreData ?? 0);
+    } catch (e) {
+      console.warn("[presale-activity] score recompute failed", e);
+    }
+
+    const updates: Record<string, unknown> = {
+      last_activity_at: occurredAt,
+      last_visit_at: RETURN_TYPES.has(ev.type) ? occurredAt : (priorLast ?? occurredAt),
+      visit_count: RETURN_TYPES.has(ev.type) && isReturnVisit ? visitCountPrev + 1 : visitCountPrev,
+      engagement_score: newScore,
+      engagement_score_at: new Date().toISOString(),
+    };
     if (hotReason) {
       const { data: cur } = await supabase
         .from("crm_contacts")
