@@ -15,8 +15,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET") ?? "";
-
+// BRIDGE_SECRET / PRESALE_BRIDGE_SECRET checked via _shared/inbound-auth
 type EventType = string;
 
 const HIGH_INTENT: EventType[] = ["email_open", "email_opened", "deck_unlock", "link_click", "email_clicked", "return_visit"];
