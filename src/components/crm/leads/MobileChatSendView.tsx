@@ -170,12 +170,12 @@ export function MobileChatSendView({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Back"
-          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60"
+          aria-label="Back to leads"
+          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} />
+          <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
         </button>
-        <Avatar className="h-8 w-8 shrink-0">
+        <Avatar className="h-8 w-8 shrink-0" aria-hidden>
           <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
             {initials || '?'}
           </AvatarFallback>
@@ -191,20 +191,22 @@ export function MobileChatSendView({
         <button
           type="button"
           onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
-          aria-label="Call"
+          aria-label={contact.phone ? `Call ${fullName}` : 'No phone number on file'}
           disabled={!contact.phone}
-          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30"
+          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <Phone className="h-[17px] w-[17px]" />
+          <Phone className="h-[17px] w-[17px]" aria-hidden />
         </button>
         <Popover open={moreOpen} onOpenChange={setMoreOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label="More"
-              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60"
+              aria-label="More options"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <MoreHorizontal className="h-[18px] w-[18px]" />
+              <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" sideOffset={6} className="w-60 p-1">
