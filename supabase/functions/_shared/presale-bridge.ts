@@ -160,21 +160,33 @@ export const presaleBridge = {
     templateStyle: string;
     leadName?: string;
   }) => {
-    const agentsRaw = await call<{ agents: BridgeAgent[] } | BridgeAgent[]>("bridge-list-agents");
-    const agents = Array.isArray(agentsRaw) ? agentsRaw : agentsRaw.agents ?? [];
-    const wanted = params.agentSlug.trim().toLowerCase();
-    const agent = agents.find((a) => {
-      const nameSlug = (a.name ?? (a as any).full_name ?? "").toLowerCase().replace(/\s+/g, "-");
-      const emailLocal = (a.email ?? "").split("@")[0]?.toLowerCase();
-      return a.slug?.toLowerCase() === wanted || nameSlug === wanted || emailLocal === wanted;
-    });
+    const value = params.agentSlug.trim();
+    let agentEmail: string | undefined;
+    let agentId: string | undefined;
+    if (value.includes("@")) {
+      agentEmail = value;
+    } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+      agentId = value;
+    } else {
+      const agentsRaw = await call<{ agents: BridgeAgent[] } | BridgeAgent[]>("bridge-list-agents");
+      const agents = Array.isArray(agentsRaw) ? agentsRaw : agentsRaw.agents ?? [];
+      const wanted = value.toLowerCase();
+      const agent = agents.find((a) => {
+        const nameSlug = (a.name ?? (a as any).full_name ?? "").toLowerCase().replace(/\s+/g, "-");
+        const emailLocal = (a.email ?? "").split("@")[0]?.toLowerCase();
+        return a.slug?.toLowerCase() === wanted || nameSlug === wanted || emailLocal === wanted;
+      });
+      agentEmail = agent?.email;
+      agentId = agent?.id;
+    }
     return call<BridgeRenderedEmail>("bridge-render-email", {
       method: "POST",
       body: {
         ...params,
         project_slug: params.projectSlug,
         agent_slug: params.agentSlug,
-        agent_email: agent?.email,
+        agent_email: agentEmail,
+        agent_id: agentId,
         template_style: params.templateStyle,
         lead_name: params.leadName,
       },
