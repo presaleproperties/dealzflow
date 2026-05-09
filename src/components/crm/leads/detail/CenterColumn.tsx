@@ -479,6 +479,16 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         open={showImport}
         onOpenChange={setShowImport}
       />
+
+      <SmsThreadDrawer
+        open={smsDrawerOpen}
+        onOpenChange={(o) => { setSmsDrawerOpen(o); if (!o) setSmsDrawerInitialId(null); }}
+        contact={contact}
+        messages={smsLog}
+        channel={smsDrawerChannel}
+        initialMessageId={smsDrawerInitialId}
+        onReply={replyFromSmsDrawer}
+      />
     </Tabs>
   );
 }
