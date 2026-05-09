@@ -20,6 +20,8 @@ async function pickAssignee(
   supabase: any,
   agentSlug?: string | null,
   assignedAgentId?: string | null,
+  leadEmail?: string | null,
+  leadFirstName?: string | null,
 ): Promise<string> {
   // 0) Upstream round-robin: presale.com may send assigned_agent_id directly.
   if (assignedAgentId) {
@@ -49,7 +51,26 @@ async function pickAssignee(
     if (match?.display_name) return match.display_name;
   }
 
-  // 2) Default: route to the team owner (team lead) for triage.
+  // 2) Test/internal submissions often use personal emails like ravish2@gmail.com.
+  // If the email + first name clearly match an active team member, route to that
+  // agent instead of falling through to a random/default assignee.
+  if (leadEmail || leadFirstName) {
+    const local = (leadEmail ?? "").split("@")[0]?.toLowerCase().replace(/\d+$/g, "") ?? "";
+    const first = (leadFirstName ?? "").trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const displayFirst = (t.display_name ?? "").split(/\s+/)[0]?.toLowerCase();
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return displayFirst && first === displayFirst && (local === displayFirst || local === emailLocal || local === presaleLocal);
+    });
+    if (match?.display_name) return match.display_name;
+  }
+
+  // 3) Default: route to the team owner (team lead) for triage.
   const { data: owner } = await supabase
     .from("crm_team")
     .select("display_name")
