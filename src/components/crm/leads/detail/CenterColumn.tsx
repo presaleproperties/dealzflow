@@ -9,6 +9,7 @@ import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
 import { useLeadNotes, useAddNote, useUpdateNote, type CrmNote } from '@/hooks/useCrmNotes';
 import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
+import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
@@ -41,6 +42,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emailLog = [] } = useCrmEmailLog(contact.id);
   const { data: smsLog = [] } = useCrmContactSmsLog(contact.id);
+  const { data: activityEvents = [] } = useCrmContactActivityEvents(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
   const openChat = useOpenChat();
@@ -93,14 +95,59 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       };
     });
 
-    const merged = [...rawNotes, ...emailNotes, ...smsNotes];
+    // Synthesize virtual notes from external activity events (Presale webhook,
+    // email opens, deck visits, lead.approved, etc.). These live in
+    // crm_activity_events and are NOT in our emailLog / smsLog tables, so
+    // without this merge they'd never appear in the timeline.
+    const eventNotes: CrmNote[] = (activityEvents ?? []).map((ev: any) => {
+      const t: string = ev.type || 'event';
+      const meta = ev.metadata || {};
+      const subject = meta.subject ? `: ${meta.subject}` : '';
+      let kind: CrmNote['note_type'] = 'system';
+      let label = t;
+      if (t === 'email.sent' || t === 'email.auto_response_sent') {
+        kind = 'email';
+        label = `Sent email${subject}`;
+      } else if (t === 'email_opened' || t === 'email.opened') {
+        kind = 'email';
+        const n = meta.open_count ? ` (open #${meta.open_count})` : '';
+        label = `Email opened${n}${subject}`;
+      } else if (t === 'email.clicked' || t === 'email_clicked') {
+        kind = 'email';
+        label = `Email link clicked${subject}`;
+      } else if (t === 'lead.approved') {
+        kind = 'system';
+        label = `Lead approved${meta.approved_by ? ` by ${meta.approved_by}` : ''}${meta.project_name ? ` — ${meta.project_name}` : ''}`;
+      } else if (t.startsWith('deck')) {
+        kind = 'system';
+        label = `Deck visit${meta.visit_number ? ` #${meta.visit_number}` : ''}${meta.project_name ? ` — ${meta.project_name}` : ''}`;
+      } else if (t === 'floorplan_download' || t === 'floorplan.downloaded') {
+        kind = 'system';
+        label = `Floorplan downloaded${meta.project_name ? ` — ${meta.project_name}` : ''}`;
+      } else {
+        label = t.replace(/[._]/g, ' ');
+      }
+      return {
+        id: `evt-${ev.id}`,
+        contact_id: contact.id,
+        user_id: '',
+        content: label,
+        note_type: kind,
+        is_pinned: false,
+        created_at: ev.occurred_at || ev.received_at || new Date().toISOString(),
+        updated_at: ev.occurred_at || ev.received_at || new Date().toISOString(),
+        event_at: ev.occurred_at || ev.received_at || null,
+      };
+    });
+
+    const merged = [...rawNotes, ...emailNotes, ...smsNotes, ...eventNotes];
     const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
     const sorted = merged.sort((a, b) => {
       if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
       return ts(b) - ts(a);
     });
     return { notes: sorted, emailById: emailMap, smsById: smsMap };
-  }, [rawNotes, emailLog, smsLog, contact.id]);
+  }, [rawNotes, emailLog, smsLog, activityEvents, contact.id]);
 
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
   const [threadOpen, setThreadOpen] = useState(false);
