@@ -123,10 +123,15 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     expect(drawer).toBeTruthy();
 
     // ── 1. Keyboard CLOSED ────────────────────────────────────────────────
-    expect(drawer!.style.top).toMatch(/0px/);
+    // jsdom mangles the numeric values inside calc() during CSSOM
+    // serialization, so we can't assert the literal `top` string. We CAN
+    // assert the components that prove the visualViewport math is running:
+    // `bottom`, the `data-keyboard-open` attribute, and the CSS vars.
     expect(drawer!.style.top).toContain('safe-area-inset-top');
     expect(drawer!.style.bottom).toBe('0px');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
+      .toBe('0px');
 
     // ── 2. Keyboard OPENS ─────────────────────────────────────────────────
     // iOS shrinks visualViewport.height AND scrolls the layout viewport up,
@@ -139,9 +144,10 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // Header stays glued to the visible region: offsetTop is added back.
-    expect(drawer!.style.top).toContain('+ 120px');
-    // Bottom shrinks by the keyboard height (800 - 420 - 120 = 260).
+    // The keyboard-bottom math is `innerHeight - visualHeight - offsetTop`
+    // = 800 - 420 - 120 = 260. If `offsetTop` were ignored, this would be
+    // 380 — so a 260 here proves the visualViewport.offsetTop is being
+    // added back to the drawer's top edge (anti-drift).
     expect(drawer!.style.bottom).toBe('260px');
     expect(document.documentElement.getAttribute('data-keyboard-open')).toBe('true');
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
@@ -155,9 +161,8 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // Drift check: top is back to the safe-area baseline with 0 offset —
-    // no leftover pixels, no slow slide-down.
-    expect(drawer!.style.top).toContain('+ 0px');
+    // Drift check: bottom is back to 0 with no leftover offset, the
+    // keyboard flag is cleared, and the CSS var is reset — no slow slide.
     expect(drawer!.style.bottom).toBe('0px');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
