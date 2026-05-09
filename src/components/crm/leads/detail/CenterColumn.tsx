@@ -278,8 +278,158 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
-        <div className="px-3 md:px-0">
-          <LeadTimelineV2 contactId={contact.id} />
+        <div className="px-3 md:px-0 space-y-3">
+          {/* Toolbar: filter pills + Pull from Lofty + Import */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {filters.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none transition-colors border inline-flex items-center',
+                    filter === f.key
+                      ? 'bg-primary/15 text-primary border-primary/30'
+                      : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
+                  )}
+                >
+                  {f.label}
+                  {(counts as any)[f.key] > 0 && (
+                    <span className="ml-1 text-[10px] opacity-70">{(counts as any)[f.key]}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[11px] gap-1.5"
+                onClick={handlePullFromLofty}
+                disabled={pullingLofty}
+              >
+                {pullingLofty ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                Pull from Lofty
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[11px] gap-1.5"
+                onClick={() => setShowImport(true)}
+              >
+                <StickyNote className="w-3 h-3" />
+                Import
+              </Button>
+            </div>
+          </div>
+
+          {/* Notes feed */}
+          <div className="relative space-y-1">
+            {(pinnedNotes.length > 0 || groupedNotes.length > 0) && (
+              <div className="absolute left-[13px] top-4 bottom-4 w-px bg-border/50" />
+            )}
+
+            {/* Pinned section */}
+            {pinnedNotes.length > 0 && (
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-1.5 pl-9">
+                  <Pin className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Pinned</span>
+                </div>
+                {pinnedNotes.map(note => {
+                  const emailRow = emailById.get(note.id);
+                  const smsRow = smsById.get(note.id);
+                  if (emailRow) {
+                    return (
+                      <EmailNoteCard
+                        key={note.id}
+                        email={emailRow}
+                        contactEmail={contact.email}
+                        onOpen={() => handleOpenEmail(note.id)}
+                      />
+                    );
+                  }
+                  if (smsRow) {
+                    return (
+                      <SmsNoteCard
+                        key={note.id}
+                        message={smsRow}
+                        onOpen={() => openSmsThread(smsRow)}
+                      />
+                    );
+                  }
+                  return (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      isOwn={note.user_id === currentUserId}
+                      contactId={contact.id}
+                      editingId={editingId}
+                      editContent={editContent}
+                      onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
+                      onCancelEdit={() => setEditingId(null)}
+                      onSaveEdit={handleEditSave}
+                      setEditContent={setEditContent}
+                    />
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Grouped by date */}
+            {groupedNotes.map(group => (
+              <div key={group.label} className="space-y-2 mb-4">
+                <div className="pl-9">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    {group.label}
+                  </span>
+                </div>
+                {group.notes.map(note => {
+                  const emailRow = emailById.get(note.id);
+                  const smsRow = smsById.get(note.id);
+                  if (emailRow) {
+                    return (
+                      <EmailNoteCard
+                        key={note.id}
+                        email={emailRow}
+                        contactEmail={contact.email}
+                        onOpen={() => handleOpenEmail(note.id)}
+                      />
+                    );
+                  }
+                  if (smsRow) {
+                    return (
+                      <SmsNoteCard
+                        key={note.id}
+                        message={smsRow}
+                        onOpen={() => openSmsThread(smsRow)}
+                      />
+                    );
+                  }
+                  return (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      isOwn={note.user_id === currentUserId}
+                      contactId={contact.id}
+                      editingId={editingId}
+                      editContent={editContent}
+                      onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
+                      onCancelEdit={() => setEditingId(null)}
+                      onSaveEdit={handleEditSave}
+                      setEditContent={setEditContent}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+
+            {filteredNotes.length === 0 && (
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                {filter === 'all' ? 'No notes or activity yet.' : `No ${filter} entries yet.`}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Appointments — collapsible card */}
