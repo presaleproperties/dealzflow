@@ -241,15 +241,24 @@ Deno.serve(async (req) => {
   // instead of bridge-ingest-lead. Treat those as real CRM leads, then continue
   // recording the originating activity against the newly created/merged contact.
   if (!contact && (LEAD_LIFECYCLE_EVENTS.has(body.type) || isBehaviorLeadCreate) && (email || phone)) {
-    const { first_name, last_name } = splitName(meta.name ?? meta.full_name);
+    const formPayload: any = completedForm?.payload ?? completedForm ?? {};
+    const { first_name, last_name } = splitName(
+      meta.name ?? meta.full_name ?? formPayload.name ?? formPayload.full_name ??
+        [formPayload.first_name, formPayload.last_name].filter(Boolean).join(" "),
+    );
     const assignee = await pickAssignee(supabase, body.agent_slug ?? meta.agent_slug ?? null);
-    const leadEmail = email ?? cleanEmail(meta.email);
-    const leadPhone = phone ?? cleanPhone(meta.phone);
+    const leadEmail = email ?? cleanEmail(meta.email) ?? cleanEmail(formPayload.email);
+    const leadPhone = phone ?? cleanPhone(meta.phone) ?? cleanPhone(formPayload.phone);
     const source = meta.source === "presale_properties_bulk_sync"
       ? "presaleproperties.com"
       : (typeof meta.source === "string" ? meta.source : "presaleproperties.com");
-    const leadSource = typeof meta.lead_source === "string" ? meta.lead_source : null;
-    const projects = [body.project_slug, meta.project, meta.property_name, meta.project_name].filter(Boolean) as string[];
+    const leadSource = typeof meta.lead_source === "string"
+      ? meta.lead_source
+      : (completedForm?.form_type ?? null);
+    const projects = [
+      body.project_slug, meta.project, meta.property_name, meta.project_name,
+      completedForm?.property_name, formPayload.project, formPayload.property_name,
+    ].filter(Boolean) as string[];
 
     const { data: created, error: createErr } = await supabase
       .from("crm_contacts")
