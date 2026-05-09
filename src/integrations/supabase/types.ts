@@ -810,6 +810,8 @@ export type Database = {
           created_at: string | null
           email: string | null
           email_secondary: string | null
+          engagement_score: number
+          engagement_score_at: string | null
           first_name: string
           home_type_pref: string | null
           id: string
@@ -821,6 +823,7 @@ export type Database = {
           last_name: string
           last_touch_at: string | null
           last_touch_type: string | null
+          last_visit_at: string | null
           lead_currency: string | null
           lead_score: number | null
           lead_tier: string | null
@@ -855,6 +858,7 @@ export type Database = {
           tags: string[] | null
           timeframe: string | null
           updated_at: string | null
+          visit_count: number
           won_at: string | null
         }
         Insert: {
@@ -877,6 +881,8 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           email_secondary?: string | null
+          engagement_score?: number
+          engagement_score_at?: string | null
           first_name: string
           home_type_pref?: string | null
           id?: string
@@ -888,6 +894,7 @@ export type Database = {
           last_name: string
           last_touch_at?: string | null
           last_touch_type?: string | null
+          last_visit_at?: string | null
           lead_currency?: string | null
           lead_score?: number | null
           lead_tier?: string | null
@@ -922,6 +929,7 @@ export type Database = {
           tags?: string[] | null
           timeframe?: string | null
           updated_at?: string | null
+          visit_count?: number
           won_at?: string | null
         }
         Update: {
@@ -944,6 +952,8 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           email_secondary?: string | null
+          engagement_score?: number
+          engagement_score_at?: string | null
           first_name?: string
           home_type_pref?: string | null
           id?: string
@@ -955,6 +965,7 @@ export type Database = {
           last_name?: string
           last_touch_at?: string | null
           last_touch_type?: string | null
+          last_visit_at?: string | null
           lead_currency?: string | null
           lead_score?: number | null
           lead_tier?: string | null
@@ -989,6 +1000,7 @@ export type Database = {
           tags?: string[] | null
           timeframe?: string | null
           updated_at?: string | null
+          visit_count?: number
           won_at?: string | null
         }
         Relationships: [
@@ -2533,13 +2545,34 @@ export type Database = {
           },
         ]
       }
+      crm_notification_dedupe: {
+        Row: {
+          dedupe_key: string
+          expires_at: string
+          user_id: string
+        }
+        Insert: {
+          dedupe_key: string
+          expires_at: string
+          user_id: string
+        }
+        Update: {
+          dedupe_key?: string
+          expires_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crm_notifications: {
         Row: {
           body: string | null
           created_at: string | null
+          dedupe_key: string | null
           id: string
           is_read: boolean | null
           link_to: string | null
+          meta: Json
+          severity: string
           title: string
           type: string | null
           user_id: string | null
@@ -2547,9 +2580,12 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string | null
+          dedupe_key?: string | null
           id?: string
           is_read?: boolean | null
           link_to?: string | null
+          meta?: Json
+          severity?: string
           title: string
           type?: string | null
           user_id?: string | null
@@ -2557,9 +2593,12 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string | null
+          dedupe_key?: string | null
           id?: string
           is_read?: boolean | null
           link_to?: string | null
+          meta?: Json
+          severity?: string
           title?: string
           type?: string | null
           user_id?: string | null
@@ -3964,6 +4003,9 @@ export type Database = {
           presale_email: string | null
           presale_snapshot: Json | null
           presale_synced_at: string | null
+          quiet_hours_end: number | null
+          quiet_hours_start: number | null
+          quiet_hours_tz: string
           role: string
           scheduler_onboarded_at: string | null
           slug: string | null
@@ -3995,6 +4037,9 @@ export type Database = {
           presale_email?: string | null
           presale_snapshot?: Json | null
           presale_synced_at?: string | null
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          quiet_hours_tz?: string
           role?: string
           scheduler_onboarded_at?: string | null
           slug?: string | null
@@ -4026,6 +4071,9 @@ export type Database = {
           presale_email?: string | null
           presale_snapshot?: Json | null
           presale_synced_at?: string | null
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          quiet_hours_tz?: string
           role?: string
           scheduler_onboarded_at?: string | null
           slug?: string | null
@@ -5727,6 +5775,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      crm_compute_engagement_score: {
+        Args: { _contact_id: string }
+        Returns: number
+      }
       crm_contact_matches_pipeline_filter: {
         Args: {
           _contact: Database["public"]["Tables"]["crm_contacts"]["Row"]
@@ -5808,6 +5860,10 @@ export type Database = {
         Args: { _assigned_to: string }
         Returns: string[]
       }
+      crm_replay_recent_activity: {
+        Args: { _contact_id: string; _hours?: number }
+        Returns: number
+      }
       crm_scheduler_resolve_slug: {
         Args: { _event_slug: string; _team_slug: string }
         Returns: Json
@@ -5815,6 +5871,20 @@ export type Database = {
       crm_scheduler_seed_defaults: {
         Args: { _agent_user_id: string }
         Returns: undefined
+      }
+      crm_send_notification: {
+        Args: {
+          _body: string
+          _dedupe_key?: string
+          _dedupe_window_minutes?: number
+          _link_to: string
+          _meta?: Json
+          _severity?: string
+          _title: string
+          _type: string
+          _user_ids: string[]
+        }
+        Returns: number
       }
       crm_stitch_orphan_behavior: { Args: never; Returns: Json }
       crm_team_admin_update_member: {
@@ -5921,6 +5991,17 @@ export type Database = {
         Args: { _created_by_agent_slug: string }
         Returns: boolean
       }
+      crm_warmup_digest_candidates: {
+        Args: never
+        Returns: {
+          assigned_to: string
+          contact_id: string
+          engagement_score: number
+          full_name: string
+          last_activity_at: string
+        }[]
+      }
+      crm_within_quiet_hours: { Args: { _user_id: string }; Returns: boolean }
       decrypt_api_credential: {
         Args: { ciphertext: string; passphrase: string }
         Returns: string
