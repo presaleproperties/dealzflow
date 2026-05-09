@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const secret =
-    Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET");
+    Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET");
   if (!secret) return json({ error: "bridge_secret_missing" }, 500);
 
   // Require an authenticated CRM user (any signed-in user is fine — we only
