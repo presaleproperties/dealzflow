@@ -595,6 +595,16 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         open={!!previewEmail}
         onOpenChange={(o) => { if (!o) setPreviewEmail(null); }}
         contactEmail={contact.email}
+        onReply={handleReplyToPreview}
+      />
+
+      {/* Compose dialog launched from the preview's Reply button. */}
+      <ComposeEmailDialog
+        contact={contact}
+        open={!!replyCompose}
+        onOpenChange={(o) => { if (!o) setReplyCompose(null); }}
+        initialSubject={replyCompose?.subject}
+        initialBodyHtml={replyCompose?.bodyHtml}
       />
 
       <ImportConversationDialog
