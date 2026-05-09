@@ -9,12 +9,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Hardcoded fallback if there are no active agents at all (shouldn't happen).
+// Hardcoded fallback if there are no active owners at all (shouldn't happen).
 const FALLBACK_AGENT = "Uzair Muhammad";
 
-// Round-robin agent picker. Honors `agent_slug` (matched against crm_team.slug,
+// Assignee picker. Honors `agent_slug` (matched against crm_team.slug,
 // then email/presale_email local-part, then display_name slugified). If no
-// match, returns the active agent with the fewest contacts assigned.
+// explicit slug match, defaults to the team owner — the team lead handles
+// triage and re-assigns from there.
 async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<string> {
   // 1) Try agent_slug → crm_team
   if (agentSlug) {
@@ -37,26 +38,18 @@ async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<s
     if (match?.display_name) return match.display_name;
   }
 
-  // 2) Round-robin: agent with fewest existing contacts (excluding the owner
-  //    so new leads spread across the sales team).
-  const { data: agents } = await supabase
+  // 2) Default: route to the team owner (team lead) for triage.
+  const { data: owner } = await supabase
     .from("crm_team")
-    .select("display_name, role")
+    .select("display_name")
     .eq("is_active", true)
-    .in("role", ["agent", "admin"]);
-  const candidates = (agents ?? []).map((a: any) => a.display_name).filter(Boolean);
-  if (!candidates.length) return FALLBACK_AGENT;
+    .eq("role", "owner")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (owner?.display_name) return owner.display_name;
 
-  const counts: Record<string, number> = {};
-  for (const name of candidates) {
-    const { count } = await supabase
-      .from("crm_contacts")
-      .select("id", { count: "exact", head: true })
-      .eq("assigned_to", name);
-    counts[name] = count ?? 0;
-  }
-  candidates.sort((a: string, b: string) => (counts[a] ?? 0) - (counts[b] ?? 0));
-  return candidates[0];
+  return FALLBACK_AGENT;
 }
 
 // Resolve the agent record (id/email/phone/photo/calendly) so the website can
