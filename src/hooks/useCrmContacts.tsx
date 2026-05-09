@@ -477,11 +477,15 @@ export function useBulkDeleteContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase
-        .from('crm_contacts')
-        .delete()
-        .in('id', ids);
-      if (error) throw error;
+      // Use the SECURITY DEFINER RPC so each delete is permission-checked
+      // server-side and we get a clear error if any row was blocked by RLS.
+      const results = await Promise.all(
+        ids.map((id) => supabase.rpc('crm_delete_contact', { p_contact_id: id })),
+      );
+      const firstError = results.find((r) => r.error)?.error;
+      if (firstError) throw firstError;
+      const blocked = results.filter((r) => r.data !== true).length;
+      if (blocked > 0) throw new Error(`${blocked} lead(s) could not be deleted (no permission)`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
