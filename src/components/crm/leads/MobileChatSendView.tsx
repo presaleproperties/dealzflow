@@ -372,29 +372,40 @@ export function MobileChatSendView({
             ref={taRef}
             value={body}
             onChange={(e) => onBodyChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={isOptedOut ? 'This number opted out' : 'Message'}
             disabled={isOptedOut}
             rows={1}
+            aria-label={`Message ${fullName} via ${channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}`}
+            aria-keyshortcuts="Meta+Enter Control+Enter"
+            aria-multiline="true"
+            enterKeyHint="send"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            spellCheck
             style={{ height: taHeight }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px]"
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px] focus-visible:outline-none"
           />
           {showSendBtn && (
             <button
               type="button"
               onClick={onSend}
               disabled={!canSend || sending}
-              aria-label="Send"
+              aria-label={sending ? 'Sending message' : 'Send message'}
+              aria-busy={sending || undefined}
+              aria-keyshortcuts="Meta+Enter Control+Enter"
+              title="Send (⌘/Ctrl + Enter)"
               className={cn(
-                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all',
+                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 canSend && !sending
                   ? 'bg-primary text-primary-foreground active:scale-95'
                   : 'bg-muted-foreground/20 text-muted-foreground',
               )}
             >
               {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
-                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               )}
             </button>
           )}
