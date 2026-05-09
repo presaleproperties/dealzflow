@@ -344,7 +344,7 @@ export function MobileChatSendView({
       {/* Composer — pill input with outboard "+" attach. Send arrow appears
           inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-2 flex items-end gap-2"
+        className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-2 flex items-end gap-2 transition-[padding] duration-150 ease-out"
         style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 8px)' }}
       >
         <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/70 bg-muted/40 pl-4 pr-1 py-0.5">

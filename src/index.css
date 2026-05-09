@@ -206,15 +206,15 @@
     }
   }
 
-  /* When the soft keyboard is open inside a drawer composer, drawer's bottom
-     edge is already pinned to the top of the keyboard — so any extra
-     safe-area padding below would just create dead space. Components opt in
-     by reading `--composer-safe-bottom` instead of env() directly. */
+  /* Composer safe-bottom token. Idle = real iOS safe-area inset (home-indicator
+     clearance). When a drawer composer is mounted, ResponsiveDialog overrides
+     this with a *continuous* value (env(safe-area-inset-bottom) - keyboard
+     height, floored at 0) so the composer footer eases from 34px → 0px in
+     lockstep with the keyboard animation instead of snapping at a threshold.
+     The JS-set value wins because inline styles on :root beat declared rules. */
   :root {
     --composer-safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  :root[data-keyboard-open='true'] {
-    --composer-safe-bottom: 0px;
+    --keyboard-inset-bottom: 0px;
   }
 
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.

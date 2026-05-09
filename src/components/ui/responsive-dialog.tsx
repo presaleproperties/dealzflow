@@ -70,8 +70,20 @@ export const ResponsiveDialogContent = React.forwardRef<
         maxHeight: 'none',
       });
 
-      // Broadcast keyboard state so footers / sticky bars can drop their
-      // safe-area padding when the keyboard already covers it.
+      // Continuous composer-safe-bottom: the drawer's bottom edge is already
+      // pinned `keyboardBottom`px above the device bottom, so any safe-area
+      // inset below the keyboard line is *already covered*. Subtract it so
+      // the composer's inner padding eases from full safe-area (idle) down
+      // to 0 (keyboard fully open) instead of snapping at a threshold.
+      // Floor at 0 — never negative.
+      root.style.setProperty('--keyboard-inset-bottom', `${keyboardBottom}px`);
+      root.style.setProperty(
+        '--composer-safe-bottom',
+        `max(0px, calc(env(safe-area-inset-bottom, 0px) - ${keyboardBottom}px))`,
+      );
+
+      // Keep the binary attribute too for components that still branch on it
+      // (e.g. dropping outer page padding while typing).
       if (keyboardOpen) {
         root.setAttribute('data-keyboard-open', 'true');
       } else {
@@ -103,6 +115,8 @@ export const ResponsiveDialogContent = React.forwardRef<
       window.removeEventListener('resize', onChange);
       window.removeEventListener('scroll', onChange);
       root.removeAttribute('data-keyboard-open');
+      root.style.removeProperty('--keyboard-inset-bottom');
+      root.style.removeProperty('--composer-safe-bottom');
     };
   }, [isMobile, isDrawer, isTrulyFullScreen]);
 
