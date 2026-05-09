@@ -260,6 +260,32 @@ Deno.serve(async (req) => {
       completedForm?.property_name, formPayload.project, formPayload.property_name,
     ].filter(Boolean) as string[];
 
+    // Persona → contact_type
+    const personaRaw = (meta.persona ?? formPayload.persona ?? "").toString().trim().toLowerCase();
+    const personaType = ["buyer", "investor", "realtor", "developer"].includes(personaRaw) ? personaRaw : null;
+
+    // Tags: presale-website + form:<type> + deck:<name> + raw lead_source label
+    const tagSet = new Set<string>(["presale-website"]);
+    if (completedForm?.form_type) tagSet.add(`form:${completedForm.form_type}`);
+    const deckName = meta.pitch_deck_name ?? meta.deck_name ?? meta.deck?.name;
+    if (deckName) tagSet.add(`deck:${deckName}`);
+    if (leadSource) tagSet.add(leadSource);
+    // Hot triggers fireable from this single payload
+    const isHotInit = body.type === "floorplan_download"
+      || (body.type === "deck_visit" && (meta.visit_number ?? 0) >= 2);
+    if (isHotInit) tagSet.add("hot");
+
+    // Notes appendix (granular routing details + free-text message)
+    const noteLines: string[] = [`[Presale form @ ${occurredAt}]`];
+    if (completedForm?.form_type) noteLines.push(`Form: ${completedForm.form_type}`);
+    if (meta.lead_source) noteLines.push(`Lead source: ${meta.lead_source}`);
+    if (meta.landing_page) noteLines.push(`Landing: ${meta.landing_page}`);
+    const utm = [meta.utm_source, meta.utm_medium, meta.utm_campaign].filter(Boolean).join(" / ");
+    if (utm) noteLines.push(`UTM: ${utm}`);
+    const messageText = formPayload.message ?? meta.message;
+    if (typeof messageText === "string" && messageText.trim()) noteLines.push(`Message: ${messageText.trim()}`);
+    const noteAppendix = noteLines.length > 1 ? noteLines.join("\n") : null;
+
     const { data: created, error: createErr } = await supabase
       .from("crm_contacts")
       .insert({
@@ -268,14 +294,17 @@ Deno.serve(async (req) => {
         email: leadEmail,
         phone: leadPhone,
         presale_user_id: presaleUserIdEarly,
-        source,
-        campaign_source: leadSource,
+        // Source rule: ALWAYS PresaleProperties.com for inbound
+        source: "PresaleProperties.com",
+        contact_type: personaType,
+        notes: noteAppendix,
         project: projects[0] ?? null,
         projects: Array.from(new Set(projects)),
         presale_metadata: meta,
-        tags: Array.from(new Set(["presale-website", leadSource].filter(Boolean))),
+        tags: Array.from(tagSet),
         status: "New Lead",
         lead_type: "Pre-Sale",
+        lead_tier: isHotInit ? "hot" : null,
         assigned_to: assignee,
         sync_source: "presale",
         lofty_synced_at: occurredAt,
