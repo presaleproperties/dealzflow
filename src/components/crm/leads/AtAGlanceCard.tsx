@@ -81,8 +81,8 @@ export function AtAGlanceCard({ contact, leadScore, lastTouchHours }: Props) {
     : 'text-rose-600';
 
   return (
-    <div className="rounded-xl border border-border bg-card px-3 py-3 shadow-sm">
-      <div className="grid grid-cols-3 gap-x-3 gap-y-3">
+    <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm">
+      <div className="grid grid-cols-3 gap-x-4 gap-y-4">
         <Cell label="Score" value={`${leadScore.score}`} sub={leadScore.label} tone={scoreTone} />
         <Cell label="Stage" value={contact.status || '—'} sub={null} compact />
         <Cell
@@ -122,18 +122,18 @@ function Cell({
 }) {
   return (
     <div className="min-w-0">
-      <div className="text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground/80 font-semibold truncate">
+      <div className="text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground/80 font-semibold truncate">
         {label}
       </div>
       <div className={cn(
-        'font-semibold tabular-nums mt-0.5 truncate',
-        compact ? 'text-[12px]' : 'text-[14px]',
+        'font-semibold tabular-nums mt-1 truncate',
+        compact ? 'text-[14px]' : 'text-[17px]',
         tone,
       )}>
         {value}
       </div>
       {sub && (
-        <div className="text-[10px] text-muted-foreground/80 truncate mt-0.5">{sub}</div>
+        <div className="text-[11px] text-muted-foreground/80 truncate mt-0.5">{sub}</div>
       )}
     </div>
   );
