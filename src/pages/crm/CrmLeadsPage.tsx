@@ -603,7 +603,7 @@ export default function CrmLeadsPage() {
               >
                 <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
                   <h1 className="m-page-title">Leads</h1>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -619,6 +619,29 @@ export default function CrmLeadsPage() {
                       aria-expanded={mobileSearchOpen}
                     >
                       <Search className="w-6 h-6" strokeWidth={2} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setFiltersExpanded(true)}
+                      className={`h-11 w-11 relative ${activeFilterCount > 0 ? 'text-primary' : 'text-foreground'}`}
+                      aria-label="Open filters"
+                    >
+                      <Filter className="w-[22px] h-[22px]" strokeWidth={2} />
+                      {activeFilterCount > 0 && (
+                        <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-[16px] text-center">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSortSheetOpen(true)}
+                      className="h-11 w-11 text-foreground"
+                      aria-label="Change sort"
+                    >
+                      <ArrowDownNarrowWide className="w-[22px] h-[22px]" strokeWidth={2} />
                     </Button>
                     {/* Add Lead moved to floating action button (bottom-right) */}
                   </div>
