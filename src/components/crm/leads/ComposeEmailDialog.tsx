@@ -777,7 +777,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             previewTpl ? 'lg:grid-cols-[260px_1fr_360px]' : 'lg:grid-cols-[260px_1fr]',
           )}>
             {/* Sidebar */}
-            <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden md:block">
+            <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden lg:block">
               {/* Lead identity */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-2 mb-2">
@@ -934,7 +934,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   "From" is desktop-only; on mobile you always send as yourself, so we hide it
                   to free vertical space. */}
               <div className="px-3 sm:px-5 pt-1 sm:pt-2 pb-0.5 sm:pb-1 border-b border-border/60 shrink-0">
-                <div className="hidden md:block">
+                <div className="hidden lg:block">
                   <RecipientRow label="From">
                     <span className="text-[13px] text-foreground/80 truncate">
                       {emailSettings?.sender_name
@@ -1023,7 +1023,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               </div>
 
               {/* Mode tabs — flush row, no heavy background block */}
-              <div className="hidden md:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
+              <div className="hidden lg:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-0.5">
                   {(() => {
                     /* Detect "rich" template HTML the rich text editor can't represent.
@@ -1156,8 +1156,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
               {/* Mobile sticky action bar — single source of truth for mobile actions */}
               <div
-                className="md:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) + 6px)' }}
+                className="lg:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
               >
                 <button
                   type="button"
@@ -1230,7 +1230,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               </div>
 
               {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
-              <div className="hidden md:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
+              <div className="hidden lg:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
                   <div className="flex items-center gap-1.5">
