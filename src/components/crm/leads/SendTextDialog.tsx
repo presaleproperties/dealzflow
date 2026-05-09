@@ -701,8 +701,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
 
         {/* Footer — pinned, safe-area aware, clears the floating bottom-nav on mobile */}
         <div
-          className="flex items-center justify-end gap-2 px-4 sm:px-8 h-14 sm:h-16 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) * 0)' }}
+          className="flex items-center justify-end gap-2 px-4 sm:px-8 min-h-14 sm:h-16 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0 pt-2 sm:pt-0"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) + 8px)' }}
         >
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
