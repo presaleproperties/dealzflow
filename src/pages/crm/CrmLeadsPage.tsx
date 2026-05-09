@@ -379,8 +379,12 @@ export default function CrmLeadsPage() {
       letterFilter,
       pipelineView,
       savedViewFilters: savedViewFilters,
+      // Pass the segment's full filter_config (tags_any_ci / lead_type_ci / status / etc.)
+      // so the list matches the pill count exactly. Using only pipeline_segment_id
+      // would show ONLY contacts manually dragged in Kanban (often <10) while the
+      // pill counts every contact matching the loose tag/lead_type filter (often 50+).
       segmentFilters: activeSegment && Object.keys(activeSegment.filter_config).length > 0
-        ? { pipeline_segment_id: activeSegment.id }
+        ? (activeSegment.filter_config as Record<string, unknown>)
         : undefined,
       uncontacted7: !!activeView.filters._uncontacted_7,
       stale30: !!activeView.filters._stale_30,
