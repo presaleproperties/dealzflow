@@ -1404,7 +1404,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
             {/* Right-side template preview pane */}
             {previewTpl && (
-              <aside className="border-l border-border bg-muted/10 overflow-hidden hidden md:flex flex-col min-h-0">
+              <aside className="border-l border-border bg-muted/10 overflow-hidden hidden lg:flex flex-col min-h-0">
                 <div className="px-4 py-3 border-b border-border bg-card flex items-start justify-between gap-2 shrink-0">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
