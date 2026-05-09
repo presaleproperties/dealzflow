@@ -96,7 +96,9 @@ export interface BridgeProjectSummary {
   [k: string]: unknown;
 }
 export interface BridgeAgent {
+  id?: string;
   slug: string;
+  full_name?: string;
   name?: string;
   email?: string;
   [k: string]: unknown;
@@ -129,8 +131,25 @@ export const presaleBridge = {
     call<{ developers: unknown[] } | unknown[]>("bridge-list-developers"),
   listAgents: () =>
     call<{ agents: BridgeAgent[] } | BridgeAgent[]>("bridge-list-agents"),
-  getAgent: (slug: string) =>
-    call<BridgeAgent>("bridge-get-agent", { query: { slug } }),
+  getAgent: async (identifier: string) => {
+    const value = identifier.trim();
+    if (!value) throw new Error("Presale agent identifier is required");
+    if (value.includes("@")) return call<BridgeAgent>("bridge-get-agent", { query: { email: value } });
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    if (uuidLike) return call<BridgeAgent>("bridge-get-agent", { query: { id: value } });
+
+    const agentsRaw = await call<{ agents: BridgeAgent[] } | BridgeAgent[]>("bridge-list-agents");
+    const agents = Array.isArray(agentsRaw) ? agentsRaw : agentsRaw.agents ?? [];
+    const wanted = value.toLowerCase();
+    const match = agents.find((a) => {
+      const nameSlug = (a.name ?? a.full_name ?? "").toLowerCase().replace(/\s+/g, "-");
+      const emailLocal = (a.email ?? "").split("@")[0]?.toLowerCase();
+      return a.slug?.toLowerCase() === wanted || nameSlug === wanted || emailLocal === wanted;
+    });
+    const resolved = match?.id ?? match?.email ?? match?.slug;
+    if (!resolved) throw new PresaleBridgeError("bridge-get-agent", 404, { error: "Agent not found" }, "Bridge bridge-get-agent failed (404): Agent not found");
+    return presaleBridge.getAgent(resolved);
+  },
   getLeadBehavior: (params: { email?: string; phone?: string }) =>
     call<BridgeBehavior>("bridge-get-lead-behavior", {
       query: { email: params.email, phone: params.phone },
