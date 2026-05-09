@@ -944,6 +944,14 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           contact={contact}
           channel={conv.channel as 'sms' | 'whatsapp'}
           onOpenFull={() => setComposeOpen(true)}
+          onSent={() => {
+            const drop = () => {
+              const el = scrollRef.current;
+              if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+            };
+            requestAnimationFrame(drop);
+            setTimeout(drop, 350);
+          }}
         />
       )}
 
