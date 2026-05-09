@@ -61,9 +61,9 @@ function cleanPhone(v: unknown): string | null {
 }
 function splitName(value: unknown): { first_name: string; last_name: string } {
   const raw = typeof value === "string" ? value.trim() : "";
-  if (!raw) return { first_name: "New", last_name: "Lead" };
+  if (!raw) return { first_name: "New", last_name: "(unknown)" };
   const parts = raw.split(/\s+/).filter(Boolean);
-  return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") || "Lead" };
+  return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") || "(unknown)" };
 }
 
 async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null): Promise<string> {
