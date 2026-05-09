@@ -66,7 +66,21 @@ function splitName(value: unknown): { first_name: string; last_name: string } {
   return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") };
 }
 
-async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null): Promise<string> {
+async function safePresaleUserId(supabase: SupabaseClient, presaleUserId: string | null, email: string | null, phone: string | null, contactId?: string | null): Promise<string | null> {
+  if (!presaleUserId) return null;
+  const { data } = await supabase
+    .from("crm_contacts")
+    .select("id, email, phone")
+    .eq("presale_user_id", presaleUserId)
+    .maybeSingle();
+  if (!data || data.id === contactId) return presaleUserId;
+  const existingEmail = String((data as any).email ?? "").trim().toLowerCase();
+  const existingPhone = String((data as any).phone ?? "").replace(/\D/g, "");
+  const incomingPhone = String(phone ?? "").replace(/\D/g, "");
+  return (!existingEmail || !email || existingEmail === email) && (!existingPhone || !incomingPhone || existingPhone === incomingPhone) ? presaleUserId : null;
+}
+
+async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null, leadEmail?: string | null, leadFirstName?: string | null): Promise<string> {
   if (agentSlug) {
     const wanted = agentSlug.trim().toLowerCase();
     const { data: team } = await supabase
@@ -81,6 +95,31 @@ async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null)
     });
     if (match?.display_name) return match.display_name;
   }
+  if (leadEmail || leadFirstName) {
+    const local = (leadEmail ?? "").split("@")[0]?.toLowerCase().replace(/\d+$/g, "") ?? "";
+    const first = (leadFirstName ?? "").trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const displayFirst = (t.display_name ?? "").split(/\s+/)[0]?.toLowerCase();
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return displayFirst && first === displayFirst && (local === displayFirst || local === emailLocal || local === presaleLocal);
+    });
+    if (match?.display_name) return match.display_name;
+  }
+  const { data: owner } = await supabase
+    .from("crm_team")
+    .select("display_name")
+    .eq("is_active", true)
+    .eq("role", "owner")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (owner?.display_name) return owner.display_name;
+
   const { data: agents } = await supabase
     .from("crm_team")
     .select("display_name, role")
@@ -187,21 +226,17 @@ export async function processPresaleActivity(
     }
   }
 
-  // ── Identity stitch: presale_user_id → email → phone ─────────────────────
+  // ── Identity stitch: email → phone → guarded presale_user_id ──────────────
+  // Visitor ids can survive across test submissions in the same browser. Never
+  // let a reused visitor id merge a different submitted email into another lead.
   let contact: { id: string; first_name: string | null; last_name: string | null; assigned_to: string | null } | null = null;
-  if (visitorId) {
-    const { data } = await supabase
-      .from("crm_contacts")
-      .select("id, first_name, last_name, assigned_to")
-      .eq("presale_user_id", visitorId)
-      .maybeSingle();
-    if (data) contact = data as typeof contact;
-  }
-  if (!contact && email) {
+  if (email) {
     const { data } = await supabase
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
       .ilike("email", email)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (data) contact = data as typeof contact;
   }
@@ -210,8 +245,25 @@ export async function processPresaleActivity(
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
       .eq("phone", phone)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (data) contact = data as typeof contact;
+  }
+  if (!contact && visitorId) {
+    const { data } = await supabase
+      .from("crm_contacts")
+      .select("id, first_name, last_name, assigned_to, email, phone")
+      .eq("presale_user_id", visitorId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const existingEmail = String((data as any)?.email ?? "").trim().toLowerCase();
+    const existingPhone = String((data as any)?.phone ?? "").replace(/\D/g, "");
+    const incomingPhone = String(phone ?? "").replace(/\D/g, "");
+    if (data && (!existingEmail || !email || existingEmail === email) && (!existingPhone || !incomingPhone || existingPhone === incomingPhone)) {
+      contact = data as typeof contact;
+    }
   }
 
   // ── Auto-create lead if lifecycle event or behavior_batch w/ completed form ─
@@ -228,9 +280,9 @@ export async function processPresaleActivity(
       ev.name_hint ?? meta.name ?? meta.full_name ?? formPayload.name ?? formPayload.full_name ??
         [formPayload.first_name, formPayload.last_name].filter(Boolean).join(" "),
     );
-    const assignee = await pickAssignee(supabase, ev.agent_slug ?? meta.agent_slug ?? null);
     const leadEmail = email ?? cleanEmail(meta.email) ?? cleanEmail(formPayload.email);
     const leadPhone = phone ?? cleanPhone(meta.phone) ?? cleanPhone(formPayload.phone);
+    const assignee = await pickAssignee(supabase, ev.agent_slug ?? meta.agent_slug ?? null, leadEmail, first_name);
     const leadSource = typeof meta.lead_source === "string" ? meta.lead_source : (completedForm?.form_type ?? null);
     // Junk-project filter (yes/no answers, "Working with agent" style labels)
     const JUNK_PROJECT_RE = [
@@ -314,7 +366,7 @@ export async function processPresaleActivity(
         first_name, last_name,
         email: leadEmail,
         phone: leadPhone,
-        presale_user_id: visitorId,
+        presale_user_id: await safePresaleUserId(supabase, visitorId, leadEmail, leadPhone),
         source: "PresaleProperties.com",
         contact_type: personaType,
         notes: noteAppendix,
@@ -339,9 +391,15 @@ export async function processPresaleActivity(
     }
     contact = created as typeof contact;
   } else if (!contact && ev.type !== "behavior_batch" && email) {
-    // Light auto-create for one-off email/engagement events (push-activity-to-crm legacy behavior)
+    // Do not auto-create duplicates for generic Presale sync/task/update events.
+    // Only true lead lifecycle or high-intent engagement events should create a
+    // new CRM lead; unmatched administrative events are stored for back-fill.
+    const canAutoCreate = HIGH_INTENT.has(ev.type) || ev.type === "vip_registration" || ev.type === "floorplan_download";
+    if (!canAutoCreate) {
+      contact = null;
+    } else {
     const { first_name, last_name } = splitName(ev.name_hint);
-    const assignee = await pickAssignee(supabase, ev.agent_slug ?? null);
+    const assignee = await pickAssignee(supabase, ev.agent_slug ?? null, email, first_name);
     const tags = ["presale-website"];
     if (ev.raw_event_type === "vip_registration" || ev.type === "vip_registration") tags.push("vip");
     const { data: created, error: createErr } = await supabase
@@ -350,7 +408,7 @@ export async function processPresaleActivity(
         first_name, last_name,
         email,
         phone,
-        presale_user_id: visitorId,
+        presale_user_id: await safePresaleUserId(supabase, visitorId, email, phone),
         source: "PresaleProperties.com",
         status: "New Lead",
         lead_type: "Pre-Sale",
@@ -365,15 +423,19 @@ export async function processPresaleActivity(
       .single();
     if (createErr) return { error: `contact_create_failed: ${createErr.message}`, status: 500 };
     contact = created as typeof contact;
+    }
   }
 
   // Backfill presale_user_id on stitched contact
   if (contact && visitorId) {
+    const stitchId = await safePresaleUserId(supabase, visitorId, email, phone, contact.id);
+    if (stitchId) {
     await supabase
       .from("crm_contacts")
-      .update({ presale_user_id: visitorId })
+      .update({ presale_user_id: stitchId })
       .eq("id", contact.id)
       .is("presale_user_id", null);
+    }
   }
 
   // ── Insert activity (always, except dedupe behavior_batch) ──────────────
@@ -599,12 +661,12 @@ export async function processPresaleActivity(
 
   // ── Notifications: completed form submissions in batch ──
   let notified = false;
-  if (contact && behavior?.forms) {
+  if (contact && behavior?.forms && !batchSkipped) {
     const completed = (behavior.forms as any[]).filter((f) => f?.status === "completed");
     if (completed.length > 0) {
       const { data: recipients } = await supabase.rpc("crm_recipients_for_contact", { _assigned_to: contact.assigned_to ?? "" });
       const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "A lead";
-      const formLabel = completed.map((f) => f.form_type).filter(Boolean).join(", ");
+      const formLabel = Array.from(new Set(completed.map((f) => f.form_type).filter(Boolean))).join(", ");
       if (Array.isArray(recipients) && recipients.length > 0) {
         await supabase.from("crm_notifications").insert(
           (recipients as string[]).map((u) => ({

@@ -20,6 +20,8 @@ async function pickAssignee(
   supabase: any,
   agentSlug?: string | null,
   assignedAgentId?: string | null,
+  leadEmail?: string | null,
+  leadFirstName?: string | null,
 ): Promise<string> {
   // 0) Upstream round-robin: presale.com may send assigned_agent_id directly.
   if (assignedAgentId) {
@@ -49,7 +51,26 @@ async function pickAssignee(
     if (match?.display_name) return match.display_name;
   }
 
-  // 2) Default: route to the team owner (team lead) for triage.
+  // 2) Test/internal submissions often use personal emails like ravish2@gmail.com.
+  // If the email + first name clearly match an active team member, route to that
+  // agent instead of falling through to a random/default assignee.
+  if (leadEmail || leadFirstName) {
+    const local = (leadEmail ?? "").split("@")[0]?.toLowerCase().replace(/\d+$/g, "") ?? "";
+    const first = (leadFirstName ?? "").trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const displayFirst = (t.display_name ?? "").split(/\s+/)[0]?.toLowerCase();
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return displayFirst && first === displayFirst && (local === displayFirst || local === emailLocal || local === presaleLocal);
+    });
+    if (match?.display_name) return match.display_name;
+  }
+
+  // 3) Default: route to the team owner (team lead) for triage.
   const { data: owner } = await supabase
     .from("crm_team")
     .select("display_name")
@@ -190,6 +211,19 @@ function sanitizeProjects(values: (string | null | undefined)[]): string[] {
   return Array.from(seen.values());
 }
 
+async function safePresaleUserId(supabase: any, presaleUserId: string | null | undefined, email: string, phone: string | null, contactId?: string | null): Promise<string | null> {
+  if (!presaleUserId) return null;
+  const { data } = await supabase
+    .from("crm_contacts")
+    .select("id, email, phone")
+    .eq("presale_user_id", presaleUserId)
+    .maybeSingle();
+  if (!data || data.id === contactId) return presaleUserId;
+  const existingEmail = String(data.email ?? "").trim().toLowerCase();
+  const existingPhone = String(data.phone ?? "").replace(/\D/g, "");
+  return (!existingEmail || existingEmail === email) && (!existingPhone || !phone || existingPhone === phone) ? presaleUserId : null;
+}
+
 // Persona → contact_type (buyer/investor/realtor/developer)
 function personaToContactType(meta: any): string | null {
   const p = (meta?.persona ?? "").toString().trim().toLowerCase();
@@ -323,20 +357,28 @@ Deno.serve(async (req) => {
       console.warn("[bridge-ingest-lead] log_source_event failed (non-fatal):", e);
     }
 
-    // Dedup by presale_user_id, then email or phone (merge & enrich)
+    // Dedup by email/phone first. Presale visitor/session ids can be reused in
+    // the same browser during testing, so they must not override a different
+    // submitted email/phone identity.
     let existing: any = null;
-    if (L.presale_user_id) {
+    if (email || phone) {
       const { data } = await supabase.from("crm_contacts")
-        .select("id, first_name, last_name, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
-        .eq("presale_user_id", L.presale_user_id).limit(1).maybeSingle();
+        .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+        .order("created_at", { ascending: true })
+        .limit(1).maybeSingle();
       existing = data;
     }
     if (!existing) {
       const { data } = await supabase.from("crm_contacts")
-        .select("id, first_name, last_name, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
-        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+        .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+        .eq("presale_user_id", L.presale_user_id)
         .limit(1).maybeSingle();
-      existing = data;
+      const existingEmail = String(data?.email ?? "").trim().toLowerCase();
+      const existingPhone = String(data?.phone ?? "").replace(/\D/g, "");
+      if (data && (!existingEmail || existingEmail === email) && (!existingPhone || !phone || existingPhone === phone)) {
+        existing = data;
+      }
     }
 
     let contactId: string;
@@ -363,7 +405,7 @@ Deno.serve(async (req) => {
       await supabase.from("crm_contacts").update({
         first_name: existing.first_name || L.first_name || "New",
         last_name: existing.last_name || L.last_name || "",
-        presale_user_id: L.presale_user_id ?? undefined,
+        presale_user_id: await safePresaleUserId(supabase, L.presale_user_id, email, phone, existing.id) ?? undefined,
         // Source rule: ALWAYS PresaleProperties.com for inbound presale leads
         source: "PresaleProperties.com",
         contact_type: personaType ?? undefined,
@@ -394,7 +436,7 @@ Deno.serve(async (req) => {
 
       contactId = existing.id;
     } else {
-      const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null);
+      const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null, email, L.first_name ?? null);
       const newTags = buildTags(null, L.tags, meta);
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
@@ -402,7 +444,7 @@ Deno.serve(async (req) => {
         last_name: L.last_name || "",
         email,
         phone: L.phone || null,
-        presale_user_id: L.presale_user_id || null,
+        presale_user_id: await safePresaleUserId(supabase, L.presale_user_id, email, phone) || null,
         source: "PresaleProperties.com",
         contact_type: personaType,
         notes: noteAppendix,
