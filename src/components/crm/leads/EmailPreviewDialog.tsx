@@ -37,6 +37,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Lead's email — used as a sensible default for inbound "from" / outbound "to". */
   contactEmail?: string | null;
+  /** When provided, renders a "Reply" button that hands back the email so the
+   *  parent can pop the full ComposeEmailDialog pre-filled with Re:/quoted body.
+   *  Used for Presale-pushed auto-responses that aren't in `crm_email_log`. */
+  onReply?: (email: EmailLogRow) => void;
 }
 
 const BASE_STYLES = `
