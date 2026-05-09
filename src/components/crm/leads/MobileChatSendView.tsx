@@ -10,11 +10,13 @@
  * full composer if the agent needs them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, Phone, MoreHorizontal, Sparkles, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Phone, MoreHorizontal, Sparkles, MessagesSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AttachMenu } from '@/components/crm/shared/AttachMenu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrmContactSmsLog } from '@/hooks/useCrmContactSmsLog';
 import { useDialer } from '@/hooks/useDialer';
 import type { CrmContact } from '@/hooks/useCrmContacts';
