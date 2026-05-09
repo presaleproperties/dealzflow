@@ -371,12 +371,17 @@ export function PipelineKanban() {
           </SelectContent>
         </Select>
         <Select value={filterAgent} onValueChange={setFilterAgent}>
-          <SelectTrigger className="h-10 sm:h-9 w-full sm:w-[170px] text-xs min-h-[44px] sm:min-h-0">
-            <SelectValue placeholder="All Agents" />
+          <SelectTrigger className="h-10 sm:h-9 w-full sm:w-[180px] text-xs min-h-[44px] sm:min-h-0">
+            <SelectValue placeholder="My Leads" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__mine">
+              My Leads{myName ? ` (${myName})` : ''}
+            </SelectItem>
             <SelectItem value="all">All Agents</SelectItem>
-            {dynamicAgents.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            {dynamicAgents
+              .filter(a => a !== myName)
+              .map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
