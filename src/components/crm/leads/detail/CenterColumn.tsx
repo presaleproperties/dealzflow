@@ -209,12 +209,19 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
+    // Presale-pushed emails (synthesized from crm_activity_events) aren't in
+    // the local crm_email_log, so the thread dialog can't load them. Open the
+    // single-message preview directly so the body_html renders cleanly.
+    if (noteId.startsWith('presale-email-')) {
+      setPreviewEmail(row);
+      setThreadInitialId(null);
+      setThreadOpen(false);
+      return;
+    }
     // Open the full-thread dialog scoped to this email so the agent sees
     // the complete back-and-forth with quoted history + inline reply.
     setThreadInitialId(`log-${row.id}`);
     setThreadOpen(true);
-    // Keep the legacy preview state available but unused; future single-row
-    // previews can re-enable this without code changes.
     setPreviewEmail(null);
   };
 
