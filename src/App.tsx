@@ -207,6 +207,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
       {children}
       <SessionRestoringBanner />
       <EmailIdentitySetupDialog />
+      <DialerWidget />
     </>
   );
 }
