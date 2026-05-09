@@ -95,6 +95,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
       value: originalInnerWidth,
