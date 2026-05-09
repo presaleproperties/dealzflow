@@ -357,6 +357,32 @@ Deno.serve(async (req) => {
       console.warn("[bridge-ingest-lead] log_source_event failed (non-fatal):", e);
     }
 
+    // Detect "agent self-test" pattern: an active team member's first name
+    // followed by digits in the email local-part (e.g. ravish2@gmail.com).
+    // Lead is still created and notified, but flagged for filtering.
+    let isAgentTest = false;
+    try {
+      const local = (email.split("@")[0] || "").toLowerCase();
+      const m = /^([a-z]+)\d+$/.exec(local);
+      if (m) {
+        const candidate = m[1];
+        const { data: teamRows } = await supabase
+          .from("crm_team")
+          .select("display_name, first_name")
+          .eq("status", "active");
+        const names = new Set<string>();
+        for (const t of teamRows ?? []) {
+          const dn = String((t as any).display_name ?? "").trim().toLowerCase().split(/\s+/)[0];
+          const fn = String((t as any).first_name ?? "").trim().toLowerCase();
+          if (dn) names.add(dn);
+          if (fn) names.add(fn);
+        }
+        if (names.has(candidate)) isAgentTest = true;
+      }
+    } catch (e) {
+      console.warn("[bridge-ingest-lead] agent-test detection failed (non-fatal):", e);
+    }
+
     // Dedup via the identity vault first (matches against any email or phone
     // this contact has EVER used, not just the current primary). Falls back to
     // a direct lookup so we don't regress if the vault is empty.
