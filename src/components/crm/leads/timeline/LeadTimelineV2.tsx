@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { Loader2, Inbox } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +12,8 @@ import {
 } from '@/hooks/useLeadTimelineV2';
 import { TimelineRow } from './TimelineRow';
 import { TimelineFilters } from './TimelineFilters';
+import { TimelinePresetsBar } from './TimelinePresetsBar';
+import { useTimelinePresets, type TimelinePreset } from '@/hooks/useTimelinePresets';
 import { format, isSameDay } from 'date-fns';
 
 interface Props {
@@ -37,6 +39,45 @@ export function LeadTimelineV2({
   const [filterKey, setFilterKey] = useState<'all' | TimelineKind | 'comms'>('all');
   const [kinds, setKinds] = useState<TimelineKind[] | null>(null);
   const [search, setSearch] = useState('');
+
+  const {
+    presets,
+    savePreset,
+    deletePreset,
+    lastAppliedId,
+    setLastAppliedId,
+  } = useTimelinePresets(contactId);
+
+  // Auto-apply the last used preset when switching leads.
+  useEffect(() => {
+    if (!lastAppliedId) return;
+    const p = presets.find((x) => x.id === lastAppliedId);
+    if (!p) return;
+    setFilterKey(p.filterKey);
+    setKinds(p.kinds);
+    setSearch(p.search);
+    // Only on lead change / initial preset load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactId, presets.length === 0 ? null : lastAppliedId]);
+
+  const applyPreset = (p: TimelinePreset) => {
+    setFilterKey(p.filterKey);
+    setKinds(p.kinds);
+    setSearch(p.search);
+    setLastAppliedId(p.id);
+  };
+
+  const handleSavePreset = (name: string) => {
+    const p = savePreset({ name, filterKey, kinds, search });
+    setLastAppliedId(p.id);
+  };
+
+  // Detect whether current view differs from any saved preset (so "Save view" is meaningful).
+  const matchesExisting = presets.some(
+    (p) => p.filterKey === filterKey && p.search === search,
+  );
+  const isDefaultView = filterKey === 'all' && !search;
+  const canSavePreset = !matchesExisting && !isDefaultView;
 
   const { events, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useLeadTimelineV2({ contactId, kinds, search });
@@ -86,11 +127,25 @@ export function LeadTimelineV2({
         onChange={(k, ks) => {
           setFilterKey(k);
           setKinds(ks);
+          setLastAppliedId(null);
         }}
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setLastAppliedId(null);
+        }}
       />
 
+      <div className="mt-2">
+        <TimelinePresetsBar
+          presets={presets}
+          activeId={lastAppliedId}
+          canSave={canSavePreset}
+          onApply={applyPreset}
+          onDelete={deletePreset}
+          onSave={handleSavePreset}
+        />
+      </div>
       {pinnedEvents.length > 0 && (
         <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] p-2">
           <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-400">
