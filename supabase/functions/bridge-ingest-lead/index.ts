@@ -374,7 +374,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, contact_id: contactId, action: existing ? "merged" : "created", event_id: eventId }), {
+    // Resolve assigned_agent envelope so Presale can render the agent card
+    const { data: contactRow } = await supabase
+      .from("crm_contacts")
+      .select("assigned_to")
+      .eq("id", contactId)
+      .maybeSingle();
+    const assignedAgent = await loadAgentEnvelope(supabase, contactRow?.assigned_to ?? "");
+
+    return new Response(JSON.stringify({
+      ok: true,
+      contact_id: contactId,
+      crm_contact_id: contactId,
+      action: existing ? "merged" : "created",
+      event_id: eventId,
+      assigned_agent: assignedAgent,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
