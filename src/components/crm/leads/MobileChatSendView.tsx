@@ -97,7 +97,12 @@ export function MobileChatSendView({
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  const [taHeight, setTaHeight] = useState(36);
+  // Single-line baseline (~36px) → grows one line at a time → caps at ~5 lines
+  // (132px) and starts scrolling internally instead of pushing the chat up.
+  const TA_MIN = 36;
+  const TA_MAX = 132;
+  const [taHeight, setTaHeight] = useState(TA_MIN);
+  const [taScrollable, setTaScrollable] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Show oldest → newest in the scroll view (chat order).
