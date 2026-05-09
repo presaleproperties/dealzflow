@@ -23,9 +23,8 @@ import { getDateGroup, noteTime, type CrmShowing } from './types';
 import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
-import { Pin, Download as DownloadIcon } from 'lucide-react';
+import { Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn as cnUtil } from '@/lib/utils';
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
 
