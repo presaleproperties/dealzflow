@@ -188,7 +188,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_gmail_messages')
-        .select('id, gmail_thread_id, direction, from_email, from_name, to_emails, cc_emails, bcc_emails, subject, body_html, body_text, snippet, internal_date')
+        .select('id, gmail_message_id, gmail_thread_id, direction, from_email, from_name, to_emails, cc_emails, bcc_emails, subject, body_html, body_text, snippet, internal_date, has_attachments, attachment_meta')
         .eq('contact_id', contact.id)
         .order('internal_date', { ascending: false })
         .limit(100);
