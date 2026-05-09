@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, MessageSquare, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
@@ -33,26 +33,15 @@ export function SmsNoteCard({ message, onOpen }: Props) {
   const body = (message.body ?? '').trim();
 
   return (
-    <div className="group relative flex gap-3">
-      {/* Timeline dot */}
-      <div
-        className="relative z-10 flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 border bg-background"
-        style={{
-          borderColor: `hsl(${tint} / 0.5)`,
-          background: `hsl(${tint} / 0.1)`,
-        }}
-      >
-        <MessageSquare className="w-3.5 h-3.5" strokeWidth={2} style={{ color: `hsl(${tint})` }} />
-      </div>
-
-      {/* Card */}
+    <div className="group relative">
+      {/* Card — colored left rail communicates channel. No dot needed. */}
       <button
         type="button"
         onClick={onOpen}
         disabled={!onOpen}
         className={cn(
-          'flex-1 min-w-0 text-left rounded-lg border bg-card pl-3 pr-3 py-2.5 md:pl-3.5 md:pr-3.5 md:py-3 transition-all',
-          'border-border/50 border-l-[3px]',
+          'w-full text-left rounded-lg border bg-card pl-3.5 pr-3 py-2.5 md:pl-4 md:pr-3.5 md:py-3 transition-all',
+          'border-border/60 border-l-[3px]',
           onOpen && 'active:bg-muted/40 md:hover:border-primary/40 md:hover:bg-muted/20 cursor-pointer',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         )}

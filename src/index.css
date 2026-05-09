@@ -6,17 +6,19 @@
 
 @layer base {
   :root {
-    /* Light — Gold premium palette */
-    --background: 30 11% 99%;
-    --foreground: 222 25% 10%;
+    /* Light — Gold premium palette (audit v2: warmer bg, AA-safe meta text) */
+    --background: 30 14% 97.5%;
+    --foreground: 222 28% 9%;
+    /* Strong text — for primary names, page H1, table titles */
+    --text-strong: 222 32% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 25% 10%;
+    --card-foreground: 222 28% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 25% 10%;
+    --popover-foreground: 222 28% 9%;
 
-    /* Primary — gold accent */
+    /* Primary — gold accent (unchanged: brand) */
     --primary: 39 67% 55%;
     --primary-foreground: 222 25% 10%;
     --primary-glow: 39 72% 62%;
@@ -26,25 +28,25 @@
     --secondary: 30 6% 94%;
     --secondary-foreground: 222 25% 15%;
 
-    /* Muted */
+    /* Muted — darker meta text for AA headroom (was 224 8% 46%) */
     --muted: 30 6% 92%;
-    --muted-foreground: 224 8% 46%;
+    --muted-foreground: 222 14% 38%;
 
     /* Accent */
     --accent: 39 67% 55%;
     --accent-foreground: 222 25% 10%;
 
-    /* Semantic */
-    --success: 142 71% 45%;
+    /* Semantic — desaturated ~20% so chips read as muted/editorial */
+    --success: 142 52% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 35 78% 48%;
     --warning-foreground: 0 0% 100%;
-    --info: 210 62% 46%;
+    --info: 210 52% 44%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 68% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 9% 89%;
+    --border: 30 9% 88%;
     --border-subtle: 30 8% 92%;
     --input: 30 9% 91%;
     --ring: 39 67% 55%;
@@ -61,24 +63,25 @@
     --sidebar-border: 222 20% 16%;
     --sidebar-ring: 39 67% 55%;
 
-    /* Charts */
+    /* Charts — desaturated for editorial feel */
     --chart-1: 39 67% 55%;
-    --chart-2: 142 71% 45%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 270 48% 56%;
-    --chart-5: 0 84% 60%;
+    --chart-2: 142 52% 42%;
+    --chart-3: 35 78% 48%;
+    --chart-4: 270 38% 52%;
+    --chart-5: 0 68% 56%;
   }
 
   .dark {
-    /* Dark — deep slate with gold accent */
+    /* Dark — deep slate with gold accent (audit v2: brighter meta, calmer semantics) */
     --background: 222 25% 7%;
-    --foreground: 220 14% 93%;
+    --foreground: 220 16% 94%;
+    --text-strong: 220 18% 98%;
 
     --card: 222 20% 13%;
-    --card-foreground: 220 14% 93%;
+    --card-foreground: 220 16% 94%;
 
     --popover: 222 20% 13%;
-    --popover-foreground: 220 14% 93%;
+    --popover-foreground: 220 16% 94%;
 
     /* Primary — gold on dark */
     --primary: 39 72% 55%;
@@ -89,23 +92,24 @@
     --secondary: 222 18% 18%;
     --secondary-foreground: 220 12% 80%;
 
+    /* Muted — bumped from 64% → 72% L for AA on /60 /70 opacity uses */
     --muted: 222 16% 16%;
-    --muted-foreground: 220 10% 64%;
+    --muted-foreground: 220 12% 72%;
 
     --accent: 39 72% 55%;
     --accent-foreground: 222 25% 10%;
 
-    --success: 142 71% 45%;
+    --success: 142 50% 48%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 90% 54%;
+    --warning: 35 78% 56%;
     --warning-foreground: 220 13% 10%;
-    --info: 210 60% 54%;
+    --info: 210 50% 58%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 68% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 14% 20%;
-    --border-subtle: 222 12% 17%;
+    --border: 222 14% 22%;
+    --border-subtle: 222 12% 18%;
     --input: 222 14% 17%;
     --ring: 39 72% 55%;
 
@@ -253,6 +257,30 @@
   h2 { @apply text-[26px] font-semibold tracking-[-0.028em] leading-tight; }
   h3 { @apply text-[20px] font-semibold tracking-[-0.022em]; }
   h4, h5, h6 { @apply text-base font-semibold tracking-tight; }
+
+  /* ─────────────────────────────────────────────────────────────
+     CRM Editorial Type Scale (audit v2)
+     Use these utility classes anywhere in the CRM for a consistent
+     vertical rhythm. Sizes are tuned for desktop reading at 1366+.
+     Mobile keeps the existing m-* token system.
+     ───────────────────────────────────────────────────────────── */
+  .text-strong       { color: hsl(var(--text-strong)); }
+  .crm-h1            { @apply text-[22px] font-bold tracking-[-0.022em] leading-tight; color: hsl(var(--text-strong)); }
+  .crm-h2            { @apply text-[18px] font-semibold tracking-[-0.018em] leading-snug; color: hsl(var(--text-strong)); }
+  .crm-section-label { @apply text-[11px] font-semibold uppercase tracking-[0.08em]; color: hsl(var(--muted-foreground)); }
+  .crm-row-title     { @apply text-[15px] font-semibold leading-snug; color: hsl(var(--text-strong)); }
+  .crm-body          { @apply text-[14px] leading-relaxed; color: hsl(var(--foreground)); }
+  .crm-meta          { @apply text-[12.5px] leading-snug; color: hsl(var(--muted-foreground)); }
+  .crm-meta-strong   { @apply text-[12.5px] font-medium leading-snug; color: hsl(var(--foreground) / 0.78); }
+
+  /* Row hover/selected states with enough contrast to scan quickly. */
+  .crm-row-hover     { @apply transition-colors duration-150; }
+  .crm-row-hover:hover { background: hsl(var(--accent) / 0.06); }
+  .crm-row-selected  { background: hsl(var(--accent) / 0.10); box-shadow: inset 2px 0 0 hsl(var(--primary)); }
+
+  /* Card chrome — flat, single layer of separation, no shadow noise. */
+  .crm-card          { @apply bg-card rounded-xl border border-border; }
+  .crm-card-padded   { @apply bg-card rounded-xl border border-border p-4 md:p-5; }
 
   html { scroll-behavior: smooth; }
 

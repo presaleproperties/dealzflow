@@ -8,10 +8,10 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { cn } from '@/lib/utils';
 
 const KIND_META: Record<NoteKind, { icon: typeof Phone; label: string; tone: string }> = {
-  call:        { icon: Phone,         label: 'Call',        tone: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
-  text:        { icon: MessageSquare, label: 'Text',        tone: 'text-sky-500 bg-sky-500/10 border-sky-500/20' },
-  email:       { icon: Mail,          label: 'Email',       tone: 'text-violet-500 bg-violet-500/10 border-violet-500/20' },
-  appointment: { icon: Calendar,      label: 'Appointment', tone: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+  call:        { icon: Phone,         label: 'Call',        tone: 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/8 border-emerald-500/15' },
+  text:        { icon: MessageSquare, label: 'Text',        tone: 'text-sky-700 dark:text-sky-400 bg-sky-500/8 border-sky-500/15' },
+  email:       { icon: Mail,          label: 'Email',       tone: 'text-violet-700 dark:text-violet-400 bg-violet-500/8 border-violet-500/15' },
+  appointment: { icon: Calendar,      label: 'Appointment', tone: 'text-amber-700 dark:text-amber-400 bg-amber-500/8 border-amber-500/15' },
   note:        { icon: FileText,      label: 'Note',        tone: 'text-muted-foreground bg-muted/40 border-border' },
 };
 
