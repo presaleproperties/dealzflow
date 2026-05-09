@@ -218,7 +218,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           extraContacts={selectedContacts.slice(1)}
           open={showBulkEmail}
           onOpenChange={setShowBulkEmail}
-          onSent={onClearSelection}
+          onSent={() => { /* keep selection so user can chain follow-ups */ }}
         />
       )}
 
