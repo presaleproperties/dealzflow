@@ -130,7 +130,7 @@ export function RichTextEditor({
   const btnClass = 'h-8 w-8 p-0';
 
   return (
-    <div className="flex flex-col h-full min-h-[320px] bg-background">
+    <div className="flex flex-col h-full min-h-0 lg:min-h-[320px] bg-background">
       {/* Toolbar — sits flush against the composer header above (no border-top, no rounded corners) */}
       <div className="flex items-center gap-0.5 px-1 py-1.5 border-b border-border/60 bg-muted/20">
         <Button type="button" variant={editor.isActive('bold') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBold().run()}>
@@ -167,7 +167,7 @@ export function RichTextEditor({
       {/* Single scrollable area — fills remaining space so body feels expansive, not boxed */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
       >
         <EditorContent editor={editor} />
         {footerSlot}
