@@ -399,7 +399,7 @@ Deno.serve(async (req) => {
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
-        last_name: L.last_name || "(unknown)",
+        last_name: L.last_name || "",
         email,
         phone: L.phone || null,
         presale_user_id: L.presale_user_id || null,
