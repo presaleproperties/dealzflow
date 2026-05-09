@@ -750,8 +750,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               : (initialSubject ? 'Reply' : 'New Message');
             return (
               <DialogHeader
+                data-composer-header="true"
                 className="lg:hidden px-2 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-1"
-                style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: '8px' }}
+                style={{ paddingTop: 'var(--composer-header-top-pad, calc(env(safe-area-inset-top, 0px) + 6px))', paddingBottom: '8px' }}
               >
                 <button
                   type="button"
