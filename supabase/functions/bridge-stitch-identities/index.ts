@@ -233,7 +233,22 @@ Deno.serve(async (req) => {
     } else {
       updated++;
       holderByPid.set(m.presale_user_id, { id: target.id, email: m.email, created_at: target.created_at, tags: null, projects: null, notes: null });
+      // Replay recent anonymous activity into a single catch-up notification
+      try {
+        await supabase.rpc("crm_replay_recent_activity", { _contact_id: target.id, _hours: 24 });
+      } catch (e) {
+        console.warn("[stitch] replay failed", target.id, e);
+      }
     }
+  }
+
+  // Replay for merged contacts too
+  for (const [pid, holder] of holderByPid.entries()) {
+    if (!pid || !holder?.id) continue;
+    // best-effort, idempotent thanks to dedupe_key
+    try {
+      await supabase.rpc("crm_replay_recent_activity", { _contact_id: holder.id, _hours: 24 });
+    } catch { /* swallow */ }
   }
 
   return json({
