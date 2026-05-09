@@ -338,7 +338,7 @@ export function LeftSidebar({
       {/* Details */}
       <div className="space-y-3">
         <SectionHeader>Details</SectionHeader>
-        <div className="space-y-px">
+        <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border/60 [&>*]:px-3">
           {isMobile ? (
             <>
               <MobileEditRow label="Source" value={contact.source || ''} placeholder="Select source" onClick={() => setDrawer('source')} />
