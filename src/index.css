@@ -258,6 +258,30 @@
   h3 { @apply text-[20px] font-semibold tracking-[-0.022em]; }
   h4, h5, h6 { @apply text-base font-semibold tracking-tight; }
 
+  /* ─────────────────────────────────────────────────────────────
+     CRM Editorial Type Scale (audit v2)
+     Use these utility classes anywhere in the CRM for a consistent
+     vertical rhythm. Sizes are tuned for desktop reading at 1366+.
+     Mobile keeps the existing m-* token system.
+     ───────────────────────────────────────────────────────────── */
+  .text-strong       { color: hsl(var(--text-strong)); }
+  .crm-h1            { @apply text-[22px] font-bold tracking-[-0.022em] leading-tight; color: hsl(var(--text-strong)); }
+  .crm-h2            { @apply text-[18px] font-semibold tracking-[-0.018em] leading-snug; color: hsl(var(--text-strong)); }
+  .crm-section-label { @apply text-[11px] font-semibold uppercase tracking-[0.08em]; color: hsl(var(--muted-foreground)); }
+  .crm-row-title     { @apply text-[15px] font-semibold leading-snug; color: hsl(var(--text-strong)); }
+  .crm-body          { @apply text-[14px] leading-relaxed; color: hsl(var(--foreground)); }
+  .crm-meta          { @apply text-[12.5px] leading-snug; color: hsl(var(--muted-foreground)); }
+  .crm-meta-strong   { @apply text-[12.5px] font-medium leading-snug; color: hsl(var(--foreground) / 0.78); }
+
+  /* Row hover/selected states with enough contrast to scan quickly. */
+  .crm-row-hover     { @apply transition-colors duration-150; }
+  .crm-row-hover:hover { background: hsl(var(--accent) / 0.06); }
+  .crm-row-selected  { background: hsl(var(--accent) / 0.10); box-shadow: inset 2px 0 0 hsl(var(--primary)); }
+
+  /* Card chrome — flat, single layer of separation, no shadow noise. */
+  .crm-card          { @apply bg-card rounded-xl border border-border; }
+  .crm-card-padded   { @apply bg-card rounded-xl border border-border p-4 md:p-5; }
+
   html { scroll-behavior: smooth; }
 
   ::selection {
