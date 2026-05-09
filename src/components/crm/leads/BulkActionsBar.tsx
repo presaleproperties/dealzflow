@@ -63,12 +63,12 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
 
   const handleAssign = (agent: string) => {
     bulkUpdate.mutate({ ids: selectedIds, updates: { assigned_to: agent } });
-    onClearSelection();
+    // Keep selection so the user can chain more updates on the same set.
   };
 
   const handleStatus = (status: string) => {
     bulkUpdate.mutate({ ids: selectedIds, updates: { status, status_changed_at: new Date().toISOString() } });
-    onClearSelection();
+    // Keep selection so the user can chain more updates on the same set.
   };
 
   const handleDelete = () => {
