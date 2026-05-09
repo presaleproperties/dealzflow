@@ -1,15 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Flame, Phone, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
+import { useMyAgentName } from '@/hooks/useTeamAgents';
 import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
+
+const AGENT_FILTER_KEY = 'crm.pipeline.agentFilter.v1';
 
 const SEGMENT_DOT: Record<string, string> = {
   'New Leads':      'hsl(var(--primary))',
@@ -28,9 +31,29 @@ export function MobilePipelineView() {
   const navigate = useNavigate();
   const { data: contacts = [], isLoading: cl } = useCrmContacts();
   const { data: segments = [], isLoading: sl } = useCrmLeadSegments();
+  const myName = useMyAgentName();
   const [search, setSearch] = useState('');
   const [activeSegId, setActiveSegId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [filterAgent, setFilterAgent] = useState<string>(() => {
+    try { return localStorage.getItem(AGENT_FILTER_KEY) ?? '__mine'; }
+    catch { return '__mine'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(AGENT_FILTER_KEY, filterAgent); } catch {}
+  }, [filterAgent]);
+
+  const dynamicAgents = useMemo(() => {
+    const agents = new Set<string>();
+    contacts.forEach(c => { if (c.assigned_to) agents.add(c.assigned_to); });
+    return Array.from(agents).sort();
+  }, [contacts]);
+
+  const effectiveAgent = useMemo(() => {
+    if (filterAgent === '__mine') return myName ?? null;
+    if (filterAgent === 'all') return null;
+    return filterAgent;
+  }, [filterAgent, myName]);
 
   const pipelineSegments = useMemo(
     () => segments.filter(s => s.filter_config && Object.keys(s.filter_config).length > 0),
@@ -49,6 +72,7 @@ export function MobilePipelineView() {
     pipelineSegments.forEach(s => { map[s.id] = []; });
     const q = search.trim().toLowerCase();
     contacts.forEach(c => {
+      if (effectiveAgent && c.assigned_to !== effectiveAgent) return;
       if (q) {
         const name = formatContactName(c.first_name, c.last_name).toLowerCase();
         if (!name.includes(q) && !(c.email?.toLowerCase().includes(q)) && !(c.phone || '').includes(q)) return;
@@ -65,7 +89,7 @@ export function MobilePipelineView() {
     const cts: Record<string, number> = {};
     pipelineSegments.forEach(s => { cts[s.id] = map[s.id].length; });
     return { counts: cts, byStage: map };
-  }, [contacts, pipelineSegments, search]);
+  }, [contacts, pipelineSegments, search, effectiveAgent]);
 
   if (sl || cl) {
     return (
@@ -104,6 +128,32 @@ export function MobilePipelineView() {
             placeholder="Search leads…"
             className="pl-9 h-10 text-sm"
           />
+        </div>
+
+        {/* Agent scope chips — Mine / All / specific. Mine is default. */}
+        <div className="overflow-x-auto scrollbar-hide -mx-3 px-3 mb-2">
+          <div className="flex gap-1.5 min-w-max">
+            {(['__mine', 'all', ...dynamicAgents.filter(a => a !== myName)] as const).map(opt => {
+              const isActive = filterAgent === opt;
+              const label =
+                opt === '__mine' ? `Mine${myName ? ` · ${myName.split(' ')[0]}` : ''}`
+                : opt === 'all' ? 'All Agents'
+                : opt;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setFilterAgent(opt)}
+                  className={`inline-flex items-center px-2.5 h-7 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all border ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-transparent border-border text-muted-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Stage chip selector — horizontal scroll */}

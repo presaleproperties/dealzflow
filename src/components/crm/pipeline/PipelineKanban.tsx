@@ -16,8 +16,14 @@ import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments
 import { formatContactName } from '@/lib/format';
 import { useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMyAgentName } from '@/hooks/useTeamAgents';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+
+// Persist agent filter across reloads. Special sentinel "__mine" resolves
+// to the current signed-in agent's display_name at render time so the chip
+// keeps working when the same browser is used by a different teammate.
+const AGENT_FILTER_KEY = 'crm.pipeline.agentFilter.v1';
 
 /* ─── Segment-based colors ─── */
 const SEGMENT_COLORS: Record<string, { bg: string; border: string; dot: string }> = {
@@ -195,9 +201,26 @@ export function PipelineKanban() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const handleOpen = useCallback((id: string) => navigate(`/crm/leads/${id}`, { state: { from: '/crm/pipeline' } }), [navigate]);
+  const myName = useMyAgentName();
   const [search, setSearch] = useState('');
   const [filterProject, setFilterProject] = useState('all');
-  const [filterAgent, setFilterAgent] = useState('all');
+  // Stored values: 'all' | '__mine' | <agent display_name>. Default = mine.
+  const [filterAgent, setFilterAgent] = useState<string>(() => {
+    try {
+      return localStorage.getItem(AGENT_FILTER_KEY) ?? '__mine';
+    } catch { return '__mine'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(AGENT_FILTER_KEY, filterAgent); } catch {}
+  }, [filterAgent]);
+
+  // Resolve __mine → actual agent name once it's loaded. If the user isn't
+  // on a team, fall back to "all" so they aren't staring at an empty board.
+  const effectiveAgent = useMemo(() => {
+    if (filterAgent === '__mine') return myName ?? null;
+    if (filterAgent === 'all') return null;
+    return filterAgent;
+  }, [filterAgent, myName]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
@@ -226,9 +249,9 @@ export function PipelineKanban() {
       );
     }
     if (filterProject !== 'all') list = list.filter(c => (c.projects ?? []).includes(filterProject) || c.project === filterProject);
-    if (filterAgent !== 'all') list = list.filter(c => c.assigned_to === filterAgent);
+    if (effectiveAgent) list = list.filter(c => c.assigned_to === effectiveAgent);
     return list;
-  }, [contacts, search, filterProject, filterAgent]);
+  }, [contacts, search, filterProject, effectiveAgent]);
 
   // Place contacts into segment columns (first match wins)
   const columns = useMemo(() => {
@@ -348,12 +371,17 @@ export function PipelineKanban() {
           </SelectContent>
         </Select>
         <Select value={filterAgent} onValueChange={setFilterAgent}>
-          <SelectTrigger className="h-10 sm:h-9 w-full sm:w-[170px] text-xs min-h-[44px] sm:min-h-0">
-            <SelectValue placeholder="All Agents" />
+          <SelectTrigger className="h-10 sm:h-9 w-full sm:w-[180px] text-xs min-h-[44px] sm:min-h-0">
+            <SelectValue placeholder="My Leads" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__mine">
+              My Leads{myName ? ` (${myName})` : ''}
+            </SelectItem>
             <SelectItem value="all">All Agents</SelectItem>
-            {dynamicAgents.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            {dynamicAgents
+              .filter(a => a !== myName)
+              .map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
