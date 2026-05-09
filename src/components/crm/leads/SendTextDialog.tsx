@@ -320,7 +320,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
         ref={composerRef}
-        className="mobile-drawer sm:max-w-[920px] sm:w-[92vw] sm:h-auto sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl [&>button]:hidden"
+        className="mobile-truly-fullscreen mobile-drawer sm:max-w-[920px] sm:w-[92vw] sm:h-auto sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl [&>button]:hidden"
         hideMobileHandle={isMobileChatMode}
       >
         {dragActive && (
