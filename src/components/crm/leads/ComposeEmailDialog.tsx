@@ -611,7 +611,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
    * Hidden on mobile — the mobile sticky action bar at the bottom is the
    * single source of truth for these actions to avoid duplication. */
   const composerActions = (
-    <div className="hidden md:flex items-center gap-1">
+    <div className="hidden lg:flex items-center gap-1">
       <AttachMenu
         onFiles={(f) => handleAttachFiles(f)}
         uploading={uploading}
@@ -743,8 +743,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
               keyboard pushes the dialog up. */}
           <DialogHeader
-            className="md:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
-            style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top))', paddingBottom: '0.375rem' }}
+            className="lg:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            style={{ paddingTop: '0.375rem', paddingBottom: '0.375rem' }}
           >
             <button
               type="button"
@@ -765,7 +765,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               keeping vertical real estate for the editor.) */}
 
           {/* Desktop slim title bar */}
-          <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
+          <DialogHeader className="hidden lg:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
             <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
               {isMass ? `Mass Email · ${allRecipients.length} recipients` : 'New Message'}
             </DialogTitle>
@@ -774,10 +774,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
           {/* Multi-column body */}
           <div className={cn(
             'flex-1 grid grid-cols-1 overflow-hidden min-h-0',
-            previewTpl ? 'md:grid-cols-[260px_1fr_360px]' : 'md:grid-cols-[260px_1fr]',
+            previewTpl ? 'lg:grid-cols-[260px_1fr_360px]' : 'lg:grid-cols-[260px_1fr]',
           )}>
             {/* Sidebar */}
-            <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden md:block">
+            <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden lg:block">
               {/* Lead identity */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-2 mb-2">
@@ -934,7 +934,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   "From" is desktop-only; on mobile you always send as yourself, so we hide it
                   to free vertical space. */}
               <div className="px-3 sm:px-5 pt-1 sm:pt-2 pb-0.5 sm:pb-1 border-b border-border/60 shrink-0">
-                <div className="hidden md:block">
+                <div className="hidden lg:block">
                   <RecipientRow label="From">
                     <span className="text-[13px] text-foreground/80 truncate">
                       {emailSettings?.sender_name
@@ -1023,7 +1023,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               </div>
 
               {/* Mode tabs — flush row, no heavy background block */}
-              <div className="hidden md:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
+              <div className="hidden lg:flex px-4 py-1.5 border-b border-border/60 items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center gap-0.5">
                   {(() => {
                     /* Detect "rich" template HTML the rich text editor can't represent.
@@ -1156,8 +1156,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
               {/* Mobile sticky action bar — single source of truth for mobile actions */}
               <div
-                className="md:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) + 6px)' }}
+                className="lg:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
               >
                 <button
                   type="button"
@@ -1230,7 +1230,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               </div>
 
               {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
-              <div className="hidden md:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
+              <div className="hidden lg:flex px-5 py-3 border-t border-border bg-card items-center justify-between gap-3 flex-wrap shrink-0">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   {/* Single signature control: pick one (or none). Default is auto-selected on open. */}
                   <div className="flex items-center gap-1.5">
@@ -1404,7 +1404,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
             {/* Right-side template preview pane */}
             {previewTpl && (
-              <aside className="border-l border-border bg-muted/10 overflow-hidden hidden md:flex flex-col min-h-0">
+              <aside className="border-l border-border bg-muted/10 overflow-hidden hidden lg:flex flex-col min-h-0">
                 <div className="px-4 py-3 border-b border-border bg-card flex items-start justify-between gap-2 shrink-0">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
