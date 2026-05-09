@@ -836,8 +836,16 @@ function initialsFor(name?: string | null, email?: string | null): string {
 }
 
 function MessageCard({
-  message, isLatest, contactEmail, defaultExpanded = true,
-}: { message: ThreadMessage; isLatest: boolean; contactEmail?: string | null; defaultExpanded?: boolean }) {
+  message, isLatest, contactEmail, defaultExpanded = true, canReply = true, onReply, onForward,
+}: {
+  message: ThreadMessage;
+  isLatest: boolean;
+  contactEmail?: string | null;
+  defaultExpanded?: boolean;
+  canReply?: boolean;
+  onReply?: () => void;
+  onForward?: () => void;
+}) {
   const inbound = message.direction === 'inbound';
   const srcDoc = useMemo(() => buildSrcDoc(message.bodyHtml, message.bodyText), [message.bodyHtml, message.bodyText]);
   const fromAddr = message.fromEmail || (inbound ? contactEmail : 'You');
