@@ -226,6 +226,20 @@
     pointer-events: none;
   }
 
+  /* When the keyboard is up, slide a mobile drawer flush against the top
+     of the screen (no safe-area gutter) so its sticky header sits where
+     the browser/system nav would normally be — maximising room for the
+     conversation to scroll up above the keyboard. */
+  html[data-keyboard-open="true"] [data-mobile-drawer="true"] {
+    top: 0 !important;
+  }
+  /* Composer headers opt in via data-composer-header="true" — collapse
+     their safe-area top padding when the keyboard is open so the header
+     pins flush to the screen edge. */
+  html[data-keyboard-open="true"] [data-composer-header="true"] {
+    padding-top: 6px !important;
+  }
+
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.
      Modals/sheets/main content must NOT add this again. */
   :root {

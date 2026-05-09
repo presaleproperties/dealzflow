@@ -118,6 +118,7 @@ export const ResponsiveDialogContent = React.forwardRef<
       <SheetContent
         ref={ref}
         side="bottom"
+        data-mobile-drawer={isDrawer ? 'true' : undefined}
         className={cn(
           isDrawer
             ? 'p-0 w-screen rounded-t-3xl border-0 border-t border-border/60 shadow-2xl flex flex-col'
