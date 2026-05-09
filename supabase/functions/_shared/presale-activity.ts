@@ -326,30 +326,68 @@ export async function processPresaleActivity(
       .is("presale_user_id", null);
   }
 
-  // ── Insert activity (always) ─────────────────────────────────────────────
+  // ── Insert activity (always, except dedupe behavior_batch) ──────────────
   const activityMeta: Record<string, any> = { ...meta };
   if (ev.raw_event_type) activityMeta.event_type = ev.raw_event_type;
   if (ev.event_id) activityMeta.event_id = ev.event_id;
   if (ev.email_log_id) activityMeta.email_log_id = ev.email_log_id;
 
-  const { data: inserted, error: insertErr } = await supabase
-    .from("crm_activity_events")
-    .insert({
-      type: ev.type,
-      lead_email: email,
-      lead_phone: phone,
-      contact_id: contact?.id ?? null,
-      project_slug: ev.project_slug,
-      agent_slug: ev.agent_slug,
-      metadata: activityMeta,
-      occurred_at: occurredAt,
-    })
-    .select("id")
-    .single();
-  if (insertErr) {
-    await notifySyncFailure(supabase, "event insert failed", `${ev.type} for ${email ?? phone ?? "unknown lead"}: ${insertErr.message}`);
-    return { error: insertErr.message, status: 500 };
+  // For behavior_batch (heartbeat-style pings), derive a stable fingerprint
+  // event_id from the latest content timestamps so repeated batches collapse
+  // into a single timeline entry instead of spamming "Visited X" rows.
+  let batchSkipped = false;
+  if (ev.type === "behavior_batch" && !activityMeta.event_id) {
+    const beh: any = activityMeta.behavior ?? {};
+    const maxTs = (arr: any[], key: string) =>
+      Array.isArray(arr) && arr.length
+        ? arr.map((r) => r?.[key] ?? "").filter(Boolean).sort().slice(-1)[0] ?? ""
+        : "";
+    const fp = [
+      maxTs(beh.forms, "submitted_at"),
+      maxTs(beh.views, "viewed_at"),
+      maxTs(beh.sessions, "ended_at"),
+      maxTs(beh.engagement, "occurred_at"),
+    ].join("|");
+    const idScope = contact?.id ?? visitorId ?? email ?? phone ?? "anon";
+    const fingerprint = `batch:${idScope}:${fp}`;
+    activityMeta.event_id = fingerprint;
+    activityMeta.fingerprint = fingerprint;
+
+    const { data: dupe } = await supabase
+      .from("crm_activity_events")
+      .select("id")
+      .eq("type", "behavior_batch")
+      .eq("metadata->>fingerprint", fingerprint)
+      .limit(1)
+      .maybeSingle();
+    if (dupe?.id) {
+      batchSkipped = true;
+    }
   }
+
+  let inserted: { id: string } | null = null;
+  if (!batchSkipped) {
+    const { data, error: insertErr } = await supabase
+      .from("crm_activity_events")
+      .insert({
+        type: ev.type,
+        lead_email: email,
+        lead_phone: phone,
+        contact_id: contact?.id ?? null,
+        project_slug: ev.project_slug,
+        agent_slug: ev.agent_slug,
+        metadata: activityMeta,
+        occurred_at: occurredAt,
+      })
+      .select("id")
+      .single();
+    if (insertErr) {
+      await notifySyncFailure(supabase, "event insert failed", `${ev.type} for ${email ?? phone ?? "unknown lead"}: ${insertErr.message}`);
+      return { error: insertErr.message, status: 500 };
+    }
+    inserted = data;
+  }
+
 
   if (!contact && (email || phone)) {
     await notifySyncFailure(
