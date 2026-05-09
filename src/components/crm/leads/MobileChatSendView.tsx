@@ -22,7 +22,6 @@ import {
   MoreHorizontal,
   Sparkles,
   MessagesSquare,
-  Plus,
   ArrowUp,
   Check,
 } from 'lucide-react';
