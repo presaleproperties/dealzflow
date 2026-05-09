@@ -15,6 +15,7 @@ import { ImportConversationDialog } from '@/components/crm/leads/ImportConversat
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { SmsThreadDrawer } from '@/components/crm/leads/SmsThreadDrawer';
 import { useOpenChat } from '@/hooks/useOpenChat';
