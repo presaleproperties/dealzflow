@@ -83,26 +83,87 @@ async function loadAgentEnvelope(supabase: any, displayName: string) {
   };
 }
 
+// Tags that should never appear (the source name itself, raw answer values, etc).
+const JUNK_TAGS = new Set([
+  "presaleproperties.com", "presale-properties.com", "presale_properties",
+  "yes", "no", "true", "false", "n/a", "na", "unknown",
+]);
+
+// Lead-source aliases → canonical form-type tag. Prevents duplicates like
+// `project_floor_plan` + `floor_plan_request` both showing up.
+const LEAD_SOURCE_ALIASES: Record<string, string> = {
+  "project_floor_plan": "floor_plan_request",
+  "project_floorplan": "floor_plan_request",
+  "floorplan_request": "floor_plan_request",
+  "project_inquiry": "project_inquiry",
+  "contact_form": "contact_form",
+  "vip_signup": "vip_registration",
+  "vip_registration": "vip_registration",
+};
+
+function normalizeTag(raw: string): string | null {
+  const t = String(raw ?? "").trim();
+  if (!t) return null;
+  const lower = t.toLowerCase();
+  if (JUNK_TAGS.has(lower)) return null;
+  // Map known aliases to canonical form
+  if (LEAD_SOURCE_ALIASES[lower]) return LEAD_SOURCE_ALIASES[lower];
+  return t;
+}
+
 // Build the tag list per Presale Ingest Mapping rule:
 //   presale-website + form:<type> + deck:<name> + (caller tags) — always append.
+// Sanitizes junk tags (source name, yes/no), dedupes case-insensitively, and
+// collapses lead-source aliases (e.g. `project_floor_plan` → `floor_plan_request`).
 function buildTags(existingTags: string[] | null, leadTags: string[] | undefined, meta: any): string[] {
-  const out = new Set<string>(existingTags ?? []);
-  out.add("presale-website");
-  for (const t of leadTags ?? []) if (t) out.add(t);
+  const seen = new Map<string, string>(); // lowercase → canonical
+  const add = (raw?: string | null) => {
+    const t = normalizeTag(raw ?? "");
+    if (!t) return;
+    const k = t.toLowerCase();
+    if (!seen.has(k)) seen.set(k, t);
+  };
+
+  for (const t of existingTags ?? []) add(t);
+  add("presale-website");
+  for (const t of leadTags ?? []) add(t);
+
   const formType = meta?.form_type;
-  if (typeof formType === "string" && formType.trim()) out.add(`form:${formType.trim()}`);
+  if (typeof formType === "string" && formType.trim()) add(`form:${formType.trim()}`);
   const deckName = meta?.pitch_deck_name ?? meta?.deck_name ?? meta?.deck?.name;
-  if (typeof deckName === "string" && deckName.trim()) out.add(`deck:${deckName.trim()}`);
+  if (typeof deckName === "string" && deckName.trim()) add(`deck:${deckName.trim()}`);
+
   // Hot triggers from this single payload (floorplan download or deck revisit)
   const beh: any = meta?.behavior ?? null;
   if (Array.isArray(beh?.engagement)) {
     for (const e of beh.engagement) {
       const t = (e?.event_type ?? "").toLowerCase();
-      if (t === "floorplan_download") out.add("hot");
-      if ((t === "deck_visit" || t === "deck_unlock") && (e?.visit_number ?? 0) >= 2) out.add("hot");
+      if (t === "floorplan_download") add("hot");
+      if ((t === "deck_visit" || t === "deck_unlock") && (e?.visit_number ?? 0) >= 2) add("hot");
     }
   }
-  return Array.from(out);
+  return Array.from(seen.values());
+}
+
+// Filter out junk project values (yes/no answers, "Working with agent" style
+// form-question labels). A real project should be more than 2 chars and not a
+// known answer phrase.
+const JUNK_PROJECT_PATTERNS = [
+  /^working with (an? )?agent$/i,
+  /^(have|has) (an? )?agent$/i,
+  /^(yes|no|n\/a|na|unknown|true|false)$/i,
+  /^agent[_\s-]?status$/i,
+];
+function sanitizeProjects(values: (string | null | undefined)[]): string[] {
+  const seen = new Map<string, string>();
+  for (const raw of values) {
+    const v = String(raw ?? "").trim();
+    if (!v || v.length < 2) continue;
+    if (JUNK_PROJECT_PATTERNS.some((re) => re.test(v))) continue;
+    const k = v.toLowerCase();
+    if (!seen.has(k)) seen.set(k, v);
+  }
+  return Array.from(seen.values());
 }
 
 // Persona → contact_type (buyer/investor/realtor/developer)
