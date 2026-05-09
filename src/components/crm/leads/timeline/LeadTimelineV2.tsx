@@ -95,20 +95,63 @@ export function LeadTimelineV2({
     [events, pinSet],
   );
 
-  // Build a flat virtualizable row list with sticky-ish date headers inlined.
+  // Per-day collapse state. Keyed by `Date.toDateString()`. Default = expanded.
+  const [collapsedDays, setCollapsedDays] = useState<Set<string>>(() => new Set());
+
+  const toggleDay = useCallback((dayKey: string) => {
+    setCollapsedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(dayKey)) next.delete(dayKey);
+      else next.add(dayKey);
+      return next;
+    });
+  }, []);
+
+  // Group events by day, then build a virtualizable row list. Skip event rows
+  // for collapsed days but always keep the header so it can be re-expanded.
   const rows = useMemo<Row[]>(() => {
-    const out: Row[] = [];
-    let lastDate: Date | null = null;
+    const groups: { date: Date; dayKey: string; events: TimelineEvent[] }[] = [];
+    let last: { dayKey: string; group: (typeof groups)[number] } | null = null;
     for (const ev of events) {
       const d = new Date(ev.occurred_at);
-      if (!lastDate || !isSameDay(lastDate, d)) {
-        out.push({ kind: 'header', key: `h-${d.toDateString()}`, date: d });
-        lastDate = d;
+      const dayKey = d.toDateString();
+      if (!last || last.dayKey !== dayKey) {
+        const g = { date: d, dayKey, events: [ev] };
+        groups.push(g);
+        last = { dayKey, group: g };
+      } else {
+        last.group.events.push(ev);
       }
-      out.push({ kind: 'event', key: `${ev.kind}:${ev.event_id}`, event: ev });
+    }
+
+    const out: Row[] = [];
+    for (const g of groups) {
+      const collapsed = collapsedDays.has(g.dayKey);
+      out.push({
+        kind: 'header',
+        key: `h-${g.dayKey}`,
+        dayKey: g.dayKey,
+        date: g.date,
+        count: g.events.length,
+        collapsed,
+      });
+      if (!collapsed) {
+        for (const ev of g.events) {
+          out.push({ kind: 'event', key: `${ev.kind}:${ev.event_id}`, event: ev });
+        }
+      }
     }
     return out;
+  }, [events, collapsedDays]);
+
+  const collapseAll = useCallback(() => {
+    const all = new Set<string>();
+    for (const ev of events) all.add(new Date(ev.occurred_at).toDateString());
+    setCollapsedDays(all);
   }, [events]);
+
+  const expandAll = useCallback(() => setCollapsedDays(new Set()), []);
+  const anyCollapsed = collapsedDays.size > 0;
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
