@@ -633,7 +633,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                     {!replyOpen && (
                       <Button
                         size="sm"
-                        onClick={handleStartReply}
+                        onClick={() => handleStartReply()}
                         disabled={!lastInThread || !contact.email}
                         className="gap-1.5 h-8 text-[12px] shadow-sm"
                       >
@@ -661,7 +661,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                     {!replyOpen && contact.email && (
                       <button
                         type="button"
-                        onClick={handleStartReply}
+                        onClick={() => handleStartReply()}
                         className="hidden md:flex w-full mt-4 group items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-border/70 bg-card/50 hover:bg-card hover:border-border transition-colors text-left"
                       >
                         <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -772,7 +772,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         {!replyOpen && contact.email && activeThread && (
           <button
             type="button"
-            onClick={handleStartReply}
+            onClick={() => handleStartReply()}
             className="md:hidden absolute right-4 z-30 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)] active:scale-95 transition-transform"
             style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
             aria-label="Reply"
