@@ -439,6 +439,7 @@ Deno.serve(async (req) => {
     if (existing) {
       // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
       const newTags = buildTags(existing.tags, L.tags, meta);
+      if (isAgentTest && !newTags.includes("agent-test")) newTags.push("agent-test");
       const newProjects = sanitizeProjects([...(existing.projects || []), ...incomingProjects]);
       const newCities = Array.from(new Set([...(existing.looking_to_buy_in || []), ...(L.looking_to_buy_in || [])]));
       const mergedMeta = { ...(existing.presale_metadata || {}), ...(L.metadata || {}) };
