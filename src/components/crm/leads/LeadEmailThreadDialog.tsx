@@ -311,21 +311,45 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   const [mobileComposeSubject, setMobileComposeSubject] = useState('');
   const [mobileComposeBody, setMobileComposeBody] = useState('');
 
-  const buildReplyContext = () => {
-    if (!lastInThread) return null;
-    const subject = lastInThread.subject?.toLowerCase().startsWith('re:')
-      ? lastInThread.subject
-      : `Re: ${lastInThread.subject ?? ''}`.trim();
-    const quotedHeader = `${format(parseISO(lastInThread.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')} ${lastInThread.fromName || lastInThread.fromEmail || ''} wrote:`;
-    const quotedBody = (lastInThread.bodyHtml || `<p>${escapeHtml(lastInThread.bodyText || '')}</p>`);
+  // Forward composer — recipient unknown, opens canonical composer with __pick__ stub.
+  const [forwardOpen, setForwardOpen] = useState(false);
+  const [forwardSubject, setForwardSubject] = useState('');
+  const [forwardBody, setForwardBody] = useState('');
+  const [forwardPicked, setForwardPicked] = useState<CrmContact | null>(null);
+
+  const buildReplyContext = (msg?: ThreadMessage | null) => {
+    const target = msg ?? lastInThread;
+    if (!target) return null;
+    const subject = target.subject?.toLowerCase().startsWith('re:')
+      ? target.subject
+      : `Re: ${target.subject ?? ''}`.trim();
+    const quotedHeader = `${format(parseISO(target.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')} ${target.fromName || target.fromEmail || ''} wrote:`;
+    const quotedBody = (target.bodyHtml || `<p>${escapeHtml(target.bodyText || '')}</p>`);
     const body = `<p></p><p></p><div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:4px 14px;margin:14px 0;"><div style="margin-bottom:8px;color:#888;">${escapeHtml(quotedHeader)}</div>${quotedBody}</div>`;
     return { subject: subject || '(no subject)', body };
   };
 
-  const handleStartReply = () => {
+  const buildForwardContext = (msg?: ThreadMessage | null) => {
+    const target = msg ?? lastInThread;
+    if (!target) return null;
+    const baseSubject = (target.subject ?? '').replace(/^(fwd?|fw)\s*:\s*/i, '');
+    const subject = `Fwd: ${baseSubject}`.trim();
+    const headerLines = [
+      `From: ${target.fromName ? `${target.fromName} <${target.fromEmail ?? ''}>` : (target.fromEmail ?? '')}`,
+      `Date: ${format(parseISO(target.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')}`,
+      `Subject: ${target.subject ?? ''}`,
+      `To: ${target.toEmail ?? ''}`,
+      target.cc ? `Cc: ${target.cc}` : '',
+    ].filter(Boolean).map(escapeHtml).join('<br/>');
+    const quotedBody = (target.bodyHtml || `<p>${escapeHtml(target.bodyText || '')}</p>`);
+    const body = `<p></p><p></p><div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:8px 14px;margin:14px 0;"><div style="margin-bottom:10px;color:#888;font-size:12px;">--------- Forwarded message ---------<br/>${headerLines}</div>${quotedBody}</div>`;
+    return { subject, body };
+  };
+
+  const handleStartReply = (msg?: ThreadMessage | null) => {
     // Mobile → defer to the unified ComposeEmailDialog for parity with "New email".
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      const ctx = buildReplyContext();
+      const ctx = buildReplyContext(msg);
       if (!ctx) return;
       setMobileComposeSubject(ctx.subject);
       setMobileComposeBody(ctx.body);
@@ -338,6 +362,16 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
       composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   };
+
+  const handleStartForward = (msg?: ThreadMessage | null) => {
+    const ctx = buildForwardContext(msg);
+    if (!ctx) return;
+    setForwardSubject(ctx.subject);
+    setForwardBody(ctx.body);
+    setForwardPicked(null);
+    setForwardOpen(true);
+  };
+
 
   // Keyboard: "R" to reply, Esc handled by Dialog itself.
   useEffect(() => {
@@ -597,15 +631,27 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                       </div>
                     </div>
                     {!replyOpen && (
-                      <Button
-                        size="sm"
-                        onClick={handleStartReply}
-                        disabled={!lastInThread || !contact.email}
-                        className="gap-1.5 h-8 text-[12px] shadow-sm"
-                      >
-                        <Reply className="w-3.5 h-3.5" /> Reply
-                        <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
-                      </Button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStartForward()}
+                          disabled={!lastInThread}
+                          className="gap-1.5 h-8 text-[12px]"
+                          title="Forward this message"
+                        >
+                          <ArrowUpRight className="w-3.5 h-3.5" /> Forward
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleStartReply()}
+                          disabled={!lastInThread || !contact.email}
+                          className="gap-1.5 h-8 text-[12px] shadow-sm"
+                        >
+                          <Reply className="w-3.5 h-3.5" /> Reply
+                          <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -620,6 +666,9 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                         isLatest={idx === activeThread.messages.length - 1}
                         contactEmail={contact.email}
                         defaultExpanded={idx === activeThread.messages.length - 1}
+                        canReply={!!contact.email}
+                        onReply={() => handleStartReply(m)}
+                        onForward={() => handleStartForward(m)}
                       />
                     ))}
 
@@ -627,7 +676,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                     {!replyOpen && contact.email && (
                       <button
                         type="button"
-                        onClick={handleStartReply}
+                        onClick={() => handleStartReply()}
                         className="hidden md:flex w-full mt-4 group items-center gap-3 px-4 py-3.5 rounded-xl border border-dashed border-border/70 bg-card/50 hover:bg-card hover:border-border transition-colors text-left"
                       >
                         <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -738,7 +787,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
         {!replyOpen && contact.email && activeThread && (
           <button
             type="button"
-            onClick={handleStartReply}
+            onClick={() => handleStartReply()}
             className="md:hidden absolute right-4 z-30 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)] active:scale-95 transition-transform"
             style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
             aria-label="Reply"
@@ -765,6 +814,32 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           initialBodyHtml={mobileComposeBody}
         />
       )}
+
+      {/* Forward composer — recipient is unknown, opens with __pick__ stub so the
+          agent picks the destination lead inside the canonical composer. The send
+          flows through bridge-send-email which writes to crm_email_log → timeline. */}
+      {forwardOpen && (
+        <ComposeEmailDialog
+          contact={(forwardPicked ?? ({
+            id: '__pick__',
+            first_name: '',
+            last_name: '',
+            email: null,
+          } as unknown as CrmContact))}
+          open={forwardOpen}
+          onOpenChange={(o) => {
+            setForwardOpen(o);
+            if (!o) {
+              setForwardSubject('');
+              setForwardBody('');
+              setForwardPicked(null);
+            }
+          }}
+          initialSubject={forwardSubject}
+          initialBodyHtml={forwardBody}
+          onPickContact={(c) => setForwardPicked(c)}
+        />
+      )}
     </Dialog>
   );
 }
@@ -787,8 +862,16 @@ function initialsFor(name?: string | null, email?: string | null): string {
 }
 
 function MessageCard({
-  message, isLatest, contactEmail, defaultExpanded = true,
-}: { message: ThreadMessage; isLatest: boolean; contactEmail?: string | null; defaultExpanded?: boolean }) {
+  message, isLatest, contactEmail, defaultExpanded = true, canReply = true, onReply, onForward,
+}: {
+  message: ThreadMessage;
+  isLatest: boolean;
+  contactEmail?: string | null;
+  defaultExpanded?: boolean;
+  canReply?: boolean;
+  onReply?: () => void;
+  onForward?: () => void;
+}) {
   const inbound = message.direction === 'inbound';
   const srcDoc = useMemo(() => buildSrcDoc(message.bodyHtml, message.bodyText), [message.bodyHtml, message.bodyText]);
   const fromAddr = message.fromEmail || (inbound ? contactEmail : 'You');
@@ -871,6 +954,37 @@ function MessageCard({
       )}
       {expanded && (message.attachments?.length ?? 0) > 0 && (
         <AttachmentsStrip attachments={message.attachments!} />
+      )}
+      {expanded && (onReply || onForward) && (
+        <div className="border-t border-border/60 bg-muted/10 px-3 md:px-4 py-2 flex items-center gap-2">
+          {onReply && (
+            <button
+              type="button"
+              onClick={onReply}
+              disabled={!canReply}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium border border-border/60 bg-card hover:bg-muted/40 transition-colors',
+                !canReply && 'opacity-50 cursor-not-allowed',
+              )}
+              title={canReply ? 'Reply to this message' : 'No email on file for this lead'}
+            >
+              <Reply className="w-3 h-3" /> Reply
+            </button>
+          )}
+          {onForward && (
+            <button
+              type="button"
+              onClick={onForward}
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium border border-border/60 bg-card hover:bg-muted/40 transition-colors"
+              title="Forward this message"
+            >
+              <ArrowUpRight className="w-3 h-3" /> Forward
+            </button>
+          )}
+          <span className="ml-auto text-[10.5px] text-muted-foreground">
+            Sends are saved to this lead's timeline
+          </span>
+        </div>
       )}
     </article>
   );
