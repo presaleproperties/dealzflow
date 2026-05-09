@@ -739,40 +739,63 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             </div>
           )}
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
-          {/* Mobile header — Mail-app style: just Cancel + title. Send moved to bottom action bar.
-              Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
-              keyboard pushes the dialog up. */}
-          <DialogHeader
-            className="lg:hidden px-1.5 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
-            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '6px' }}
-          >
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-2.5 py-1.5 rounded-md min-h-[34px] text-left"
-              disabled={isPending}
-              aria-label="Close composer"
-            >
-              Cancel
-            </button>
-            <DialogTitle className="text-[13.5px] font-semibold tracking-tight text-foreground truncate">
-              {isMass ? `Mass · ${allRecipients.length}` : 'New Message'}
-            </DialogTitle>
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!canSend || isPending}
-              aria-label="Send"
-              className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
-            >
-              {isPending ? (
-                <Loader2 className="h-[14px] w-[14px] animate-spin" />
-              ) : (
-                <Send className="h-[14px] w-[14px]" />
-              )}
-              <span className="leading-none">{isPending ? 'Sending' : isMass ? `Send ${allRecipients.length}` : 'Send'}</span>
-            </button>
-          </DialogHeader>
+          {/* Mobile header — Apple Mail reply style: icon-only X (left), centered avatar +
+              title + sender email subtitle, icon-only Send paper-plane (right). Honors iOS
+              safe-area-top so the row never collides with the status bar. */}
+          {(() => {
+            const senderEmail = emailSettings?.reply_to ?? user?.email ?? '';
+            const senderInitial = (emailSettings?.sender_name?.[0] ?? senderEmail[0] ?? '?').toUpperCase();
+            const headerTitle = isMass
+              ? `Mass · ${allRecipients.length}`
+              : (initialSubject ? 'Reply' : 'New Message');
+            return (
+              <DialogHeader
+                className="lg:hidden px-2 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-1"
+                style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)', paddingBottom: '8px' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => onOpenChange(false)}
+                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60"
+                  disabled={isPending}
+                  aria-label="Close composer"
+                >
+                  <X className="h-[20px] w-[20px]" strokeWidth={2.25} />
+                </button>
+                <div className="flex-1 min-w-0 flex items-center justify-center gap-2 px-1">
+                  <div className="h-7 w-7 rounded-full bg-primary/15 text-primary text-[11px] font-semibold inline-flex items-center justify-center shrink-0">
+                    {senderInitial}
+                  </div>
+                  <div className="min-w-0 flex flex-col items-start leading-tight">
+                    <DialogTitle className="text-[14px] font-semibold tracking-tight text-foreground truncate max-w-[52vw]">
+                      {headerTitle}
+                    </DialogTitle>
+                    {senderEmail && (
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[52vw]">
+                        {senderEmail}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!canSend || isPending}
+                  aria-label="Send"
+                  className={cn(
+                    'shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full transition-all active:scale-95',
+                    canSend && !isPending ? 'text-primary' : 'text-muted-foreground/40',
+                  )}
+                >
+                  {isPending ? (
+                    <Loader2 className="h-[18px] w-[18px] animate-spin" />
+                  ) : (
+                    <Send className="h-[19px] w-[19px] -rotate-12 -translate-y-px" strokeWidth={2} />
+                  )}
+                </button>
+              </DialogHeader>
+            );
+          })()}
 
           {/* (Mobile sub-header removed — the To row already names the recipient,
               keeping vertical real estate for the editor.) */}
@@ -1028,9 +1051,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="What's this about?"
+                    placeholder="Subject"
                     maxLength={200}
-                    className="w-full bg-transparent border-0 outline-none text-[14px] sm:text-[14px] font-medium sm:font-semibold tracking-[-0.005em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/45 px-0 min-h-[28px] sm:min-h-0"
+                    className="w-full bg-transparent border-0 outline-none text-[14.5px] sm:text-[14px] font-semibold tracking-[-0.005em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/45 px-0 min-h-[28px] sm:min-h-0"
                   />
                 </RecipientRow>
               </div>
@@ -1533,9 +1556,10 @@ function RecipientRow({
   trailing?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 sm:gap-3 py-1.5 border-b border-border/30 last:border-b-0">
-      <span className="w-[44px] sm:w-[58px] shrink-0 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-        {label}
+    <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-1.5 border-b border-border/30 last:border-b-0">
+      <span className="w-[52px] sm:w-[58px] shrink-0 text-[12.5px] sm:text-[11px] sm:font-medium sm:uppercase sm:tracking-wider text-muted-foreground/80 sm:text-muted-foreground/70">
+        <span className="sm:hidden">{label}:</span>
+        <span className="hidden sm:inline">{label}</span>
       </span>
       <div className="flex-1 min-w-0 flex items-center">{children}</div>
       {trailing && <div className="shrink-0">{trailing}</div>}
