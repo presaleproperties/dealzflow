@@ -44,6 +44,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const createLeadType = useCreateCrmLeadType();
   const AGENTS = useAgentNames();
   const myAgentName = useMyAgentName();
+  const { data: canonicalSources = [] } = useCanonicalLeadSources();
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
