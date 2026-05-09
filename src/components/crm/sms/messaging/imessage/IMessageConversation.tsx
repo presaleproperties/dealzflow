@@ -91,9 +91,9 @@ export function IMessageConversation(props: Props) {
   }, [visibleMessages.length, thread.key]);
 
   return (
-    <div className="flex flex-col h-full imsg-font">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font">
       {/* ===== Frosted header (centered title, iMessage style) ===== */}
-      <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top">
+      <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top shrink-0 sticky top-0 z-30">
         {/* Left controls */}
         <div className="flex items-center gap-1">
           {isMobile ? (
@@ -253,7 +253,7 @@ export function IMessageConversation(props: Props) {
       )}
 
       {/* ===== Messages ===== */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 imsg-bg">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-6 imsg-bg">
         <IMessageList
           messages={visibleMessages}
           highlight={highlight}
@@ -731,7 +731,7 @@ function IMessageComposer({
   };
 
   return (
-    <div className="px-3 sm:px-4 pt-2 pb-3 imsg-font native-safe-bottom native-kb-lift">
+    <div className="shrink-0 px-3 sm:px-4 pt-2 pb-3 imsg-font native-safe-bottom bg-background/95 backdrop-blur-md border-t border-border/40">
       <div className="max-w-3xl mx-auto space-y-2 rounded-2xl bg-background/85 backdrop-blur-md border border-border/60 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.25)] px-3 sm:px-4 py-2.5">
         {quotedRef && (
           <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-2xl bg-muted/50 border-l-2 border-[#007AFF]">

@@ -86,11 +86,9 @@ export const ResponsiveDialogContent = React.forwardRef<
 
   if (isMobile) {
     // `mobile-fullbleed` (legacy flag) and `mobile-drawer` (new) both render
-    // a premium bottom-drawer: rounded top, capped at 96dvh so the iOS
-    // status bar stays visible above the sheet, sticky safe-area-aware
-    // padding so footer actions never tuck under the floating bottom-nav.
-    // Use `mobile-truly-fullscreen` for the rare case where you really
-    // want to paint behind the status bar.
+    // a premium mobile surface. Fullscreen composer surfaces must track the
+    // visual viewport top/height so iOS keyboard focus never pans the header
+    // under the status island; only the internal body is allowed to scroll.
     if (isTrulyFullScreen) {
       return (
         <SheetContent
@@ -98,10 +96,10 @@ export const ResponsiveDialogContent = React.forwardRef<
           side="bottom"
           data-mobile-drawer={isDrawer ? 'true' : undefined}
           className={cn(
-            'p-0 inset-x-0 top-0 bottom-auto max-h-none h-[var(--composer-viewport-height,100dvh)] w-screen rounded-none border-0 flex flex-col overflow-hidden',
+            'p-0 inset-x-0 bottom-auto max-h-none h-[var(--composer-viewport-height,100dvh)] w-screen rounded-none border-0 flex flex-col overflow-hidden',
             className,
           )}
-          style={{ top: 0, bottom: 'auto', height: 'var(--composer-viewport-height, 100dvh)', maxHeight: 'none', ...style }}
+          style={{ top: 'var(--composer-viewport-top, 0px)', bottom: 'auto', height: 'var(--composer-viewport-height, 100dvh)', maxHeight: 'none', ...style }}
           {...(rest as any)}
         >
           {children}
