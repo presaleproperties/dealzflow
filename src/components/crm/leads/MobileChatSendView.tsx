@@ -164,7 +164,8 @@ export function MobileChatSendView({
           Back, avatar, name + segment subtitle, status pill. Right side keeps
           a slim Call + More so power actions are still one tap away. */}
       <header
-        className="flex items-center gap-1.5 px-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
+        data-composer-header="true"
+        className="sticky top-0 z-20 flex items-center gap-1.5 px-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md transition-[padding] duration-150 ease-out"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '8px' }}
       >
         <button
