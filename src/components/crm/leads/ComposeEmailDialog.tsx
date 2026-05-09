@@ -1119,15 +1119,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                           ) : (
                             <>
                               {/* Desktop: signature renders inline as continuation of body. */}
-                              <div className="hidden sm:block">
+                              <div className="hidden lg:block">
                                 <SignatureInlineFrame html={activeSignatureHtml} />
                               </div>
-                              {/* Mobile/tablet: same inline signature, rendered in a compact
-                                  variant so it scales down with the device and the agent can
-                                  always see what their email closes with. */}
-                              <div className="sm:hidden">
-                                <SignatureInlineFrame html={activeSignatureHtml} compact />
-                              </div>
+                              {/* Mobile/tablet: no inline preview — it created dead space below
+                                  the editor. The signature is still attached on send; the picker
+                                  in the mini action row lets the agent verify which one. */}
                             </>
                           )
                         ) : null
