@@ -139,11 +139,7 @@
     --bottom-nav-pad: var(--bottom-nav-height);
     /* Mobile top breathing room — sits just below the OS status bar. */
     --m-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
-    /* Composer top inset — guarantees a comfortable clearance even when
-       env(safe-area-inset-top) reports 0 in standalone PWA mode, AND when
-       iOS shifts the bottom-sheet upward to make room for the keyboard. 
-       60px ≈ iOS Dynamic Island / notch + status bar height. */
-    --composer-top-pad: max(env(safe-area-inset-top, 0px), 60px);
+    --composer-top-pad: env(safe-area-inset-top, 0px);
   }
   :root.is-standalone,
   :root.is-standalone-pwa {
@@ -217,14 +213,13 @@
     --keyboard-inset-bottom: 0px;
     --composer-viewport-top: 0px;
     --composer-viewport-height: 100dvh;
-    /* Composer headers paint edge-to-edge and only inset the controls by the
-       real iOS safe-area, matching MobileAppHeader instead of adding a large
-       artificial spacer. */
-    --composer-header-top-pad: calc(env(safe-area-inset-top, 0px) + 6px);
+    /* Composer chrome paints edge-to-edge; only the controls are inset below
+       the status bar, matching MobileAppHeader without artificial white space. */
+    --composer-header-top-pad: env(safe-area-inset-top, 0px);
   }
   :root.is-standalone,
   :root.is-standalone-pwa {
-    --composer-header-top-pad: calc(env(safe-area-inset-top, 0px) + 6px);
+    --composer-header-top-pad: env(safe-area-inset-top, 0px);
   }
   @media (min-width: 1024px) {
     :root { --composer-header-top-pad: 0px; }
@@ -244,6 +239,15 @@
      the visual viewport. */
   [data-composer-header="true"] {
     padding-top: var(--composer-header-top-pad) !important;
+  }
+
+  [data-mobile-drawer="true"] [data-composer-header="true"] {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: hsl(var(--background) / 0.92);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
   }
 
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.
