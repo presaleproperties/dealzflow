@@ -165,8 +165,10 @@ Deno.serve(async (req) => {
     received: batch.mappings.length,
     valid: cleaned.length,
     updated,
+    skipped: alreadyLinked,
     already_linked: alreadyLinked,
     conflicts,
+    notFound,
     not_found: notFound,
     forced: force,
   });
