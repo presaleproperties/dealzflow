@@ -16,6 +16,7 @@ import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
+import { SmsThreadDrawer } from '@/components/crm/leads/SmsThreadDrawer';
 import { useOpenChat } from '@/hooks/useOpenChat';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
