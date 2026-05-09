@@ -179,7 +179,7 @@ export function LeadTimelineV2({
         }}
       />
 
-      <div className="mt-2">
+      <div className="mt-2 flex items-center justify-between gap-2">
         <TimelinePresetsBar
           presets={presets}
           activeId={lastAppliedId}
@@ -188,6 +188,15 @@ export function LeadTimelineV2({
           onDelete={deletePreset}
           onSave={handleSavePreset}
         />
+        {rows.length > 0 && (
+          <button
+            type="button"
+            onClick={anyCollapsed ? expandAll : collapseAll}
+            className="shrink-0 rounded-full border border-border bg-background px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            {anyCollapsed ? 'Expand all' : 'Collapse all'}
+          </button>
+        )}
       </div>
       {pinnedEvents.length > 0 && (
         <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] p-2">
