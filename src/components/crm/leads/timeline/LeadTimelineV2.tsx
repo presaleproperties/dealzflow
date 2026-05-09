@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { Loader2, Inbox } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +15,6 @@ import { TimelineFilters } from './TimelineFilters';
 import { TimelinePresetsBar } from './TimelinePresetsBar';
 import { useTimelinePresets, type TimelinePreset } from '@/hooks/useTimelinePresets';
 import { format, isSameDay } from 'date-fns';
-import { useEffect } from 'react';
 
 interface Props {
   contactId: string;
