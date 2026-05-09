@@ -64,6 +64,12 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
           >
             <MessageSquare className="w-3.5 h-3.5" style={{ color: 'hsl(160 60% 40%)' }} /> Send SMS
           </Button>
+          <CallButton
+            contactId={contact.id}
+            contactName={formatContactName(contact)}
+            phone={contact.phone}
+            label="Call"
+          />
           <Button
             variant="outline" size="sm"
             className="h-9 text-xs gap-1.5 justify-start col-span-2"
