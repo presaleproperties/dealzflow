@@ -260,9 +260,9 @@ export async function processPresaleActivity(
       ev.name_hint ?? meta.name ?? meta.full_name ?? formPayload.name ?? formPayload.full_name ??
         [formPayload.first_name, formPayload.last_name].filter(Boolean).join(" "),
     );
-    const assignee = await pickAssignee(supabase, ev.agent_slug ?? meta.agent_slug ?? null);
     const leadEmail = email ?? cleanEmail(meta.email) ?? cleanEmail(formPayload.email);
     const leadPhone = phone ?? cleanPhone(meta.phone) ?? cleanPhone(formPayload.phone);
+    const assignee = await pickAssignee(supabase, ev.agent_slug ?? meta.agent_slug ?? null, leadEmail, first_name);
     const leadSource = typeof meta.lead_source === "string" ? meta.lead_source : (completedForm?.form_type ?? null);
     // Junk-project filter (yes/no answers, "Working with agent" style labels)
     const JUNK_PROJECT_RE = [
@@ -371,9 +371,15 @@ export async function processPresaleActivity(
     }
     contact = created as typeof contact;
   } else if (!contact && ev.type !== "behavior_batch" && email) {
-    // Light auto-create for one-off email/engagement events (push-activity-to-crm legacy behavior)
+    // Do not auto-create duplicates for generic Presale sync/task/update events.
+    // Only true lead lifecycle or high-intent engagement events should create a
+    // new CRM lead; unmatched administrative events are stored for back-fill.
+    const canAutoCreate = HIGH_INTENT.has(ev.type) || ev.type === "vip_registration" || ev.type === "floorplan_download";
+    if (!canAutoCreate) {
+      contact = null;
+    } else {
     const { first_name, last_name } = splitName(ev.name_hint);
-    const assignee = await pickAssignee(supabase, ev.agent_slug ?? null);
+    const assignee = await pickAssignee(supabase, ev.agent_slug ?? null, email, first_name);
     const tags = ["presale-website"];
     if (ev.raw_event_type === "vip_registration" || ev.type === "vip_registration") tags.push("vip");
     const { data: created, error: createErr } = await supabase
@@ -397,6 +403,7 @@ export async function processPresaleActivity(
       .single();
     if (createErr) return { error: `contact_create_failed: ${createErr.message}`, status: 500 };
     contact = created as typeof contact;
+    }
   }
 
   // Backfill presale_user_id on stitched contact
