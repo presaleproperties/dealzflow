@@ -842,6 +842,12 @@ function MessageCard({
                   {message.clickCount}
                 </Pill>
               )}
+              {(message.attachments?.length ?? 0) > 0 && (
+                <Pill size="sm" className="!gap-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                  <Paperclip className="w-2.5 h-2.5" />
+                  {message.attachments!.length}
+                </Pill>
+              )}
               <span className="text-[10.5px] text-muted-foreground ml-auto tabular-nums whitespace-nowrap">
                 {format(parseISO(message.ts), 'MMM d · h:mm a')}
               </span>
