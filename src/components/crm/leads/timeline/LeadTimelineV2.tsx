@@ -12,7 +12,10 @@ import {
 } from '@/hooks/useLeadTimelineV2';
 import { TimelineRow } from './TimelineRow';
 import { TimelineFilters } from './TimelineFilters';
+import { TimelinePresetsBar } from './TimelinePresetsBar';
+import { useTimelinePresets, type TimelinePreset } from '@/hooks/useTimelinePresets';
 import { format, isSameDay } from 'date-fns';
+import { useEffect } from 'react';
 
 interface Props {
   contactId: string;
