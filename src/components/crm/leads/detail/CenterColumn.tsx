@@ -15,6 +15,7 @@ import { ImportConversationDialog } from '@/components/crm/leads/ImportConversat
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { SmsThreadDrawer } from '@/components/crm/leads/SmsThreadDrawer';
 import { useOpenChat } from '@/hooks/useOpenChat';
@@ -209,6 +210,32 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [replyCompose, setReplyCompose] = useState<{ subject: string; bodyHtml: string } | null>(null);
+
+  const handleReplyToPreview = (em: EmailLogRow) => {
+    if (!contact.email) {
+      toast.error('Add an email to this lead before replying');
+      return;
+    }
+    const cleanSubject = (em.subject || '').replace(/^(re:\s*)+/i, '').trim();
+    const subject = cleanSubject ? `Re: ${cleanSubject}` : 'Re:';
+    const ts = em.sent_at || em.created_at;
+    const dateLabel = ts ? new Date(ts).toLocaleString(undefined, {
+      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    }) : '';
+    const fromAddr = em.from_email || contact.email || 'sender';
+    const rawBody = (em.body_html || em.body || em.body_text || '').toString();
+    // Wrap original message in a Gmail-style quoted block.
+    const quoted = rawBody
+      ? `<div class="gmail_quote"><blockquote style="margin:0 0 0 .8ex;border-left:2px solid #ccc;padding-left:1ex;color:#555">${rawBody}</blockquote></div>`
+      : '';
+    const bodyHtml =
+      `<p><br/></p><p><br/></p>` +
+      `<p style="color:#6b7280;font-size:12px;margin:8px 0">On ${dateLabel}, ${fromAddr} wrote:</p>` +
+      quoted;
+    setReplyCompose({ subject, bodyHtml });
+  };
+
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
@@ -568,6 +595,16 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         open={!!previewEmail}
         onOpenChange={(o) => { if (!o) setPreviewEmail(null); }}
         contactEmail={contact.email}
+        onReply={handleReplyToPreview}
+      />
+
+      {/* Compose dialog launched from the preview's Reply button. */}
+      <ComposeEmailDialog
+        contact={contact}
+        open={!!replyCompose}
+        onOpenChange={(o) => { if (!o) setReplyCompose(null); }}
+        initialSubject={replyCompose?.subject}
+        initialBodyHtml={replyCompose?.bodyHtml}
       />
 
       <ImportConversationDialog

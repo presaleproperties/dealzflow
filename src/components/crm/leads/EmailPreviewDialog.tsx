@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail, Reply } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 
 /**
@@ -36,6 +37,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Lead's email — used as a sensible default for inbound "from" / outbound "to". */
   contactEmail?: string | null;
+  /** When provided, renders a "Reply" button that hands back the email so the
+   *  parent can pop the full ComposeEmailDialog pre-filled with Re:/quoted body.
+   *  Used for Presale-pushed auto-responses that aren't in `crm_email_log`. */
+  onReply?: (email: EmailLogRow) => void;
 }
 
 const BASE_STYLES = `
@@ -109,7 +114,7 @@ function plainBlockToHtml(text: string, opts?: { stripQuoteMarks?: boolean }): s
     .join('');
 }
 
-export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: Props) {
+export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, onReply }: Props) {
   const isInbound = email?.direction === 'inbound';
   const rawBody = (email?.body_html || email?.body || '').trim();
   const plainBody = (email?.body_text || '').trim();
@@ -237,6 +242,22 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: 
             )}
           </div>
         </div>
+
+        {onReply && (
+          <div className="shrink-0 border-t border-border/60 bg-background px-5 py-3 flex items-center justify-between gap-3">
+            <span className="text-[11px] text-muted-foreground">
+              Replying as you — sends through your connected email and logs to this lead's timeline.
+            </span>
+            <Button
+              size="sm"
+              onClick={() => { onReply(email); onOpenChange(false); }}
+              className="gap-1.5"
+            >
+              <Reply className="w-3.5 h-3.5" />
+              Reply
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
