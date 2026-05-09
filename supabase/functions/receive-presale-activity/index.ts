@@ -371,6 +371,54 @@ Deno.serve(async (req) => {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Hot-lead computation (Presale rules):
+  //   • any floorplan_download → hot
+  //   • any deck_visit/deck_unlock with visit_number ≥ 2 → hot
+  //   • ≥2 email.opened events for this contact → hot
+  //   • ≥2 activity events for this contact in last 7 days → hot
+  // When triggered: append "hot" tag, set lead_tier='hot', bump last_activity_at.
+  // ─────────────────────────────────────────────────────────────────────────
+  if (contact) {
+    let hotReason: string | null = null;
+    const t = body.type.toLowerCase();
+    const visitNum = Number((meta as any)?.visit_number ?? 0);
+
+    if (t === "floorplan_download") hotReason = "floorplan_download";
+    else if ((t === "deck_visit" || t === "deck_unlock") && visitNum >= 2) hotReason = "deck_revisit";
+
+    if (!hotReason && t === "email.opened") {
+      const { count } = await supabase
+        .from("crm_activity_events")
+        .select("id", { count: "exact", head: true })
+        .eq("contact_id", contact.id)
+        .eq("type", "email.opened");
+      if ((count ?? 0) >= 2) hotReason = "email_opens";
+    }
+    if (!hotReason) {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("crm_activity_events")
+        .select("id", { count: "exact", head: true })
+        .eq("contact_id", contact.id)
+        .gte("occurred_at", since);
+      if ((count ?? 0) >= 2) hotReason = "activity_burst_7d";
+    }
+
+    const updates: Record<string, unknown> = { last_activity_at: occurredAt };
+    if (hotReason) {
+      const { data: cur } = await supabase
+        .from("crm_contacts")
+        .select("tags, lead_tier")
+        .eq("id", contact.id)
+        .maybeSingle();
+      const tags = Array.from(new Set([...(cur?.tags ?? []), "hot"]));
+      updates.tags = tags;
+      if (cur?.lead_tier !== "hot") updates.lead_tier = "hot";
+    }
+    await supabase.from("crm_contacts").update(updates).eq("id", contact.id);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Behavior batch fan-out: when Presale sends type="behavior_batch" with a
   // nested metadata.behavior payload, expand it into the four behavior tables
   // (forms, views, sessions, engagement) and refresh the lead's project list.
