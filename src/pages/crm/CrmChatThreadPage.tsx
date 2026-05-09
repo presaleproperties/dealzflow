@@ -583,7 +583,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     <div className={
       embedded
         ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
-        : '-mx-3 sm:-mx-4 -my-3 sm:-my-4 flex flex-col h-[calc(100dvh-60px)]'
+        // Phone: fill the route slot without negative top margin (which used to
+        // tuck the thread header under the global mobile app header). Tablet+
+        // keeps the bleed for the two-pane shell.
+        : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4'
     }>
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
