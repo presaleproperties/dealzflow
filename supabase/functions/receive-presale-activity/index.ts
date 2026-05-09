@@ -222,10 +222,25 @@ Deno.serve(async (req) => {
     if (data) contact = data as typeof contact;
   }
 
+  // Auto-create from behavior_batch when it carries a completed form submission
+  // with an email/phone. Some Presale forms (floor_plan_request, project_inquiry)
+  // ship telemetry but don't fire a separate lead.created lifecycle event, so
+  // without this branch the lead never lands in the CRM. Same first-match-wins
+  // assignment as real lifecycle events.
+  const behaviorPre: any = meta?.behavior ?? null;
+  const completedForm = behaviorPre && Array.isArray(behaviorPre.forms)
+    ? behaviorPre.forms.find((f: any) => (f?.status ?? "").toLowerCase() === "completed")
+    : null;
+  const isBehaviorLeadCreate =
+    !contact &&
+    body.type === "behavior_batch" &&
+    !!completedForm &&
+    (!!email || !!phone);
+
   // Presale sometimes sends new-lead lifecycle events to this activity webhook
   // instead of bridge-ingest-lead. Treat those as real CRM leads, then continue
   // recording the originating activity against the newly created/merged contact.
-  if (!contact && LEAD_LIFECYCLE_EVENTS.has(body.type) && (email || phone)) {
+  if (!contact && (LEAD_LIFECYCLE_EVENTS.has(body.type) || isBehaviorLeadCreate) && (email || phone)) {
     const { first_name, last_name } = splitName(meta.name ?? meta.full_name);
     const assignee = await pickAssignee(supabase, body.agent_slug ?? meta.agent_slug ?? null);
     const leadEmail = email ?? cleanEmail(meta.email);
