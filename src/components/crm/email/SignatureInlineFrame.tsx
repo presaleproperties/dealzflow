@@ -15,7 +15,7 @@ const MAX_HEIGHT = 800;
  * - User can drag the bottom-right handle to set a custom height (persisted).
  * - "Fit" button restores auto-sizing.
  */
-export function SignatureInlineFrame({ html }: { html: string }) {
+export function SignatureInlineFrame({ html, compact = false }: { html: string; compact?: boolean }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [contentHeight, setContentHeight] = useState(24);
@@ -29,53 +29,52 @@ export function SignatureInlineFrame({ html }: { html: string }) {
     }
   });
 
+  // Compact variant — used inside mobile/tablet composers. Scales the
+  // signature down (~85%) so the agent can always see how their email
+  // closes without the headshot/contact block dominating the screen.
+  const baseFont = compact ? 12 : 14;
+  const basePadX = compact ? 12 : 16;
+  const headshotPx = compact ? 64 : 80;
+
   const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
     html,body{
       margin:0;
-      padding:0 16px;
+      padding:0 ${basePadX}px;
       font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-      font-size:14px;
-      line-height:1.7142857;
+      font-size:${baseFont}px;
+      line-height:1.65;
       color:hsl(0 0% 4%);
       background:transparent;
     }
-    /* Flush with editor text — collapse vertical whitespace at the seam.
-       The composer keeps a one-line gap via the editor's last paragraph;
-       the signature itself adds zero leading/trailing space. */
+    /* Flush with editor text — collapse vertical whitespace at the seam. */
     body{padding-top:0 !important;padding-bottom:0 !important}
     body > *:first-child{margin-top:0 !important;padding-top:0 !important}
     body > *:last-child{margin-bottom:0 !important;padding-bottom:0 !important}
-    /* Hide empty leading/trailing paragraphs that some signatures ship with */
     body > p:first-child:empty,
     body > p:last-child:empty,
     body > br:first-child,
     body > br:last-child{display:none !important}
-    p{margin:1.1428571em 0}
+    p{margin:${compact ? '.6em' : '1.1428571em'} 0}
     a{color:hsl(217 91% 50%);text-decoration:underline}
     img{max-width:100%;height:auto;display:block}
     table{border-collapse:collapse;max-width:100%}
     td,th{vertical-align:top}
-    /* Mobile: stack the authored 2-column "headshot | text" layout vertically
-       so the headshot sits on top (matches the Settings preview) and the
-       contact lines read full-width below. */
+    /* Mobile: stack the authored 2-column "headshot | text" layout vertically. */
     @media (max-width: 520px){
-      html,body{padding:0 14px !important}
-      body{font-size:13px;line-height:1.55;text-align:center}
-      p{margin:.3em 0}
+      html,body{padding:0 ${Math.max(10, basePadX - 2)}px !important}
+      body{font-size:${Math.max(11, baseFont - 1)}px;line-height:1.5;text-align:center}
+      p{margin:.25em 0}
       table{width:100% !important;table-layout:auto !important;display:block !important}
       tbody, thead, tfoot{display:block !important;width:100% !important}
       tr{display:block !important;width:100% !important}
       td,th{display:block !important;width:100% !important;padding:2px 0 !important;vertical-align:middle !important;word-break:break-word;text-align:center !important}
-      /* First cell (headshot) — centered, capped, stacks on top.
-         Preserve authored border-radius (square / rounded square). */
-      tr > td:first-child, tr > th:first-child{padding:0 0 8px 0 !important}
+      tr > td:first-child, tr > th:first-child{padding:0 0 6px 0 !important}
       tr > td:first-child img, tr > th:first-child img{
-        width:80px !important;height:80px !important;max-width:80px !important;
+        width:${headshotPx}px !important;height:${headshotPx}px !important;max-width:${headshotPx}px !important;
         object-fit:cover !important;margin:0 auto !important;display:block !important;
       }
-      /* Trim oversized brand logos */
       img{max-width:100% !important;height:auto !important;margin-left:auto !important;margin-right:auto !important}
-      tr > td:not(:first-child) img[width]{max-width:100px !important;width:auto !important;height:auto !important}
+      tr > td:not(:first-child) img[width]{max-width:90px !important;width:auto !important;height:auto !important}
     }
   </style></head><body>${html}</body></html>`;
 
