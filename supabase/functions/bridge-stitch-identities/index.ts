@@ -110,53 +110,129 @@ Deno.serve(async (req) => {
 
   // Pull existing contacts for all emails in a single query
   const emails = Array.from(new Set(cleaned.map((m) => m.email)));
+  const pids = Array.from(new Set(cleaned.map((m) => m.presale_user_id)));
+
   const { data: existing, error: fetchErr } = await supabase
     .from("crm_contacts")
-    .select("id, email, presale_user_id")
+    .select("id, email, presale_user_id, created_at")
     .in("email", emails);
   if (fetchErr) {
     console.error("[stitch] fetch error", fetchErr);
     return json({ error: fetchErr.message }, 500);
   }
 
-  const byEmail = new Map<string, { id: string; presale_user_id: string | null }>();
-  for (const c of existing ?? []) {
-    if (c.email) byEmail.set(c.email.toLowerCase(), { id: c.id, presale_user_id: c.presale_user_id });
+  // Pre-fetch every contact that already OWNS any pid we're about to assign.
+  // Without this, the unique index `crm_contacts_presale_user_id_uidx` fires
+  // when a different contact already holds the target pid (the cause of the
+  // 23505 errors in production).
+  const { data: pidHolders, error: holderErr } = await supabase
+    .from("crm_contacts")
+    .select("id, email, presale_user_id, created_at, tags, projects, notes")
+    .in("presale_user_id", pids);
+  if (holderErr) {
+    console.error("[stitch] holder fetch error", holderErr);
+    return json({ error: holderErr.message }, 500);
+  }
+  const holderByPid = new Map<string, { id: string; email: string | null; created_at: string; tags: string[] | null; projects: string[] | null; notes: string | null }>();
+  for (const h of pidHolders ?? []) {
+    if (h.presale_user_id) holderByPid.set(h.presale_user_id, h as any);
   }
 
-  const updates: Array<{ id: string; presale_user_id: string }> = [];
+  const byEmail = new Map<string, { id: string; presale_user_id: string | null; created_at: string }>();
+  for (const c of existing ?? []) {
+    if (c.email) byEmail.set(c.email.toLowerCase(), { id: c.id, presale_user_id: c.presale_user_id, created_at: c.created_at });
+  }
+
+  let updated = 0;
+  let merged = 0;
   let alreadyLinked = 0;
   let conflicts = 0;
   let notFound = 0;
 
+  // Re-fetch target row's mergeable fields lazily inside the loop when we hit
+  // a conflict — keeps the common path cheap.
   for (const m of cleaned) {
-    const c = byEmail.get(m.email);
-    if (!c) {
-      notFound++;
-      continue;
-    }
-    if (c.presale_user_id === m.presale_user_id) {
-      alreadyLinked++;
-      continue;
-    }
-    if (c.presale_user_id && !force) {
-      conflicts++;
-      continue;
-    }
-    updates.push({ id: c.id, presale_user_id: m.presale_user_id });
-  }
+    const target = byEmail.get(m.email);
+    if (!target) { notFound++; continue; }
+    if (target.presale_user_id === m.presale_user_id) { alreadyLinked++; continue; }
+    if (target.presale_user_id && !force) { conflicts++; continue; }
 
-  // Apply updates one-by-one (small batches; ~few thousand max)
-  let updated = 0;
-  for (const u of updates) {
+    const holder = holderByPid.get(m.presale_user_id);
+    if (holder && holder.id !== target.id) {
+      // Two contacts collide on the same presale_user_id.
+      // Strategy: keep the OLDER contact as canonical, merge tags/projects/notes
+      // from the newer one into it, then clear pid from the newer row before
+      // assigning to canonical. Never deletes — leaves an audit trail in notes.
+      const targetCreated = Date.parse(target.created_at) || 0;
+      const holderCreated = Date.parse(holder.created_at) || 0;
+      const canonicalId = targetCreated <= holderCreated ? target.id : holder.id;
+      const otherId = canonicalId === target.id ? holder.id : target.id;
+
+      // Pull both rows' mergeable fields
+      const { data: rows } = await supabase
+        .from("crm_contacts")
+        .select("id, tags, projects, notes")
+        .in("id", [canonicalId, otherId]);
+      const canonicalRow: any = (rows ?? []).find((r: any) => r.id === canonicalId) ?? {};
+      const otherRow: any = (rows ?? []).find((r: any) => r.id === otherId) ?? {};
+
+      const mergedTags = Array.from(new Set([...(canonicalRow.tags ?? []), ...(otherRow.tags ?? [])]));
+      const mergedProjects = Array.from(new Set([...(canonicalRow.projects ?? []), ...(otherRow.projects ?? [])]));
+      const auditLine = `[stitch ${new Date().toISOString()}] merged duplicate contact ${otherId} on presale_user_id ${m.presale_user_id}`;
+      const mergedNotes = [canonicalRow.notes, otherRow.notes, auditLine].filter(Boolean).join("\n");
+
+      // Clear pid on the non-canonical row FIRST (releases the unique constraint),
+      // then assign to canonical with merged data.
+      const { error: clearErr } = await supabase
+        .from("crm_contacts")
+        .update({ presale_user_id: null, notes: [otherRow.notes, `[stitch] absorbed into ${canonicalId} on ${new Date().toISOString()}`].filter(Boolean).join("\n") })
+        .eq("id", otherId);
+      if (clearErr) {
+        console.error("[stitch] clear pid failed", otherId, clearErr.message);
+        conflicts++;
+        continue;
+      }
+
+      const { error: setErr } = await supabase
+        .from("crm_contacts")
+        .update({
+          presale_user_id: m.presale_user_id,
+          tags: mergedTags,
+          projects: mergedProjects,
+          notes: mergedNotes,
+          ai_summary_stale: true,
+        })
+        .eq("id", canonicalId);
+      if (setErr) {
+        console.error("[stitch] set pid failed", canonicalId, setErr.message);
+        conflicts++;
+      } else {
+        merged++;
+        updated++;
+        // Update local view so subsequent mappings see the new state
+        holderByPid.set(m.presale_user_id, { ...(holder as any), id: canonicalId });
+        if (otherId === target.id) {
+          // target lost its row to canonical — refresh local map so any later
+          // mapping for this email points at canonical now
+          byEmail.set(m.email, { id: canonicalId, presale_user_id: m.presale_user_id, created_at: holder.created_at });
+        } else {
+          byEmail.set(m.email, { id: canonicalId, presale_user_id: m.presale_user_id, created_at: target.created_at });
+        }
+      }
+      continue;
+    }
+
+    // Happy path: no holder collision
     const { error } = await supabase
       .from("crm_contacts")
-      .update({ presale_user_id: u.presale_user_id })
-      .eq("id", u.id);
+      .update({ presale_user_id: m.presale_user_id })
+      .eq("id", target.id);
     if (error) {
-      console.error("[stitch] update error", u.id, error.message);
+      console.error("[stitch] update error", target.id, error.message);
+      conflicts++;
     } else {
       updated++;
+      holderByPid.set(m.presale_user_id, { id: target.id, email: m.email, created_at: target.created_at, tags: null, projects: null, notes: null });
     }
   }
 
@@ -164,6 +240,7 @@ Deno.serve(async (req) => {
     received: batch.mappings.length,
     valid: cleaned.length,
     updated,
+    merged,
     skipped: alreadyLinked,
     already_linked: alreadyLinked,
     conflicts,
