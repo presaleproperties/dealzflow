@@ -61,6 +61,9 @@ export function SchedulerProfilePanel() {
       bio: form.bio || null,
       default_buffer_min: parseInt(form.default_buffer_min) || 0,
       default_min_notice_min: parseInt(form.default_min_notice_min) || 240,
+      quiet_hours_start: form.quiet_hours_start === '' || form.quiet_hours_start == null ? null : Math.max(0, Math.min(23, parseInt(form.quiet_hours_start))),
+      quiet_hours_end: form.quiet_hours_end === '' || form.quiet_hours_end == null ? null : Math.max(0, Math.min(23, parseInt(form.quiet_hours_end))),
+      quiet_hours_tz: form.quiet_hours_tz || form.timezone || 'America/Vancouver',
     };
     if (!patch.slug) { toast.error('URL slug is required'); return; }
     await updateMut.mutateAsync(patch);
