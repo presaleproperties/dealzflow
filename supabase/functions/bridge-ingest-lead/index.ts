@@ -58,6 +58,70 @@ async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<s
   return candidates[0];
 }
 
+// Resolve the agent record (id/email/phone/photo/calendly) so the website can
+// render the assigned-agent card immediately after submission.
+async function loadAgentEnvelope(supabase: any, displayName: string) {
+  if (!displayName) return null;
+  const { data } = await supabase
+    .from("crm_team")
+    .select("id, display_name, email, phone, avatar_url, calendly_url, presale_email")
+    .eq("display_name", displayName)
+    .maybeSingle();
+  if (!data) return { id: null, name: displayName, email: null, phone: null, photo_url: null, calendly_url: null };
+  return {
+    id: data.id,
+    name: data.display_name,
+    email: data.presale_email || data.email || null,
+    phone: data.phone || null,
+    photo_url: data.avatar_url || null,
+    calendly_url: data.calendly_url || null,
+  };
+}
+
+// Build the tag list per Presale Ingest Mapping rule:
+//   presale-website + form:<type> + deck:<name> + (caller tags) — always append.
+function buildTags(existingTags: string[] | null, leadTags: string[] | undefined, meta: any): string[] {
+  const out = new Set<string>(existingTags ?? []);
+  out.add("presale-website");
+  for (const t of leadTags ?? []) if (t) out.add(t);
+  const formType = meta?.form_type;
+  if (typeof formType === "string" && formType.trim()) out.add(`form:${formType.trim()}`);
+  const deckName = meta?.pitch_deck_name ?? meta?.deck_name ?? meta?.deck?.name;
+  if (typeof deckName === "string" && deckName.trim()) out.add(`deck:${deckName.trim()}`);
+  // Hot triggers from this single payload (floorplan download or deck revisit)
+  const beh: any = meta?.behavior ?? null;
+  if (Array.isArray(beh?.engagement)) {
+    for (const e of beh.engagement) {
+      const t = (e?.event_type ?? "").toLowerCase();
+      if (t === "floorplan_download") out.add("hot");
+      if ((t === "deck_visit" || t === "deck_unlock") && (e?.visit_number ?? 0) >= 2) out.add("hot");
+    }
+  }
+  return Array.from(out);
+}
+
+// Persona → contact_type (buyer/investor/realtor/developer)
+function personaToContactType(meta: any): string | null {
+  const p = (meta?.persona ?? "").toString().trim().toLowerCase();
+  return ["buyer", "investor", "realtor", "developer"].includes(p) ? p : null;
+}
+
+// Compose a structured note from granular metadata (lead_source, form_type,
+// utm, landing_page, free-text message). Appended — never overwrites existing notes.
+function buildNoteAppendix(meta: any): string | null {
+  if (!meta || typeof meta !== "object") return null;
+  const lines: string[] = [];
+  const ts = new Date().toISOString();
+  lines.push(`[Presale form @ ${ts}]`);
+  if (meta.form_type) lines.push(`Form: ${meta.form_type}`);
+  if (meta.lead_source) lines.push(`Lead source: ${meta.lead_source}`);
+  if (meta.landing_page) lines.push(`Landing: ${meta.landing_page}`);
+  const utm = [meta.utm_source, meta.utm_medium, meta.utm_campaign].filter(Boolean).join(" / ");
+  if (utm) lines.push(`UTM: ${utm}`);
+  if (typeof meta.message === "string" && meta.message.trim()) lines.push(`Message: ${meta.message.trim()}`);
+  return lines.length > 1 ? lines.join("\n") : null;
+}
+
 
 interface BehaviorPayload {
   views?: Array<{ property_id?: string; property_name?: string; property_url?: string; action?: string; viewed_at?: string; metadata?: any }>;
