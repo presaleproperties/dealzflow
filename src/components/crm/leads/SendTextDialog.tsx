@@ -259,6 +259,10 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const skippedNoPhone = allRecipients.length - reachable.length;
   const isMass = reachable.length > 1;
   const isPending = sendSms.isPending || bulkSendSms.isPending;
+  // Single-recipient sends on mobile use a native chat-style UI. Mass sends and
+  // desktop keep the rich composer. The "..." button toggles `forceAdvanced`
+  // so the agent can still reach templates / schedule / variables on mobile.
+  const isMobileChatMode = isMobile && !isMass && !forceAdvanced;
   const canSend = isMass
     ? reachable.length > 0 && body.trim().length > 0 && !isPending
     : !!contact.phone && body.trim().length > 0 && !isPending && !isOptedOut;
