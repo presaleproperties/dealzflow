@@ -115,7 +115,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
 
     const { container } = render(
       <ResponsiveDialog open onOpenChange={() => {}}>
-        <ResponsiveDialogContent className="mobile-drawer" aria-describedby={undefined}>
+        <ResponsiveDialogContent className="mobile-truly-fullscreen mobile-drawer" aria-describedby={undefined}>
           <div data-testid="header">Header</div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>,
