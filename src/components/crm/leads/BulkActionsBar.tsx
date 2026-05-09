@@ -63,12 +63,12 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
 
   const handleAssign = (agent: string) => {
     bulkUpdate.mutate({ ids: selectedIds, updates: { assigned_to: agent } });
-    onClearSelection();
+    // Keep selection so the user can chain more updates on the same set.
   };
 
   const handleStatus = (status: string) => {
     bulkUpdate.mutate({ ids: selectedIds, updates: { status, status_changed_at: new Date().toISOString() } });
-    onClearSelection();
+    // Keep selection so the user can chain more updates on the same set.
   };
 
   const handleDelete = () => {
@@ -141,7 +141,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
             if (!o && pendingTags.length > 0) {
               bulkAddTags.mutate({ ids: selectedIds, tags: pendingTags });
               setPendingTags([]);
-              onClearSelection();
+              // Keep selection so the user can chain more updates on the same set.
             } else if (!o) {
               setPendingTags([]);
             }
@@ -205,7 +205,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           extraContacts={selectedContacts.slice(1)}
           open={showBulkText}
           onOpenChange={setShowBulkText}
-          onSent={onClearSelection}
+          onSent={() => { /* keep selection so user can chain follow-ups */ }}
         />
       )}
 
@@ -218,13 +218,13 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
           extraContacts={selectedContacts.slice(1)}
           open={showBulkEmail}
           onOpenChange={setShowBulkEmail}
-          onSent={onClearSelection}
+          onSent={() => { /* keep selection so user can chain follow-ups */ }}
         />
       )}
 
       <EnrollInAutomationDialog
         open={showEnroll}
-        onOpenChange={(o) => { setShowEnroll(o); if (!o) onClearSelection(); }}
+        onOpenChange={(o) => { setShowEnroll(o); /* keep selection on close */ }}
         contactIds={selectedIds}
         contactNames={selectedContacts.map((c) => formatContactName(c.first_name, c.last_name))}
       />
