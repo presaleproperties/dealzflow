@@ -67,9 +67,11 @@ export function MobileChatSendView({
 }: Props) {
   const { data: smsLog = [] } = useCrmContactSmsLog(contact.id);
   const dialer = useDialer();
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const [taHeight, setTaHeight] = useState(38);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Show oldest → newest in the scroll view (chat order).
   const messages = useMemo(
