@@ -73,7 +73,7 @@ async function upsertMinimalContact(
   const { data, error } = await supabase
     .from("crm_contacts").insert({
       first_name: payload?.first_name ?? "New",
-      last_name: payload?.last_name ?? "Lead",
+      last_name: payload?.last_name ?? "",
       email: email || null,
       phone: phone || null,
       source: "PresaleProperties.com",
