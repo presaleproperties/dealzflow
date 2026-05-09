@@ -22,10 +22,8 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const secret = req.headers.get("x-bridge-secret");
-  if (!secret || secret !== Deno.env.get("BRIDGE_SECRET")) {
-    return json({ error: "unauthorized" }, 401);
-  }
+  const authFail = requireBridgeSecret(req);
+  if (authFail) return authFail;
 
   let email: string | null = null;
   let phone: string | null = null;
