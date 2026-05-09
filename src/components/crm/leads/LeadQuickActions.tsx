@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap } from 'lucide-react';
+import { CallButton } from '@/components/crm/dialer/DialerWidget';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
