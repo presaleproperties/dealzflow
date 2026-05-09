@@ -16,8 +16,14 @@ import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments
 import { formatContactName } from '@/lib/format';
 import { useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMyAgentName } from '@/hooks/useTeamAgents';
 import { formatDistanceToNow } from 'date-fns';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+
+// Persist agent filter across reloads. Special sentinel "__mine" resolves
+// to the current signed-in agent's display_name at render time so the chip
+// keeps working when the same browser is used by a different teammate.
+const AGENT_FILTER_KEY = 'crm.pipeline.agentFilter.v1';
 
 /* ─── Segment-based colors ─── */
 const SEGMENT_COLORS: Record<string, { bg: string; border: string; dot: string }> = {
