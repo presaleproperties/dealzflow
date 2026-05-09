@@ -247,7 +247,7 @@ export default function LeadDetailPage() {
 
   // Mobile layout
   if (isMobile) {
-    const onCall = () => c.phone && (window.location.href = `tel:${c.phone}`);
+    const onCall = () => callContact(c);
     const onSms = () => { setTextChannel('sms'); setShowText(true); };
     const onWhatsApp = () => {
       void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
@@ -331,7 +331,7 @@ export default function LeadDetailPage() {
               leadScore={leadScore}
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
-              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onCall={() => callContact(c)}
               onSms={() => { setTextChannel('sms'); setShowText(true); }}
               onEmail={() => setShowEmail(true)}
               onWhatsApp={() => {
@@ -351,7 +351,7 @@ export default function LeadDetailPage() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <CenterColumn
               contact={c}
-              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onCall={() => callContact(c)}
               onText={() => setShowText(true)}
               onEmail={() => setShowEmail(true)}
               onTask={() => setShowTask(true)}
@@ -372,7 +372,7 @@ export default function LeadDetailPage() {
               contact={c}
               onAddTask={() => setShowTask(true)}
               onAddShowing={() => setShowShowing(true)}
-              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onCall={() => callContact(c)}
               onText={() => setShowText(true)}
               onEmail={() => setShowEmail(true)}
               onSendProject={() => setShowSendProject(true)}
