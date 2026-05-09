@@ -3,14 +3,29 @@
  * ------------------
  * Native chat-style replacement for the rich SMS composer when sending to a
  * single recipient on mobile. Recent thread history renders as bubbles, and
- * a pinned iMessage-style composer sits at the bottom with auto-grow textarea.
+ * a pinned composer sits at the bottom with auto-grow textarea.
+ *
+ * Layout cues borrowed from the user's iPhone reference (Lofty/Apple Messages
+ * style): left-aligned header with avatar+name+segment+status pill, no loud
+ * channel toggle (lives in the More menu), a muted From/To info row above the
+ * composer, and a pill-shaped composer with an outboard "+" attach button.
  *
  * Intentionally minimal — no templates, no schedule, no variables. Those live
  * in the full composer (Mass send + desktop). The "..." menu jumps to the
  * full composer if the agent needs them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, Phone, MoreHorizontal, Sparkles, MessagesSquare } from 'lucide-react';
+import {
+  ChevronLeft,
+  Loader2,
+  Phone,
+  MoreHorizontal,
+  Sparkles,
+  MessagesSquare,
+  Plus,
+  ArrowUp,
+  Check,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -48,6 +63,19 @@ function formatBubbleTime(iso: string | null) {
   return format(d, 'MMM d, h:mm a');
 }
 
+/** Pretty-prints a North-American number — falls back to the raw value. */
+function formatPhone(raw: string | null | undefined): string {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+1 ${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return raw;
+}
+
 export function MobileChatSendView({
   contact,
   channel,
@@ -70,7 +98,7 @@ export function MobileChatSendView({
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  const [taHeight, setTaHeight] = useState(38);
+  const [taHeight, setTaHeight] = useState(36);
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Show oldest → newest in the scroll view (chat order).
@@ -78,6 +106,12 @@ export function MobileChatSendView({
     () => [...smsLog].reverse().filter((m) => m.channel === channel || (channel === 'sms' && !m.channel)),
     [smsLog, channel],
   );
+
+  // Last outbound from-number is our active Twilio caller-ID for the From row.
+  const fromNumber = useMemo(() => {
+    const lastOut = smsLog.find((m) => m.direction === 'outbound' && m.from_number);
+    return lastOut?.from_number ?? null;
+  }, [smsLog]);
 
   // Auto-scroll to bottom on mount + when messages/sending changes.
   useEffect(() => {
@@ -93,7 +127,7 @@ export function MobileChatSendView({
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = 'auto';
-    const next = Math.min(140, Math.max(38, ta.scrollHeight));
+    const next = Math.min(140, Math.max(36, ta.scrollHeight));
     ta.style.height = `${next}px`;
     setTaHeight(next);
   }, [body]);
@@ -105,39 +139,46 @@ export function MobileChatSendView({
   const initials =
     `${(contact.first_name?.[0] || '').toUpperCase()}${(contact.last_name?.[0] || '').toUpperCase()}` ||
     (contact.phone?.replace(/\D/g, '').slice(-2) ?? '?');
+  const segmentLabel = contact.status || contact.lead_type || 'Contact';
+
+  const showSendBtn = body.trim().length > 0 || mediaUrls.length > 0;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-background">
-      {/* Chat header — Messages-app style: back, avatar+name centred, call/more on right.
-          Uses real safe-area-top so the avatar can never collide with the iOS notch /
-          Dynamic Island when the drawer reaches its top clearance. */}
+      {/* Header — left-aligned, Lofty/Messages-style.
+          Back, avatar, name + segment subtitle, status pill. Right side keeps
+          a slim Call + More so power actions are still one tap away. */}
       <header
-        className="flex items-center gap-2 px-2 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '6px' }}
+        className="flex items-center gap-2 px-1.5 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '8px' }}
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Back"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60"
+          className="inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
         </button>
-        <div className="flex-1 flex flex-col items-center min-w-0 -ml-9">
-          <Avatar className="h-8 w-8 mb-0.5">
-            <AvatarFallback className="text-[11px] font-semibold bg-muted">
-              {initials || '?'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[12px] font-semibold tracking-tight truncate max-w-[60vw]">
-              {fullName}
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              {channel === 'whatsapp' ? 'WhatsApp' : 'iMessage'}
-            </span>
-          </div>
+        <Avatar className="h-9 w-9 shrink-0">
+          <AvatarFallback className="text-[12px] font-semibold bg-primary/15 text-primary">
+            {initials || '?'}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0 flex flex-col leading-tight">
+          <span className="text-[15px] font-semibold tracking-tight text-foreground truncate">
+            {fullName}
+          </span>
+          <span className="text-[11.5px] text-muted-foreground truncate">
+            {segmentLabel}
+            {channel === 'whatsapp' && ' · WhatsApp'}
+          </span>
         </div>
+        {contact.status && (
+          <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10.5px] font-semibold tracking-wide">
+            {contact.status}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
@@ -145,7 +186,7 @@ export function MobileChatSendView({
           disabled={!contact.phone}
           className="inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30"
         >
-          <Phone className="h-[18px] w-[18px]" />
+          <Phone className="h-[17px] w-[17px]" />
         </button>
         <Popover open={moreOpen} onOpenChange={setMoreOpen}>
           <PopoverTrigger asChild>
@@ -157,7 +198,7 @@ export function MobileChatSendView({
               <MoreHorizontal className="h-[18px] w-[18px]" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" sideOffset={6} className="w-56 p-1">
+          <PopoverContent align="end" sideOffset={6} className="w-60 p-1">
             <button
               type="button"
               onClick={() => {
@@ -174,6 +215,19 @@ export function MobileChatSendView({
               type="button"
               onClick={() => {
                 setMoreOpen(false);
+                onChannelChange(channel === 'sms' ? 'whatsapp' : 'sms');
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
+            >
+              <span className={cn('h-4 w-4 rounded-full inline-flex items-center justify-center', channel === 'whatsapp' ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/15 text-primary')}>
+                {channel === 'whatsapp' ? <Check className="h-3 w-3" /> : <span className="text-[10px] font-bold">S</span>}
+              </span>
+              <span className="flex-1">{channel === 'whatsapp' ? 'Switch to SMS' : 'Switch to WhatsApp'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMoreOpen(false);
                 onOpenAdvanced();
               }}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
@@ -184,30 +238,6 @@ export function MobileChatSendView({
           </PopoverContent>
         </Popover>
       </header>
-
-      {/* Channel toggle — slim chip row, only shown when WhatsApp is an option */}
-      <div className="flex justify-center gap-1 px-2 py-1.5 border-b border-border/30 shrink-0 bg-background">
-        <button
-          type="button"
-          onClick={() => onChannelChange('sms')}
-          className={cn(
-            'px-3 py-0.5 rounded-full text-[10.5px] font-semibold uppercase tracking-wider transition-colors',
-            channel === 'sms' ? 'bg-primary/10 text-primary' : 'text-muted-foreground',
-          )}
-        >
-          SMS
-        </button>
-        <button
-          type="button"
-          onClick={() => onChannelChange('whatsapp')}
-          className={cn(
-            'px-3 py-0.5 rounded-full text-[10.5px] font-semibold uppercase tracking-wider transition-colors flex items-center gap-1',
-            channel === 'whatsapp' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground',
-          )}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> WhatsApp
-        </button>
-      </div>
 
       {/* Conversation scroll area */}
       <div
@@ -231,16 +261,23 @@ export function MobileChatSendView({
           return (
             <div key={m.id}>
               {showTime && (
-                <div className="text-center text-[10px] text-muted-foreground/70 my-2 tracking-wide">
+                <div className="text-center text-[11px] text-muted-foreground/70 my-3 tracking-wide font-medium">
                   {formatBubbleTime(m.sent_at || m.created_at)}
                 </div>
               )}
-              <div className={cn('flex w-full', isOut ? 'justify-end' : 'justify-start')}>
+              <div className={cn('flex w-full items-end gap-1.5', isOut ? 'justify-end' : 'justify-start')}>
+                {!isOut && (
+                  <Avatar className="h-6 w-6 shrink-0 mb-0.5">
+                    <AvatarFallback className="text-[9px] font-semibold bg-primary/15 text-primary">
+                      {initials || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 <div
                   className={cn(
-                    'max-w-[78%] px-3.5 py-2 text-[14px] leading-snug rounded-2xl whitespace-pre-wrap break-words',
+                    'max-w-[78%] px-3.5 py-2 text-[14.5px] leading-snug rounded-2xl whitespace-pre-wrap break-words',
                     isOut
-                      ? 'bg-primary text-primary-foreground rounded-br-md'
+                      ? 'bg-primary/12 text-foreground rounded-br-md'
                       : 'bg-muted text-foreground rounded-bl-md',
                   )}
                 >
@@ -283,47 +320,75 @@ export function MobileChatSendView({
         </div>
       )}
 
-      {/* iMessage-style composer — pinned to bottom */}
+      {/* From / To info strip — hairline row above the composer, like the reference */}
+      <div className="shrink-0 px-3 py-2 border-t border-border/40 flex items-center justify-between gap-2 text-[11.5px] text-muted-foreground bg-background">
+        <span className="truncate">
+          <span className="text-muted-foreground/70">From:</span>{' '}
+          <span className="text-foreground/80 font-medium tabular-nums">
+            {fromNumber ? formatPhone(fromNumber) : 'Default number'}
+          </span>
+        </span>
+        <span className="text-border">|</span>
+        <span className="truncate text-right">
+          <span className="text-muted-foreground/70">To:</span>{' '}
+          <span
+            className={cn(
+              'font-medium tabular-nums',
+              isOptedOut ? 'text-destructive' : 'text-foreground/80',
+            )}
+          >
+            {isOptedOut && '⊘ '}{contact.phone ? formatPhone(contact.phone) : 'No number'}
+          </span>
+        </span>
+      </div>
+
+      {/* Composer — pill input with outboard "+" attach. Send arrow appears
+          inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 border-t border-border/40 bg-background/95 backdrop-blur-md px-2 pt-2 flex items-end gap-1.5"
-        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 6px)' }}
+        className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-2 flex items-end gap-2"
+        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 8px)' }}
       >
-        <AttachMenu
-          variant="icon"
-          uploading={uploading}
-          onFiles={onFiles}
-          className="h-9 w-9 rounded-full bg-muted/60 active:scale-95 transition-transform shrink-0"
-        />
-        <div className="flex-1 min-w-0 flex items-end rounded-3xl border border-border/70 bg-muted/30 pl-3.5 pr-1 py-1">
+        <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/70 bg-muted/40 pl-4 pr-1 py-0.5">
           <textarea
             ref={taRef}
             value={body}
             onChange={(e) => onBodyChange(e.target.value)}
-            placeholder={isOptedOut ? 'This number opted out' : `${channel === 'whatsapp' ? 'WhatsApp' : 'Text'} message`}
+            placeholder={isOptedOut ? 'This number opted out' : 'Message'}
             disabled={isOptedOut}
             rows={1}
             style={{ height: taHeight }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-1.5 placeholder:text-muted-foreground/60 disabled:opacity-50 max-h-[140px]"
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px]"
           />
-          <button
-            type="button"
-            onClick={onSend}
-            disabled={!canSend}
-            aria-label="Send"
-            className={cn(
-              'shrink-0 ml-1 h-7 w-7 rounded-full inline-flex items-center justify-center transition-all',
-              canSend
-                ? 'bg-primary text-primary-foreground active:scale-95'
-                : 'bg-muted-foreground/20 text-muted-foreground',
-            )}
-          >
-            {sending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <span className="text-[16px] leading-none -mt-0.5">↑</span>
-            )}
-          </button>
+          {showSendBtn && (
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={!canSend || sending}
+              aria-label="Send"
+              className={cn(
+                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all',
+                canSend && !sending
+                  ? 'bg-primary text-primary-foreground active:scale-95'
+                  : 'bg-muted-foreground/20 text-muted-foreground',
+              )}
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+              )}
+            </button>
+          )}
         </div>
+        {!showSendBtn && (
+          <AttachMenu
+            variant="icon"
+            uploading={uploading}
+            onFiles={onFiles}
+            className="h-9 w-9 rounded-full border border-border/70 text-muted-foreground active:scale-95 transition-transform shrink-0"
+            icon={Plus}
+          />
+        )}
       </div>
     </div>
   );
