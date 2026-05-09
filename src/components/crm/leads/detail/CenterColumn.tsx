@@ -24,6 +24,7 @@ import { getDateGroup, noteTime, type CrmShowing } from './types';
 import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
+import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster';
 import { Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -395,43 +396,69 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                     {group.label}
                   </span>
                 </div>
-                {group.notes.map(note => {
-                  const emailRow = emailById.get(note.id);
-                  const smsRow = smsById.get(note.id);
-                  if (emailRow) {
-                    return (
-                      <EmailNoteCard
-                        key={note.id}
-                        email={emailRow}
-                        contactEmail={contact.email}
-                        onOpen={() => handleOpenEmail(note.id)}
-                      />
-                    );
+                {(() => {
+                  // Walk the date-group and collapse consecutive system-style
+                  // notes (lead score updates, task created/completed,
+                  // automation writes) into a single SystemActivityCluster row.
+                  const out: React.ReactNode[] = [];
+                  let runStart = -1;
+                  for (let i = 0; i <= group.notes.length; i++) {
+                    const note = group.notes[i];
+                    const isSys = note ? isSystemishNote(note) : false;
+                    if (isSys) {
+                      if (runStart === -1) runStart = i;
+                      continue;
+                    }
+                    // Flush any pending system run.
+                    if (runStart !== -1) {
+                      const run = group.notes.slice(runStart, i);
+                      out.push(
+                        <SystemActivityCluster
+                          key={`syscluster-${run[0].id}`}
+                          notes={run}
+                        />,
+                      );
+                      runStart = -1;
+                    }
+                    if (!note) break;
+                    const emailRow = emailById.get(note.id);
+                    const smsRow = smsById.get(note.id);
+                    if (emailRow) {
+                      out.push(
+                        <EmailNoteCard
+                          key={note.id}
+                          email={emailRow}
+                          contactEmail={contact.email}
+                          onOpen={() => handleOpenEmail(note.id)}
+                        />,
+                      );
+                    } else if (smsRow) {
+                      out.push(
+                        <SmsNoteCard
+                          key={note.id}
+                          message={smsRow}
+                          onOpen={() => openSmsThread(smsRow)}
+                        />,
+                      );
+                    } else {
+                      out.push(
+                        <NoteCard
+                          key={note.id}
+                          note={note}
+                          isOwn={note.user_id === currentUserId}
+                          contactId={contact.id}
+                          editingId={editingId}
+                          editContent={editContent}
+                          onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
+                          onCancelEdit={() => setEditingId(null)}
+                          onSaveEdit={handleEditSave}
+                          setEditContent={setEditContent}
+                        />,
+                      );
+                    }
                   }
-                  if (smsRow) {
-                    return (
-                      <SmsNoteCard
-                        key={note.id}
-                        message={smsRow}
-                        onOpen={() => openSmsThread(smsRow)}
-                      />
-                    );
-                  }
-                  return (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      isOwn={note.user_id === currentUserId}
-                      contactId={contact.id}
-                      editingId={editingId}
-                      editContent={editContent}
-                      onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
-                      onCancelEdit={() => setEditingId(null)}
-                      onSaveEdit={handleEditSave}
-                      setEditContent={setEditContent}
-                    />
-                  );
-                })}
+                  return out;
+                })()}
               </div>
             ))}
 
