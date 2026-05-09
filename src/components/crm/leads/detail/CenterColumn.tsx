@@ -279,6 +279,36 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
           <QuickActionBar contact={contact} />
         </div>
 
+        {/* View toggle: Classic vs Unified Timeline v2 (beta) */}
+        <div className="px-3 md:px-0">
+          <div className="inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-muted/30 p-0.5">
+            {(['classic', 'v2'] as ViewMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setViewMode(m);
+                  try { localStorage.setItem(VIEW_KEY, m); } catch {}
+                }}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors',
+                  viewMode === m
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {m === 'classic' ? 'Classic' : 'Timeline v2 · Beta'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {viewMode === 'v2' ? (
+          <div className="px-3 md:px-0">
+            <LeadTimelineV2 contactId={contact.id} />
+          </div>
+        ) : (
+        <>
         {/* Filter strip */}
         <div className="px-3 md:px-0 overflow-x-auto md:overflow-visible scrollbar-none -mx-1 md:mx-0">
           <div className="flex items-center gap-1 md:gap-1.5 md:flex-wrap min-w-max md:min-w-0 px-1 md:px-0">
