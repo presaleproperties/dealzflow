@@ -123,7 +123,7 @@ export function LeftSidebar({
       <div className="space-y-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-[24px] sm:text-[26px] font-bold text-foreground leading-[1.05] tracking-[-0.02em] break-words">
+            <h1 className="text-[28px] sm:text-[30px] font-bold text-foreground leading-[1.05] tracking-[-0.02em] break-words">
               {formatContactName(contact.first_name, contact.last_name) || 'Unnamed lead'}
             </h1>
             {(() => {
@@ -131,11 +131,11 @@ export function LeftSidebar({
               const hasSource = !!contact.source;
               if (types.length === 0 && !hasSource) return null;
               return (
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
                   {hasSource && <span className="truncate font-medium">{contact.source}</span>}
                   {hasSource && types.length > 0 && <span className="text-muted-foreground/40">·</span>}
                   {types.map((t, i) => (
-                    <span key={t} className="font-semibold uppercase tracking-[0.1em] text-[10.5px] text-muted-foreground/85">
+                    <span key={t} className="font-semibold uppercase tracking-[0.1em] text-[11.5px] text-muted-foreground/85">
                       {LEAD_TYPE_LABELS[t] || t}{i < types.length - 1 ? ',' : ''}
                     </span>
                   ))}
@@ -170,14 +170,14 @@ export function LeftSidebar({
         </div>
 
         {(contact.phone || contact.email) && (
-          <div className="space-y-1.5 pt-3 border-t border-border/40">
+          <div className="space-y-2 pt-3 border-t border-border/40">
             {contact.phone && (
               <div className="flex items-center justify-between gap-2 group">
                 <a
                   href={`tel:${contact.phone}`}
-                  className="flex items-center gap-2.5 min-w-0 text-[13.5px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 text-[15px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Phone className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" strokeWidth={1.75} />
+                  <Phone className="w-4 h-4 text-muted-foreground/70 shrink-0" strokeWidth={1.75} />
                   <span className="truncate font-medium tabular-nums">{formatPhone(contact.phone)}</span>
                 </a>
                 <CopyButton value={contact.phone} label="phone" />
@@ -187,9 +187,9 @@ export function LeftSidebar({
               <div className="flex items-center justify-between gap-2 group">
                 <a
                   href={`mailto:${contact.email}`}
-                  className="flex items-center gap-2.5 min-w-0 text-[13.5px] text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-2.5 min-w-0 text-[15px] text-foreground hover:text-primary transition-colors"
                 >
-                  <Mail className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" strokeWidth={1.75} />
+                  <Mail className="w-4 h-4 text-muted-foreground/70 shrink-0" strokeWidth={1.75} />
                   <span className="truncate">{contact.email}</span>
                 </a>
                 <CopyButton value={contact.email} label="email" />
@@ -239,44 +239,44 @@ export function LeftSidebar({
       </AlertDialog>
 
       {showActionRow && (
-        <div className={`grid gap-1.5 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
             onClick={onCall}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
+            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
             aria-label="Call"
           >
-            <Phone className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">Call</span>
+            <Phone className="w-[18px] h-[18px] text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+            <span className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground group-hover:text-primary transition-colors">Call</span>
           </button>
           <button
             onClick={onSms}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
+            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
             aria-label="Text"
           >
-            <Send className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">Text</span>
+            <Send className="w-[18px] h-[18px] text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+            <span className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground group-hover:text-primary transition-colors">Text</span>
           </button>
           {onWhatsApp && (
             <button
               onClick={onWhatsApp}
               disabled={!contact.phone}
-              className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
+              className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
               aria-label="WhatsApp"
             >
-              <MessageCircle className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">WhatsApp</span>
+              <MessageCircle className="w-[18px] h-[18px] text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+              <span className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground group-hover:text-primary transition-colors">WhatsApp</span>
             </button>
           )}
           <button
             onClick={onEmail}
             disabled={!contact.email}
-            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
+            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
             aria-label="Email"
           >
-            <Mail className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">Email</span>
+            <Mail className="w-[18px] h-[18px] text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+            <span className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground group-hover:text-primary transition-colors">Email</span>
           </button>
         </div>
       )}
@@ -298,7 +298,7 @@ export function LeftSidebar({
               if (seg) setPipeline.mutate({ contact, segment: seg });
             }}
           >
-            <SelectTrigger className="h-9 text-sm bg-card border-border font-medium">
+            <SelectTrigger className="h-10 text-[14px] bg-card border-border font-medium">
               <SelectValue placeholder={contact.status ?? 'New Lead'} />
             </SelectTrigger>
             <SelectContent>
