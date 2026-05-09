@@ -123,7 +123,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       // a fully rendered body_html. Fold them into the email lane so they
       // render with the polished EmailNoteCard + open in the email preview.
       const isPresaleEmailSend =
-        (t === 'email.sent' || t === 'email.auto_response_sent' || t === 'email_sent') &&
+        (t === 'email.sent' ||
+          t === 'email.auto_response_sent' ||
+          t === 'email_sent' ||
+          t === 'email_auto_response_sent') &&
         (meta.body_html || meta.subject);
       if (isPresaleEmailSend) {
         const noteId = `presale-email-${ev.id}`;
