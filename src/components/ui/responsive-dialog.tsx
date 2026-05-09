@@ -98,10 +98,10 @@ export const ResponsiveDialogContent = React.forwardRef<
           side="bottom"
           data-mobile-drawer={isDrawer ? 'true' : undefined}
           className={cn(
-            'p-0 inset-x-0 top-0 bottom-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col overflow-hidden',
+            'p-0 inset-x-0 top-0 bottom-auto max-h-none h-[var(--composer-viewport-height,100dvh)] w-screen rounded-none border-0 flex flex-col overflow-hidden',
             className,
           )}
-          style={{ top: 0, bottom: 0, height: '100dvh', maxHeight: 'none', ...style }}
+          style={{ top: 0, bottom: 'auto', height: 'var(--composer-viewport-height, 100dvh)', maxHeight: 'none', ...style }}
           {...(rest as any)}
         >
           {children}
