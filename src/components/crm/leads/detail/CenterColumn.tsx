@@ -13,7 +13,7 @@ import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
-import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { SmsThreadDrawer } from '@/components/crm/leads/SmsThreadDrawer';
