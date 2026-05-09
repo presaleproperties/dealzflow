@@ -929,6 +929,37 @@ function MessageCard({
       {expanded && (message.attachments?.length ?? 0) > 0 && (
         <AttachmentsStrip attachments={message.attachments!} />
       )}
+      {expanded && (onReply || onForward) && (
+        <div className="border-t border-border/60 bg-muted/10 px-3 md:px-4 py-2 flex items-center gap-2">
+          {onReply && (
+            <button
+              type="button"
+              onClick={onReply}
+              disabled={!canReply}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium border border-border/60 bg-card hover:bg-muted/40 transition-colors',
+                !canReply && 'opacity-50 cursor-not-allowed',
+              )}
+              title={canReply ? 'Reply to this message' : 'No email on file for this lead'}
+            >
+              <Reply className="w-3 h-3" /> Reply
+            </button>
+          )}
+          {onForward && (
+            <button
+              type="button"
+              onClick={onForward}
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11.5px] font-medium border border-border/60 bg-card hover:bg-muted/40 transition-colors"
+              title="Forward this message"
+            >
+              <ArrowUpRight className="w-3 h-3" /> Forward
+            </button>
+          )}
+          <span className="ml-auto text-[10.5px] text-muted-foreground">
+            Sends are saved to this lead's timeline
+          </span>
+        </div>
+      )}
     </article>
   );
 }
