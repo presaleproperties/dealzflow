@@ -135,6 +135,25 @@ Deno.serve(async (req) => {
       status: 'received', twilio_message_sid: sid,
     }).select('id').maybeSingle();
 
+    // Mirror into activity events feed (powers LiveActivityTimeline + hot-lead toasts)
+    try {
+      await admin.from('crm_activity_events').insert({
+        type: channel === 'whatsapp' ? 'whatsapp_inbound' : 'sms_inbound',
+        contact_id: contact?.id ?? null,
+        lead_phone: fromNum,
+        metadata: {
+          body: bodyText.slice(0, 500),
+          to_number: toNum,
+          from_number: fromNum,
+          media_count: numMedia,
+          twilio_message_sid: sid,
+          sms_log_id: logged?.id ?? null,
+          channel,
+        },
+        occurred_at: new Date().toISOString(),
+      });
+    } catch (e) { console.error('activity_events insert failed', e); }
+
     // Notify CRM team if this is a known contact
     if (contact) {
       const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'A lead';
