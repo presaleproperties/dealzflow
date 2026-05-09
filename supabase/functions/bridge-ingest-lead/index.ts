@@ -1,6 +1,7 @@
 // Bridge endpoint: Presale Properties → CRM
 // Receives new signups + behavior data. Dedupes by email/phone (merge & enrich).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireBridgeSecret } from "../_shared/inbound-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
