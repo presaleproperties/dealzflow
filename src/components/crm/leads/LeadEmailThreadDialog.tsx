@@ -631,15 +631,27 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                       </div>
                     </div>
                     {!replyOpen && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleStartReply()}
-                        disabled={!lastInThread || !contact.email}
-                        className="gap-1.5 h-8 text-[12px] shadow-sm"
-                      >
-                        <Reply className="w-3.5 h-3.5" /> Reply
-                        <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
-                      </Button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStartForward()}
+                          disabled={!lastInThread}
+                          className="gap-1.5 h-8 text-[12px]"
+                          title="Forward this message"
+                        >
+                          <ArrowUpRight className="w-3.5 h-3.5" /> Forward
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleStartReply()}
+                          disabled={!lastInThread || !contact.email}
+                          className="gap-1.5 h-8 text-[12px] shadow-sm"
+                        >
+                          <Reply className="w-3.5 h-3.5" /> Reply
+                          <kbd className="ml-1 hidden sm:inline-flex items-center px-1 rounded bg-primary-foreground/15 text-[9.5px] font-mono">R</kbd>
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
