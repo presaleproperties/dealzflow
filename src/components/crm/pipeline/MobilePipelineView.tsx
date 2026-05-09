@@ -130,6 +130,32 @@ export function MobilePipelineView() {
           />
         </div>
 
+        {/* Agent scope chips — Mine / All / specific. Mine is default. */}
+        <div className="overflow-x-auto scrollbar-hide -mx-3 px-3 mb-2">
+          <div className="flex gap-1.5 min-w-max">
+            {(['__mine', 'all', ...dynamicAgents.filter(a => a !== myName)] as const).map(opt => {
+              const isActive = filterAgent === opt;
+              const label =
+                opt === '__mine' ? `Mine${myName ? ` · ${myName.split(' ')[0]}` : ''}`
+                : opt === 'all' ? 'All Agents'
+                : opt;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setFilterAgent(opt)}
+                  className={`inline-flex items-center px-2.5 h-7 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all border ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-transparent border-border text-muted-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Stage chip selector — horizontal scroll */}
         <div className="overflow-x-auto scrollbar-hide -mx-3 px-3">
           <div className="flex gap-1.5 pb-1 min-w-max">
