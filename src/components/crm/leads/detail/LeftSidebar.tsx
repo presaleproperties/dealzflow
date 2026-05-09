@@ -307,7 +307,6 @@ export function LeftSidebar({
               {pipelines.map(seg => (
                 <SelectItem key={seg.id} value={seg.id}>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
                     {seg.emoji && <span>{seg.emoji}</span>}
                     {seg.name}
                   </span>
