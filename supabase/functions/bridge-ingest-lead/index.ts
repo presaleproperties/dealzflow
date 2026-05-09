@@ -174,16 +174,43 @@ function personaToContactType(meta: any): string | null {
 
 // Compose a structured note from granular metadata (lead_source, form_type,
 // utm, landing_page, free-text message). Appended — never overwrites existing notes.
-function buildNoteAppendix(meta: any): string | null {
+function buildNoteAppendix(meta: any, behavior?: any): string | null {
   if (!meta || typeof meta !== "object") return null;
   const lines: string[] = [];
   const ts = new Date().toISOString();
   lines.push(`[Presale form @ ${ts}]`);
-  if (meta.form_type) lines.push(`Form: ${meta.form_type}`);
+
+  // Form type — prefer top-level, then derive from completed forms in behavior
+  let formType = meta.form_type;
+  if (!formType && Array.isArray(behavior?.forms)) {
+    const completed = behavior.forms.filter((f: any) => (f?.status ?? "").toLowerCase() === "completed");
+    const types = Array.from(new Set(completed.map((f: any) => f?.form_type).filter(Boolean)));
+    if (types.length) formType = types.join(", ");
+  }
+  if (formType) lines.push(`Form: ${formType}`);
+
   if (meta.lead_source) lines.push(`Lead source: ${meta.lead_source}`);
+  if (meta.persona) lines.push(`Persona: ${meta.persona}`);
+  if (meta.agent_status) {
+    const a = String(meta.agent_status).toLowerCase();
+    lines.push(`Working with an agent: ${a === "no" ? "No (unrepresented)" : a === "yes" ? "Yes" : meta.agent_status}`);
+  }
+  if (meta.intent_tier) lines.push(`Intent tier: ${meta.intent_tier}`);
   if (meta.landing_page) lines.push(`Landing: ${meta.landing_page}`);
+  if (meta.referrer) lines.push(`Referrer: ${meta.referrer}`);
   const utm = [meta.utm_source, meta.utm_medium, meta.utm_campaign].filter(Boolean).join(" / ");
   if (utm) lines.push(`UTM: ${utm}`);
+
+  // Engagement signal from behavior batch
+  if (behavior && typeof behavior === "object") {
+    const sessions = Array.isArray(behavior.sessions) ? behavior.sessions : [];
+    const totalPages = sessions.reduce((n: number, s: any) => n + (Number(s?.pages_viewed) || 0), 0);
+    const views = Array.isArray(behavior.views) ? behavior.views : [];
+    const projects = Array.from(new Set(views.map((v: any) => v?.property_name).filter(Boolean)));
+    if (totalPages) lines.push(`Engagement: ${totalPages} page views across ${sessions.length} session${sessions.length === 1 ? "" : "s"}`);
+    if (projects.length) lines.push(`Viewed projects: ${projects.join(", ")}`);
+  }
+
   if (typeof meta.message === "string" && meta.message.trim()) lines.push(`Message: ${meta.message.trim()}`);
   return lines.length > 1 ? lines.join("\n") : null;
 }
