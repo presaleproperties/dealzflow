@@ -6,17 +6,19 @@
 
 @layer base {
   :root {
-    /* Light — Gold premium palette */
-    --background: 30 11% 99%;
-    --foreground: 222 25% 10%;
+    /* Light — Gold premium palette (audit v2: warmer bg, AA-safe meta text) */
+    --background: 30 14% 97.5%;
+    --foreground: 222 28% 9%;
+    /* Strong text — for primary names, page H1, table titles */
+    --text-strong: 222 32% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 25% 10%;
+    --card-foreground: 222 28% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 25% 10%;
+    --popover-foreground: 222 28% 9%;
 
-    /* Primary — gold accent */
+    /* Primary — gold accent (unchanged: brand) */
     --primary: 39 67% 55%;
     --primary-foreground: 222 25% 10%;
     --primary-glow: 39 72% 62%;
@@ -26,25 +28,25 @@
     --secondary: 30 6% 94%;
     --secondary-foreground: 222 25% 15%;
 
-    /* Muted */
+    /* Muted — darker meta text for AA headroom (was 224 8% 46%) */
     --muted: 30 6% 92%;
-    --muted-foreground: 224 8% 46%;
+    --muted-foreground: 222 14% 38%;
 
     /* Accent */
     --accent: 39 67% 55%;
     --accent-foreground: 222 25% 10%;
 
-    /* Semantic */
-    --success: 142 71% 45%;
+    /* Semantic — desaturated ~20% so chips read as muted/editorial */
+    --success: 142 52% 40%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 35 78% 48%;
     --warning-foreground: 0 0% 100%;
-    --info: 210 62% 46%;
+    --info: 210 52% 44%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 68% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 9% 89%;
+    --border: 30 9% 88%;
     --border-subtle: 30 8% 92%;
     --input: 30 9% 91%;
     --ring: 39 67% 55%;
@@ -61,12 +63,12 @@
     --sidebar-border: 222 20% 16%;
     --sidebar-ring: 39 67% 55%;
 
-    /* Charts */
+    /* Charts — desaturated for editorial feel */
     --chart-1: 39 67% 55%;
-    --chart-2: 142 71% 45%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 270 48% 56%;
-    --chart-5: 0 84% 60%;
+    --chart-2: 142 52% 42%;
+    --chart-3: 35 78% 48%;
+    --chart-4: 270 38% 52%;
+    --chart-5: 0 68% 56%;
   }
 
   .dark {
