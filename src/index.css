@@ -217,6 +217,15 @@
     --keyboard-inset-bottom: 0px;
   }
 
+  /* When a composer drawer opens the soft keyboard, hide the floating
+     bottom nav so it can't slide under the agent's thumb while typing.
+     Pure CSS — no per-frame JS, no shake. */
+  html[data-keyboard-open="true"] nav[aria-label="Primary"] {
+    transform: translateY(120%);
+    transition: transform 180ms ease-out;
+    pointer-events: none;
+  }
+
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.
      Modals/sheets/main content must NOT add this again. */
   :root {
