@@ -4,6 +4,7 @@
 // assigned agent on hot signals.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireBridgeSecret } from "../_shared/inbound-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,8 +15,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET") ?? "";
-
+// BRIDGE_SECRET / PRESALE_BRIDGE_SECRET checked via _shared/inbound-auth
 type EventType = string;
 
 const HIGH_INTENT: EventType[] = ["email_open", "email_opened", "deck_unlock", "link_click", "email_clicked", "return_visit"];
@@ -144,11 +144,8 @@ Deno.serve(async (req) => {
     return jsonResp({ error: "method_not_allowed" }, 405);
   }
 
-  // Auth via shared bridge secret
-  const provided = req.headers.get("x-bridge-secret") ?? "";
-  if (!BRIDGE_SECRET || provided !== BRIDGE_SECRET) {
-    return jsonResp({ error: "unauthorized" }, 401);
-  }
+  const authFail = requireBridgeSecret(req);
+  if (authFail) return authFail;
 
   let body: IncomingEvent;
   try {

@@ -1,6 +1,7 @@
 // Bridge endpoint: Presale Properties → CRM
 // Receives new signups + behavior data. Dedupes by email/phone (merge & enrich).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireBridgeSecret } from "../_shared/inbound-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -175,10 +176,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const secret = req.headers.get("x-bridge-secret");
-    if (!secret || secret !== Deno.env.get("BRIDGE_SECRET")) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const authFail = requireBridgeSecret(req);
+    if (authFail) return authFail;
 
     const body: IngestRequest = await req.json();
     if (!body?.lead?.email) {
