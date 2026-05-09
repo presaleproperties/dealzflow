@@ -5663,6 +5663,10 @@ export type Database = {
         Returns: Json
       }
       backfill_behavior_notes: { Args: never; Returns: Json }
+      backfill_behavior_notes_for_contact: {
+        Args: { _contact_id: string }
+        Returns: number
+      }
       bulk_reformat_crm_notes: { Args: never; Returns: Json }
       contact_related_counts: {
         Args: { _contact_ids: string[] }
