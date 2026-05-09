@@ -729,8 +729,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
         <ResponsiveDialogContent
           ref={composerRef}
-          hideMobileHandle
-          className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
+          className="mobile-drawer max-w-7xl sm:w-[98vw] sm:h-[92vh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
           {dragActive && (
             <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
