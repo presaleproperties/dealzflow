@@ -355,7 +355,7 @@ export default function CrmChatsPage() {
         <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
           <div className="min-w-0">
             <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">Chats</h1>
-            <p className="text-[11px] text-muted-foreground mt-1 font-medium">
+            <p className="hidden sm:block text-[11px] text-muted-foreground mt-1 font-medium">
               {selectMode && selected.size > 0
                 ? <><span className="text-primary font-bold">{selected.size}</span> selected</>
                 : counts.all > 0
