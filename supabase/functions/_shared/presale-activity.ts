@@ -49,8 +49,75 @@ const LEAD_LIFECYCLE_EVENTS = new Set([
 const HIGH_INTENT = new Set([
   "email_open", "email_opened", "email.opened",
   "deck_unlock", "link_click", "email_clicked", "email.clicked",
-  "return_visit",
+  "return_visit", "floorplan_download", "deck_visit", "form_submission",
 ]);
+
+// ── Notification severity tiers ─────────────────────────────────────────
+// low  = inserted only (no push, suppressed in quiet hours)
+// med  = inserted + push (auto-suppressed to low in quiet hours)
+// high = inserted + push (auto-suppressed to low in quiet hours)
+async function dispatchNotification(
+  supabase: SupabaseClient,
+  args: {
+    user_ids: string[];
+    title: string;
+    body: string;
+    type: string;
+    link_to: string;
+    severity: "low" | "med" | "high";
+    dedupe_key?: string | null;
+    dedupe_window_minutes?: number;
+    meta?: Record<string, unknown>;
+  },
+): Promise<number> {
+  if (!args.user_ids?.length) return 0;
+  const { data, error } = await supabase.rpc("crm_send_notification", {
+    _user_ids: args.user_ids,
+    _title: args.title,
+    _body: args.body,
+    _type: args.type,
+    _link_to: args.link_to,
+    _severity: args.severity,
+    _dedupe_key: args.dedupe_key ?? null,
+    _dedupe_window_minutes: args.dedupe_window_minutes ?? 120,
+    _meta: args.meta ?? {},
+  });
+  if (error) {
+    console.warn("[presale-activity] crm_send_notification failed:", error.message);
+    return 0;
+  }
+  // Fire web push for medium/high severity (helper already downgraded for quiet hours)
+  if (args.severity === "med" || args.severity === "high") {
+    try {
+      const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
+      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      // Per-user push so quiet-hours-affected users (who got severity downgraded) still get the row,
+      // but we don't know which were filtered. We push to all recipients; client subscription is opt-in.
+      await Promise.all(args.user_ids.map((u) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          body: JSON.stringify({ user_id: u, title: args.title, message: args.body, url: args.link_to }),
+        }).catch((e) => console.warn("[presale-activity] push fetch failed:", e))
+      ));
+    } catch (e) {
+      console.warn("[presale-activity] push dispatch error:", e);
+    }
+  }
+  return (data as number) ?? 0;
+}
+
+function humanGap(fromIso: string | null | undefined): string {
+  if (!fromIso) return "";
+  const ms = Date.now() - new Date(fromIso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 48) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
 const FALLBACK_AGENT = "Uzair Muhammad";
 
 function cleanEmail(v: unknown): string | null {
@@ -509,7 +576,9 @@ export async function processPresaleActivity(
     );
   }
 
-  // ── Hot-lead computation ─────────────────────────────────────────────────
+  // ── Hot-lead computation + return-visit detection + score recompute ─────
+  let returnVisitGap: string | null = null;
+  let isReturnVisit = false;
   if (contact) {
     let hotReason: string | null = null;
     const t = ev.type.toLowerCase();
@@ -535,7 +604,39 @@ export async function processPresaleActivity(
       if ((count ?? 0) >= 2) hotReason = "activity_burst_7d";
     }
 
-    const updates: Record<string, unknown> = { last_activity_at: occurredAt };
+    // Return-visit: prior last_activity_at older than 2h, and current event is a session/view/form
+    const RETURN_TYPES = new Set(["behavior_batch", "session_start", "page_view", "form_submission", "contact_form"]);
+    const { data: prior } = await supabase
+      .from("crm_contacts")
+      .select("last_activity_at, visit_count")
+      .eq("id", contact.id)
+      .maybeSingle();
+    const priorLast = (prior as any)?.last_activity_at ?? null;
+    const visitCountPrev = Number((prior as any)?.visit_count ?? 0);
+    if (priorLast && RETURN_TYPES.has(ev.type)) {
+      const gapMs = Date.now() - new Date(priorLast).getTime();
+      if (gapMs >= 2 * 60 * 60 * 1000) {
+        isReturnVisit = true;
+        returnVisitGap = humanGap(priorLast);
+      }
+    }
+
+    // Recompute engagement score (cheap, decayed)
+    let newScore = 0;
+    try {
+      const { data: scoreData } = await supabase.rpc("crm_compute_engagement_score", { _contact_id: contact.id });
+      newScore = Number(scoreData ?? 0);
+    } catch (e) {
+      console.warn("[presale-activity] score recompute failed", e);
+    }
+
+    const updates: Record<string, unknown> = {
+      last_activity_at: occurredAt,
+      last_visit_at: RETURN_TYPES.has(ev.type) ? occurredAt : (priorLast ?? occurredAt),
+      visit_count: RETURN_TYPES.has(ev.type) && isReturnVisit ? visitCountPrev + 1 : visitCountPrev,
+      engagement_score: newScore,
+      engagement_score_at: new Date().toISOString(),
+    };
     if (hotReason) {
       const { data: cur } = await supabase
         .from("crm_contacts")
@@ -659,31 +760,101 @@ export async function processPresaleActivity(
     }
   }
 
-  // ── Notifications: completed form submissions in batch ──
+  // ── Notifications: tiered ────────────────────────────────────────────────
+  // Helper: resolve recipients for the contact's assigned agent
   let notified = false;
+  const fullName = contact ? ([contact.first_name, contact.last_name].filter(Boolean).join(" ") || "A lead") : null;
+  const linkTo = contact ? `/crm/leads/${contact.id}` : "/crm";
+
+  async function recipientsForContact(): Promise<string[]> {
+    if (!contact) return [];
+    const { data } = await supabase.rpc("crm_recipients_for_contact", { _assigned_to: contact.assigned_to ?? "" });
+    return Array.isArray(data) ? (data as string[]) : [];
+  }
+
+  // 1) Completed form submission → MED severity (push)
   if (contact && behavior?.forms && !batchSkipped) {
     const completed = (behavior.forms as any[]).filter((f) => f?.status === "completed");
     if (completed.length > 0) {
-      const { data: recipients } = await supabase.rpc("crm_recipients_for_contact", { _assigned_to: contact.assigned_to ?? "" });
-      const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "A lead";
-      const formLabel = Array.from(new Set(completed.map((f) => f.form_type).filter(Boolean))).join(", ");
-      if (Array.isArray(recipients) && recipients.length > 0) {
-        await supabase.from("crm_notifications").insert(
-          (recipients as string[]).map((u) => ({
-            user_id: u,
-            title: `📝 ${fullName} submitted a form`,
-            body: formLabel ? `New ${formLabel} submission` : "New form submission on Presale",
-            type: "hot_lead_activity",
-            link_to: `/crm/leads/${contact!.id}`,
-            is_read: false,
-          })),
-        );
-        notified = true;
-      }
+      const recipients = await recipientsForContact();
+      const formTypes = Array.from(new Set(completed.map((f) => f.form_type).filter(Boolean)));
+      const projectName = completed.find((f: any) => f.property_name)?.property_name ?? ev.project_slug ?? null;
+      const projectPart = projectName ? ` · ${projectName}` : "";
+      const formLabel = formTypes.join(", ");
+      const sent = await dispatchNotification(supabase, {
+        user_ids: recipients,
+        title: `📝 ${fullName} submitted ${formTypes.length === 1 ? `a ${formTypes[0]}` : "forms"}`,
+        body: `${formLabel ? `New ${formLabel}` : "New form"} on PresaleProperties${projectPart}`,
+        type: "hot_lead_activity",
+        link_to: linkTo,
+        severity: "med",
+        dedupe_key: `form:${contact.id}:${(formTypes[0] ?? "any")}`,
+        dedupe_window_minutes: 60,
+        meta: { form_types: formTypes, project: projectName, severity_reason: "form_submission" },
+      });
+      if (sent > 0) notified = true;
     }
   }
 
-  // ── Notifications: 2+ email opens in last 24h ──
+  // 2) Return-visit → LOW severity (in-app only, no push spam)
+  if (contact && isReturnVisit) {
+    const recipients = await recipientsForContact();
+    const visitNum = Number((meta as any)?.visit_number ?? 0);
+    const projectName = ev.project_slug || (Array.isArray(meta?.behavior?.views) ? meta.behavior.views[0]?.property_name : null) || null;
+    const visitPart = visitNum ? ` (visit #${visitNum})` : "";
+    const projectPart = projectName ? ` · ${projectName}` : "";
+    const sent = await dispatchNotification(supabase, {
+      user_ids: recipients,
+      title: `👋 ${fullName} is back on the website${visitPart}`,
+      body: `Returned after ${returnVisitGap}${projectPart}`,
+      type: "lead_returned",
+      link_to: linkTo,
+      severity: "low",
+      dedupe_key: `return:${contact.id}`,
+      dedupe_window_minutes: 120,
+      meta: { project: projectName, gap: returnVisitGap, visit_number: visitNum },
+    });
+    if (sent > 0) notified = true;
+  }
+
+  // 3) Floorplan download → HIGH severity (push, immediate)
+  if (contact && ev.type === "floorplan_download") {
+    const recipients = await recipientsForContact();
+    const projectName = ev.project_slug || (meta as any)?.property_name || null;
+    const sent = await dispatchNotification(supabase, {
+      user_ids: recipients,
+      title: `🔥 ${fullName} downloaded a floor plan`,
+      body: projectName ? `Floor plan: ${projectName}` : "Floor plan download",
+      type: "hot_lead_activity",
+      link_to: linkTo,
+      severity: "high",
+      dedupe_key: `floorplan:${contact.id}:${projectName ?? "any"}`,
+      dedupe_window_minutes: 60,
+      meta: { project: projectName, severity_reason: "floorplan_download" },
+    });
+    if (sent > 0) notified = true;
+  }
+
+  // 4) Deck revisit (visit_number >= 2) → HIGH severity
+  if (contact && (ev.type === "deck_visit" || ev.type === "deck_unlock") && Number((meta as any)?.visit_number ?? 0) >= 2) {
+    const recipients = await recipientsForContact();
+    const projectName = ev.project_slug || (meta as any)?.deck_name || null;
+    const visitNum = Number((meta as any)?.visit_number ?? 0);
+    const sent = await dispatchNotification(supabase, {
+      user_ids: recipients,
+      title: `🔥 ${fullName} revisited your deck`,
+      body: `Deck open #${visitNum}${projectName ? ` · ${projectName}` : ""}`,
+      type: "hot_lead_activity",
+      link_to: linkTo,
+      severity: "high",
+      dedupe_key: `deck-revisit:${contact.id}`,
+      dedupe_window_minutes: 60,
+      meta: { project: projectName, visit_number: visitNum, severity_reason: "deck_revisit" },
+    });
+    if (sent > 0) notified = true;
+  }
+
+  // 5) 2+ email opens in last 24h → MED severity
   if (contact && (ev.type === "email_open" || ev.type === "email.opened" || ev.type === "email_opened")) {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count } = await supabase
@@ -693,22 +864,20 @@ export async function processPresaleActivity(
       .in("type", ["email_open", "email.opened", "email_opened"])
       .gte("occurred_at", since);
     if ((count ?? 0) >= 2) {
-      const { data: recipients } = await supabase.rpc("crm_recipients_for_contact", { _assigned_to: contact.assigned_to ?? "" });
-      const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "A lead";
-      const projectLabel = ev.project_slug ? ` (${ev.project_slug})` : "";
-      if (Array.isArray(recipients) && recipients.length > 0) {
-        await supabase.from("crm_notifications").insert(
-          (recipients as string[]).map((u) => ({
-            user_id: u,
-            title: `🔥 ${fullName} is engaging`,
-            body: `${count} email opens in the last 24h${projectLabel}`,
-            type: "hot_lead_activity",
-            link_to: `/crm/leads/${contact!.id}`,
-            is_read: false,
-          })),
-        );
-        notified = true;
-      }
+      const recipients = await recipientsForContact();
+      const projectLabel = ev.project_slug ? ` · ${ev.project_slug}` : "";
+      const sent = await dispatchNotification(supabase, {
+        user_ids: recipients,
+        title: `🔥 ${fullName} is engaging`,
+        body: `${count} email opens in the last 24h${projectLabel}`,
+        type: "hot_lead_activity",
+        link_to: linkTo,
+        severity: "med",
+        dedupe_key: `email-opens:${contact.id}`,
+        dedupe_window_minutes: 240,
+        meta: { count, project: ev.project_slug ?? null, severity_reason: "email_opens" },
+      });
+      if (sent > 0) notified = true;
     }
   }
 

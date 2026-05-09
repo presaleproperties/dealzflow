@@ -2,12 +2,28 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const HIGH_INTENT = new Set(["email_open", "deck_unlock", "link_click"]);
+const HIGH_INTENT = new Set([
+  "email_open",
+  "deck_unlock",
+  "deck_visit",
+  "link_click",
+  "floorplan_download",
+  "form_submission",
+  "contact_form",
+  "return_visit",
+  "lead_returned",
+]);
 
 const TYPE_PHRASE: Record<string, string> = {
   email_open: "just opened your email",
   deck_unlock: "just unlocked your pitch deck",
+  deck_visit: "is back on your deck",
   link_click: "just clicked a link",
+  floorplan_download: "downloaded a floor plan",
+  form_submission: "submitted a form",
+  contact_form: "submitted a contact form",
+  return_visit: "is back on your website",
+  lead_returned: "is back on your website",
 };
 
 interface ActivityRow {
@@ -15,6 +31,7 @@ interface ActivityRow {
   type: string;
   contact_id: string | null;
   project_slug: string | null;
+  metadata: Record<string, any> | null;
 }
 
 /**
@@ -83,9 +100,13 @@ export function useHotLeadActivityToasts() {
             [contact.first_name, contact.last_name].filter(Boolean).join(" ") ||
             "A lead";
           const phrase = TYPE_PHRASE[row.type] ?? `triggered ${row.type}`;
-          const projectPart = row.project_slug ? ` about ${row.project_slug}` : "";
+          const meta = row.metadata ?? {};
+          const projectName = meta.project_name || meta.property_name || row.project_slug;
+          const projectPart = projectName ? ` · ${projectName}` : "";
+          const visitNum = Number(meta.visit_number ?? 0);
+          const visitPart = visitNum ? ` (visit #${visitNum})` : "";
 
-          toast(`🔥 ${fullName} ${phrase}${projectPart}`, {
+          toast(`🔥 ${fullName} ${phrase}${visitPart}${projectPart}`, {
             action: {
               label: "Open lead",
               onClick: () => {
