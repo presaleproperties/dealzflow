@@ -242,6 +242,22 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, on
             )}
           </div>
         </div>
+
+        {onReply && (
+          <div className="shrink-0 border-t border-border/60 bg-background px-5 py-3 flex items-center justify-between gap-3">
+            <span className="text-[11px] text-muted-foreground">
+              Replying as you — sends through your connected email and logs to this lead's timeline.
+            </span>
+            <Button
+              size="sm"
+              onClick={() => { onReply(email); onOpenChange(false); }}
+              className="gap-1.5"
+            >
+              <Reply className="w-3.5 h-3.5" />
+              Reply
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
