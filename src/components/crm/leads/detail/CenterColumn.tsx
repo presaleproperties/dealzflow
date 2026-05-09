@@ -123,7 +123,10 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       // a fully rendered body_html. Fold them into the email lane so they
       // render with the polished EmailNoteCard + open in the email preview.
       const isPresaleEmailSend =
-        (t === 'email.sent' || t === 'email.auto_response_sent' || t === 'email_sent') &&
+        (t === 'email.sent' ||
+          t === 'email.auto_response_sent' ||
+          t === 'email_sent' ||
+          t === 'email_auto_response_sent') &&
         (meta.body_html || meta.subject);
       if (isPresaleEmailSend) {
         const noteId = `presale-email-${ev.id}`;
@@ -165,7 +168,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         kind = 'email';
         const n = meta.open_count ? ` (open #${meta.open_count})` : '';
         label = `Email opened${n}${subject}`;
-      } else if (t === 'email.clicked' || t === 'email_clicked') {
+      } else if (t === 'email.clicked' || t === 'email_clicked' || t === 'email_link_clicked') {
         kind = 'email';
         label = `Email link clicked${subject}`;
       } else if (t === 'lead.approved') {
