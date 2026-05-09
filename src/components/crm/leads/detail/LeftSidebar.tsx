@@ -239,44 +239,44 @@ export function LeftSidebar({
       </AlertDialog>
 
       {showActionRow && (
-        <div className={`grid gap-2 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`grid gap-1.5 ${onWhatsApp ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <button
             onClick={onCall}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-emerald-500/5 border border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
             aria-label="Call"
           >
-            <Phone className="w-[18px] h-[18px] text-emerald-600 group-hover:scale-110 transition-transform" strokeWidth={1.9} />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700/85 group-hover:text-emerald-700">Call</span>
+            <Phone className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">Call</span>
           </button>
           <button
             onClick={onSms}
             disabled={!contact.phone}
-            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-sky-500/5 border border-sky-500/30 hover:border-sky-500/60 hover:bg-sky-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
             aria-label="Text"
           >
-            <Send className="w-[18px] h-[18px] text-sky-500 group-hover:scale-110 transition-transform" strokeWidth={1.9} />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sky-600/85 group-hover:text-sky-600">Text</span>
+            <Send className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">Text</span>
           </button>
           {onWhatsApp && (
             <button
               onClick={onWhatsApp}
               disabled={!contact.phone}
-              className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-[#25D366]/10 border border-[#25D366]/40 hover:border-[#25D366]/70 hover:bg-[#25D366]/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
               aria-label="WhatsApp"
             >
-              <MessageCircle className="w-[18px] h-[18px] text-[#1DA851] group-hover:scale-110 transition-transform" strokeWidth={1.9} />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1DA851]/95 group-hover:text-[#1DA851]">WhatsApp</span>
+              <MessageCircle className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">WhatsApp</span>
             </button>
           )}
           <button
             onClick={onEmail}
             disabled={!contact.email}
-            className="group flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl bg-blue-700/5 border border-blue-700/30 hover:border-blue-700/60 hover:bg-blue-700/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center justify-center gap-1 h-14 rounded-lg border border-border/60 bg-card hover:bg-muted/40 hover:border-border hover:text-primary transition-colors disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-current"
             aria-label="Email"
           >
-            <Mail className="w-[18px] h-[18px] text-blue-700 group-hover:scale-110 transition-transform" strokeWidth={1.9} />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-blue-700/85 group-hover:text-blue-700">Email</span>
+            <Mail className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.75} />
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground group-hover:text-primary transition-colors">Email</span>
           </button>
         </div>
       )}
