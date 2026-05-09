@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   useSendSms, useBulkSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
   SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
@@ -23,6 +24,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AttachMenu } from '@/components/crm/shared/AttachMenu';
 import { useDragAndPasteFiles } from '@/hooks/useDragAndPasteFiles';
+import { MobileChatSendView } from './MobileChatSendView';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 /**
@@ -90,6 +92,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const [uploading, setUploading] = useState(false);
   const composerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [forceAdvanced, setForceAdvanced] = useState(false);
+  const isMobile = useIsMobile();
 
   // Reset on close; sync channel with `initialChannel` on open
   useEffect(() => {
@@ -102,6 +106,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       setScheduled(false);
       setScheduledFor('');
       setFromOverride('');
+      setForceAdvanced(false);
     }
   }, [open, initialChannel, initialBody]);
 
@@ -255,6 +260,10 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const skippedNoPhone = allRecipients.length - reachable.length;
   const isMass = reachable.length > 1;
   const isPending = sendSms.isPending || bulkSendSms.isPending;
+  // Single-recipient sends on mobile use a native chat-style UI. Mass sends and
+  // desktop keep the rich composer. The "..." button toggles `forceAdvanced`
+  // so the agent can still reach templates / schedule / variables on mobile.
+  const isMobileChatMode = isMobile && !isMass && !forceAdvanced;
   const canSend = isMass
     ? reachable.length > 0 && body.trim().length > 0 && !isPending
     : !!contact.phone && body.trim().length > 0 && !isPending && !isOptedOut;
@@ -312,6 +321,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       <ResponsiveDialogContent
         ref={composerRef}
         className="mobile-drawer sm:max-w-[920px] sm:w-[92vw] sm:h-auto sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl [&>button]:hidden"
+        hideMobileHandle={isMobileChatMode}
       >
         {dragActive && (
           <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-t-3xl sm:rounded-2xl">
@@ -320,6 +330,26 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             </div>
           </div>
         )}
+        {isMobileChatMode ? (
+          <MobileChatSendView
+            contact={contact}
+            channel={channel}
+            onChannelChange={setChannel}
+            body={body}
+            onBodyChange={setBody}
+            onSend={handleSend}
+            sending={isPending}
+            canSend={!!canSend}
+            onClose={() => onOpenChange(false)}
+            onOpenAdvanced={() => setForceAdvanced(true)}
+            uploading={uploading}
+            onFiles={(f) => { void handleFiles(f); }}
+            isOptedOut={!!isOptedOut}
+            mediaUrls={mediaUrls}
+            onRemoveMedia={(u) => setMediaUrls((prev) => prev.filter((x) => x !== u))}
+          />
+        ) : (
+        <>
         {/* Header — title + channel toggle + close. Drag handle (rendered by
             ResponsiveDialog wrapper) sits above this on mobile. */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-8 h-11 sm:h-14 border-b shrink-0">
@@ -719,6 +749,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             )}
           </Button>
         </div>
+        </>
+        )}
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
