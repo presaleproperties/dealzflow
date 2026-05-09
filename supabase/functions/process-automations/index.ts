@@ -359,10 +359,14 @@ async function executeAction(
     const draft = out?.choices?.[0]?.message?.content ?? "";
     if (!draft) return { ok: false, error: "ai_empty" };
     try {
+      // Auto-logged AI draft → system note (not attributed to any agent).
+      // user_id satisfies NOT NULL but UI overrides display to "System" for
+      // note_type = 'system'.
       await supabase.from("crm_notes").insert({
         contact_id: contact.id,
-        body: `[AI draft email]\n\n${draft}`,
-        source: "automation",
+        user_id: contact.assigned_to ?? contact.user_id,
+        content: `[AI draft email]\n\n${draft}`,
+        note_type: "system",
       });
     } catch { /* best effort */ }
     return { ok: true, payload: { draft_preview: String(draft).slice(0, 120) } };
