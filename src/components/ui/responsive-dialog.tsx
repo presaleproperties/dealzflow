@@ -38,7 +38,12 @@ export const ResponsiveDialogContent = React.forwardRef<
   const classNameString = typeof className === 'string' ? className : '';
   const isDrawer = classNameString.includes('mobile-fullbleed') || classNameString.includes('mobile-drawer');
   const isTrulyFullScreen = classNameString.includes('mobile-truly-fullscreen');
-  const [drawerViewportStyle, setDrawerViewportStyle] = React.useState<React.CSSProperties>({});
+  const [drawerViewportStyle, setDrawerViewportStyle] = React.useState<React.CSSProperties>({
+    top: '60px',
+    bottom: '0px',
+    height: 'auto',
+    maxHeight: 'none',
+  });
 
   React.useEffect(() => {
     if (!isMobile || !isDrawer || isTrulyFullScreen || typeof window === 'undefined') return;
