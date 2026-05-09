@@ -869,6 +869,9 @@ function MessageCard({
           <AutoSizingFrame srcDoc={srcDoc} title={`Email body ${message.id}`} />
         </div>
       )}
+      {expanded && (message.attachments?.length ?? 0) > 0 && (
+        <AttachmentsStrip attachments={message.attachments!} />
+      )}
     </article>
   );
 }
