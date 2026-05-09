@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, MessageSquare, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
