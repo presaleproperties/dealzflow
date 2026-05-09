@@ -272,7 +272,7 @@ async function sendViaAgentGmail(supabase: any, row: any): Promise<SendResult> {
 }
 
 async function sendViaPresale(row: any): Promise<SendResult> {
-  const bridgeSecret = Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET");
+  const bridgeSecret = Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET");
   const presaleAnonKey = Deno.env.get("PRESALE_ANON_KEY");
   if (!bridgeSecret || !presaleAnonKey) return { ok: false, provider: "presale", error: "Presale bridge is not configured", retryable: false };
 
