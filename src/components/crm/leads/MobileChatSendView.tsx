@@ -145,15 +145,42 @@ export function MobileChatSendView({
         >
           <Phone className="h-[18px] w-[18px]" />
         </button>
-        <button
-          type="button"
-          onClick={onOpenAdvanced}
-          aria-label="More"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60"
-          title="Templates, schedule, variables"
-        >
-          <MoreHorizontal className="h-[18px] w-[18px]" />
-        </button>
+        <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="More"
+              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60"
+            >
+              <MoreHorizontal className="h-[18px] w-[18px]" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" sideOffset={6} className="w-56 p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMoreOpen(false);
+                onClose();
+                navigate(`/crm/chats/${contact.id}`);
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
+            >
+              <MessagesSquare className="h-4 w-4 text-primary" />
+              <span className="flex-1">Open full conversation</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMoreOpen(false);
+                onOpenAdvanced();
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
+            >
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
+              <span className="flex-1">Templates, schedule, variables</span>
+            </button>
+          </PopoverContent>
+        </Popover>
       </header>
 
       {/* Channel toggle — slim chip row, only shown when WhatsApp is an option */}
