@@ -530,106 +530,112 @@ export function LeftSidebar({
         )}
       </div>
 
-      {/* Lead Type */}
-      <div className="space-y-2">
-        <SectionHeader>Lead Type</SectionHeader>
-        {(() => {
-          const selected: string[] = leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : [];
-          if (isMobile) {
+      {/* Categorization — Lead Type / Tags / Projects in a single divided card */}
+      <div className="space-y-3">
+        <SectionHeader>Categorization</SectionHeader>
+        <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border/60">
+          {/* Lead Type */}
+          {(() => {
+            const selected: string[] = leadTypesArr.length ? leadTypesArr : contact.lead_type ? [contact.lead_type] : [];
+            if (isMobile) {
+              return (
+                <MobileEditRow
+                  label="Lead Type"
+                  value={selected.length ? selected.map(v => LEAD_TYPE_LABELS[v] ?? v).join(', ') : ''}
+                  placeholder="Set lead type"
+                  onClick={() => setDrawer('lead_type')}
+                />
+              );
+            }
+            const libMap = new Map<string, { label: string; count: number }>();
+            leadTypeLib.forEach(l => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
+            LEAD_TYPES.forEach(t => {
+              if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { label: t, count: 0 });
+            });
+            const merged = Array.from(libMap.values()).sort((a, b) => b.count - a.count);
             return (
-              <MobileEditRow
-                label="Selected"
-                value={selected.length ? selected.map(v => LEAD_TYPE_LABELS[v] ?? v).join(', ') : ''}
-                placeholder="Set lead type"
-                onClick={() => setDrawer('lead_type')}
-              />
+              <div className="px-3 py-2.5 space-y-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">Lead Type</span>
+                <InlineLibraryPicker
+                  selected={selected}
+                  library={merged}
+                  onChange={(next) => {
+                    updateContact.mutate({
+                      id: contact.id,
+                      updates: { lead_types: next, lead_type: next[0] ?? null },
+                      oldValues: { lead_types: selected, lead_type: contact.lead_type },
+                    });
+                  }}
+                  onCreate={(name) => createLeadType.mutate(name)}
+                  renderLabel={(v) => LEAD_TYPE_LABELS[v] ?? v}
+                  variant="primary"
+                  placeholder="Search or add lead type…"
+                  emptyText="No lead types yet"
+                />
+              </div>
             );
-          }
-          const libMap = new Map<string, { label: string; count: number }>();
-          leadTypeLib.forEach(l => libMap.set(l.name.toLowerCase(), { label: l.name, count: l.usage_count }));
-          LEAD_TYPES.forEach(t => {
-            if (!libMap.has(t.toLowerCase())) libMap.set(t.toLowerCase(), { label: t, count: 0 });
-          });
-          const merged = Array.from(libMap.values()).sort((a, b) => b.count - a.count);
-          return (
-            <InlineLibraryPicker
-              selected={selected}
-              library={merged}
-              onChange={(next) => {
-                updateContact.mutate({
-                  id: contact.id,
-                  updates: { lead_types: next, lead_type: next[0] ?? null },
-                  oldValues: { lead_types: selected, lead_type: contact.lead_type },
-                });
-              }}
-              onCreate={(name) => createLeadType.mutate(name)}
-              renderLabel={(v) => LEAD_TYPE_LABELS[v] ?? v}
-              variant="primary"
-              placeholder="Search or add lead type…"
-              emptyText="No lead types yet"
+          })()}
+
+          {/* Tags */}
+          {isMobile ? (
+            <MobileEditRow
+              label="Tags"
+              value={tags.length ? tags.join(', ') : ''}
+              placeholder="Add tags"
+              onClick={() => setDrawer('tags')}
             />
-          );
-        })()}
+          ) : (
+            <div className="px-3 py-2.5 space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">Tags</span>
+              <InlineLibraryPicker
+                selected={tags}
+                library={tagLib.map(t => ({ label: t.name, count: t.usage_count }))}
+                onChange={(next) => save('tags', next)}
+                onCreate={(name) => createTag.mutate(name)}
+                placeholder="Search or add tag…"
+                emptyText="No tags yet"
+              />
+            </div>
+          )}
+
+          {/* Projects */}
+          {isMobile ? (
+            <MobileEditRow
+              label="Projects"
+              value={projects.length ? projects.join(', ') : ''}
+              placeholder="Add projects"
+              onClick={() => setDrawer('projects')}
+            />
+          ) : (
+            <div className="px-3 py-2.5 space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">Projects</span>
+              <InlineLibraryPicker
+                selected={projects}
+                library={projectLib.map(p => ({ label: p.name, count: p.usage_count }))}
+                onChange={(next) => {
+                  updateContact.mutate({
+                    id: contact.id,
+                    updates: { projects: next, project: next[0] ?? null },
+                    oldValues: { projects: contact.projects ?? [], project: contact.project },
+                  });
+                }}
+                onCreate={(name) => createProject.mutate(name)}
+                placeholder="Search or add project…"
+                emptyText="No projects yet"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Tags */}
-      <div className="space-y-2.5">
-        <SectionHeader>Tags</SectionHeader>
-        {isMobile ? (
-          <MobileEditRow
-            label="Selected"
-            value={tags.length ? tags.join(', ') : ''}
-            placeholder="Add tags"
-            onClick={() => setDrawer('tags')}
-          />
-        ) : (
-          <InlineLibraryPicker
-            selected={tags}
-            library={tagLib.map(t => ({ label: t.name, count: t.usage_count }))}
-            onChange={(next) => save('tags', next)}
-            onCreate={(name) => createTag.mutate(name)}
-            placeholder="Search or add tag…"
-            emptyText="No tags yet"
-          />
-        )}
-      </div>
-
-      {/* Projects */}
-      <div className="space-y-2.5">
-        <SectionHeader>Projects</SectionHeader>
-        {isMobile ? (
-          <MobileEditRow
-            label="Selected"
-            value={projects.length ? projects.join(', ') : ''}
-            placeholder="Add projects"
-            onClick={() => setDrawer('projects')}
-          />
-        ) : (
-          <InlineLibraryPicker
-            selected={projects}
-            library={projectLib.map(p => ({ label: p.name, count: p.usage_count }))}
-            onChange={(next) => {
-              updateContact.mutate({
-                id: contact.id,
-                updates: { projects: next, project: next[0] ?? null },
-                oldValues: { projects: contact.projects ?? [], project: contact.project },
-              });
-            }}
-            onCreate={(name) => createProject.mutate(name)}
-            placeholder="Search or add project…"
-            emptyText="No projects yet"
-          />
-        )}
-      </div>
-
-      {/* Co-Buyer */}
-      <div className="space-y-2.5">
+      {/* Family Member / Co-Buyer — own divided card */}
+      <div className="space-y-3">
         <button onClick={() => setCoBuyerOpen(!coBuyerOpen)} className="flex items-center justify-between w-full">
           <SectionHeader>{hasCoBuyer ? 'Co-Buyer' : 'Family Member'}</SectionHeader>
           {coBuyerOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
         {coBuyerOpen && (
-          <div className="space-y-px">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border/60 [&>*]:px-3">
             {isMobile ? (
               <>
                 <MobileEditRow label="Name" value={contact.co_buyer_name || ''} onClick={() => setDrawer('co_buyer_name')} />
