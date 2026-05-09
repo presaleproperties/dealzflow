@@ -43,6 +43,8 @@ export const ResponsiveDialogContent = React.forwardRef<
 
     const root = document.documentElement;
 
+    let frame = 0;
+
     const publishKeyboardState = () => {
       const viewport = window.visualViewport;
       const visualHeight = viewport?.height ?? window.innerHeight;
@@ -62,12 +64,18 @@ export const ResponsiveDialogContent = React.forwardRef<
       else root.removeAttribute('data-keyboard-open');
     };
 
+    const schedulePublishKeyboardState = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(publishKeyboardState);
+    };
+
     publishKeyboardState();
-    // Only listen to `resize` — `scroll` on visualViewport fires constantly
-    // during iOS's keyboard animation and was the source of the shake.
-    window.visualViewport?.addEventListener('resize', publishKeyboardState);
+    window.visualViewport?.addEventListener('resize', schedulePublishKeyboardState);
+    window.visualViewport?.addEventListener('scroll', schedulePublishKeyboardState);
     return () => {
-      window.visualViewport?.removeEventListener('resize', publishKeyboardState);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.visualViewport?.removeEventListener('resize', schedulePublishKeyboardState);
+      window.visualViewport?.removeEventListener('scroll', schedulePublishKeyboardState);
       root.removeAttribute('data-keyboard-open');
       root.style.removeProperty('--keyboard-inset-bottom');
       root.style.removeProperty('--composer-viewport-top');
@@ -90,10 +98,10 @@ export const ResponsiveDialogContent = React.forwardRef<
           side="bottom"
           data-mobile-drawer={isDrawer ? 'true' : undefined}
           className={cn(
-            'p-0 inset-x-0 bottom-auto top-[var(--composer-viewport-top,0px)] max-h-none h-[var(--composer-viewport-height,100dvh)] w-screen rounded-none border-0 flex flex-col',
+            'p-0 inset-x-0 top-0 bottom-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col overflow-hidden',
             className,
           )}
-          style={style}
+          style={{ top: 0, bottom: 0, height: '100dvh', maxHeight: 'none', ...style }}
           {...(rest as any)}
         >
           {children}
