@@ -743,13 +743,13 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
               keyboard pushes the dialog up. */}
           <DialogHeader
-            className="lg:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            className="lg:hidden px-1.5 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
             style={{ paddingTop: '0.375rem', paddingBottom: '0.375rem' }}
           >
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-3 py-1.5 rounded-md min-h-[34px] text-left"
+              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-2.5 py-1.5 rounded-md min-h-[34px] text-left"
               disabled={isPending}
               aria-label="Close composer"
             >
@@ -758,7 +758,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             <DialogTitle className="text-[13.5px] font-semibold tracking-tight text-foreground truncate">
               {isMass ? `Mass · ${allRecipients.length}` : 'New Message'}
             </DialogTitle>
-            <span className="w-[64px] shrink-0" aria-hidden />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!canSend || isPending}
+              aria-label="Send"
+              className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
+            >
+              {isPending ? (
+                <Loader2 className="h-[14px] w-[14px] animate-spin" />
+              ) : (
+                <Send className="h-[14px] w-[14px]" />
+              )}
+              <span className="leading-none">{isPending ? 'Sending' : isMass ? `Send ${allRecipients.length}` : 'Send'}</span>
+            </button>
           </DialogHeader>
 
           {/* (Mobile sub-header removed — the To row already names the recipient,
