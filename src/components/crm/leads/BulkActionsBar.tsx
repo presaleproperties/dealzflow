@@ -141,7 +141,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
             if (!o && pendingTags.length > 0) {
               bulkAddTags.mutate({ ids: selectedIds, tags: pendingTags });
               setPendingTags([]);
-              onClearSelection();
+              // Keep selection so the user can chain more updates on the same set.
             } else if (!o) {
               setPendingTags([]);
             }
