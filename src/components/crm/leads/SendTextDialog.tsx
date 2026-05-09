@@ -352,7 +352,10 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         <>
         {/* Header — title + channel toggle + close. Drag handle (rendered by
             ResponsiveDialog wrapper) sits above this on mobile. */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-8 h-11 sm:h-14 border-b shrink-0">
+        <div
+          className="flex items-center justify-between gap-3 px-4 sm:px-8 sm:h-14 border-b shrink-0 bg-background/95 backdrop-blur-md"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '6px', minHeight: '44px' }}
+        >
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-[14px] sm:text-base font-semibold tracking-tight truncate">
               {isMass ? `Mass ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'} · ${reachable.length}` : `Send ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'}`}
@@ -691,7 +694,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={`Write your message to ${contact.first_name || 'this lead'}…`}
                 maxLength={1600}
-                className="min-h-[180px] max-h-[32dvh] sm:min-h-[260px] sm:max-h-none resize-none overflow-y-auto leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
+                className="min-h-[140px] sm:min-h-[260px] max-h-[40dvh] sm:max-h-none resize-none overflow-y-auto leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
               />
               <div className="absolute bottom-2 right-3 flex items-center gap-2 text-[11px] text-muted-foreground pointer-events-none">
                 <span className="font-mono">{preview.length}/1600</span>
@@ -732,7 +735,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         {/* Footer — pinned, safe-area aware, clears the floating bottom-nav on mobile */}
         <div
           className="flex items-center justify-end gap-2 px-4 sm:px-8 min-h-14 sm:h-16 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0 pt-2 sm:pt-0"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
+          style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 8px)' }}
         >
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button

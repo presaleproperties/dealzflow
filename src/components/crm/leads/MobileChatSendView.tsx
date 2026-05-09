@@ -108,10 +108,12 @@ export function MobileChatSendView({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-background">
-      {/* Chat header — Messages-app style: back, avatar+name centred, call/more on right */}
+      {/* Chat header — Messages-app style: back, avatar+name centred, call/more on right.
+          Uses real safe-area-top so the avatar can never collide with the iOS notch /
+          Dynamic Island when the drawer reaches its top clearance. */}
       <header
-        className="flex items-center gap-2 px-2 border-b border-border/40 shrink-0"
-        style={{ paddingTop: '0.375rem', paddingBottom: '0.375rem' }}
+        className="flex items-center gap-2 px-2 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '6px' }}
       >
         <button
           type="button"
@@ -284,7 +286,7 @@ export function MobileChatSendView({
       {/* iMessage-style composer — pinned to bottom */}
       <div
         className="shrink-0 border-t border-border/40 bg-background/95 backdrop-blur-md px-2 pt-2 flex items-end gap-1.5"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
+        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 6px)' }}
       >
         <AttachMenu
           variant="icon"

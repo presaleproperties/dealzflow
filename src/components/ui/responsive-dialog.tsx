@@ -39,7 +39,7 @@ export const ResponsiveDialogContent = React.forwardRef<
   const isDrawer = classNameString.includes('mobile-fullbleed') || classNameString.includes('mobile-drawer');
   const isTrulyFullScreen = classNameString.includes('mobile-truly-fullscreen');
   const [drawerViewportStyle, setDrawerViewportStyle] = React.useState<React.CSSProperties>({
-    top: '60px',
+    top: 'max(env(safe-area-inset-top, 0px), 8px)',
     bottom: '0px',
     height: 'auto',
     maxHeight: 'none',
@@ -48,30 +48,61 @@ export const ResponsiveDialogContent = React.forwardRef<
   React.useEffect(() => {
     if (!isMobile || !isDrawer || isTrulyFullScreen || typeof window === 'undefined') return;
 
+    let raf = 0;
+    const root = document.documentElement;
+
     const updateViewportVars = () => {
       const viewport = window.visualViewport;
-      const visualTop = viewport?.offsetTop ?? 0;
       const visualHeight = viewport?.height ?? window.innerHeight;
-      const visualBottom = visualTop + visualHeight;
-      const keyboardBottom = Math.max(0, window.innerHeight - visualBottom);
-      const topClearance = Math.max(60, visualTop + 8);
+      const visualOffsetTop = viewport?.offsetTop ?? 0;
+      // Height of on-screen keyboard / soft input panel.
+      const keyboardBottom = Math.max(0, window.innerHeight - visualHeight - visualOffsetTop);
+      const keyboardOpen = keyboardBottom > 60;
 
+      // Top clearance: real safe-area inset (notch / Dynamic Island) + a hair,
+      // never less than 8px so the drawer never tucks behind the status bar.
+      // We use the CSS env value via a calc string so it auto-recalculates if
+      // the device rotates.
       setDrawerViewportStyle({
-        top: `${topClearance}px`,
+        top: 'max(env(safe-area-inset-top, 0px), 8px)',
         bottom: `${keyboardBottom}px`,
         height: 'auto',
         maxHeight: 'none',
       });
+
+      // Broadcast keyboard state so footers / sticky bars can drop their
+      // safe-area padding when the keyboard already covers it.
+      if (keyboardOpen) {
+        root.setAttribute('data-keyboard-open', 'true');
+      } else {
+        root.removeAttribute('data-keyboard-open');
+      }
+
+      // CRITICAL iOS FIX: when an input gains focus, iOS Safari scrolls the
+      // *layout* viewport up to keep the input visible — which slides our
+      // position:fixed drawer up *with* the page, tucking the header behind
+      // the status bar / notch. Pinning window scroll to 0 every time the
+      // visual viewport changes defeats that and keeps the drawer anchored.
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+
+    const onChange = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateViewportVars);
     };
 
     updateViewportVars();
-    window.visualViewport?.addEventListener('resize', updateViewportVars);
-    window.visualViewport?.addEventListener('scroll', updateViewportVars);
-    window.addEventListener('resize', updateViewportVars);
+    window.visualViewport?.addEventListener('resize', onChange);
+    window.visualViewport?.addEventListener('scroll', onChange);
+    window.addEventListener('resize', onChange);
+    window.addEventListener('scroll', onChange, { passive: true });
     return () => {
-      window.visualViewport?.removeEventListener('resize', updateViewportVars);
-      window.visualViewport?.removeEventListener('scroll', updateViewportVars);
-      window.removeEventListener('resize', updateViewportVars);
+      cancelAnimationFrame(raf);
+      window.visualViewport?.removeEventListener('resize', onChange);
+      window.visualViewport?.removeEventListener('scroll', onChange);
+      window.removeEventListener('resize', onChange);
+      window.removeEventListener('scroll', onChange);
+      root.removeAttribute('data-keyboard-open');
     };
   }, [isMobile, isDrawer, isTrulyFullScreen]);
 
