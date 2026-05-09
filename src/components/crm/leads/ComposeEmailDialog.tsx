@@ -744,7 +744,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               keyboard pushes the dialog up. */}
           <DialogHeader
             className="lg:hidden px-1.5 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
-            style={{ paddingTop: '0.375rem', paddingBottom: '0.375rem' }}
+            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '6px' }}
           >
             <button
               type="button"
