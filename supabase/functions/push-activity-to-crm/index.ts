@@ -71,10 +71,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonResp({ error: "method_not_allowed" }, 405);
 
-  const provided = req.headers.get("x-bridge-secret") ?? "";
-  if (!BRIDGE_SECRET || provided !== BRIDGE_SECRET) {
-    return jsonResp({ error: "unauthorized" }, 401);
-  }
+  const authFail = requireBridgeSecret(req);
+  if (authFail) return authFail;
 
   let body: any;
   try { body = await req.json(); } catch { return jsonResp({ error: "invalid_json" }, 400); }
