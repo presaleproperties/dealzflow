@@ -100,9 +100,13 @@ export function useHotLeadActivityToasts() {
             [contact.first_name, contact.last_name].filter(Boolean).join(" ") ||
             "A lead";
           const phrase = TYPE_PHRASE[row.type] ?? `triggered ${row.type}`;
-          const projectPart = row.project_slug ? ` about ${row.project_slug}` : "";
+          const meta = row.metadata ?? {};
+          const projectName = meta.project_name || meta.property_name || row.project_slug;
+          const projectPart = projectName ? ` · ${projectName}` : "";
+          const visitNum = Number(meta.visit_number ?? 0);
+          const visitPart = visitNum ? ` (visit #${visitNum})` : "";
 
-          toast(`🔥 ${fullName} ${phrase}${projectPart}`, {
+          toast(`🔥 ${fullName} ${phrase}${visitPart}${projectPart}`, {
             action: {
               label: "Open lead",
               onClick: () => {
