@@ -4,7 +4,7 @@
 // and a shared `x-bridge-secret` header (app-level auth).
 
 const BRIDGE_URL = Deno.env.get("PRESALE_BRIDGE_URL");
-const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET");
+const BRIDGE_SECRET = Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET");
 const ANON_KEY = Deno.env.get("PRESALE_ANON_KEY");
 
 export type BridgeEndpoint =
