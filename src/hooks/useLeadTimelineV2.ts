@@ -88,18 +88,15 @@ export function useLeadTimelineV2({
     };
 
     const filter = `contact_id=eq.${contactId}`;
+    // Only subscribe to tables that exist AND are in the supabase_realtime publication.
     const tables: { table: string; events: ('INSERT' | 'UPDATE')[] }[] = [
       { table: 'crm_activity_events', events: ['INSERT'] },
       { table: 'crm_messages', events: ['INSERT'] },
-      { table: 'crm_email_log', events: ['INSERT'] },
-      { table: 'crm_email_events', events: ['INSERT'] },
-      { table: 'crm_sms', events: ['INSERT', 'UPDATE'] },
-      { table: 'crm_calls', events: ['INSERT'] },
-      { table: 'crm_contact_forms', events: ['INSERT'] },
+      { table: 'crm_email_log', events: ['INSERT', 'UPDATE'] },
+      { table: 'crm_sms_log', events: ['INSERT', 'UPDATE'] },
+      { table: 'crm_lead_behavior_forms', events: ['INSERT'] },
       { table: 'crm_showings', events: ['INSERT', 'UPDATE'] },
       { table: 'crm_tasks', events: ['INSERT', 'UPDATE'] },
-      { table: 'crm_calendar_events', events: ['INSERT'] },
-      { table: 'crm_deals', events: ['INSERT', 'UPDATE'] },
     ];
 
     let ch = supabase.channel(`lead-timeline-${contactId}`);
