@@ -97,7 +97,12 @@ export function MobileChatSendView({
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  const [taHeight, setTaHeight] = useState(36);
+  // Single-line baseline (~36px) → grows one line at a time → caps at ~5 lines
+  // (132px) and starts scrolling internally instead of pushing the chat up.
+  const TA_MIN = 36;
+  const TA_MAX = 132;
+  const [taHeight, setTaHeight] = useState(TA_MIN);
+  const [taScrollable, setTaScrollable] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Show oldest → newest in the scroll view (chat order).
@@ -129,14 +134,21 @@ export function MobileChatSendView({
     return () => window.clearTimeout(id);
   }, [isOptedOut]);
 
-  // Auto-grow textarea up to ~5 lines.
+  // Auto-grow textarea: reset → measure scrollHeight → clamp to [MIN, MAX].
+  // Once content exceeds MAX, the textarea itself becomes scrollable so the
+  // chat surface above is never pushed upward.
   useEffect(() => {
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = 'auto';
-    const next = Math.min(140, Math.max(36, ta.scrollHeight));
+    const measured = ta.scrollHeight;
+    const next = Math.min(TA_MAX, Math.max(TA_MIN, measured));
     ta.style.height = `${next}px`;
     setTaHeight(next);
+    setTaScrollable(measured > TA_MAX);
+    // Keep the latest message visible as the composer grows.
+    const sc = scrollRef.current;
+    if (sc) sc.scrollTop = sc.scrollHeight;
   }, [body]);
 
   // Cmd/Ctrl+Enter from anywhere in the composer triggers send.
@@ -379,8 +391,8 @@ export function MobileChatSendView({
             autoCapitalize="sentences"
             autoCorrect="on"
             spellCheck
-            style={{ height: taHeight }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px] focus-visible:outline-none"
+            style={{ height: taHeight, overflowY: taScrollable ? 'auto' : 'hidden' }}
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 focus-visible:outline-none"
           />
           {showSendBtn && (
             <button
