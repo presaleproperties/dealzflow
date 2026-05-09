@@ -366,7 +366,7 @@ export async function processPresaleActivity(
         first_name, last_name,
         email: leadEmail,
         phone: leadPhone,
-        presale_user_id: visitorId,
+        presale_user_id: await safePresaleUserId(supabase, visitorId, leadEmail, leadPhone),
         source: "PresaleProperties.com",
         contact_type: personaType,
         notes: noteAppendix,
@@ -408,7 +408,7 @@ export async function processPresaleActivity(
         first_name, last_name,
         email,
         phone,
-        presale_user_id: visitorId,
+        presale_user_id: await safePresaleUserId(supabase, visitorId, email, phone),
         source: "PresaleProperties.com",
         status: "New Lead",
         lead_type: "Pre-Sale",
@@ -428,11 +428,14 @@ export async function processPresaleActivity(
 
   // Backfill presale_user_id on stitched contact
   if (contact && visitorId) {
+    const stitchId = await safePresaleUserId(supabase, visitorId, email, phone, contact.id);
+    if (stitchId) {
     await supabase
       .from("crm_contacts")
-      .update({ presale_user_id: visitorId })
+      .update({ presale_user_id: stitchId })
       .eq("id", contact.id)
       .is("presale_user_id", null);
+    }
   }
 
   // ── Insert activity (always, except dedupe behavior_batch) ──────────────
