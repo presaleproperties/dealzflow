@@ -889,7 +889,7 @@ export function LeadsTable({
             </colgroup>
             <thead>
               <tr className="border-b border-border bg-muted/20">
-                <th className="w-10 px-3 py-3.5"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
+                <th className="w-10 px-3 py-3.5 text-left align-middle"><Checkbox checked={allSelected} onCheckedChange={toggleAll} /></th>
                 {columns.map(col => (
                   <ResizableHeaderCell
                     key={col.key}
