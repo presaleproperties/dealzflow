@@ -6,6 +6,7 @@ import { NextBestActionCard } from '@/components/crm/leads/NextBestActionCard';
 import { AtAGlanceCard } from '@/components/crm/leads/AtAGlanceCard';
 import { EngagementTabs } from '@/components/crm/leads/EngagementTabs';
 import { UpcomingMini } from '@/components/crm/leads/UpcomingMini';
+import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 
