@@ -92,6 +92,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
   const [uploading, setUploading] = useState(false);
   const composerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [forceAdvanced, setForceAdvanced] = useState(false);
+  const isMobile = useIsMobile();
 
   // Reset on close; sync channel with `initialChannel` on open
   useEffect(() => {
