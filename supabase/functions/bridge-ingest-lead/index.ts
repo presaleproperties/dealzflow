@@ -58,6 +58,70 @@ async function pickAssignee(supabase: any, agentSlug?: string | null): Promise<s
   return candidates[0];
 }
 
+// Resolve the agent record (id/email/phone/photo/calendly) so the website can
+// render the assigned-agent card immediately after submission.
+async function loadAgentEnvelope(supabase: any, displayName: string) {
+  if (!displayName) return null;
+  const { data } = await supabase
+    .from("crm_team")
+    .select("id, display_name, email, phone, avatar_url, calendly_url, presale_email")
+    .eq("display_name", displayName)
+    .maybeSingle();
+  if (!data) return { id: null, name: displayName, email: null, phone: null, photo_url: null, calendly_url: null };
+  return {
+    id: data.id,
+    name: data.display_name,
+    email: data.presale_email || data.email || null,
+    phone: data.phone || null,
+    photo_url: data.avatar_url || null,
+    calendly_url: data.calendly_url || null,
+  };
+}
+
+// Build the tag list per Presale Ingest Mapping rule:
+//   presale-website + form:<type> + deck:<name> + (caller tags) — always append.
+function buildTags(existingTags: string[] | null, leadTags: string[] | undefined, meta: any): string[] {
+  const out = new Set<string>(existingTags ?? []);
+  out.add("presale-website");
+  for (const t of leadTags ?? []) if (t) out.add(t);
+  const formType = meta?.form_type;
+  if (typeof formType === "string" && formType.trim()) out.add(`form:${formType.trim()}`);
+  const deckName = meta?.pitch_deck_name ?? meta?.deck_name ?? meta?.deck?.name;
+  if (typeof deckName === "string" && deckName.trim()) out.add(`deck:${deckName.trim()}`);
+  // Hot triggers from this single payload (floorplan download or deck revisit)
+  const beh: any = meta?.behavior ?? null;
+  if (Array.isArray(beh?.engagement)) {
+    for (const e of beh.engagement) {
+      const t = (e?.event_type ?? "").toLowerCase();
+      if (t === "floorplan_download") out.add("hot");
+      if ((t === "deck_visit" || t === "deck_unlock") && (e?.visit_number ?? 0) >= 2) out.add("hot");
+    }
+  }
+  return Array.from(out);
+}
+
+// Persona → contact_type (buyer/investor/realtor/developer)
+function personaToContactType(meta: any): string | null {
+  const p = (meta?.persona ?? "").toString().trim().toLowerCase();
+  return ["buyer", "investor", "realtor", "developer"].includes(p) ? p : null;
+}
+
+// Compose a structured note from granular metadata (lead_source, form_type,
+// utm, landing_page, free-text message). Appended — never overwrites existing notes.
+function buildNoteAppendix(meta: any): string | null {
+  if (!meta || typeof meta !== "object") return null;
+  const lines: string[] = [];
+  const ts = new Date().toISOString();
+  lines.push(`[Presale form @ ${ts}]`);
+  if (meta.form_type) lines.push(`Form: ${meta.form_type}`);
+  if (meta.lead_source) lines.push(`Lead source: ${meta.lead_source}`);
+  if (meta.landing_page) lines.push(`Landing: ${meta.landing_page}`);
+  const utm = [meta.utm_source, meta.utm_medium, meta.utm_campaign].filter(Boolean).join(" / ");
+  if (utm) lines.push(`UTM: ${utm}`);
+  if (typeof meta.message === "string" && meta.message.trim()) lines.push(`Message: ${meta.message.trim()}`);
+  return lines.length > 1 ? lines.join("\n") : null;
+}
+
 
 interface BehaviorPayload {
   views?: Array<{ property_id?: string; property_name?: string; property_url?: string; action?: string; viewed_at?: string; metadata?: any }>;
@@ -162,17 +226,30 @@ Deno.serve(async (req) => {
     let contactId: string;
     const incomingProjects = L.projects?.length ? L.projects : (L.project ? [L.project] : []);
 
+    // Build merge metadata once (used for tags/notes/persona on both branches)
+    const meta = { ...(L.metadata || {}), behavior: body.behavior } as any;
+    const personaType = personaToContactType(meta);
+    const noteAppendix = buildNoteAppendix(meta);
+
     if (existing) {
       // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
-      const newTags = Array.from(new Set([...(existing.tags || []), ...(L.tags || []), "presale-website"]));
+      const newTags = buildTags(existing.tags, L.tags, meta);
       const newProjects = Array.from(new Set([...(existing.projects || []), ...incomingProjects]));
       const newCities = Array.from(new Set([...(existing.looking_to_buy_in || []), ...(L.looking_to_buy_in || [])]));
       const mergedMeta = { ...(existing.presale_metadata || {}), ...(L.metadata || {}) };
+      const mergedNotes = noteAppendix
+        ? [existing.notes, noteAppendix].filter((s: any) => s && String(s).trim()).join("\n\n")
+        : existing.notes;
+      const isHot = newTags.includes("hot");
 
       await supabase.from("crm_contacts").update({
         first_name: existing.first_name || L.first_name || "Lead",
         last_name: existing.last_name || L.last_name || "",
         presale_user_id: L.presale_user_id ?? undefined,
+        // Source rule: ALWAYS PresaleProperties.com for inbound presale leads
+        source: "PresaleProperties.com",
+        contact_type: personaType ?? undefined,
+        notes: mergedNotes ?? undefined,
         tags: newTags,
         projects: newProjects,
         looking_to_buy_in: newCities,
@@ -189,27 +266,28 @@ Deno.serve(async (req) => {
         postal_code: L.postal_code ?? undefined,
         marketing_consent: L.marketing_consent ?? undefined,
         signup_completed_at: L.signup_completed_at ?? undefined,
-        campaign_source: L.campaign_source ?? undefined,
-        referral_source: L.referral_source ?? undefined,
         presale_metadata: mergedMeta,
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
         last_touch_at: new Date().toISOString(),
         last_touch_type: "presale_signup",
+        ...(isHot ? { lead_tier: "hot" } : {}),
       }).eq("id", existing.id);
 
       contactId = existing.id;
     } else {
       const assignee = await pickAssignee(supabase, L.agent_slug);
+      const newTags = buildTags(null, L.tags, meta);
+      const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
         last_name: L.last_name || "Lead",
         email,
         phone: L.phone || null,
         presale_user_id: L.presale_user_id || null,
-        source: L.source || "presale-website",
-        campaign_source: L.campaign_source || null,
-        referral_source: L.referral_source || null,
+        source: "PresaleProperties.com",
+        contact_type: personaType,
+        notes: noteAppendix,
         project: incomingProjects[0] || null,
         projects: incomingProjects,
         looking_to_buy_in: L.looking_to_buy_in || [],
@@ -227,13 +305,14 @@ Deno.serve(async (req) => {
         marketing_consent: L.marketing_consent ?? false,
         signup_completed_at: L.signup_completed_at || null,
         presale_metadata: L.metadata || {},
-        tags: Array.from(new Set([...(L.tags || []), "presale-website"])),
+        tags: newTags,
         status: "New Lead",
         lead_type: "Pre-Sale",
+        lead_tier: isHot ? "hot" : null,
         assigned_to: assignee,
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
-      }).select("id").single();
+      }).select("id, assigned_to").single();
 
       if (insErr) throw insErr;
       contactId = created.id;
@@ -295,7 +374,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, contact_id: contactId, action: existing ? "merged" : "created", event_id: eventId }), {
+    // Resolve assigned_agent envelope so Presale can render the agent card
+    const { data: contactRow } = await supabase
+      .from("crm_contacts")
+      .select("assigned_to")
+      .eq("id", contactId)
+      .maybeSingle();
+    const assignedAgent = await loadAgentEnvelope(supabase, contactRow?.assigned_to ?? "");
+
+    return new Response(JSON.stringify({
+      ok: true,
+      contact_id: contactId,
+      crm_contact_id: contactId,
+      action: existing ? "merged" : "created",
+      event_id: eventId,
+      assigned_agent: assignedAgent,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
