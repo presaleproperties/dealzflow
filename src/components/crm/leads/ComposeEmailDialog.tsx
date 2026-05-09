@@ -16,10 +16,8 @@ import {
   Loader2,
   Monitor,
   Smartphone,
-  ChevronDown,
   Save,
   Mail,
-  User,
   Inbox,
   X,
   Search,
@@ -135,10 +133,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   // Inline signature editor state
   const [editingSignature, setEditingSignature] = useState(false);
   const [sigDraft, setSigDraft] = useState('');
-  // Mobile-only: collapse the inline signature preview by default so the
-  // typing area dominates the screen. Tap "Show signature" to reveal.
-  const [showSignaturePreviewMobile, setShowSignaturePreviewMobile] = useState(false);
-
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
   const [tplName, setTplName] = useState('');
@@ -146,7 +140,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   const [previewTpl, setPreviewTpl] = useState<AnyTpl | null>(null);
   const [varPickerOpen, setVarPickerOpen] = useState(false);
   const [varSearch, setVarSearch] = useState('');
-  const autoSignaturePreviewedRef = useRef(false);
 
   /* Load recent template IDs from local storage when dialog opens */
   useEffect(() => {
@@ -211,8 +204,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       setSelectedSignatureId(null);
       setEditingSignature(false);
       setSigDraft('');
-      autoSignaturePreviewedRef.current = false;
-      setShowSignaturePreviewMobile(false);
     }
   }, [open]);
 
@@ -607,35 +598,96 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
     }
   };
 
-  /* Compact Templates + Insert variable controls rendered in the editor toolbar.
-   * Hidden on mobile — the mobile sticky action bar at the bottom is the
-   * single source of truth for these actions to avoid duplication. */
+  const selectedSignature = selectedSignatureId
+    ? signatures.find((s) => s.id === selectedSignatureId)
+    : null;
+
+  const signatureLabel = appendSignature
+    ? (selectedSignature?.name ?? 'Signature')
+    : 'No signature';
+
+  /* Compact composer controls live in the rich-text toolbar on every viewport,
+     so mobile has no separate bottom action bar competing with the keyboard. */
   const composerActions = (
-    <div className="hidden lg:flex items-center gap-1">
+    <div className="flex items-center gap-0.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <AttachMenu
+        variant="icon"
         onFiles={(f) => handleAttachFiles(f)}
         uploading={uploading}
-        className="h-8 px-2 text-xs"
+        className="h-8 w-8 rounded-full hover:bg-muted/60 active:scale-95 transition-transform"
       />
       <Button
         type="button"
-        size="sm"
-        variant="ghost"
-        className="h-8 gap-1.5 px-2 text-xs"
-        onClick={() => setPickerOpen(true)}
+        size="icon"
+        variant={mode === 'preview' ? 'secondary' : 'ghost'}
+        className="h-8 w-8 rounded-full shrink-0"
+        onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
+        title="Preview"
+        aria-label="Preview"
       >
-        <FileText className="h-3.5 w-3.5" />
-        Templates
+        <Eye className="h-4 w-4" />
       </Button>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="h-8 w-8 rounded-full shrink-0"
+        onClick={() => setPickerOpen(true)}
+        title="Templates"
+        aria-label="Templates"
+      >
+        <FileText className="h-4 w-4" />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            size="icon"
+            variant={appendSignature ? 'secondary' : 'ghost'}
+            className="h-8 w-8 rounded-full shrink-0"
+            title={signatureLabel}
+            aria-label="Signature"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>Signature</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => setAppendSignature(false)}
+            className={!appendSignature ? 'bg-muted' : undefined}
+          >
+            No signature
+          </DropdownMenuItem>
+          {signatures.map((s) => (
+            <DropdownMenuItem
+              key={s.id}
+              onClick={() => {
+                setAppendSignature(true);
+                setSelectedSignatureId(s.id);
+              }}
+              className={appendSignature && selectedSignatureId === s.id ? 'bg-muted' : undefined}
+            >
+              <span className="truncate">{s.name}{s.is_default ? ' · default' : ''}</span>
+            </DropdownMenuItem>
+          ))}
+          {appendSignature && selectedSignature && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => insertSignature(selectedSignature.html, selectedSignature.name)}>
+                Insert inline
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Popover open={varPickerOpen} onOpenChange={(o) => { setVarPickerOpen(o); if (!o) setVarSearch(''); }}>
         <PopoverTrigger asChild>
-          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs">
-            <Variable className="h-3.5 w-3.5" />
-            Insert variable
-            <ChevronDown className="h-3 w-3" />
+          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full shrink-0" title="Insert variable" aria-label="Insert variable">
+            <Variable className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[420px] p-0 overflow-hidden">
+        <PopoverContent align="end" className="w-[min(420px,calc(100vw-24px))] p-0 overflow-hidden">
           <div className="px-3 py-2.5 border-b border-border bg-muted/30">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
               Merge variables
@@ -739,12 +791,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             </div>
           )}
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
-          {/* Mobile header — Apple Mail reply style: icon-only X (left), centered avatar +
-              title + sender email subtitle, icon-only Send paper-plane (right). Honors iOS
+          {/* Mobile header — native fixed bar: icon-only X (left), centered title,
+              icon-only Send paper-plane (right). Honors iOS
               safe-area-top so the row never collides with the status bar. */}
           {(() => {
-            const senderEmail = emailSettings?.reply_to ?? user?.email ?? '';
-            const senderInitial = (emailSettings?.sender_name?.[0] ?? senderEmail[0] ?? '?').toUpperCase();
             const headerTitle = isMass
               ? `Mass · ${allRecipients.length}`
               : (initialSubject ? 'Reply' : 'New Message');
@@ -752,39 +802,27 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               <DialogHeader
                 data-composer-header="true"
                 className="lg:hidden px-2 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-1"
-                style={{ paddingBottom: '6px' }}
+                style={{ paddingBottom: 0 }}
               >
                 <button
                   type="button"
                   onClick={() => onOpenChange(false)}
-                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60"
+                  className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full text-primary active:opacity-60"
                   disabled={isPending}
                   aria-label="Close composer"
                 >
                   <X className="h-[20px] w-[20px]" strokeWidth={2.25} />
                 </button>
-                <div className="flex-1 min-w-0 flex items-center justify-center gap-2 px-1">
-                  <div className="h-7 w-7 rounded-full bg-primary/15 text-primary text-[11px] font-semibold inline-flex items-center justify-center shrink-0">
-                    {senderInitial}
-                  </div>
-                  <div className="min-w-0 flex flex-col items-start leading-tight">
-                    <DialogTitle className="text-[14px] font-semibold tracking-tight text-foreground truncate max-w-[52vw]">
-                      {headerTitle}
-                    </DialogTitle>
-                    {senderEmail && (
-                      <span className="text-[11px] text-muted-foreground truncate max-w-[52vw]">
-                        {senderEmail}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                <DialogTitle className="flex-1 min-w-0 text-center text-[15px] font-semibold tracking-tight text-foreground truncate">
+                  {headerTitle}
+                </DialogTitle>
                 <button
                   type="button"
                   onClick={handleSend}
                   disabled={!canSend || isPending}
                   aria-label="Send"
                   className={cn(
-                    'shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full transition-all active:scale-95',
+                    'shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full transition-all active:scale-95',
                     canSend && !isPending ? 'text-primary' : 'text-muted-foreground/40',
                   )}
                 >
@@ -1188,66 +1226,6 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                       )}
                     />
                   </div>
-                )}
-              </div>
-
-              {/* Mobile mini action row — minimalist. Send lives in the top header,
-                  so this row only carries the signature picker + draft state.
-                  Padding is intentionally tight so the keyboard sits flush against it. */}
-              <div
-                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border-t border-border/40 bg-background/95 backdrop-blur-md shrink-0 transition-[padding] duration-150 ease-out"
-                style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 4px)' }}
-              >
-                <AttachMenu
-                  variant="icon"
-                  uploading={uploading}
-                  onFiles={(f) => handleAttachFiles(f)}
-                  className="h-8 w-8 rounded-full hover:bg-muted/60 active:scale-95 transition-transform"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen(true)}
-                  aria-label="Templates"
-                  className="shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/60 text-muted-foreground active:scale-95 transition-transform"
-                  title="Templates"
-                >
-                  <FileText className="h-[15px] w-[15px]" />
-                </button>
-                <div className="w-px h-4 bg-border/60" aria-hidden />
-                {/* Signature picker — native select with a visible chevron so it
-                    reads as interactive instead of dead text. */}
-                <div className="relative min-w-0 flex-1">
-                  <select
-                    value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === '__none__') {
-                        setAppendSignature(false);
-                      } else {
-                        setAppendSignature(true);
-                        setSelectedSignatureId(v || null);
-                      }
-                    }}
-                    className="w-full h-8 rounded-md bg-transparent border-0 pl-1 pr-5 text-[12px] font-medium text-muted-foreground focus:outline-none focus:text-foreground truncate appearance-none"
-                    aria-label="Signature"
-                    title="Signature"
-                  >
-                    <option value="__none__">No signature</option>
-                    {signatures.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}{s.is_default ? ' · default' : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
-                </div>
-                {savedAt && (
-                  <span
-                    className="shrink-0 text-[10.5px] text-muted-foreground/70 tabular-nums"
-                    title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}
-                  >
-                    Saved
-                  </span>
                 )}
               </div>
 

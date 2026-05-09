@@ -132,7 +132,7 @@ export function RichTextEditor({
   return (
     <div className="flex flex-col h-full min-h-0 lg:min-h-[320px] bg-background">
       {/* Toolbar — sits flush against the composer header above (no border-top, no rounded corners) */}
-      <div className="flex items-center gap-0.5 px-1 py-1.5 border-b border-border/60 bg-muted/20">
+      <div className="flex items-center gap-0.5 px-1 py-1.5 border-b border-border/60 bg-muted/20 overflow-hidden">
         <Button type="button" variant={editor.isActive('bold') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBold().run()}>
           <Bold className="w-4 h-4" />
         </Button>
@@ -160,7 +160,7 @@ export function RichTextEditor({
         {toolbarSlot && (
           <>
             <div className="w-px h-5 bg-border/70 mx-1" />
-            <div className="flex items-center gap-1 ml-auto">{toolbarSlot}</div>
+            <div className="flex items-center gap-1 ml-auto min-w-0">{toolbarSlot}</div>
           </>
         )}
       </div>
