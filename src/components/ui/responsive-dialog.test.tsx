@@ -142,9 +142,12 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       .toBe('0px');
 
     // ── 2. Keyboard OPENS ─────────────────────────────────────────────────
-    // iOS shrinks visualViewport.height AND scrolls the layout viewport up,
-    // surfaced as visualViewport.offsetTop > 0. Without the fix, the drawer
-    // would be dragged up by `offsetTop` and tuck behind the notch.
+    // We no longer rewrite the drawer's `top`/`bottom` per frame (that was
+    // the source of the iOS shake). Instead, the viewport meta's
+    // `interactive-widget=resizes-content` shrinks the layout viewport so a
+    // `fixed bottom: 0` drawer sits above the keyboard automatically. Our
+    // job is just to publish CSS vars + the `data-keyboard-open` flag so
+    // siblings (BottomNav, etc.) can react.
     vv.height = 420;
     vv.offsetTop = 120;
     await act(async () => {
@@ -152,12 +155,9 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // The keyboard-bottom math is `innerHeight - visualHeight - offsetTop`
-    // = 800 - 420 - 120 = 260. If `offsetTop` were ignored, this would be
-    // 380 — so a 260 here proves the visualViewport.offsetTop is being
-    // added back to the drawer's top edge (anti-drift).
-    expect(drawer!.style.bottom).toBe('260px');
+    expect(drawer!.style.bottom).toBe('0px');
     expect(document.documentElement.getAttribute('data-keyboard-open')).toBe('true');
+    // Math: innerHeight - visualHeight - offsetTop = 800 - 420 - 120 = 260
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
       .toBe('260px');
 
@@ -169,8 +169,6 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // Drift check: bottom is back to 0 with no leftover offset, the
-    // keyboard flag is cleared, and the CSS var is reset — no slow slide.
     expect(drawer!.style.bottom).toBe('0px');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
