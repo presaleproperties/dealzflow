@@ -911,11 +911,11 @@ export function LeadsTable({
                 return (
                   <tr key={contact.id}
                     style={{ height: 68 }}
-                    className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
+                    className={`group hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/[0.07] shadow-[inset_3px_0_0_hsl(var(--primary))]' : ''}`}
                     onMouseEnter={() => prefetchLead(contact.id)}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
                     <td className="px-3 py-3.5 align-middle" onClick={e => e.stopPropagation()}>
-                      <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
+                      <div className="flex items-center justify-center"><Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} /></div>
                     </td>
                     {columns.map(col => (
                       <td key={col.key} className="px-3 py-3.5 align-middle overflow-hidden">
