@@ -351,6 +351,17 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                 {pinnedNotes.map(note => {
                   const emailRow = emailById.get(note.id);
                   const smsRow = smsById.get(note.id);
+                  if (note.note_type === 'ai_summary') {
+                    const stale = (contact as any).ai_summary_stale === true;
+                    return (
+                      <AiSummaryCard
+                        key={note.id}
+                        note={note}
+                        contactId={contact.id}
+                        isStale={stale}
+                      />
+                    );
+                  }
                   if (emailRow) {
                     return (
                       <EmailNoteCard
