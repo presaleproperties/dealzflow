@@ -224,7 +224,7 @@ export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBar
 
       <EnrollInAutomationDialog
         open={showEnroll}
-        onOpenChange={(o) => { setShowEnroll(o); if (!o) onClearSelection(); }}
+        onOpenChange={(o) => { setShowEnroll(o); /* keep selection on close */ }}
         contactIds={selectedIds}
         contactNames={selectedContacts.map((c) => formatContactName(c.first_name, c.last_name))}
       />
