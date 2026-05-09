@@ -336,41 +336,25 @@ export function MobileChatSendView({
         </div>
       )}
 
-      {/* From / To info strip — hairline row above the composer, like the reference */}
-      <div className="shrink-0 px-3 py-1.5 border-t border-border/40 flex items-center gap-3 text-[11px] text-muted-foreground bg-background">
-        <span className="flex-1 min-w-0 flex items-baseline gap-1 truncate">
-          <span className="text-muted-foreground/60 uppercase tracking-wider text-[9.5px] font-semibold shrink-0">From</span>
-          <span className="text-foreground/80 font-medium tabular-nums truncate">
-            {fromNumber ? formatPhone(fromNumber) : 'Default'}
-          </span>
-        </span>
-        <span className="h-3 w-px bg-border shrink-0" aria-hidden />
-        <span className="flex-1 min-w-0 flex items-baseline gap-1 justify-end truncate">
-          <span className="text-muted-foreground/60 uppercase tracking-wider text-[9.5px] font-semibold shrink-0">To</span>
-          <span
-            className={cn(
-              'font-medium tabular-nums truncate',
-              isOptedOut ? 'text-destructive' : 'text-foreground/80',
-            )}
-          >
-            {isOptedOut && '⊘ '}{contact.phone ? formatPhone(contact.phone) : 'No number'}
-          </span>
-        </span>
-      </div>
+      {isOptedOut && (
+        <div className="shrink-0 px-3 py-1 text-[11px] text-destructive text-center bg-background">
+          ⊘ This number opted out
+        </div>
+      )}
 
-      {/* Composer — pill input with outboard "+" attach. Send arrow appears
+      {/* Composer — slim pill input with outboard "+" attach. Send arrow appears
           inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-1.5 flex items-end gap-2 transition-[padding] duration-150 ease-out"
-        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 6px)' }}
+        className="shrink-0 bg-background/95 backdrop-blur-md px-2 pt-1 flex items-end gap-1.5 transition-[padding] duration-150 ease-out"
+        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 4px)' }}
       >
         <AttachMenu
           variant="icon"
           uploading={uploading}
           onFiles={onFiles}
-          className="h-9 w-9 rounded-full border border-border/70 text-muted-foreground active:scale-95 transition-transform shrink-0"
+          className="h-8 w-8 rounded-full border border-border/60 text-muted-foreground active:scale-95 transition-transform shrink-0"
         />
-        <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/70 bg-muted/40 pl-4 pr-1 py-0.5">
+        <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/60 bg-muted/40 pl-3.5 pr-0.5 py-0">
           <textarea
             ref={taRef}
             value={body}
