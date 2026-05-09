@@ -1,93 +1,122 @@
-## Audit findings (what's broken today)
+## Unified Lead Timeline v2
 
-The current automations system looks polished but is largely **non-functional**:
+### Goal
+Make the lead detail page feel like HubSpot's contact timeline: one chronological feed of **every touchpoint ever**, fast, filterable, searchable, paginated, and inclusive of sources the current `LeadActivityTimeline` misses.
 
-1. **No enrollment engine.** Triggers `new_lead`, `status_change`, `tag_added`, `no_response` exist in the UI, but **nothing in the database or any edge function actually enrolls a lead** when those events happen. `process-automations` only ticks already-enrolled rows — but no row ever gets enrolled. So most automations never run.
-2. **Action-type mismatch.** UI saves: `send_email`, `send_whatsapp`, `wait`, `assign_agent`, `update_status`, `add_tag`, `create_task`, `send_notification`. Runner only handles: `send_email`, `send_sms`, `set_tag`, `set_status`. Anything saved from the UI is silently dropped as `unsupported_action`. WhatsApp is also forbidden by project memory.
-3. **`delay_hours` and `exit_condition` are in the schema but hidden** from the builder, so users can't actually build multi-step delayed sequences.
-4. **`crm_automation_logs` doubles as the enrollments table** (it has `status`, `current_step_order`, `next_step_due_at`, `exit_reason`). That's confusing and there's no proper "log" of each step's send result.
-5. **No manual enrollment UI**, no "Enroll lead in automation" action, no test-run, no way to see who is currently in flight.
-6. **Page UX**: list-only, no preview pane. Builder takes over the whole screen and there's no way to glance at multiple automations side by side.
+### Why v2
+The current `LeadActivityTimeline.tsx` (539 lines) merges 7 sources client-side via 8 separate hooks. It works but:
+- Misses **calls**, **calendar bookings**, **deal events**, **project interest views**, **task completions**, **assignment changes**, **pipeline moves**, **notes by other agents**.
+- No pagination — loads everything for every lead.
+- No server-side search across all sources.
+- No "pin to top" / "important moments" view.
+- No ability to share a permalink to a specific event.
+- Each hook hits a different table → 8 round trips per lead open.
 
-## Goal
+### What v2 delivers
 
-A **split-pane Automations workspace** that looks and behaves like a high-end agentic workflow tool (Customer.io / Make / n8n vibe), backed by an engine that actually fires.
+**1. Server-side unified feed (`crm_lead_timeline_v2` SQL function)**
+A single Postgres function that returns a paginated, sorted, typed event stream per `contact_id`. It UNIONs across:
+- `crm_messages` (notes)
+- `crm_email_log` + `crm_email_events` (sent / opened / clicked)
+- `crm_sms` (in/out, status, MMS)
+- `crm_calls` (Twilio call log — if present, else stub)
+- `crm_activity_events` (Presale behavior: views, deck opens, floorplan downloads)
+- `crm_contact_views` + `crm_contact_sessions` (web visits)
+- `crm_contact_forms` (form submissions)
+- `crm_showings`
+- `crm_tasks` (created + completed)
+- `crm_calendar_events` (Google Calendar matched to lead via attendee email)
+- `crm_deals` events (created, stage change, won/lost)
+- `crm_audit_log` filtered to contact (assignment changes, pipeline moves, status flips)
 
-## Plan
+Each row returns `{ id, kind, sub_kind, direction, occurred_at, actor, title, subtitle, body_excerpt, metadata jsonb, importance int }`.
 
-### Phase 1 — Engine (make it actually work)
+**2. New React component `<LeadTimelineV2 />`**
+Replaces `LeadActivityTimeline` on lead detail (desktop + mobile drawer). Features:
+- **Virtualized list** (react-virtuoso or windowing) — handles 10k+ events.
+- **Filter chips**: All · Communications · Behavior · Tasks · Deals · System.
+- **Search bar** — full-text across title + body_excerpt (server-side via `to_tsvector`).
+- **Date jumper** — sticky month headers, click to jump.
+- **Pin / star** — `crm_timeline_pins` table for "important moments" surfaced at top.
+- **Permalink** — `/crm/leads/:id?event=<eventId>` deep-links + scroll-into-view.
+- **Inline expand** — emails open thread dialog, SMS opens chat, calls show recording, deals open deal sheet.
+- **Realtime tail** — subscribe to `crm_activity_events` insert for this contact only; new event animates in at top.
 
-- **One migration**:
-  - Rename the in-flight rows out of `crm_automation_logs`: create `crm_automation_enrollments` (id, automation_id, contact_id, status, current_step_order, next_step_due_at, enrolled_at, exited_at, exit_reason, project_slug). Migrate existing in-flight rows.
-  - Add `crm_automation_run_log` (id, enrollment_id, step_order, action_type, action_result, error_message, payload, created_at) for true per-step history.
-  - Add a SECURITY DEFINER function `enroll_in_automation(p_automation_id, p_contact_id, p_trigger_data)` with idempotency (no double-enroll if active).
-  - Add Postgres triggers on `crm_contacts`:
-    - INSERT → match `new_lead` automations (honoring `trigger_config.source` filter).
-    - UPDATE of `status` → match `status_change` automations.
-    - UPDATE of `tags` → match `tag_added` automations (new tag in array).
-  - Add nightly `pg_cron` (`scan-stale-leads`) calling a new edge fn that enrolls leads with no `last_touch_at` activity for `trigger_config.days` into `no_response` automations.
-- **Rewrite `process-automations`** to read from `crm_automation_enrollments`, write per-step rows to `crm_automation_run_log`, and support the full action set: `send_email`, `send_sms`, `wait`, `assign_agent`, `update_status` (renamed from set_status), `add_tag` (renamed from set_tag), `create_task`, `send_notification`. Map old names for back-compat. Drop `send_whatsapp` from UI (memory).
-- Add `enroll-in-automation` and `unenroll-from-automation` edge fns for client + manual UI use.
+**3. Importance scoring (lays groundwork for engagement engine)**
+The SQL function assigns `importance` (0–10) per event:
+- Form submit: 8, deck reopen: 9, floorplan download: 10
+- Email open: 2, click: 4, reply: 7
+- SMS reply: 6, missed call: 7
+- Pipeline move: 5, deal won: 10
+Used to sort the "Important Moments" pinned strip and feed into the future engagement score.
 
-### Phase 2 — Split-pane workspace UI
+**4. Empty / loading / error states**
+Skeleton shimmer (existing `crm-mobile-*` utility), empty illustration, retry on 5xx.
 
-Replace `CrmAutomationsPage` with a 3-zone editorial layout:
+### Out of scope (saved for later sprints)
+- Workflow automation engine (P1).
+- Project-scoped opportunities (P2).
+- Source attribution analytics (P3).
+- Outbound bridge push of CRM → Presale events.
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  Header: Automations · stats · search · New                      │
-├──────────────┬───────────────────────────────────────────────────┤
-│ List rail    │  Preview / Builder pane                           │
-│ (380px)      │                                                   │
-│              │   ┌─ Header: name · status pill · run/pause ─┐   │
-│  ┌────────┐  │   │                                            │   │
-│  │ Auto 1 │  │   │  Flow canvas (centered nodes)              │   │
-│  │ active │  │   │     [Trigger]                              │   │
-│  │ 24 in  │  │   │        ↓                                   │   │
-│  │ flight │  │   │     [Wait 1 day]                           │   │
-│  └────────┘  │   │        ↓                                   │   │
-│  ┌────────┐  │   │     [Send email · "Welcome v2"]            │   │
-│  │ Auto 2 │  │   │        ↓                                   │   │
-│  └────────┘  │   │     [+ add step]                           │   │
-│              │   └────────────────────────────────────────────┘   │
-│  + New       │   Tabs: Flow · Enrolled · Runs · Settings         │
-└──────────────┴───────────────────────────────────────────────────┘
+### Technical details
+
+**Migration**
+```sql
+-- Function with stable security definer, scoped via crm_can_see_contact_id
+create or replace function public.crm_lead_timeline_v2(
+  p_contact_id uuid,
+  p_kinds text[] default null,
+  p_search text default null,
+  p_before timestamptz default null,
+  p_limit int default 50
+) returns table (...) language sql stable security definer ...
+
+-- Pin table
+create table public.crm_timeline_pins (
+  id uuid primary key default gen_random_uuid(),
+  contact_id uuid not null,
+  event_kind text not null,
+  event_id text not null,
+  pinned_by uuid not null,
+  pinned_at timestamptz default now(),
+  unique (contact_id, event_kind, event_id)
+);
+alter table public.crm_timeline_pins enable row level security;
+create policy "team can manage pins" on public.crm_timeline_pins
+  for all using (public.crm_can_see_contact_id(contact_id));
 ```
 
-- **List rail**: each row shows name, trigger pill, active/draft, # in-flight, last-run, click → preview/edit on the right. Search + filter at top of rail.
-- **Preview pane**: same `AutomationBuilder` flow canvas, but tabbed:
-  - **Flow** — visual canvas + side config (today's builder, expanded with `delay_hours` and `exit_condition` per step).
-  - **Enrolled** — table of currently-active enrollments with "unenroll" + "advance now" + jump-to-lead.
-  - **Runs** — chronological per-step run log with success/error badges and the rendered email/sms snippet.
-  - **Settings** — name, description, active toggle, slug, danger-zone delete.
-- **Empty preview state**: gallery of starter templates + "Build from scratch".
-- Mobile: rail collapses to a top dropdown, preview takes full width.
+**Files**
+- `supabase/migrations/<ts>_lead_timeline_v2.sql` — function + pin table + GIN index on activity events for search.
+- `src/hooks/useLeadTimelineV2.ts` — infinite query with `useInfiniteQuery`, realtime subscription.
+- `src/components/crm/leads/timeline/LeadTimelineV2.tsx` — main component.
+- `src/components/crm/leads/timeline/TimelineRow.tsx` — single event row (kind-aware rendering).
+- `src/components/crm/leads/timeline/TimelineFilters.tsx` — chip row + search input.
+- `src/components/crm/leads/timeline/PinnedMoments.tsx` — sticky strip.
+- Wire into `LeadDetailView` (desktop) and mobile drawer; **keep `LeadActivityTimeline` for one release behind a feature flag** so we can A/B and roll back fast.
 
-### Phase 3 — Agentic capabilities
+**Performance budget**
+- First page (50 events) under 200ms server-side.
+- GIN index on `crm_activity_events.payload` for search.
+- React-virtuoso so DOM stays under 60 nodes regardless of feed size.
 
-- **New action types** the builder exposes:
-  - `wait` (amount + unit, mapped into `delay_hours`).
-  - `branch_if` — basic condition node: lead source / status / tag / has-email / engagement-score threshold. Builder shows a Y/N split (saved as two ordered branches via `step_order` semantics; runner picks branch by evaluating `action_config.condition`).
-  - `ai_draft_email` — calls Lovable AI gateway (`google/gemini-2.5-flash`) with the lead context + a prompt to draft a personalized email; result is saved as a draft on the lead and the assigned agent gets notified.
-  - `ai_classify_lead` — runs the lead through a prompt to score intent / suggest next-best-action; writes to `lead_engagement_score` + a note.
-  - `webhook` — POST lead JSON to a user-supplied URL (for Zapier/Make/n8n bridges).
-- **Per-step exit conditions** (already in schema): "stop if lead replied", "stop if status = X", "stop if tag added".
-- **Manual enrollment everywhere**: `EnrollInAutomationDialog` that's launched from `LeadQuickActions` ("Enroll in automation"), bulk action on the leads table ("Enroll selected"), and a button on the automation preview ("Enroll leads…" with picker).
-- **Test run**: "Test on me" button that enrolls the current logged-in agent's own contact (or a chosen lead) and immediately processes the first step, surfacing the result inline.
-- **Tokens**: standardize on `{{first_name}}`, `{{last_name}}`, `{{agent_name}}`, `{{project}}`, `{{source}}`, `{{status}}`, `{{unsubscribe}}` everywhere — same renderer the email composer already uses.
+### Plan structure (build order)
+```text
+1. Migration: crm_lead_timeline_v2 fn + crm_timeline_pins table  (first, needs approval)
+2. Hook: useLeadTimelineV2 with infinite query + realtime
+3. Component: TimelineRow (kind-aware rendering, reuse existing icon/tone palette)
+4. Component: TimelineFilters + PinnedMoments
+5. Component: LeadTimelineV2 (virtualized container)
+6. Wire into LeadDetailView (feature flag)
+7. Memory entry + acceptance check
+```
 
-## Out of scope
-
-- Visual drag-to-reorder of step nodes (use up/down buttons for now).
-- Multi-branch trees deeper than one Y/N (keep the canvas linear with at most one branch split per automation).
-- Migrating WhatsApp / ManyChat (forbidden by memory).
-- Replacing the email/sms send pipelines — we reuse `render-and-send` and `send-sms`.
-
-## Files
-
-- **New**: `crm_automation_enrollments` + `crm_automation_run_log` migration; `enroll-in-automation` + `unenroll-from-automation` + `scan-stale-leads` edge fns; `EnrollInAutomationDialog`, `AutomationListRail`, `AutomationPreviewPane`, `AutomationEnrolledTab`, `AutomationRunsTab`, `AutomationSettingsTab` components; `useAutomationEnrollments` hook.
-- **Edited**: `process-automations/index.ts` (full rewrite of action set + new tables), `useCrmAutomations.tsx` (action type list, new hooks), `AutomationBuilder.tsx` (delay/exit fields, branch + AI nodes, drop whatsapp), `CrmAutomationsPage.tsx` (split-pane shell), `LeadQuickActions.tsx` ("Enroll in automation"), leads bulk ops ("Enroll selected").
-
-## Estimated scope
-
-≈ 1 migration · 3 new edge fns + 1 rewrite · 6 new components · ~5 edits. Larger than typical — splitting Phase 1 (engine) and Phase 2 (UI) is safe; Phase 3 (agentic) is additive.
+### Acceptance
+- Open any lead → see merged feed of every source above, sorted desc.
+- Type in search → server filters by `to_tsvector` match.
+- Click filter chip → server re-queries with `p_kinds`.
+- Star an event → it appears in the pinned strip; reload preserves it.
+- New Presale activity arrives → animates in at top within 2s.
+- Mobile drawer renders identically.
+- Desktop loads 50 events under 300ms wall clock.

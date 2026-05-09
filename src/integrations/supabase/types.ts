@@ -3930,6 +3930,41 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_timeline_pins: {
+        Row: {
+          contact_id: string
+          event_id: string
+          event_kind: string
+          id: string
+          pinned_at: string
+          pinned_by: string
+        }
+        Insert: {
+          contact_id: string
+          event_id: string
+          event_kind: string
+          id?: string
+          pinned_at?: string
+          pinned_by: string
+        }
+        Update: {
+          contact_id?: string
+          event_id?: string
+          event_kind?: string
+          id?: string
+          pinned_at?: string
+          pinned_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_timeline_pins_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_whatsapp_conversations: {
         Row: {
           contact_id: string
@@ -5416,6 +5451,27 @@ export type Database = {
       crm_has_perm: {
         Args: { _perm: string; _user_id: string }
         Returns: boolean
+      }
+      crm_lead_timeline_v2: {
+        Args: {
+          p_before?: string
+          p_contact_id: string
+          p_kinds?: string[]
+          p_limit?: number
+          p_search?: string
+        }
+        Returns: {
+          body_excerpt: string
+          direction: string
+          event_id: string
+          importance: number
+          kind: string
+          metadata: Json
+          occurred_at: string
+          sub_kind: string
+          subtitle: string
+          title: string
+        }[]
       }
       crm_my_presale_slug: { Args: never; Returns: string }
       crm_recipients_for_contact: {
