@@ -128,7 +128,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     expect(drawer).toBeTruthy();
 
     // ── 1. Keyboard CLOSED ────────────────────────────────────────────────
-    expect(drawer!.style.top).toBe('0px');
+    expect(drawer!.style.top).toContain('--composer-viewport-top');
     expect(drawer!.style.height).toContain('--composer-viewport-height');
     expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
@@ -136,12 +136,9 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       .toBe('0px');
 
     // ── 2. Keyboard OPENS ─────────────────────────────────────────────────
-    // We no longer rewrite the drawer's `top`/`bottom` per frame (that was
-    // the source of the iOS shake). Instead, the viewport meta's
-    // `interactive-widget=resizes-content` shrinks the layout viewport so a
-    // `fixed bottom: 0` drawer sits above the keyboard automatically. Our
-    // job is just to publish CSS vars + the `data-keyboard-open` flag so
-    // siblings (BottomNav, etc.) can react.
+    // The fullscreen composer tracks visualViewport top/height so iOS cannot
+    // pan the entire sheet under the status island; header/body/footer remain
+    // fixed regions while only the message body scrolls.
     vv.height = 420;
     vv.offsetTop = 120;
     await act(async () => {
@@ -149,7 +146,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(drawer!.style.top).toBe('0px');
+    expect(drawer!.style.top).toContain('--composer-viewport-top');
     expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.style.getPropertyValue('--composer-viewport-top'))
       .toBe('120px');
