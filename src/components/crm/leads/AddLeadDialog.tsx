@@ -530,7 +530,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       open={drawer === 'source'}
       onOpenChange={(o) => { if (!o) setDrawer(null); }}
       title="Source"
-      options={LEAD_SOURCES.map((s) => ({ value: s, label: s }))}
+      options={canonicalSources.map((s) => ({ value: s.display_name, label: s.display_name }))}
       value={form.source}
       onChange={(v) => { setForm((p) => ({ ...p, source: v })); setErrors((p) => ({ ...p, source: '' })); }}
     />
