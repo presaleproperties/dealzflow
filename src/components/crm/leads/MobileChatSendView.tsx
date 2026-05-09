@@ -347,6 +347,12 @@ export function MobileChatSendView({
         className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-2 flex items-end gap-2 transition-[padding] duration-150 ease-out"
         style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 8px)' }}
       >
+        <AttachMenu
+          variant="icon"
+          uploading={uploading}
+          onFiles={onFiles}
+          className="h-9 w-9 rounded-full border border-border/70 text-muted-foreground active:scale-95 transition-transform shrink-0"
+        />
         <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/70 bg-muted/40 pl-4 pr-1 py-0.5">
           <textarea
             ref={taRef}
@@ -379,14 +385,6 @@ export function MobileChatSendView({
             </button>
           )}
         </div>
-        {!showSendBtn && (
-          <AttachMenu
-            variant="icon"
-            uploading={uploading}
-            onFiles={onFiles}
-            className="h-9 w-9 rounded-full border border-border/70 text-muted-foreground active:scale-95 transition-transform shrink-0"
-          />
-        )}
       </div>
     </div>
   );
