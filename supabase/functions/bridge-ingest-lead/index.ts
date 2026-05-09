@@ -226,17 +226,30 @@ Deno.serve(async (req) => {
     let contactId: string;
     const incomingProjects = L.projects?.length ? L.projects : (L.project ? [L.project] : []);
 
+    // Build merge metadata once (used for tags/notes/persona on both branches)
+    const meta = { ...(L.metadata || {}), behavior: body.behavior } as any;
+    const personaType = personaToContactType(meta);
+    const noteAppendix = buildNoteAppendix(meta);
+
     if (existing) {
       // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
-      const newTags = Array.from(new Set([...(existing.tags || []), ...(L.tags || []), "presale-website"]));
+      const newTags = buildTags(existing.tags, L.tags, meta);
       const newProjects = Array.from(new Set([...(existing.projects || []), ...incomingProjects]));
       const newCities = Array.from(new Set([...(existing.looking_to_buy_in || []), ...(L.looking_to_buy_in || [])]));
       const mergedMeta = { ...(existing.presale_metadata || {}), ...(L.metadata || {}) };
+      const mergedNotes = noteAppendix
+        ? [existing.notes, noteAppendix].filter((s: any) => s && String(s).trim()).join("\n\n")
+        : existing.notes;
+      const isHot = newTags.includes("hot");
 
       await supabase.from("crm_contacts").update({
         first_name: existing.first_name || L.first_name || "Lead",
         last_name: existing.last_name || L.last_name || "",
         presale_user_id: L.presale_user_id ?? undefined,
+        // Source rule: ALWAYS PresaleProperties.com for inbound presale leads
+        source: "PresaleProperties.com",
+        contact_type: personaType ?? undefined,
+        notes: mergedNotes ?? undefined,
         tags: newTags,
         projects: newProjects,
         looking_to_buy_in: newCities,
@@ -253,27 +266,28 @@ Deno.serve(async (req) => {
         postal_code: L.postal_code ?? undefined,
         marketing_consent: L.marketing_consent ?? undefined,
         signup_completed_at: L.signup_completed_at ?? undefined,
-        campaign_source: L.campaign_source ?? undefined,
-        referral_source: L.referral_source ?? undefined,
         presale_metadata: mergedMeta,
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
         last_touch_at: new Date().toISOString(),
         last_touch_type: "presale_signup",
+        ...(isHot ? { lead_tier: "hot" } : {}),
       }).eq("id", existing.id);
 
       contactId = existing.id;
     } else {
       const assignee = await pickAssignee(supabase, L.agent_slug);
+      const newTags = buildTags(null, L.tags, meta);
+      const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
         last_name: L.last_name || "Lead",
         email,
         phone: L.phone || null,
         presale_user_id: L.presale_user_id || null,
-        source: L.source || "presale-website",
-        campaign_source: L.campaign_source || null,
-        referral_source: L.referral_source || null,
+        source: "PresaleProperties.com",
+        contact_type: personaType,
+        notes: noteAppendix,
         project: incomingProjects[0] || null,
         projects: incomingProjects,
         looking_to_buy_in: L.looking_to_buy_in || [],
@@ -291,13 +305,14 @@ Deno.serve(async (req) => {
         marketing_consent: L.marketing_consent ?? false,
         signup_completed_at: L.signup_completed_at || null,
         presale_metadata: L.metadata || {},
-        tags: Array.from(new Set([...(L.tags || []), "presale-website"])),
+        tags: newTags,
         status: "New Lead",
         lead_type: "Pre-Sale",
+        lead_tier: isHot ? "hot" : null,
         assigned_to: assignee,
         sync_source: "presale",
         lofty_synced_at: new Date().toISOString(),
-      }).select("id").single();
+      }).select("id, assigned_to").single();
 
       if (insErr) throw insErr;
       contactId = created.id;
