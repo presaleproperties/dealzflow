@@ -2,12 +2,28 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const HIGH_INTENT = new Set(["email_open", "deck_unlock", "link_click"]);
+const HIGH_INTENT = new Set([
+  "email_open",
+  "deck_unlock",
+  "deck_visit",
+  "link_click",
+  "floorplan_download",
+  "form_submission",
+  "contact_form",
+  "return_visit",
+  "lead_returned",
+]);
 
 const TYPE_PHRASE: Record<string, string> = {
   email_open: "just opened your email",
   deck_unlock: "just unlocked your pitch deck",
+  deck_visit: "is back on your deck",
   link_click: "just clicked a link",
+  floorplan_download: "downloaded a floor plan",
+  form_submission: "submitted a form",
+  contact_form: "submitted a contact form",
+  return_visit: "is back on your website",
+  lead_returned: "is back on your website",
 };
 
 interface ActivityRow {
@@ -15,6 +31,7 @@ interface ActivityRow {
   type: string;
   contact_id: string | null;
   project_slug: string | null;
+  metadata: Record<string, any> | null;
 }
 
 /**
