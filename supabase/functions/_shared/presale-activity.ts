@@ -221,6 +221,8 @@ export async function processPresaleActivity(
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
       .ilike("email", email)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (data) contact = data as typeof contact;
   }
@@ -229,6 +231,8 @@ export async function processPresaleActivity(
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
       .eq("phone", phone)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (data) contact = data as typeof contact;
   }
@@ -237,6 +241,8 @@ export async function processPresaleActivity(
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to, email, phone")
       .eq("presale_user_id", visitorId)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     const existingEmail = String((data as any)?.email ?? "").trim().toLowerCase();
     const existingPhone = String((data as any)?.phone ?? "").replace(/\D/g, "");
@@ -638,12 +644,12 @@ export async function processPresaleActivity(
 
   // ── Notifications: completed form submissions in batch ──
   let notified = false;
-  if (contact && behavior?.forms) {
+  if (contact && behavior?.forms && !batchSkipped) {
     const completed = (behavior.forms as any[]).filter((f) => f?.status === "completed");
     if (completed.length > 0) {
       const { data: recipients } = await supabase.rpc("crm_recipients_for_contact", { _assigned_to: contact.assigned_to ?? "" });
       const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "A lead";
-      const formLabel = completed.map((f) => f.form_type).filter(Boolean).join(", ");
+      const formLabel = Array.from(new Set(completed.map((f) => f.form_type).filter(Boolean))).join(", ");
       if (Array.isArray(recipients) && recipients.length > 0) {
         await supabase.from("crm_notifications").insert(
           (recipients as string[]).map((u) => ({
