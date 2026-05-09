@@ -15,7 +15,7 @@
  *  - Optional: localStorage version markers
  */
 
-export const BUILD_ID = "2026-05-09-pipeline-mine-default-4";
+export const BUILD_ID = "2026-05-09-lead-detail-widen-5";
 const BUILD_ID_KEY = "__app_build_id";
 
 export async function hardRefresh(): Promise<void> {
