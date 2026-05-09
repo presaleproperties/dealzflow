@@ -344,20 +344,28 @@ Deno.serve(async (req) => {
       console.warn("[bridge-ingest-lead] log_source_event failed (non-fatal):", e);
     }
 
-    // Dedup by presale_user_id, then email or phone (merge & enrich)
+    // Dedup by email/phone first. Presale visitor/session ids can be reused in
+    // the same browser during testing, so they must not override a different
+    // submitted email/phone identity.
     let existing: any = null;
-    if (L.presale_user_id) {
+    if (email || phone) {
       const { data } = await supabase.from("crm_contacts")
-        .select("id, first_name, last_name, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
-        .eq("presale_user_id", L.presale_user_id).limit(1).maybeSingle();
+        .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+        .order("created_at", { ascending: true })
+        .limit(1).maybeSingle();
       existing = data;
     }
     if (!existing) {
       const { data } = await supabase.from("crm_contacts")
-        .select("id, first_name, last_name, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
-        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+        .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+        .eq("presale_user_id", L.presale_user_id)
         .limit(1).maybeSingle();
-      existing = data;
+      const existingEmail = String(data?.email ?? "").trim().toLowerCase();
+      const existingPhone = String(data?.phone ?? "").replace(/\D/g, "");
+      if (data && (!existingEmail || existingEmail === email) && (!existingPhone || !phone || existingPhone === phone)) {
+        existing = data;
+      }
     }
 
     let contactId: string;
@@ -415,7 +423,7 @@ Deno.serve(async (req) => {
 
       contactId = existing.id;
     } else {
-      const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null);
+      const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null, email, L.first_name ?? null);
       const newTags = buildTags(null, L.tags, meta);
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
