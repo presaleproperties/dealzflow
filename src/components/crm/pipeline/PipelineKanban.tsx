@@ -201,9 +201,26 @@ export function PipelineKanban() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const handleOpen = useCallback((id: string) => navigate(`/crm/leads/${id}`, { state: { from: '/crm/pipeline' } }), [navigate]);
+  const myName = useMyAgentName();
   const [search, setSearch] = useState('');
   const [filterProject, setFilterProject] = useState('all');
-  const [filterAgent, setFilterAgent] = useState('all');
+  // Stored values: 'all' | '__mine' | <agent display_name>. Default = mine.
+  const [filterAgent, setFilterAgent] = useState<string>(() => {
+    try {
+      return localStorage.getItem(AGENT_FILTER_KEY) ?? '__mine';
+    } catch { return '__mine'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(AGENT_FILTER_KEY, filterAgent); } catch {}
+  }, [filterAgent]);
+
+  // Resolve __mine → actual agent name once it's loaded. If the user isn't
+  // on a team, fall back to "all" so they aren't staring at an empty board.
+  const effectiveAgent = useMemo(() => {
+    if (filterAgent === '__mine') return myName ?? null;
+    if (filterAgent === 'all') return null;
+    return filterAgent;
+  }, [filterAgent, myName]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
@@ -232,9 +249,9 @@ export function PipelineKanban() {
       );
     }
     if (filterProject !== 'all') list = list.filter(c => (c.projects ?? []).includes(filterProject) || c.project === filterProject);
-    if (filterAgent !== 'all') list = list.filter(c => c.assigned_to === filterAgent);
+    if (effectiveAgent) list = list.filter(c => c.assigned_to === effectiveAgent);
     return list;
-  }, [contacts, search, filterProject, filterAgent]);
+  }, [contacts, search, filterProject, effectiveAgent]);
 
   // Place contacts into segment columns (first match wins)
   const columns = useMemo(() => {
