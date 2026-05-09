@@ -167,8 +167,19 @@ Deno.serve(async (req: Request) => {
       if (updateErr) throw new Error(`Update failed: ${updateErr.message}`);
       action = "updated";
     } else {
-      // INSERT new
-      const { error: insertErr } = await supabase.from("crm_contacts").insert(cleanContact);
+      // INSERT new — default assignment to the team owner (team lead triages)
+      const { data: owner } = await supabase
+        .from("crm_team")
+        .select("display_name")
+        .eq("is_active", true)
+        .eq("role", "owner")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const defaultAssignee = owner?.display_name || "Uzair Muhammad";
+      const { error: insertErr } = await supabase
+        .from("crm_contacts")
+        .insert({ ...cleanContact, assigned_to: defaultAssignee });
       if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
       action = "inserted";
     }
