@@ -102,8 +102,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     document.documentElement.style.removeProperty('--keyboard-inset-bottom');
     document.documentElement.style.removeProperty('--composer-safe-bottom');
     // Clean visualViewport mock.
-    // @ts-expect-error allow re-deletion across tests
-    delete (window as any).visualViewport;
+    delete (window as { visualViewport?: unknown }).visualViewport;
   });
 
   it("pins drawer top to visualViewport.offsetTop so the header never drifts behind the notch", async () => {
