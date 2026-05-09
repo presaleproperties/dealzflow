@@ -160,21 +160,51 @@ export default function CrmLeadsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') ?? '');
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [letterFilter, setLetterFilter] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(DEFAULT_VISIBLE);
 
-  const [filterContactType, setFilterContactType] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [filterSource, setFilterSource] = useState<string[]>([]);
-  const [filterAgent, setFilterAgent] = useState<string[]>([]);
-  const [filterProject, setFilterProject] = useState<string[]>([]);
-  const [filterLeadType, setFilterLeadType] = useState<string[]>([]);
-  const [filterLanguage, setFilterLanguage] = useState<string[]>([]);
-  const [filterTags, setFilterTags] = useState<string[]>([]);
-  const [filterExcludeTags, setFilterExcludeTags] = useState<string[]>([]);
-  const [filterPropertyType, setFilterPropertyType] = useState<string[]>([]);
-  const [filterCity, setFilterCity] = useState<string[]>([]);
-  const [filterPreApproved, setFilterPreApproved] = useState<string[]>([]);
-  const [filterCampaign, setFilterCampaign] = useState<string[]>([]);
+  // ── Persisted UI prefs (visible columns + filters) ──
+  // Bundled under a single localStorage key so reloads restore exactly what
+  // the user last saw. Reads happen lazily on first render only.
+  const PREFS_KEY = 'crm.leads.prefs.v1';
+  const persistedPrefs = useMemo<{
+    visibleColumns?: string[];
+    filterContactType?: string;
+    filterStatus?: string[];
+    filterSource?: string[];
+    filterAgent?: string[];
+    filterProject?: string[];
+    filterLeadType?: string[];
+    filterLanguage?: string[];
+    filterTags?: string[];
+    filterExcludeTags?: string[];
+    filterPropertyType?: string[];
+    filterCity?: string[];
+    filterPreApproved?: string[];
+    filterCampaign?: string[];
+  }>(() => {
+    try {
+      const raw = localStorage.getItem(PREFS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    () => new Set(persistedPrefs.visibleColumns ?? Array.from(DEFAULT_VISIBLE)),
+  );
+
+  const [filterContactType, setFilterContactType] = useState(persistedPrefs.filterContactType ?? '');
+  const [filterStatus, setFilterStatus] = useState<string[]>(persistedPrefs.filterStatus ?? []);
+  const [filterSource, setFilterSource] = useState<string[]>(persistedPrefs.filterSource ?? []);
+  const [filterAgent, setFilterAgent] = useState<string[]>(persistedPrefs.filterAgent ?? []);
+  const [filterProject, setFilterProject] = useState<string[]>(persistedPrefs.filterProject ?? []);
+  const [filterLeadType, setFilterLeadType] = useState<string[]>(persistedPrefs.filterLeadType ?? []);
+  const [filterLanguage, setFilterLanguage] = useState<string[]>(persistedPrefs.filterLanguage ?? []);
+  const [filterTags, setFilterTags] = useState<string[]>(persistedPrefs.filterTags ?? []);
+  const [filterExcludeTags, setFilterExcludeTags] = useState<string[]>(persistedPrefs.filterExcludeTags ?? []);
+  const [filterPropertyType, setFilterPropertyType] = useState<string[]>(persistedPrefs.filterPropertyType ?? []);
+  const [filterCity, setFilterCity] = useState<string[]>(persistedPrefs.filterCity ?? []);
+  const [filterPreApproved, setFilterPreApproved] = useState<string[]>(persistedPrefs.filterPreApproved ?? []);
+  const [filterCampaign, setFilterCampaign] = useState<string[]>(persistedPrefs.filterCampaign ?? []);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(() =>
     mobileListCache.accumulated.length > 0
