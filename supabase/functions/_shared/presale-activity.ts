@@ -66,6 +66,20 @@ function splitName(value: unknown): { first_name: string; last_name: string } {
   return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") };
 }
 
+async function safePresaleUserId(supabase: SupabaseClient, presaleUserId: string | null, email: string | null, phone: string | null, contactId?: string | null): Promise<string | null> {
+  if (!presaleUserId) return null;
+  const { data } = await supabase
+    .from("crm_contacts")
+    .select("id, email, phone")
+    .eq("presale_user_id", presaleUserId)
+    .maybeSingle();
+  if (!data || data.id === contactId) return presaleUserId;
+  const existingEmail = String((data as any).email ?? "").trim().toLowerCase();
+  const existingPhone = String((data as any).phone ?? "").replace(/\D/g, "");
+  const incomingPhone = String(phone ?? "").replace(/\D/g, "");
+  return (!existingEmail || !email || existingEmail === email) && (!existingPhone || !incomingPhone || existingPhone === incomingPhone) ? presaleUserId : null;
+}
+
 async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null, leadEmail?: string | null, leadFirstName?: string | null): Promise<string> {
   if (agentSlug) {
     const wanted = agentSlug.trim().toLowerCase();
