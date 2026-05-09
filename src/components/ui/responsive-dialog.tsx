@@ -51,11 +51,14 @@ export const ResponsiveDialogContent = React.forwardRef<
       const visualOffsetTop = viewport?.offsetTop ?? 0;
       const keyboardBottom = Math.max(0, window.innerHeight - visualHeight - visualOffsetTop);
       const keyboardOpen = keyboardBottom > 60;
-      const viewportTop = viewport?.offsetTop ?? 0;
 
       root.style.setProperty('--keyboard-inset-bottom', `${keyboardBottom}px`);
-      root.style.setProperty('--composer-viewport-top', `${viewportTop}px`);
-      root.style.setProperty('--composer-viewport-height', `${visualHeight}px`);
+      // IMPORTANT: keep the composer surface locked to the layout viewport so
+      // the dialog never resizes/pans when the keyboard opens. The keyboard
+      // simply overlays the bottom; the inner footer lifts via
+      // --keyboard-inset-bottom and the body scrolls internally.
+      root.style.setProperty('--composer-viewport-top', '0px');
+      root.style.setProperty('--composer-viewport-height', '100dvh');
       root.style.setProperty(
         '--composer-safe-bottom',
         `max(0px, calc(env(safe-area-inset-bottom, 0px) - ${keyboardBottom}px))`,
