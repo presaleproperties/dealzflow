@@ -114,7 +114,7 @@ function plainBlockToHtml(text: string, opts?: { stripQuoteMarks?: boolean }): s
     .join('');
 }
 
-export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail }: Props) {
+export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, onReply }: Props) {
   const isInbound = email?.direction === 'inbound';
   const rawBody = (email?.body_html || email?.body || '').trim();
   const plainBody = (email?.body_text || '').trim();
