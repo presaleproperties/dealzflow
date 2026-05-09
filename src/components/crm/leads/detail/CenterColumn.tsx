@@ -42,6 +42,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const { data: showings = [] } = useCrmContactShowings(contact.id);
   const { data: emailLog = [] } = useCrmEmailLog(contact.id);
   const { data: smsLog = [] } = useCrmContactSmsLog(contact.id);
+  const { data: activityEvents = [] } = useCrmContactActivityEvents(contact.id);
   const addNote = useAddNote();
   const updateNote = useUpdateNote();
   const openChat = useOpenChat();
