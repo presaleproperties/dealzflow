@@ -34,10 +34,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const secret = req.headers.get("x-bridge-secret");
-    if (!secret || secret !== Deno.env.get("BRIDGE_SECRET")) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const authFail = requireBridgeSecret(req);
+    if (authFail) return authFail;
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
