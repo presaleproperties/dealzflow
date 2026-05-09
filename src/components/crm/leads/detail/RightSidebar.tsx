@@ -71,17 +71,13 @@ export function RightSidebar({
         onAddShowing={onAddShowing}
       />
 
-      {/* ③ At-a-glance — Score, Stage, Days in stage, Sends, Open rate, Last touch */}
-      <AtAGlanceCard
-        contact={contact}
-        leadScore={leadScore}
-        lastTouchHours={lastTouchHours}
-      />
-
-      {/* ④ Unified engagement (replaces 5 widgets) */}
+      {/* ③ Engagement (Emails / Behavior) */}
       <EngagementTabs contact={contact} />
 
-      {/* ④ⓑ Recent phone calls (only renders when calls exist) */}
+      {/* ④ Source — separated into its own tile */}
+      <PresaleSignupSourceCard contact={contact} />
+
+      {/* ⑤ Recent phone calls (only renders when calls exist) */}
       <RecentCallsCard contactId={contact.id} />
       {/* ⑤ Debug — collapsed by default, hidden noise */}
       <details className="rounded-xl border border-border/60 bg-card/50 group">
