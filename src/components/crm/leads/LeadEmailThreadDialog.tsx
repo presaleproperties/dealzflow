@@ -41,7 +41,7 @@ import { AgentSignatureBlock } from '@/components/agent/AgentSignatureBlock';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
-import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick } from 'lucide-react';
+import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Paperclip, Download, FileText, FileImage, FileVideo, FileAudio, FileArchive, FileSpreadsheet, File as FileIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
