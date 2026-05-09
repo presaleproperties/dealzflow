@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight, AlertTriangle, Plus, X } from 'lucide-react'
 import { MobilePickerDrawer } from './MobilePickerDrawer';
 import { MobileMultiPickerDrawer } from './MobileMultiPickerDrawer';
 import { MobileTextEditDrawer } from './MobileTextEditDrawer';
-import { useAddCrmContact, LEAD_STATUSES, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { useAddCrmContact, LEAD_STATUSES } from '@/hooks/useCrmContacts';
+import { useCanonicalLeadSources } from '@/hooks/useCanonicalLeadSources';
 import { useAgentNames, useMyAgentName } from '@/hooks/useTeamAgents';
 import { useCrmTags, useCreateCrmTag } from '@/hooks/useCrmTags';
 import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
@@ -43,6 +44,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
   const createLeadType = useCreateCrmLeadType();
   const AGENTS = useAgentNames();
   const myAgentName = useMyAgentName();
+  const { data: canonicalSources = [] } = useCanonicalLeadSources();
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -528,7 +530,7 @@ export function AddLeadDialog({ open, onOpenChange }: AddLeadDialogProps) {
       open={drawer === 'source'}
       onOpenChange={(o) => { if (!o) setDrawer(null); }}
       title="Source"
-      options={LEAD_SOURCES.map((s) => ({ value: s, label: s }))}
+      options={canonicalSources.map((s) => ({ value: s.display_name, label: s.display_name }))}
       value={form.source}
       onChange={(v) => { setForm((p) => ({ ...p, source: v })); setErrors((p) => ({ ...p, source: '' })); }}
     />

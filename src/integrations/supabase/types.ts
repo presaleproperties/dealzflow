@@ -2200,6 +2200,44 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_merged_contacts: {
+        Row: {
+          field_choices: Json
+          id: string
+          loser_id: string
+          loser_snapshot: Json
+          merged_at: string
+          merged_by: string | null
+          winner_id: string
+        }
+        Insert: {
+          field_choices?: Json
+          id?: string
+          loser_id: string
+          loser_snapshot: Json
+          merged_at?: string
+          merged_by?: string | null
+          winner_id: string
+        }
+        Update: {
+          field_choices?: Json
+          id?: string
+          loser_id?: string
+          loser_snapshot?: Json
+          merged_at?: string
+          merged_by?: string | null
+          winner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_merged_contacts_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_messages: {
         Row: {
           channel: string | null
@@ -5473,6 +5511,14 @@ export type Database = {
           title: string
         }[]
       }
+      crm_merge_contacts: {
+        Args: {
+          p_field_choices?: Json
+          p_loser_id: string
+          p_winner_id: string
+        }
+        Returns: Json
+      }
       crm_my_presale_slug: { Args: never; Returns: string }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
@@ -5699,6 +5745,7 @@ export type Database = {
         Args: { input: string[] }
         Returns: string[]
       }
+      normalize_phone: { Args: { p_raw: string }; Returns: string }
       notify_crm: {
         Args: {
           _body: string
