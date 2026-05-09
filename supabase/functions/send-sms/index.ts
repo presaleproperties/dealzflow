@@ -368,6 +368,28 @@ Deno.serve(async (req) => {
       client_dedupe_id,
     }).select('id').maybeSingle();
 
+    // Mirror into activity events feed
+    if (contact_id) {
+      try {
+        await supabaseAdmin.from('crm_activity_events').insert({
+          type: channel === 'whatsapp' ? 'whatsapp_outbound' : 'sms_outbound',
+          contact_id,
+          lead_phone: to,
+          metadata: {
+            body: finalBody.slice(0, 500),
+            to_number: to,
+            from_number: fromNumber,
+            media_count: media_urls.length,
+            twilio_message_sid: twilioData?.sid ?? null,
+            sms_log_id: logged?.id ?? null,
+            campaign_id,
+            channel,
+          },
+          occurred_at: new Date().toISOString(),
+        });
+      } catch (e) { console.error('activity_events insert failed', e); }
+    }
+
     return new Response(JSON.stringify({
       ok: true, sid: twilioData?.sid, status: twilioData?.status, log_id: logged?.id, channel,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
