@@ -691,7 +691,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={`Write your message to ${contact.first_name || 'this lead'}…`}
                 maxLength={1600}
-                className="min-h-[180px] max-h-[32dvh] sm:min-h-[260px] sm:max-h-none resize-none overflow-y-auto leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
+                className="min-h-[140px] sm:min-h-[260px] max-h-[40dvh] sm:max-h-none resize-none overflow-y-auto leading-relaxed pb-10 border rounded-lg focus-visible:ring-1 focus-visible:ring-primary px-4 py-3"
               />
               <div className="absolute bottom-2 right-3 flex items-center gap-2 text-[11px] text-muted-foreground pointer-events-none">
                 <span className="font-mono">{preview.length}/1600</span>
