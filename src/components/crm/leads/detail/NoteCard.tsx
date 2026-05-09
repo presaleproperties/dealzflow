@@ -129,12 +129,29 @@ export function NoteCard({
             )}
             <span className="text-muted-foreground/40">·</span>
             <span className="shrink-0 tabular-nums">{dateLabel} · {time}</span>
-            {note.user_id && (
-              <>
-                <span className="text-muted-foreground/40">·</span>
-                <AgentBadge userId={note.user_id} prefix="by" />
-              </>
-            )}
+            {(() => {
+              // Auto-logged entries (system events, web-form ingests, Zapier,
+              // imports, AI drafts, web behavior summaries) should always read
+              // as "System" — not as the agent who happens to own the row.
+              const autoTypes = new Set(['system', 'import', 'zapier']);
+              const isAuto =
+                autoTypes.has(note.note_type) ||
+                /website behavior summary|inquired on|system auto-updated/i.test(note.content);
+              if (isAuto) {
+                return (
+                  <>
+                    <span className="text-muted-foreground/40">·</span>
+                    <AgentBadge system prefix="by" />
+                  </>
+                );
+              }
+              return note.user_id ? (
+                <>
+                  <span className="text-muted-foreground/40">·</span>
+                  <AgentBadge userId={note.user_id} prefix="by" />
+                </>
+              ) : null;
+            })()}
             {isClickableEmail && (
               <>
                 <span className="text-muted-foreground/40">·</span>
