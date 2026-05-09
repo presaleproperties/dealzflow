@@ -200,6 +200,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   usePresaleAgentSync();
   usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
+  useLiveNotificationToasts();
   return (
     <>
       {children}
