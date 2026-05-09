@@ -83,6 +83,13 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       value: 800,
     });
     window.scrollTo = vi.fn() as any;
+    // Run rAF callbacks synchronously so visualViewport changes flush
+    // inside the same `act()` tick the test dispatches them in.
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
   });
 
   afterEach(() => {
