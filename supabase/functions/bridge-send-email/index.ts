@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const bridgeSecret =
-      Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET");
+      Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET");
     const presaleAnonKey = Deno.env.get("PRESALE_ANON_KEY");
 
     if (!bridgeSecret) return json({ error: "BRIDGE_SECRET not configured" }, 500);
