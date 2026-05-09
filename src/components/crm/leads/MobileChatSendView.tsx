@@ -148,42 +148,36 @@ export function MobileChatSendView({
           Back, avatar, name + segment subtitle, status pill. Right side keeps
           a slim Call + More so power actions are still one tap away. */}
       <header
-        className="flex items-center gap-2 px-1.5 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
+        className="flex items-center gap-1.5 px-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '8px' }}
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Back"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60"
+          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60"
         >
-          <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
+          <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} />
         </button>
-        <Avatar className="h-9 w-9 shrink-0">
-          <AvatarFallback className="text-[12px] font-semibold bg-primary/15 text-primary">
+        <Avatar className="h-8 w-8 shrink-0">
+          <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
             {initials || '?'}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0 flex flex-col leading-tight">
+        <div className="flex-1 min-w-0 flex flex-col leading-[1.15] pr-1">
           <span className="text-[15px] font-semibold tracking-tight text-foreground truncate">
             {fullName}
           </span>
-          <span className="text-[11.5px] text-muted-foreground truncate">
-            {segmentLabel}
-            {channel === 'whatsapp' && ' · WhatsApp'}
+          <span className="text-[11px] text-muted-foreground truncate mt-px">
+            {[segmentLabel, channel === 'whatsapp' ? 'WhatsApp' : null].filter(Boolean).join(' · ')}
           </span>
         </div>
-        {contact.status && (
-          <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10.5px] font-semibold tracking-wide">
-            {contact.status}
-          </span>
-        )}
         <button
           type="button"
           onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
           aria-label="Call"
           disabled={!contact.phone}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30"
+          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30"
         >
           <Phone className="h-[17px] w-[17px]" />
         </button>
@@ -320,19 +314,19 @@ export function MobileChatSendView({
       )}
 
       {/* From / To info strip — hairline row above the composer, like the reference */}
-      <div className="shrink-0 px-3 py-2 border-t border-border/40 flex items-center justify-between gap-2 text-[11.5px] text-muted-foreground bg-background">
-        <span className="truncate">
-          <span className="text-muted-foreground/70">From:</span>{' '}
-          <span className="text-foreground/80 font-medium tabular-nums">
-            {fromNumber ? formatPhone(fromNumber) : 'Default number'}
+      <div className="shrink-0 px-3 py-1.5 border-t border-border/40 flex items-center gap-3 text-[11px] text-muted-foreground bg-background">
+        <span className="flex-1 min-w-0 flex items-baseline gap-1 truncate">
+          <span className="text-muted-foreground/60 uppercase tracking-wider text-[9.5px] font-semibold shrink-0">From</span>
+          <span className="text-foreground/80 font-medium tabular-nums truncate">
+            {fromNumber ? formatPhone(fromNumber) : 'Default'}
           </span>
         </span>
-        <span className="text-border">|</span>
-        <span className="truncate text-right">
-          <span className="text-muted-foreground/70">To:</span>{' '}
+        <span className="h-3 w-px bg-border shrink-0" aria-hidden />
+        <span className="flex-1 min-w-0 flex items-baseline gap-1 justify-end truncate">
+          <span className="text-muted-foreground/60 uppercase tracking-wider text-[9.5px] font-semibold shrink-0">To</span>
           <span
             className={cn(
-              'font-medium tabular-nums',
+              'font-medium tabular-nums truncate',
               isOptedOut ? 'text-destructive' : 'text-foreground/80',
             )}
           >
