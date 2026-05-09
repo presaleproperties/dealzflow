@@ -743,13 +743,13 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
               keyboard pushes the dialog up. */}
           <DialogHeader
-            className="lg:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            className="lg:hidden px-1.5 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
             style={{ paddingTop: '0.375rem', paddingBottom: '0.375rem' }}
           >
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-3 py-1.5 rounded-md min-h-[34px] text-left"
+              className="text-[14px] font-medium text-primary hover:opacity-80 active:opacity-60 px-2.5 py-1.5 rounded-md min-h-[34px] text-left"
               disabled={isPending}
               aria-label="Close composer"
             >
@@ -758,7 +758,20 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             <DialogTitle className="text-[13.5px] font-semibold tracking-tight text-foreground truncate">
               {isMass ? `Mass · ${allRecipients.length}` : 'New Message'}
             </DialogTitle>
-            <span className="w-[64px] shrink-0" aria-hidden />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!canSend || isPending}
+              aria-label="Send"
+              className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
+            >
+              {isPending ? (
+                <Loader2 className="h-[14px] w-[14px] animate-spin" />
+              ) : (
+                <Send className="h-[14px] w-[14px]" />
+              )}
+              <span className="leading-none">{isPending ? 'Sending' : isMass ? `Send ${allRecipients.length}` : 'Send'}</span>
+            </button>
           </DialogHeader>
 
           {/* (Mobile sub-header removed — the To row already names the recipient,
@@ -1106,15 +1119,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                           ) : (
                             <>
                               {/* Desktop: signature renders inline as continuation of body. */}
-                              <div className="hidden sm:block">
+                              <div className="hidden lg:block">
                                 <SignatureInlineFrame html={activeSignatureHtml} />
                               </div>
-                              {/* Mobile/tablet: same inline signature, rendered in a compact
-                                  variant so it scales down with the device and the agent can
-                                  always see what their email closes with. */}
-                              <div className="sm:hidden">
-                                <SignatureInlineFrame html={activeSignatureHtml} compact />
-                              </div>
+                              {/* Mobile/tablet: no inline preview — it created dead space below
+                                  the editor. The signature is still attached on send; the picker
+                                  in the mini action row lets the agent verify which one. */}
                             </>
                           )
                         ) : null
@@ -1154,35 +1164,30 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                 )}
               </div>
 
-              {/* Mobile sticky action bar — single source of truth for mobile actions */}
+              {/* Mobile mini action row — minimalist. Send lives in the top header,
+                  so this row only carries the signature picker + draft state.
+                  Padding is intentionally tight so the keyboard sits flush against it. */}
               <div
-                className="lg:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
+                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border-t border-border/40 bg-background/95 backdrop-blur-md shrink-0"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)' }}
               >
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen(true)}
-                  aria-label="Templates"
-                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
-                  title="Templates"
-                >
-                  <FileText className="h-[15px] w-[15px]" />
-                </button>
                 <AttachMenu
                   variant="icon"
                   uploading={uploading}
                   onFiles={(f) => handleAttachFiles(f)}
-                  className="h-9 w-9 rounded-full bg-muted/60 active:scale-95 transition-transform"
+                  className="h-8 w-8 rounded-full hover:bg-muted/60 active:scale-95 transition-transform"
                 />
                 <button
                   type="button"
-                  onClick={() => setMode((m) => (m === 'preview' ? 'edit' : 'preview'))}
-                  aria-label={mode === 'preview' ? 'Edit' : 'Preview'}
-                  className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted/60 text-foreground active:scale-95 transition-transform"
-                  title={mode === 'preview' ? 'Back to editor' : 'Preview email'}
+                  onClick={() => setPickerOpen(true)}
+                  aria-label="Templates"
+                  className="shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/60 text-muted-foreground active:scale-95 transition-transform"
+                  title="Templates"
                 >
-                  <Eye className="h-[15px] w-[15px]" />
+                  <FileText className="h-[15px] w-[15px]" />
                 </button>
+                <div className="w-px h-4 bg-border/60" aria-hidden />
+                {/* Single minimal signature control. */}
                 <select
                   value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
                   onChange={(e) => {
@@ -1194,39 +1199,25 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                       setSelectedSignatureId(v || null);
                     }
                   }}
-                  className="min-w-0 flex-1 h-9 rounded-full border border-border bg-muted/60 px-2.5 text-[11.5px] font-medium text-foreground focus:outline-none truncate appearance-none"
+                  className="min-w-0 flex-1 h-8 rounded-md bg-transparent border-0 px-1 text-[12px] font-medium text-muted-foreground focus:outline-none focus:text-foreground truncate appearance-none"
                   aria-label="Signature"
                   title="Signature"
                 >
-                  <option value="__none__">No sig</option>
+                  <option value="__none__">No signature</option>
                   {signatures.map((s) => (
                     <option key={s.id} value={s.id}>
-                      ✎ {s.name}{s.is_default ? ' (default)' : ''}
+                      {s.name}{s.is_default ? ' · default' : ''}
                     </option>
                   ))}
                 </select>
                 {savedAt && (
                   <span
-                    className="hidden xs:inline shrink-0 text-[10.5px] text-muted-foreground/80 tabular-nums"
+                    className="shrink-0 text-[10.5px] text-muted-foreground/70 tabular-nums"
                     title={`Draft saved ${new Date(savedAt).toLocaleTimeString()}`}
                   >
                     Saved
                   </span>
                 )}
-                {/* Big primary Send button — bottom-right, thumb-reachable */}
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={!canSend || isPending}
-                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-primary-foreground text-[13px] font-semibold shadow-sm disabled:opacity-40 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-95"
-                >
-                  {isPending ? (
-                    <Loader2 className="h-[15px] w-[15px] animate-spin" />
-                  ) : (
-                    <Send className="h-[15px] w-[15px]" />
-                  )}
-                  {isPending ? 'Sending' : isMass ? `Send ${allRecipients.length}` : 'Send'}
-                </button>
               </div>
 
               {/* Footer — hidden on mobile (Send/Cancel live in the top bar) */}
