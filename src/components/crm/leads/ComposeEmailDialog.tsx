@@ -1556,9 +1556,10 @@ function RecipientRow({
   trailing?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 sm:gap-3 py-1.5 border-b border-border/30 last:border-b-0">
-      <span className="w-[44px] sm:w-[58px] shrink-0 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-        {label}
+    <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-1.5 border-b border-border/30 last:border-b-0">
+      <span className="w-[52px] sm:w-[58px] shrink-0 text-[12.5px] sm:text-[11px] sm:font-medium sm:uppercase sm:tracking-wider text-muted-foreground/80 sm:text-muted-foreground/70">
+        <span className="sm:hidden">{label}:</span>
+        <span className="hidden sm:inline">{label}</span>
       </span>
       <div className="flex-1 min-w-0 flex items-center">{children}</div>
       {trailing && <div className="shrink-0">{trailing}</div>}
