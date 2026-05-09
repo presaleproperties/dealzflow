@@ -1194,7 +1194,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   so this row only carries the signature picker + draft state.
                   Padding is intentionally tight so the keyboard sits flush against it. */}
               <div
-                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border-t border-border/40 bg-background/95 backdrop-blur-md shrink-0"
+                className="lg:hidden flex items-center gap-2 px-3 py-1.5 border-t border-border/40 bg-background/95 backdrop-blur-md shrink-0 transition-[padding] duration-150 ease-out"
                 style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 4px)' }}
               >
                 <AttachMenu
