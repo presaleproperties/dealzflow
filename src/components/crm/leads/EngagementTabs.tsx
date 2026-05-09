@@ -17,14 +17,11 @@ interface Props {
   contact: CrmContact;
 }
 
-type TabKey = 'emails' | 'behavior' | 'source';
+type TabKey = 'emails' | 'behavior';
 
 /**
- * Unified Engagement card — collapses 5 previously separate widgets
- * (Email Activity, Email Attribution, Live Engagement, Presale Activity,
- * Web Behavior, Signup Source) into one tabbed surface.
- *
- * The "Behavior" tab is owner-only — team members see Emails + Source.
+ * Unified Engagement card — Emails + Behavior tabs.
+ * Source moved to its own tile in RightSidebar.
  */
 export function EngagementTabs({ contact }: Props) {
   const { role } = useCrmAccess();
@@ -34,11 +31,9 @@ export function EngagementTabs({ contact }: Props) {
     ? [
         { key: 'emails',   label: 'Emails' },
         { key: 'behavior', label: 'Behavior' },
-        { key: 'source',   label: 'Source' },
       ]
     : [
         { key: 'emails', label: 'Emails' },
-        { key: 'source', label: 'Source' },
       ];
 
   const [tab, setTab] = useState<TabKey>('emails');
