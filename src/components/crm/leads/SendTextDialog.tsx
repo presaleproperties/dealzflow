@@ -285,10 +285,17 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       toast.error('This lead has no phone number');
       return;
     }
+    // Fall back to the raw body if every merge token resolved to empty —
+    // otherwise the server rejects with "to and body are required".
+    const finalBody = preview.trim().length > 0 ? preview : body;
+    if (!finalBody.trim()) {
+      toast.error('Message body is empty');
+      return;
+    }
     sendSms.mutate({
       contact_id: contact.id,
       to: contact.phone,
-      body: preview,
+      body: finalBody,
       from: fromOverride || undefined,
       media_urls: mediaUrls,
       channel,
