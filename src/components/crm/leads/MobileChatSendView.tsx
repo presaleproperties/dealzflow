@@ -166,7 +166,7 @@ export function MobileChatSendView({
       <header
         data-composer-header="true"
         className="sticky top-0 z-20 flex items-center gap-1.5 px-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md transition-[padding] duration-150 ease-out"
-        style={{ paddingTop: 'var(--composer-header-top-pad, calc(env(safe-area-inset-top, 0px) + 6px))', paddingBottom: '8px' }}
+        style={{ paddingBottom: '6px' }}
       >
         <button
           type="button"
@@ -361,8 +361,8 @@ export function MobileChatSendView({
       {/* Composer — pill input with outboard "+" attach. Send arrow appears
           inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-2 flex items-end gap-2 transition-[padding] duration-150 ease-out"
-        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 8px)' }}
+        className="shrink-0 bg-background/95 backdrop-blur-md px-2.5 pt-1.5 flex items-end gap-2 transition-[padding] duration-150 ease-out"
+        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 6px)' }}
       >
         <AttachMenu
           variant="icon"
