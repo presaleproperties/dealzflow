@@ -156,9 +156,6 @@ export function EngagementTabs({ contact }: Props) {
           </div>
         )}
 
-        {tab === 'source' && (
-          <PresaleSignupSourceCard contact={contact} />
-        )}
       </div>
 
       <LeadEmailThreadDialog
