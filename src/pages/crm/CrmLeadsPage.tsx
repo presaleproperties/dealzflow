@@ -32,26 +32,28 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+// Columns surfaced in the "Columns" popover. We deliberately omit duplicates:
+//   - Phone / Email → already merged into "Contact Info"
+//   - Reg          → duplicate of "Added"
+// They still exist in LeadsTable's ALL_COLUMNS for back-compat with old
+// persisted prefs, but the user can no longer toggle them on/off.
 const ALL_COLUMN_KEYS = [
   { key: 'name', label: 'Name', locked: true },
   { key: 'contactInfo', label: 'Contact Info' },
-  { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'reg', label: 'Reg' },
-  { key: 'project', label: 'Projects' },
-  { key: 'source', label: 'Source' },
   { key: 'pipeline', label: 'Pipeline' },
   { key: 'tags', label: 'Tags' },
   { key: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', label: 'Last Activity' },
   { key: 'created_at', label: 'Added' },
+  { key: 'project', label: 'Projects' },
+  { key: 'source', label: 'Source' },
   { key: 'campaign_source', label: 'Campaign' },
   { key: 'city_pref', label: 'City Pref' },
   { key: 'property_type_pref', label: 'Prop Type' },
   { key: 'is_pre_approved', label: 'Pre-Approved' },
 ] as const;
 
-const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
+const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
 /**
  * Module-level cache so that navigating into a lead detail page and swiping
