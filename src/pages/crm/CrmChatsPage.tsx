@@ -563,7 +563,7 @@ export default function CrmChatsPage() {
         </div>
 
         {/* Saved views chip strip */}
-        <div className="px-3 pb-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+        <div className="hidden sm:flex px-3 pb-2.5 items-center gap-1.5 overflow-x-auto scrollbar-hide">
           {builtinViews.map(b => {
             const active = activeViewId === b.id;
             return (
