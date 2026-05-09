@@ -11,6 +11,9 @@ export interface CrmTask {
   due_date?: string | null;
   completed_at?: string | null;
   assigned_to?: string | null;
+  presale_task_id?: string | null;
+  claimed_at?: string | null;
+  claimed_by?: string | null;
 }
 
 export interface CrmShowing {
