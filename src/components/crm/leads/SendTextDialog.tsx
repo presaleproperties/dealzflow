@@ -354,8 +354,8 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             ResponsiveDialog wrapper) sits above this on mobile. */}
         <div
           data-composer-header="true"
-          className="flex items-center justify-between gap-3 px-3 sm:px-8 sm:h-14 border-b shrink-0 bg-background/95 backdrop-blur-md"
-          style={{ paddingBottom: '6px', minHeight: '44px' }}
+          className="flex items-center justify-between gap-3 px-3 sm:px-8 sm:h-14 pb-1.5 sm:pb-0 border-b shrink-0 bg-background/95 backdrop-blur-md sticky top-0 z-30"
+          style={{ minHeight: '44px' }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-[14px] sm:text-base font-semibold tracking-tight truncate">
@@ -382,7 +382,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 -mr-1 p-1 min-h-[32px] min-w-[32px] inline-flex items-center justify-center"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 -mr-1 p-1 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-full"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
