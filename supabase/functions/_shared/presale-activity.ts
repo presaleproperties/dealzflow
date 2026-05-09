@@ -66,7 +66,7 @@ function splitName(value: unknown): { first_name: string; last_name: string } {
   return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") };
 }
 
-async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null): Promise<string> {
+async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null, leadEmail?: string | null, leadFirstName?: string | null): Promise<string> {
   if (agentSlug) {
     const wanted = agentSlug.trim().toLowerCase();
     const { data: team } = await supabase
@@ -81,6 +81,31 @@ async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null)
     });
     if (match?.display_name) return match.display_name;
   }
+  if (leadEmail || leadFirstName) {
+    const local = (leadEmail ?? "").split("@")[0]?.toLowerCase().replace(/\d+$/g, "") ?? "";
+    const first = (leadFirstName ?? "").trim().toLowerCase();
+    const { data: team } = await supabase
+      .from("crm_team")
+      .select("display_name, slug, email, presale_email")
+      .eq("is_active", true);
+    const match = (team ?? []).find((t: any) => {
+      const displayFirst = (t.display_name ?? "").split(/\s+/)[0]?.toLowerCase();
+      const emailLocal = (t.email ?? "").split("@")[0]?.toLowerCase();
+      const presaleLocal = (t.presale_email ?? "").split("@")[0]?.toLowerCase();
+      return displayFirst && first === displayFirst && (local === displayFirst || local === emailLocal || local === presaleLocal);
+    });
+    if (match?.display_name) return match.display_name;
+  }
+  const { data: owner } = await supabase
+    .from("crm_team")
+    .select("display_name")
+    .eq("is_active", true)
+    .eq("role", "owner")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (owner?.display_name) return owner.display_name;
+
   const { data: agents } = await supabase
     .from("crm_team")
     .select("display_name, role")
