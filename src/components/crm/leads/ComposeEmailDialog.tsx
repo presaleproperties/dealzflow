@@ -1172,7 +1172,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   Padding is intentionally tight so the keyboard sits flush against it. */}
               <div
                 className="lg:hidden flex items-center gap-2 px-3 py-1.5 border-t border-border/40 bg-background/95 backdrop-blur-md shrink-0"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)' }}
+                style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 4px)' }}
               >
                 <AttachMenu
                   variant="icon"
@@ -1190,29 +1190,33 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   <FileText className="h-[15px] w-[15px]" />
                 </button>
                 <div className="w-px h-4 bg-border/60" aria-hidden />
-                {/* Single minimal signature control. */}
-                <select
-                  value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === '__none__') {
-                      setAppendSignature(false);
-                    } else {
-                      setAppendSignature(true);
-                      setSelectedSignatureId(v || null);
-                    }
-                  }}
-                  className="min-w-0 flex-1 h-8 rounded-md bg-transparent border-0 px-1 text-[12px] font-medium text-muted-foreground focus:outline-none focus:text-foreground truncate appearance-none"
-                  aria-label="Signature"
-                  title="Signature"
-                >
-                  <option value="__none__">No signature</option>
-                  {signatures.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}{s.is_default ? ' · default' : ''}
-                    </option>
-                  ))}
-                </select>
+                {/* Signature picker — native select with a visible chevron so it
+                    reads as interactive instead of dead text. */}
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    value={appendSignature ? (selectedSignatureId ?? '') : '__none__'}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === '__none__') {
+                        setAppendSignature(false);
+                      } else {
+                        setAppendSignature(true);
+                        setSelectedSignatureId(v || null);
+                      }
+                    }}
+                    className="w-full h-8 rounded-md bg-transparent border-0 pl-1 pr-5 text-[12px] font-medium text-muted-foreground focus:outline-none focus:text-foreground truncate appearance-none"
+                    aria-label="Signature"
+                    title="Signature"
+                  >
+                    <option value="__none__">No signature</option>
+                    {signatures.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}{s.is_default ? ' · default' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
+                </div>
                 {savedAt && (
                   <span
                     className="shrink-0 text-[10.5px] text-muted-foreground/70 tabular-nums"
