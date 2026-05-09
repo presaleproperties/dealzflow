@@ -27,6 +27,7 @@ import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner
 import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 import { useLiveNotificationToasts } from "@/hooks/useLiveNotificationToasts";
+import { DialerWidget } from "@/components/crm/dialer/DialerWidget";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
 // Auth + the most common landing destinations stay eager so first paint is
