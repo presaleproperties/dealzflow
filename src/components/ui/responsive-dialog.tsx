@@ -58,7 +58,7 @@ export const ResponsiveDialogContent = React.forwardRef<
   };
 
   React.useEffect(() => {
-    if (!isMobile || !isDrawer || isTrulyFullScreen || typeof window === 'undefined') return;
+    if (!isMobile || !isDrawer || typeof window === 'undefined') return;
 
     const root = document.documentElement;
 
@@ -88,7 +88,7 @@ export const ResponsiveDialogContent = React.forwardRef<
       root.style.removeProperty('--keyboard-inset-bottom');
       root.style.removeProperty('--composer-safe-bottom');
     };
-  }, [isMobile, isDrawer, isTrulyFullScreen]);
+  }, [isMobile, isDrawer]);
 
   if (isMobile) {
     // `mobile-fullbleed` (legacy flag) and `mobile-drawer` (new) both render
@@ -102,6 +102,7 @@ export const ResponsiveDialogContent = React.forwardRef<
         <SheetContent
           ref={ref}
           side="bottom"
+          data-mobile-drawer={isDrawer ? 'true' : undefined}
           className={cn(
             'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col',
             className,
