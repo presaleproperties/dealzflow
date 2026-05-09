@@ -135,8 +135,9 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     // serialization, so we can't assert the literal `top` string. We CAN
     // assert the components that prove the visualViewport math is running:
     // `bottom`, the `data-keyboard-open` attribute, and the CSS vars.
-    expect(drawer!.style.top).toContain('safe-area-inset-top');
-    expect(drawer!.style.bottom).toBe('0px');
+    expect(drawer!.style.top).toContain('--composer-viewport-top');
+    expect(drawer!.style.height).toContain('--composer-viewport-height');
+    expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
       .toBe('0px');
@@ -155,7 +156,11 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(drawer!.style.bottom).toBe('0px');
+    expect(drawer!.style.bottom).toBe('auto');
+    expect(document.documentElement.style.getPropertyValue('--composer-viewport-top'))
+      .toBe('120px');
+    expect(document.documentElement.style.getPropertyValue('--composer-viewport-height'))
+      .toBe('420px');
     expect(document.documentElement.getAttribute('data-keyboard-open')).toBe('true');
     // Math: innerHeight - visualHeight - offsetTop = 800 - 420 - 120 = 260
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
@@ -169,7 +174,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(drawer!.style.bottom).toBe('0px');
+    expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
       .toBe('0px');
