@@ -134,6 +134,26 @@ export function MobileChatSendView({
     return () => window.clearTimeout(id);
   }, [isOptedOut]);
 
+  // When the keyboard opens/closes, the composer footer's padding changes
+  // (it rides --keyboard-inset-bottom). Re-pin the chat to the bottom so the
+  // latest bubble stays visible and the surface above the composer never
+  // appears to "jump".
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const pin = () => {
+      const sc = scrollRef.current;
+      if (sc) sc.scrollTop = sc.scrollHeight;
+    };
+    vv.addEventListener('resize', pin);
+    vv.addEventListener('scroll', pin);
+    return () => {
+      vv.removeEventListener('resize', pin);
+      vv.removeEventListener('scroll', pin);
+    };
+  }, []);
+
   // Auto-grow textarea: reset → measure scrollHeight → clamp to [MIN, MAX].
   // Once content exceeds MAX, the textarea itself becomes scrollable so the
   // chat surface above is never pushed upward.
