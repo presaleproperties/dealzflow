@@ -36,23 +36,46 @@ export const ResponsiveDialogContent = React.forwardRef<
 >(({ className, children, hideMobileHandle, ...rest }, ref) => {
   const isMobile = useIsMobile();
   if (isMobile) {
-    // Detect "fullBleed" by class flag — full-screen sheet (no rounded top, no
-    // backdrop padding, no handle). Used for native-feel composer dialogs.
-    const isFullBleed = typeof className === 'string' && className.includes('mobile-fullbleed');
+    // `mobile-fullbleed` (legacy flag) and `mobile-drawer` (new) both render
+    // a premium bottom-drawer: rounded top, capped at 96dvh so the iOS
+    // status bar stays visible above the sheet, sticky safe-area-aware
+    // padding so footer actions never tuck under the floating bottom-nav.
+    // Use `mobile-truly-fullscreen` for the rare case where you really
+    // want to paint behind the status bar.
+    const isDrawer =
+      typeof className === 'string' &&
+      (className.includes('mobile-fullbleed') || className.includes('mobile-drawer'));
+    const isTrulyFullScreen =
+      typeof className === 'string' && className.includes('mobile-truly-fullscreen');
+
+    if (isTrulyFullScreen) {
+      return (
+        <SheetContent
+          side="bottom"
+          className={cn(
+            'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col',
+            className,
+          )}
+        >
+          {children}
+        </SheetContent>
+      );
+    }
+
     return (
       <SheetContent
         side="bottom"
         className={cn(
-          isFullBleed
-            ? 'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col'
+          isDrawer
+            ? 'p-0 w-screen rounded-t-3xl border-0 border-t border-border/60 shadow-2xl flex flex-col max-h-[96dvh] h-[96dvh]'
             : 'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
-        style={isFullBleed ? undefined : { paddingTop: 'var(--composer-top-pad)' }}
+        style={isDrawer ? undefined : { paddingTop: 'var(--composer-top-pad)' }}
       >
-        {!hideMobileHandle && !isFullBleed && (
-          <div className="flex justify-center pt-1 pb-1.5 shrink-0 pointer-events-none">
-            <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+        {!hideMobileHandle && (
+          <div className="flex justify-center pt-2 pb-1 shrink-0 pointer-events-none">
+            <div className="h-1 w-9 rounded-full bg-muted-foreground/30" />
           </div>
         )}
         {children}
