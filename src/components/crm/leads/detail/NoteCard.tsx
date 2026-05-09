@@ -101,10 +101,11 @@ export function NoteCard({
       </div>
       <div
         className={cn(
-          'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all hover:border-border',
+          'flex-1 min-w-0 rounded-lg border bg-card px-3.5 py-3 transition-all border-l-[3px]',
           note.is_pinned ? 'border-foreground/20 bg-muted/30' : 'border-border/50',
-          isClickableEmail && 'cursor-pointer hover:bg-muted/30 hover:border-primary/40',
+          isClickableEmail && 'cursor-pointer hover:bg-muted/20 hover:border-primary/40',
         )}
+        style={{ borderLeftColor: `hsl(${meta.tint})` }}
         onClick={isClickableEmail ? () => onOpenEmail!(note.id) : undefined}
         role={isClickableEmail ? 'button' : undefined}
         tabIndex={isClickableEmail ? 0 : undefined}
@@ -113,31 +114,34 @@ export function NoteCard({
           : undefined}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-            <span className="font-semibold text-foreground/80 uppercase tracking-wider text-[11px]">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
+            <span
+              className="font-semibold uppercase tracking-[0.08em] text-[10px]"
+              style={{ color: `hsl(${meta.tint})` }}
+            >
               {isStructured && parsed.title ? parsed.title : meta.label}
             </span>
             {parsed.source && (
               <>
-                <span className="opacity-30">·</span>
+                <span className="text-muted-foreground/40">·</span>
                 <span className="truncate">{parsed.source}</span>
               </>
             )}
-            <span className="opacity-30">·</span>
-            <span className="shrink-0">{dateLabel} · {time}</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="shrink-0 tabular-nums">{dateLabel} · {time}</span>
             {note.user_id && (
               <>
-                <span className="opacity-30">·</span>
+                <span className="text-muted-foreground/40">·</span>
                 <AgentBadge userId={note.user_id} prefix="by" />
               </>
             )}
             {isClickableEmail && (
               <>
-                <span className="opacity-30">·</span>
+                <span className="text-muted-foreground/40">·</span>
                 <span className="text-primary font-medium shrink-0">View email →</span>
               </>
             )}
-            {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60 shrink-0" />}
+            {note.is_pinned && <Pin className="w-3 h-3 text-foreground/60 shrink-0 ml-0.5" />}
           </div>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             {!isVirtual && (
