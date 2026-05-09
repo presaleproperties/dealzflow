@@ -1,3 +1,4 @@
+import { Cog } from 'lucide-react';
 import { useTeamByUserId, initialsFromName } from '@/hooks/useTeamByUserId';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +10,13 @@ interface AgentBadgeProps {
   prefix?: string;
   size?: 'xs' | 'sm';
   className?: string;
+  /**
+   * Force-render this attribution as "System" regardless of userId.
+   * Use for entries that were auto-logged (webhooks, syncs, automations,
+   * stage changes, web-form ingests, etc.) so they don't appear to be the
+   * work of whichever agent happened to own the row.
+   */
+  system?: boolean;
 }
 
 /**
@@ -25,11 +33,13 @@ export function AgentBadge({
   prefix,
   size = 'xs',
   className,
+  system = false,
 }: AgentBadgeProps) {
   const { data: teamMap } = useTeamByUserId();
-  const member = userId ? teamMap?.[userId] : null;
+  const member = !system && userId ? teamMap?.[userId] : null;
 
-  const name = member?.display_name ?? (userId ? 'Agent' : 'System');
+  const isSystem = system || !userId;
+  const name = isSystem ? 'System' : (member?.display_name ?? 'Agent');
   const firstName = name.split(/\s+/)[0];
   const initials = initialsFromName(name);
 
@@ -51,7 +61,9 @@ export function AgentBadge({
           dim,
         )}
       >
-        {member?.headshot_url ? (
+        {isSystem ? (
+          <Cog className="w-2.5 h-2.5 text-muted-foreground" strokeWidth={2} />
+        ) : member?.headshot_url ? (
           <img
             src={member.headshot_url}
             alt={name}
