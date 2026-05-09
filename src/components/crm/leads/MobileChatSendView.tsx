@@ -134,14 +134,21 @@ export function MobileChatSendView({
     return () => window.clearTimeout(id);
   }, [isOptedOut]);
 
-  // Auto-grow textarea up to ~5 lines.
+  // Auto-grow textarea: reset → measure scrollHeight → clamp to [MIN, MAX].
+  // Once content exceeds MAX, the textarea itself becomes scrollable so the
+  // chat surface above is never pushed upward.
   useEffect(() => {
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = 'auto';
-    const next = Math.min(140, Math.max(36, ta.scrollHeight));
+    const measured = ta.scrollHeight;
+    const next = Math.min(TA_MAX, Math.max(TA_MIN, measured));
     ta.style.height = `${next}px`;
     setTaHeight(next);
+    setTaScrollable(measured > TA_MAX);
+    // Keep the latest message visible as the composer grows.
+    const sc = scrollRef.current;
+    if (sc) sc.scrollTop = sc.scrollHeight;
   }, [body]);
 
   // Cmd/Ctrl+Enter from anywhere in the composer triggers send.
