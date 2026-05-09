@@ -361,8 +361,8 @@ Deno.serve(async (req) => {
       const isHot = newTags.includes("hot");
 
       await supabase.from("crm_contacts").update({
-        first_name: existing.first_name || L.first_name || "Lead",
-        last_name: existing.last_name || L.last_name || "",
+        first_name: existing.first_name || L.first_name || "New",
+        last_name: existing.last_name || L.last_name || "(unknown)",
         presale_user_id: L.presale_user_id ?? undefined,
         // Source rule: ALWAYS PresaleProperties.com for inbound presale leads
         source: "PresaleProperties.com",
