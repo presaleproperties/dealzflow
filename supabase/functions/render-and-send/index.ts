@@ -27,7 +27,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const BRIDGE_URL = Deno.env.get("PRESALE_BRIDGE_URL");
-const BRIDGE_SECRET = Deno.env.get("PRESALE_BRIDGE_SECRET");
+const BRIDGE_SECRET = Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET");
 const PRESALE_ANON_KEY = Deno.env.get("PRESALE_ANON_KEY");
 
 function json(body: unknown, status = 200) {

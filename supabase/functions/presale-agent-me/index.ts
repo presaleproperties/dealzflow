@@ -145,7 +145,8 @@ Deno.serve(async (req) => {
         : undefined) ??
       agents.find((a) => (a.email ?? "").toLowerCase() === lookupEmail);
 
-    if (!match?.slug) {
+    const matchIdentifier = match?.slug ?? match?.id ?? match?.email;
+    if (!matchIdentifier) {
       return new Response(
         JSON.stringify({
           agent: null,
@@ -160,7 +161,7 @@ Deno.serve(async (req) => {
     }
 
     // 2. Pull the full agent payload
-    const full = await presaleBridge.getAgent(match.slug);
+    const full = await presaleBridge.getAgent(matchIdentifier);
     const agent = normalize(full ?? match);
 
     return new Response(

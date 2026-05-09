@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       ALLOWED_REDIRECTS.find((r) => requested === r || requested.startsWith(r + "?")) ||
       "/dashboard/email-builder";
 
-    const secret = Deno.env.get("PRESALE_BRIDGE_SECRET");
+    const secret = Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET");
     if (!secret) return json({ error: "PRESALE_BRIDGE_SECRET not configured" }, 500);
 
     const r = await fetch(PRESALE_URL, {

@@ -20,7 +20,7 @@ const BRIDGE_URL =
   Deno.env.get("PRESALE_BRIDGE_URL") ??
   "https://thvlisplwqhtjpzpedhq.supabase.co/functions/v1";
 const BRIDGE_SECRET =
-  Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET") ?? "";
+  Deno.env.get("BRIDGE_SECRET") ?? Deno.env.get("PRESALE_BRIDGE_SECRET") ?? "";
 const PRESALE_ANON = Deno.env.get("PRESALE_ANON_KEY") ?? "";
 
 function json(body: unknown, status = 200) {
