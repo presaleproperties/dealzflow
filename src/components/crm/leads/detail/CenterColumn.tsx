@@ -461,6 +461,8 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
             </div>
           </details>
         )}
+        </>
+        )}
       </TabsContent>
 
       {/* (Standalone Showings TabsContent removed — accordion above is the single surface.) */}
