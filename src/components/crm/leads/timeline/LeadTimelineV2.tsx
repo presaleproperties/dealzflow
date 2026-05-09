@@ -41,6 +41,45 @@ export function LeadTimelineV2({
   const [kinds, setKinds] = useState<TimelineKind[] | null>(null);
   const [search, setSearch] = useState('');
 
+  const {
+    presets,
+    savePreset,
+    deletePreset,
+    lastAppliedId,
+    setLastAppliedId,
+  } = useTimelinePresets(contactId);
+
+  // Auto-apply the last used preset when switching leads.
+  useEffect(() => {
+    if (!lastAppliedId) return;
+    const p = presets.find((x) => x.id === lastAppliedId);
+    if (!p) return;
+    setFilterKey(p.filterKey);
+    setKinds(p.kinds);
+    setSearch(p.search);
+    // Only on lead change / initial preset load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactId, presets.length === 0 ? null : lastAppliedId]);
+
+  const applyPreset = (p: TimelinePreset) => {
+    setFilterKey(p.filterKey);
+    setKinds(p.kinds);
+    setSearch(p.search);
+    setLastAppliedId(p.id);
+  };
+
+  const handleSavePreset = (name: string) => {
+    const p = savePreset({ name, filterKey, kinds, search });
+    setLastAppliedId(p.id);
+  };
+
+  // Detect whether current view differs from any saved preset (so "Save view" is meaningful).
+  const matchesExisting = presets.some(
+    (p) => p.filterKey === filterKey && p.search === search,
+  );
+  const isDefaultView = filterKey === 'all' && !search;
+  const canSavePreset = !matchesExisting && !isDefaultView;
+
   const { events, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useLeadTimelineV2({ contactId, kinds, search });
 
