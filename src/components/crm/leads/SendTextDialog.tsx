@@ -353,8 +353,9 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
         {/* Header — title + channel toggle + close. Drag handle (rendered by
             ResponsiveDialog wrapper) sits above this on mobile. */}
         <div
+          data-composer-header="true"
           className="flex items-center justify-between gap-3 px-4 sm:px-8 sm:h-14 border-b shrink-0 bg-background/95 backdrop-blur-md"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)', paddingBottom: '6px', minHeight: '44px' }}
+          style={{ paddingTop: 'var(--composer-header-top-pad, calc(env(safe-area-inset-top, 0px) + 6px))', paddingBottom: '6px', minHeight: '44px' }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-[14px] sm:text-base font-semibold tracking-tight truncate">
