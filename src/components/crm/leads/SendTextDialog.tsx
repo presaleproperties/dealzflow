@@ -106,6 +106,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       setScheduled(false);
       setScheduledFor('');
       setFromOverride('');
+      setForceAdvanced(false);
     }
   }, [open, initialChannel, initialBody]);
 
