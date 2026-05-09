@@ -23,6 +23,8 @@ import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
 import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
+import { useDialer } from '@/hooks/useDialer';
+import { formatContactName } from '@/lib/format';
 import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 
 import type { LeadScore } from '@/components/crm/leads/detail/types';
