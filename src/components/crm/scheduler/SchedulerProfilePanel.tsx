@@ -210,6 +210,49 @@ export function SchedulerProfilePanel() {
         </div>
       </Card>
 
+      {/* Quiet Hours — silences notifications/digests during these hours */}
+      <Card className="p-5 space-y-4">
+        <div>
+          <div className="text-[13px] font-semibold text-foreground">Quiet hours</div>
+          <p className="text-[12px] text-muted-foreground mt-0.5">
+            We'll hold non-urgent lead notifications during these hours and batch them into your morning digest. Leave both blank to disable.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <Label className="text-[12px]">Start hour (0–23)</Label>
+            <Input
+              type="number" min={0} max={23}
+              placeholder="21"
+              value={form.quiet_hours_start ?? ''}
+              onChange={(e) => u({ quiet_hours_start: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-[12px]">End hour (0–23)</Label>
+            <Input
+              type="number" min={0} max={23}
+              placeholder="7"
+              value={form.quiet_hours_end ?? ''}
+              onChange={(e) => u({ quiet_hours_end: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-[12px]">Timezone</Label>
+            <select
+              value={form.quiet_hours_tz || form.timezone || 'America/Vancouver'}
+              onChange={(e) => u({ quiet_hours_tz: e.target.value })}
+              className="w-full h-9 px-3 rounded-md border border-input bg-background text-[13px]"
+            >
+              {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
+            </select>
+          </div>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Example: 21 → 7 silences notifications between 9pm and 7am. Wraps midnight.
+        </p>
+      </Card>
+
       <div className="flex justify-end">
         <Button onClick={save} disabled={updateMut.isPending}>
           {updateMut.isPending ? 'Saving…' : 'Save profile'}
