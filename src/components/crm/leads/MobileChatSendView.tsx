@@ -134,7 +134,7 @@ export function MobileChatSendView({
         </div>
         <button
           type="button"
-          onClick={() => contact.phone && dialer.startCall({ contact, number: contact.phone })}
+          onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
           aria-label="Call"
           disabled={!contact.phone}
           className="inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30"
