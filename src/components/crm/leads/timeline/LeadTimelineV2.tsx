@@ -128,11 +128,25 @@ export function LeadTimelineV2({
         onChange={(k, ks) => {
           setFilterKey(k);
           setKinds(ks);
+          setLastAppliedId(null);
         }}
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setLastAppliedId(null);
+        }}
       />
 
+      <div className="mt-2">
+        <TimelinePresetsBar
+          presets={presets}
+          activeId={lastAppliedId}
+          canSave={canSavePreset}
+          onApply={applyPreset}
+          onDelete={deletePreset}
+          onSave={handleSavePreset}
+        />
+      </div>
       {pinnedEvents.length > 0 && (
         <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] p-2">
           <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-400">
