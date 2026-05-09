@@ -32,26 +32,28 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+// Columns surfaced in the "Columns" popover. We deliberately omit duplicates:
+//   - Phone / Email → already merged into "Contact Info"
+//   - Reg          → duplicate of "Added"
+// They still exist in LeadsTable's ALL_COLUMNS for back-compat with old
+// persisted prefs, but the user can no longer toggle them on/off.
 const ALL_COLUMN_KEYS = [
   { key: 'name', label: 'Name', locked: true },
   { key: 'contactInfo', label: 'Contact Info' },
-  { key: 'phone', label: 'Phone' },
-  { key: 'email', label: 'Email' },
-  { key: 'reg', label: 'Reg' },
-  { key: 'project', label: 'Projects' },
-  { key: 'source', label: 'Source' },
   { key: 'pipeline', label: 'Pipeline' },
   { key: 'tags', label: 'Tags' },
   { key: 'assigned_to', label: 'Agent' },
   { key: 'last_touch_at', label: 'Last Activity' },
   { key: 'created_at', label: 'Added' },
+  { key: 'project', label: 'Projects' },
+  { key: 'source', label: 'Source' },
   { key: 'campaign_source', label: 'Campaign' },
   { key: 'city_pref', label: 'City Pref' },
   { key: 'property_type_pref', label: 'Prop Type' },
   { key: 'is_pre_approved', label: 'Pre-Approved' },
 ] as const;
 
-const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'reg', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
+const DEFAULT_VISIBLE = new Set(['name', 'contactInfo', 'pipeline', 'tags', 'assigned_to', 'last_touch_at', 'quick_actions']);
 
 /**
  * Module-level cache so that navigating into a lead detail page and swiping
@@ -855,8 +857,11 @@ export default function CrmLeadsPage() {
                       <span className="hidden lg:inline">Columns</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-48 p-2">
-                    <p className="text-xs font-semibold text-muted-foreground px-2 pb-1.5">Toggle columns</p>
+                  <PopoverContent align="end" className="w-56 p-2">
+                    <div className="flex items-center justify-between px-2 pb-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground">Toggle columns</p>
+                      <span className="text-[10px] text-muted-foreground/70">Auto-saved</span>
+                    </div>
                     {ALL_COLUMN_KEYS.map(col => (
                       <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
                         <Checkbox
@@ -867,6 +872,19 @@ export default function CrmLeadsPage() {
                         {col.label}
                       </label>
                     ))}
+                    <div className="border-t border-border/50 mt-1.5 pt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisibleColumns(new Set(DEFAULT_VISIBLE));
+                          try { localStorage.removeItem('crm:leads:colWidths:v1'); } catch {}
+                          window.location.reload();
+                        }}
+                        className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted/50 text-[12px] text-muted-foreground hover:text-foreground"
+                      >
+                        Reset columns &amp; widths
+                      </button>
+                    </div>
                   </PopoverContent>
                 </Popover>
                 <span className="mx-1 h-5 w-px bg-border/60" aria-hidden="true" />
