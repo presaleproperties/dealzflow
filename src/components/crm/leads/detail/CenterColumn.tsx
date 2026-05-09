@@ -13,7 +13,7 @@ import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
 import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
-import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
+import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
 import { SmsThreadDrawer } from '@/components/crm/leads/SmsThreadDrawer';
@@ -113,16 +113,55 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
     // email opens, deck visits, lead.approved, etc.). These live in
     // crm_activity_events and are NOT in our emailLog / smsLog tables, so
     // without this merge they'd never appear in the timeline.
-    const eventNotes: CrmNote[] = (activityEvents ?? []).map((ev: any) => {
+    const eventNotes: CrmNote[] = [];
+    for (const ev of (activityEvents ?? []) as any[]) {
       const t: string = ev.type || 'event';
       const meta = ev.metadata || {};
       const subject = meta.subject ? `: ${meta.subject}` : '';
+
+      // Presale-pushed outbound emails (auto-responses, project sends) include
+      // a fully rendered body_html. Fold them into the email lane so they
+      // render with the polished EmailNoteCard + open in the email preview.
+      const isPresaleEmailSend =
+        (t === 'email.sent' || t === 'email.auto_response_sent' || t === 'email_sent') &&
+        (meta.body_html || meta.subject);
+      if (isPresaleEmailSend) {
+        const noteId = `presale-email-${ev.id}`;
+        const ts = ev.occurred_at || meta.sent_at || ev.received_at || new Date().toISOString();
+        const virtualRow: EmailLogRow = {
+          id: ev.id,
+          subject: meta.subject ?? null,
+          body: meta.body_html ?? null,
+          body_html: meta.body_html ?? null,
+          body_text: meta.body_text ?? null,
+          direction: (meta.direction === 'inbound' ? 'inbound' : 'outbound'),
+          sent_at: meta.sent_at ?? ts,
+          created_at: ts,
+          from_email: meta.from_email ?? null,
+          to_email: meta.to_email ?? null,
+          open_count: meta.open_count ?? 0,
+          click_count: meta.click_count ?? 0,
+          tracking_id: meta.tracking_id ?? null,
+          sent_by: null,
+        };
+        emailMap.set(noteId, virtualRow);
+        eventNotes.push({
+          id: noteId,
+          contact_id: contact.id,
+          user_id: '',
+          content: `Sent email: ${meta.subject ?? '(no subject)'}`,
+          note_type: 'email',
+          is_pinned: false,
+          created_at: ts,
+          updated_at: ts,
+          event_at: ts,
+        });
+        continue;
+      }
+
       let kind: CrmNote['note_type'] = 'system';
       let label = t;
-      if (t === 'email.sent' || t === 'email.auto_response_sent') {
-        kind = 'email';
-        label = `Sent email${subject}`;
-      } else if (t === 'email_opened' || t === 'email.opened') {
+      if (t === 'email_opened' || t === 'email.opened') {
         kind = 'email';
         const n = meta.open_count ? ` (open #${meta.open_count})` : '';
         label = `Email opened${n}${subject}`;
@@ -141,7 +180,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
       } else {
         label = t.replace(/[._]/g, ' ');
       }
-      return {
+      eventNotes.push({
         id: `evt-${ev.id}`,
         contact_id: contact.id,
         user_id: '',
@@ -151,8 +190,8 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         created_at: ev.occurred_at || ev.received_at || new Date().toISOString(),
         updated_at: ev.occurred_at || ev.received_at || new Date().toISOString(),
         event_at: ev.occurred_at || ev.received_at || null,
-      };
-    });
+      });
+    }
 
     const merged = [...rawNotes, ...emailNotes, ...smsNotes, ...eventNotes];
     const ts = (n: CrmNote) => new Date(n.event_at || n.created_at).getTime();
@@ -170,12 +209,19 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
+    // Presale-pushed emails (synthesized from crm_activity_events) aren't in
+    // the local crm_email_log, so the thread dialog can't load them. Open the
+    // single-message preview directly so the body_html renders cleanly.
+    if (noteId.startsWith('presale-email-')) {
+      setPreviewEmail(row);
+      setThreadInitialId(null);
+      setThreadOpen(false);
+      return;
+    }
     // Open the full-thread dialog scoped to this email so the agent sees
     // the complete back-and-forth with quoted history + inline reply.
     setThreadInitialId(`log-${row.id}`);
     setThreadOpen(true);
-    // Keep the legacy preview state available but unused; future single-row
-    // previews can re-enable this without code changes.
     setPreviewEmail(null);
   };
 
@@ -504,12 +550,21 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
 
       <LeadEmailThreadDialog
         contact={contact}
-        open={threadOpen || !!previewEmail}
+        open={threadOpen}
         onOpenChange={(o) => {
           setThreadOpen(o);
-          if (!o) { setThreadInitialId(null); setPreviewEmail(null); }
+          if (!o) setThreadInitialId(null);
         }}
-        initialEmailId={threadInitialId ?? (previewEmail ? `log-${previewEmail.id}` : null)}
+        initialEmailId={threadInitialId}
+      />
+
+      {/* Standalone preview for emails that aren't in crm_email_log
+          (e.g. Presale-pushed auto-responses with rendered body_html). */}
+      <EmailPreviewDialog
+        email={previewEmail}
+        open={!!previewEmail}
+        onOpenChange={(o) => { if (!o) setPreviewEmail(null); }}
+        contactEmail={contact.email}
       />
 
       <ImportConversationDialog
