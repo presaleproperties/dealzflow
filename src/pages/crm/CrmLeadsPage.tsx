@@ -232,6 +232,34 @@ export default function CrmLeadsPage() {
       localStorage.setItem('crm.leads.sortDir', sortDir);
     } catch {}
   }, [sortKey, sortDir]);
+
+  // Persist visible columns + every filter so a refresh / re-navigation
+  // keeps the user's exact view. Saved Views still override at the
+  // viewFilters layer; this only restores the user's manual choices.
+  useEffect(() => {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        visibleColumns: Array.from(visibleColumns),
+        filterContactType,
+        filterStatus,
+        filterSource,
+        filterAgent,
+        filterProject,
+        filterLeadType,
+        filterLanguage,
+        filterTags,
+        filterExcludeTags,
+        filterPropertyType,
+        filterCity,
+        filterPreApproved,
+        filterCampaign,
+      }));
+    } catch { /* quota / private mode — ignore */ }
+  }, [
+    visibleColumns, filterContactType, filterStatus, filterSource, filterAgent,
+    filterProject, filterLeadType, filterLanguage, filterTags, filterExcludeTags,
+    filterPropertyType, filterCity, filterPreApproved, filterCampaign,
+  ]);
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(() => !!searchParams.get('search'));
