@@ -5462,6 +5462,7 @@ export type Database = {
         Args: { button_key: string; url: string }
         Returns: string
       }
+      crm_delete_contact: { Args: { p_contact_id: string }; Returns: boolean }
       crm_distinct_sources: {
         Args: never
         Returns: {
