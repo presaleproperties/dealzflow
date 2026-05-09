@@ -28,6 +28,7 @@ import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 import { useLiveNotificationToasts } from "@/hooks/useLiveNotificationToasts";
 import { DialerWidget } from "@/components/crm/dialer/DialerWidget";
+import { ViewportDebugOverlay } from "@/components/dev/ViewportDebugOverlay";
 
 // ── Eager-loaded pages ────────────────────────────────────────────────────
 // Auth + the most common landing destinations stay eager so first paint is
@@ -209,6 +210,7 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
       <SessionRestoringBanner />
       <EmailIdentitySetupDialog />
       <DialerWidget />
+      <ViewportDebugOverlay />
     </>
   );
 }
