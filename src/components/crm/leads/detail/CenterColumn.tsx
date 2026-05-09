@@ -168,7 +168,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         kind = 'email';
         const n = meta.open_count ? ` (open #${meta.open_count})` : '';
         label = `Email opened${n}${subject}`;
-      } else if (t === 'email.clicked' || t === 'email_clicked') {
+      } else if (t === 'email.clicked' || t === 'email_clicked' || t === 'email_link_clicked') {
         kind = 'email';
         label = `Email link clicked${subject}`;
       } else if (t === 'lead.approved') {
