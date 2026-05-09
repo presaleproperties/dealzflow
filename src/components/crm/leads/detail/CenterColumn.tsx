@@ -23,8 +23,11 @@ import { getDateGroup, noteTime, type CrmShowing } from './types';
 import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
+import { LeadTimelineV2 } from '@/components/crm/leads/timeline/LeadTimelineV2';
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
+type ViewMode = 'classic' | 'v2';
+const VIEW_KEY = 'crm-lead-timeline-view';
 
 interface Props {
   contact: CrmContact;
