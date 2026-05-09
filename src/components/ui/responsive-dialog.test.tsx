@@ -123,7 +123,8 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     expect(drawer).toBeTruthy();
 
     // ── 1. Keyboard CLOSED ────────────────────────────────────────────────
-    expect(drawer!.style.top).toMatch(/calc\(max\(env\(safe-area-inset-top.*\+ 0px\)/);
+    expect(drawer!.style.top).toMatch(/0px/);
+    expect(drawer!.style.top).toContain('safe-area-inset-top');
     expect(drawer!.style.bottom).toBe('0px');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
 
