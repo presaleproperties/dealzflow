@@ -61,7 +61,9 @@ export default function CrmInboxPage() {
     <div className="flex flex-1 min-h-0 h-full flex-col">
       {/* Channel switcher — slim, native-feeling */}
       <header className="border-b border-border/60 bg-background/95 backdrop-blur-sm">
-        <div className="px-4 lg:px-6 pt-3 pb-0 flex items-center gap-2">
+        {/* Title row — hidden on mobile (the global app header already shows page
+            context; channel tabs below are the actionable bit). */}
+        <div className="hidden md:flex px-4 lg:px-6 pt-3 pb-0 items-center gap-2">
           <Inbox className="w-4 h-4 text-muted-foreground" strokeWidth={1.6} />
           <h1 className="text-[15px] font-semibold tracking-tight">Inbox</h1>
         </div>

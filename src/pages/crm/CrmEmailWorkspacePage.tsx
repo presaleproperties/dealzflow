@@ -68,11 +68,10 @@ export default function CrmEmailWorkspacePage() {
   };
 
   return (
-    <div
-      className="flex flex-col h-full min-h-0 lg:h-[calc(100dvh-140px)] lg:min-h-[600px]"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-    >
-      <div className="mb-2"><EmailLiveStatusBar /></div>
+    <div className="flex flex-col h-full min-h-0 lg:h-[calc(100dvh-140px)] lg:min-h-[600px]">
+      {/* Status bar is desktop-only — on mobile the chat header already shows
+          connection state and we don't want a fat banner stealing the fold. */}
+      <div className="hidden md:block mb-2"><EmailLiveStatusBar /></div>
       {/* Editorial header — segmented tabs + primary "New Email" CTA */}
       <div className="mb-3 flex items-center gap-3">
         <div className="flex-1 -mx-1 overflow-x-auto no-scrollbar">
