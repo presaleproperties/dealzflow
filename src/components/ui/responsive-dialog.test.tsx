@@ -1,19 +1,14 @@
 /**
  * Regression test for the iOS keyboard "header drift" bug.
  *
- * When iOS opens the soft keyboard it scrolls the *layout* viewport up to
- * keep the focused input visible. Anything `position: fixed` (Radix Sheet)
- * gets dragged up with it — that's what made the composer header tuck
- * behind the notch and "slowly slide down" once iOS settled. The fix in
- * ResponsiveDialogContent tracks `window.visualViewport` and rewrites the
- * drawer's inline `top` to cancel that scroll every frame.
+ * When iOS opens the soft keyboard, the visible viewport changes. The
+ * fullscreen composer should resize to that viewport, not add fake top
+ * padding or let the whole sheet drift into the phone edge.
  *
  * This test simulates the keyboard open/close cycle and asserts:
- *   1. While the keyboard is closed, top stays at the safe-area baseline.
- *   2. While the keyboard is open, top is offset by visualViewport.offsetTop
- *      (i.e. the header does NOT drift behind the notch).
- *   3. The bottom inset matches the keyboard height so the drawer shrinks
- *      from below instead of being pushed up.
+ *   1. While the keyboard is closed, the drawer uses viewport CSS vars.
+ *   2. While the keyboard is open, those vars follow visualViewport.
+ *   3. The bottom inset matches the keyboard height.
  *   4. The `data-keyboard-open` attribute and `--keyboard-inset-bottom` CSS
  *      var follow the keyboard state.
  */
@@ -108,6 +103,8 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     window.scrollTo = originalScrollTo;
     document.documentElement.removeAttribute('data-keyboard-open');
     document.documentElement.style.removeProperty('--keyboard-inset-bottom');
+    document.documentElement.style.removeProperty('--composer-viewport-top');
+    document.documentElement.style.removeProperty('--composer-viewport-height');
     document.documentElement.style.removeProperty('--composer-safe-bottom');
     // Clean visualViewport mock.
     delete (window as { visualViewport?: unknown }).visualViewport;
