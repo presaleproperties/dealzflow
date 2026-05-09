@@ -59,42 +59,44 @@ export const ResponsiveDialogContent = React.forwardRef<
       const keyboardBottom = Math.max(0, window.innerHeight - visualHeight - visualOffsetTop);
       const keyboardOpen = keyboardBottom > 60;
 
-      // Top clearance: real safe-area inset (notch / Dynamic Island) + a hair,
-      // never less than 8px so the drawer never tucks behind the status bar.
-      // We use the CSS env value via a calc string so it auto-recalculates if
-      // the device rotates.
+      // Track the *visual* viewport, not the layout viewport. When iOS opens
+      // the keyboard it scrolls the layout viewport up to keep the focused
+      // input visible — that drags any `position: fixed` element up with it,
+      // which is exactly what made the composer header tuck behind the notch
+      // and "slowly slide down" once iOS settled. By offsetting `top` by
+      // `visualOffsetTop` we cancel that scroll and the drawer stays glued
+      // to the visible region for the entire keyboard animation.
       setDrawerViewportStyle({
-        top: 'max(env(safe-area-inset-top, 0px), 8px)',
+        top: `calc(max(env(safe-area-inset-top, 0px), 8px) + ${visualOffsetTop}px)`,
         bottom: `${keyboardBottom}px`,
         height: 'auto',
         maxHeight: 'none',
+        // No transition on `top` — it must follow the keyboard frame-perfect.
+        // iOS animates the visualViewport itself, so this already feels smooth.
+        willChange: 'top, bottom',
       });
 
-      // Continuous composer-safe-bottom: the drawer's bottom edge is already
-      // pinned `keyboardBottom`px above the device bottom, so any safe-area
-      // inset below the keyboard line is *already covered*. Subtract it so
-      // the composer's inner padding eases from full safe-area (idle) down
-      // to 0 (keyboard fully open) instead of snapping at a threshold.
-      // Floor at 0 — never negative.
+      // Continuous composer-safe-bottom: drawer's bottom edge already sits
+      // `keyboardBottom`px above the device bottom, so the safe-area inset
+      // below the keyboard line is *already covered*. Subtract it so the
+      // composer's inner padding eases from full safe-area (idle) down to
+      // 0 (keyboard fully open) instead of snapping at a threshold.
       root.style.setProperty('--keyboard-inset-bottom', `${keyboardBottom}px`);
       root.style.setProperty(
         '--composer-safe-bottom',
         `max(0px, calc(env(safe-area-inset-bottom, 0px) - ${keyboardBottom}px))`,
       );
 
-      // Keep the binary attribute too for components that still branch on it
-      // (e.g. dropping outer page padding while typing).
       if (keyboardOpen) {
         root.setAttribute('data-keyboard-open', 'true');
       } else {
         root.removeAttribute('data-keyboard-open');
       }
 
-      // CRITICAL iOS FIX: when an input gains focus, iOS Safari scrolls the
-      // *layout* viewport up to keep the input visible — which slides our
-      // position:fixed drawer up *with* the page, tucking the header behind
-      // the status bar / notch. Pinning window scroll to 0 every time the
-      // visual viewport changes defeats that and keeps the drawer anchored.
+      // Belt-and-suspenders: also pin the layout viewport scroll to 0 so
+      // anything outside the drawer (toasts, dialer widget) doesn't drift.
+      // Combined with the visualOffsetTop math above, the drawer header is
+      // now pinned regardless of which viewport iOS chooses to move.
       if (window.scrollY !== 0) window.scrollTo(0, 0);
     };
 
