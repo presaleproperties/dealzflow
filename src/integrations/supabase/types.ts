@@ -789,6 +789,53 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_contact_identities: {
+        Row: {
+          contact_id: string
+          first_seen_at: string
+          id: string
+          is_primary: boolean
+          kind: string
+          last_seen_at: string
+          metadata: Json
+          raw_value: string | null
+          source: string | null
+          value: string
+        }
+        Insert: {
+          contact_id: string
+          first_seen_at?: string
+          id?: string
+          is_primary?: boolean
+          kind: string
+          last_seen_at?: string
+          metadata?: Json
+          raw_value?: string | null
+          source?: string | null
+          value: string
+        }
+        Update: {
+          contact_id?: string
+          first_seen_at?: string
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          last_seen_at?: string
+          metadata?: Json
+          raw_value?: string | null
+          source?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contact_identities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_contacts: {
         Row: {
           address: string | null
@@ -5740,6 +5787,15 @@ export type Database = {
         Args: { _contact_ids: string[]; _tags: string[] }
         Returns: number
       }
+      crm_attach_alternate: {
+        Args: {
+          _contact_id: string
+          _email?: string
+          _phone?: string
+          _source?: string
+        }
+        Returns: undefined
+      }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
       crm_can_see_contact: {
         Args: { _assigned_to: string; _user_id: string }
@@ -5856,13 +5912,33 @@ export type Database = {
         Returns: Json
       }
       crm_my_presale_slug: { Args: never; Returns: string }
+      crm_normalize_email: { Args: { _v: string }; Returns: string }
+      crm_normalize_phone: { Args: { _v: string }; Returns: string }
       crm_recipients_for_contact: {
         Args: { _assigned_to: string }
         Returns: string[]
       }
+      crm_record_identity: {
+        Args: {
+          _contact_id: string
+          _is_primary?: boolean
+          _kind: string
+          _source?: string
+          _value: string
+        }
+        Returns: string
+      }
       crm_replay_recent_activity: {
         Args: { _contact_id: string; _hours?: number }
         Returns: number
+      }
+      crm_resolve_contact_identity: {
+        Args: { _email?: string; _phone?: string }
+        Returns: {
+          contact_id: string
+          matched_on: string
+          matched_value: string
+        }[]
       }
       crm_scheduler_resolve_slug: {
         Args: { _event_slug: string; _team_slug: string }

@@ -357,17 +357,62 @@ Deno.serve(async (req) => {
       console.warn("[bridge-ingest-lead] log_source_event failed (non-fatal):", e);
     }
 
-    // Dedup by email/phone first. Presale visitor/session ids can be reused in
-    // the same browser during testing, so they must not override a different
-    // submitted email/phone identity.
+    // Detect "agent self-test" pattern: an active team member's first name
+    // followed by digits in the email local-part (e.g. ravish2@gmail.com).
+    // Lead is still created and notified, but flagged for filtering.
+    let isAgentTest = false;
+    try {
+      const local = (email.split("@")[0] || "").toLowerCase();
+      const m = /^([a-z]+)\d+$/.exec(local);
+      if (m) {
+        const candidate = m[1];
+        const { data: teamRows } = await supabase
+          .from("crm_team")
+          .select("display_name, first_name")
+          .eq("status", "active");
+        const names = new Set<string>();
+        for (const t of teamRows ?? []) {
+          const dn = String((t as any).display_name ?? "").trim().toLowerCase().split(/\s+/)[0];
+          const fn = String((t as any).first_name ?? "").trim().toLowerCase();
+          if (dn) names.add(dn);
+          if (fn) names.add(fn);
+        }
+        if (names.has(candidate)) isAgentTest = true;
+      }
+    } catch (e) {
+      console.warn("[bridge-ingest-lead] agent-test detection failed (non-fatal):", e);
+    }
+
+    // Dedup via the identity vault first (matches against any email or phone
+    // this contact has EVER used, not just the current primary). Falls back to
+    // a direct lookup so we don't regress if the vault is empty.
     let existing: any = null;
+    let matchedOn: string | null = null;
     if (email || phone) {
-      const { data } = await supabase.from("crm_contacts")
-        .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
-        .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
-        .order("created_at", { ascending: true })
-        .limit(1).maybeSingle();
-      existing = data;
+      try {
+        const { data: resolved } = await supabase.rpc("crm_resolve_contact_identity", {
+          _email: email || null,
+          _phone: phone || null,
+        });
+        const hit = Array.isArray(resolved) ? resolved[0] : resolved;
+        if (hit?.contact_id) {
+          matchedOn = hit.matched_on ?? null;
+          const { data } = await supabase.from("crm_contacts")
+            .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+            .eq("id", hit.contact_id).maybeSingle();
+          existing = data;
+        }
+      } catch (e) {
+        console.warn("[bridge-ingest-lead] resolver RPC failed, falling back:", e);
+      }
+      if (!existing) {
+        const { data } = await supabase.from("crm_contacts")
+          .select("id, first_name, last_name, email, phone, tags, projects, looking_to_buy_in, source, notes, presale_metadata")
+          .or(phone ? `email.eq.${email},phone.eq.${phone}` : `email.eq.${email}`)
+          .order("created_at", { ascending: true })
+          .limit(1).maybeSingle();
+        existing = data;
+      }
     }
     if (!existing) {
       const { data } = await supabase.from("crm_contacts")
@@ -394,6 +439,7 @@ Deno.serve(async (req) => {
     if (existing) {
       // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
       const newTags = buildTags(existing.tags, L.tags, meta);
+      if (isAgentTest && !newTags.includes("agent-test")) newTags.push("agent-test");
       const newProjects = sanitizeProjects([...(existing.projects || []), ...incomingProjects]);
       const newCities = Array.from(new Set([...(existing.looking_to_buy_in || []), ...(L.looking_to_buy_in || [])]));
       const mergedMeta = { ...(existing.presale_metadata || {}), ...(L.metadata || {}) };
@@ -438,6 +484,7 @@ Deno.serve(async (req) => {
     } else {
       const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null, email, L.first_name ?? null);
       const newTags = buildTags(null, L.tags, meta);
+      if (isAgentTest && !newTags.includes("agent-test")) newTags.push("agent-test");
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
@@ -476,6 +523,20 @@ Deno.serve(async (req) => {
 
       if (insErr) throw insErr;
       contactId = created.id;
+    }
+
+    // Identity vault: stash the inbound email + phone so future submissions
+    // with a different email under the same phone (or vice versa) still match.
+    // Never overwrites primary; promotes to secondary only if the field is empty.
+    try {
+      await supabase.rpc("crm_attach_alternate", {
+        _contact_id: contactId,
+        _email: email || null,
+        _phone: phone || null,
+        _source: "presale_form",
+      });
+    } catch (e) {
+      console.warn("[bridge-ingest-lead] crm_attach_alternate failed (non-fatal):", e);
     }
 
     // Stitch any prior anonymous behavior rows by presale_user_id → this contact
