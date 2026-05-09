@@ -215,19 +215,16 @@
   :root {
     --composer-safe-bottom: env(safe-area-inset-bottom, 0px);
     --keyboard-inset-bottom: 0px;
-    /* Composer header inset — must mirror the bottom-nav pattern: in
-       installed iOS PWAs `env(safe-area-inset-top)` frequently reports 0,
-       which would slam the header into the Dynamic Island / status bar.
-       Floor at 60px (status bar + notch height) so the composer always
-       clears the top chrome — exactly like --composer-top-pad does. */
-    --composer-header-top-pad: max(env(safe-area-inset-top, 0px), 60px);
+    --composer-viewport-top: 0px;
+    --composer-viewport-height: 100dvh;
+    /* Composer headers paint edge-to-edge and only inset the controls by the
+       real iOS safe-area, matching MobileAppHeader instead of adding a large
+       artificial spacer. */
+    --composer-header-top-pad: calc(env(safe-area-inset-top, 0px) + 6px);
   }
-  /* When the app actually runs in standalone PWA mode the safe-area inset
-     becomes reliable (it's the keyboard-open case where iOS lies). Trust
-     the real inset there so we don't over-pad on tall devices. */
   :root.is-standalone,
   :root.is-standalone-pwa {
-    --composer-header-top-pad: calc(env(safe-area-inset-top, 0px) + 8px);
+    --composer-header-top-pad: calc(env(safe-area-inset-top, 0px) + 6px);
   }
   @media (min-width: 1024px) {
     :root { --composer-header-top-pad: 0px; }

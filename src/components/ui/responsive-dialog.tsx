@@ -38,25 +38,6 @@ export const ResponsiveDialogContent = React.forwardRef<
   const classNameString = typeof className === 'string' ? className : '';
   const isDrawer = classNameString.includes('mobile-fullbleed') || classNameString.includes('mobile-drawer');
   const isTrulyFullScreen = classNameString.includes('mobile-truly-fullscreen');
-  // The drawer no longer fights iOS for `top`. Our viewport meta uses
-  // `interactive-widget=resizes-content`, so the *layout* viewport itself
-  // shrinks when the soft keyboard opens — meaning a `fixed` drawer pinned
-  // to `top: safe-area` and `bottom: 0` already stays glued above the
-  // keyboard, with zero per-frame math. Previously we rewrote `top` every
-  // `requestAnimationFrame` AND called `window.scrollTo(0, 0)` on every
-  // visualViewport scroll, which is what made the composer (and the
-  // floating bottom nav) "shake" while typing on iOS. We now only react to
-  // `visualViewport.resize` to publish CSS vars + `data-keyboard-open` so
-  // the rest of the UI (BottomNav, dialer widget, toasts) can hide
-  // themselves while the keyboard is up — but we never animate the drawer
-  // ourselves.
-  const drawerViewportStyle: React.CSSProperties = {
-    top: 'max(env(safe-area-inset-top, 0px), 8px)',
-    bottom: '0px',
-    height: 'auto',
-    maxHeight: 'none',
-  };
-
   React.useEffect(() => {
     if (!isMobile || !isDrawer || typeof window === 'undefined') return;
 
@@ -68,8 +49,11 @@ export const ResponsiveDialogContent = React.forwardRef<
       const visualOffsetTop = viewport?.offsetTop ?? 0;
       const keyboardBottom = Math.max(0, window.innerHeight - visualHeight - visualOffsetTop);
       const keyboardOpen = keyboardBottom > 60;
+      const viewportTop = viewport?.offsetTop ?? 0;
 
       root.style.setProperty('--keyboard-inset-bottom', `${keyboardBottom}px`);
+      root.style.setProperty('--composer-viewport-top', `${viewportTop}px`);
+      root.style.setProperty('--composer-viewport-height', `${visualHeight}px`);
       root.style.setProperty(
         '--composer-safe-bottom',
         `max(0px, calc(env(safe-area-inset-bottom, 0px) - ${keyboardBottom}px))`,
@@ -86,6 +70,8 @@ export const ResponsiveDialogContent = React.forwardRef<
       window.visualViewport?.removeEventListener('resize', publishKeyboardState);
       root.removeAttribute('data-keyboard-open');
       root.style.removeProperty('--keyboard-inset-bottom');
+      root.style.removeProperty('--composer-viewport-top');
+      root.style.removeProperty('--composer-viewport-height');
       root.style.removeProperty('--composer-safe-bottom');
     };
   }, [isMobile, isDrawer]);
@@ -104,7 +90,7 @@ export const ResponsiveDialogContent = React.forwardRef<
           side="bottom"
           data-mobile-drawer={isDrawer ? 'true' : undefined}
           className={cn(
-            'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col',
+            'p-0 inset-x-0 bottom-auto top-[var(--composer-viewport-top,0px)] max-h-none h-[var(--composer-viewport-height,100dvh)] w-screen rounded-none border-0 flex flex-col',
             className,
           )}
           style={style}
@@ -126,7 +112,7 @@ export const ResponsiveDialogContent = React.forwardRef<
             : 'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
-        style={isDrawer ? { ...drawerViewportStyle, ...style } : { paddingTop: 'var(--composer-top-pad)', ...style }}
+        style={isDrawer ? { top: 'var(--composer-viewport-top, 0px)', bottom: 'auto', height: 'var(--composer-viewport-height, 100dvh)', maxHeight: 'none', ...style } : { paddingTop: 'var(--composer-top-pad)', ...style }}
         {...(rest as any)}
       >
         {!hideMobileHandle && (

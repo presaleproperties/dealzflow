@@ -1,19 +1,14 @@
 /**
  * Regression test for the iOS keyboard "header drift" bug.
  *
- * When iOS opens the soft keyboard it scrolls the *layout* viewport up to
- * keep the focused input visible. Anything `position: fixed` (Radix Sheet)
- * gets dragged up with it — that's what made the composer header tuck
- * behind the notch and "slowly slide down" once iOS settled. The fix in
- * ResponsiveDialogContent tracks `window.visualViewport` and rewrites the
- * drawer's inline `top` to cancel that scroll every frame.
+ * When iOS opens the soft keyboard, the visible viewport changes. The
+ * fullscreen composer should resize to that viewport, not add fake top
+ * padding or let the whole sheet drift into the phone edge.
  *
  * This test simulates the keyboard open/close cycle and asserts:
- *   1. While the keyboard is closed, top stays at the safe-area baseline.
- *   2. While the keyboard is open, top is offset by visualViewport.offsetTop
- *      (i.e. the header does NOT drift behind the notch).
- *   3. The bottom inset matches the keyboard height so the drawer shrinks
- *      from below instead of being pushed up.
+ *   1. While the keyboard is closed, the drawer uses viewport CSS vars.
+ *   2. While the keyboard is open, those vars follow visualViewport.
+ *   3. The bottom inset matches the keyboard height.
  *   4. The `data-keyboard-open` attribute and `--keyboard-inset-bottom` CSS
  *      var follow the keyboard state.
  */
@@ -108,6 +103,8 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     window.scrollTo = originalScrollTo;
     document.documentElement.removeAttribute('data-keyboard-open');
     document.documentElement.style.removeProperty('--keyboard-inset-bottom');
+    document.documentElement.style.removeProperty('--composer-viewport-top');
+    document.documentElement.style.removeProperty('--composer-viewport-height');
     document.documentElement.style.removeProperty('--composer-safe-bottom');
     // Clean visualViewport mock.
     delete (window as { visualViewport?: unknown }).visualViewport;
@@ -135,8 +132,9 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
     // serialization, so we can't assert the literal `top` string. We CAN
     // assert the components that prove the visualViewport math is running:
     // `bottom`, the `data-keyboard-open` attribute, and the CSS vars.
-    expect(drawer!.style.top).toContain('safe-area-inset-top');
-    expect(drawer!.style.bottom).toBe('0px');
+    expect(drawer!.style.top).toContain('--composer-viewport-top');
+    expect(drawer!.style.height).toContain('--composer-viewport-height');
+    expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
       .toBe('0px');
@@ -155,7 +153,11 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(drawer!.style.bottom).toBe('0px');
+    expect(drawer!.style.bottom).toBe('auto');
+    expect(document.documentElement.style.getPropertyValue('--composer-viewport-top'))
+      .toBe('120px');
+    expect(document.documentElement.style.getPropertyValue('--composer-viewport-height'))
+      .toBe('420px');
     expect(document.documentElement.getAttribute('data-keyboard-open')).toBe('true');
     // Math: innerHeight - visualHeight - offsetTop = 800 - 420 - 120 = 260
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
@@ -169,7 +171,7 @@ describe('ResponsiveDialogContent — iOS keyboard drift regression', () => {
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(drawer!.style.bottom).toBe('0px');
+    expect(drawer!.style.bottom).toBe('auto');
     expect(document.documentElement.hasAttribute('data-keyboard-open')).toBe(false);
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset-bottom'))
       .toBe('0px');
