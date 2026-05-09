@@ -27,7 +27,7 @@ interface Props {
 }
 
 type Row =
-  | { kind: 'header'; key: string; date: Date }
+  | { kind: 'header'; key: string; dayKey: string; date: Date; count: number; collapsed: boolean }
   | { kind: 'event'; key: string; event: TimelineEvent };
 
 export function LeadTimelineV2({
