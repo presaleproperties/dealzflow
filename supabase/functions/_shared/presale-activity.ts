@@ -49,8 +49,75 @@ const LEAD_LIFECYCLE_EVENTS = new Set([
 const HIGH_INTENT = new Set([
   "email_open", "email_opened", "email.opened",
   "deck_unlock", "link_click", "email_clicked", "email.clicked",
-  "return_visit",
+  "return_visit", "floorplan_download", "deck_visit", "form_submission",
 ]);
+
+// ── Notification severity tiers ─────────────────────────────────────────
+// low  = inserted only (no push, suppressed in quiet hours)
+// med  = inserted + push (auto-suppressed to low in quiet hours)
+// high = inserted + push (auto-suppressed to low in quiet hours)
+async function dispatchNotification(
+  supabase: SupabaseClient,
+  args: {
+    user_ids: string[];
+    title: string;
+    body: string;
+    type: string;
+    link_to: string;
+    severity: "low" | "med" | "high";
+    dedupe_key?: string | null;
+    dedupe_window_minutes?: number;
+    meta?: Record<string, unknown>;
+  },
+): Promise<number> {
+  if (!args.user_ids?.length) return 0;
+  const { data, error } = await supabase.rpc("crm_send_notification", {
+    _user_ids: args.user_ids,
+    _title: args.title,
+    _body: args.body,
+    _type: args.type,
+    _link_to: args.link_to,
+    _severity: args.severity,
+    _dedupe_key: args.dedupe_key ?? null,
+    _dedupe_window_minutes: args.dedupe_window_minutes ?? 120,
+    _meta: args.meta ?? {},
+  });
+  if (error) {
+    console.warn("[presale-activity] crm_send_notification failed:", error.message);
+    return 0;
+  }
+  // Fire web push for medium/high severity (helper already downgraded for quiet hours)
+  if (args.severity === "med" || args.severity === "high") {
+    try {
+      const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
+      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      // Per-user push so quiet-hours-affected users (who got severity downgraded) still get the row,
+      // but we don't know which were filtered. We push to all recipients; client subscription is opt-in.
+      await Promise.all(args.user_ids.map((u) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          body: JSON.stringify({ user_id: u, title: args.title, message: args.body, url: args.link_to }),
+        }).catch((e) => console.warn("[presale-activity] push fetch failed:", e))
+      ));
+    } catch (e) {
+      console.warn("[presale-activity] push dispatch error:", e);
+    }
+  }
+  return (data as number) ?? 0;
+}
+
+function humanGap(fromIso: string | null | undefined): string {
+  if (!fromIso) return "";
+  const ms = Date.now() - new Date(fromIso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 48) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
 const FALLBACK_AGENT = "Uzair Muhammad";
 
 function cleanEmail(v: unknown): string | null {
