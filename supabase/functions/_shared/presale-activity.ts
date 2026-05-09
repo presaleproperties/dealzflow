@@ -212,17 +212,11 @@ export async function processPresaleActivity(
     }
   }
 
-  // ── Identity stitch: presale_user_id → email → phone ─────────────────────
+  // ── Identity stitch: email → phone → guarded presale_user_id ──────────────
+  // Visitor ids can survive across test submissions in the same browser. Never
+  // let a reused visitor id merge a different submitted email into another lead.
   let contact: { id: string; first_name: string | null; last_name: string | null; assigned_to: string | null } | null = null;
-  if (visitorId) {
-    const { data } = await supabase
-      .from("crm_contacts")
-      .select("id, first_name, last_name, assigned_to")
-      .eq("presale_user_id", visitorId)
-      .maybeSingle();
-    if (data) contact = data as typeof contact;
-  }
-  if (!contact && email) {
+  if (email) {
     const { data } = await supabase
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
@@ -237,6 +231,19 @@ export async function processPresaleActivity(
       .eq("phone", phone)
       .maybeSingle();
     if (data) contact = data as typeof contact;
+  }
+  if (!contact && visitorId) {
+    const { data } = await supabase
+      .from("crm_contacts")
+      .select("id, first_name, last_name, assigned_to, email, phone")
+      .eq("presale_user_id", visitorId)
+      .maybeSingle();
+    const existingEmail = String((data as any)?.email ?? "").trim().toLowerCase();
+    const existingPhone = String((data as any)?.phone ?? "").replace(/\D/g, "");
+    const incomingPhone = String(phone ?? "").replace(/\D/g, "");
+    if (data && (!existingEmail || !email || existingEmail === email) && (!existingPhone || !incomingPhone || existingPhone === incomingPhone)) {
+      contact = data as typeof contact;
+    }
   }
 
   // ── Auto-create lead if lifecycle event or behavior_batch w/ completed form ─
