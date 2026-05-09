@@ -1152,7 +1152,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               </div>
 
               {/* Mobile sticky action bar — single source of truth for mobile actions */}
-              <div className="md:hidden flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+2px)]">
+              <div
+                className="md:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) + 6px)' }}
+              >
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}
