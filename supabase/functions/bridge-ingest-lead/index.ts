@@ -497,6 +497,20 @@ Deno.serve(async (req) => {
       contactId = created.id;
     }
 
+    // Identity vault: stash the inbound email + phone so future submissions
+    // with a different email under the same phone (or vice versa) still match.
+    // Never overwrites primary; promotes to secondary only if the field is empty.
+    try {
+      await supabase.rpc("crm_attach_alternate", {
+        _contact_id: contactId,
+        _email: email || null,
+        _phone: phone || null,
+        _source: "presale_form",
+      });
+    } catch (e) {
+      console.warn("[bridge-ingest-lead] crm_attach_alternate failed (non-fatal):", e);
+    }
+
     // Stitch any prior anonymous behavior rows by presale_user_id → this contact
     if (L.presale_user_id) {
       for (const t of [
