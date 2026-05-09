@@ -311,21 +311,45 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   const [mobileComposeSubject, setMobileComposeSubject] = useState('');
   const [mobileComposeBody, setMobileComposeBody] = useState('');
 
-  const buildReplyContext = () => {
-    if (!lastInThread) return null;
-    const subject = lastInThread.subject?.toLowerCase().startsWith('re:')
-      ? lastInThread.subject
-      : `Re: ${lastInThread.subject ?? ''}`.trim();
-    const quotedHeader = `${format(parseISO(lastInThread.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')} ${lastInThread.fromName || lastInThread.fromEmail || ''} wrote:`;
-    const quotedBody = (lastInThread.bodyHtml || `<p>${escapeHtml(lastInThread.bodyText || '')}</p>`);
+  // Forward composer — recipient unknown, opens canonical composer with __pick__ stub.
+  const [forwardOpen, setForwardOpen] = useState(false);
+  const [forwardSubject, setForwardSubject] = useState('');
+  const [forwardBody, setForwardBody] = useState('');
+  const [forwardPicked, setForwardPicked] = useState<CrmContact | null>(null);
+
+  const buildReplyContext = (msg?: ThreadMessage | null) => {
+    const target = msg ?? lastInThread;
+    if (!target) return null;
+    const subject = target.subject?.toLowerCase().startsWith('re:')
+      ? target.subject
+      : `Re: ${target.subject ?? ''}`.trim();
+    const quotedHeader = `${format(parseISO(target.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')} ${target.fromName || target.fromEmail || ''} wrote:`;
+    const quotedBody = (target.bodyHtml || `<p>${escapeHtml(target.bodyText || '')}</p>`);
     const body = `<p></p><p></p><div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:4px 14px;margin:14px 0;"><div style="margin-bottom:8px;color:#888;">${escapeHtml(quotedHeader)}</div>${quotedBody}</div>`;
     return { subject: subject || '(no subject)', body };
   };
 
-  const handleStartReply = () => {
+  const buildForwardContext = (msg?: ThreadMessage | null) => {
+    const target = msg ?? lastInThread;
+    if (!target) return null;
+    const baseSubject = (target.subject ?? '').replace(/^(fwd?|fw)\s*:\s*/i, '');
+    const subject = `Fwd: ${baseSubject}`.trim();
+    const headerLines = [
+      `From: ${target.fromName ? `${target.fromName} <${target.fromEmail ?? ''}>` : (target.fromEmail ?? '')}`,
+      `Date: ${format(parseISO(target.ts), 'EEE, MMM d, yyyy \'at\' h:mm a')}`,
+      `Subject: ${target.subject ?? ''}`,
+      `To: ${target.toEmail ?? ''}`,
+      target.cc ? `Cc: ${target.cc}` : '',
+    ].filter(Boolean).map(escapeHtml).join('<br/>');
+    const quotedBody = (target.bodyHtml || `<p>${escapeHtml(target.bodyText || '')}</p>`);
+    const body = `<p></p><p></p><div style="color:#666;font-size:13px;border-left:3px solid #e5e5e5;padding:8px 14px;margin:14px 0;"><div style="margin-bottom:10px;color:#888;font-size:12px;">--------- Forwarded message ---------<br/>${headerLines}</div>${quotedBody}</div>`;
+    return { subject, body };
+  };
+
+  const handleStartReply = (msg?: ThreadMessage | null) => {
     // Mobile → defer to the unified ComposeEmailDialog for parity with "New email".
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      const ctx = buildReplyContext();
+      const ctx = buildReplyContext(msg);
       if (!ctx) return;
       setMobileComposeSubject(ctx.subject);
       setMobileComposeBody(ctx.body);
@@ -338,6 +362,16 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
       composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   };
+
+  const handleStartForward = (msg?: ThreadMessage | null) => {
+    const ctx = buildForwardContext(msg);
+    if (!ctx) return;
+    setForwardSubject(ctx.subject);
+    setForwardBody(ctx.body);
+    setForwardPicked(null);
+    setForwardOpen(true);
+  };
+
 
   // Keyboard: "R" to reply, Esc handled by Dialog itself.
   useEffect(() => {
