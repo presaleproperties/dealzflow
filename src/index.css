@@ -197,6 +197,15 @@
   .safe-pl { padding-left:   env(safe-area-inset-left,  0px); }
   .safe-pr { padding-right:  env(safe-area-inset-right, 0px); }
 
+  @media (max-width: 1023px) {
+    .mobile-drawer input,
+    .mobile-drawer textarea,
+    .mobile-drawer select,
+    .mobile-drawer [contenteditable='true'] {
+      font-size: 16px !important;
+    }
+  }
+
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.
      Modals/sheets/main content must NOT add this again. */
   :root {
