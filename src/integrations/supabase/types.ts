@@ -660,6 +660,96 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_call_log: {
+        Row: {
+          agent_user_id: string | null
+          answered_at: string | null
+          contact_id: string | null
+          created_at: string
+          direction: string
+          duration_sec: number | null
+          ended_at: string | null
+          error_code: string | null
+          error_message: string | null
+          from_number: string | null
+          id: string
+          notes: string | null
+          parent_call_sid: string | null
+          recording_duration_sec: number | null
+          recording_sid: string | null
+          recording_url: string | null
+          started_at: string
+          status: string
+          to_number: string | null
+          twilio_call_sid: string | null
+          updated_at: string
+          voicemail_dropped_id: string | null
+        }
+        Insert: {
+          agent_user_id?: string | null
+          answered_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          direction: string
+          duration_sec?: number | null
+          ended_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          from_number?: string | null
+          id?: string
+          notes?: string | null
+          parent_call_sid?: string | null
+          recording_duration_sec?: number | null
+          recording_sid?: string | null
+          recording_url?: string | null
+          started_at?: string
+          status?: string
+          to_number?: string | null
+          twilio_call_sid?: string | null
+          updated_at?: string
+          voicemail_dropped_id?: string | null
+        }
+        Update: {
+          agent_user_id?: string | null
+          answered_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          direction?: string
+          duration_sec?: number | null
+          ended_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          from_number?: string | null
+          id?: string
+          notes?: string | null
+          parent_call_sid?: string | null
+          recording_duration_sec?: number | null
+          recording_sid?: string | null
+          recording_url?: string | null
+          started_at?: string
+          status?: string
+          to_number?: string | null
+          twilio_call_sid?: string | null
+          updated_at?: string
+          voicemail_dropped_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_call_log_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_call_log_voicemail_dropped_fk"
+            columns: ["voicemail_dropped_id"]
+            isOneToOne: false
+            referencedRelation: "crm_voicemail_drops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_cities: {
         Row: {
           created_at: string
@@ -4003,6 +4093,48 @@ export type Database = {
           },
         ]
       }
+      crm_voicemail_drops: {
+        Row: {
+          audio_path: string
+          audio_url: string
+          created_at: string
+          duration_sec: number | null
+          id: string
+          is_active: boolean
+          name: string
+          owner_agent_slug: string | null
+          owner_scope: string
+          owner_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_path: string
+          audio_url: string
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          owner_agent_slug?: string | null
+          owner_scope?: string
+          owner_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_path?: string
+          audio_url?: string
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          owner_agent_slug?: string | null
+          owner_scope?: string
+          owner_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_whatsapp_conversations: {
         Row: {
           contact_id: string
@@ -5510,6 +5642,13 @@ export type Database = {
           sub_kind: string
           subtitle: string
           title: string
+        }[]
+      }
+      crm_match_contact_by_phone: {
+        Args: { _phone: string }
+        Returns: {
+          assigned_to: string
+          contact_id: string
         }[]
       }
       crm_merge_contacts: {
