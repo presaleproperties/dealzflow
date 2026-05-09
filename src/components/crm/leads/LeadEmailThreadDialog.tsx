@@ -666,6 +666,9 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
                         isLatest={idx === activeThread.messages.length - 1}
                         contactEmail={contact.email}
                         defaultExpanded={idx === activeThread.messages.length - 1}
+                        canReply={!!contact.email}
+                        onReply={() => handleStartReply(m)}
+                        onForward={() => handleStartForward(m)}
                       />
                     ))}
 
