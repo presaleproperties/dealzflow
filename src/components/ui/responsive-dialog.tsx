@@ -115,6 +115,8 @@ export const ResponsiveDialogContent = React.forwardRef<
       window.removeEventListener('resize', onChange);
       window.removeEventListener('scroll', onChange);
       root.removeAttribute('data-keyboard-open');
+      root.style.removeProperty('--keyboard-inset-bottom');
+      root.style.removeProperty('--composer-safe-bottom');
     };
   }, [isMobile, isDrawer, isTrulyFullScreen]);
 
