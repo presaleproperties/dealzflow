@@ -9,7 +9,11 @@ const corsHeaders = {
 };
 
 const PRESALE_SEND_URL = Deno.env.get("PRESALE_SEND_URL") ?? "";
-const PRESALE_BRIDGE_SECRET = Deno.env.get("BRIDGE_SECRET") ?? "";
+// Outbound to Presale uses PRESALE_BRIDGE_SECRET. Fall back to BRIDGE_SECRET
+// only if PRESALE_BRIDGE_SECRET isn't set so legacy single-secret deployments
+// keep working.
+const PRESALE_BRIDGE_SECRET =
+  Deno.env.get("PRESALE_BRIDGE_SECRET") ?? Deno.env.get("BRIDGE_SECRET") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const TRACK_BASE = `${SUPABASE_URL}/functions/v1/crm-email-track`;
 
