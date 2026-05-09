@@ -211,6 +211,19 @@ function sanitizeProjects(values: (string | null | undefined)[]): string[] {
   return Array.from(seen.values());
 }
 
+async function safePresaleUserId(supabase: any, presaleUserId: string | null | undefined, email: string, phone: string | null, contactId?: string | null): Promise<string | null> {
+  if (!presaleUserId) return null;
+  const { data } = await supabase
+    .from("crm_contacts")
+    .select("id, email, phone")
+    .eq("presale_user_id", presaleUserId)
+    .maybeSingle();
+  if (!data || data.id === contactId) return presaleUserId;
+  const existingEmail = String(data.email ?? "").trim().toLowerCase();
+  const existingPhone = String(data.phone ?? "").replace(/\D/g, "");
+  return (!existingEmail || existingEmail === email) && (!existingPhone || !phone || existingPhone === phone) ? presaleUserId : null;
+}
+
 // Persona → contact_type (buyer/investor/realtor/developer)
 function personaToContactType(meta: any): string | null {
   const p = (meta?.persona ?? "").toString().trim().toLowerCase();
@@ -392,7 +405,7 @@ Deno.serve(async (req) => {
       await supabase.from("crm_contacts").update({
         first_name: existing.first_name || L.first_name || "New",
         last_name: existing.last_name || L.last_name || "",
-        presale_user_id: L.presale_user_id ?? undefined,
+        presale_user_id: await safePresaleUserId(supabase, L.presale_user_id, email, phone, existing.id) ?? undefined,
         // Source rule: ALWAYS PresaleProperties.com for inbound presale leads
         source: "PresaleProperties.com",
         contact_type: personaType ?? undefined,
@@ -431,7 +444,7 @@ Deno.serve(async (req) => {
         last_name: L.last_name || "",
         email,
         phone: L.phone || null,
-        presale_user_id: L.presale_user_id || null,
+        presale_user_id: await safePresaleUserId(supabase, L.presale_user_id, email, phone) || null,
         source: "PresaleProperties.com",
         contact_type: personaType,
         notes: noteAppendix,
