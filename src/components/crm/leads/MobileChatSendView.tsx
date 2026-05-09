@@ -286,7 +286,7 @@ export function MobileChatSendView({
       {/* iMessage-style composer — pinned to bottom */}
       <div
         className="shrink-0 border-t border-border/40 bg-background/95 backdrop-blur-md px-2 pt-2 flex items-end gap-1.5"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
+        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 6px)' }}
       >
         <AttachMenu
           variant="icon"
