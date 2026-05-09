@@ -908,15 +908,15 @@ export function LeadsTable({
                 const isSelected = selectedIds.includes(contact.id);
                 return (
                   <tr key={contact.id}
-                    style={{ height: 56 }}
+                    style={{ height: 68 }}
                     className={`hover:bg-muted/20 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                     onMouseEnter={() => prefetchLead(contact.id)}
                     onClick={() => navigate(`/crm/leads/${contact.id}`)}>
-                    <td className="px-3 py-2 align-middle" onClick={e => e.stopPropagation()}>
+                    <td className="px-3 py-3.5 align-middle" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(contact.id)} />
                     </td>
                     {columns.map(col => (
-                      <td key={col.key} className="px-3 py-2 align-middle overflow-hidden">
+                      <td key={col.key} className="px-3 py-3.5 align-middle overflow-hidden">
                         <CellContent col={col} contact={contact} updateContact={updateContact} tagLibrary={tagLibrary} onSendSms={setSmsContact} onSendEmail={setEmailContact} />
                       </td>
                     ))}
