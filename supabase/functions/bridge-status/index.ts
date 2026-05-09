@@ -158,6 +158,7 @@ Deno.serve(async (req) => {
       PRESALE_BRIDGE_URL: mask(Deno.env.get("PRESALE_BRIDGE_URL")),
       PRESALE_ANON_KEY: mask(Deno.env.get("PRESALE_ANON_KEY")),
       PRESALE_BRIDGE_SECRET: mask(Deno.env.get("PRESALE_BRIDGE_SECRET")),
+      BRIDGE_SECRET: mask(Deno.env.get("BRIDGE_SECRET")),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
