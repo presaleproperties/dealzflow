@@ -177,7 +177,7 @@ export function MobileChatSendView({
           a slim Call + More so power actions are still one tap away. */}
       <header
         data-composer-header="true"
-        className="sticky top-0 z-30 flex items-center gap-1.5 px-1 pb-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
+        className="relative z-30 flex items-center gap-1.5 px-1 pb-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
       >
         <button
           type="button"
@@ -371,15 +371,7 @@ export function MobileChatSendView({
             value={body}
             onChange={(e) => onBodyChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => {
-              // When the keyboard opens, push the conversation up so the
-              // latest messages remain visible just above the composer.
-              const el = scrollRef.current;
-              if (!el) return;
-              window.setTimeout(() => {
-                el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-              }, 220);
-            }}
+            onFocus={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })}
             placeholder={isOptedOut ? 'This number opted out' : 'Message'}
             disabled={isOptedOut}
             rows={1}
