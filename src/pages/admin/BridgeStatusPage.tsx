@@ -31,9 +31,9 @@ const ALL_ACTIONS = [
 export default function BridgeStatusPage() {
   const [params, setParams] = useState({
     q: "vancouver",
-    slug: "century-city",
+    slug: "rhodes",
     agentSlug: "sarb@presaleproperties.com",
-    projectSlug: "century-city",
+    projectSlug: "rhodes",
     templateStyle: "modern",
     leadName: "Test Lead",
     email: "test@example.com",
