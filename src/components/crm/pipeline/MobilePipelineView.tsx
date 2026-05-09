@@ -31,9 +31,29 @@ export function MobilePipelineView() {
   const navigate = useNavigate();
   const { data: contacts = [], isLoading: cl } = useCrmContacts();
   const { data: segments = [], isLoading: sl } = useCrmLeadSegments();
+  const myName = useMyAgentName();
   const [search, setSearch] = useState('');
   const [activeSegId, setActiveSegId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [filterAgent, setFilterAgent] = useState<string>(() => {
+    try { return localStorage.getItem(AGENT_FILTER_KEY) ?? '__mine'; }
+    catch { return '__mine'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(AGENT_FILTER_KEY, filterAgent); } catch {}
+  }, [filterAgent]);
+
+  const dynamicAgents = useMemo(() => {
+    const agents = new Set<string>();
+    contacts.forEach(c => { if (c.assigned_to) agents.add(c.assigned_to); });
+    return Array.from(agents).sort();
+  }, [contacts]);
+
+  const effectiveAgent = useMemo(() => {
+    if (filterAgent === '__mine') return myName ?? null;
+    if (filterAgent === 'all') return null;
+    return filterAgent;
+  }, [filterAgent, myName]);
 
   const pipelineSegments = useMemo(
     () => segments.filter(s => s.filter_config && Object.keys(s.filter_config).length > 0),
@@ -52,6 +72,7 @@ export function MobilePipelineView() {
     pipelineSegments.forEach(s => { map[s.id] = []; });
     const q = search.trim().toLowerCase();
     contacts.forEach(c => {
+      if (effectiveAgent && c.assigned_to !== effectiveAgent) return;
       if (q) {
         const name = formatContactName(c.first_name, c.last_name).toLowerCase();
         if (!name.includes(q) && !(c.email?.toLowerCase().includes(q)) && !(c.phone || '').includes(q)) return;
@@ -68,7 +89,7 @@ export function MobilePipelineView() {
     const cts: Record<string, number> = {};
     pipelineSegments.forEach(s => { cts[s.id] = map[s.id].length; });
     return { counts: cts, byStage: map };
-  }, [contacts, pipelineSegments, search]);
+  }, [contacts, pipelineSegments, search, effectiveAgent]);
 
   if (sl || cl) {
     return (
