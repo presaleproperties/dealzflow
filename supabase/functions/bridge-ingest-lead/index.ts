@@ -130,16 +130,40 @@ function buildTags(existingTags: string[] | null, leadTags: string[] | undefined
 
   const formType = meta?.form_type;
   if (typeof formType === "string" && formType.trim()) add(`form:${formType.trim()}`);
+  // Derive form:<type> from completed forms in behavior batch when not at top-level
+  const beh: any = meta?.behavior ?? null;
+  if (!formType && Array.isArray(beh?.forms)) {
+    for (const f of beh.forms) {
+      if ((f?.status ?? "").toLowerCase() === "completed" && f?.form_type) add(`form:${f.form_type}`);
+    }
+  }
   const deckName = meta?.pitch_deck_name ?? meta?.deck_name ?? meta?.deck?.name;
   if (typeof deckName === "string" && deckName.trim()) add(`deck:${deckName.trim()}`);
 
+  // Representation status — useful triage signal
+  const agentStatus = String(meta?.agent_status ?? "").toLowerCase();
+  if (agentStatus === "no") add("unrepresented");
+  else if (agentStatus === "yes") add("has-agent");
+
+  // Persona-derived buyer/investor tag for quick filtering
+  const persona = String(meta?.persona ?? "").toLowerCase();
+  if (["buyer", "investor", "realtor", "developer"].includes(persona)) add(persona);
+
+  // Pre-approval = strong buying signal
+  if (meta?.is_pre_approved === true) add("pre-approved");
+
   // Hot triggers from this single payload (floorplan download or deck revisit)
-  const beh: any = meta?.behavior ?? null;
   if (Array.isArray(beh?.engagement)) {
     for (const e of beh.engagement) {
       const t = (e?.event_type ?? "").toLowerCase();
       if (t === "floorplan_download") add("hot");
       if ((t === "deck_visit" || t === "deck_unlock") && (e?.visit_number ?? 0) >= 2) add("hot");
+    }
+  }
+  // Heavy browser = hot (≥20 page views in any session)
+  if (Array.isArray(beh?.sessions)) {
+    for (const s of beh.sessions) {
+      if ((Number(s?.pages_viewed) || 0) >= 20) { add("hot"); add("heavy-browser"); break; }
     }
   }
   return Array.from(seen.values());
