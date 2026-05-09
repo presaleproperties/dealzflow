@@ -16,7 +16,6 @@ import {
   Loader2,
   Monitor,
   Smartphone,
-  ChevronDown,
   Save,
   Mail,
   Inbox,
@@ -792,8 +791,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             </div>
           )}
           {/* (Drag handle hidden on mobile — composer is full-screen, Cancel is the exit.) */}
-          {/* Mobile header — Apple Mail reply style: icon-only X (left), centered avatar +
-              title + sender email subtitle, icon-only Send paper-plane (right). Honors iOS
+          {/* Mobile header — native fixed bar: icon-only X (left), centered title,
+              icon-only Send paper-plane (right). Honors iOS
               safe-area-top so the row never collides with the status bar. */}
           {(() => {
             const headerTitle = isMass
