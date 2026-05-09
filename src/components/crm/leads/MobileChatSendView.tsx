@@ -134,6 +134,26 @@ export function MobileChatSendView({
     return () => window.clearTimeout(id);
   }, [isOptedOut]);
 
+  // When the keyboard opens/closes, the composer footer's padding changes
+  // (it rides --keyboard-inset-bottom). Re-pin the chat to the bottom so the
+  // latest bubble stays visible and the surface above the composer never
+  // appears to "jump".
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const pin = () => {
+      const sc = scrollRef.current;
+      if (sc) sc.scrollTop = sc.scrollHeight;
+    };
+    vv.addEventListener('resize', pin);
+    vv.addEventListener('scroll', pin);
+    return () => {
+      vv.removeEventListener('resize', pin);
+      vv.removeEventListener('scroll', pin);
+    };
+  }, []);
+
   // Auto-grow textarea: reset → measure scrollHeight → clamp to [MIN, MAX].
   // Once content exceeds MAX, the textarea itself becomes scrollable so the
   // chat surface above is never pushed upward.
@@ -356,8 +376,15 @@ export function MobileChatSendView({
       {/* Composer — slim pill input with outboard "+" attach. Send arrow appears
           inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 bg-background/95 backdrop-blur-md px-2 pt-1 flex items-end gap-1.5 transition-[padding] duration-150 ease-out"
-        style={{ paddingBottom: 'calc(var(--composer-safe-bottom, 0px) + 4px)' }}
+        className="shrink-0 bg-background/95 backdrop-blur-md px-2 pt-1 flex items-end gap-1.5"
+        style={{
+          // Lift the composer above the soft keyboard so it stays visible
+          // while the dialog itself stays locked at 100dvh. Only the chat
+          // scroll area (flex-1) shrinks; the header never moves.
+          paddingBottom:
+            'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 4px))',
+          transition: 'padding-bottom 120ms ease-out',
+        }}
       >
         <AttachMenu
           variant="icon"
