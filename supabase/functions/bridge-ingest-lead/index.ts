@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
     // Build merge metadata once (used for tags/notes/persona on both branches)
     const meta = { ...(L.metadata || {}), behavior: body.behavior } as any;
     const personaType = personaToContactType(meta);
-    const noteAppendix = buildNoteAppendix(meta);
+    const noteAppendix = buildNoteAppendix(meta, body.behavior);
 
     if (existing) {
       // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
