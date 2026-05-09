@@ -37,12 +37,12 @@ export function RightSidebar({
   const presaleUserId = (contact as unknown as Record<string, unknown>).presale_user_id as string | undefined;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* ⓪ Send Project — themed gold CTA (highest-frequency action) */}
       {onSendProject && (
         <Button
           onClick={onSendProject}
-          className="w-full h-11 gap-2 font-semibold tracking-tight bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/40 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)]"
+          className="w-full h-12 gap-2 text-[14px] font-semibold tracking-tight bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/40 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.55)]"
         >
           <Send className="w-4 h-4" /> Send Project
         </Button>
