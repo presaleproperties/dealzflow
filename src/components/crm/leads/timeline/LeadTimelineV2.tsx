@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { Loader2, Inbox } from 'lucide-react';
+import { Loader2, Inbox, ChevronDown, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
