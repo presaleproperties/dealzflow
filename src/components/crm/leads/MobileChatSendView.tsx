@@ -177,8 +177,7 @@ export function MobileChatSendView({
           a slim Call + More so power actions are still one tap away. */}
       <header
         data-composer-header="true"
-        className="sticky top-0 z-20 flex items-center gap-1.5 px-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md transition-[padding] duration-150 ease-out"
-        style={{ paddingBottom: '6px' }}
+        className="sticky top-0 z-30 flex items-center gap-1.5 px-1 pb-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
       >
         <button
           type="button"
