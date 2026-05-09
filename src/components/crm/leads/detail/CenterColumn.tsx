@@ -16,6 +16,7 @@ import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
 import { SmsNoteCard } from '@/components/crm/leads/SmsNoteCard';
+import { SmsThreadDrawer } from '@/components/crm/leads/SmsThreadDrawer';
 import { useOpenChat } from '@/hooks/useOpenChat';
 import { cn } from '@/lib/utils';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -49,9 +50,19 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const updateNote = useUpdateNote();
   const openChat = useOpenChat();
 
+  const [smsDrawerOpen, setSmsDrawerOpen] = useState(false);
+  const [smsDrawerChannel, setSmsDrawerChannel] = useState<'sms' | 'whatsapp'>('sms');
+  const [smsDrawerInitialId, setSmsDrawerInitialId] = useState<string | null>(null);
+
   const openSmsThread = (row: CrmSmsLogRow) => {
-    const channel = row.channel === 'whatsapp' ? 'whatsapp' : 'sms';
-    openChat(contact.id, channel, onText);
+    setSmsDrawerChannel(row.channel === 'whatsapp' ? 'whatsapp' : 'sms');
+    setSmsDrawerInitialId(row.id);
+    setSmsDrawerOpen(true);
+  };
+
+  const replyFromSmsDrawer = () => {
+    setSmsDrawerOpen(false);
+    openChat(contact.id, smsDrawerChannel, onText);
   };
 
   // Merge real notes with virtual entries synthesized from the email + SMS
@@ -467,6 +478,16 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         contact={contact}
         open={showImport}
         onOpenChange={setShowImport}
+      />
+
+      <SmsThreadDrawer
+        open={smsDrawerOpen}
+        onOpenChange={(o) => { setSmsDrawerOpen(o); if (!o) setSmsDrawerInitialId(null); }}
+        contact={contact}
+        messages={smsLog}
+        channel={smsDrawerChannel}
+        initialMessageId={smsDrawerInitialId}
+        onReply={replyFromSmsDrawer}
       />
     </Tabs>
   );
