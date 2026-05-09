@@ -386,7 +386,6 @@ export function MobileChatSendView({
             uploading={uploading}
             onFiles={onFiles}
             className="h-9 w-9 rounded-full border border-border/70 text-muted-foreground active:scale-95 transition-transform shrink-0"
-            icon={Plus}
           />
         )}
       </div>
