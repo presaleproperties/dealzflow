@@ -69,8 +69,6 @@ export function EmailNoteCard({ email, onOpen, contactEmail }: Props) {
         )}
         style={{ borderLeftColor: `hsl(${tint})` }}
       >
-        style={{ borderLeftColor: `hsl(${tint})` }}
-      >
         {/* Meta row */}
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
