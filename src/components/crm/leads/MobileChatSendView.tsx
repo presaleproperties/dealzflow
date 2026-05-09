@@ -251,6 +251,10 @@ export function MobileChatSendView({
       {/* Conversation scroll area */}
       <div
         ref={scrollRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label={`Conversation with ${fullName}`}
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 space-y-1.5"
       >
         {messages.length === 0 && (
