@@ -72,15 +72,16 @@
   }
 
   .dark {
-    /* Dark — deep slate with gold accent */
+    /* Dark — deep slate with gold accent (audit v2: brighter meta, calmer semantics) */
     --background: 222 25% 7%;
-    --foreground: 220 14% 93%;
+    --foreground: 220 16% 94%;
+    --text-strong: 220 18% 98%;
 
     --card: 222 20% 13%;
-    --card-foreground: 220 14% 93%;
+    --card-foreground: 220 16% 94%;
 
     --popover: 222 20% 13%;
-    --popover-foreground: 220 14% 93%;
+    --popover-foreground: 220 16% 94%;
 
     /* Primary — gold on dark */
     --primary: 39 72% 55%;
@@ -91,23 +92,24 @@
     --secondary: 222 18% 18%;
     --secondary-foreground: 220 12% 80%;
 
+    /* Muted — bumped from 64% → 72% L for AA on /60 /70 opacity uses */
     --muted: 222 16% 16%;
-    --muted-foreground: 220 10% 64%;
+    --muted-foreground: 220 12% 72%;
 
     --accent: 39 72% 55%;
     --accent-foreground: 222 25% 10%;
 
-    --success: 142 71% 45%;
+    --success: 142 50% 48%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 90% 54%;
+    --warning: 35 78% 56%;
     --warning-foreground: 220 13% 10%;
-    --info: 210 60% 54%;
+    --info: 210 50% 58%;
     --info-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 68% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 14% 20%;
-    --border-subtle: 222 12% 17%;
+    --border: 222 14% 22%;
+    --border-subtle: 222 12% 18%;
     --input: 222 14% 17%;
     --ring: 39 72% 55%;
 
