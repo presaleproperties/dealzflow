@@ -9,6 +9,8 @@ interface Props {
   channel: 'sms' | 'whatsapp';
   /** Open the full composer (templates / media / scheduling). */
   onOpenFull: () => void;
+  /** Fired right after a send is queued/sent so the parent can scroll to bottom. */
+  onSent?: () => void;
 }
 
 /**
@@ -17,7 +19,7 @@ interface Props {
  * full Send dialog. The "+" button still launches `SendTextDialog` for
  * templates, attachments, scheduling, etc.
  */
-export function InlineTextComposer({ contact, channel, onOpenFull }: Props) {
+export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Props) {
   const [body, setBody] = useState('');
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const sendSms = useSendSms();
@@ -42,6 +44,9 @@ export function InlineTextComposer({ contact, channel, onOpenFull }: Props) {
     }
     const text = body;
     setBody('');
+    // Optimistically scroll the parent thread — message will land via realtime
+    // shortly but the user expects the view to drop to the bottom immediately.
+    onSent?.();
     sendSms.mutate(
       {
         contact_id: contact.id,
@@ -50,6 +55,7 @@ export function InlineTextComposer({ contact, channel, onOpenFull }: Props) {
         channel,
       },
       {
+        onSuccess: () => { onSent?.(); },
         onError: (err: any) => {
           // Restore the draft so the user doesn't lose what they typed.
           setBody(text);
