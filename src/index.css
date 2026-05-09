@@ -215,6 +215,7 @@
   :root {
     --composer-safe-bottom: env(safe-area-inset-bottom, 0px);
     --keyboard-inset-bottom: 0px;
+    --composer-header-top-pad: calc(env(safe-area-inset-top, 0px) + 6px);
   }
 
   /* When a composer drawer opens the soft keyboard, hide the floating
@@ -226,18 +227,11 @@
     pointer-events: none;
   }
 
-  /* When the keyboard is up, slide a mobile drawer flush against the top
-     of the screen (no safe-area gutter) so its sticky header sits where
-     the browser/system nav would normally be — maximising room for the
-     conversation to scroll up above the keyboard. */
-  html[data-keyboard-open="true"] [data-mobile-drawer="true"] {
-    top: 0 !important;
-  }
-  /* Composer headers opt in via data-composer-header="true" — collapse
-     their safe-area top padding when the keyboard is open so the header
-     pins flush to the screen edge. */
+  /* Composer headers opt in via data-composer-header="true" and keep their
+     controls below the iOS status bar/notch even while the keyboard shrinks
+     the visual viewport. */
   html[data-keyboard-open="true"] [data-composer-header="true"] {
-    padding-top: 6px !important;
+    padding-top: var(--composer-header-top-pad) !important;
   }
 
   /* iOS PWA safe-area token — applied ONLY to the bottom nav.
