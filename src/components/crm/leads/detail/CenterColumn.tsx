@@ -156,6 +156,12 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      return v === 'v2' ? 'v2' : 'classic';
+    } catch { return 'classic'; }
+  });
   const handleOpenEmail = (noteId: string) => {
     const row = emailById.get(noteId);
     if (!row) return;
