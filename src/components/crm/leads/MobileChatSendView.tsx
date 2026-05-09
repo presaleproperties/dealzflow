@@ -121,6 +121,14 @@ export function MobileChatSendView({
     });
   }, [messages.length, sending]);
 
+  // Focus the textarea on mount unless the recipient opted out, so the
+  // keyboard surfaces immediately like a native chat thread.
+  useEffect(() => {
+    if (isOptedOut) return;
+    const id = window.setTimeout(() => taRef.current?.focus({ preventScroll: true }), 80);
+    return () => window.clearTimeout(id);
+  }, [isOptedOut]);
+
   // Auto-grow textarea up to ~5 lines.
   useEffect(() => {
     const ta = taRef.current;
@@ -130,6 +138,14 @@ export function MobileChatSendView({
     ta.style.height = `${next}px`;
     setTaHeight(next);
   }, [body]);
+
+  // Cmd/Ctrl+Enter from anywhere in the composer triggers send.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (canSend && !sending) onSend();
+    }
+  };
 
   const fullName =
     [contact.first_name, contact.last_name].filter(Boolean).join(' ') ||
@@ -154,12 +170,12 @@ export function MobileChatSendView({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Back"
-          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60"
+          aria-label="Back to leads"
+          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} />
+          <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
         </button>
-        <Avatar className="h-8 w-8 shrink-0">
+        <Avatar className="h-8 w-8 shrink-0" aria-hidden>
           <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
             {initials || '?'}
           </AvatarFallback>
@@ -175,20 +191,22 @@ export function MobileChatSendView({
         <button
           type="button"
           onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
-          aria-label="Call"
+          aria-label={contact.phone ? `Call ${fullName}` : 'No phone number on file'}
           disabled={!contact.phone}
-          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30"
+          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <Phone className="h-[17px] w-[17px]" />
+          <Phone className="h-[17px] w-[17px]" aria-hidden />
         </button>
         <Popover open={moreOpen} onOpenChange={setMoreOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label="More"
-              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60"
+              aria-label="More options"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <MoreHorizontal className="h-[18px] w-[18px]" />
+              <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" sideOffset={6} className="w-60 p-1">
@@ -235,6 +253,10 @@ export function MobileChatSendView({
       {/* Conversation scroll area */}
       <div
         ref={scrollRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label={`Conversation with ${fullName}`}
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 space-y-1.5"
       >
         {messages.length === 0 && (
@@ -352,29 +374,40 @@ export function MobileChatSendView({
             ref={taRef}
             value={body}
             onChange={(e) => onBodyChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={isOptedOut ? 'This number opted out' : 'Message'}
             disabled={isOptedOut}
             rows={1}
+            aria-label={`Message ${fullName} via ${channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}`}
+            aria-keyshortcuts="Meta+Enter Control+Enter"
+            aria-multiline="true"
+            enterKeyHint="send"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            spellCheck
             style={{ height: taHeight }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px]"
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px] focus-visible:outline-none"
           />
           {showSendBtn && (
             <button
               type="button"
               onClick={onSend}
               disabled={!canSend || sending}
-              aria-label="Send"
+              aria-label={sending ? 'Sending message' : 'Send message'}
+              aria-busy={sending || undefined}
+              aria-keyshortcuts="Meta+Enter Control+Enter"
+              title="Send (⌘/Ctrl + Enter)"
               className={cn(
-                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all',
+                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 canSend && !sending
                   ? 'bg-primary text-primary-foreground active:scale-95'
                   : 'bg-muted-foreground/20 text-muted-foreground',
               )}
             >
               {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
-                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               )}
             </button>
           )}
