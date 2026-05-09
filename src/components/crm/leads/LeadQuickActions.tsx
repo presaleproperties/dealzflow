@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, CalendarDays, ListTodo, ArrowRightLeft, UserCheck, MessageSquare, Link2, Zap } from 'lucide-react';
+import { CallButton } from '@/components/crm/dialer/DialerWidget';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
@@ -63,6 +64,12 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
           >
             <MessageSquare className="w-3.5 h-3.5" style={{ color: 'hsl(160 60% 40%)' }} /> Send SMS
           </Button>
+          <CallButton
+            contactId={contact.id}
+            contactName={formatContactName(contact)}
+            phone={contact.phone}
+            label="Call"
+          />
           <Button
             variant="outline" size="sm"
             className="h-9 text-xs gap-1.5 justify-start col-span-2"

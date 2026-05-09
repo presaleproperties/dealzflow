@@ -6,6 +6,7 @@ import { NextBestActionCard } from '@/components/crm/leads/NextBestActionCard';
 import { AtAGlanceCard } from '@/components/crm/leads/AtAGlanceCard';
 import { EngagementTabs } from '@/components/crm/leads/EngagementTabs';
 import { UpcomingMini } from '@/components/crm/leads/UpcomingMini';
+import { RecentCallsCard } from '@/components/crm/leads/RecentCallsCard';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { LeadScore } from './types';
 
@@ -80,6 +81,8 @@ export function RightSidebar({
       {/* ④ Unified engagement (replaces 5 widgets) */}
       <EngagementTabs contact={contact} />
 
+      {/* ④ⓑ Recent phone calls (only renders when calls exist) */}
+      <RecentCallsCard contactId={contact.id} />
       {/* ⑤ Debug — collapsed by default, hidden noise */}
       <details className="rounded-xl border border-border/60 bg-card/50 group">
         <summary className="cursor-pointer list-none px-3 py-2 flex items-center justify-between text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground hover:text-foreground transition-colors">

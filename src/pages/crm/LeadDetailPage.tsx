@@ -23,6 +23,8 @@ import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
 import { LeftSidebar } from '@/components/crm/leads/detail/LeftSidebar';
 import { CenterColumn } from '@/components/crm/leads/detail/CenterColumn';
 import { RightSidebar } from '@/components/crm/leads/detail/RightSidebar';
+import { useDialer } from '@/hooks/useDialer';
+import { formatContactName } from '@/lib/format';
 import { PanelEdgeHandle } from '@/components/crm/leads/detail/PanelEdgeHandle';
 
 import type { LeadScore } from '@/components/crm/leads/detail/types';
@@ -32,6 +34,14 @@ export default function LeadDetailPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: contact, isLoading } = useCrmContact(id);
+  const dialer = useDialer();
+  const callContact = (c: CrmContact | undefined | null) => {
+    if (!c?.phone) return;
+    dialer.startCall({
+      contact: { id: c.id, name: formatContactName(c), phone: c.phone },
+      number: c.phone,
+    });
+  };
   // Only fetch the full contacts list on desktop (used for prev/next nav).
   // On mobile this query was loading ~7,500 rows on every detail open and freezing the app.
   const { data: allContacts = [] } = useCrmContacts(undefined, { enabled: !isMobile });
@@ -237,7 +247,7 @@ export default function LeadDetailPage() {
 
   // Mobile layout
   if (isMobile) {
-    const onCall = () => c.phone && (window.location.href = `tel:${c.phone}`);
+    const onCall = () => callContact(c);
     const onSms = () => { setTextChannel('sms'); setShowText(true); };
     const onWhatsApp = () => {
       void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
@@ -321,7 +331,7 @@ export default function LeadDetailPage() {
               leadScore={leadScore}
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
-              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onCall={() => callContact(c)}
               onSms={() => { setTextChannel('sms'); setShowText(true); }}
               onEmail={() => setShowEmail(true)}
               onWhatsApp={() => {
@@ -341,7 +351,7 @@ export default function LeadDetailPage() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <CenterColumn
               contact={c}
-              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onCall={() => callContact(c)}
               onText={() => setShowText(true)}
               onEmail={() => setShowEmail(true)}
               onTask={() => setShowTask(true)}
@@ -362,7 +372,7 @@ export default function LeadDetailPage() {
               contact={c}
               onAddTask={() => setShowTask(true)}
               onAddShowing={() => setShowShowing(true)}
-              onCall={() => c.phone && (window.location.href = `tel:${c.phone}`)}
+              onCall={() => callContact(c)}
               onText={() => setShowText(true)}
               onEmail={() => setShowEmail(true)}
               onSendProject={() => setShowSendProject(true)}
