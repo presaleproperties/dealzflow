@@ -1051,9 +1051,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="What's this about?"
+                    placeholder="Subject"
                     maxLength={200}
-                    className="w-full bg-transparent border-0 outline-none text-[14px] sm:text-[14px] font-medium sm:font-semibold tracking-[-0.005em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/45 px-0 min-h-[28px] sm:min-h-0"
+                    className="w-full bg-transparent border-0 outline-none text-[14.5px] sm:text-[14px] font-semibold tracking-[-0.005em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/45 px-0 min-h-[28px] sm:min-h-0"
                   />
                 </RecipientRow>
               </div>
