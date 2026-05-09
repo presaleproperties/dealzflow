@@ -314,6 +314,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       <ResponsiveDialogContent
         ref={composerRef}
         className="mobile-drawer sm:max-w-[920px] sm:w-[92vw] sm:h-auto sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl [&>button]:hidden"
+        hideMobileHandle={isMobileChatMode}
       >
         {dragActive && (
           <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-t-3xl sm:rounded-2xl">
@@ -322,6 +323,26 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
             </div>
           </div>
         )}
+        {isMobileChatMode ? (
+          <MobileChatSendView
+            contact={contact}
+            channel={channel}
+            onChannelChange={setChannel}
+            body={body}
+            onBodyChange={setBody}
+            onSend={handleSend}
+            sending={isPending}
+            canSend={!!canSend}
+            onClose={() => onOpenChange(false)}
+            onOpenAdvanced={() => setForceAdvanced(true)}
+            uploading={uploading}
+            onFiles={(f) => { void handleFiles(f); }}
+            isOptedOut={!!isOptedOut}
+            mediaUrls={mediaUrls}
+            onRemoveMedia={(u) => setMediaUrls((prev) => prev.filter((x) => x !== u))}
+          />
+        ) : (
+        <>
         {/* Header — title + channel toggle + close. Drag handle (rendered by
             ResponsiveDialog wrapper) sits above this on mobile. */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-8 h-11 sm:h-14 border-b shrink-0">
