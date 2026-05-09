@@ -391,8 +391,8 @@ export function MobileChatSendView({
             autoCapitalize="sentences"
             autoCorrect="on"
             spellCheck
-            style={{ height: taHeight }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 max-h-[140px] focus-visible:outline-none"
+            style={{ height: taHeight, overflowY: taScrollable ? 'auto' : 'hidden' }}
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 focus-visible:outline-none"
           />
           {showSendBtn && (
             <button
