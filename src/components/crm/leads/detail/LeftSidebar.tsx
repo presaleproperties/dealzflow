@@ -319,9 +319,9 @@ export function LeftSidebar({
 
 
       {/* Insight */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <SectionHeader>Insight</SectionHeader>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 rounded-lg border border-border/50 bg-card/40 divide-x divide-border/40">
           <InsightCard
             value={<span style={{ color: leadScore.color }}>{leadScore.score}</span>}
             label="Score"
