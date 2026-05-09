@@ -182,8 +182,26 @@ export default function CrmLeadsPage() {
       : Number(searchParams.get('page')) || 1,
   );
   const [pageSize, setPageSize] = useState(50);
-  const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get('sort') as SortKey) || 'last_touch_at');
-  const [sortDir, setSortDir] = useState<SortDir>(() => (searchParams.get('dir') as SortDir) || 'desc');
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    const url = searchParams.get('sort') as SortKey | null;
+    if (url) return url;
+    try { const s = localStorage.getItem('crm.leads.sortKey'); if (s) return s as SortKey; } catch {}
+    return 'last_touch_at';
+  });
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
+    const url = searchParams.get('dir') as SortDir | null;
+    if (url) return url;
+    try { const s = localStorage.getItem('crm.leads.sortDir'); if (s === 'asc' || s === 'desc') return s; } catch {}
+    return 'desc';
+  });
+
+  // Persist sort across navigations
+  useEffect(() => {
+    try {
+      localStorage.setItem('crm.leads.sortKey', sortKey);
+      localStorage.setItem('crm.leads.sortDir', sortDir);
+    } catch {}
+  }, [sortKey, sortDir]);
   const [showAdd, setShowAdd] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(() => !!searchParams.get('search'));
