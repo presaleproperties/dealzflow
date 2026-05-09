@@ -223,15 +223,33 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
     const dateLabel = ts ? new Date(ts).toLocaleString(undefined, {
       weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
     }) : '';
-    const fromAddr = em.from_email || contact.email || 'sender';
-    const rawBody = (em.body_html || em.body || em.body_text || '').toString();
-    // Wrap original message in a Gmail-style quoted block.
+    const fromAddr = em.from_email || 'sender';
+    const fromName = (em as any).from_name || (fromAddr.includes('@') ? fromAddr.split('@')[0] : fromAddr);
+    const toAddr = contact.email || '';
+    let rawBody = (em.body_html || em.body || em.body_text || '').toString();
+
+    // Strip the original sender's signature/legal-disclaimer trailer so the
+    // quoted block focuses on the actual message. The Presale auto-emails
+    // always end with the same "LEGAL DISCLAIMER" block + agent v-card; cut
+    // everything from there so the reply view stays tight.
+    rawBody = rawBody
+      .replace(/<hr[^>]*>[\s\S]*$/i, '')
+      .replace(/(LEGAL\s*DISCLAIMER)[\s\S]*$/i, '')
+      .replace(/(<table[^>]*>[\s\S]*?(PREC|REAL\s*BROKER|FOUNDER\s*&amp;\s*PRESALE)[\s\S]*?<\/table>)/gi, '')
+      .trim();
+
+    // Gmail-style reply: 2 blank paragraphs (cursor lands here), then a
+    // hairline divider, a faint attribution line, then the original body
+    // inside a styled blockquote that visually reads as "previous message".
+    const attribution = `On ${dateLabel}${fromName ? `, <strong>${fromName}</strong>` : ''}${fromAddr && fromAddr !== fromName ? ` &lt;${fromAddr}&gt;` : ''} wrote${toAddr ? ` to ${toAddr}` : ''}:`;
     const quoted = rawBody
-      ? `<div class="gmail_quote"><blockquote style="margin:0 0 0 .8ex;border-left:2px solid #ccc;padding-left:1ex;color:#555">${rawBody}</blockquote></div>`
+      ? `<blockquote style="margin:0;padding:12px 16px;border-left:3px solid #d7a542;background:#faf7f0;color:#374151;font-size:14px;line-height:1.55;border-radius:0 6px 6px 0">${rawBody}</blockquote>`
       : '';
     const bodyHtml =
-      `<p><br/></p><p><br/></p>` +
-      `<p style="color:#6b7280;font-size:12px;margin:8px 0">On ${dateLabel}, ${fromAddr} wrote:</p>` +
+      `<p><br/></p>` +
+      `<p><br/></p>` +
+      `<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0" />` +
+      `<p style="color:#6b7280;font-size:12px;margin:0 0 10px;font-style:italic">${attribution}</p>` +
       quoted;
     setReplyCompose({ subject, bodyHtml });
   };
