@@ -81,6 +81,8 @@ export function RightSidebar({
       {/* ④ Unified engagement (replaces 5 widgets) */}
       <EngagementTabs contact={contact} />
 
+      {/* ④ⓑ Recent phone calls (only renders when calls exist) */}
+      <RecentCallsCard contactId={contact.id} />
       {/* ⑤ Debug — collapsed by default, hidden noise */}
       <details className="rounded-xl border border-border/60 bg-card/50 group">
         <summary className="cursor-pointer list-none px-3 py-2 flex items-center justify-between text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground hover:text-foreground transition-colors">
