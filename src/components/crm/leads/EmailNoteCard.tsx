@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Eye, Mail, Paperclip } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Eye, Paperclip } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { EmailLogRow } from './EmailPreviewDialog';
