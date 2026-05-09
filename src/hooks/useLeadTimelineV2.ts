@@ -72,25 +72,47 @@ export function useLeadTimelineV2({
     staleTime: 15_000,
   });
 
-  // Realtime tail — refetch first page when a new activity event arrives for this contact
+  // Realtime tail — refetch first page when ANY source-of-truth table inserts/updates
+  // a row tied to this contact. Debounced so a burst of changes triggers one refetch.
   useEffect(() => {
     if (!contactId) return;
-    const ch = supabase
-      .channel(`lead-timeline-${contactId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'crm_activity_events',
-          filter: `contact_id=eq.${contactId}`,
-        },
-        () => {
-          qc.invalidateQueries({ queryKey: ['lead-timeline-v2', contactId] });
-        },
-      )
-      .subscribe();
+
+    let pending: number | null = null;
+    const schedule = () => {
+      if (pending) window.clearTimeout(pending);
+      pending = window.setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ['lead-timeline-v2', contactId] });
+        qc.invalidateQueries({ queryKey: ['lead-timeline-pins', contactId] });
+        pending = null;
+      }, 350);
+    };
+
+    const filter = `contact_id=eq.${contactId}`;
+    // Only subscribe to tables that exist AND are in the supabase_realtime publication.
+    const tables: { table: string; events: ('INSERT' | 'UPDATE')[] }[] = [
+      { table: 'crm_activity_events', events: ['INSERT'] },
+      { table: 'crm_messages', events: ['INSERT'] },
+      { table: 'crm_email_log', events: ['INSERT', 'UPDATE'] },
+      { table: 'crm_sms_log', events: ['INSERT', 'UPDATE'] },
+      { table: 'crm_lead_behavior_forms', events: ['INSERT'] },
+      { table: 'crm_showings', events: ['INSERT', 'UPDATE'] },
+      { table: 'crm_tasks', events: ['INSERT', 'UPDATE'] },
+    ];
+
+    let ch = supabase.channel(`lead-timeline-${contactId}`);
+    for (const { table, events } of tables) {
+      for (const evt of events) {
+        ch = ch.on(
+          'postgres_changes' as any,
+          { event: evt, schema: 'public', table, filter },
+          schedule,
+        );
+      }
+    }
+    ch.subscribe();
+
     return () => {
+      if (pending) window.clearTimeout(pending);
       void supabase.removeChannel(ch);
     };
   }, [contactId, qc]);
