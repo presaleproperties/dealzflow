@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import { Loader2, Inbox } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
@@ -20,9 +20,20 @@ interface Props {
   /** When true, render in compact mode for sidebars/cards. */
   compact?: boolean;
   onEventClick?: (event: TimelineEvent) => void;
+  /** Virtualization viewport height. Defaults to 640px. */
+  height?: number;
 }
 
-export function LeadTimelineV2({ contactId, className, compact, onEventClick }: Props) {
+type Row =
+  | { kind: 'header'; key: string; date: Date }
+  | { kind: 'event'; key: string; event: TimelineEvent };
+
+export function LeadTimelineV2({
+  contactId,
+  className,
+  onEventClick,
+  height = 640,
+}: Props) {
   const [filterKey, setFilterKey] = useState<'all' | TimelineKind | 'comms'>('all');
   const [kinds, setKinds] = useState<TimelineKind[] | null>(null);
   const [search, setSearch] = useState('');
@@ -33,26 +44,40 @@ export function LeadTimelineV2({ contactId, className, compact, onEventClick }: 
   const { data: pins = [] } = useTimelinePins(contactId);
   const toggle = useTogglePin(contactId);
 
-  const pinSet = useMemo(() => {
-    return new Set(pins.map((p) => `${p.event_kind}:${p.event_id}`));
-  }, [pins]);
+  const pinSet = useMemo(
+    () => new Set(pins.map((p) => `${p.event_kind}:${p.event_id}`)),
+    [pins],
+  );
 
   const pinnedEvents = useMemo(
     () => events.filter((e) => pinSet.has(`${e.kind}:${e.event_id}`)),
     [events, pinSet],
   );
 
-  // Group remaining by date for sticky headers
-  const grouped = useMemo(() => {
-    const groups: { date: Date; items: TimelineEvent[] }[] = [];
+  // Build a flat virtualizable row list with sticky-ish date headers inlined.
+  const rows = useMemo<Row[]>(() => {
+    const out: Row[] = [];
+    let lastDate: Date | null = null;
     for (const ev of events) {
       const d = new Date(ev.occurred_at);
-      const last = groups[groups.length - 1];
-      if (last && isSameDay(last.date, d)) last.items.push(ev);
-      else groups.push({ date: d, items: [ev] });
+      if (!lastDate || !isSameDay(lastDate, d)) {
+        out.push({ kind: 'header', key: `h-${d.toDateString()}`, date: d });
+        lastDate = d;
+      }
+      out.push({ kind: 'event', key: `${ev.kind}:${ev.event_id}`, event: ev });
     }
-    return groups;
+    return out;
   }, [events]);
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const handleTogglePin = useCallback(
+    (e: TimelineEvent) =>
+      toggle.mutate({ event: e, isPinned: pinSet.has(`${e.kind}:${e.event_id}`) }),
+    [toggle, pinSet],
+  );
 
   return (
     <div className={cn('flex flex-col', className)}>
@@ -77,7 +102,7 @@ export function LeadTimelineV2({ contactId, className, compact, onEventClick }: 
                 key={`pin-${ev.kind}-${ev.event_id}`}
                 event={ev}
                 isPinned
-                onTogglePin={(e) => toggle.mutate({ event: e, isPinned: true })}
+                onTogglePin={handleTogglePin}
                 onClick={onEventClick}
               />
             ))}
@@ -85,14 +110,14 @@ export function LeadTimelineV2({ contactId, className, compact, onEventClick }: 
         </div>
       )}
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-3">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-14 w-full rounded-lg" />
             ))}
           </div>
-        ) : events.length === 0 ? (
+        ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/60 py-10 text-center">
             <Inbox className="mb-2 h-6 w-6 text-muted-foreground/60" />
             <p className="text-[12.5px] text-muted-foreground">
@@ -100,41 +125,49 @@ export function LeadTimelineV2({ contactId, className, compact, onEventClick }: 
             </p>
           </div>
         ) : (
-          grouped.map((g) => (
-            <div key={g.date.toISOString()} className="space-y-0.5">
-              <p className="sticky top-0 z-[1] -mx-1 mb-1 bg-gradient-to-b from-background via-background/95 to-background/80 px-1 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground backdrop-blur">
-                {format(g.date, 'EEEE, MMM d')}
-              </p>
-              {g.items.map((ev) => (
+          <Virtuoso
+            style={{ height }}
+            data={rows}
+            increaseViewportBy={{ top: 200, bottom: 600 }}
+            endReached={handleEndReached}
+            computeItemKey={(_i, row) => row.key}
+            itemContent={(_index, row) => {
+              if (row.kind === 'header') {
+                return (
+                  <p className="bg-background py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    {format(row.date, 'EEEE, MMM d')}
+                  </p>
+                );
+              }
+              return (
                 <TimelineRow
-                  key={`${ev.kind}-${ev.event_id}`}
-                  event={ev}
-                  isPinned={pinSet.has(`${ev.kind}:${ev.event_id}`)}
-                  onTogglePin={(e) =>
-                    toggle.mutate({ event: e, isPinned: pinSet.has(`${e.kind}:${e.event_id}`) })
-                  }
+                  event={row.event}
+                  isPinned={pinSet.has(`${row.event.kind}:${row.event.event_id}`)}
+                  onTogglePin={handleTogglePin}
                   onClick={onEventClick}
                 />
-              ))}
-            </div>
-          ))
-        )}
-
-        {hasNextPage && (
-          <div className="flex justify-center pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="h-8 text-[12px]"
-            >
-              {isFetchingNextPage ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : null}
-              Load older
-            </Button>
-          </div>
+              );
+            }}
+            components={{
+              Footer: () =>
+                hasNextPage ? (
+                  <div className="flex items-center justify-center py-3 text-[11.5px] text-muted-foreground">
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        Loading older activity…
+                      </>
+                    ) : (
+                      'Scroll for more'
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-3 text-center text-[10.5px] text-muted-foreground/70">
+                    End of timeline
+                  </div>
+                ),
+            }}
+          />
         )}
       </div>
     </div>
