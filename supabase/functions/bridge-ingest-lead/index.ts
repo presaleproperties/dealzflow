@@ -484,6 +484,7 @@ Deno.serve(async (req) => {
     } else {
       const assignee = await pickAssignee(supabase, L.agent_slug, (L as any).assigned_agent_id ?? L.metadata?.assigned_agent_id ?? null, email, L.first_name ?? null);
       const newTags = buildTags(null, L.tags, meta);
+      if (isAgentTest && !newTags.includes("agent-test")) newTags.push("agent-test");
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
