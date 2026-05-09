@@ -821,10 +821,12 @@ export type Database = {
           last_name: string
           last_touch_at: string | null
           last_touch_type: string | null
+          lead_currency: string | null
           lead_score: number | null
           lead_tier: string | null
           lead_type: string | null
           lead_types: string[]
+          lead_value: number | null
           lofty_id: string | null
           lofty_synced_at: string | null
           lofty_updated_at: string | null
@@ -853,6 +855,7 @@ export type Database = {
           tags: string[] | null
           timeframe: string | null
           updated_at: string | null
+          won_at: string | null
         }
         Insert: {
           address?: string | null
@@ -885,10 +888,12 @@ export type Database = {
           last_name: string
           last_touch_at?: string | null
           last_touch_type?: string | null
+          lead_currency?: string | null
           lead_score?: number | null
           lead_tier?: string | null
           lead_type?: string | null
           lead_types?: string[]
+          lead_value?: number | null
           lofty_id?: string | null
           lofty_synced_at?: string | null
           lofty_updated_at?: string | null
@@ -917,6 +922,7 @@ export type Database = {
           tags?: string[] | null
           timeframe?: string | null
           updated_at?: string | null
+          won_at?: string | null
         }
         Update: {
           address?: string | null
@@ -949,10 +955,12 @@ export type Database = {
           last_name?: string
           last_touch_at?: string | null
           last_touch_type?: string | null
+          lead_currency?: string | null
           lead_score?: number | null
           lead_tier?: string | null
           lead_type?: string | null
           lead_types?: string[]
+          lead_value?: number | null
           lofty_id?: string | null
           lofty_synced_at?: string | null
           lofty_updated_at?: string | null
@@ -981,6 +989,7 @@ export type Database = {
           tags?: string[] | null
           timeframe?: string | null
           updated_at?: string | null
+          won_at?: string | null
         }
         Relationships: [
           {
@@ -1874,6 +1883,48 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_inbound_events: {
+        Row: {
+          contact_id: string | null
+          error: string | null
+          event_type: string
+          idempotency_key: string
+          occurred_at: string | null
+          payload: Json
+          processed_at: string | null
+          received_at: string
+          signature: string | null
+          signature_valid: boolean | null
+          status: string
+        }
+        Insert: {
+          contact_id?: string | null
+          error?: string | null
+          event_type: string
+          idempotency_key: string
+          occurred_at?: string | null
+          payload: Json
+          processed_at?: string | null
+          received_at?: string
+          signature?: string | null
+          signature_valid?: boolean | null
+          status?: string
+        }
+        Update: {
+          contact_id?: string | null
+          error?: string | null
+          event_type?: string
+          idempotency_key?: string
+          occurred_at?: string | null
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          signature?: string | null
+          signature_valid?: boolean | null
+          status?: string
+        }
+        Relationships: []
+      }
       crm_inbox_views: {
         Row: {
           channel: string
@@ -2512,6 +2563,54 @@ export type Database = {
           title?: string
           type?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_outbound_webhooks: {
+        Row: {
+          attempts: number
+          created_at: string
+          event_type: string
+          id: string
+          idempotency_key: string | null
+          last_attempt_at: string | null
+          last_error: string | null
+          last_status_code: number | null
+          max_attempts: number
+          next_attempt_at: string
+          payload: Json
+          status: string
+          target_url: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          event_type: string
+          id?: string
+          idempotency_key?: string | null
+          last_attempt_at?: string | null
+          last_error?: string | null
+          last_status_code?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payload: Json
+          status?: string
+          target_url: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          event_type?: string
+          id?: string
+          idempotency_key?: string | null
+          last_attempt_at?: string | null
+          last_error?: string | null
+          last_status_code?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+          target_url?: string
         }
         Relationships: []
       }
@@ -3781,36 +3880,51 @@ export type Database = {
       }
       crm_tasks: {
         Row: {
+          ack_token: string | null
           assigned_to: string | null
+          claimed_at: string | null
+          claimed_by: string | null
           contact_id: string | null
           created_at: string | null
           description: string | null
           due_date: string | null
           id: string
+          lead_external_id: string | null
+          presale_task_id: string | null
           priority: string | null
           status: string | null
           task_type: string | null
           title: string
         }
         Insert: {
+          ack_token?: string | null
           assigned_to?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
           contact_id?: string | null
           created_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          lead_external_id?: string | null
+          presale_task_id?: string | null
           priority?: string | null
           status?: string | null
           task_type?: string | null
           title: string
         }
         Update: {
+          ack_token?: string | null
           assigned_to?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
           contact_id?: string | null
           created_at?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          lead_external_id?: string | null
+          presale_task_id?: string | null
           priority?: string | null
           status?: string | null
           task_type?: string | null
@@ -5582,6 +5696,32 @@ export type Database = {
       crm_can_see_contact_id: {
         Args: { _contact_id: string; _user_id: string }
         Returns: boolean
+      }
+      crm_claim_task: {
+        Args: { _ack_token?: string; _task_id: string }
+        Returns: {
+          ack_token: string | null
+          assigned_to: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          contact_id: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          lead_external_id: string | null
+          presale_task_id: string | null
+          priority: string | null
+          status: string | null
+          task_type: string | null
+          title: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       crm_contact_matches_pipeline_filter: {
         Args: {
