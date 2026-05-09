@@ -56,6 +56,14 @@ interface Props {
 }
 
 /** Unified message shape — produced from either crm_gmail_messages or crm_email_log. */
+type EmailAttachment = {
+  filename: string;
+  mime: string;
+  size: number;
+  attachment_id: string;
+  /** Gmail message id needed to fetch the bytes. */
+  gmail_message_id?: string | null;
+};
 type ThreadMessage = {
   id: string;
   threadKey: string;
@@ -74,6 +82,7 @@ type ThreadMessage = {
   clickCount?: number;
   lastOpenedAt?: string | null;
   lastClickedAt?: string | null;
+  attachments?: EmailAttachment[];
 };
 
 const IFRAME_STYLES = `
