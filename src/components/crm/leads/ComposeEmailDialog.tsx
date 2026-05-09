@@ -1015,9 +1015,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Subject"
+                    placeholder="What's this about?"
                     maxLength={200}
-                    className="w-full bg-transparent border-0 outline-none text-[14px] font-semibold tracking-[-0.01em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/50 px-0"
+                    className="w-full bg-transparent border-0 outline-none text-[14px] sm:text-[14px] font-medium sm:font-semibold tracking-[-0.005em] text-foreground placeholder:font-normal placeholder:text-muted-foreground/45 px-0 min-h-[28px] sm:min-h-0"
                   />
                 </RecipientRow>
               </div>
@@ -1109,9 +1109,12 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                               <div className="hidden sm:block">
                                 <SignatureInlineFrame html={activeSignatureHtml} />
                               </div>
-                              {/* Mobile: signature is managed via the bottom action bar selector
-                                  and revealed in the Preview tab — no inline footer to keep the
-                                  editor visually clean. */}
+                              {/* Mobile/tablet: same inline signature, rendered in a compact
+                                  variant so it scales down with the device and the agent can
+                                  always see what their email closes with. */}
+                              <div className="sm:hidden">
+                                <SignatureInlineFrame html={activeSignatureHtml} compact />
+                              </div>
                             </>
                           )
                         ) : null
