@@ -34,6 +34,14 @@ export default function LeadDetailPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: contact, isLoading } = useCrmContact(id);
+  const dialer = useDialer();
+  const callContact = (c: CrmContact | undefined | null) => {
+    if (!c?.phone) return;
+    dialer.startCall({
+      contact: { id: c.id, name: formatContactName(c), phone: c.phone },
+      number: c.phone,
+    });
+  };
   // Only fetch the full contacts list on desktop (used for prev/next nav).
   // On mobile this query was loading ~7,500 rows on every detail open and freezing the app.
   const { data: allContacts = [] } = useCrmContacts(undefined, { enabled: !isMobile });
