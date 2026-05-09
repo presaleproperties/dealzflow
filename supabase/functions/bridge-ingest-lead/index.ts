@@ -130,16 +130,40 @@ function buildTags(existingTags: string[] | null, leadTags: string[] | undefined
 
   const formType = meta?.form_type;
   if (typeof formType === "string" && formType.trim()) add(`form:${formType.trim()}`);
+  // Derive form:<type> from completed forms in behavior batch when not at top-level
+  const beh: any = meta?.behavior ?? null;
+  if (!formType && Array.isArray(beh?.forms)) {
+    for (const f of beh.forms) {
+      if ((f?.status ?? "").toLowerCase() === "completed" && f?.form_type) add(`form:${f.form_type}`);
+    }
+  }
   const deckName = meta?.pitch_deck_name ?? meta?.deck_name ?? meta?.deck?.name;
   if (typeof deckName === "string" && deckName.trim()) add(`deck:${deckName.trim()}`);
 
+  // Representation status — useful triage signal
+  const agentStatus = String(meta?.agent_status ?? "").toLowerCase();
+  if (agentStatus === "no") add("unrepresented");
+  else if (agentStatus === "yes") add("has-agent");
+
+  // Persona-derived buyer/investor tag for quick filtering
+  const persona = String(meta?.persona ?? "").toLowerCase();
+  if (["buyer", "investor", "realtor", "developer"].includes(persona)) add(persona);
+
+  // Pre-approval = strong buying signal
+  if (meta?.is_pre_approved === true) add("pre-approved");
+
   // Hot triggers from this single payload (floorplan download or deck revisit)
-  const beh: any = meta?.behavior ?? null;
   if (Array.isArray(beh?.engagement)) {
     for (const e of beh.engagement) {
       const t = (e?.event_type ?? "").toLowerCase();
       if (t === "floorplan_download") add("hot");
       if ((t === "deck_visit" || t === "deck_unlock") && (e?.visit_number ?? 0) >= 2) add("hot");
+    }
+  }
+  // Heavy browser = hot (≥20 page views in any session)
+  if (Array.isArray(beh?.sessions)) {
+    for (const s of beh.sessions) {
+      if ((Number(s?.pages_viewed) || 0) >= 20) { add("hot"); add("heavy-browser"); break; }
     }
   }
   return Array.from(seen.values());
@@ -174,16 +198,43 @@ function personaToContactType(meta: any): string | null {
 
 // Compose a structured note from granular metadata (lead_source, form_type,
 // utm, landing_page, free-text message). Appended — never overwrites existing notes.
-function buildNoteAppendix(meta: any): string | null {
+function buildNoteAppendix(meta: any, behavior?: any): string | null {
   if (!meta || typeof meta !== "object") return null;
   const lines: string[] = [];
   const ts = new Date().toISOString();
   lines.push(`[Presale form @ ${ts}]`);
-  if (meta.form_type) lines.push(`Form: ${meta.form_type}`);
+
+  // Form type — prefer top-level, then derive from completed forms in behavior
+  let formType = meta.form_type;
+  if (!formType && Array.isArray(behavior?.forms)) {
+    const completed = behavior.forms.filter((f: any) => (f?.status ?? "").toLowerCase() === "completed");
+    const types = Array.from(new Set(completed.map((f: any) => f?.form_type).filter(Boolean)));
+    if (types.length) formType = types.join(", ");
+  }
+  if (formType) lines.push(`Form: ${formType}`);
+
   if (meta.lead_source) lines.push(`Lead source: ${meta.lead_source}`);
+  if (meta.persona) lines.push(`Persona: ${meta.persona}`);
+  if (meta.agent_status) {
+    const a = String(meta.agent_status).toLowerCase();
+    lines.push(`Working with an agent: ${a === "no" ? "No (unrepresented)" : a === "yes" ? "Yes" : meta.agent_status}`);
+  }
+  if (meta.intent_tier) lines.push(`Intent tier: ${meta.intent_tier}`);
   if (meta.landing_page) lines.push(`Landing: ${meta.landing_page}`);
+  if (meta.referrer) lines.push(`Referrer: ${meta.referrer}`);
   const utm = [meta.utm_source, meta.utm_medium, meta.utm_campaign].filter(Boolean).join(" / ");
   if (utm) lines.push(`UTM: ${utm}`);
+
+  // Engagement signal from behavior batch
+  if (behavior && typeof behavior === "object") {
+    const sessions = Array.isArray(behavior.sessions) ? behavior.sessions : [];
+    const totalPages = sessions.reduce((n: number, s: any) => n + (Number(s?.pages_viewed) || 0), 0);
+    const views = Array.isArray(behavior.views) ? behavior.views : [];
+    const projects = Array.from(new Set(views.map((v: any) => v?.property_name).filter(Boolean)));
+    if (totalPages) lines.push(`Engagement: ${totalPages} page views across ${sessions.length} session${sessions.length === 1 ? "" : "s"}`);
+    if (projects.length) lines.push(`Viewed projects: ${projects.join(", ")}`);
+  }
+
   if (typeof meta.message === "string" && meta.message.trim()) lines.push(`Message: ${meta.message.trim()}`);
   return lines.length > 1 ? lines.join("\n") : null;
 }
@@ -296,7 +347,7 @@ Deno.serve(async (req) => {
     // Build merge metadata once (used for tags/notes/persona on both branches)
     const meta = { ...(L.metadata || {}), behavior: body.behavior } as any;
     const personaType = personaToContactType(meta);
-    const noteAppendix = buildNoteAppendix(meta);
+    const noteAppendix = buildNoteAppendix(meta, body.behavior);
 
     if (existing) {
       // Merge: only fill blanks, append tags/projects/cities, never overwrite manual edits
@@ -310,8 +361,8 @@ Deno.serve(async (req) => {
       const isHot = newTags.includes("hot");
 
       await supabase.from("crm_contacts").update({
-        first_name: existing.first_name || L.first_name || "Lead",
-        last_name: existing.last_name || L.last_name || "",
+        first_name: existing.first_name || L.first_name || "New",
+        last_name: existing.last_name || L.last_name || "(unknown)",
         presale_user_id: L.presale_user_id ?? undefined,
         // Source rule: ALWAYS PresaleProperties.com for inbound presale leads
         source: "PresaleProperties.com",
@@ -348,7 +399,7 @@ Deno.serve(async (req) => {
       const isHot = newTags.includes("hot");
       const { data: created, error: insErr } = await supabase.from("crm_contacts").insert({
         first_name: L.first_name || "New",
-        last_name: L.last_name || "Lead",
+        last_name: L.last_name || "(unknown)",
         email,
         phone: L.phone || null,
         presale_user_id: L.presale_user_id || null,

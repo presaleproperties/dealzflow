@@ -61,9 +61,9 @@ function cleanPhone(v: unknown): string | null {
 }
 function splitName(value: unknown): { first_name: string; last_name: string } {
   const raw = typeof value === "string" ? value.trim() : "";
-  if (!raw) return { first_name: "New", last_name: "Lead" };
+  if (!raw) return { first_name: "New", last_name: "(unknown)" };
   const parts = raw.split(/\s+/).filter(Boolean);
-  return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") || "Lead" };
+  return { first_name: parts[0] || "New", last_name: parts.slice(1).join(" ") || "(unknown)" };
 }
 
 async function pickAssignee(supabase: SupabaseClient, agentSlug?: string | null): Promise<string> {
@@ -232,28 +232,78 @@ export async function processPresaleActivity(
     const leadEmail = email ?? cleanEmail(meta.email) ?? cleanEmail(formPayload.email);
     const leadPhone = phone ?? cleanPhone(meta.phone) ?? cleanPhone(formPayload.phone);
     const leadSource = typeof meta.lead_source === "string" ? meta.lead_source : (completedForm?.form_type ?? null);
-    const projects = [
+    // Junk-project filter (yes/no answers, "Working with agent" style labels)
+    const JUNK_PROJECT_RE = [
+      /^working with (an? )?agent$/i,
+      /^(have|has) (an? )?agent$/i,
+      /^(yes|no|n\/a|na|unknown|true|false)$/i,
+      /^agent[_\s-]?status$/i,
+    ];
+    const projects = ([
       ev.project_slug, meta.project, meta.property_name, meta.project_name,
       completedForm?.property_name, formPayload.project, formPayload.property_name,
-    ].filter(Boolean) as string[];
+    ].filter(Boolean) as string[])
+      .filter((p) => p.trim().length >= 2 && !JUNK_PROJECT_RE.some((re) => re.test(p)));
     const personaRaw = (meta.persona ?? formPayload.persona ?? "").toString().trim().toLowerCase();
     const personaType = ["buyer", "investor", "realtor", "developer"].includes(personaRaw) ? personaRaw : null;
 
+    // Lead-source aliases → canonical form-type tag (avoid duplicate tags)
+    const LEAD_SOURCE_ALIASES: Record<string, string> = {
+      "project_floor_plan": "floor_plan_request",
+      "project_floorplan": "floor_plan_request",
+      "floorplan_request": "floor_plan_request",
+      "vip_signup": "vip_registration",
+    };
+    const JUNK_TAG = new Set([
+      "presaleproperties.com", "presale-properties.com",
+      "yes", "no", "true", "false", "n/a", "na", "unknown",
+    ]);
     const tagSet = new Set<string>(["presale-website"]);
-    if (completedForm?.form_type) tagSet.add(`form:${completedForm.form_type}`);
+    const addTag = (raw?: string | null) => {
+      const t = String(raw ?? "").trim();
+      if (!t) return;
+      const low = t.toLowerCase();
+      if (JUNK_TAG.has(low)) return;
+      tagSet.add(LEAD_SOURCE_ALIASES[low] ?? t);
+    };
+    if (completedForm?.form_type) addTag(`form:${completedForm.form_type}`);
     const deckName = meta.pitch_deck_name ?? meta.deck_name ?? meta.deck?.name;
-    if (deckName) tagSet.add(`deck:${deckName}`);
-    if (leadSource) tagSet.add(leadSource);
-    const isHotInit = ev.type === "floorplan_download"
+    if (deckName) addTag(`deck:${deckName}`);
+    if (leadSource) addTag(leadSource);
+    // Representation status — useful triage
+    const agentStatus = String(meta.agent_status ?? "").toLowerCase();
+    if (agentStatus === "no") addTag("unrepresented");
+    else if (agentStatus === "yes") addTag("has-agent");
+    if (personaType) addTag(personaType);
+    if (meta.is_pre_approved === true) addTag("pre-approved");
+    let isHotInit = ev.type === "floorplan_download"
       || (ev.type === "deck_visit" && (meta.visit_number ?? 0) >= 2);
-    if (isHotInit) tagSet.add("hot");
+    // Heavy browser = hot
+    const sessionsArr: any[] = Array.isArray(meta?.behavior?.sessions) ? meta.behavior.sessions : [];
+    if (sessionsArr.some((s) => (Number(s?.pages_viewed) || 0) >= 20)) {
+      addTag("heavy-browser");
+      isHotInit = true;
+    }
+    if (isHotInit) addTag("hot");
 
     const noteLines: string[] = [`[Presale form @ ${occurredAt}]`];
     if (completedForm?.form_type) noteLines.push(`Form: ${completedForm.form_type}`);
     if (meta.lead_source) noteLines.push(`Lead source: ${meta.lead_source}`);
+    if (meta.persona) noteLines.push(`Persona: ${meta.persona}`);
+    if (meta.agent_status) {
+      const a = String(meta.agent_status).toLowerCase();
+      noteLines.push(`Working with an agent: ${a === "no" ? "No (unrepresented)" : a === "yes" ? "Yes" : meta.agent_status}`);
+    }
+    if (meta.intent_tier) noteLines.push(`Intent tier: ${meta.intent_tier}`);
     if (meta.landing_page) noteLines.push(`Landing: ${meta.landing_page}`);
+    if (meta.referrer) noteLines.push(`Referrer: ${meta.referrer}`);
     const utm = [meta.utm_source, meta.utm_medium, meta.utm_campaign].filter(Boolean).join(" / ");
     if (utm) noteLines.push(`UTM: ${utm}`);
+    // Engagement signal
+    const totalPages = sessionsArr.reduce((n: number, s: any) => n + (Number(s?.pages_viewed) || 0), 0);
+    if (totalPages) noteLines.push(`Engagement: ${totalPages} page views across ${sessionsArr.length} session${sessionsArr.length === 1 ? "" : "s"}`);
+    const viewedProjects = Array.from(new Set((meta?.behavior?.views ?? []).map((v: any) => v?.property_name).filter(Boolean)));
+    if (viewedProjects.length) noteLines.push(`Viewed projects: ${viewedProjects.join(", ")}`);
     const messageText = formPayload.message ?? meta.message;
     if (typeof messageText === "string" && messageText.trim()) noteLines.push(`Message: ${messageText.trim()}`);
     const noteAppendix = noteLines.length > 1 ? noteLines.join("\n") : null;
