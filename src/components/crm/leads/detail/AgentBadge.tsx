@@ -1,3 +1,4 @@
+import { Cog } from 'lucide-react';
 import { useTeamByUserId, initialsFromName } from '@/hooks/useTeamByUserId';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +10,13 @@ interface AgentBadgeProps {
   prefix?: string;
   size?: 'xs' | 'sm';
   className?: string;
+  /**
+   * Force-render this attribution as "System" regardless of userId.
+   * Use for entries that were auto-logged (webhooks, syncs, automations,
+   * stage changes, web-form ingests, etc.) so they don't appear to be the
+   * work of whichever agent happened to own the row.
+   */
+  system?: boolean;
 }
 
 /**
