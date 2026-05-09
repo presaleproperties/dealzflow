@@ -12,6 +12,7 @@ import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/
 import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 import { EmailMessageView, buildReplyQuote, buildForwardQuote } from '@/components/crm/chats/EmailMessageView';
 import { InlineEmailReplyBox } from '@/components/crm/chats/InlineEmailReplyBox';
+import { InlineTextComposer } from '@/components/crm/chats/InlineTextComposer';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
