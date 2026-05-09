@@ -142,6 +142,25 @@ Deno.serve(async (req) => {
   const action = body.action ?? "run-all";
   const params = body.params ?? {};
 
+  if (action === "_env-probe") {
+    const mask = (v: string | undefined) => {
+      if (!v) return { present: false };
+      return {
+        present: true,
+        length: v.length,
+        first6: v.slice(0, 6),
+        last6: v.slice(-6),
+        hasWhitespace: /\s/.test(v),
+        hasNewline: /[\r\n]/.test(v),
+      };
+    };
+    return new Response(JSON.stringify({
+      PRESALE_BRIDGE_URL: mask(Deno.env.get("PRESALE_BRIDGE_URL")),
+      PRESALE_ANON_KEY: mask(Deno.env.get("PRESALE_ANON_KEY")),
+      PRESALE_BRIDGE_SECRET: mask(Deno.env.get("PRESALE_BRIDGE_SECRET")),
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
   if (action === "run-all") {
     const actions: Exclude<Action, "run-all">[] = [
       "search-projects",
