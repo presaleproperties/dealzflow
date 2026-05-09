@@ -611,7 +611,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
    * Hidden on mobile — the mobile sticky action bar at the bottom is the
    * single source of truth for these actions to avoid duplication. */
   const composerActions = (
-    <div className="hidden md:flex items-center gap-1">
+    <div className="hidden lg:flex items-center gap-1">
       <AttachMenu
         onFiles={(f) => handleAttachFiles(f)}
         uploading={uploading}
@@ -743,8 +743,8 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               Honor the iOS status-bar safe area so "11:10" never overlaps the From row when the
               keyboard pushes the dialog up. */}
           <DialogHeader
-            className="md:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
-            style={{ paddingTop: 'max(0.375rem, env(safe-area-inset-top))', paddingBottom: '0.375rem' }}
+            className="lg:hidden px-1 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-2"
+            style={{ paddingTop: '0.375rem', paddingBottom: '0.375rem' }}
           >
             <button
               type="button"
@@ -765,7 +765,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               keeping vertical real estate for the editor.) */}
 
           {/* Desktop slim title bar */}
-          <DialogHeader className="hidden md:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
+          <DialogHeader className="hidden lg:block px-5 py-2.5 border-b border-border/60 bg-background/80 backdrop-blur-sm shrink-0 space-y-0">
             <DialogTitle className="text-[13px] font-semibold tracking-[-0.01em] text-foreground/90">
               {isMass ? `Mass Email · ${allRecipients.length} recipients` : 'New Message'}
             </DialogTitle>
@@ -774,7 +774,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
           {/* Multi-column body */}
           <div className={cn(
             'flex-1 grid grid-cols-1 overflow-hidden min-h-0',
-            previewTpl ? 'md:grid-cols-[260px_1fr_360px]' : 'md:grid-cols-[260px_1fr]',
+            previewTpl ? 'lg:grid-cols-[260px_1fr_360px]' : 'lg:grid-cols-[260px_1fr]',
           )}>
             {/* Sidebar */}
             <aside className="border-r border-border bg-muted/10 overflow-y-auto hidden md:block">
