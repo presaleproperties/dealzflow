@@ -277,10 +277,14 @@ export function MessagingCenter({ channel, onChannelChange }: Props) {
   const otherThreads = filteredThreads.filter(t => !isPinned(channel, t.key));
 
   const isWa = channel === 'whatsapp';
+  const isMobileConversationShell = isMobile && showCenterPane && !showLeftPane;
 
   return (
     <div className={cn(
-      'flex flex-col h-[calc(100dvh-260px-var(--bottom-nav-pad,0px))] min-h-[420px] lg:min-h-[480px] rounded-2xl overflow-hidden border border-border shadow-sm',
+      'flex flex-col overflow-hidden',
+      isMobileConversationShell
+        ? 'fixed inset-0 z-50 h-[100dvh] min-h-0 rounded-none border-0 shadow-none'
+        : 'h-[calc(100dvh-260px-var(--bottom-nav-pad,0px))] min-h-[420px] lg:min-h-[480px] rounded-2xl border border-border shadow-sm',
       isWa ? 'bg-[#efeae2] dark:bg-[#0b141a]' : 'bg-background',
     )}>
       <div className="grid h-full grid-cols-1" style={!isMobile ? { gridTemplateColumns: gridCols } : undefined}>
