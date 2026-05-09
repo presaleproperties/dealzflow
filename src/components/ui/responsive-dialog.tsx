@@ -33,7 +33,7 @@ type ResponsiveDialogContentProps = React.ComponentPropsWithoutRef<typeof Dialog
 export const ResponsiveDialogContent = React.forwardRef<
   HTMLDivElement,
   ResponsiveDialogContentProps
->(({ className, children, hideMobileHandle, ...rest }, ref) => {
+>(({ className, children, hideMobileHandle, style, ...rest }, ref) => {
   const isMobile = useIsMobile();
   const classNameString = typeof className === 'string' ? className : '';
   const isDrawer = classNameString.includes('mobile-fullbleed') || classNameString.includes('mobile-drawer');
@@ -86,6 +86,7 @@ export const ResponsiveDialogContent = React.forwardRef<
             'p-0 inset-0 max-h-none h-[100dvh] w-screen rounded-none border-0 flex flex-col',
             className,
           )}
+          style={style}
           {...(rest as any)}
         >
           {children}
@@ -103,7 +104,7 @@ export const ResponsiveDialogContent = React.forwardRef<
             : 'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
-        style={isDrawer ? { ...drawerViewportStyle, ...(rest as any).style } : { paddingTop: 'var(--composer-top-pad)', ...(rest as any).style }}
+        style={isDrawer ? { ...drawerViewportStyle, ...style } : { paddingTop: 'var(--composer-top-pad)', ...style }}
         {...(rest as any)}
       >
         {!hideMobileHandle && (
@@ -116,7 +117,7 @@ export const ResponsiveDialogContent = React.forwardRef<
     );
   }
   return (
-    <DialogContent ref={ref} className={className} {...(rest as any)}>
+    <DialogContent ref={ref} className={className} style={style} {...(rest as any)}>
       {children}
     </DialogContent>
   );
