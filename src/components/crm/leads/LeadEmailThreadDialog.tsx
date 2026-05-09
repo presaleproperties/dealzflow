@@ -41,7 +41,7 @@ import { AgentSignatureBlock } from '@/components/agent/AgentSignatureBlock';
 import { RichTextEditor } from '@/components/crm/email/RichTextEditor';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
-import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick } from 'lucide-react';
+import { X, Reply, Send, Loader2, Mail, ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Paperclip, Download, FileText, FileImage, FileVideo, FileAudio, FileArchive, FileSpreadsheet, File as FileIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
@@ -56,6 +56,14 @@ interface Props {
 }
 
 /** Unified message shape — produced from either crm_gmail_messages or crm_email_log. */
+type EmailAttachment = {
+  filename: string;
+  mime: string;
+  size: number;
+  attachment_id: string;
+  /** Gmail message id needed to fetch the bytes. */
+  gmail_message_id?: string | null;
+};
 type ThreadMessage = {
   id: string;
   threadKey: string;
@@ -74,6 +82,7 @@ type ThreadMessage = {
   clickCount?: number;
   lastOpenedAt?: string | null;
   lastClickedAt?: string | null;
+  attachments?: EmailAttachment[];
 };
 
 const IFRAME_STYLES = `
@@ -179,7 +188,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crm_gmail_messages')
-        .select('id, gmail_thread_id, direction, from_email, from_name, to_emails, cc_emails, bcc_emails, subject, body_html, body_text, snippet, internal_date')
+        .select('id, gmail_message_id, gmail_thread_id, direction, from_email, from_name, to_emails, cc_emails, bcc_emails, subject, body_html, body_text, snippet, internal_date, has_attachments, attachment_meta')
         .eq('contact_id', contact.id)
         .order('internal_date', { ascending: false })
         .limit(100);
@@ -204,6 +213,17 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
       bodyText: m.body_text ?? m.snippet ?? null,
       ts: m.internal_date,
       source: 'gmail',
+      attachments: m.has_attachments && Array.isArray(m.attachment_meta)
+        ? (m.attachment_meta as any[])
+            .filter((a) => a && a.attachment_id && a.filename)
+            .map((a) => ({
+              filename: String(a.filename),
+              mime: String(a.mime ?? 'application/octet-stream'),
+              size: Number(a.size ?? 0),
+              attachment_id: String(a.attachment_id),
+              gmail_message_id: m.gmail_message_id ?? null,
+            }))
+        : [],
     }));
     const fromLog: ThreadMessage[] = (emailLog ?? []).map((e: any) => ({
       id: `log-${e.id}`,
@@ -822,6 +842,12 @@ function MessageCard({
                   {message.clickCount}
                 </Pill>
               )}
+              {(message.attachments?.length ?? 0) > 0 && (
+                <Pill size="sm" className="!gap-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                  <Paperclip className="w-2.5 h-2.5" />
+                  {message.attachments!.length}
+                </Pill>
+              )}
               <span className="text-[10.5px] text-muted-foreground ml-auto tabular-nums whitespace-nowrap">
                 {format(parseISO(message.ts), 'MMM d · h:mm a')}
               </span>
@@ -842,6 +868,9 @@ function MessageCard({
         <div className="bg-white">
           <AutoSizingFrame srcDoc={srcDoc} title={`Email body ${message.id}`} />
         </div>
+      )}
+      {expanded && (message.attachments?.length ?? 0) > 0 && (
+        <AttachmentsStrip attachments={message.attachments!} />
       )}
     </article>
   );
@@ -887,6 +916,141 @@ function AutoSizingFrame({ srcDoc, title }: { srcDoc: string; title: string }) {
       style={{ height: `${height}px`, minHeight: 200 }}
       sandbox="allow-same-origin allow-popups"
     />
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Attachments                                                            */
+/* ---------------------------------------------------------------------- */
+
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes < 0) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function shortMime(mime: string): string {
+  if (!mime) return 'file';
+  const map: Record<string, string> = {
+    'application/pdf': 'PDF',
+    'application/zip': 'ZIP',
+    'application/x-zip-compressed': 'ZIP',
+    'application/msword': 'DOC',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+    'application/vnd.ms-excel': 'XLS',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+    'application/vnd.ms-powerpoint': 'PPT',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+    'text/csv': 'CSV',
+    'text/plain': 'TXT',
+  };
+  if (map[mime]) return map[mime];
+  if (mime.startsWith('image/')) return mime.split('/')[1].toUpperCase();
+  if (mime.startsWith('video/')) return mime.split('/')[1].toUpperCase();
+  if (mime.startsWith('audio/')) return mime.split('/')[1].toUpperCase();
+  const sub = mime.split('/')[1];
+  return (sub || 'file').toUpperCase().slice(0, 6);
+}
+
+function iconForMime(mime: string) {
+  if (!mime) return FileIcon;
+  if (mime.startsWith('image/')) return FileImage;
+  if (mime.startsWith('video/')) return FileVideo;
+  if (mime.startsWith('audio/')) return FileAudio;
+  if (mime === 'application/pdf' || mime.startsWith('text/')) return FileText;
+  if (mime.includes('spreadsheet') || mime === 'text/csv' || mime.includes('excel')) return FileSpreadsheet;
+  if (mime.includes('zip') || mime.includes('compressed') || mime.includes('tar')) return FileArchive;
+  return FileIcon;
+}
+
+function base64UrlToBlob(b64url: string, mime: string): Blob {
+  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  const bin = atob(padded);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime || 'application/octet-stream' });
+}
+
+function AttachmentsStrip({ attachments }: { attachments: EmailAttachment[] }) {
+  return (
+    <div className="border-t border-border/60 bg-muted/15 px-3 md:px-4 py-2.5">
+      <div className="flex items-center gap-1.5 mb-2 text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground font-medium">
+        <Paperclip className="w-3 h-3" />
+        {attachments.length} {attachments.length === 1 ? 'attachment' : 'attachments'}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {attachments.map((a) => (
+          <AttachmentChip key={a.attachment_id} attachment={a} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AttachmentChip({ attachment }: { attachment: EmailAttachment }) {
+  const [busy, setBusy] = useState(false);
+  const Icon = iconForMime(attachment.mime);
+  const canDownload = !!attachment.gmail_message_id;
+
+  const handleDownload = async () => {
+    if (!canDownload || busy) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('gmail-get-attachment', {
+        body: {
+          gmail_message_id: attachment.gmail_message_id,
+          attachment_id: attachment.attachment_id,
+          filename: attachment.filename,
+          mime: attachment.mime,
+        },
+      });
+      if (error) throw error;
+      if (!data?.data_base64url) throw new Error('No data returned');
+      const blob = base64UrlToBlob(data.data_base64url, data.mime || attachment.mime);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = attachment.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) {
+      console.error('attachment download failed', e);
+      toast.error(e?.message || 'Could not download attachment');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={!canDownload || busy}
+      title={canDownload ? `Download ${attachment.filename}` : 'Attachment not available — re-sync Gmail'}
+      className={cn(
+        'group flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-border/70 bg-card text-left',
+        'hover:border-primary/50 hover:bg-card/80 transition-colors',
+        'disabled:opacity-60 disabled:cursor-not-allowed',
+        'min-w-[180px] max-w-[280px]',
+      )}
+    >
+      <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12px] font-medium text-foreground truncate">{attachment.filename}</div>
+        <div className="text-[10.5px] text-muted-foreground tabular-nums">
+          {shortMime(attachment.mime)} · {formatBytes(attachment.size)}
+        </div>
+      </div>
+      <Download className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+    </button>
   );
 }
 
