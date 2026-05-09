@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { Loader2, Inbox } from 'lucide-react';
+import { Loader2, Inbox, ChevronDown, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
@@ -14,7 +14,7 @@ import { TimelineRow } from './TimelineRow';
 import { TimelineFilters } from './TimelineFilters';
 import { TimelinePresetsBar } from './TimelinePresetsBar';
 import { useTimelinePresets, type TimelinePreset } from '@/hooks/useTimelinePresets';
-import { format, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 
 interface Props {
   contactId: string;
@@ -27,7 +27,7 @@ interface Props {
 }
 
 type Row =
-  | { kind: 'header'; key: string; date: Date }
+  | { kind: 'header'; key: string; dayKey: string; date: Date; count: number; collapsed: boolean }
   | { kind: 'event'; key: string; event: TimelineEvent };
 
 export function LeadTimelineV2({
@@ -95,20 +95,63 @@ export function LeadTimelineV2({
     [events, pinSet],
   );
 
-  // Build a flat virtualizable row list with sticky-ish date headers inlined.
+  // Per-day collapse state. Keyed by `Date.toDateString()`. Default = expanded.
+  const [collapsedDays, setCollapsedDays] = useState<Set<string>>(() => new Set());
+
+  const toggleDay = useCallback((dayKey: string) => {
+    setCollapsedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(dayKey)) next.delete(dayKey);
+      else next.add(dayKey);
+      return next;
+    });
+  }, []);
+
+  // Group events by day, then build a virtualizable row list. Skip event rows
+  // for collapsed days but always keep the header so it can be re-expanded.
   const rows = useMemo<Row[]>(() => {
-    const out: Row[] = [];
-    let lastDate: Date | null = null;
+    const groups: { date: Date; dayKey: string; events: TimelineEvent[] }[] = [];
+    let last: { dayKey: string; group: (typeof groups)[number] } | null = null;
     for (const ev of events) {
       const d = new Date(ev.occurred_at);
-      if (!lastDate || !isSameDay(lastDate, d)) {
-        out.push({ kind: 'header', key: `h-${d.toDateString()}`, date: d });
-        lastDate = d;
+      const dayKey = d.toDateString();
+      if (!last || last.dayKey !== dayKey) {
+        const g = { date: d, dayKey, events: [ev] };
+        groups.push(g);
+        last = { dayKey, group: g };
+      } else {
+        last.group.events.push(ev);
       }
-      out.push({ kind: 'event', key: `${ev.kind}:${ev.event_id}`, event: ev });
+    }
+
+    const out: Row[] = [];
+    for (const g of groups) {
+      const collapsed = collapsedDays.has(g.dayKey);
+      out.push({
+        kind: 'header',
+        key: `h-${g.dayKey}`,
+        dayKey: g.dayKey,
+        date: g.date,
+        count: g.events.length,
+        collapsed,
+      });
+      if (!collapsed) {
+        for (const ev of g.events) {
+          out.push({ kind: 'event', key: `${ev.kind}:${ev.event_id}`, event: ev });
+        }
+      }
     }
     return out;
+  }, [events, collapsedDays]);
+
+  const collapseAll = useCallback(() => {
+    const all = new Set<string>();
+    for (const ev of events) all.add(new Date(ev.occurred_at).toDateString());
+    setCollapsedDays(all);
   }, [events]);
+
+  const expandAll = useCallback(() => setCollapsedDays(new Set()), []);
+  const anyCollapsed = collapsedDays.size > 0;
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
@@ -136,7 +179,7 @@ export function LeadTimelineV2({
         }}
       />
 
-      <div className="mt-2">
+      <div className="mt-2 flex items-center justify-between gap-2">
         <TimelinePresetsBar
           presets={presets}
           activeId={lastAppliedId}
@@ -145,6 +188,15 @@ export function LeadTimelineV2({
           onDelete={deletePreset}
           onSave={handleSavePreset}
         />
+        {rows.length > 0 && (
+          <button
+            type="button"
+            onClick={anyCollapsed ? expandAll : collapseAll}
+            className="shrink-0 rounded-full border border-border bg-background px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            {anyCollapsed ? 'Expand all' : 'Collapse all'}
+          </button>
+        )}
       </div>
       {pinnedEvents.length > 0 && (
         <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] p-2">
@@ -188,10 +240,20 @@ export function LeadTimelineV2({
             computeItemKey={(_i, row) => row.key}
             itemContent={(_index, row) => {
               if (row.kind === 'header') {
+                const Chevron = row.collapsed ? ChevronRight : ChevronDown;
                 return (
-                  <p className="bg-background py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    {format(row.date, 'EEEE, MMM d')}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => toggleDay(row.dayKey)}
+                    className="group flex w-full items-center gap-1.5 bg-background py-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
+                    aria-expanded={!row.collapsed}
+                  >
+                    <Chevron className="h-3 w-3 opacity-70 transition-transform group-hover:opacity-100" />
+                    <span>{format(row.date, 'EEEE, MMM d')}</span>
+                    <span className="ml-1 rounded-full bg-muted/50 px-1.5 py-px text-[9.5px] font-medium normal-case tracking-normal text-muted-foreground/80">
+                      {row.count}
+                    </span>
+                  </button>
                 );
               }
               return (
