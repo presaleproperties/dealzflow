@@ -729,8 +729,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
         <ResponsiveDialogContent
           ref={composerRef}
-          hideMobileHandle
-          className="max-w-7xl w-screen sm:w-[98vw] sm:h-[92vh] h-[100dvh] max-h-[100dvh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
+          className="mobile-drawer max-w-7xl sm:w-[98vw] sm:h-[92vh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl sm:border sm:border-border/60 shadow-2xl [&>button]:hidden"
         >
           {dragActive && (
             <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
@@ -1153,7 +1152,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               </div>
 
               {/* Mobile sticky action bar — single source of truth for mobile actions */}
-              <div className="md:hidden flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/95 backdrop-blur shrink-0 pb-[calc(env(safe-area-inset-bottom,0px)+2px)]">
+              <div
+                className="md:hidden flex items-center gap-1 px-2 pt-1.5 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) + 6px)' }}
+              >
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}

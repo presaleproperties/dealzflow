@@ -1,21 +1,45 @@
+import { useEffect, useState } from "react";
 import { Toaster as Sonner, toast } from "sonner";
 import { useTheme } from "next-themes";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
+const useIsMobile = () => {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = () => setMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return mobile;
+};
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+  const isMobile = useIsMobile();
+
+  // On phones the floating "Text Sent" / "Loaded …" toasts were landing on
+  // top of the iOS status bar (time, signal, battery). Centre them under
+  // the notch and offset by the real safe-area inset so they always read
+  // as a clean banner instead of overlapping content.
+  const position: ToasterProps["position"] = isMobile ? "top-center" : "top-right";
+  const offset = isMobile
+    ? "calc(env(safe-area-inset-top, 0px) + 14px)"
+    : 16;
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
-      position="top-right"
-      offset={16}
-      gap={10}
-      visibleToasts={5}
-      expand
+      position={position}
+      offset={offset}
+      gap={isMobile ? 8 : 10}
+      visibleToasts={isMobile ? 3 : 5}
+      expand={!isMobile}
       closeButton
       className="toaster group"
+      style={isMobile ? ({ "--width": "calc(100vw - 24px)" } as React.CSSProperties) : undefined}
       toastOptions={{
         duration: 6000,
         classNames: {

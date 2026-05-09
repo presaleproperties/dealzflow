@@ -311,20 +311,20 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
         ref={composerRef}
-        hideMobileHandle
-        className="sm:max-w-[920px] w-screen sm:w-[92vw] h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none sm:rounded-2xl [&>button]:hidden"
+        className="mobile-drawer sm:max-w-[920px] sm:w-[92vw] sm:h-auto sm:max-h-[88vh] p-0 gap-0 overflow-hidden flex flex-col sm:rounded-2xl [&>button]:hidden"
       >
         {dragActive && (
-          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-none sm:rounded-2xl">
+          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-primary/5 backdrop-blur-[2px] border-2 border-dashed border-primary rounded-t-3xl sm:rounded-2xl">
             <div className="rounded-xl bg-background/95 px-5 py-3 shadow-lg border border-border text-sm font-semibold text-foreground">
               Drop to attach
             </div>
           </div>
         )}
-        {/* Header — sticky, consistent vertical rhythm */}
-        <div className="flex items-center justify-between gap-3 px-5 sm:px-8 h-12 sm:h-14 border-b shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <h2 className="text-[15px] sm:text-base font-bold uppercase tracking-wider truncate">
+        {/* Header — title + channel toggle + close. Drag handle (rendered by
+            ResponsiveDialog wrapper) sits above this on mobile. */}
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-8 h-12 sm:h-14 border-b shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="text-[14px] sm:text-base font-semibold tracking-tight truncate">
               {isMass ? `Mass ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'} · ${reachable.length}` : `Send ${channel === 'whatsapp' ? 'WhatsApp' : 'Text'}`}
             </h2>
             <div className="flex items-center gap-1 p-0.5 rounded-md bg-muted shrink-0">
@@ -348,7 +348,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 -mr-1 p-1"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 -mr-1 p-1 min-h-[32px] min-w-[32px] inline-flex items-center justify-center"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -699,8 +699,11 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
           </div>
         </div>
 
-        {/* Footer — pinned, safe-area aware on mobile */}
-        <div className="flex items-center justify-end gap-2 px-5 sm:px-8 h-14 sm:h-16 border-t bg-muted/30 shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
+        {/* Footer — pinned, safe-area aware, clears the floating bottom-nav on mobile */}
+        <div
+          className="flex items-center justify-end gap-2 px-4 sm:px-8 min-h-14 sm:h-16 border-t border-border/60 bg-background/92 backdrop-blur-md shrink-0 pt-2 sm:pt-0"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px) + 8px)' }}
+        >
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleSend}
