@@ -129,7 +129,7 @@ export default function CrmSmsCenterPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      <SmsLiveStatusBar />
+      <div className="hidden md:block"><SmsLiveStatusBar /></div>
       {/* ============ Compact header — tabs + New Blast + status chips ============ */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="-mx-1 overflow-x-auto no-scrollbar">
