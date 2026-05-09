@@ -376,6 +376,15 @@ export function MobileChatSendView({
             value={body}
             onChange={(e) => onBodyChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => {
+              // When the keyboard opens, push the conversation up so the
+              // latest messages remain visible just above the composer.
+              const el = scrollRef.current;
+              if (!el) return;
+              window.setTimeout(() => {
+                el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+              }, 220);
+            }}
             placeholder={isOptedOut ? 'This number opted out' : 'Message'}
             disabled={isOptedOut}
             rows={1}
