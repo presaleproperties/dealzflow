@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   useSendSms, useBulkSendSms, useSmsTemplates, useSmsNumbers, useIsPhoneOptedOut,
   SMS_VARIABLES, renderSmsTemplate, smsSegments, type MessagingChannel,
@@ -23,6 +24,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AttachMenu } from '@/components/crm/shared/AttachMenu';
 import { useDragAndPasteFiles } from '@/hooks/useDragAndPasteFiles';
+import { MobileChatSendView } from './MobileChatSendView';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 
 /**
