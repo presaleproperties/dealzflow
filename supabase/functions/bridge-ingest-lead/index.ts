@@ -289,7 +289,9 @@ Deno.serve(async (req) => {
     }
 
     let contactId: string;
-    const incomingProjects = L.projects?.length ? L.projects : (L.project ? [L.project] : []);
+    const incomingProjects = sanitizeProjects(
+      L.projects?.length ? L.projects : (L.project ? [L.project] : []),
+    );
 
     // Build merge metadata once (used for tags/notes/persona on both branches)
     const meta = { ...(L.metadata || {}), behavior: body.behavior } as any;
