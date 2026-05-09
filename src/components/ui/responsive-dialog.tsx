@@ -38,84 +38,52 @@ export const ResponsiveDialogContent = React.forwardRef<
   const classNameString = typeof className === 'string' ? className : '';
   const isDrawer = classNameString.includes('mobile-fullbleed') || classNameString.includes('mobile-drawer');
   const isTrulyFullScreen = classNameString.includes('mobile-truly-fullscreen');
-  const [drawerViewportStyle, setDrawerViewportStyle] = React.useState<React.CSSProperties>({
+  // The drawer no longer fights iOS for `top`. Our viewport meta uses
+  // `interactive-widget=resizes-content`, so the *layout* viewport itself
+  // shrinks when the soft keyboard opens — meaning a `fixed` drawer pinned
+  // to `top: safe-area` and `bottom: 0` already stays glued above the
+  // keyboard, with zero per-frame math. Previously we rewrote `top` every
+  // `requestAnimationFrame` AND called `window.scrollTo(0, 0)` on every
+  // visualViewport scroll, which is what made the composer (and the
+  // floating bottom nav) "shake" while typing on iOS. We now only react to
+  // `visualViewport.resize` to publish CSS vars + `data-keyboard-open` so
+  // the rest of the UI (BottomNav, dialer widget, toasts) can hide
+  // themselves while the keyboard is up — but we never animate the drawer
+  // ourselves.
+  const drawerViewportStyle: React.CSSProperties = {
     top: 'max(env(safe-area-inset-top, 0px), 8px)',
     bottom: '0px',
     height: 'auto',
     maxHeight: 'none',
-  });
+  };
 
   React.useEffect(() => {
     if (!isMobile || !isDrawer || isTrulyFullScreen || typeof window === 'undefined') return;
 
-    let raf = 0;
     const root = document.documentElement;
 
-    const updateViewportVars = () => {
+    const publishKeyboardState = () => {
       const viewport = window.visualViewport;
       const visualHeight = viewport?.height ?? window.innerHeight;
       const visualOffsetTop = viewport?.offsetTop ?? 0;
-      // Height of on-screen keyboard / soft input panel.
       const keyboardBottom = Math.max(0, window.innerHeight - visualHeight - visualOffsetTop);
       const keyboardOpen = keyboardBottom > 60;
 
-      // Track the *visual* viewport, not the layout viewport. When iOS opens
-      // the keyboard it scrolls the layout viewport up to keep the focused
-      // input visible — that drags any `position: fixed` element up with it,
-      // which is exactly what made the composer header tuck behind the notch
-      // and "slowly slide down" once iOS settled. By offsetting `top` by
-      // `visualOffsetTop` we cancel that scroll and the drawer stays glued
-      // to the visible region for the entire keyboard animation.
-      setDrawerViewportStyle({
-        top: `calc(max(env(safe-area-inset-top, 0px), 8px) + ${visualOffsetTop}px)`,
-        bottom: `${keyboardBottom}px`,
-        height: 'auto',
-        maxHeight: 'none',
-        // No transition on `top` — it must follow the keyboard frame-perfect.
-        // iOS animates the visualViewport itself, so this already feels smooth.
-        willChange: 'top, bottom',
-      });
-
-      // Continuous composer-safe-bottom: drawer's bottom edge already sits
-      // `keyboardBottom`px above the device bottom, so the safe-area inset
-      // below the keyboard line is *already covered*. Subtract it so the
-      // composer's inner padding eases from full safe-area (idle) down to
-      // 0 (keyboard fully open) instead of snapping at a threshold.
       root.style.setProperty('--keyboard-inset-bottom', `${keyboardBottom}px`);
       root.style.setProperty(
         '--composer-safe-bottom',
         `max(0px, calc(env(safe-area-inset-bottom, 0px) - ${keyboardBottom}px))`,
       );
-
-      if (keyboardOpen) {
-        root.setAttribute('data-keyboard-open', 'true');
-      } else {
-        root.removeAttribute('data-keyboard-open');
-      }
-
-      // Belt-and-suspenders: also pin the layout viewport scroll to 0 so
-      // anything outside the drawer (toasts, dialer widget) doesn't drift.
-      // Combined with the visualOffsetTop math above, the drawer header is
-      // now pinned regardless of which viewport iOS chooses to move.
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
+      if (keyboardOpen) root.setAttribute('data-keyboard-open', 'true');
+      else root.removeAttribute('data-keyboard-open');
     };
 
-    const onChange = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(updateViewportVars);
-    };
-
-    updateViewportVars();
-    window.visualViewport?.addEventListener('resize', onChange);
-    window.visualViewport?.addEventListener('scroll', onChange);
-    window.addEventListener('resize', onChange);
-    window.addEventListener('scroll', onChange, { passive: true });
+    publishKeyboardState();
+    // Only listen to `resize` — `scroll` on visualViewport fires constantly
+    // during iOS's keyboard animation and was the source of the shake.
+    window.visualViewport?.addEventListener('resize', publishKeyboardState);
     return () => {
-      cancelAnimationFrame(raf);
-      window.visualViewport?.removeEventListener('resize', onChange);
-      window.visualViewport?.removeEventListener('scroll', onChange);
-      window.removeEventListener('resize', onChange);
-      window.removeEventListener('scroll', onChange);
+      window.visualViewport?.removeEventListener('resize', publishKeyboardState);
       root.removeAttribute('data-keyboard-open');
       root.style.removeProperty('--keyboard-inset-bottom');
       root.style.removeProperty('--composer-safe-bottom');
