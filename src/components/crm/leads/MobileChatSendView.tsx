@@ -121,6 +121,14 @@ export function MobileChatSendView({
     });
   }, [messages.length, sending]);
 
+  // Focus the textarea on mount unless the recipient opted out, so the
+  // keyboard surfaces immediately like a native chat thread.
+  useEffect(() => {
+    if (isOptedOut) return;
+    const id = window.setTimeout(() => taRef.current?.focus({ preventScroll: true }), 80);
+    return () => window.clearTimeout(id);
+  }, [isOptedOut]);
+
   // Auto-grow textarea up to ~5 lines.
   useEffect(() => {
     const ta = taRef.current;
@@ -130,6 +138,14 @@ export function MobileChatSendView({
     ta.style.height = `${next}px`;
     setTaHeight(next);
   }, [body]);
+
+  // Cmd/Ctrl+Enter from anywhere in the composer triggers send.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (canSend && !sending) onSend();
+    }
+  };
 
   const fullName =
     [contact.first_name, contact.last_name].filter(Boolean).join(' ') ||
