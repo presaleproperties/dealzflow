@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import CrmChatsPage from './CrmChatsPage';
 import CrmChatThreadPage from './CrmChatThreadPage';
+import CrmNewChatPane from './CrmNewChatPane';
 
 /**
  * Two-pane chat shell.
