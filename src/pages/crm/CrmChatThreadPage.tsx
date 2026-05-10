@@ -823,7 +823,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         data-thread-scroll
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10 native-scroll"
         style={{
-          paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))',
+          paddingBottom: '0.75rem',
           // Browser-native scroll anchoring: when content above the viewport
           // changes height (typing indicator appears, image loads, inbound
           // bubble inserts), the browser preserves the visible anchor instead
@@ -1149,10 +1149,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           onSent={() => {
             const drop = () => {
               const el = scrollRef.current;
-              if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+              if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
             };
             requestAnimationFrame(drop);
-            setTimeout(drop, 350);
+            setTimeout(drop, 90);
           }}
         />
       )}
