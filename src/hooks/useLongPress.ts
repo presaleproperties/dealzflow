@@ -36,7 +36,7 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
     fired.current = false;
     timer.current = window.setTimeout(() => {
       fired.current = true;
-      try { (navigator as any).vibrate?.(8); } catch {}
+      triggerHaptic('medium');
       onLongPress(e);
     }, delay);
   }, [onLongPress, delay]);
