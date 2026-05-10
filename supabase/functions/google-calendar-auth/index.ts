@@ -16,17 +16,6 @@ type OAuthState = {
   redirectUrl: string;
 };
 
-function decodeOAuthState(state: string | null): OAuthState | null {
-  if (!state) return null;
-  try {
-    const parsed = JSON.parse(atob(state));
-    if (!parsed?.userId || !parsed?.redirectUrl) return null;
-    return { userId: parsed.userId, redirectUrl: parsed.redirectUrl };
-  } catch {
-    return null;
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
