@@ -7,42 +7,44 @@ import { toast } from 'sonner';
 type ChatChannel = 'sms' | 'whatsapp' | 'email';
 
 /**
- * One-tap chat opener for a lead on any channel (sms / whatsapp / email).
+ * One-tap chat opener for a lead on any channel.
  *
- * Looks for an existing `crm_conversations` row for the given contact +
- * channel. If found, navigates to the chat thread page. Otherwise calls
- * `onCompose` so the parent can open the matching compose dialog.
+ * If an existing `crm_conversations` row exists for the contact + channel,
+ * navigates to that thread. Otherwise navigates into the inline new-chat
+ * pane on the Chats page with the contact pre-selected — no popups.
+ *
+ * Pass `onCompose` only if you need a fallback (legacy callers).
  */
 export function useOpenChat() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
   return useCallback(
-    async (contactId: string, channel: ChatChannel, onCompose: () => void) => {
+    async (contactId: string, channel: ChatChannel, onCompose?: () => void) => {
       try {
+        const channels: ChatChannel[] = channel === 'email' ? ['email'] : ['sms', 'whatsapp'];
         const { data, error } = await supabase
           .from('crm_conversations')
           .select('id, last_message_at')
           .eq('contact_id', contactId)
-          .eq('channel', channel)
+          .in('channel', channels)
           .order('last_message_at', { ascending: false, nullsFirst: false })
           .limit(1)
           .maybeSingle();
 
         if (error) throw error;
 
-        if (data?.id) {
-          qc.invalidateQueries({ queryKey: ['crm-chats'] });
-          navigate(`/crm/chats/${data.id}`);
-          return;
-        }
+        qc.invalidateQueries({ queryKey: ['crm-chats'] });
 
-        // No existing thread → fall through to compose.
-        onCompose();
+        if (data?.id) {
+          navigate(`/crm/chats/${data.id}`);
+        } else {
+          navigate(`/crm/chats/new?contactId=${encodeURIComponent(contactId)}&channel=${channel}`);
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Could not open chat';
         toast.error(msg);
-        onCompose();
+        if (onCompose) onCompose();
       }
     },
     [navigate, qc],
