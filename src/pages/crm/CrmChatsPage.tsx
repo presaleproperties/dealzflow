@@ -130,7 +130,7 @@ export default function CrmChatsPage() {
   // Outlook-style expanded email rows: contact_id → expanded?
   const [expandedEmail, setExpandedEmail] = useState<Set<string>>(new Set());
 
-  const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived });
+  const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived, showCampaigns });
 
   const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
     const now = Date.now();
