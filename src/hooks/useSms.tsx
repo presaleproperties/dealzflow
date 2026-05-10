@@ -198,6 +198,9 @@ export interface SendSmsArgs {
   skip_quiet_hours?: boolean;
   ignore_optout?: boolean;
   channel?: MessagingChannel;
+  /** Chat-thread conversation id — when provided, the optimistic bubble is
+   *  also inserted into the chat thread cache so it appears instantly. */
+  conversation_id?: string | null;
 }
 
 function makeDedupeId(): string {
@@ -283,9 +286,10 @@ export function useSendSms() {
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: ['crm-sms-log-all'] });
       const previous = qc.getQueriesData({ queryKey: ['crm-sms-log-all'] });
+      const optimisticId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
       const optimistic: SmsLogRow = {
-        id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: optimisticId,
         user_id: null,
         contact_id: vars.contact_id || null,
         direction: 'outbound',
@@ -317,18 +321,45 @@ export function useSendSms() {
           old ? [optimistic, ...old] : [optimistic],
         );
       }
-      return { previous, optimisticId: optimistic.id };
+
+      // Chat-thread bubble: drop into the messages cache so the InlineTextComposer
+      // shows the bubble instantly (chat thread reads crm_messages, not crm_sms_log).
+      let threadPrev: any = null;
+      if (vars.conversation_id) {
+        const key = ['crm-chat-thread-messages', vars.conversation_id];
+        threadPrev = qc.getQueryData(key);
+        qc.setQueryData<any[]>(key, (old) => {
+          const bubble = {
+            id: optimisticId,
+            conversation_id: vars.conversation_id,
+            contact_id: vars.contact_id || null,
+            direction: 'outbound',
+            content: vars.body,
+            message_type: (vars.media_urls?.length ?? 0) > 0 ? 'mms' : 'sms',
+            channel: vars.channel || 'sms',
+            read: true,
+            delivered: false,
+            sent_by: null,
+            created_at: new Date().toISOString(),
+            source_table: 'crm_sms_log',
+            source_id: optimisticId,
+            __optimistic: true,
+          };
+          return old ? [...old, bubble] : [bubble];
+        });
+      }
+
+      return { previous, threadPrev, threadKey: vars.conversation_id ? ['crm-chat-thread-messages', vars.conversation_id] : null, optimisticId };
     },
-    onSuccess: (data, vars) => {
+    onSuccess: (data, vars, ctx) => {
+      // Realtime channels on the chat thread + sidebar already refetch on the
+      // INSERT from send-sms. We only invalidate the views realtime can't see
+      // (per-contact log + chat list) so we don't trigger a refetch storm that
+      // visibly rewrites the UI right after a send.
       if (vars.contact_id) {
         qc.invalidateQueries({ queryKey: ['crm-sms-log', vars.contact_id] });
-        qc.invalidateQueries({ queryKey: ['crm-contact-messages', vars.contact_id] });
       }
-      qc.invalidateQueries({ queryKey: ['crm-sms-log-all'] });
       qc.invalidateQueries({ queryKey: ['crm-chats'] });
-      qc.invalidateQueries({ queryKey: ['crm-chat-thread'] });
-      qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages'] });
-      qc.invalidateQueries({ queryKey: ['crm-recent-activity'] });
       if (data?.queued_offline) {
         toast.success(
           data.queue_reason === 'offline'
@@ -337,11 +368,13 @@ export function useSendSms() {
         );
       } else if (data?.scheduled) toast.success('Text scheduled');
       else if (data?.queued) toast.success(data?.retrying || data?.fallback ? 'Text queued — retrying automatically' : 'Saved — will send once Twilio is connected');
-      else toast.success('Text sent');
+      // Suppress the success toast on a normal send — the bubble + delivery
+      // indicator already give native feedback. Toast spam felt laggy.
     },
     onError: (e: any, _vars, ctx) => {
       // Roll back optimistic update
       ctx?.previous?.forEach(([key, value]) => qc.setQueryData(key, value));
+      if (ctx?.threadKey) qc.setQueryData(ctx.threadKey, ctx.threadPrev);
       toast.error(e?.message || 'Failed to send text');
     },
   });

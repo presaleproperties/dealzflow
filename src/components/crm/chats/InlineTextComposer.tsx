@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Plus, Loader2 } from 'lucide-react';
+import { Send, Plus } from 'lucide-react';
 import { useSendSms } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
@@ -7,6 +7,9 @@ import { toast } from 'sonner';
 interface Props {
   contact: CrmContact;
   channel: 'sms' | 'whatsapp';
+  /** Conversation id — passed through to useSendSms so the optimistic
+   *  bubble lands in the chat-thread cache instantly. */
+  conversationId?: string | null;
   /** Open the full composer (templates / media / scheduling). */
   onOpenFull: () => void;
   /** Fired right after a send is queued/sent so the parent can scroll to bottom. */
@@ -19,7 +22,7 @@ interface Props {
  * full Send dialog. The "+" button still launches `SendTextDialog` for
  * templates, attachments, scheduling, etc.
  */
-export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Props) {
+export function InlineTextComposer({ contact, channel, conversationId, onOpenFull, onSent }: Props) {
   const [body, setBody] = useState('');
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const sendSms = useSendSms();
@@ -34,7 +37,10 @@ export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Pro
 
   const name = (contact.first_name || contact.last_name || 'lead').toString();
   const placeholder = `Message ${name.split(' ')[0]}…`;
-  const canSend = body.trim().length > 0 && !!contact.phone && !sendSms.isPending;
+  // Send is fire-and-forget — never disable on isPending. The optimistic
+  // bubble + cleared input give the user "tap, gone" feedback so they can
+  // immediately type and send the next message (iMessage parity).
+  const canSend = body.trim().length > 0 && !!contact.phone;
 
   const send = () => {
     if (!body.trim()) return;
@@ -44,8 +50,10 @@ export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Pro
     }
     const text = body;
     setBody('');
-    // Optimistically scroll the parent thread — message will land via realtime
-    // shortly but the user expects the view to drop to the bottom immediately.
+    // Reset textarea height immediately so the dock doesn't visibly snap.
+    if (taRef.current) taRef.current.style.height = 'auto';
+    // Optimistic scroll — bubble lands in cache via onMutate, then we drop
+    // to the bottom so it's visible even on small screens.
     onSent?.();
     sendSms.mutate(
       {
@@ -53,9 +61,9 @@ export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Pro
         to: contact.phone,
         body: text,
         channel,
+        conversation_id: conversationId ?? undefined,
       },
       {
-        onSuccess: () => { onSent?.(); },
         onError: (err: any) => {
           // Restore the draft so the user doesn't lose what they typed.
           setBody(text);
@@ -128,7 +136,7 @@ export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Pro
           className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-primary-foreground active:scale-95 transition disabled:opacity-40 disabled:active:scale-100"
           style={{ background: 'hsl(var(--primary))' }}
         >
-          {sendSms.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          <Send className="w-4 h-4" />
         </button>
       </div>
     </div>

@@ -956,6 +956,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         <InlineTextComposer
           contact={contact}
           channel={conv.channel as 'sms' | 'whatsapp'}
+          conversationId={conv.id}
           onOpenFull={() => setComposeOpen(true)}
           onSent={() => {
             const drop = () => {
