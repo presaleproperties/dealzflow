@@ -71,6 +71,9 @@ export function MobileAppHeader() {
       .find((r) => pathname.startsWith(r.match))?.title ?? 'Dealzflow';
 
   const isCrm = pathname.startsWith('/crm');
+  const isChatThread = /^\/crm\/chats\/[^/]+/.test(pathname) && pathname !== '/crm/chats/new';
+
+  if (isChatThread) return null;
 
   // Unread count badge (always-on, light query)
   const { data: unreadCount = 0 } = useQuery({
