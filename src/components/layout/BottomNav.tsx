@@ -222,7 +222,7 @@ export function BottomNav() {
           label: 'New Chat',
           description: 'Text or email any contact',
           icon: MessageSquare,
-          onClick: () => { close(); useNewChatStore.getState().open(); },
+          onClick: () => { close(); navigate('/crm/chats/new'); },
         },
       ];
       return actions;
