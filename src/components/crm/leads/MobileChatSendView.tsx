@@ -366,11 +366,11 @@ export function MobileChatSendView({
         className="shrink-0 bg-background/95 backdrop-blur-md px-2 pt-1 flex items-end gap-1.5"
         style={{
           // Lift the composer above the soft keyboard so it stays visible
-          // while the dialog itself stays locked at 100dvh. Only the chat
-          // scroll area (flex-1) shrinks; the header never moves.
+          // while the dialog itself stays locked at 100dvh. NO transition —
+          // padding tracks the visualViewport tick-by-tick which makes the
+          // composer feel glued to the keyboard instead of chasing it.
           paddingBottom:
             'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 4px))',
-          transition: 'padding-bottom 120ms ease-out',
         }}
       >
         <AttachMenu
