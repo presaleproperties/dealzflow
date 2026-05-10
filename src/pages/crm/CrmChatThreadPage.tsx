@@ -187,6 +187,30 @@ interface CrmChatThreadPageProps {
   embedded?: boolean;
 }
 
+/**
+ * Mobile-friendly bubble wrapper. On touch input the user can long-press
+ * to open the bubble action sheet (Reply quote / Copy / Resend / Delete).
+ * On non-touch devices the wrapper is just a pass-through `<div>`.
+ */
+function TouchBubble({
+  children,
+  className,
+  onLongPress,
+  disabled,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onLongPress: () => void;
+  disabled?: boolean;
+}) {
+  const handlers = useLongPress<HTMLDivElement>(() => onLongPress(), { delay: 420 });
+  return (
+    <div className={className} {...(disabled ? {} : handlers)}>
+      {children}
+    </div>
+  );
+}
+
 export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPageProps = {}) {
   const { conversationId = '' } = useParams<{ conversationId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
