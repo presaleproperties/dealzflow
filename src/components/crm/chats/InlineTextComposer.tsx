@@ -228,4 +228,4 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       </div>
     </div>
   );
-}
+});
