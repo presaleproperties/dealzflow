@@ -186,7 +186,7 @@ export function MobileChatSendView({
         data-composer-header="true"
         className="sticky top-0 z-30 shrink-0 touch-pan-y"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        {...useSwipeDownToDismiss({ onDismiss: onClose })}
+        {...swipeDownHandlers}
       >
         <div
           className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
