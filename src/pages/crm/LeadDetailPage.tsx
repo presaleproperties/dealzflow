@@ -250,7 +250,7 @@ export default function LeadDetailPage() {
   // Mobile layout
   if (isMobile) {
     const onCall = () => callContact(c);
-    const onSms = () => { setTextChannel('sms'); setShowText(true); };
+    const onSms = () => { void openChat(c.id, 'sms'); };
     const onWhatsApp = () => {
       void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
     };
