@@ -1674,6 +1674,14 @@ html.is-standalone *:focus-visible {
   outline-offset: 2px;
 }
 
+html.is-standalone [data-chat-composer="true"] *:focus,
+html.is-standalone [data-chat-composer="true"] *:focus-visible,
+html.is-native [data-chat-composer="true"] *:focus,
+html.is-native [data-chat-composer="true"] *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Buttons / links inside chrome should never show the iOS "press" callout
    or selection ring. Apply .native-chrome to nav rows, headers, tabs. */
 .native-chrome,
