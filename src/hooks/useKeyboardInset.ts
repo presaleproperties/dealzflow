@@ -104,7 +104,7 @@ export function useKeyboardInset(enabled = true) {
       document.removeEventListener('focusin', publishStableKeyboardOpenInset);
       window.visualViewport?.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('scroll', schedule);
-      window.removeEventListener('scroll', pin);
+      window.removeEventListener('scroll', pin, { capture: true } as any);
       root.removeAttribute('data-keyboard-open');
       root.style.setProperty('--keyboard-inset-bottom', '0px');
     };
