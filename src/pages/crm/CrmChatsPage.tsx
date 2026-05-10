@@ -587,39 +587,8 @@ export default function CrmChatsPage() {
           </div>
         </div>
 
-        {/* Saved views chip strip */}
-        <div className="hidden sm:flex px-3 pb-2.5 items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {builtinViews.map(b => {
-            const active = activeViewId === b.id;
-            return (
-              <button key={b.id} onClick={() => applyBuiltin(b)}
-                className={`shrink-0 h-7 px-2.5 rounded-full text-[11px] font-semibold border transition-colors ${
-                  active ? 'bg-foreground text-background border-foreground' : 'bg-muted/40 text-muted-foreground hover:text-foreground border-border/40'
-                }`}>
-                {b.name}
-              </button>
-            );
-          })}
-          {views.map(v => {
-            const active = activeViewId === v.id;
-            return (
-              <div key={v.id} className="relative group">
-                <button onClick={() => applyView(v)}
-                  className={`shrink-0 h-7 pl-2.5 pr-7 rounded-full text-[11px] font-semibold border transition-colors ${
-                    active ? 'bg-primary text-primary-foreground border-primary' : 'bg-primary/5 text-primary hover:bg-primary/10 border-primary/30'
-                  }`}>
-                  {v.name}
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); if (confirm(`Delete view "${v.name}"?`)) removeView.mutate(v.id); }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-background/30 inline-flex items-center justify-center"
-                  aria-label={`Delete ${v.name}`}>
-                  <X className={`w-3 h-3 ${active ? 'text-primary-foreground' : 'text-primary'}`} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        {/* Saved views chip strip removed — pin-to-top + Inbox/Unread chips
+            in advanced filters cover the same ground without a second pill row. */}
       </div>
 
       {/* Thread list */}
