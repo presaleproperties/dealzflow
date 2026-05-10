@@ -808,7 +808,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                 data-composer-header="true"
                 className="lg:hidden border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 block touch-pan-y"
                 style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-                {...useSwipeDownToDismiss({ onDismiss: () => onOpenChange(false), disabled: isPending })}
+                {...swipeDownHandlers}
               >
                 {/* Grabber affordance — visual cue for swipe-down-to-dismiss. */}
                 <div className="flex justify-center pt-1 pb-0.5" aria-hidden>
