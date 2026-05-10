@@ -33,6 +33,7 @@ export function SwipeRow({ children, isPinned, onPin, onDelete, disabled }: Swip
     startX.current = null;
     startY.current = null;
     locked.current = null;
+    armed.current = null;
     setDx(0);
   };
 
