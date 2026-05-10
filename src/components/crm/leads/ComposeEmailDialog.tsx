@@ -1202,9 +1202,9 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                                 <SignatureInlineFrame html={activeSignatureHtml} />
                               </div>
                               {/* Mobile/tablet: render the signature inline below the editor —
-                                  Apple Mail style. A single hairline + tight margins keep it
-                                  reading as a continuation of the body, not a separate card. */}
-                              <div className="lg:hidden px-1 pt-1 pb-1">
+                                  Apple Mail style. Zero top padding + tight bottom keeps it
+                                  reading as a continuation of the body, no card seam. */}
+                              <div className="lg:hidden px-1 pt-0 pb-0.5">
                                 <SignatureInlineFrame html={activeSignatureHtml} compact />
                               </div>
                             </>
