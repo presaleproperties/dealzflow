@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { triggerHaptic } from '@/lib/haptics';
 
 /**
  * Global tap-haptic: fires a tiny 10ms vibration on every <button> click.
@@ -9,7 +10,6 @@ import { useEffect } from 'react';
  */
 export function useGlobalTapHaptics() {
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 
     const onPointer = (e: Event) => {
@@ -18,11 +18,7 @@ export function useGlobalTapHaptics() {
       const btn = target.closest('button, [role="button"]') as HTMLButtonElement | null;
       if (!btn) return;
       if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
-      try {
-        navigator.vibrate(10);
-      } catch {
-        /* noop */
-      }
+      triggerHaptic('light');
     };
 
     // pointerup fires earlier than click and feels more native
