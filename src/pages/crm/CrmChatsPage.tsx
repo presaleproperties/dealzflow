@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
-import { EmailLiveStatusBar, SmsLiveStatusBar } from '@/components/crm/shared/LiveStatusBar';
+import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
 
 /**
  * Strip HTML, collapse whitespace, decode common entities so email previews
