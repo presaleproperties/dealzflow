@@ -387,8 +387,8 @@ export default function CrmChatsPage() {
           <div className="flex items-center gap-0.5">
             <Button
               variant="ghost" size="icon"
-              onClick={() => useNewChatStore.getState().open()}
-              className="h-10 w-10 rounded-full text-foreground"
+              onClick={() => navigate('/crm/chats/new')}
+              className={`h-10 w-10 rounded-full ${activeId === 'new' ? 'bg-primary/10 text-primary' : 'text-foreground'}`}
               aria-label="Start new chat"
               title="New chat"
             >
