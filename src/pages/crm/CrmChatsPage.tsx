@@ -438,12 +438,7 @@ export default function CrmChatsPage() {
             <button
               disabled={selected.size === 0}
               onClick={() => {
-                setPinned(prev => {
-                  const next = new Set(prev);
-                  selectedIds.forEach(id => next.add(id));
-                  try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
-                  return next;
-                });
+                pinMany(selectedIds, true);
                 bulkDone('Pinned');
               }}
               className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
