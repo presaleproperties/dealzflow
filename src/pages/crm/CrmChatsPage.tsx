@@ -761,6 +761,7 @@ export default function CrmChatsPage() {
                       </div>
                     )}
                   </div>
+                  </SwipeRow>
 
                   {/* Expanded subject-thread sub-list (Outlook conversation view) */}
                   {t.channel === 'email' && expandedEmail.has(t.contact_id) && (
