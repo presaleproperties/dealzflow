@@ -56,7 +56,25 @@ export function useCrmInboxFlags() {
   const markUnread = (ids: Ids) =>
     updateFlags.mutateAsync({ ids, patch: { unread_count: 1 } });
 
-  return { star, archive, snooze, markRead, markUnread, isPending: updateFlags.isPending };
+  const remove = useMutation({
+    mutationFn: async (ids: Ids) => {
+      const arr = toArray(ids);
+      const { error } = await supabase
+        .from('crm_conversations')
+        .delete()
+        .in('id', arr);
+      if (error) throw error;
+      return arr.length;
+    },
+    onSuccess: inv,
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete'),
+  });
+
+  return {
+    star, archive, snooze, markRead, markUnread,
+    remove: (ids: Ids) => remove.mutateAsync(ids),
+    isPending: updateFlags.isPending || remove.isPending,
+  };
 }
 
 /** Common snooze presets. Returns ISO strings. */
