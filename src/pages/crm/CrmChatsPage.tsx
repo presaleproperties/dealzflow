@@ -778,6 +778,21 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   );
 }
 
+function BulkBtn({ title, onClick, tone, children }: { title: string; onClick: () => void; tone?: 'destructive'; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick} title={title} aria-label={title}
+      className={`h-8 w-8 rounded-full inline-flex items-center justify-center transition-colors ${
+        tone === 'destructive'
+          ? 'text-destructive hover:bg-destructive/10'
+          : 'text-foreground hover:bg-muted'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function RowAction({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={(e) => { e.stopPropagation(); onClick(); }} title={title} aria-label={title}
