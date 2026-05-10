@@ -258,6 +258,45 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   // composer can ride above the keyboard instead of being covered by it.
   useKeyboardInset(true);
 
+  // Hard-lock the document while this thread is mounted on mobile. With
+  // `interactive-widget=overlays-content` iOS still tries to pan the layout
+  // viewport up to keep the focused input visible. That pan + our pin-back
+  // handler is what visually "slides the header/composer down" over ~300ms.
+  // Removing the pan target entirely (position:fixed body) makes the keyboard
+  // transition instant — only --keyboard-inset-bottom moves, nothing else.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyWidth: body.style.width,
+      bodyHeight: body.style.height,
+      bodyTop: body.style.top,
+      bodyOverscroll: (body.style as any).overscrollBehavior,
+    };
+    const scrollY = window.scrollY;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.width = '100%';
+    body.style.height = '100%';
+    body.style.top = `-${scrollY}px`;
+    (body.style as any).overscrollBehavior = 'none';
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.width = prev.bodyWidth;
+      body.style.height = prev.bodyHeight;
+      body.style.top = prev.bodyTop;
+      (body.style as any).overscrollBehavior = prev.bodyOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   // Conversation + joined contact
   const { data: rawThread, isLoading: threadLoading } = useQuery({
     queryKey: ['crm-chat-thread', conversationId],
