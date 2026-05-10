@@ -118,6 +118,9 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
         paddingTop: '8px',
+        transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
+        willChange: 'transform',
+        transition: 'transform 180ms cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
