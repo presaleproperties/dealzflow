@@ -120,11 +120,15 @@ export function MobileChatSendView({
   }, [smsLog]);
 
   // Auto-scroll to bottom on mount + when messages/sending changes.
+  // Use smooth behavior after first paint so new messages glide in instead
+  // of snapping (the initial mount still uses instant to avoid an opening jump).
+  const didInitialScroll = useRef(false);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight;
+      el.scrollTo({ top: el.scrollHeight, behavior: didInitialScroll.current ? 'smooth' : 'auto' });
+      didInitialScroll.current = true;
     });
   }, [messages.length, sending]);
 
