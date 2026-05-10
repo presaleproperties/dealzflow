@@ -91,9 +91,31 @@ export const ResponsiveDialogContent = React.forwardRef<
     // settles the keyboard and added no useful information — it just
     // produced extra style writes that translated into composer jitter.
     window.visualViewport?.addEventListener('resize', schedulePublishKeyboardState);
+
+    // ── iOS keyboard pan-lock ────────────────────────────────────────────
+    // With `interactive-widget=overlays-content` iOS does NOT resize the
+    // layout viewport, but Safari STILL pans `window` to keep the focused
+    // input in the visualViewport. That pan is what visually "pushes" the
+    // composer header upward when the user taps to type. We pin the window
+    // to (0,0) for as long as the drawer is open so the page itself never
+    // scrolls — only the dock translate (below) and the inner chat scroller
+    // are allowed to move.
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverscroll = (document.body.style as any).overscrollBehavior;
+    document.body.style.overflow = 'hidden';
+    (document.body.style as any).overscrollBehavior = 'none';
+    const pinWindow = () => {
+      if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+    pinWindow();
+    window.addEventListener('scroll', pinWindow, { passive: true });
+
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       window.visualViewport?.removeEventListener('resize', schedulePublishKeyboardState);
+      window.removeEventListener('scroll', pinWindow);
+      document.body.style.overflow = previousBodyOverflow;
+      (document.body.style as any).overscrollBehavior = previousBodyOverscroll;
       root.removeAttribute('data-keyboard-open');
       root.style.removeProperty('--keyboard-inset-bottom');
       root.style.removeProperty('--composer-viewport-top');
