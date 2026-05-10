@@ -802,7 +802,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
               <DialogHeader
                 data-composer-header="true"
                 className="lg:hidden px-2 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-1"
-                style={{ paddingBottom: 0 }}
+                style={{ paddingTop: 'var(--composer-header-top-pad-locked, env(safe-area-inset-top, 0px))', paddingBottom: 0 }}
               >
                 <button
                   type="button"
