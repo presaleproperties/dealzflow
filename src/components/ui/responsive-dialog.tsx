@@ -99,7 +99,6 @@ export const ResponsiveDialogContent = React.forwardRef<
       root.style.removeProperty('--composer-viewport-top');
       root.style.removeProperty('--composer-viewport-height');
       root.style.removeProperty('--composer-safe-bottom');
-      root.style.removeProperty('--composer-header-top-pad-locked');
     };
   }, [isMobile, isDrawer]);
 
