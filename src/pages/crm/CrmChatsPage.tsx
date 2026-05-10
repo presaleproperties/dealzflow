@@ -412,61 +412,46 @@ export default function CrmChatsPage() {
           </div>
         </div>
 
-        {/* Bulk-action toolbar */}
-        {selectMode && (
-          <div className="px-3 pb-2.5 flex items-center gap-1.5">
-            <button
-              onClick={toggleSelectAll}
-              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40"
-            >
-              {allOnPageSelected ? 'Clear' : 'Select all'}
-            </button>
-            <button
-              disabled={selected.size === 0}
-              onClick={async () => { await flags.markRead(selectedIds); bulkDone('Marked read'); }}
-              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
-            >
-              <MailOpen className="w-3 h-3" /> Read
-            </button>
-            <button
-              disabled={selected.size === 0}
-              onClick={async () => { await flags.markUnread(selectedIds); bulkDone('Marked unread'); }}
-              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
-            >
-              <Mail className="w-3 h-3" /> Unread
-            </button>
-            <button
-              disabled={selected.size === 0}
-              onClick={() => {
-                pinMany(selectedIds, true);
-                bulkDone('Pinned');
-              }}
-              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
-            >
-              <Pin className="w-3 h-3" /> Pin
-            </button>
-            <button
-              disabled={selected.size === 0}
+        {/* Contextual action bar — only renders once at least one row is
+            selected. Floats above the bottom nav so the header stays clean. */}
+        {selectMode && selected.size > 0 && (
+          <div
+            className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 rounded-full border border-border/60 bg-background/95 backdrop-blur shadow-lg px-1.5 py-1"
+            style={{ bottom: 'calc(var(--bottom-nav-pad, 16px) + 12px)' }}
+          >
+            <span className="px-2.5 text-[11.5px] font-semibold tabular-nums text-foreground">
+              {selected.size}
+            </span>
+            <span className="h-5 w-px bg-border/60" />
+            <BulkBtn title="Mark read" onClick={async () => { await flags.markRead(selectedIds); bulkDone('Marked read'); }}>
+              <MailOpen className="w-4 h-4" />
+            </BulkBtn>
+            <BulkBtn title="Pin to top" onClick={() => { pinMany(selectedIds, true); bulkDone('Pinned'); }}>
+              <Pin className="w-4 h-4" />
+            </BulkBtn>
+            <BulkBtn title={showArchived ? 'Restore' : 'Archive'}
               onClick={async () => {
                 if (showArchived) { await flags.archive(selectedIds, false); bulkDone('Restored'); }
                 else { await flags.archive(selectedIds, true); bulkDone('Archived'); }
-              }}
-              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
-            >
-              {showArchived ? <ArchiveRestore className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
-              {showArchived ? 'Restore' : 'Archive'}
-            </button>
-            <button
-              disabled={selected.size === 0}
+              }}>
+              {showArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+            </BulkBtn>
+            <BulkBtn title="Delete"
+              tone="destructive"
               onClick={async () => {
                 const n = selectedIds.length;
                 if (!window.confirm(`Delete ${n} chat${n === 1 ? '' : 's'}? Underlying emails and texts are preserved — only the inbox conversation is removed.`)) return;
                 await flags.remove(selectedIds);
                 bulkDone(`Deleted ${n}`);
-              }}
-              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-destructive/10 hover:bg-destructive/15 text-destructive border border-destructive/30 disabled:opacity-40 inline-flex items-center gap-1"
+              }}>
+              <Trash2 className="w-4 h-4" />
+            </BulkBtn>
+            <span className="h-5 w-px bg-border/60" />
+            <button
+              onClick={toggleSelectAll}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold text-muted-foreground hover:text-foreground"
             >
-              <Trash2 className="w-3 h-3" /> Delete
+              {allOnPageSelected ? 'Clear' : 'All'}
             </button>
           </div>
         )}
@@ -788,6 +773,21 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
       className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
         active ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40'
       }`}>
+      {children}
+    </button>
+  );
+}
+
+function BulkBtn({ title, onClick, tone, children }: { title: string; onClick: () => void; tone?: 'destructive'; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick} title={title} aria-label={title}
+      className={`h-8 w-8 rounded-full inline-flex items-center justify-center transition-colors ${
+        tone === 'destructive'
+          ? 'text-destructive hover:bg-destructive/10'
+          : 'text-foreground hover:bg-muted'
+      }`}
+    >
       {children}
     </button>
   );
