@@ -34,6 +34,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useCrmContactSmsLog } from '@/hooks/useCrmContactSmsLog';
 import { useDialer } from '@/hooks/useDialer';
 import { useSwipeDownToDismiss } from '@/hooks/useSwipeDownToDismiss';
+import { triggerHaptic } from '@/lib/haptics';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { MessagingChannel } from '@/hooks/useSms';
 
@@ -119,11 +120,15 @@ export function MobileChatSendView({
   }, [smsLog]);
 
   // Auto-scroll to bottom on mount + when messages/sending changes.
+  // Use smooth behavior after first paint so new messages glide in instead
+  // of snapping (the initial mount still uses instant to avoid an opening jump).
+  const didInitialScroll = useRef(false);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight;
+      el.scrollTo({ top: el.scrollHeight, behavior: didInitialScroll.current ? 'smooth' : 'auto' });
+      didInitialScroll.current = true;
     });
   }, [messages.length, sending]);
 
@@ -163,7 +168,7 @@ export function MobileChatSendView({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      if (canSend && !sending) onSend();
+      if (canSend && !sending) { triggerHaptic('medium'); onSend(); }
     }
   };
 
@@ -181,12 +186,13 @@ export function MobileChatSendView({
   return (
     <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden bg-background">
       {/* Header — mirrors MobileAppHeader: fixed top chrome, safe-area outside
-          the row, blurred edge-to-edge background, and a stable row height. */}
+          the row, blurred edge-to-edge background, and a stable row height.
+          Swipe-to-dismiss is scoped to the grabber pill only so scrolling /
+          tapping anywhere else in the header never accidentally closes it. */}
       <header
         data-composer-header="true"
-        className="sticky top-0 z-30 shrink-0 touch-pan-y"
+        className="sticky top-0 z-30 shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        {...swipeDownHandlers}
       >
         <div
           className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
@@ -199,9 +205,14 @@ export function MobileChatSendView({
               'linear-gradient(90deg, transparent, hsl(var(--border) / 0.7) 10%, hsl(var(--border) / 0.7) 90%, transparent)',
           }}
         />
-        {/* Grabber affordance — visual cue for swipe-down-to-dismiss. */}
-        <div className="relative flex justify-center pt-1 pb-0.5" aria-hidden>
-          <span className="block h-[5px] w-9 rounded-full bg-foreground/15" />
+        {/* Grabber affordance — visual + interactive cue for swipe-down-to-dismiss.
+            Generous tappable hit-area (h-5 w-16) but a slim visible pill. */}
+        <div
+          className="relative flex justify-center pt-1 pb-0.5 touch-pan-y"
+          aria-label="Swipe down to dismiss"
+          {...swipeDownHandlers}
+        >
+          <span className="block h-[5px] w-9 rounded-full bg-foreground/15" aria-hidden />
         </div>
         <div className="relative flex items-center gap-2 px-4 h-11">
           <button
@@ -441,7 +452,7 @@ export function MobileChatSendView({
           {showSendBtn && (
             <button
               type="button"
-              onClick={onSend}
+              onClick={() => { triggerHaptic('medium'); onSend(); }}
               disabled={!canSend || sending}
               aria-label={sending ? 'Sending message' : 'Send message'}
               aria-busy={sending || undefined}
