@@ -156,7 +156,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const agentKey = user?.id ?? 'anon';
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
-  const [enrollFollowup, setEnrollFollowup] = useState<boolean>(true);
+  const [funnelSlug, setFunnelSlug] = useState<string>(NONE_FUNNEL_SLUG);
   const [showPreviewMobile, setShowPreviewMobile] = useState<boolean>(false);
   const [sending, setSending] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -177,6 +177,41 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [ctaCallNow, setCtaCallNow] = useState(true);
   // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
+
+  // ─── Presale signup-style funnels (seeded in crm_automations) ────────────
+  const { data: funnels = [] } = useQuery<Funnel[]>({
+    queryKey: ['send-project.funnels'],
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data: autos } = await supabase
+        .from('crm_automations')
+        .select('id, slug, name, description')
+        .like('slug', 'presale-%')
+        .eq('is_active', true)
+        .order('name');
+      if (!autos?.length) return [];
+      const ids = autos.map((a) => a.id);
+      const { data: steps } = await supabase
+        .from('crm_automation_steps')
+        .select('automation_id, step_order, delay_hours, action_config')
+        .in('automation_id', ids)
+        .order('step_order');
+      return autos.map((a) => ({
+        slug: a.slug as string,
+        name: a.name,
+        description: a.description ?? null,
+        steps: (steps ?? [])
+          .filter((s) => s.automation_id === a.id)
+          .map((s) => ({
+            step_order: s.step_order,
+            delay_hours: s.delay_hours ?? 0,
+            template_slug: ((s.action_config as { template_slug?: string } | null)?.template_slug) ?? '',
+          })),
+      }));
+    },
+  });
+  const selectedFunnel = funnels.find((f) => f.slug === funnelSlug) ?? null;
 
   // ─── Recipient signal: last email + open count ────────────────────────
   const { data: lastEmail } = useQuery({
