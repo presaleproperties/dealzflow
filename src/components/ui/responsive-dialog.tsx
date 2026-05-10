@@ -48,21 +48,11 @@ export const ResponsiveDialogContent = React.forwardRef<
     root.style.setProperty('--composer-viewport-top', '0px');
     root.style.setProperty('--composer-viewport-height', '100dvh');
 
-    // Snapshot the safe-area-inset-top ONCE while the keyboard is closed.
-    // iOS collapses env(safe-area-inset-top) to ~0 once the soft keyboard
-    // opens, which was visibly pulling the composer header up under the
-    // status bar. Pinning the value to a stable CSS var keeps the header
-    // padding constant across keyboard open/close.
-    try {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
-      document.body.appendChild(probe);
-      const measured = Math.round(probe.getBoundingClientRect().height);
-      document.body.removeChild(probe);
-      root.style.setProperty('--composer-header-top-pad-locked', `${measured}px`);
-    } catch {
-      root.style.setProperty('--composer-header-top-pad-locked', '0px');
-    }
+    // Header padding uses env(safe-area-inset-top) directly — same pattern
+    // as MobileAppHeader and every other top-of-page header in the app.
+    // The visible header chrome stays a fixed height (h-11), so even if
+    // iOS collapses the safe-area inset while the keyboard is open, only
+    // the empty status-bar spacer changes — the row itself never shrinks.
 
     let frame = 0;
     let lastKeyboardBottom = -1;
@@ -109,7 +99,6 @@ export const ResponsiveDialogContent = React.forwardRef<
       root.style.removeProperty('--composer-viewport-top');
       root.style.removeProperty('--composer-viewport-height');
       root.style.removeProperty('--composer-safe-bottom');
-      root.style.removeProperty('--composer-header-top-pad-locked');
     };
   }, [isMobile, isDrawer]);
 

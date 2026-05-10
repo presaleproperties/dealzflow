@@ -184,90 +184,92 @@ export function MobileChatSendView({
           a slim Call + More so power actions are still one tap away. */}
       <header
         data-composer-header="true"
-        className="relative z-30 flex items-center gap-1.5 px-1 pb-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
-        style={{ paddingTop: 'var(--composer-header-top-pad-locked, env(safe-area-inset-top, 0px))' }}
+        className="relative z-30 shrink-0 border-b border-border/40 bg-background/95 backdrop-blur-md"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Back to leads"
-          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
-        </button>
-        <Avatar className="h-8 w-8 shrink-0" aria-hidden>
-          <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
-            {initials || '?'}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0 flex flex-col leading-[1.15] pr-1">
-          <span className="text-[15px] font-semibold tracking-tight text-foreground truncate">
-            {fullName}
-          </span>
-          <span className="text-[11px] text-muted-foreground truncate mt-px">
-            {[segmentLabel, channel === 'whatsapp' ? 'WhatsApp' : null].filter(Boolean).join(' · ')}
-          </span>
+        <div className="relative flex items-center gap-1.5 px-1 h-12">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Back to leads"
+            className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
+          </button>
+          <Avatar className="h-8 w-8 shrink-0" aria-hidden>
+            <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
+              {initials || '?'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0 flex flex-col leading-[1.15] pr-1">
+            <span className="text-[15px] font-semibold tracking-tight text-foreground truncate">
+              {fullName}
+            </span>
+            <span className="text-[11px] text-muted-foreground truncate mt-px">
+              {[segmentLabel, channel === 'whatsapp' ? 'WhatsApp' : null].filter(Boolean).join(' · ')}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
+            aria-label={contact.phone ? `Call ${fullName}` : 'No phone number on file'}
+            disabled={!contact.phone}
+            className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <Phone className="h-[17px] w-[17px]" aria-hidden />
+          </button>
+          <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="More options"
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" sideOffset={6} className="w-60 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  onClose();
+                  navigate(`/crm/chats/${contact.id}`);
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
+              >
+                <MessagesSquare className="h-4 w-4 text-primary" />
+                <span className="flex-1">Open full conversation</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  onChannelChange(channel === 'sms' ? 'whatsapp' : 'sms');
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
+              >
+                <span className={cn('h-4 w-4 rounded-full inline-flex items-center justify-center', channel === 'whatsapp' ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/15 text-primary')}>
+                  {channel === 'whatsapp' ? <Check className="h-3 w-3" /> : <span className="text-[10px] font-bold">S</span>}
+                </span>
+                <span className="flex-1">{channel === 'whatsapp' ? 'Switch to SMS' : 'Switch to WhatsApp'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  onOpenAdvanced();
+                }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
+              >
+                <Sparkles className="h-4 w-4 text-muted-foreground" />
+                <span className="flex-1">Templates, schedule, variables</span>
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
-        <button
-          type="button"
-          onClick={() => contact.phone && dialer.startCall({ contact: { id: contact.id, name: fullName, phone: contact.phone }, number: contact.phone })}
-          aria-label={contact.phone ? `Call ${fullName}` : 'No phone number on file'}
-          disabled={!contact.phone}
-          className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-primary active:opacity-60 disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          <Phone className="h-[17px] w-[17px]" aria-hidden />
-        </button>
-        <Popover open={moreOpen} onOpenChange={setMoreOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label="More options"
-              aria-haspopup="menu"
-              aria-expanded={moreOpen}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" sideOffset={6} className="w-60 p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMoreOpen(false);
-                onClose();
-                navigate(`/crm/chats/${contact.id}`);
-              }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
-            >
-              <MessagesSquare className="h-4 w-4 text-primary" />
-              <span className="flex-1">Open full conversation</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMoreOpen(false);
-                onChannelChange(channel === 'sms' ? 'whatsapp' : 'sms');
-              }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
-            >
-              <span className={cn('h-4 w-4 rounded-full inline-flex items-center justify-center', channel === 'whatsapp' ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/15 text-primary')}>
-                {channel === 'whatsapp' ? <Check className="h-3 w-3" /> : <span className="text-[10px] font-bold">S</span>}
-              </span>
-              <span className="flex-1">{channel === 'whatsapp' ? 'Switch to SMS' : 'Switch to WhatsApp'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMoreOpen(false);
-                onOpenAdvanced();
-              }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] hover:bg-muted text-left"
-            >
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-              <span className="flex-1">Templates, schedule, variables</span>
-            </button>
-          </PopoverContent>
-        </Popover>
       </header>
 
       {/* Conversation scroll area */}
