@@ -41,9 +41,7 @@ export function useServiceWorkerUpdate() {
   }, []);
 
   const applyUpdate = () => {
-    if (waitingWorker) {
-      waitingWorker.postMessage({ type: "SKIP_WAITING" });
-    }
+    waitingWorker?.postMessage({ type: "SKIP_WAITING" });
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       window.location.reload();
     });
