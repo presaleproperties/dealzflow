@@ -537,12 +537,6 @@ export default function CrmChatsPage() {
                 <FilterChip active={attachmentsOnly} onClick={() => setAttachmentsOnly(v => !v)}>
                   <Paperclip className="w-3 h-3" strokeWidth={2.4} /> Attachments
                 </FilterChip>
-                <FilterChip active={starredOnly} onClick={() => setStarredOnly(v => !v)}>
-                  <Star className="w-3 h-3" strokeWidth={2.4} /> Starred
-                </FilterChip>
-                <FilterChip active={hasFailures} onClick={() => setHasFailures(v => !v)}>
-                  <AlertCircle className="w-3 h-3" strokeWidth={2.4} /> Failed sends
-                </FilterChip>
               </div>
               <div className="flex items-center gap-2">
                 {activeFilterCount > 0 && (
