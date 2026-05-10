@@ -135,6 +135,10 @@ export default function CrmChatsPage() {
   const [expandedEmail, setExpandedEmail] = useState<Set<string>>(new Set());
 
   const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived, showCampaigns });
+  const queryClient = useQueryClient();
+  const handlePullRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['crm-chats'] });
+  };
 
   const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
     const now = Date.now();
