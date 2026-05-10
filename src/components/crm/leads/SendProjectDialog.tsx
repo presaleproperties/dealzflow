@@ -539,22 +539,36 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
 
             {/* Channel: email only (SMS removed) */}
 
-            {/* Follow-up toggle */}
-            <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
-              <div className="space-y-0.5">
-                <div className="text-sm font-medium">Enroll in 3 / 7 / 14 day follow-up</div>
-                <div className="text-xs text-muted-foreground">
-                  {automationAvailable
-                    ? 'Lead enters the cold-lead nurture sequence after sending.'
-                    : 'Sequence not seeded yet (waiting on Prompt 3).'}
-                </div>
-              </div>
-              <Switch
-                checked={enrollFollowup && Boolean(automationAvailable)}
-                onCheckedChange={setEnrollFollowup}
-                disabled={!automationAvailable}
+            {/* Signup-style funnel picker — mirrors what fires when a lead
+                signs up on PresaleProperties.com. The first email sends now;
+                subsequent steps are queued and fired by the automation worker. */}
+            <Field label="Signup-style funnel">
+              <Combobox
+                value={funnelSlug}
+                onChange={setFunnelSlug}
+                items={[
+                  { value: NONE_FUNNEL_SLUG, label: 'No follow-up — single send' },
+                  ...funnels.map((f) => ({
+                    value: f.slug,
+                    label: f.name.replace(/^Presale ·\s*/, ''),
+                    hint: `${f.steps.length} email${f.steps.length === 1 ? '' : 's'}`,
+                  })),
+                ]}
+                placeholder="Select funnel…"
+                emptyText="No funnels seeded."
               />
-            </div>
+              <div className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                {funnelSlug === NONE_FUNNEL_SLUG || !selectedFunnel
+                  ? 'Just sends this email — no automated follow-ups.'
+                  : (
+                      <>
+                        {selectedFunnel.description ?? ''}
+                        <br />
+                        <span className="text-foreground">{describeSequence(selectedFunnel.steps)}</span>
+                      </>
+                    )}
+              </div>
+            </Field>
 
             {/* Gmail status */}
             {gmailConnected === false && (
