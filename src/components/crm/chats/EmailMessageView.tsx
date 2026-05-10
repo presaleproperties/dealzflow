@@ -365,7 +365,7 @@ export function EmailMessageView({
             <HtmlBodyFrame html={main} messageId={id} />
           ) : (
             <pre className="whitespace-pre-wrap break-words font-sans text-[14px] leading-relaxed text-foreground/90 m-0">
-              {main}
+              {linkify(main)}
             </pre>
           )}
 
