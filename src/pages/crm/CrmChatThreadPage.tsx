@@ -782,7 +782,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         data-thread-scroll
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10 native-scroll"
         style={{
-          paddingBottom: '1rem',
+          paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))',
           // Edge-swipe-back visual feedback (mobile only). Applied here — NOT
           // on the outer container — because a transform on the composer's
           // ancestor breaks `position: sticky`'s ability to ride the keyboard.
