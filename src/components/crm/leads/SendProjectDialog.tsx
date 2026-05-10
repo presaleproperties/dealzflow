@@ -25,7 +25,7 @@ interface Props {
 }
 
 interface Project { slug: string; name: string; city: string | null; status: string | null; presale_slug: string | null }
-interface Template { slug: string; name: string }
+interface Template { slug: string; name: string; description?: string }
 
 // (Legacy FOLLOWUP_SLUG removed — funnel picker drives enroll_followup_slug.)
 
