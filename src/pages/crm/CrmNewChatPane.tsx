@@ -29,7 +29,34 @@ export default function CrmNewChatPane() {
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => { toRef.current?.focus(); }, []);
-  useEffect(() => { if (picked) bodyRef.current?.focus(); }, [picked]);
+  // When a contact is picked, check for an existing SMS/WhatsApp thread and
+  // jump straight into it — feels native: "starting a new chat" with someone
+  // you already talk to just opens the existing conversation.
+  useEffect(() => {
+    if (!picked) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('crm_conversations')
+          .select('id, last_message_at')
+          .eq('contact_id', picked.id)
+          .in('channel', ['sms', 'whatsapp'])
+          .order('last_message_at', { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data?.id) {
+          navigate(`/crm/chats/${data.id}`, { replace: true });
+          return;
+        }
+        bodyRef.current?.focus();
+      } catch {
+        bodyRef.current?.focus();
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [picked, navigate]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
