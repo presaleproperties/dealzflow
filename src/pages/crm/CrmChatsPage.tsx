@@ -708,10 +708,10 @@ export default function CrmChatsPage() {
                             <Paperclip className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70" strokeWidth={2.2} aria-label="Has attachment" />
                           )}
                           {t.subject ? (
-                            <>
-                              <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/80'}>{t.subject}</span>
-                              {preview && <span className="text-muted-foreground/70"> — {preview}</span>}
-                            </>
+                            // Subject alone reads cleanest in the rail (Gmail/Outlook
+                            // compact view). Appending " — preview" caused the
+                            // subject to truncate mid-title on narrow rails.
+                            <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/85'}>{t.subject}</span>
                           ) : (preview || fallback || 'No messages yet')}
                         </p>
                         {snoozeText && (
