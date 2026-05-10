@@ -167,6 +167,7 @@ export function BottomNav() {
   }, []);
 
   const mode = detectMode(location.pathname);
+  const isImmersiveChatThread = /^\/crm\/chats\/[^/]+/.test(location.pathname) && location.pathname !== '/crm/chats/new';
 
   const tabs = mode === 'crm' ? CRM_TABS : WORKSPACE_TABS;
   const leftTabs = tabs.slice(0, 2);
@@ -303,6 +304,8 @@ export function BottomNav() {
   };
 
   // Tabs render in order; "+" is a floating FAB above the bar (not inline).
+  if (isImmersiveChatThread) return null;
+
   return (
     <>
       <nav
