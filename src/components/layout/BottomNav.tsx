@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
-import { useNewChatStore } from '@/stores/useNewChatStore';
+
 
 type Mode = 'workspace' | 'crm';
 
