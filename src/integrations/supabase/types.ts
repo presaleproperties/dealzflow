@@ -1066,11 +1066,14 @@ export type Database = {
           channel: string
           contact_id: string
           created_at: string | null
+          first_reply_at: string | null
           id: string
           is_archived: boolean
+          is_campaign: boolean
           is_starred: boolean
           last_message_at: string | null
           snoozed_until: string | null
+          started_by_campaign_id: string | null
           status: string | null
           unread_count: number | null
         }
@@ -1079,11 +1082,14 @@ export type Database = {
           channel: string
           contact_id: string
           created_at?: string | null
+          first_reply_at?: string | null
           id?: string
           is_archived?: boolean
+          is_campaign?: boolean
           is_starred?: boolean
           last_message_at?: string | null
           snoozed_until?: string | null
+          started_by_campaign_id?: string | null
           status?: string | null
           unread_count?: number | null
         }
@@ -1092,11 +1098,14 @@ export type Database = {
           channel?: string
           contact_id?: string
           created_at?: string | null
+          first_reply_at?: string | null
           id?: string
           is_archived?: boolean
+          is_campaign?: boolean
           is_starred?: boolean
           last_message_at?: string | null
           snoozed_until?: string | null
+          started_by_campaign_id?: string | null
           status?: string | null
           unread_count?: number | null
         }

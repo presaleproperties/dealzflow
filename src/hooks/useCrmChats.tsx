@@ -38,8 +38,9 @@ export interface ChatThread {
 /** UI-level filter — 'text' is a virtual channel meaning SMS ∪ WhatsApp. */
 export type ChatChannelFilter = ChatChannel | 'text' | 'all';
 
-export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArchived?: boolean }) {
+export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArchived?: boolean; showCampaigns?: boolean }) {
   const showArchived = !!opts?.showArchived;
+  const showCampaigns = !!opts?.showCampaigns;
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -59,13 +60,13 @@ export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArch
   }, [qc]);
 
   return useQuery({
-    queryKey: ['crm-chats', channelFilter ?? 'all', showArchived ? 'archived' : 'inbox'],
+    queryKey: ['crm-chats', channelFilter ?? 'all', showArchived ? 'archived' : showCampaigns ? 'campaigns' : 'inbox'],
     queryFn: async (): Promise<ChatThread[]> => {
       let q = supabase
         .from('crm_conversations')
         .select(
           `id, contact_id, channel, status, unread_count, last_message_at,
-           is_starred, is_archived, snoozed_until,
+           is_starred, is_archived, snoozed_until, is_campaign,
            crm_contacts!inner ( first_name, last_name, email, phone )`,
         )
         .order('last_message_at', { ascending: false, nullsFirst: false })
@@ -77,10 +78,17 @@ export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArch
         q = q.eq('channel', channelFilter);
       }
 
-      // Default inbox view hides archived rows; the dedicated "Archived"
-      // saved view passes showArchived: true to surface them.
-      if (showArchived) q = q.eq('is_archived', true);
-      else q = q.eq('is_archived', false);
+      // View routing:
+      //   Campaigns view → only campaign-flagged (hidden) threads
+      //   Archived view  → archived rows (excluding campaigns)
+      //   Default inbox  → not archived, not campaign
+      if (showCampaigns) {
+        q = q.eq('is_campaign', true);
+      } else if (showArchived) {
+        q = q.eq('is_archived', true).eq('is_campaign', false);
+      } else {
+        q = q.eq('is_archived', false).eq('is_campaign', false);
+      }
 
       const { data, error } = await q;
       if (error) throw error;

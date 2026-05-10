@@ -118,6 +118,7 @@ export default function CrmChatsPage() {
   const [starredOnly, setStarredOnly] = useState(false);
   const [hasFailures, setHasFailures] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [showCampaigns, setShowCampaigns] = useState(false);
 
   // Bulk-select mode
   const [selectMode, setSelectMode] = useState(false);
@@ -129,7 +130,7 @@ export default function CrmChatsPage() {
   // Outlook-style expanded email rows: contact_id → expanded?
   const [expandedEmail, setExpandedEmail] = useState<Set<string>>(new Set());
 
-  const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived });
+  const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived, showCampaigns });
 
   const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
     const now = Date.now();
@@ -234,6 +235,7 @@ export default function CrmChatsPage() {
     setStarredOnly(!!f.starredOnly);
     setHasFailures(!!f.hasFailures);
     setShowArchived(!!f.showArchived);
+    setShowCampaigns(!!f.showCampaigns);
     setActiveViewId(v.id);
   };
 
@@ -244,6 +246,7 @@ export default function CrmChatsPage() {
     { id: '__unread',   name: 'Unread',   channel: 'all' as ChatChannelFilter, filters: { unreadOnly: true } as InboxViewFilters },
     { id: '__starred',  name: 'Starred',  channel: 'all' as ChatChannelFilter, filters: { starredOnly: true } as InboxViewFilters },
     { id: '__failed',   name: 'Failed',   channel: 'all' as ChatChannelFilter, filters: { hasFailures: true } as InboxViewFilters },
+    { id: '__campaigns', name: 'Campaigns', channel: 'all' as ChatChannelFilter, filters: { showCampaigns: true } as InboxViewFilters },
     { id: '__archive',  name: 'Archived', channel: 'all' as ChatChannelFilter, filters: { showArchived: true } as InboxViewFilters },
   ], []);
   const applyBuiltin = (b: typeof builtinViews[number]) => {
@@ -256,6 +259,7 @@ export default function CrmChatsPage() {
     setStarredOnly(!!b.filters.starredOnly);
     setHasFailures(!!b.filters.hasFailures);
     setShowArchived(!!b.filters.showArchived);
+    setShowCampaigns(!!b.filters.showCampaigns);
     setActiveViewId(b.id);
   };
   // Default to Inbox on first mount
@@ -266,7 +270,7 @@ export default function CrmChatsPage() {
   const listRef = useRef<HTMLUListElement | null>(null);
   const [cursor, setCursor] = useState(0);
 
-  useEffect(() => { setCursor(0); }, [filter, search, sender, subject, unreadOnly, attachmentsOnly, dateRange, customFrom, customTo, starredOnly, hasFailures, showArchived]);
+  useEffect(() => { setCursor(0); }, [filter, search, sender, subject, unreadOnly, attachmentsOnly, dateRange, customFrom, customTo, starredOnly, hasFailures, showArchived, showCampaigns]);
 
   useEffect(() => {
     const isTyping = (el: EventTarget | null) =>
