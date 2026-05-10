@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
 import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
+import { useChatPins } from '@/hooks/useChatPins';
 
 /**
  * Strip HTML, collapse whitespace, decode common entities so email previews
@@ -147,22 +148,12 @@ export default function CrmChatsPage() {
     return { from: null, to: null };
   }, [dateRange, customFrom, customTo]);
 
-  // Pin-to-top: per-user (per-browser) localStorage. Lightweight v1 — no DB.
-  const PIN_KEY = 'crm-chats-pinned-v1';
-  const [pinned, setPinned] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem(PIN_KEY);
-      return new Set<string>(raw ? JSON.parse(raw) : []);
-    } catch { return new Set(); }
-  });
+  // Pin-to-top: shared store across page + right-rail drawer.
+  const { pinned, isPinned, toggle: togglePinId, pinMany } = useChatPins();
   const togglePin = (id: string) => {
-    setPinned(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
-      return next;
-    });
-    toast.success(pinned.has(id) ? 'Unpinned' : 'Pinned to top');
+    const wasPinned = isPinned(id);
+    togglePinId(id);
+    toast.success(wasPinned ? 'Unpinned' : 'Pinned to top');
   };
 
   const filtered = useMemo(() => {
@@ -447,12 +438,7 @@ export default function CrmChatsPage() {
             <button
               disabled={selected.size === 0}
               onClick={() => {
-                setPinned(prev => {
-                  const next = new Set(prev);
-                  selectedIds.forEach(id => next.add(id));
-                  try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
-                  return next;
-                });
+                pinMany(selectedIds, true);
                 bulkDone('Pinned');
               }}
               className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
