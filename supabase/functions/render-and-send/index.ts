@@ -706,33 +706,92 @@ Deno.serve(async (req) => {
     })
     .eq("id", contact_id);
 
-  // (h) optional follow-up enrollment
+  // (h) optional follow-up enrollment — uses crm_automation_enrollments so
+  //     process-automations actually fires subsequent steps. Step 1 of every
+  //     Presale funnel has delay_hours=0 and matches the email we just sent,
+  //     so we advance the enrollment to step 2 immediately to avoid
+  //     duplicating the initial email when the cron picks it up.
   let enrolled = false;
   if (enroll_followup_slug) {
-    // Match by slug-like name; crm_automations has no slug column yet, fall
-    // back to matching the lower-cased name. If the automation isn't seeded
-    // yet (Prompt 3), silently skip.
+    // Prefer slug column; fall back to legacy name-based match for older rows.
     const { data: automation } = await supabase
       .from("crm_automations")
       .select("id, is_active")
       .or(
-        `name.eq.${enroll_followup_slug},name.ilike.${enroll_followup_slug.replace(/-/g, " ")}`,
+        `slug.eq.${enroll_followup_slug},name.eq.${enroll_followup_slug},name.ilike.${enroll_followup_slug.replace(/-/g, " ")}`,
       )
       .limit(1)
       .maybeSingle();
-    if (automation?.id) {
-      const { error: enrollErr } = await supabase
-        .from("crm_automation_logs")
-        .insert({
+
+    if (automation?.id && automation.is_active !== false) {
+      // Use the canonical RPC so trigger logic + dedupe (active uniq index)
+      // are honored.
+      const { data: enrollmentId, error: enrollErr } = await supabase.rpc(
+        "enroll_in_automation",
+        {
+          p_automation_id: automation.id,
+          p_contact_id: contact_id,
+          p_trigger_data: {
+            project_slug,
+            template_slug,
+            enrolled_via: "render-and-send",
+            initial_email_sent_at: new Date().toISOString(),
+          },
+        } as never,
+      );
+
+      if (!enrollErr && enrollmentId) {
+        // Update enrollment to skip step 1 (already sent) and schedule step 2.
+        const { data: step2 } = await supabase
+          .from("crm_automation_steps")
+          .select("step_order, delay_hours")
+          .eq("automation_id", automation.id)
+          .gt("step_order", 1)
+          .order("step_order", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (step2) {
+          // delay_hours on step 2 is measured from step 1 (which fired now)
+          const dueAt = new Date(
+            Date.now() + (step2.delay_hours ?? 0) * 3600_000,
+          ).toISOString();
+          await supabase
+            .from("crm_automation_enrollments")
+            .update({
+              current_step_order: step2.step_order,
+              next_step_due_at: dueAt,
+              project_slug: project_slug ?? null,
+            })
+            .eq("id", enrollmentId as unknown as string);
+        } else {
+          // Single-step funnel: nothing more to do; mark complete.
+          await supabase
+            .from("crm_automation_enrollments")
+            .update({
+              status: "completed",
+              exited_at: new Date().toISOString(),
+              exit_reason: "single_step_funnel",
+              project_slug: project_slug ?? null,
+            })
+            .eq("id", enrollmentId as unknown as string);
+        }
+
+        enrolled = true;
+        // Mirror to legacy log table for analytics.
+        await supabase.from("crm_automation_logs").insert({
           automation_id: automation.id,
           contact_id,
           trigger_data: {
             project_slug,
             template_slug,
             enrolled_via: "render-and-send",
+            enrollment_id: enrollmentId,
           },
-        });
-      if (!enrollErr) enrolled = true;
+        }).catch(() => {});
+      } else if (enrollErr) {
+        console.warn("[render-and-send] enroll_in_automation failed", enrollErr);
+      }
     }
   }
 
