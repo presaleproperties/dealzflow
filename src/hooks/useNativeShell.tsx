@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import {
   isNative, platform, setKeyboardResizeNative,
-  onKeyboardShow, onKeyboardHide,
+  onKeyboardShow, onKeyboardHide, hideKeyboardAccessoryBar,
 } from '@/lib/native';
 
 /**
@@ -23,8 +23,11 @@ export function useNativeShell() {
     if (platform === 'android') root.classList.add('is-android');
 
     // Status bar style is driven by useStandaloneMode() so it follows the
-    // active theme instead of being hard-coded.
+    // active theme instead of being hard-coded. Hide iOS' accessory bar so
+    // chat composers sit flush against the real keyboard instead of leaving
+    // the native prev/next toolbar gap shown in screenshots.
     setKeyboardResizeNative();
+    hideKeyboardAccessoryBar();
 
     const off1 = onKeyboardShow((h) => root.style.setProperty('--kb-h', `${h}px`));
     const off2 = onKeyboardHide(() => root.style.setProperty('--kb-h', '0px'));

@@ -55,6 +55,11 @@ export async function setKeyboardResizeNative() {
   try { await Keyboard.setResizeMode({ mode: KeyboardResize.Native }); } catch { /* noop */ }
 }
 
+export async function hideKeyboardAccessoryBar() {
+  if (!isNative || platform !== 'ios') return;
+  try { await Keyboard.setAccessoryBarVisible({ isVisible: false }); } catch { /* noop */ }
+}
+
 // ── Hardware back-button (Android) ──────────────────────────────────────────
 /**
  * Register a handler for Android's hardware back button. The most-recently

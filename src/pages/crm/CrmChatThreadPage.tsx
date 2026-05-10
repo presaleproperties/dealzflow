@@ -22,6 +22,7 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useIsCompact } from '@/hooks/use-mobile';
 import { useDialer } from '@/hooks/useDialer';
 import { useAuth } from '@/hooks/useAuth';
+import { isNative } from '@/lib/native';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrmInboxFlags, snoozePresets } from '@/hooks/useCrmInboxFlags';
@@ -256,7 +257,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
 
   // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
   // composer can ride above the keyboard instead of being covered by it.
-  useKeyboardInset(true);
+  useKeyboardInset(!isNative);
 
   // Hard-lock the document while this thread is mounted on mobile. With
   // `interactive-widget=overlays-content` iOS still tries to pan the layout
@@ -266,6 +267,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   // transition instant — only --keyboard-inset-bottom moves, nothing else.
   useEffect(() => {
     if (typeof document === 'undefined') return;
+    if (isNative) return;
     const html = document.documentElement;
     const body = document.body;
     const prev = {
@@ -729,10 +731,9 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       className={
         embedded
           ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
-          // Phone: fill the route slot without negative top margin (which used to
-          // tuck the thread header under the global mobile app header). Tablet+
-          // keeps the bleed for the two-pane shell.
-          : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4 relative bg-background'
+          // Phone/native: own the visual viewport so iOS cannot pan the header
+          // while focusing the reply box. Tablet+ keeps the two-pane bleed.
+          : 'flex flex-col flex-1 min-h-0 h-[100dvh] sm:h-full sm:-mx-4 sm:-my-4 relative bg-background overflow-hidden'
       }
     >
       {/* Header */}
