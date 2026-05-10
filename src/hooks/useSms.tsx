@@ -198,6 +198,9 @@ export interface SendSmsArgs {
   skip_quiet_hours?: boolean;
   ignore_optout?: boolean;
   channel?: MessagingChannel;
+  /** Chat-thread conversation id — when provided, the optimistic bubble is
+   *  also inserted into the chat thread cache so it appears instantly. */
+  conversation_id?: string | null;
 }
 
 function makeDedupeId(): string {
