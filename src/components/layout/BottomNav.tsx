@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
+import { useNewChatStore } from '@/stores/useNewChatStore';
 
 type Mode = 'workspace' | 'crm';
 
@@ -217,15 +218,13 @@ export function BottomNav() {
           icon: Mail,
           onClick: () => { close(); navigate('/crm/email'); },
         },
-      ];
-      if (isCrmAdmin) {
-        actions.push({
-          label: 'Send Text',
-          description: 'SMS or WhatsApp',
+        {
+          label: 'New Chat',
+          description: 'Text or email any contact',
           icon: MessageSquare,
-          onClick: () => { close(); navigate('/crm/sms'); },
-        });
-      }
+          onClick: () => { close(); useNewChatStore.getState().open(); },
+        },
+      ];
       return actions;
     }
     return [
@@ -247,6 +246,12 @@ export function BottomNav() {
         description: 'Quick capture',
         icon: PenSquare,
         onClick: () => { close(); navigate('/dashboard'); },
+      },
+      {
+        label: 'New Chat',
+        description: 'Text or email any contact',
+        icon: MessageSquare,
+        onClick: () => { close(); useNewChatStore.getState().open(); },
       },
     ];
   }, [mode, navigate, isCrmAdmin]);

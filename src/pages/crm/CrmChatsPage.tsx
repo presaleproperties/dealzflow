@@ -4,7 +4,7 @@ import {
   Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal,
   Paperclip, Archive, Clock4, MailOpen, MoreHorizontal, BookmarkPlus,
   Trash2, AlertCircle, CheckSquare, Square, ArchiveRestore, BellOff, Bell,
-  ChevronRight, ChevronDown, Pin, PinOff,
+  ChevronRight, ChevronDown, Pin, PinOff, PenSquare,
 } from 'lucide-react';
 import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
 import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
 import { useChatPins } from '@/hooks/useChatPins';
 import { SwipeRow } from '@/components/crm/chats/SwipeRow';
+import { useNewChatStore } from '@/stores/useNewChatStore';
 
 /**
  * Strip HTML, collapse whitespace, decode common entities so email previews
@@ -384,6 +385,15 @@ export default function CrmChatsPage() {
             </p>
           </div>
           <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost" size="icon"
+              onClick={() => useNewChatStore.getState().open()}
+              className="h-10 w-10 rounded-full text-foreground"
+              aria-label="Start new chat"
+              title="New chat"
+            >
+              <PenSquare className="w-[18px] h-[18px]" strokeWidth={2} />
+            </Button>
             <Button
               variant="ghost" size="icon"
               onClick={() => setSelectMode(v => !v)}
