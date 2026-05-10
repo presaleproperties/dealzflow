@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Plus } from 'lucide-react';
+import { Send, Plus, FileText, Image as ImageIcon, Variable, MoreHorizontal } from 'lucide-react';
 import { useSendSms } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface Props {
   contact: CrmContact;
