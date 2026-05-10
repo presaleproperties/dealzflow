@@ -701,6 +701,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       {/* Messages */}
       <div
         ref={scrollRef}
+        data-thread-scroll
         className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10"
         style={{ paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
       >
