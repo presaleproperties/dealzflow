@@ -29,6 +29,27 @@ interface Template { slug: string; name: string }
 
 const FOLLOWUP_SLUG = 'cold-lead-followup';
 
+// Presale signup-style funnels (seeded in crm_automations). Each = a sequence
+// of emails using Presale's Template A (with docs) or Template B (agent intro)
+// — exactly what fires when a lead signs up on presaleproperties.com.
+type Funnel = {
+  slug: string;
+  name: string;
+  description: string | null;
+  steps: { step_order: number; delay_hours: number; template_slug: string }[];
+};
+const NONE_FUNNEL_SLUG = '__none__';
+
+function describeSequence(steps: Funnel['steps']): string {
+  if (!steps?.length) return 'Sends one email — no follow-ups.';
+  const labels = steps.map((s) => {
+    if (s.delay_hours === 0) return 'now';
+    const days = Math.round(s.delay_hours / 24);
+    return days >= 1 ? `+${days}d` : `+${s.delay_hours}h`;
+  });
+  return `Sends ${labels.join(' → ')} (${steps.length} email${steps.length === 1 ? '' : 's'})`;
+}
+
 export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
