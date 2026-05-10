@@ -354,7 +354,7 @@ export default function LeadDetailPage() {
             <CenterColumn
               contact={c}
               onCall={() => callContact(c)}
-              onText={() => setShowText(true)}
+              onText={() => { void openChat(c.id, 'sms'); }}
               onEmail={() => setShowEmail(true)}
               onTask={() => setShowTask(true)}
               onShowing={() => setShowShowing(true)}
