@@ -104,6 +104,7 @@ export function MobileChatSendView({
   const [taHeight, setTaHeight] = useState(TA_MIN);
   const [taScrollable, setTaScrollable] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const swipeDownHandlers = useSwipeDownToDismiss({ onDismiss: onClose });
 
   // Show oldest → newest in the scroll view (chat order).
   const messages = useMemo(
