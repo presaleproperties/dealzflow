@@ -456,6 +456,18 @@ export default function CrmChatsPage() {
               {showArchived ? <ArchiveRestore className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
               {showArchived ? 'Restore' : 'Archive'}
             </button>
+            <button
+              disabled={selected.size === 0}
+              onClick={async () => {
+                const n = selectedIds.length;
+                if (!window.confirm(`Delete ${n} chat${n === 1 ? '' : 's'}? Underlying emails and texts are preserved — only the inbox conversation is removed.`)) return;
+                await flags.remove(selectedIds);
+                bulkDone(`Deleted ${n}`);
+              }}
+              className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-destructive/10 hover:bg-destructive/15 text-destructive border border-destructive/30 disabled:opacity-40 inline-flex items-center gap-1"
+            >
+              <Trash2 className="w-3 h-3" /> Delete
+            </button>
           </div>
         )}
 
@@ -731,7 +743,7 @@ export default function CrmChatsPage() {
                       </button>
                     )}
 
-                    {/* Per-row inline action — pin only */}
+                    {/* Per-row inline actions — pin + delete */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
@@ -739,6 +751,13 @@ export default function CrmChatsPage() {
                           {pinned.has(t.id)
                             ? <PinOff className="w-4 h-4 text-muted-foreground" />
                             : <Pin className="w-4 h-4 text-muted-foreground" />}
+                        </RowAction>
+                        <RowAction title="Delete chat"
+                          onClick={() => {
+                            if (!window.confirm('Delete this chat? Underlying emails and texts are preserved — only the inbox conversation is removed.')) return;
+                            flags.remove(t.id).then(() => toast.success('Chat deleted'));
+                          }}>
+                          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                         </RowAction>
                       </div>
                     )}
