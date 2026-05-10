@@ -1,4 +1,6 @@
 // Generates a valid VAPID key pair for Web Push
+import { requireAdmin } from '../_shared/requireAuth.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -13,6 +15,14 @@ function toBase64url(buffer: ArrayBuffer | Uint8Array): string {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status ?? 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     // Generate ECDH P-256 key pair (required for Web Push / VAPID)
