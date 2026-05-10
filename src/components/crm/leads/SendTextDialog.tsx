@@ -72,7 +72,7 @@ function formatPhoneDisplay(phone?: string | null): string {
   return phone;
 }
 
-export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms', extraContacts, onSent, initialBody }: Props) {
+export function SendTextDialog({ contact, open, onOpenChange, initialChannel = 'sms', extraContacts, onSent, initialBody, conversationId }: Props) {
   const { user } = useAuth();
   const sendSms = useSendSms();
   const bulkSendSms = useBulkSendSms();
