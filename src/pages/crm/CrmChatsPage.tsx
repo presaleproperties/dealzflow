@@ -623,6 +623,15 @@ export default function CrmChatsPage() {
                       className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all ${isCursor ? 'h-9 w-[3px]' : 'h-7 w-[3px]'}`}
                       style={{ background: isUnread ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.55)' }} />
                   )}
+                  <SwipeRow
+                    isPinned={pinned.has(t.id)}
+                    disabled={selectMode}
+                    onPin={() => togglePin(t.id)}
+                    onDelete={() => {
+                      if (!window.confirm('Delete this chat? Underlying emails and texts are preserved — only the inbox conversation is removed.')) return;
+                      flags.remove(t.id).then(() => toast.success('Chat deleted'));
+                    }}
+                  >
                   <div
                     onPointerEnter={() => { prefetchThread(t.id); setCursor(idx); }}
                     onTouchStart={() => prefetchThread(t.id)}
