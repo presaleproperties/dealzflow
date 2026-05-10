@@ -1019,7 +1019,8 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                 </div>
               </div>
             );
-          })
+          })}
+          </>
         )}
 
         {/* Ghost bubbles for offline outbox items not yet on the server */}
