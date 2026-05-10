@@ -159,6 +159,15 @@ export async function drainOutbox(): Promise<void> {
       .sort((a, b) => new Date(a.enqueued_at).getTime() - new Date(b.enqueued_at).getTime());
 
     for (const item of due) {
+      // Hard-fail malformed items so a bad row can't loop forever and surface
+      // "to and body are required" errors on every drain.
+      if (!item.to || !item.body || item.body.trim().length === 0) {
+        item.status = 'failed';
+        item.last_error = 'Missing recipient or message body';
+        await tx('readwrite', (store) => reqToPromise(store.put(item)));
+        notifyChange();
+        continue;
+      }
       try {
         const { data, error } = await supabase.functions.invoke('send-sms', {
           body: {

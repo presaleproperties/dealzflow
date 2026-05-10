@@ -212,6 +212,11 @@ export function useSendSms() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: SendSmsArgs & { client_dedupe_id?: string }) => {
+      // Reject malformed sends locally — saves a round-trip and prevents the
+      // generic "to and body are required" 400 from the edge function.
+      if (!args.to || !args.body || args.body.trim().length === 0) {
+        throw new Error('Recipient phone and message body are required');
+      }
       const dedupeId = args.client_dedupe_id ?? makeDedupeId();
       const channel: 'sms' | 'whatsapp' = args.channel || 'sms';
 
