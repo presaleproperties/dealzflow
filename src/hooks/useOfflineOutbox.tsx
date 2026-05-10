@@ -14,7 +14,7 @@ import {
  */
 export function useOfflineOutbox(opts?: { contactId?: string | null }) {
   const [items, setItems] = useState<OutboxItem[]>([]);
-  const [online, setOnline] = useState<boolean>(typeof navigator === 'undefined' ? true : navigator.onLine);
+  const [online, setOnline] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
