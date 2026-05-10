@@ -21,6 +21,8 @@ import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
 import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
 import { useChatPins } from '@/hooks/useChatPins';
 import { SwipeRow } from '@/components/crm/chats/SwipeRow';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 /**
@@ -133,6 +135,10 @@ export default function CrmChatsPage() {
   const [expandedEmail, setExpandedEmail] = useState<Set<string>>(new Set());
 
   const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived, showCampaigns });
+  const queryClient = useQueryClient();
+  const handlePullRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['crm-chats'] });
+  };
 
   const dateBounds = useMemo<{ from: number | null; to: number | null }>(() => {
     const now = Date.now();
@@ -591,6 +597,7 @@ export default function CrmChatsPage() {
 
       {/* Thread list */}
       <div className="flex-1 -mx-3 sm:-mx-4">
+        <PullToRefresh onRefresh={handlePullRefresh}>
         {isLoading ? (
           <ul>
             {Array.from({ length: 6 }).map((_, i) => (
@@ -787,6 +794,7 @@ export default function CrmChatsPage() {
             })}
           </ul>
         )}
+        </PullToRefresh>
       </div>
     </div>
   );
