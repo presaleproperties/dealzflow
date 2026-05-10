@@ -597,6 +597,7 @@ export default function CrmChatsPage() {
 
       {/* Thread list */}
       <div className="flex-1 -mx-3 sm:-mx-4">
+        <PullToRefresh onRefresh={handlePullRefresh}>
         {isLoading ? (
           <ul>
             {Array.from({ length: 6 }).map((_, i) => (
