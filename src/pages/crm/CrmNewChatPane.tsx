@@ -3,7 +3,7 @@
 // (empty) conversation, footer is a normal chat composer. Sending the first
 // message creates the conversation and navigates straight into it.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, X, Search, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
