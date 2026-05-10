@@ -58,7 +58,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             variant="outline"
             size="sm"
             className="h-9 text-xs gap-1.5 justify-start"
-            onClick={() => setShowSms(true)}
+            onClick={() => { void openChat(contact.id, 'sms'); }}
             disabled={!contact.phone}
             title={contact.phone ? 'Send SMS' : 'No phone number on file'}
           >
