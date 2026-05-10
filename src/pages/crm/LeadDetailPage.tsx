@@ -375,7 +375,7 @@ export default function LeadDetailPage() {
               onAddTask={() => setShowTask(true)}
               onAddShowing={() => setShowShowing(true)}
               onCall={() => callContact(c)}
-              onText={() => setShowText(true)}
+              onText={() => { void openChat(c.id, 'sms'); }}
               onEmail={() => setShowEmail(true)}
               onSendProject={() => setShowSendProject(true)}
               leadScore={leadScore}
