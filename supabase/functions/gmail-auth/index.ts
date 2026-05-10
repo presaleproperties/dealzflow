@@ -4,6 +4,7 @@
 // Add gmail.readonly + gmail.send + gmail.modify scopes to the consent screen.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { encodeOAuthState, decodeOAuthState } from "../_shared/oauthState.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,16 +22,6 @@ const SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 
-function decodeOAuthState(state: string | null) {
-  if (!state) return null;
-  try {
-    const parsed = JSON.parse(atob(state));
-    if (!parsed?.userId || !parsed?.redirectUrl) return null;
-    return parsed as { userId: string; redirectUrl: string };
-  } catch {
-    return null;
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -55,7 +46,7 @@ serve(async (req) => {
     const oauthError = url.searchParams.get("error");
 
     if (oauthError) {
-      const parsed = decodeOAuthState(state);
+      const parsed = await decodeOAuthState(state);
       const back = parsed?.redirectUrl ?? "/";
       return Response.redirect(
         `${back}?gmail_auth=error&message=${encodeURIComponent(oauthError)}`,
@@ -64,7 +55,7 @@ serve(async (req) => {
     }
 
     if (code && state) {
-      const parsed = decodeOAuthState(state);
+      const parsed = await decodeOAuthState(state);
       if (!parsed) return json({ error: "Invalid state" }, 400);
 
       const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
@@ -169,8 +160,8 @@ serve(async (req) => {
       const action = body.action;
 
       if (action === "get_auth_url") {
-        const redirectUrl = body.redirectUrl || "https://commissioniq.lovable.app/crm/email";
-        const stateData = btoa(JSON.stringify({ userId, redirectUrl }));
+        const redirectUrl = body.redirectUrl || "https://dealzflow.ca/crm/email";
+        const stateData = await encodeOAuthState({ userId, redirectUrl });
         const loginHint = (typeof body.loginHint === "string" && body.loginHint.trim()) || user.email || "";
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +

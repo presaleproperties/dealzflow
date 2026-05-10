@@ -91,7 +91,7 @@ serve(async (req) => {
       if (!authUserData?.user?.email) throw new Error("Could not find user email");
       const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
         authUserData.user.email,
-        { redirectTo: `${req.headers.get("origin") || "https://commissioniq.lovable.app"}/reset-password` }
+        { redirectTo: `${req.headers.get("origin") || "https://dealzflow.ca"}/reset-password` }
       );
       if (resetError) throw new Error(`Failed to send reset email: ${resetError.message}`);
       await writeAuditLog({ email: authUserData.user.email });

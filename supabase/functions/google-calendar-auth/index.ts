@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { encodeOAuthState, decodeOAuthState } from "../_shared/oauthState.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,17 +15,6 @@ type OAuthState = {
   userId: string;
   redirectUrl: string;
 };
-
-function decodeOAuthState(state: string | null): OAuthState | null {
-  if (!state) return null;
-  try {
-    const parsed = JSON.parse(atob(state));
-    if (!parsed?.userId || !parsed?.redirectUrl) return null;
-    return { userId: parsed.userId, redirectUrl: parsed.redirectUrl };
-  } catch {
-    return null;
-  }
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -54,7 +44,7 @@ serve(async (req) => {
     const oauthErrorDescription = url.searchParams.get('error_description');
 
     if (oauthError) {
-      const parsedState = decodeOAuthState(state);
+      const parsedState = await decodeOAuthState(state);
       const message = oauthErrorDescription || oauthError;
 
       if (parsedState?.redirectUrl) {
@@ -72,7 +62,7 @@ serve(async (req) => {
       let userId: string;
       let redirectUrl: string;
 
-      const parsedState = decodeOAuthState(state);
+      const parsedState = await decodeOAuthState(state);
       if (!parsedState) {
         return new Response(JSON.stringify({ error: 'Invalid OAuth state' }), {
           status: 400,
@@ -179,9 +169,9 @@ serve(async (req) => {
       const action = body.action;
 
       if (action === 'get_auth_url') {
-        const redirectUrl = body.redirectUrl || 'https://commissioniq.lovable.app/command-center';
+        const redirectUrl = body.redirectUrl || 'https://dealzflow.ca/command-center';
         const loginHint = (typeof body.loginHint === 'string' && body.loginHint.trim()) || user.email || '';
-        const stateData = btoa(JSON.stringify({ userId, redirectUrl }));
+        const stateData = await encodeOAuthState({ userId, redirectUrl });
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
           `client_id=${encodeURIComponent(CLIENT_ID)}` +
