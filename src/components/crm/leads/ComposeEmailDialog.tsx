@@ -514,9 +514,11 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       // For single send the DB trigger creates the chat message; mass-send is
       // logged server-side. Never manually insert here.
       clearEmailDraft(draftScope);
+      triggerHaptic('success');
       onSent?.();
       onOpenChange(false);
     } catch {
+      triggerHaptic('error');
       /* toast handled in hook */
     }
   };
