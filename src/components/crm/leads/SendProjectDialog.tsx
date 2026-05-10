@@ -25,7 +25,7 @@ interface Props {
 }
 
 interface Project { slug: string; name: string; city: string | null; status: string | null; presale_slug: string | null }
-interface Template { slug: string; name: string }
+interface Template { slug: string; name: string; description?: string }
 
 // (Legacy FOLLOWUP_SLUG removed — funnel picker drives enroll_followup_slug.)
 
@@ -70,7 +70,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     enabled: open,
   });
 
-  const { data: templates = [], refetch: refetchTemplates } = useQuery<Template[]>({
+  const { data: templates = [], refetch: refetchTemplates, dataUpdatedAt: templatesFetchedAt } = useQuery<Template[]>({
     queryKey: ['send-project.templates'],
     queryFn: async () => {
       // ONLY Presale system auto-response templates — admin-managed, branded,
@@ -82,9 +82,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           method: 'GET',
         });
         const list = (data as { templates?: Array<{ id: string; name: string; description?: string }> } | null)?.templates ?? [];
-        // Strip the leading "★ " star — every option is now a system template,
-        // so the marker is redundant. Keep names clean.
-        return list.map((t) => ({ slug: t.id, name: t.name }));
+        return list.map((t) => ({ slug: t.id, name: t.name, description: t.description }));
       } catch (e) {
         console.warn('[SendProject] presale auto-templates fetch failed', e);
         return [];
@@ -468,12 +466,35 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               <Combobox
                 value={templateSlug}
                 onChange={setTemplateSlug}
-                items={templates.map(t => ({ value: t.slug, label: t.name }))}
+                items={templates.map(t => ({
+                  value: t.slug,
+                  label: t.name,
+                  hint: t.description,
+                }))}
                 placeholder="Select email style…"
                 emptyText="No project email styles."
               />
-              <div className="text-[11px] text-muted-foreground mt-1.5">
-                Branded layout & project card from Presale Properties · your CRM signature replaces the default footer.
+              <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground mt-1.5">
+                <span className="truncate">
+                  {templateSlug ? (
+                    <>
+                      <span className="font-mono opacity-70">{templateSlug}</span>
+                      {' · Branded layout from Presale Properties'}
+                    </>
+                  ) : (
+                    'Branded layout & project card from Presale Properties · your CRM signature replaces the default footer.'
+                  )}
+                </span>
+                {templatesFetchedAt > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => refetchTemplates()}
+                    className="shrink-0 underline hover:text-foreground"
+                    title={new Date(templatesFetchedAt).toLocaleString()}
+                  >
+                    Synced {formatDistanceToNowStrict(new Date(templatesFetchedAt), { addSuffix: true })} · refresh
+                  </button>
+                )}
               </div>
             </Field>
 
