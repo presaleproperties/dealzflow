@@ -186,12 +186,13 @@ export function MobileChatSendView({
   return (
     <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden bg-background">
       {/* Header — mirrors MobileAppHeader: fixed top chrome, safe-area outside
-          the row, blurred edge-to-edge background, and a stable row height. */}
+          the row, blurred edge-to-edge background, and a stable row height.
+          Swipe-to-dismiss is scoped to the grabber pill only so scrolling /
+          tapping anywhere else in the header never accidentally closes it. */}
       <header
         data-composer-header="true"
-        className="sticky top-0 z-30 shrink-0 touch-pan-y"
+        className="sticky top-0 z-30 shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        {...swipeDownHandlers}
       >
         <div
           className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
@@ -204,9 +205,14 @@ export function MobileChatSendView({
               'linear-gradient(90deg, transparent, hsl(var(--border) / 0.7) 10%, hsl(var(--border) / 0.7) 90%, transparent)',
           }}
         />
-        {/* Grabber affordance — visual cue for swipe-down-to-dismiss. */}
-        <div className="relative flex justify-center pt-1 pb-0.5" aria-hidden>
-          <span className="block h-[5px] w-9 rounded-full bg-foreground/15" />
+        {/* Grabber affordance — visual + interactive cue for swipe-down-to-dismiss.
+            Generous tappable hit-area (h-5 w-16) but a slim visible pill. */}
+        <div
+          className="relative flex justify-center pt-1 pb-0.5 touch-pan-y"
+          aria-label="Swipe down to dismiss"
+          {...swipeDownHandlers}
+        >
+          <span className="block h-[5px] w-9 rounded-full bg-foreground/15" aria-hidden />
         </div>
         <div className="relative flex items-center gap-2 px-4 h-11">
           <button
