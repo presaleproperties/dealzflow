@@ -134,25 +134,12 @@ export function MobileChatSendView({
     return () => window.clearTimeout(id);
   }, [isOptedOut]);
 
-  // When the keyboard opens/closes, the composer footer's padding changes
-  // (it rides --keyboard-inset-bottom). Re-pin the chat to the bottom so the
-  // latest bubble stays visible and the surface above the composer never
-  // appears to "jump".
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const pin = () => {
-      const sc = scrollRef.current;
-      if (sc) sc.scrollTop = sc.scrollHeight;
-    };
-    vv.addEventListener('resize', pin);
-    vv.addEventListener('scroll', pin);
-    return () => {
-      vv.removeEventListener('resize', pin);
-      vv.removeEventListener('scroll', pin);
-    };
-  }, []);
+  // NOTE: we intentionally do NOT pin the chat scroll on every visualViewport
+  // resize/scroll event. iOS fires those repeatedly during the keyboard
+  // animation, and forcing scrollTop on each tick produced a visible
+  // "stutter" in the chat history. The composer footer rides
+  // --keyboard-inset-bottom (no JS) so the experience is now fully native:
+  // header stays put, chat stays put, only the keyboard slides in.
 
   // Auto-grow textarea: reset → measure scrollHeight → clamp to [MIN, MAX].
   // Once content exceeds MAX, the textarea itself becomes scrollable so the
