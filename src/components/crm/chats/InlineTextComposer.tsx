@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Plus, Loader2 } from 'lucide-react';
+import { Send, Plus } from 'lucide-react';
 import { useSendSms } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
