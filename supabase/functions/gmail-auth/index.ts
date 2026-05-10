@@ -46,7 +46,7 @@ serve(async (req) => {
     const oauthError = url.searchParams.get("error");
 
     if (oauthError) {
-      const parsed = decodeOAuthState(state);
+      const parsed = await decodeOAuthState(state);
       const back = parsed?.redirectUrl ?? "/";
       return Response.redirect(
         `${back}?gmail_auth=error&message=${encodeURIComponent(oauthError)}`,
@@ -55,7 +55,7 @@ serve(async (req) => {
     }
 
     if (code && state) {
-      const parsed = decodeOAuthState(state);
+      const parsed = await decodeOAuthState(state);
       if (!parsed) return json({ error: "Invalid state" }, 400);
 
       const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
