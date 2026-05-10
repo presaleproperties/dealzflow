@@ -950,12 +950,20 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                           key={m.id}
                           className={`flex flex-col max-w-full ${mi > 0 ? 'mt-[3px]' : ''} ${isOptimistic ? 'animate-in fade-in-0 zoom-in-95 duration-150' : 'animate-in fade-in-0 slide-in-from-bottom-1 duration-200'}`}
                         >
-                          <div
+                          <TouchBubble
+                            disabled={!isCompact}
+                            onLongPress={() => setActionTarget({
+                              id: m.id,
+                              text: (m.content ?? '').trim(),
+                              outbound,
+                              failed: deliveryState === 'failed',
+                              canDelete: outbound,
+                            })}
                             className={`px-3.5 py-2 text-[14.5px] leading-[1.35] whitespace-pre-wrap break-words ${corner} ${
                               outbound
                                 ? 'bg-primary text-primary-foreground shadow-[0_1px_1px_rgba(0,0,0,0.06)]'
                                 : 'bg-card text-foreground border border-border/60'
-                            } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''} ${isOptimistic ? 'opacity-90' : ''}`}
+                            } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''} ${isOptimistic ? 'opacity-90' : ''} select-text`}
                           >
                             {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
                           </div>
