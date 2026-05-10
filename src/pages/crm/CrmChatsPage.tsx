@@ -147,22 +147,12 @@ export default function CrmChatsPage() {
     return { from: null, to: null };
   }, [dateRange, customFrom, customTo]);
 
-  // Pin-to-top: per-user (per-browser) localStorage. Lightweight v1 — no DB.
-  const PIN_KEY = 'crm-chats-pinned-v1';
-  const [pinned, setPinned] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem(PIN_KEY);
-      return new Set<string>(raw ? JSON.parse(raw) : []);
-    } catch { return new Set(); }
-  });
+  // Pin-to-top: shared store across page + right-rail drawer.
+  const { pinned, isPinned, toggle: togglePinId, pinMany } = useChatPins();
   const togglePin = (id: string) => {
-    setPinned(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
-      return next;
-    });
-    toast.success(pinned.has(id) ? 'Unpinned' : 'Pinned to top');
+    const wasPinned = isPinned(id);
+    togglePinId(id);
+    toast.success(wasPinned ? 'Unpinned' : 'Pinned to top');
   };
 
   const filtered = useMemo(() => {
