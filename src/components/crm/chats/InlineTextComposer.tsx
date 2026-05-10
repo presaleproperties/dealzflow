@@ -99,24 +99,55 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
       }}
     >
       <div className="flex items-end gap-1.5">
-        <button
-          type="button"
-          onClick={onOpenFull}
-          aria-label="More options"
-          className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-        <div className="flex-1 min-w-0 flex items-end rounded-3xl border border-border bg-muted/40 focus-within:bg-background focus-within:border-primary/40 transition-colors px-3 py-1.5">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Attachments and templates"
+              className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+            >
+              <Plus className="w-[18px] h-[18px]" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" sideOffset={8} className="w-56 p-1">
+            <button
+              type="button"
+              onClick={(e) => { (e.currentTarget.closest('[data-radix-popper-content-wrapper]') as HTMLElement | null)?.querySelector<HTMLElement>('[data-close]')?.click(); onOpenFull(); }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted text-left"
+            >
+              <FileText className="w-4 h-4 text-muted-foreground" /> Insert template
+            </button>
+            <button
+              type="button"
+              onClick={onOpenFull}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted text-left"
+            >
+              <ImageIcon className="w-4 h-4 text-muted-foreground" /> Attach photo / file
+            </button>
+            <button
+              type="button"
+              onClick={onOpenFull}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted text-left"
+            >
+              <Variable className="w-4 h-4 text-muted-foreground" /> Insert variable
+            </button>
+            <div className="my-1 h-px bg-border" />
+            <button
+              type="button"
+              onClick={onOpenFull}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm hover:bg-muted text-left"
+            >
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" /> Full composer…
+            </button>
+          </PopoverContent>
+        </Popover>
+        <div className="flex-1 min-w-0 flex items-end rounded-3xl border border-border bg-muted/40 focus-within:bg-background focus-within:border-primary/40 transition-colors px-3 py-0.5">
           <textarea
             ref={taRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={onKeyDown}
             onFocus={() => {
-              // After the keyboard finishes its open animation, scroll the
-              // parent thread to the bottom so the most recent message is
-              // visible above the keyboard. Two-stage drop matches iMessage.
               const drop = () => {
                 const sc = (taRef.current?.closest('[class*="overflow-y-auto"]') as HTMLElement | null)
                   ?? document.querySelector('[data-thread-scroll]') as HTMLElement | null;
@@ -128,7 +159,7 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
             placeholder={placeholder}
             rows={1}
             enterKeyHint="send"
-            className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] leading-snug py-1.5 max-h-[140px] placeholder:text-muted-foreground"
+            className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] leading-[1.35] py-1.5 max-h-[120px] placeholder:text-muted-foreground"
           />
         </div>
         <button
@@ -136,10 +167,10 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
           onClick={send}
           disabled={!canSend}
           aria-label="Send"
-          className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-primary-foreground active:scale-95 transition disabled:opacity-40 disabled:active:scale-100"
+          className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-primary-foreground active:scale-95 transition disabled:opacity-40 disabled:active:scale-100"
           style={{ background: 'hsl(var(--primary))' }}
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-[14px] h-[14px]" />
         </button>
       </div>
     </div>
