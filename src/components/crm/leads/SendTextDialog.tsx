@@ -54,6 +54,10 @@ interface Props {
   onSent?: () => void;
   /** Optional pre-filled message body (e.g. when sharing a booking link). */
   initialBody?: string;
+  /** When opened from inside an existing chat thread, keep the send pinned
+   *  to that conversation so the new bubble lands in the same row instead
+   *  of the server resolving (or creating) a different conversation. */
+  conversationId?: string | null;
 }
 
 function formatPhoneDisplay(phone?: string | null): string {
