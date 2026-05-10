@@ -147,11 +147,29 @@ export default function CrmChatsPage() {
     return { from: null, to: null };
   }, [dateRange, customFrom, customTo]);
 
+  // Pin-to-top: per-user (per-browser) localStorage. Lightweight v1 — no DB.
+  const PIN_KEY = 'crm-chats-pinned-v1';
+  const [pinned, setPinned] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(PIN_KEY);
+      return new Set<string>(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  });
+  const togglePin = (id: string) => {
+    setPinned(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+    toast.success(pinned.has(id) ? 'Unpinned' : 'Pinned to top');
+  };
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     const sndr = sender.trim().toLowerCase();
     const subj = subject.trim().toLowerCase();
-    return threads.filter(t => {
+    const list = threads.filter(t => {
       const name = formatContactName(t.first_name, t.last_name).toLowerCase();
       const email = (t.email ?? '').toLowerCase();
       const phone = t.phone ?? '';
@@ -179,7 +197,13 @@ export default function CrmChatsPage() {
       }
       return true;
     });
-  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, starredOnly, hasFailures, dateBounds]);
+    // Stable sort: pinned to top, otherwise preserve original order from server.
+    return list.sort((a, b) => {
+      const ap = pinned.has(a.id) ? 1 : 0;
+      const bp = pinned.has(b.id) ? 1 : 0;
+      return bp - ap;
+    });
+  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, starredOnly, hasFailures, dateBounds, pinned]);
 
   const activeFilterCount =
     (sender ? 1 : 0) + (subject ? 1 : 0) + (dateRange !== 'any' ? 1 : 0)
