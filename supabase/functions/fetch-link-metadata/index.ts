@@ -1,6 +1,7 @@
 // Server-side OG / meta fetcher for the timeline link preview.
 // Fetches the target URL with a short timeout, parses <title>, meta description,
 // OG tags and favicon, and returns a small JSON payload for the client.
+import { requireUser } from '../_shared/requireAuth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -209,6 +210,14 @@ async function fetchMetadata(rawUrl: string): Promise<MetaResult> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  const auth = await requireUser(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status ?? 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   let url: string | null = null;
