@@ -38,8 +38,9 @@ export interface ChatThread {
 /** UI-level filter — 'text' is a virtual channel meaning SMS ∪ WhatsApp. */
 export type ChatChannelFilter = ChatChannel | 'text' | 'all';
 
-export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArchived?: boolean }) {
+export function useCrmChats(channelFilter?: ChatChannelFilter, opts?: { showArchived?: boolean; showCampaigns?: boolean }) {
   const showArchived = !!opts?.showArchived;
+  const showCampaigns = !!opts?.showCampaigns;
   const qc = useQueryClient();
 
   useEffect(() => {
