@@ -452,7 +452,7 @@ export function MobileChatSendView({
           {showSendBtn && (
             <button
               type="button"
-              onClick={onSend}
+              onClick={() => { triggerHaptic('medium'); onSend(); }}
               disabled={!canSend || sending}
               aria-label={sending ? 'Sending message' : 'Send message'}
               aria-busy={sending || undefined}
