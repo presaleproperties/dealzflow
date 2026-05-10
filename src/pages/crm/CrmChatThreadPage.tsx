@@ -1026,7 +1026,13 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         />
       )}
       {(conv.channel === 'sms' || conv.channel === 'whatsapp') && (
-        <SendTextDialog contact={contact} open={composeOpen} onOpenChange={setComposeOpen} />
+        <SendTextDialog
+          contact={contact}
+          open={composeOpen}
+          onOpenChange={setComposeOpen}
+          initialChannel={conv.channel as 'sms' | 'whatsapp'}
+          conversationId={conv.id}
+        />
       )}
     </div>
   );
