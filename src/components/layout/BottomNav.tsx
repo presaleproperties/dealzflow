@@ -247,6 +247,12 @@ export function BottomNav() {
         icon: PenSquare,
         onClick: () => { close(); navigate('/dashboard'); },
       },
+      {
+        label: 'New Chat',
+        description: 'Text or email any contact',
+        icon: MessageSquare,
+        onClick: () => { close(); useNewChatStore.getState().open(); },
+      },
     ];
   }, [mode, navigate, isCrmAdmin]);
 
