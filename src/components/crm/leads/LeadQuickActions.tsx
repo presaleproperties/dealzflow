@@ -22,10 +22,10 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const { pipelines } = useUnifiedPipelines();
   const activePipeline = useActivePipelineFor(contact);
   const setPipeline = useSetContactPipeline();
+  const openChat = useOpenChat();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
-  const [showSms, setShowSms] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showEnroll, setShowEnroll] = useState(false);
 
