@@ -97,10 +97,9 @@ export function MobileChatSendView({
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  // Single-line baseline (~36px) → grows one line at a time → caps at ~5 lines
-  // (132px) and starts scrolling internally instead of pushing the chat up.
-  const TA_MIN = 36;
-  const TA_MAX = 132;
+  // Single-line baseline matches the 32px attach button, then grows internally.
+  const TA_MIN = 32;
+  const TA_MAX = 112;
   const [taHeight, setTaHeight] = useState(TA_MIN);
   const [taScrollable, setTaScrollable] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -178,34 +177,44 @@ export function MobileChatSendView({
   const showSendBtn = body.trim().length > 0 || mediaUrls.length > 0;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-background">
-      {/* Header — left-aligned, Lofty/Messages-style.
-          Back, avatar, name + segment subtitle, status pill. Right side keeps
-          a slim Call + More so power actions are still one tap away. */}
+    <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden bg-background">
+      {/* Header — mirrors MobileAppHeader: fixed top chrome, safe-area outside
+          the row, blurred edge-to-edge background, and a stable row height. */}
       <header
         data-composer-header="true"
-        className="relative z-30 shrink-0 border-b border-border/40 bg-background/95 backdrop-blur-md"
+        className="sticky top-0 z-30 shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="relative flex items-center gap-1.5 px-1 h-12">
+        <div
+          className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
+          style={{ background: 'hsl(var(--background) / 0.85)' }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-px"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, hsl(var(--border) / 0.7) 10%, hsl(var(--border) / 0.7) 90%, transparent)',
+          }}
+        />
+        <div className="relative flex items-center gap-2 px-4 h-11">
           <button
             type="button"
             onClick={onClose}
             aria-label="Back to leads"
-            className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="shrink-0 -ml-2 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
           </button>
-          <Avatar className="h-8 w-8 shrink-0" aria-hidden>
+          <Avatar className="h-7 w-7 shrink-0" aria-hidden>
             <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
               {initials || '?'}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0 flex flex-col leading-[1.15] pr-1">
-            <span className="text-[15px] font-semibold tracking-tight text-foreground truncate">
+          <div className="flex-1 min-w-0 flex flex-col leading-[1.12] pr-1">
+            <span className="text-[14px] font-semibold text-foreground truncate">
               {fullName}
             </span>
-            <span className="text-[11px] text-muted-foreground truncate mt-px">
+            <span className="text-[10.5px] text-muted-foreground truncate mt-px">
               {[segmentLabel, channel === 'whatsapp' ? 'WhatsApp' : null].filter(Boolean).join(' · ')}
             </span>
           </div>
@@ -279,7 +288,11 @@ export function MobileChatSendView({
         aria-live="polite"
         aria-relevant="additions"
         aria-label={`Conversation with ${fullName}`}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 space-y-1.5"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pt-3 space-y-1.5"
+        style={{
+          paddingBottom:
+            'calc(48px + var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))',
+        }}
       >
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-1.5 text-muted-foreground">
@@ -340,7 +353,10 @@ export function MobileChatSendView({
 
       {/* Pending media strip */}
       {mediaUrls.length > 0 && (
-        <div className="flex gap-1.5 px-3 pb-1.5 overflow-x-auto shrink-0 border-t border-border/30 pt-2">
+        <div
+          className="absolute inset-x-0 z-20 flex gap-1.5 px-3 py-1.5 overflow-x-auto border-t border-border/30 bg-background/92 backdrop-blur-md"
+          style={{ bottom: 'calc(46px + var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))' }}
+        >
           {mediaUrls.map((u) => (
             <div key={u} className="relative shrink-0">
               <img src={u} alt="" className="h-14 w-14 rounded-lg object-cover border border-border/60" />
@@ -358,7 +374,7 @@ export function MobileChatSendView({
       )}
 
       {isOptedOut && (
-        <div className="shrink-0 px-3 py-1 text-[11px] text-destructive text-center bg-background">
+        <div className="absolute inset-x-0 bottom-12 z-20 px-3 py-1 text-[11px] text-destructive text-center bg-background/92 backdrop-blur-md">
           ⊘ This number opted out
         </div>
       )}
@@ -366,14 +382,12 @@ export function MobileChatSendView({
       {/* Composer — slim pill input with outboard "+" attach. Send arrow appears
           inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 bg-background/95 backdrop-blur-md px-2 pt-1 flex items-end gap-1.5"
+        className="absolute inset-x-0 bottom-0 z-20 bg-background/80 backdrop-blur-md px-3 pt-1.5 flex items-center gap-1.5"
         style={{
-          // Lift the composer above the soft keyboard so it stays visible
-          // while the dialog itself stays locked at 100dvh. NO transition —
-          // padding tracks the visualViewport tick-by-tick which makes the
-          // composer feel glued to the keyboard instead of chasing it.
+          // Only this dock follows the keyboard. The fullscreen composer shell
+          // and top header stay locked; the conversation body scrolls behind it.
           paddingBottom:
-            'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 4px))',
+            'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))',
         }}
       >
         <AttachMenu
@@ -382,7 +396,7 @@ export function MobileChatSendView({
           onFiles={onFiles}
           className="h-8 w-8 rounded-full border border-border/60 text-muted-foreground active:scale-95 transition-transform shrink-0"
         />
-        <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/60 bg-muted/40 pl-3.5 pr-0.5 py-0">
+        <div className="flex-1 min-w-0 flex items-center rounded-full border border-border/60 bg-background/95 pl-3 pr-0.5 shadow-sm">
           <textarea
             ref={taRef}
             value={body}
@@ -400,7 +414,7 @@ export function MobileChatSendView({
             autoCorrect="on"
             spellCheck
             style={{ height: taHeight, overflowY: taScrollable ? 'auto' : 'hidden' }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 focus-visible:outline-none"
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[16px] leading-[20px] py-1.5 placeholder:text-muted-foreground/55 disabled:opacity-50 focus-visible:outline-none"
           />
           {showSendBtn && (
             <button
@@ -412,7 +426,7 @@ export function MobileChatSendView({
               aria-keyshortcuts="Meta+Enter Control+Enter"
               title="Send (⌘/Ctrl + Enter)"
               className={cn(
-                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                'shrink-0 ml-1 h-7 w-7 rounded-full inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 canSend && !sending
                   ? 'bg-primary text-primary-foreground active:scale-95'
                   : 'bg-muted-foreground/20 text-muted-foreground',
