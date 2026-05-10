@@ -31,8 +31,12 @@ export function useKeyboardInset(enabled = true) {
       frame = 0;
       const vv = window.visualViewport;
       const visualHeight = vv?.height ?? window.innerHeight;
-      const offsetTop = vv?.offsetTop ?? 0;
-      const kb = Math.max(0, Math.round(window.innerHeight - visualHeight - offsetTop));
+      // Use the FULL gap between layout and visual viewports as the keyboard
+      // inset. We deliberately DO NOT subtract `offsetTop` here — iOS pans
+      // the visual viewport upward during the keyboard animation, which
+      // would shrink the inset back toward 0 and cause the composer to
+      // visibly slide down BEHIND the keyboard a moment after appearing.
+      const kb = Math.max(0, Math.round(window.innerHeight - visualHeight));
       if (kb === last) return;
       last = kb;
       root.style.setProperty('--keyboard-inset-bottom', `${kb}px`);
