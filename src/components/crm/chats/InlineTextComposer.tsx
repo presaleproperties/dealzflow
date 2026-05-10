@@ -70,12 +70,16 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       toast.error('This lead has no phone number');
       return;
     }
-    const text = body;
+    // If a quote preview is attached, prepend it as ">" lines so the
+    // recipient sees the context they're being replied to.
+    const quotedPrefix = quote
+      ? quote.split('\n').map((l) => `> ${l}`).join('\n') + '\n\n'
+      : '';
+    const text = quotedPrefix + body;
+    const draftBody = body;
     setBody('');
-    // Reset textarea height immediately so the dock doesn't visibly snap.
+    setQuote(null);
     if (taRef.current) taRef.current.style.height = 'auto';
-    // Optimistic scroll — bubble lands in cache via onMutate, then we drop
-    // to the bottom so it's visible even on small screens.
     onSent?.();
     sendSms.mutate(
       {
@@ -88,7 +92,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       {
         onError: (err: any) => {
           // Restore the draft so the user doesn't lose what they typed.
-          setBody(text);
+          setBody(draftBody);
           toast.error(err?.message || 'Failed to send');
         },
       },
