@@ -185,6 +185,7 @@ export function MobileChatSendView({
       <header
         data-composer-header="true"
         className="relative z-30 flex items-center gap-1.5 px-1 pb-1 border-b border-border/40 shrink-0 bg-background/95 backdrop-blur-md"
+        style={{ paddingTop: 'var(--composer-header-top-pad-locked, env(safe-area-inset-top, 0px))' }}
       >
         <button
           type="button"
