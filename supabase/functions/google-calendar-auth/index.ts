@@ -169,9 +169,9 @@ serve(async (req) => {
       const action = body.action;
 
       if (action === 'get_auth_url') {
-        const redirectUrl = body.redirectUrl || 'https://commissioniq.lovable.app/command-center';
+        const redirectUrl = body.redirectUrl || 'https://dealzflow.ca/command-center';
         const loginHint = (typeof body.loginHint === 'string' && body.loginHint.trim()) || user.email || '';
-        const stateData = btoa(JSON.stringify({ userId, redirectUrl }));
+        const stateData = await encodeOAuthState({ userId, redirectUrl });
 
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
           `client_id=${encodeURIComponent(CLIENT_ID)}` +
