@@ -19,6 +19,12 @@
  */
 import { useEffect } from 'react';
 
+function isEditableElement(el: Element | null): boolean {
+  if (!el) return false;
+  const tag = el.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable;
+}
+
 export function useKeyboardInset(enabled = true) {
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
@@ -26,17 +32,28 @@ export function useKeyboardInset(enabled = true) {
 
     let frame = 0;
     let last = -1;
+    let stableViewportHeight = Math.max(
+      window.innerHeight || 0,
+      root.clientHeight || 0,
+      window.visualViewport?.height || 0,
+    );
 
     const publish = () => {
       frame = 0;
       const vv = window.visualViewport;
       const visualHeight = vv?.height ?? window.innerHeight;
-      // Use the FULL gap between layout and visual viewports as the keyboard
-      // inset. We deliberately DO NOT subtract `offsetTop` here — iOS pans
-      // the visual viewport upward during the keyboard animation, which
-      // would shrink the inset back toward 0 and cause the composer to
-      // visibly slide down BEHIND the keyboard a moment after appearing.
-      const kb = Math.max(0, Math.round(window.innerHeight - visualHeight));
+      const layoutHeight = Math.max(window.innerHeight || 0, root.clientHeight || 0, visualHeight);
+      const editing = isEditableElement(document.activeElement);
+
+      // iOS installed PWAs sometimes shrink `window.innerHeight` late in the
+      // keyboard animation. If we calculate from that moving value, the inset
+      // decays back toward 0 and the composer slides under the keyboard. Keep a
+      // stable "keyboard closed" viewport height and measure against that.
+      if (!editing || visualHeight >= stableViewportHeight - 80) {
+        stableViewportHeight = Math.max(stableViewportHeight, layoutHeight, visualHeight);
+      }
+
+      const kb = Math.max(0, Math.round(stableViewportHeight - visualHeight));
       if (kb === last) return;
       last = kb;
       root.style.setProperty('--keyboard-inset-bottom', `${kb}px`);
