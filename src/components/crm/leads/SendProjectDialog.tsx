@@ -73,33 +73,22 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { data: templates = [], refetch: refetchTemplates } = useQuery<Template[]>({
     queryKey: ['send-project.templates'],
     queryFn: async () => {
-      // 1. Presale auto-response templates (admin-managed, branded — same as
-      //    what leads receive when they sign up on presaleproperties.com).
-      let presaleAuto: Template[] = [];
+      // ONLY Presale system auto-response templates — admin-managed, branded,
+      // identical to the emails leads receive when they sign up on
+      // presaleproperties.com. Local CRM templates are intentionally excluded
+      // so every Send Project email uses the same Presale styling.
       try {
         const { data } = await supabase.functions.invoke('fetch-presale-templates', {
           method: 'GET',
         });
         const list = (data as { templates?: Array<{ id: string; name: string; description?: string }> } | null)?.templates ?? [];
-        presaleAuto = list.map((t) => ({ slug: t.id, name: `★ ${t.name}` }));
+        // Strip the leading "★ " star — every option is now a system template,
+        // so the marker is redundant. Keep names clean.
+        return list.map((t) => ({ slug: t.id, name: t.name }));
       } catch (e) {
         console.warn('[SendProject] presale auto-templates fetch failed', e);
+        return [];
       }
-
-      // 2. Local CRM templates (legacy / agent-authored).
-      const { data } = await supabase
-        .from('crm_email_templates')
-        .select('slug, name, last_synced_at, source')
-        .eq('is_active', true)
-        .not('slug', 'is', null)
-        .order('name');
-      const PROJECT_TEMPLATE_RX = /(project|property|showcase|info-package|recommendation|the-mason)/i;
-      const localFiltered = (data ?? []).filter((t) =>
-        PROJECT_TEMPLATE_RX.test(t.slug) || PROJECT_TEMPLATE_RX.test(t.name),
-      );
-      const localList = (localFiltered.length > 0 ? localFiltered : (data ?? [])) as Template[];
-
-      return [...presaleAuto, ...localList];
     },
     staleTime: 5 * 60 * 1000,
     enabled: open,
