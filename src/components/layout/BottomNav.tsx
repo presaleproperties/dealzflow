@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 import { AddLeadDialog } from '@/components/crm/leads/AddLeadDialog';
 import { BookShowingModal } from '@/components/crm/calendar/BookShowingModal';
-import { useNewChatStore } from '@/stores/useNewChatStore';
+
 
 type Mode = 'workspace' | 'crm';
 
@@ -222,7 +222,7 @@ export function BottomNav() {
           label: 'New Chat',
           description: 'Text or email any contact',
           icon: MessageSquare,
-          onClick: () => { close(); useNewChatStore.getState().open(); },
+          onClick: () => { close(); navigate('/crm/chats/new'); },
         },
       ];
       return actions;
@@ -251,7 +251,7 @@ export function BottomNav() {
         label: 'New Chat',
         description: 'Text or email any contact',
         icon: MessageSquare,
-        onClick: () => { close(); useNewChatStore.getState().open(); },
+        onClick: () => { close(); navigate('/crm/chats/new'); },
       },
     ];
   }, [mode, navigate, isCrmAdmin]);
