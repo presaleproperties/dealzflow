@@ -121,7 +121,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
       <BookShowingDialog contactId={contact.id} project={contact.project} open={showShowing} onOpenChange={setShowShowing} />
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
-      <SendTextDialog contact={contact} open={showSms} onOpenChange={setShowSms} initialChannel="sms" />
+      
       <SendBookingLinkDialog contact={contact} open={showBooking} onOpenChange={setShowBooking} />
       <EnrollInAutomationDialog
         open={showEnroll}
