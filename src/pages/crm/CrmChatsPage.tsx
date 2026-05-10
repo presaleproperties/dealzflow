@@ -731,26 +731,14 @@ export default function CrmChatsPage() {
                       </button>
                     )}
 
-                    {/* Per-row inline actions — visible on hover or always on touch */}
+                    {/* Per-row inline action — pin only */}
                     {!selectMode && (
-                      <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
                           onClick={() => togglePin(t.id)}>
                           {pinned.has(t.id)
                             ? <PinOff className="w-4 h-4 text-muted-foreground" />
                             : <Pin className="w-4 h-4 text-muted-foreground" />}
-                        </RowAction>
-                        <RowAction title={(t.unread_count ?? 0) > 0 ? 'Mark read' : 'Mark unread'}
-                          onClick={() => (t.unread_count ?? 0) > 0 ? flags.markRead(t.id) : flags.markUnread(t.id)}>
-                          {(t.unread_count ?? 0) > 0 ? <MailOpen className="w-4 h-4 text-muted-foreground" /> : <Mail className="w-4 h-4 text-muted-foreground" />}
-                        </RowAction>
-                        <SnoozeMenu
-                          isSnoozed={!!snoozeText}
-                          onSnooze={(iso) => flags.snooze(t.id, iso).then(() => toast.success(iso ? 'Snoozed' : 'Unsnoozed'))}
-                        />
-                        <RowAction title={t.is_archived ? 'Restore' : 'Archive'}
-                          onClick={() => flags.archive(t.id, !t.is_archived).then(() => toast.success(t.is_archived ? 'Restored' : 'Archived'))}>
-                          {t.is_archived ? <ArchiveRestore className="w-4 h-4 text-muted-foreground" /> : <Archive className="w-4 h-4 text-muted-foreground" />}
                         </RowAction>
                       </div>
                     )}
