@@ -43,42 +43,51 @@ export const ResponsiveDialogContent = React.forwardRef<
 
     const root = document.documentElement;
 
+    // Composer surface is permanently locked to the layout viewport — set
+    // these once so neither the dialog nor its header ever moves.
+    root.style.setProperty('--composer-viewport-top', '0px');
+    root.style.setProperty('--composer-viewport-height', '100dvh');
+
     let frame = 0;
+    let lastKeyboardBottom = -1;
 
     const publishKeyboardState = () => {
+      frame = 0;
       const viewport = window.visualViewport;
       const visualHeight = viewport?.height ?? window.innerHeight;
       const visualOffsetTop = viewport?.offsetTop ?? 0;
-      const keyboardBottom = Math.max(0, window.innerHeight - visualHeight - visualOffsetTop);
-      const keyboardOpen = keyboardBottom > 60;
+      // Round to integer so sub-pixel viewport jitter during the iOS
+      // keyboard animation doesn't trigger redundant style writes (which
+      // were causing the visible "chase" flicker on the composer).
+      const keyboardBottom = Math.max(
+        0,
+        Math.round(window.innerHeight - visualHeight - visualOffsetTop),
+      );
+      if (keyboardBottom === lastKeyboardBottom) return;
+      lastKeyboardBottom = keyboardBottom;
 
       root.style.setProperty('--keyboard-inset-bottom', `${keyboardBottom}px`);
-      // IMPORTANT: keep the composer surface locked to the layout viewport so
-      // the dialog never resizes/pans when the keyboard opens. The keyboard
-      // simply overlays the bottom; the inner footer lifts via
-      // --keyboard-inset-bottom and the body scrolls internally.
-      root.style.setProperty('--composer-viewport-top', '0px');
-      root.style.setProperty('--composer-viewport-height', '100dvh');
       root.style.setProperty(
         '--composer-safe-bottom',
         `max(0px, calc(env(safe-area-inset-bottom, 0px) - ${keyboardBottom}px))`,
       );
-      if (keyboardOpen) root.setAttribute('data-keyboard-open', 'true');
+      if (keyboardBottom > 60) root.setAttribute('data-keyboard-open', 'true');
       else root.removeAttribute('data-keyboard-open');
     };
 
     const schedulePublishKeyboardState = () => {
-      if (frame) window.cancelAnimationFrame(frame);
+      if (frame) return;
       frame = window.requestAnimationFrame(publishKeyboardState);
     };
 
     publishKeyboardState();
+    // NOTE: only listen to `resize`. `scroll` fires constantly while iOS
+    // settles the keyboard and added no useful information — it just
+    // produced extra style writes that translated into composer jitter.
     window.visualViewport?.addEventListener('resize', schedulePublishKeyboardState);
-    window.visualViewport?.addEventListener('scroll', schedulePublishKeyboardState);
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       window.visualViewport?.removeEventListener('resize', schedulePublishKeyboardState);
-      window.visualViewport?.removeEventListener('scroll', schedulePublishKeyboardState);
       root.removeAttribute('data-keyboard-open');
       root.style.removeProperty('--keyboard-inset-bottom');
       root.style.removeProperty('--composer-viewport-top');
