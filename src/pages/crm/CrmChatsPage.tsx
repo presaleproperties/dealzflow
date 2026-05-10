@@ -235,6 +235,7 @@ export default function CrmChatsPage() {
     setStarredOnly(!!f.starredOnly);
     setHasFailures(!!f.hasFailures);
     setShowArchived(!!f.showArchived);
+    setShowCampaigns(!!f.showCampaigns);
     setActiveViewId(v.id);
   };
 
