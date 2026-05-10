@@ -652,12 +652,6 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           // keeps the bleed for the two-pane shell.
           : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4 relative'
       }
-      style={{
-        // Edge-swipe-back visual feedback: tiny right-shift + brightness fade
-        // proportional to how far the user has dragged from the left edge.
-        transform: 'translate3d(calc(var(--edge-swipe-progress, 0) * 16px), 0, 0)',
-        transition: 'transform 120ms ease-out',
-      }}
     >
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
@@ -774,7 +768,15 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         ref={scrollRef}
         data-thread-scroll
         className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10"
-        style={{ paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
+        style={{
+          paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))',
+          // Edge-swipe-back visual feedback (mobile only). Applied here — NOT
+          // on the outer container — because a transform on the composer's
+          // ancestor breaks `position: sticky`'s ability to ride the keyboard.
+          transform: 'translate3d(calc(var(--edge-swipe-progress, 0) * 16px), 0, 0)',
+          transition: 'transform 120ms ease-out',
+          willChange: 'transform',
+        }}
       >
         {msgsLoading ? (
           <MessageBubbleSkeleton />
