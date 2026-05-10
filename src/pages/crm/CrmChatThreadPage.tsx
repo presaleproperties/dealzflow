@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree, Star, Archive, ArchiveRestore, Bell, BellOff, Clock4 } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree, Star, Archive, ArchiveRestore, Bell, BellOff, Clock4, MoreVertical } from 'lucide-react';
 import { format, isToday, isYesterday, isSameDay, differenceInMinutes } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
@@ -644,21 +644,25 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   return (
     <div
       ref={containerRef}
+        data-chat-thread-shell="true"
       className={
         embedded
           ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
           // Phone: fill the route slot without negative top margin (which used to
           // tuck the thread header under the global mobile app header). Tablet+
           // keeps the bleed for the two-pane shell.
-          : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4 relative'
+          : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4 relative bg-background'
       }
     >
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
+      <div
+        data-chat-thread-header="true"
+        className="shrink-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-2 px-3 py-2.5 native-chrome"
+      >
         {!embedded && (
           <button
             onClick={() => navigate('/crm/chats')}
-            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors shrink-0"
             aria-label="Back to chats"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -675,7 +679,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             {(contact.first_name?.[0] ?? contact.email?.[0] ?? '?').toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[15px] font-semibold tracking-tight text-foreground truncate group-hover:text-primary transition-colors">
+            <h1 className="text-[17px] md:text-[15px] font-semibold tracking-tight text-foreground truncate group-hover:text-primary transition-colors">
               {name}
             </h1>
             <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
@@ -695,7 +699,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             })}
             disabled={dialer.status !== 'idle' && dialer.status !== 'ended'}
             aria-label={`Call ${name}`}
-            className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <Phone className="w-4 h-4" />
           </button>
@@ -721,9 +725,16 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         <Link
           to={`/crm/leads/${contact.id}`}
           aria-label="Lead details"
-          className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors"
+          className="hidden min-[380px]:flex h-9 w-9 rounded-full items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted/60 transition-colors shrink-0"
         >
           <Info className="w-4 h-4" />
+        </Link>
+        <Link
+          to={`/crm/leads/${contact.id}`}
+          aria-label="Lead actions"
+          className="min-[380px]:hidden h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/60 transition-colors shrink-0"
+        >
+          <MoreVertical className="w-4 h-4" />
         </Link>
       </div>
 
@@ -767,9 +778,9 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       <div
         ref={scrollRef}
         data-thread-scroll
-        className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10 native-scroll"
         style={{
-          paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))',
+          paddingBottom: '1rem',
           // Edge-swipe-back visual feedback (mobile only). Applied here — NOT
           // on the outer container — because a transform on the composer's
           // ancestor breaks `position: sticky`'s ability to ride the keyboard.
