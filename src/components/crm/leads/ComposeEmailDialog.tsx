@@ -806,13 +806,17 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             return (
               <DialogHeader
                 data-composer-header="true"
-                className="lg:hidden border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 block touch-pan-y"
+                className="lg:hidden border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 block"
                 style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-                {...swipeDownHandlers}
               >
-                {/* Grabber affordance — visual cue for swipe-down-to-dismiss. */}
-                <div className="flex justify-center pt-1 pb-0.5" aria-hidden>
-                  <span className="block h-[5px] w-9 rounded-full bg-foreground/15" />
+                {/* Grabber affordance — scoped touch handlers so swipe-to-dismiss
+                    only fires from the pill, not the whole header. */}
+                <div
+                  className="flex justify-center pt-1 pb-0.5 touch-pan-y"
+                  aria-label="Swipe down to dismiss"
+                  {...swipeDownHandlers}
+                >
+                  <span className="block h-[5px] w-9 rounded-full bg-foreground/15" aria-hidden />
                 </div>
                 <div className="relative flex items-center justify-between gap-1 px-2 h-12">
                   <button
@@ -829,7 +833,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
                   </DialogTitle>
                   <button
                     type="button"
-                    onClick={handleSend}
+                    onClick={() => { triggerHaptic('medium'); handleSend(); }}
                     disabled={!canSend || isPending}
                     aria-label="Send"
                     className={cn(
