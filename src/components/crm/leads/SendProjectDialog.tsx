@@ -561,8 +561,15 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                   <Switch checked={ctaCallNow} onCheckedChange={setCtaCallNow} />
                 </div>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1.5">
-                Brochure / Floor Plans / Pricing buttons are controlled by the Attachments toggles above.
+              <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
+                <span>Brochure / Floor Plans / Pricing buttons are controlled by the Attachments toggles above.</span>
+                <button
+                  type="button"
+                  onClick={saveCtasAsDefault}
+                  className="underline hover:text-foreground shrink-0 ml-2"
+                >
+                  Save as my default
+                </button>
               </div>
             </Field>
 
