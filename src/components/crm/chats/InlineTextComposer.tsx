@@ -123,6 +123,22 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
+        {quote && (
+          <div className="mb-1.5 flex items-start gap-2 rounded-xl border border-border/50 bg-muted/40 px-2.5 py-1.5 animate-in fade-in-0 slide-in-from-bottom-1 duration-150">
+            <CornerUpLeft className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0 text-[12px] leading-snug text-muted-foreground line-clamp-2 whitespace-pre-wrap">
+              {quote}
+            </div>
+            <button
+              type="button"
+              onClick={() => setQuote(null)}
+              aria-label="Remove quote"
+              className="shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <Popover>
             <PopoverTrigger asChild>
