@@ -288,7 +288,9 @@ export function MobileChatSendView({
         </div>
       </header>
 
-      {/* Conversation scroll area */}
+      {/* Conversation scroll area. paddingBottom is STATIC (dock height + safe
+          area) so the chat list never re-lays out as the keyboard animates —
+          the dock itself rides the keyboard via a GPU transform below. */}
       <div
         ref={scrollRef}
         role="log"
@@ -299,6 +301,10 @@ export function MobileChatSendView({
         style={{
           paddingBottom:
             'calc(48px + var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))',
+          // Promote scroll surface to its own compositor layer so the dock's
+          // translate transform never repaints the chat history above it.
+          willChange: 'transform',
+          transform: 'translateZ(0)',
         }}
       >
         {messages.length === 0 && (
