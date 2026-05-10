@@ -7,6 +7,9 @@ import { toast } from 'sonner';
 interface Props {
   contact: CrmContact;
   channel: 'sms' | 'whatsapp';
+  /** Conversation id — passed through to useSendSms so the optimistic
+   *  bubble lands in the chat-thread cache instantly. */
+  conversationId?: string | null;
   /** Open the full composer (templates / media / scheduling). */
   onOpenFull: () => void;
   /** Fired right after a send is queued/sent so the parent can scroll to bottom. */
