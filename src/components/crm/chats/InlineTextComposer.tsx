@@ -53,7 +53,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     const el = taRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const next = Math.min(Math.max(el.scrollHeight, 22), 120);
+    const next = Math.min(Math.max(el.scrollHeight, 20), 120);
     el.style.height = `${next}px`;
   }, [body]);
 
