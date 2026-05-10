@@ -793,18 +793,22 @@
   .dark .imsg-bg {
     background: hsl(var(--background));
   }
-  /* Outbound — brand gold, dark legible text */
+  /* Outbound — editorial steel blue, distinct from brand gold */
   .imsg-bubble-out {
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
-    border: 1px solid hsl(var(--primary) / 0.85);
+    background: hsl(214 32% 32%);
+    color: hsl(0 0% 98%);
+    border: 1px solid hsl(214 32% 28%);
     box-shadow: none;
     -webkit-font-smoothing: antialiased;
   }
+  .dark .imsg-bubble-out {
+    background: hsl(214 38% 38%);
+    border-color: hsl(214 38% 32%);
+  }
   .imsg-bubble-out a {
-    color: hsl(var(--primary-foreground));
+    color: hsl(0 0% 98%);
     text-decoration: underline;
-    text-decoration-color: hsl(var(--primary-foreground) / 0.5);
+    text-decoration-color: hsl(0 0% 98% / 0.55);
     text-underline-offset: 2px;
   }
   /* Inbound — neutral card with hairline border */
