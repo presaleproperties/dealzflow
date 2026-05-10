@@ -27,16 +27,9 @@ export function useOfflineOutbox(opts?: { contactId?: string | null }) {
     refresh();
     const unsub = subscribeOutbox(refresh);
 
-    const onOnline = () => setOnline(true);
-    const onOffline = () => setOnline(false);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-
     return () => {
       cancelled = true;
       unsub();
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
     };
   }, []);
 
