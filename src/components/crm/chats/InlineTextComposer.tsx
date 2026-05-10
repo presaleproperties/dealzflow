@@ -28,12 +28,14 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const sendSms = useSendSms();
 
-  // Auto-grow textarea (1–6 lines).
+  // Auto-grow textarea (1–6 lines). Min height matches a single line so the
+  // dock stays slim until the user actually types multiple lines.
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+    const next = Math.min(Math.max(el.scrollHeight, 22), 120);
+    el.style.height = `${next}px`;
   }, [body]);
 
   const name = (contact.first_name || contact.last_name || 'lead').toString();
