@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   Search, Mail, MessageSquare, X, Sparkles, CornerUpLeft, SlidersHorizontal,
-  Paperclip, Star, Archive, Clock4, MailOpen, MoreHorizontal, BookmarkPlus,
+  Paperclip, Archive, Clock4, MailOpen, MoreHorizontal, BookmarkPlus,
   Trash2, AlertCircle, CheckSquare, Square, ArchiveRestore, BellOff, Bell,
-  ChevronRight, ChevronDown,
+  ChevronRight, ChevronDown, Pin, PinOff,
 } from 'lucide-react';
 import { format, isThisWeek, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -147,11 +147,29 @@ export default function CrmChatsPage() {
     return { from: null, to: null };
   }, [dateRange, customFrom, customTo]);
 
+  // Pin-to-top: per-user (per-browser) localStorage. Lightweight v1 — no DB.
+  const PIN_KEY = 'crm-chats-pinned-v1';
+  const [pinned, setPinned] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(PIN_KEY);
+      return new Set<string>(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  });
+  const togglePin = (id: string) => {
+    setPinned(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+    toast.success(pinned.has(id) ? 'Unpinned' : 'Pinned to top');
+  };
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     const sndr = sender.trim().toLowerCase();
     const subj = subject.trim().toLowerCase();
-    return threads.filter(t => {
+    const list = threads.filter(t => {
       const name = formatContactName(t.first_name, t.last_name).toLowerCase();
       const email = (t.email ?? '').toLowerCase();
       const phone = t.phone ?? '';
@@ -179,7 +197,13 @@ export default function CrmChatsPage() {
       }
       return true;
     });
-  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, starredOnly, hasFailures, dateBounds]);
+    // Stable sort: pinned to top, otherwise preserve original order from server.
+    return list.sort((a, b) => {
+      const ap = pinned.has(a.id) ? 1 : 0;
+      const bp = pinned.has(b.id) ? 1 : 0;
+      return bp - ap;
+    });
+  }, [threads, search, sender, subject, unreadOnly, attachmentsOnly, starredOnly, hasFailures, dateBounds, pinned]);
 
   const activeFilterCount =
     (sender ? 1 : 0) + (subject ? 1 : 0) + (dateRange !== 'any' ? 1 : 0)
@@ -422,10 +446,18 @@ export default function CrmChatsPage() {
             </button>
             <button
               disabled={selected.size === 0}
-              onClick={async () => { await flags.star(selectedIds, true); bulkDone('Starred'); }}
+              onClick={() => {
+                setPinned(prev => {
+                  const next = new Set(prev);
+                  selectedIds.forEach(id => next.add(id));
+                  try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(next))); } catch {}
+                  return next;
+                });
+                bulkDone('Pinned');
+              }}
               className="h-8 px-2.5 rounded-full text-[11px] font-semibold bg-muted/70 hover:bg-muted text-foreground border border-border/40 disabled:opacity-40 inline-flex items-center gap-1"
             >
-              <Star className="w-3 h-3" /> Star
+              <Pin className="w-3 h-3" /> Pin
             </button>
             <button
               disabled={selected.size === 0}
@@ -505,12 +537,6 @@ export default function CrmChatsPage() {
                 <FilterChip active={attachmentsOnly} onClick={() => setAttachmentsOnly(v => !v)}>
                   <Paperclip className="w-3 h-3" strokeWidth={2.4} /> Attachments
                 </FilterChip>
-                <FilterChip active={starredOnly} onClick={() => setStarredOnly(v => !v)}>
-                  <Star className="w-3 h-3" strokeWidth={2.4} /> Starred
-                </FilterChip>
-                <FilterChip active={hasFailures} onClick={() => setHasFailures(v => !v)}>
-                  <AlertCircle className="w-3 h-3" strokeWidth={2.4} /> Failed sends
-                </FilterChip>
               </div>
               <div className="flex items-center gap-2">
                 {activeFilterCount > 0 && (
@@ -561,39 +587,8 @@ export default function CrmChatsPage() {
           </div>
         </div>
 
-        {/* Saved views chip strip */}
-        <div className="hidden sm:flex px-3 pb-2.5 items-center gap-1.5 overflow-x-auto scrollbar-hide">
-          {builtinViews.map(b => {
-            const active = activeViewId === b.id;
-            return (
-              <button key={b.id} onClick={() => applyBuiltin(b)}
-                className={`shrink-0 h-7 px-2.5 rounded-full text-[11px] font-semibold border transition-colors ${
-                  active ? 'bg-foreground text-background border-foreground' : 'bg-muted/40 text-muted-foreground hover:text-foreground border-border/40'
-                }`}>
-                {b.name}
-              </button>
-            );
-          })}
-          {views.map(v => {
-            const active = activeViewId === v.id;
-            return (
-              <div key={v.id} className="relative group">
-                <button onClick={() => applyView(v)}
-                  className={`shrink-0 h-7 pl-2.5 pr-7 rounded-full text-[11px] font-semibold border transition-colors ${
-                    active ? 'bg-primary text-primary-foreground border-primary' : 'bg-primary/5 text-primary hover:bg-primary/10 border-primary/30'
-                  }`}>
-                  {v.name}
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); if (confirm(`Delete view "${v.name}"?`)) removeView.mutate(v.id); }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-background/30 inline-flex items-center justify-center"
-                  aria-label={`Delete ${v.name}`}>
-                  <X className={`w-3 h-3 ${active ? 'text-primary-foreground' : 'text-primary'}`} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        {/* Saved views chip strip removed — pin-to-top + Inbox/Unread chips
+            in advanced filters cover the same ground without a second pill row. */}
       </div>
 
       {/* Thread list */}
@@ -686,7 +681,7 @@ export default function CrmChatsPage() {
                       className="flex-1 min-w-0 text-left"
                     >
                       <div className="flex items-center gap-1.5">
-                        {t.is_starred && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
+                        {pinned.has(t.id) && <Pin className="w-3 h-3 text-primary shrink-0 -rotate-45" strokeWidth={2.6} />}
                         <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight flex-1 min-w-0 ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
                           {name}
                         </h3>
@@ -741,7 +736,7 @@ export default function CrmChatsPage() {
                             return next;
                           });
                         }}
-                        className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-opacity ${expandedEmail.has(t.contact_id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
+                        className={`absolute right-1 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full flex items-center justify-center bg-background/80 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-opacity ${expandedEmail.has(t.contact_id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
                         aria-expanded={expandedEmail.has(t.contact_id)}
                       >
                         {expandedEmail.has(t.contact_id)
@@ -753,9 +748,11 @@ export default function CrmChatsPage() {
                     {/* Per-row inline actions — visible on hover or always on touch */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                        <RowAction title={t.is_starred ? 'Unstar' : 'Star'}
-                          onClick={() => flags.star(t.id, !t.is_starred)}>
-                          <Star className={`w-4 h-4 ${t.is_starred ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
+                        <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
+                          onClick={() => togglePin(t.id)}>
+                          {pinned.has(t.id)
+                            ? <PinOff className="w-4 h-4 text-muted-foreground" />
+                            : <Pin className="w-4 h-4 text-muted-foreground" />}
                         </RowAction>
                         <RowAction title={(t.unread_count ?? 0) > 0 ? 'Mark read' : 'Mark unread'}
                           onClick={() => (t.unread_count ?? 0) > 0 ? flags.markRead(t.id) : flags.markUnread(t.id)}>
