@@ -9,6 +9,7 @@
  * Skips when the pointer is a mouse — desktop has hover menus instead.
  */
 import { useCallback, useRef } from 'react';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface Options {
   delay?: number;
