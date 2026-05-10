@@ -748,9 +748,11 @@ export default function CrmChatsPage() {
                     {/* Per-row inline actions — visible on hover or always on touch */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                        <RowAction title={t.is_starred ? 'Unstar' : 'Star'}
-                          onClick={() => flags.star(t.id, !t.is_starred)}>
-                          <Star className={`w-4 h-4 ${t.is_starred ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}`} />
+                        <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
+                          onClick={() => togglePin(t.id)}>
+                          {pinned.has(t.id)
+                            ? <PinOff className="w-4 h-4 text-muted-foreground" />
+                            : <Pin className="w-4 h-4 text-muted-foreground" />}
                         </RowAction>
                         <RowAction title={(t.unread_count ?? 0) > 0 ? 'Mark read' : 'Mark unread'}
                           onClick={() => (t.unread_count ?? 0) > 0 ? flags.markRead(t.id) : flags.markUnread(t.id)}>
