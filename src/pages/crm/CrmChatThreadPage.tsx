@@ -966,7 +966,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                             } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''} ${isOptimistic ? 'opacity-90' : ''} select-text`}
                           >
                             {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
-                          </div>
+                          </TouchBubble>
                           {isLast && (
                             <span className={`mt-1 text-[10.5px] tabular-nums flex items-center gap-1.5 ${outbound ? 'text-muted-foreground/80 justify-end pr-1' : 'text-muted-foreground/70 pl-1'}`}>
                               <span>{formatStamp(m.created_at)}</span>
