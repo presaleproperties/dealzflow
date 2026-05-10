@@ -5881,6 +5881,10 @@ export type Database = {
           usage_count: number
         }[]
       }
+      crm_find_existing_conversation: {
+        Args: { _channel: string; _contact_id: string }
+        Returns: string
+      }
       crm_find_my_duplicates: {
         Args: { _email?: string; _limit?: number; _phone?: string }
         Returns: {
