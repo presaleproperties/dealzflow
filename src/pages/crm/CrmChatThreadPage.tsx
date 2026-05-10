@@ -13,6 +13,7 @@ import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 import { EmailMessageView, buildReplyQuote, buildForwardQuote } from '@/components/crm/chats/EmailMessageView';
 import { InlineEmailReplyBox } from '@/components/crm/chats/InlineEmailReplyBox';
 import { InlineTextComposer } from '@/components/crm/chats/InlineTextComposer';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -195,6 +196,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const snoozeOptions = useMemo(() => snoozePresets(), []);
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
+
+  // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
+  // composer can ride above the keyboard instead of being covered by it.
+  useKeyboardInset(true);
 
   // Conversation + joined contact
   const { data: rawThread, isLoading: threadLoading } = useQuery({
@@ -694,7 +699,12 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       })()}
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-muted/10">
+      <div
+        ref={scrollRef}
+        data-thread-scroll
+        className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10"
+        style={{ paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
+      >
         {msgsLoading ? (
           <MessageBubbleSkeleton />
         ) : messages.length === 0 ? (
