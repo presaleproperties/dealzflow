@@ -44,7 +44,7 @@ serve(async (req) => {
     const oauthErrorDescription = url.searchParams.get('error_description');
 
     if (oauthError) {
-      const parsedState = decodeOAuthState(state);
+      const parsedState = await decodeOAuthState(state);
       const message = oauthErrorDescription || oauthError;
 
       if (parsedState?.redirectUrl) {
@@ -62,7 +62,7 @@ serve(async (req) => {
       let userId: string;
       let redirectUrl: string;
 
-      const parsedState = decodeOAuthState(state);
+      const parsedState = await decodeOAuthState(state);
       if (!parsedState) {
         return new Response(JSON.stringify({ error: 'Invalid OAuth state' }), {
           status: 400,
