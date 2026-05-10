@@ -645,6 +645,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     <div
       ref={containerRef}
         data-chat-thread-shell="true"
+        data-chat-thread-embedded={embedded ? 'true' : undefined}
       className={
         embedded
           ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
@@ -658,6 +659,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       <div
         data-chat-thread-header="true"
         className="shrink-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-2 px-3 py-2.5 native-chrome"
+        style={!embedded ? { paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)' } : undefined}
       >
         {!embedded && (
           <button
