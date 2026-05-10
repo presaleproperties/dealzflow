@@ -53,7 +53,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     const el = taRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const next = Math.min(Math.max(el.scrollHeight, 22), 120);
+    const next = Math.min(Math.max(el.scrollHeight, 20), 120);
     el.style.height = `${next}px`;
   }, [body]);
 
@@ -184,7 +184,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-            <div className="flex-1 min-w-0 relative flex items-end rounded-[20px] border border-border/70 bg-muted/30 focus-within:bg-background focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.10)] transition-all px-3.5 py-1">
+            <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-primary/40 transition-colors px-3.5">
             <textarea
               ref={taRef}
               value={body}
@@ -202,8 +202,9 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
               placeholder={placeholder}
               rows={1}
               enterKeyHint="send"
-              className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] leading-[1.4] py-2 max-h-[140px] placeholder:text-muted-foreground/70"
+              className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] leading-[20px] py-[7px] max-h-[120px] placeholder:text-muted-foreground/60"
             />
+
             {showCounter && (
               <span className="pointer-events-none absolute right-3 bottom-1 text-[10px] tabular-nums text-muted-foreground/70">
                 {charCount}{segments > 1 ? ` · ${segments} segs` : ''}
