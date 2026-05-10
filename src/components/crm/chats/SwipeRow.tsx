@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Pin, PinOff, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface SwipeRowProps {
   children: ReactNode;
