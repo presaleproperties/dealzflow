@@ -11,8 +11,8 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
-import { SendTextDialog } from './SendTextDialog';
 import { SendBookingLinkDialog } from './SendBookingLinkDialog';
+import { useOpenChat } from '@/hooks/useOpenChat';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
 import { formatContactName } from '@/lib/format';
 
@@ -22,10 +22,10 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
   const { pipelines } = useUnifiedPipelines();
   const activePipeline = useActivePipelineFor(contact);
   const setPipeline = useSetContactPipeline();
+  const openChat = useOpenChat();
   const [showShowing, setShowShowing] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
-  const [showSms, setShowSms] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showEnroll, setShowEnroll] = useState(false);
 
@@ -58,7 +58,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
             variant="outline"
             size="sm"
             className="h-9 text-xs gap-1.5 justify-start"
-            onClick={() => setShowSms(true)}
+            onClick={() => { void openChat(contact.id, 'sms'); }}
             disabled={!contact.phone}
             title={contact.phone ? 'Send SMS' : 'No phone number on file'}
           >
@@ -121,7 +121,7 @@ export function LeadQuickActions({ contact }: { contact: CrmContact }) {
       <BookShowingDialog contactId={contact.id} project={contact.project} open={showShowing} onOpenChange={setShowShowing} />
       <CreateTaskDialog contactId={contact.id} assignedTo={contact.assigned_to} open={showTask} onOpenChange={setShowTask} />
       <ComposeEmailDialog contact={contact} open={showEmail} onOpenChange={setShowEmail} />
-      <SendTextDialog contact={contact} open={showSms} onOpenChange={setShowSms} initialChannel="sms" />
+      
       <SendBookingLinkDialog contact={contact} open={showBooking} onOpenChange={setShowBooking} />
       <EnrollInAutomationDialog
         open={showEnroll}

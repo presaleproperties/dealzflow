@@ -17,6 +17,7 @@ import { SendProjectDialog } from '@/components/crm/leads/SendProjectDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
+import { useOpenChat } from '@/hooks/useOpenChat';
 import type { MessagingChannel } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
@@ -54,6 +55,7 @@ export default function LeadDetailPage() {
   const [showText, setShowText] = useState(false);
   const [textChannel, setTextChannel] = useState<MessagingChannel>('sms');
   const openWhatsAppChat = useOpenWhatsAppChat();
+  const openChat = useOpenChat();
   const [showTask, setShowTask] = useState(false);
   const [showShowing, setShowShowing] = useState(false);
   const [showSendProject, setShowSendProject] = useState(false);
@@ -248,7 +250,7 @@ export default function LeadDetailPage() {
   // Mobile layout
   if (isMobile) {
     const onCall = () => callContact(c);
-    const onSms = () => { setTextChannel('sms'); setShowText(true); };
+    const onSms = () => { void openChat(c.id, 'sms'); };
     const onWhatsApp = () => {
       void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
     };
@@ -332,7 +334,7 @@ export default function LeadDetailPage() {
               lastTouchLabel={lastTouchLabel}
               daysInPipeline={daysInPipeline}
               onCall={() => callContact(c)}
-              onSms={() => { setTextChannel('sms'); setShowText(true); }}
+              onSms={() => { void openChat(c.id, 'sms'); }}
               onEmail={() => setShowEmail(true)}
               onWhatsApp={() => {
                 void openWhatsAppChat(c.id, () => { setTextChannel('whatsapp'); setShowText(true); });
@@ -352,7 +354,7 @@ export default function LeadDetailPage() {
             <CenterColumn
               contact={c}
               onCall={() => callContact(c)}
-              onText={() => setShowText(true)}
+              onText={() => { void openChat(c.id, 'sms'); }}
               onEmail={() => setShowEmail(true)}
               onTask={() => setShowTask(true)}
               onShowing={() => setShowShowing(true)}
@@ -373,7 +375,7 @@ export default function LeadDetailPage() {
               onAddTask={() => setShowTask(true)}
               onAddShowing={() => setShowShowing(true)}
               onCall={() => callContact(c)}
-              onText={() => setShowText(true)}
+              onText={() => { void openChat(c.id, 'sms'); }}
               onEmail={() => setShowEmail(true)}
               onSendProject={() => setShowSendProject(true)}
               leadScore={leadScore}
