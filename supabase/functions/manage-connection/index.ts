@@ -38,13 +38,22 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } },
     )
-    const { data: userData, error: userError } = await supabaseUser.auth.getUser()
-    if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    const token = authHeader.replace('Bearer ', '')
+    let userId: string | null = null
+    // Prefer getClaims (works with asymmetric signing keys, no network call)
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token)
+    if (!claimsError && claimsData?.claims?.sub) {
+      userId = claimsData.claims.sub as string
+    } else {
+      // Fallback to getUser for legacy JWTs
+      const { data: userData, error: userError } = await supabaseUser.auth.getUser()
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      userId = userData.user.id
     }
-    const userId = userData.user.id
 
     // Service-role client — can call encrypt/decrypt functions
     const supabaseAdmin = createClient(
