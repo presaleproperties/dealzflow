@@ -12,8 +12,15 @@ import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/
 import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 import { EmailMessageView, buildReplyQuote, buildForwardQuote } from '@/components/crm/chats/EmailMessageView';
 import { InlineEmailReplyBox } from '@/components/crm/chats/InlineEmailReplyBox';
-import { InlineTextComposer } from '@/components/crm/chats/InlineTextComposer';
+import { InlineTextComposer, type InlineTextComposerHandle } from '@/components/crm/chats/InlineTextComposer';
+import { MessageActionSheet, type MessageActionTarget } from '@/components/crm/chats/MessageActionSheet';
+import { MobileLeadContextCard } from '@/components/crm/chats/MobileLeadContextCard';
+import { NewMessagesPill } from '@/components/crm/chats/NewMessagesPill';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
+import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
+import { useLongPress } from '@/hooks/useLongPress';
+import { useIsCompact } from '@/hooks/use-mobile';
+import { useDialer } from '@/hooks/useDialer';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
