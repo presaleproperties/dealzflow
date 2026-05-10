@@ -63,6 +63,7 @@ export function useKeyboardInset(enabled = true) {
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       window.visualViewport?.removeEventListener('resize', schedule);
+      window.visualViewport?.removeEventListener('scroll', schedule);
       window.removeEventListener('scroll', pin);
       root.removeAttribute('data-keyboard-open');
       root.style.setProperty('--keyboard-inset-bottom', '0px');
