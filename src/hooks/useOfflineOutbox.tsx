@@ -14,7 +14,7 @@ import {
  */
 export function useOfflineOutbox(opts?: { contactId?: string | null }) {
   const [items, setItems] = useState<OutboxItem[]>([]);
-  const [online, setOnline] = useState<boolean>(typeof navigator === 'undefined' ? true : navigator.onLine);
+  const [online, setOnline] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,16 +27,9 @@ export function useOfflineOutbox(opts?: { contactId?: string | null }) {
     refresh();
     const unsub = subscribeOutbox(refresh);
 
-    const onOnline = () => setOnline(true);
-    const onOffline = () => setOnline(false);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-
     return () => {
       cancelled = true;
       unsub();
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
     };
   }, []);
 

@@ -211,7 +211,6 @@ export function useSendSms() {
     mutationFn: async (args: SendSmsArgs & { client_dedupe_id?: string }) => {
       const dedupeId = args.client_dedupe_id ?? makeDedupeId();
       const channel: 'sms' | 'whatsapp' = args.channel || 'sms';
-      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
       // Helper: stash the message for later delivery, then return a synthetic
       // success payload so the optimistic UI sticks.
@@ -233,11 +232,6 @@ export function useSendSms() {
           log_id: dedupeId,
         };
       };
-
-      // Skip the network entirely if we know we're offline.
-      if (offline) {
-        return queueForLater('offline');
-      }
 
       // Wrap invoke so non-2xx responses surface the JSON body (code + message)
       // instead of the generic "Edge Function returned a non-2xx status code".
@@ -270,7 +264,11 @@ export function useSendSms() {
         ({ data, error } = await invoke({ ...args, skip_quiet_hours: true, client_dedupe_id: dedupeId }));
       } catch (networkErr: any) {
         // True transport failure (fetch threw). Queue and report success.
-        return queueForLater('network-error', networkErr?.message);
+        // Do not pre-queue based on navigator.onLine: iOS/PWA webviews can
+        // report false while requests still work, which caused false SMS
+        // "offline" states for online users.
+        const likelyOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        return queueForLater(likelyOffline ? 'offline' : 'network-error', networkErr?.message);
       }
 
       if (error) {
@@ -286,7 +284,6 @@ export function useSendSms() {
       await qc.cancelQueries({ queryKey: ['crm-sms-log-all'] });
       const previous = qc.getQueriesData({ queryKey: ['crm-sms-log-all'] });
 
-      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
       const optimistic: SmsLogRow = {
         id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         user_id: null,
@@ -295,7 +292,7 @@ export function useSendSms() {
         to_number: vars.to,
         from_number: vars.from || null,
         body: vars.body,
-        status: vars.scheduled_for ? 'scheduled' : (offline ? 'queued' : 'sending'),
+        status: vars.scheduled_for ? 'scheduled' : 'sending',
         message_type: (vars.media_urls?.length ?? 0) > 0 ? 'mms' : 'sms',
         media_urls: vars.media_urls || [],
         twilio_message_sid: null,
@@ -304,7 +301,7 @@ export function useSendSms() {
         delivered_at: null,
         num_segments: 1,
         error_code: null,
-        error_message: offline ? 'Waiting for network' : null,
+        error_message: null,
         price: null,
         price_unit: null,
         channel: vars.channel || 'sms',
