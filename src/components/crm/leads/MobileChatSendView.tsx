@@ -364,11 +364,16 @@ export function MobileChatSendView({
         })}
       </div>
 
-      {/* Pending media strip */}
+      {/* Pending media strip — anchored to dock height; rides keyboard via
+          the same GPU translate as the dock so the two move in lockstep. */}
       {mediaUrls.length > 0 && (
         <div
           className="absolute inset-x-0 z-20 flex gap-1.5 px-3 py-1.5 overflow-x-auto border-t border-border/30 bg-background/92 backdrop-blur-md"
-          style={{ bottom: 'calc(46px + var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))' }}
+          style={{
+            bottom: 'calc(46px + max(env(safe-area-inset-bottom, 0px), 6px))',
+            transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
+            willChange: 'transform',
+          }}
         >
           {mediaUrls.map((u) => (
             <div key={u} className="relative shrink-0">
@@ -392,15 +397,19 @@ export function MobileChatSendView({
         </div>
       )}
 
-      {/* Composer — slim pill input with outboard "+" attach. Send arrow appears
-          inside the pill once there's content, mirroring iMessage. */}
+      {/* Composer dock — slim pill input with outboard "+" attach. Send arrow
+          appears inside the pill once there's content, mirroring iMessage.
+          IMPORTANT: position is locked to bottom-0 of the composer shell, and
+          we ride the keyboard via a GPU `translate3d` instead of mutating
+          `bottom`/`padding`. Transforms are composited (no layout, no paint
+          on parent) so the dock glides with the keyboard while the header
+          stays absolutely fixed. */}
       <div
         className="absolute inset-x-0 bottom-0 z-20 bg-background/80 backdrop-blur-md px-3 pt-1.5 flex items-center gap-1.5"
         style={{
-          // Only this dock follows the keyboard. The fullscreen composer shell
-          // and top header stay locked; the conversation body scrolls behind it.
-          paddingBottom:
-            'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 6px)',
+          transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
+          willChange: 'transform',
         }}
       >
         <AttachMenu
