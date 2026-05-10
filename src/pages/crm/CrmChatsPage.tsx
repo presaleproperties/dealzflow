@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
 import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
+import { useChatPins } from '@/hooks/useChatPins';
 
 /**
  * Strip HTML, collapse whitespace, decode common entities so email previews
