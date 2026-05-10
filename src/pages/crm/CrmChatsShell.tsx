@@ -18,13 +18,14 @@ import CrmNewChatPane from './CrmNewChatPane';
  */
 export default function CrmChatsShell() {
   const { conversationId } = useParams<{ conversationId?: string }>();
-  const hasThread = !!conversationId;
+  const isNew = conversationId === 'new';
+  const hasThread = !!conversationId && !isNew;
 
   return (
     <>
       {/* ---------- PHONE (single pane) ---------- */}
       <div className="md:hidden flex flex-1 min-h-0 h-full flex-col">
-        {hasThread ? <CrmChatThreadPage /> : <CrmChatsPage />}
+        {isNew ? <CrmNewChatPane /> : hasThread ? <CrmChatThreadPage /> : <CrmChatsPage />}
       </div>
 
       {/* ---------- TABLET / DESKTOP (two pane) ---------- */}
@@ -36,9 +37,11 @@ export default function CrmChatsShell() {
           </div>
         </aside>
 
-        {/* Right: thread or empty state */}
+        {/* Right: thread, new-chat composer, or empty state */}
         <section className="flex-1 min-w-0 flex flex-col bg-muted/5">
-          {hasThread ? (
+          {isNew ? (
+            <CrmNewChatPane />
+          ) : hasThread ? (
             <CrmChatThreadPage embedded />
           ) : (
             <EmptyThreadState />
