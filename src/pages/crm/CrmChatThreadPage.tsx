@@ -91,6 +91,14 @@ function formatStamp(iso: string): string {
   return format(d, 'MMM d · h:mm a');
 }
 
+/** Editorial day separator label rendered between stacks when the day flips. */
+function formatDayDivider(iso: string): string {
+  const d = new Date(iso);
+  if (isToday(d))     return `Today · ${format(d, 'h:mm a')}`;
+  if (isYesterday(d)) return `Yesterday · ${format(d, 'h:mm a')}`;
+  return format(d, 'EEEE, MMM d · h:mm a');
+}
+
 type DeliveryState = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 /** Map a Twilio-style status string to one of our normalized delivery states. */
