@@ -801,37 +801,39 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
             return (
               <DialogHeader
                 data-composer-header="true"
-                className="lg:hidden px-2 border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 flex-row items-center justify-between gap-1"
-                style={{ paddingTop: 'var(--composer-header-top-pad-locked, env(safe-area-inset-top, 0px))', paddingBottom: 0 }}
+                className="lg:hidden border-b border-border/60 bg-background/95 backdrop-blur shrink-0 space-y-0 block"
+                style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
               >
-                <button
-                  type="button"
-                  onClick={() => onOpenChange(false)}
-                  className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full text-primary active:opacity-60"
-                  disabled={isPending}
-                  aria-label="Close composer"
-                >
-                  <X className="h-[20px] w-[20px]" strokeWidth={2.25} />
-                </button>
-                <DialogTitle className="flex-1 min-w-0 text-center text-[15px] font-semibold tracking-tight text-foreground truncate">
-                  {headerTitle}
-                </DialogTitle>
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={!canSend || isPending}
-                  aria-label="Send"
-                  className={cn(
-                    'shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full transition-all active:scale-95',
-                    canSend && !isPending ? 'text-primary' : 'text-muted-foreground/40',
-                  )}
-                >
-                  {isPending ? (
-                    <Loader2 className="h-[18px] w-[18px] animate-spin" />
-                  ) : (
-                    <Send className="h-[19px] w-[19px] -rotate-12 -translate-y-px" strokeWidth={2} />
-                  )}
-                </button>
+                <div className="relative flex items-center justify-between gap-1 px-2 h-12">
+                  <button
+                    type="button"
+                    onClick={() => onOpenChange(false)}
+                    className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full text-primary active:opacity-60"
+                    disabled={isPending}
+                    aria-label="Close composer"
+                  >
+                    <X className="h-[20px] w-[20px]" strokeWidth={2.25} />
+                  </button>
+                  <DialogTitle className="flex-1 min-w-0 text-center text-[15px] font-semibold tracking-tight text-foreground truncate">
+                    {headerTitle}
+                  </DialogTitle>
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={!canSend || isPending}
+                    aria-label="Send"
+                    className={cn(
+                      'shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full transition-all active:scale-95',
+                      canSend && !isPending ? 'text-primary' : 'text-muted-foreground/40',
+                    )}
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-[18px] w-[18px] animate-spin" />
+                    ) : (
+                      <Send className="h-[19px] w-[19px] -rotate-12 -translate-y-px" strokeWidth={2} />
+                    )}
+                  </button>
+                </div>
               </DialogHeader>
             );
           })()}
