@@ -288,7 +288,11 @@ export function MobileChatSendView({
         aria-live="polite"
         aria-relevant="additions"
         aria-label={`Conversation with ${fullName}`}
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 space-y-1.5"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pt-3 space-y-1.5"
+        style={{
+          paddingBottom:
+            'calc(48px + var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))',
+        }}
       >
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-1.5 text-muted-foreground">
@@ -349,7 +353,10 @@ export function MobileChatSendView({
 
       {/* Pending media strip */}
       {mediaUrls.length > 0 && (
-        <div className="flex gap-1.5 px-3 pb-1.5 overflow-x-auto shrink-0 border-t border-border/30 pt-2">
+        <div
+          className="absolute inset-x-0 z-20 flex gap-1.5 px-3 py-1.5 overflow-x-auto border-t border-border/30 bg-background/92 backdrop-blur-md"
+          style={{ bottom: 'calc(46px + var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))' }}
+        >
           {mediaUrls.map((u) => (
             <div key={u} className="relative shrink-0">
               <img src={u} alt="" className="h-14 w-14 rounded-lg object-cover border border-border/60" />
@@ -367,7 +374,7 @@ export function MobileChatSendView({
       )}
 
       {isOptedOut && (
-        <div className="shrink-0 px-3 py-1 text-[11px] text-destructive text-center bg-background">
+        <div className="absolute inset-x-0 bottom-12 z-20 px-3 py-1 text-[11px] text-destructive text-center bg-background/92 backdrop-blur-md">
           ⊘ This number opted out
         </div>
       )}
@@ -375,14 +382,12 @@ export function MobileChatSendView({
       {/* Composer — slim pill input with outboard "+" attach. Send arrow appears
           inside the pill once there's content, mirroring iMessage. */}
       <div
-        className="shrink-0 bg-background/95 backdrop-blur-md px-2 pt-1 flex items-end gap-1.5"
+        className="absolute inset-x-0 bottom-0 z-20 bg-background/80 backdrop-blur-md px-3 pt-1.5 flex items-center gap-1.5"
         style={{
-          // Lift the composer above the soft keyboard so it stays visible
-          // while the dialog itself stays locked at 100dvh. NO transition —
-          // padding tracks the visualViewport tick-by-tick which makes the
-          // composer feel glued to the keyboard instead of chasing it.
+          // Only this dock follows the keyboard. The fullscreen composer shell
+          // and top header stay locked; the conversation body scrolls behind it.
           paddingBottom:
-            'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 4px))',
+            'calc(var(--keyboard-inset-bottom, 0px) + max(env(safe-area-inset-bottom, 0px), 6px))',
         }}
       >
         <AttachMenu
@@ -391,7 +396,7 @@ export function MobileChatSendView({
           onFiles={onFiles}
           className="h-8 w-8 rounded-full border border-border/60 text-muted-foreground active:scale-95 transition-transform shrink-0"
         />
-        <div className="flex-1 min-w-0 flex items-end rounded-full border border-border/60 bg-muted/40 pl-3.5 pr-0.5 py-0">
+        <div className="flex-1 min-w-0 flex items-center rounded-full border border-border/60 bg-background/95 pl-3 pr-0.5 shadow-sm">
           <textarea
             ref={taRef}
             value={body}
@@ -409,7 +414,7 @@ export function MobileChatSendView({
             autoCorrect="on"
             spellCheck
             style={{ height: taHeight, overflowY: taScrollable ? 'auto' : 'hidden' }}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[15px] leading-snug py-2 placeholder:text-muted-foreground/55 disabled:opacity-50 focus-visible:outline-none"
+            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-[16px] leading-[20px] py-1.5 placeholder:text-muted-foreground/55 disabled:opacity-50 focus-visible:outline-none"
           />
           {showSendBtn && (
             <button
@@ -421,7 +426,7 @@ export function MobileChatSendView({
               aria-keyshortcuts="Meta+Enter Control+Enter"
               title="Send (⌘/Ctrl + Enter)"
               className={cn(
-                'shrink-0 ml-1 mb-0.5 h-8 w-8 rounded-full inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                'shrink-0 ml-1 h-7 w-7 rounded-full inline-flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 canSend && !sending
                   ? 'bg-primary text-primary-foreground active:scale-95'
                   : 'bg-muted-foreground/20 text-muted-foreground',
