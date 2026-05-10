@@ -6,7 +6,7 @@
 
 // Bump VERSION on any deploy that ships safe-area / layout fixes that
 // must invalidate the cached /assets/* CSS chunks.
-const VERSION = "v7-2026-05-10-mobile-keyboard";
+const VERSION = "v8-2026-05-10-composer-transition";
 const CACHE_NAME = `dealzflow-assets-${VERSION}`;
 
 self.addEventListener("install", (event) => {
