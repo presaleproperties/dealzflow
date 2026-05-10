@@ -1,51 +1,74 @@
+## Goal
 
-## Mobile composer + toast overhaul
+Replace the current single-template picker in **Send Project** with the same trigger-based funnel that fires when a lead signs up on PresaleProperties.com — except the agent picks which trigger to fire and the entire follow-up sequence is scheduled and sent from the CRM (so no Presale-side changes needed).
 
-The screenshots show three real issues. Fixing them well needs changes in a few coordinated spots — but only frontend/presentation. No business logic, no edge-fn changes.
+## Canonical triggers (mirrored from `bridge-ingest-lead`)
 
-### Issues we're fixing
+| Trigger | Fires when (on real signup) | Initial template | Follow-up sequence |
+|---|---|---|---|
+| `vip_registration` | VIP signup form | VIP welcome | Day 1, Day 3, Day 7 |
+| `floor_plan_request` | Floorplan download | Floorplan delivery | Day 1, Day 4 |
+| `project_inquiry` | Project inquiry form | Project info | Day 2, Day 5 |
+| `contact_form` | Generic contact form | Acknowledgement | Day 2 |
+| `deck_revisit_hot` | Deck re-opened (hot rule) | Re-engagement | Day 1, Day 3 |
+| `cold_lead_followup` | Manually triggered for stale leads | Cold nudge | Day 7, Day 14 |
 
-1. **Status-bar collision** — "SEND TEXT" and "Cancel / New Message" headers paint behind the iOS status bar (`11:28`, signal/wifi/battery), so titles get visually shredded.
-2. **Toast collision** — Sonner is pinned `top-right` with a 16px offset; on iOS the toast lands on top of the time/notch (the "Text Sent" / "Loaded – Save $100,000…" overlap).
-3. **Composer doesn't feel native** — Today the Send Text and Compose Email dialogs render as full-bleed sheets with hard edges and an arbitrary keyboard accessory bar. The user wants a true bottom-up drawer with rounded top, drag handle, sticky action bar that never tucks under the bottom nav, and proper safe-area padding top + bottom.
+Each trigger maps to one of the existing `★`-prefixed Presale auto-templates that `serve-auto-templates` already serves — we just decide which one fires and when. The mapping table is hard-coded in one file (`src/lib/presaleTriggers.ts`) and easy to extend later.
 
-### Scope (frontend only)
+## Architecture
 
-- **`src/components/ui/sonner.tsx`** — make toaster mobile-aware: on `<sm` switch to `top-center` and offset by `calc(env(safe-area-inset-top, 0px) + 12px)`, narrower max width, slightly smaller radius. Desktop stays exactly as today.
-- **`src/components/ui/responsive-dialog.tsx`** — upgrade the mobile sheet branch:
-  - Add a new variant `mobile-drawer` (used by composers) — rounded-t-3xl, max-h `92dvh`, backdrop dim, drag handle, content area scrolls, header pinned, footer pinned with `padding-bottom: calc(env(safe-area-inset-bottom) + var(--bottom-nav-pad, 0px))` so Send/Cancel never tucks under the floating pill nav.
-  - Retire the `mobile-fullbleed` 100dvh path for these two composers (it's the root cause of the status-bar overlap).
-  - Add `--composer-safe-top` token = `env(safe-area-inset-top)` so headers can pad above the notch.
-- **`src/components/crm/leads/SendTextDialog.tsx`** — switch from `mobile-fullbleed` to `mobile-drawer`. New header layout: drag handle row → "SEND TEXT" title row with channel toggle + close. Recipient row, message field and helper count compress on mobile (no horizontal cut-off). Sticky bottom action bar with single primary "Send" button (icon + label) that respects bottom-nav clearance. Remove the floating up/down/✓ accessory bar on mobile (it duplicates iOS's own keyboard accessory and looks foreign).
-- **`src/components/crm/leads/ComposeEmailDialog.tsx`** — same drawer treatment for mobile only:
-  - Header: drag handle + "New Message" centered, Cancel left, Send right (matches Apple Mail).
-  - Subject row sits flush under header, body editor fills, formatting toolbar collapses behind a single `Aa` button on mobile so the row doesn't horizontally clip.
-  - Sticky footer with signature picker chip + Send. Bottom padding includes safe-area + bottom-nav clearance.
-  - Kill the orange full-width separator line that's currently pushing into the keyboard area.
-  - Remove the duplicated up/down/✓ accessory bar on mobile.
-- **Send Project preview screen** (Image 58) — same drawer wrapper, no full-bleed; the toast at the top will stop overlapping once Sonner is fixed.
+```text
+SendProjectDialog (UI)
+    ├─ replaces template picker with Trigger picker (dropdown of 6 above)
+    ├─ shows the sequence preview ("Sends now + Day 1 + Day 3")
+    └─ on Send → invokes edge fn `crm-fire-trigger`
+                    │
+                    ├─ Render initial via fetch-presale-templates (POST)
+                    ├─ Send initial via bridge-send-email (existing)
+                    └─ Insert rows into NEW table `crm_scheduled_sends`
+                          (one row per follow-up step, status=pending)
 
-### Visual polish (mobile only, desktop untouched)
+NEW edge fn `crm-process-scheduled-sends` (cron every 5 min)
+    └─ For each due row: render via fetch-presale-templates,
+       send via bridge-send-email, mark sent. Honors unsubscribe + reply.
+```
 
-- 16px outer side padding on every composer field row (today some are 12 / some 20).
-- Drag handle: 36px wide, 4px tall, `bg-muted-foreground/30`, 8px top + 6px bottom.
-- Header title: `text-[15px] font-semibold tracking-tight`, no uppercase letter-spacing chaos.
-- Footer divider is hairline (`border-border/60`), not gold.
-- Sticky footer uses `backdrop-blur-md bg-background/92` so it reads as a bar, not a panel.
+## Files to add / change
 
-### Out of scope (will not touch)
+**New**
+- `src/lib/presaleTriggers.ts` — single source of truth: trigger → template + sequence
+- `supabase/functions/crm-fire-trigger/index.ts` — sends initial + queues follow-ups
+- `supabase/functions/crm-process-scheduled-sends/index.ts` — cron worker
+- DB migration: `crm_scheduled_sends` table (contact_id, trigger_id, step_index, template_slug, project_slug, agent_slug, scheduled_for, status, sent_at, message_id, cancelled_reason) with RLS scoped to assigned agent + admins, plus pg_cron job (every 5 min)
 
-- Send pipeline, templates, signatures, AI assist, attachment uploader behaviour.
-- Desktop layout for either composer.
-- Lead detail screens, chat thread bubbles (that was the SMS bubble redesign).
+**Changed**
+- `src/components/crm/leads/SendProjectDialog.tsx`
+  - Replace `templates` query + dropdown with **trigger picker** (Select)
+  - Show sequence preview ("This will send now + 2 follow-ups over 4 days")
+  - On submit → invoke `crm-fire-trigger` instead of current send path
+  - Keep project picker, agent override, Gmail-status check, and existing UX exactly as is
 
-### Verification
+**Auto-cancel rules** (built into `crm-process-scheduled-sends`)
+- If lead replies (`crm_email_threads` has new inbound after the trigger fired) → cancel remaining steps
+- If lead unsubscribes → cancel remaining steps
+- If contact deleted / merged → cancel remaining steps
+- Reason recorded in `cancelled_reason` for audit
 
-- Open `/crm/leads/<id>` on iPhone-sized viewport, tap **Text** → confirm drawer rises from bottom, drag handle visible, "SEND TEXT" sits below the status bar, Send button sits above the bottom-nav pill.
-- Tap **Email** → same drawer behaviour, Cancel/Send respect safe areas.
-- Trigger any toast → appears centered below the notch, not overlapping `11:28`.
-- Desktop (≥sm): both dialogs render exactly as today (centered modal, no drawer treatment).
+## What stays untouched
 
-### Memory follow-up
+- The "Send Project" button placement and dialog open/close flow
+- Project picker UI, Gmail connection check, agent override
+- All existing Presale endpoints (no changes on Presale side at all)
+- Existing single-shot `★` templates continue to work for ad-hoc sends elsewhere
 
-After ship, add a memory `mem://style/mobile-composer-drawer-v1` capturing the drawer pattern, safe-area tokens, and the rule "no `mobile-fullbleed` for composers" so future composers stay consistent.
+## What this explicitly does NOT do
+
+- Does not touch Presale's own activity log / scheduling — funnel lives in CRM only
+- Does not author new email templates — uses Presale's `serve-auto-templates` for rendering, exactly like today
+- No changes to `bridge-ingest-lead` (real signups still trigger Presale's own funnel as they do today)
+
+## Open detail to confirm during build
+
+The mapping in the table above is my best read of the canonical triggers in `bridge-ingest-lead`. When I get to `presaleTriggers.ts` I'll match each trigger's `template_slug` to whatever `serve-auto-templates` actually returns today (live fetch on first load) — if the slug for, say, "VIP welcome" is named differently, I'll log a warning and let you pick the closest match in Settings later. The day-offsets above are sensible defaults; we can tune per trigger after first send.
+
+Ready to build on your go-ahead.

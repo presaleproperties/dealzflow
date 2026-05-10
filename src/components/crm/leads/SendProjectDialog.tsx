@@ -27,7 +27,28 @@ interface Props {
 interface Project { slug: string; name: string; city: string | null; status: string | null; presale_slug: string | null }
 interface Template { slug: string; name: string }
 
-const FOLLOWUP_SLUG = 'cold-lead-followup';
+// (Legacy FOLLOWUP_SLUG removed — funnel picker drives enroll_followup_slug.)
+
+// Presale signup-style funnels (seeded in crm_automations). Each = a sequence
+// of emails using Presale's Template A (with docs) or Template B (agent intro)
+// — exactly what fires when a lead signs up on presaleproperties.com.
+type Funnel = {
+  slug: string;
+  name: string;
+  description: string | null;
+  steps: { step_order: number; delay_hours: number; template_slug: string }[];
+};
+const NONE_FUNNEL_SLUG = '__none__';
+
+function describeSequence(steps: Funnel['steps']): string {
+  if (!steps?.length) return 'Sends one email — no follow-ups.';
+  const labels = steps.map((s) => {
+    if (s.delay_hours === 0) return 'now';
+    const days = Math.round(s.delay_hours / 24);
+    return days >= 1 ? `+${days}d` : `+${s.delay_hours}h`;
+  });
+  return `Sends ${labels.join(' → ')} (${steps.length} email${steps.length === 1 ? '' : 's'})`;
+}
 
 export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const { toast } = useToast();
@@ -113,21 +134,9 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     enabled: open,
   });
 
-  const { data: automationAvailable } = useQuery({
-    queryKey: ['send-project.automation', FOLLOWUP_SLUG],
-    queryFn: async () => {
-      // crm_automations has no slug column yet; match by name (Prompt 3 will seed).
-      const { data } = await supabase
-        .from('crm_automations')
-        .select('id')
-        .or(`name.eq.${FOLLOWUP_SLUG},name.ilike.cold lead followup`)
-        .limit(1)
-        .maybeSingle();
-      return Boolean(data);
-    },
-    staleTime: 60_000,
-    enabled: open,
-  });
+  // (Legacy single-funnel availability check removed — replaced by funnel
+  // picker that lists all `presale-*` automations seeded in crm_automations.)
+
 
   // ─── Local state ─────────────────────────────────────────────────────────
   const queryClient = useQueryClient();
@@ -135,7 +144,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const agentKey = user?.id ?? 'anon';
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [templateSlug, setTemplateSlug] = useState<string>('');
-  const [enrollFollowup, setEnrollFollowup] = useState<boolean>(true);
+  const [funnelSlug, setFunnelSlug] = useState<string>(NONE_FUNNEL_SLUG);
   const [showPreviewMobile, setShowPreviewMobile] = useState<boolean>(false);
   const [sending, setSending] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -156,6 +165,41 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const [ctaCallNow, setCtaCallNow] = useState(true);
   // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
+
+  // ─── Presale signup-style funnels (seeded in crm_automations) ────────────
+  const { data: funnels = [] } = useQuery<Funnel[]>({
+    queryKey: ['send-project.funnels'],
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data: autos } = await supabase
+        .from('crm_automations')
+        .select('id, slug, name, description')
+        .like('slug', 'presale-%')
+        .eq('is_active', true)
+        .order('name');
+      if (!autos?.length) return [];
+      const ids = autos.map((a) => a.id);
+      const { data: steps } = await supabase
+        .from('crm_automation_steps')
+        .select('automation_id, step_order, delay_hours, action_config')
+        .in('automation_id', ids)
+        .order('step_order');
+      return autos.map((a) => ({
+        slug: a.slug as string,
+        name: a.name,
+        description: a.description ?? null,
+        steps: (steps ?? [])
+          .filter((s) => s.automation_id === a.id)
+          .map((s) => ({
+            step_order: s.step_order,
+            delay_hours: s.delay_hours ?? 0,
+            template_slug: ((s.action_config as { template_slug?: string } | null)?.template_slug) ?? '',
+          })),
+      }));
+    },
+  });
+  const selectedFunnel = funnels.find((f) => f.slug === funnelSlug) ?? null;
 
   // ─── Recipient signal: last email + open count ────────────────────────
   const { data: lastEmail } = useQuery({
@@ -324,7 +368,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         project_slug: projectSlug,
         template_slug: templateSlug,
         channel: 'email',
-        enroll_followup_slug: enrollFollowup && automationAvailable ? FOLLOWUP_SLUG : null,
+        enroll_followup_slug: funnelSlug && funnelSlug !== NONE_FUNNEL_SLUG ? funnelSlug : null,
         dry_run: false,
         attachments: {
           brochure: attachBrochure,
@@ -483,22 +527,36 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
 
             {/* Channel: email only (SMS removed) */}
 
-            {/* Follow-up toggle */}
-            <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
-              <div className="space-y-0.5">
-                <div className="text-sm font-medium">Enroll in 3 / 7 / 14 day follow-up</div>
-                <div className="text-xs text-muted-foreground">
-                  {automationAvailable
-                    ? 'Lead enters the cold-lead nurture sequence after sending.'
-                    : 'Sequence not seeded yet (waiting on Prompt 3).'}
-                </div>
-              </div>
-              <Switch
-                checked={enrollFollowup && Boolean(automationAvailable)}
-                onCheckedChange={setEnrollFollowup}
-                disabled={!automationAvailable}
+            {/* Signup-style funnel picker — mirrors what fires when a lead
+                signs up on PresaleProperties.com. The first email sends now;
+                subsequent steps are queued and fired by the automation worker. */}
+            <Field label="Signup-style funnel">
+              <Combobox
+                value={funnelSlug}
+                onChange={setFunnelSlug}
+                items={[
+                  { value: NONE_FUNNEL_SLUG, label: 'No follow-up — single send' },
+                  ...funnels.map((f) => ({
+                    value: f.slug,
+                    label: f.name.replace(/^Presale ·\s*/, ''),
+                    hint: `${f.steps.length} email${f.steps.length === 1 ? '' : 's'}`,
+                  })),
+                ]}
+                placeholder="Select funnel…"
+                emptyText="No funnels seeded."
               />
-            </div>
+              <div className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                {funnelSlug === NONE_FUNNEL_SLUG || !selectedFunnel
+                  ? 'Just sends this email — no automated follow-ups.'
+                  : (
+                      <>
+                        {selectedFunnel.description ?? ''}
+                        <br />
+                        <span className="text-foreground">{describeSequence(selectedFunnel.steps)}</span>
+                      </>
+                    )}
+              </div>
+            </Field>
 
             {/* Gmail status */}
             {gmailConnected === false && (
