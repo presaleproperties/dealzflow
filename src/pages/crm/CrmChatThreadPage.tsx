@@ -1078,6 +1078,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         />
       ) : (
         <InlineTextComposer
+          ref={composerRef}
           contact={contact}
           channel={conv.channel as 'sms' | 'whatsapp'}
           conversationId={conv.id}
@@ -1091,6 +1092,43 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             setTimeout(drop, 350);
           }}
         />
+      )}
+
+      {/* Floating "↓ N new" pill — visible on SMS/WhatsApp threads when the
+          user is scrolled away from the bottom and new messages arrive. */}
+      {conv.channel !== 'email' && (
+        <NewMessagesPill scrollRef={scrollRef} messagesCount={messages.length} />
+      )}
+
+      {/* Long-press action sheet (mobile only is enforced via TouchBubble's
+          `disabled` prop, but the sheet itself is harmless on desktop). */}
+      <MessageActionSheet
+        target={actionTarget}
+        onClose={() => setActionTarget(null)}
+        onCopy={(t) => {
+          try {
+            void navigator.clipboard?.writeText(t.text);
+            toast.success('Copied');
+          } catch {
+            toast.error('Could not copy');
+          }
+        }}
+        onQuoteReply={(t) => composerRef.current?.quoteReply(t.text)}
+        onResend={(t) => {
+          // Find the original outbox / message and re-trigger via the composer.
+          composerRef.current?.quoteReply(t.text);
+          toast.message('Edit and tap send to retry');
+        }}
+        onDelete={async (t) => {
+          // Soft delete: remove the message row. SMS-log row is left intact
+          // so reporting / Twilio reconciliation isn't disturbed.
+          const { error } = await supabase.from('crm_messages').delete().eq('id', t.id);
+          if (error) { toast.error('Could not delete'); return; }
+          toast.success('Message deleted');
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
+          qc.invalidateQueries({ queryKey: ['crm-chats'] });
+        }}
+      />
       )}
 
       {/* Channel-specific composers — full editor opens on demand for email
