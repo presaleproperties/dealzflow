@@ -70,7 +70,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     enabled: open,
   });
 
-  const { data: templates = [], refetch: refetchTemplates } = useQuery<Template[]>({
+  const { data: templates = [], refetch: refetchTemplates, dataUpdatedAt: templatesFetchedAt } = useQuery<Template[]>({
     queryKey: ['send-project.templates'],
     queryFn: async () => {
       // ONLY Presale system auto-response templates — admin-managed, branded,
@@ -82,9 +82,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
           method: 'GET',
         });
         const list = (data as { templates?: Array<{ id: string; name: string; description?: string }> } | null)?.templates ?? [];
-        // Strip the leading "★ " star — every option is now a system template,
-        // so the marker is redundant. Keep names clean.
-        return list.map((t) => ({ slug: t.id, name: t.name }));
+        return list.map((t) => ({ slug: t.id, name: t.name, description: t.description }));
       } catch (e) {
         console.warn('[SendProject] presale auto-templates fetch failed', e);
         return [];
