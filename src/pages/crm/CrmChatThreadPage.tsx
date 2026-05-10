@@ -768,7 +768,15 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         ref={scrollRef}
         data-thread-scroll
         className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-4 bg-muted/10"
-        style={{ paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))', willChange: 'transform', transform: 'translateZ(0)' }}
+        style={{
+          paddingBottom: 'calc(1rem + var(--keyboard-inset-bottom, 0px))',
+          // Edge-swipe-back visual feedback (mobile only). Applied here — NOT
+          // on the outer container — because a transform on the composer's
+          // ancestor breaks `position: sticky`'s ability to ride the keyboard.
+          transform: 'translate3d(calc(var(--edge-swipe-progress, 0) * 16px), 0, 0)',
+          transition: 'transform 120ms ease-out',
+          willChange: 'transform',
+        }}
       >
         {msgsLoading ? (
           <MessageBubbleSkeleton />
