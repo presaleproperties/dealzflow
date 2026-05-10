@@ -646,7 +646,7 @@ export default function CrmChatsPage() {
                     onTouchStart={() => prefetchThread(t.id)}
                     data-active={isActive || undefined}
                     data-unread={isUnread || undefined}
-                    className={`inbox-row group items-center !gap-3 ${
+                    className={`inbox-row group items-center !gap-2.5 ${
                       isCursor && !isActive ? 'bg-muted/40' : ''
                     } ${isSelected && !isActive ? 'bg-primary/[0.05]' : ''}`}>
                     {/* Bulk-select checkbox replaces avatar in select mode */}
@@ -708,10 +708,10 @@ export default function CrmChatsPage() {
                             <Paperclip className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70" strokeWidth={2.2} aria-label="Has attachment" />
                           )}
                           {t.subject ? (
-                            <>
-                              <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/80'}>{t.subject}</span>
-                              {preview && <span className="text-muted-foreground/70"> — {preview}</span>}
-                            </>
+                            // Subject alone reads cleanest in the rail (Gmail/Outlook
+                            // compact view). Appending " — preview" caused the
+                            // subject to truncate mid-title on narrow rails.
+                            <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/85'}>{t.subject}</span>
                           ) : (preview || fallback || 'No messages yet')}
                         </p>
                         {snoozeText && (
@@ -742,7 +742,7 @@ export default function CrmChatsPage() {
                             return next;
                           });
                         }}
-                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-opacity ${expandedEmail.has(t.contact_id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
                         aria-expanded={expandedEmail.has(t.contact_id)}
                       >
                         {expandedEmail.has(t.contact_id)
