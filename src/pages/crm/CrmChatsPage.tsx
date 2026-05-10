@@ -794,6 +794,7 @@ export default function CrmChatsPage() {
             })}
           </ul>
         )}
+        </PullToRefresh>
       </div>
     </div>
   );
