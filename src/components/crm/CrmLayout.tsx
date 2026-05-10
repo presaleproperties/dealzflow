@@ -5,6 +5,7 @@ import { MobileAppHeader } from '@/components/layout/MobileAppHeader';
 import { CrmRouteGuard } from './CrmRouteGuard';
 import { CrmSubNav } from './CrmSubNav';
 import { CrmSectionScope } from './CrmSectionScope';
+import { useLocation } from 'react-router-dom';
 import { SafeAreaPreview } from '@/components/dev/SafeAreaPreview';
 
 interface CrmLayoutProps {
@@ -13,6 +14,9 @@ interface CrmLayoutProps {
 }
 
 export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
+  const { pathname } = useLocation();
+  const isImmersiveChatThread = /^\/crm\/chats\/[^/]+/.test(pathname) && pathname !== '/crm/chats/new';
+
   return (
     <CrmRouteGuard requireRole={requireRole}>
       <CrmSectionScope />
@@ -25,7 +29,7 @@ export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
         <div
           data-route-scroll-root="true"
           className="flex-1 min-h-0 px-0 md:px-4 lg:px-6 pt-0 md:pt-3 lg:pt-4 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain md:pb-4 lg:pb-6"
-          style={{ paddingBottom: 'var(--bottom-nav-pad)' }}
+          style={{ paddingBottom: isImmersiveChatThread ? 0 : 'var(--bottom-nav-pad)' }}
         >
           {children}
         </div>
