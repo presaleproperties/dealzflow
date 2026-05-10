@@ -250,3 +250,81 @@ function Row({ label, value, tone = 'ok' }: { label: string; value: string; tone
     </div>
   );
 }
+
+// ─────────────────────────── Combined minimal "green light" ───────────────────────────
+// Single hairline row with two tiny dots (Email · SMS). Click to expand the
+// detailed checks. Designed for the top of the Chats list — visible at a
+// glance without dominating the rail.
+export function ChannelGreenLight() {
+  const [open, setOpen] = useState(false);
+
+  const email = useQuery({
+    queryKey: ['email-live-status'],
+    queryFn: async (): Promise<GmailStatus> => {
+      const { data, error } = await supabase.functions.invoke('gmail-auth', { body: { action: 'status' } });
+      if (error) throw error;
+      return data as GmailStatus;
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+  });
+  const sms = useQuery({
+    queryKey: ['sms-live-status'],
+    queryFn: async (): Promise<SmsStatus> => {
+      const { data, error } = await supabase.functions.invoke('messaging-status', { body: {} });
+      if (error) throw error;
+      return data as SmsStatus;
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+  });
+
+  const emailTone: Tone =
+    email.isLoading ? 'idle'
+    : email.error || !email.data ? 'fail'
+    : !email.data.connected ? 'fail'
+    : email.data.sync?.last_error ? 'warn'
+    : 'ok';
+  const smsTone: Tone =
+    sms.isLoading ? 'idle'
+    : sms.error || !sms.data ? 'fail'
+    : !sms.data.sms_ready ? 'fail'
+    : sms.data.overall === 'warn' ? 'warn'
+    : 'ok';
+
+  const allOk = emailTone === 'ok' && smsTone === 'ok';
+  const summary = allOk
+    ? 'Email & SMS connected'
+    : `Email ${emailTone} · SMS ${smsTone}`;
+
+  return (
+    <div className="rounded-md border border-border/50 bg-card/30">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-2.5 py-1 text-left text-[11.5px]"
+        title={summary}
+      >
+        <span className="inline-flex items-center gap-1">
+          <Dot tone={emailTone} />
+          <span className="text-muted-foreground">Email</span>
+        </span>
+        <span className="text-border">·</span>
+        <span className="inline-flex items-center gap-1">
+          <Dot tone={smsTone} />
+          <span className="text-muted-foreground">SMS</span>
+        </span>
+        <span className="ml-auto inline-flex items-center gap-1.5 text-muted-foreground/70">
+          {(email.isFetching || sms.isFetching) && <Loader2 className="w-3 h-3 animate-spin" />}
+          <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
+        </span>
+      </button>
+      {open && (
+        <div className="border-t border-border/60 p-2 space-y-2">
+          <EmailLiveStatusBar />
+          <SmsLiveStatusBar />
+        </div>
+      )}
+    </div>
+  );
+}
