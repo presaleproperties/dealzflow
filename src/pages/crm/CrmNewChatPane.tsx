@@ -1,286 +1,249 @@
-// Inline "New Chat" pane that lives inside the Chats page itself.
-// Apple-Mail-style "To:" picker with autocomplete + channel toggle, rendered
-// in the chats right pane (desktop) or full pane (mobile) — no global popup.
-//
-// Flow:
-//   1. User searches for / picks a contact and chooses a channel.
-//   2. We look up an existing crm_conversations row for that contact+channel.
-//      • If found → navigate to /crm/chats/:id (carry on the chat).
-//      • If none  → open the canonical SendTextDialog / ComposeEmailDialog
-//        as the composer. That dialog is the existing approved composer
-//        surface; only the picker has been moved into the page.
+// Inline "New Chat" pane — feels like opening a blank thread inside the
+// Chats page. No popups: header has a "To:" autocomplete, body shows the
+// (empty) conversation, footer is a normal chat composer. Sending the first
+// message creates the conversation and navigates straight into it.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Mail, Search, X, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, X, Search, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useCrmContacts, type CrmContact } from '@/hooks/useCrmContacts';
 import { formatContactName } from '@/lib/format';
-import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
-import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { useSendSms } from '@/hooks/useSms';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-type Channel = 'text' | 'email';
-
 export default function CrmNewChatPane() {
   const navigate = useNavigate();
   const { data: contacts = [] } = useCrmContacts();
+  const sendSms = useSendSms();
 
-  const [channel, setChannel] = useState<Channel>('text');
   const [picked, setPicked] = useState<CrmContact | null>(null);
   const [query, setQuery] = useState('');
-  const [opening, setOpening] = useState(false);
-  const [composer, setComposer] = useState<null | 'text' | 'email'>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [showResults, setShowResults] = useState(false);
+  const [body, setBody] = useState('');
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  const toRef = useRef<HTMLInputElement | null>(null);
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => { toRef.current?.focus(); }, []);
+  useEffect(() => { if (picked) bodyRef.current?.focus(); }, [picked]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return contacts.slice(0, 40);
+    if (!q) return contacts.slice(0, 30);
     const qDigits = q.replace(/\D/g, '');
     return contacts.filter((c) => {
       const name = formatContactName(c.first_name, c.last_name).toLowerCase();
       const email = (c.email ?? '').toLowerCase();
       const phone = (c.phone ?? '').replace(/\D/g, '');
       return name.includes(q) || email.includes(q) || (qDigits.length >= 3 && phone.includes(qDigits));
-    }).slice(0, 40);
+    }).slice(0, 30);
   }, [contacts, query]);
 
-  const canText = !!picked?.phone;
-  const canEmail = !!picked?.email;
+  const canSend = !!picked?.phone && body.trim().length > 0 && !sendSms.isPending;
 
-  // When channel switches, if other channel becomes invalid we keep the pick
-  // but disable Continue. When user picks a contact with no email and email
-  // is selected, auto-fall-back to text if available — feels native.
+  // Auto-grow textarea
   useEffect(() => {
-    if (!picked) return;
-    if (channel === 'email' && !canEmail && canText) setChannel('text');
-    if (channel === 'text' && !canText && canEmail) setChannel('email');
-  }, [picked, channel, canEmail, canText]);
+    const ta = bodyRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(180, ta.scrollHeight) + 'px';
+  }, [body]);
 
-  const handleContinue = async () => {
-    if (!picked) return;
-    if (channel === 'text' && !canText) return;
-    if (channel === 'email' && !canEmail) return;
-    setOpening(true);
-    try {
-      const wanted = channel === 'text' ? ['sms', 'whatsapp'] : ['email'];
-      const { data, error } = await supabase
-        .from('crm_conversations')
-        .select('id, channel, last_message_at')
-        .eq('contact_id', picked.id)
-        .in('channel', wanted)
-        .order('last_message_at', { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      if (data?.id) {
-        navigate(`/crm/chats/${data.id}`);
-        return;
-      }
-      // No existing thread — open the canonical composer to start one.
-      setComposer(channel);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Could not open conversation';
-      toast.error(msg);
-      setComposer(channel);
-    } finally {
-      setOpening(false);
+  const handleSend = () => {
+    if (!picked) {
+      toast.error('Pick a contact first');
+      toRef.current?.focus();
+      return;
     }
+    if (!picked.phone) {
+      toast.error('This contact has no phone number');
+      return;
+    }
+    const text = body.trim();
+    if (!text) return;
+
+    sendSms.mutate(
+      {
+        contact_id: picked.id,
+        to: picked.phone,
+        body: text,
+        channel: 'sms',
+      },
+      {
+        onSuccess: async () => {
+          setBody('');
+          // Find (or wait briefly for) the conversation row and navigate to it.
+          try {
+            for (let i = 0; i < 4; i++) {
+              const { data } = await supabase
+                .from('crm_conversations')
+                .select('id, last_message_at')
+                .eq('contact_id', picked.id)
+                .in('channel', ['sms', 'whatsapp'])
+                .order('last_message_at', { ascending: false, nullsFirst: false })
+                .limit(1)
+                .maybeSingle();
+              if (data?.id) {
+                navigate(`/crm/chats/${data.id}`);
+                return;
+              }
+              await new Promise((r) => setTimeout(r, 250));
+            }
+          } catch {
+            /* swallow — message was sent successfully */
+          }
+        },
+      }
+    );
   };
 
-  const handleComposerClose = (next: boolean) => {
-    if (!next) {
-      setComposer(null);
-      // Best-effort: jump to the newly created conversation if one was made.
-      if (picked) {
-        supabase
-          .from('crm_conversations')
-          .select('id, last_message_at')
-          .eq('contact_id', picked.id)
-          .in('channel', composer === 'text' ? ['sms', 'whatsapp'] : ['email'])
-          .order('last_message_at', { ascending: false, nullsFirst: false })
-          .limit(1)
-          .maybeSingle()
-          .then(({ data }) => { if (data?.id) navigate(`/crm/chats/${data.id}`); });
-      }
+  const onBodyKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (canSend) handleSend();
     }
   };
 
   return (
     <div className="flex-1 min-h-0 h-full flex flex-col bg-background">
-      {/* Header — mirrors the thread page header */}
-      <header className="px-5 md:px-6 pt-4 pb-3 border-b border-border/60 flex items-center gap-3">
+      {/* Header: back + To field */}
+      <header className="px-3 sm:px-4 pt-3 pb-2 border-b border-border/60 flex items-center gap-2 bg-background/95 backdrop-blur-sm">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-full md:hidden"
+          className="h-9 w-9 rounded-full md:hidden shrink-0"
           onClick={() => navigate('/crm/chats')}
           aria-label="Back to chats"
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold tracking-tight">New chat</h2>
-          <p className="text-[11.5px] text-muted-foreground mt-0.5">
-            Pick a contact, then choose how to reach them.
-          </p>
+
+        <div className="flex-1 min-w-0 relative">
+          {picked ? (
+            <div className="flex items-center gap-2 h-9">
+              <span className="text-[12px] text-muted-foreground shrink-0">To:</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/30 pl-2.5 pr-1 py-1 text-[13px] font-semibold text-foreground max-w-full">
+                <span className="truncate">{formatContactName(picked.first_name, picked.last_name)}</span>
+                <span className="text-muted-foreground font-normal text-[11.5px] truncate">
+                  · {picked.phone || 'no phone'}
+                </span>
+                <button
+                  onClick={() => { setPicked(null); setQuery(''); requestAnimationFrame(() => toRef.current?.focus()); }}
+                  className="h-5 w-5 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  aria-label="Clear contact"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-muted-foreground shrink-0">To:</span>
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.8} />
+                  <Input
+                    ref={toRef}
+                    value={query}
+                    onChange={(e) => { setQuery(e.target.value); setShowResults(true); }}
+                    onFocus={() => setShowResults(true)}
+                    onBlur={() => setTimeout(() => setShowResults(false), 150)}
+                    placeholder="Search contacts by name, email, phone…"
+                    className="pl-8 h-9 text-[13.5px]"
+                  />
+                </div>
+              </div>
+              {showResults && (
+                <div className="absolute left-[calc(1.5rem+8px)] right-0 top-[calc(100%+4px)] z-30 max-h-[320px] overflow-y-auto rounded-xl border border-border bg-popover shadow-lg divide-y divide-border/40">
+                  {filtered.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-[12.5px] text-muted-foreground">
+                      No contacts match.
+                    </div>
+                  ) : (
+                    filtered.map((c) => {
+                      const name = formatContactName(c.first_name, c.last_name);
+                      return (
+                        <button
+                          key={c.id}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => { setPicked(c); setQuery(''); setShowResults(false); }}
+                          className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/60 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-medium text-foreground truncate">{name}</div>
+                            <div className="text-[11.5px] text-muted-foreground truncate">
+                              {c.phone || c.email || 'no phone or email'}
+                            </div>
+                          </div>
+                          {!c.phone && (
+                            <span className="text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400 shrink-0">
+                              no phone
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </header>
 
-      {/* Composer body */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-6 py-5 max-w-[640px] w-full mx-auto">
-        {/* "To:" field */}
-        <label className="block text-[11px] uppercase tracking-[0.08em] font-semibold text-muted-foreground/80 mb-1.5">
-          To
-        </label>
-        {picked ? (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
-            <div className="min-w-0">
-              <div className="text-[14px] font-semibold text-foreground truncate">
-                {formatContactName(picked.first_name, picked.last_name)}
-              </div>
-              <div className="text-[12px] text-muted-foreground truncate">
-                {channel === 'text' ? picked.phone || '— no phone —' : picked.email || '— no email —'}
-              </div>
-            </div>
-            <button
-              onClick={() => { setPicked(null); setQuery(''); requestAnimationFrame(() => inputRef.current?.focus()); }}
-              className="h-8 w-8 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              aria-label="Clear contact"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.8} />
-              <Input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search contacts by name, email, phone…"
-                className="pl-9 h-11 text-[14px]"
-              />
-            </div>
-            <div className="mt-3 max-h-[360px] overflow-y-auto rounded-xl border border-border/50 divide-y divide-border/40">
-              {filtered.length === 0 ? (
-                <div className="px-3 py-10 text-center text-[12.5px] text-muted-foreground">
-                  No contacts match.
-                </div>
-              ) : (
-                filtered.map((c) => {
-                  const name = formatContactName(c.first_name, c.last_name);
-                  const meta = channel === 'text' ? c.phone : c.email;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setPicked(c)}
-                      className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-[13px] font-medium text-foreground truncate">{name}</div>
-                        <div className="text-[11.5px] text-muted-foreground truncate">
-                          {meta || (channel === 'text' ? 'no phone on file' : 'no email on file')}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Channel toggle */}
-        <label className="block mt-6 text-[11px] uppercase tracking-[0.08em] font-semibold text-muted-foreground/80 mb-1.5">
-          Channel
-        </label>
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-muted/60 border border-border/40">
-          <ChannelTab
-            active={channel === 'text'}
-            disabled={!!picked && !canText}
-            icon={<MessageCircle className="w-4 h-4" />}
-            label="Text"
-            onClick={() => setChannel('text')}
-          />
-          <ChannelTab
-            active={channel === 'email'}
-            disabled={!!picked && !canEmail}
-            icon={<Mail className="w-4 h-4" />}
-            label="Email"
-            onClick={() => setChannel('email')}
-          />
+      {/* Empty conversation body */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-10 flex flex-col items-center justify-center text-center">
+        <div className={cn(
+          'w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 grid place-items-center mb-4',
+        )}>
+          <MessageCircle className="w-6 h-6 text-primary" strokeWidth={1.6} />
         </div>
-        {picked && channel === 'text' && !canText && (
-          <p className="text-[11.5px] text-amber-600 dark:text-amber-400 mt-2">
-            {formatContactName(picked.first_name, picked.last_name)} has no phone on file.
+        <h2 className="text-[15px] font-semibold tracking-tight text-foreground mb-1">
+          {picked ? 'Say hi' : 'New conversation'}
+        </h2>
+        <p className="text-[12.5px] text-muted-foreground max-w-[320px] leading-relaxed">
+          {picked
+            ? `Type your message below. The thread will appear in Chats once you send.`
+            : `Pick a contact at the top, then write your first text below.`}
+        </p>
+        {picked && !picked.phone && (
+          <p className="mt-3 text-[12px] text-amber-600 dark:text-amber-400">
+            This contact has no phone number on file.
           </p>
         )}
-        {picked && channel === 'email' && !canEmail && (
-          <p className="text-[11.5px] text-amber-600 dark:text-amber-400 mt-2">
-            {formatContactName(picked.first_name, picked.last_name)} has no email on file.
-          </p>
-        )}
-
-        {/* Continue */}
-        <div className="mt-7 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/crm/chats')}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleContinue}
-            disabled={!picked || opening || (channel === 'text' ? !canText : !canEmail)}
-            className="gap-1.5"
-          >
-            {channel === 'text' ? <MessageSquare className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
-            {opening ? 'Opening…' : `Open ${channel === 'text' ? 'text' : 'email'} chat`}
-          </Button>
-        </div>
       </div>
 
-      {/* Canonical composers — only mounted when starting a brand-new thread */}
-      {composer === 'text' && picked && (
-        <SendTextDialog
-          contact={picked}
-          open={true}
-          onOpenChange={handleComposerClose}
-          initialChannel="sms"
-        />
-      )}
-      {composer === 'email' && picked && (
-        <ComposeEmailDialog
-          contact={picked}
-          open={true}
-          onOpenChange={handleComposerClose}
-        />
-      )}
+      {/* Composer */}
+      <div className="border-t border-border/60 bg-background/95 backdrop-blur-sm px-3 sm:px-4 py-2.5">
+        <div className="flex items-end gap-2">
+          <Textarea
+            ref={bodyRef}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={onBodyKeyDown}
+            placeholder={picked ? 'Message…' : 'Pick a contact first'}
+            disabled={!picked}
+            rows={1}
+            className="min-h-[42px] max-h-[180px] resize-none py-2.5 text-[14px] rounded-2xl"
+          />
+          <Button
+            size="icon"
+            onClick={handleSend}
+            disabled={!canSend}
+            className="h-10 w-10 rounded-full shrink-0"
+            aria-label="Send"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+        <p className="text-[10.5px] text-muted-foreground mt-1.5 px-1">
+          Press <kbd className="px-1 py-0.5 rounded bg-muted/60 border border-border/40 text-[10px]">Enter</kbd> to send · <kbd className="px-1 py-0.5 rounded bg-muted/60 border border-border/40 text-[10px]">Shift</kbd>+<kbd className="px-1 py-0.5 rounded bg-muted/60 border border-border/40 text-[10px]">Enter</kbd> for new line
+        </p>
+      </div>
     </div>
-  );
-}
-
-function ChannelTab({
-  active, disabled, icon, label, onClick,
-}: { active: boolean; disabled?: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        'flex items-center justify-center gap-1.5 h-10 rounded-lg text-[13px] font-semibold transition-all',
-        active
-          ? 'bg-background text-foreground shadow-sm border border-border/60'
-          : 'text-muted-foreground hover:text-foreground',
-        disabled && 'opacity-50 cursor-not-allowed',
-      )}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
