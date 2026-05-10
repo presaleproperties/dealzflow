@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 
 export default function CrmNewChatPane() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preContactId = searchParams.get('contactId');
   const { data: contacts = [] } = useCrmContacts();
   const sendSms = useSendSms();
 
@@ -28,7 +30,14 @@ export default function CrmNewChatPane() {
   const toRef = useRef<HTMLInputElement | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => { toRef.current?.focus(); }, []);
+  // Pre-pick contact from ?contactId= (e.g. Send SMS button on lead detail).
+  useEffect(() => {
+    if (!preContactId || picked) return;
+    const match = contacts.find((c) => c.id === preContactId);
+    if (match) setPicked(match);
+  }, [preContactId, contacts, picked]);
+
+  useEffect(() => { if (!picked) toRef.current?.focus(); }, [picked]);
   // When a contact is picked, check for an existing SMS/WhatsApp thread and
   // jump straight into it — feels native: "starting a new chat" with someone
   // you already talk to just opens the existing conversation.
