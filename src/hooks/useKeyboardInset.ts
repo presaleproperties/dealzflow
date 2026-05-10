@@ -31,12 +31,14 @@ export function useKeyboardInset(enabled = true) {
     const root = document.documentElement;
 
     let frame = 0;
+    let settleTimer = 0;
     let last = -1;
-    let stableViewportHeight = Math.max(
+    const initialViewportHeight = Math.max(
       window.innerHeight || 0,
       root.clientHeight || 0,
       window.visualViewport?.height || 0,
     );
+    let stableViewportHeight = initialViewportHeight;
 
     const publish = () => {
       frame = 0;
@@ -53,7 +55,8 @@ export function useKeyboardInset(enabled = true) {
         stableViewportHeight = Math.max(stableViewportHeight, layoutHeight, visualHeight);
       }
 
-      const kb = Math.max(0, Math.round(stableViewportHeight - visualHeight));
+      const raw = Math.max(0, Math.round(stableViewportHeight - visualHeight));
+      const kb = editing && raw > 60 ? raw : 0;
       if (kb === last) return;
       last = kb;
       root.style.setProperty('--keyboard-inset-bottom', `${kb}px`);
@@ -66,7 +69,21 @@ export function useKeyboardInset(enabled = true) {
       frame = window.requestAnimationFrame(publish);
     };
 
+    const publishStableKeyboardOpenInset = () => {
+      window.clearTimeout(settleTimer);
+      const vv = window.visualViewport;
+      if (!vv || !isEditableElement(document.activeElement)) return;
+      const immediate = Math.max(0, Math.round(stableViewportHeight - vv.height));
+      if (immediate > 60 && immediate !== last) {
+        last = immediate;
+        root.style.setProperty('--keyboard-inset-bottom', `${immediate}px`);
+        root.setAttribute('data-keyboard-open', 'true');
+      }
+      settleTimer = window.setTimeout(schedule, 180);
+    };
+
     publish();
+    document.addEventListener('focusin', publishStableKeyboardOpenInset);
     window.visualViewport?.addEventListener('resize', schedule);
     window.visualViewport?.addEventListener('scroll', schedule);
 
@@ -78,7 +95,9 @@ export function useKeyboardInset(enabled = true) {
     window.addEventListener('scroll', pin, { passive: true });
 
     return () => {
+      window.clearTimeout(settleTimer);
       if (frame) window.cancelAnimationFrame(frame);
+      document.removeEventListener('focusin', publishStableKeyboardOpenInset);
       window.visualViewport?.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('scroll', schedule);
       window.removeEventListener('scroll', pin);
