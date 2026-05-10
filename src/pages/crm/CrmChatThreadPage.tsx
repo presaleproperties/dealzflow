@@ -1129,7 +1129,6 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           qc.invalidateQueries({ queryKey: ['crm-chats'] });
         }}
       />
-      )}
 
       {/* Channel-specific composers — full editor opens on demand for email
           (CC/BCC, attachments, templates) and is the only path for SMS/WhatsApp. */}
