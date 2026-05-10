@@ -98,6 +98,36 @@ function isFullHtmlDocument(s: string): boolean {
   return /<html[\s>]/i.test(s) && /<\/html\s*>/i.test(s);
 }
 
+/** Auto-link URLs and email addresses inside plain-text bodies. */
+const LINK_RE = /((?:https?:\/\/|www\.)[^\s<>()]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+function linkify(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  LINK_RE.lastIndex = 0;
+  while ((m = LINK_RE.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    const raw = m[0];
+    const isEmail = raw.includes('@') && !/^https?:\/\//i.test(raw);
+    const href = isEmail ? `mailto:${raw}` : (/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    nodes.push(
+      <a
+        key={`l-${m.index}`}
+        href={href}
+        target={isEmail ? undefined : '_blank'}
+        rel="noreferrer"
+        className="text-[#1a73e8] underline underline-offset-2 break-all [overflow-wrap:anywhere]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {raw}
+      </a>,
+    );
+    last = m.index + raw.length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
 /** Strip <script> and on*= handlers as a defense-in-depth before iframe srcdoc. */
 function sanitizeForIframe(html: string): string {
   return html
