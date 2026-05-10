@@ -400,12 +400,53 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       }, () => {});
   }, [thread?.conv.id, thread?.conv.unread_count, qc]);
 
-  // Auto-scroll to latest
+  // Auto-scroll: only when the user is already near the bottom. Otherwise the
+  // <NewMessagesPill /> takes over and we leave their scroll position alone.
+  // Wrapped in rAF so we measure after the new bubble has been laid out — this
+  // is what kills the visible "jump" when an inbound message lands.
+  const wasAtBottomRef = useRef(true);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = dist <= 160;
+    wasAtBottomRef.current = nearBottom;
+    if (!nearBottom) return;
+    const id = requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(id);
   }, [messages.length]);
+
+  // Keyboard transition guard — when the visual viewport resizes (iOS keyboard
+  // showing/hiding) the scroll container's clientHeight changes. If the user
+  // was pinned to the bottom, re-pin them every frame of the transition so the
+  // last bubble stays glued to the composer instead of drifting up/down.
+  useEffect(() => {
+    const el = scrollRef.current;
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!el || !vv) return;
+    let raf = 0;
+    const stick = () => {
+      raf = 0;
+      if (!wasAtBottomRef.current) return;
+      el.scrollTop = el.scrollHeight;
+    };
+    const onResize = () => {
+      // Capture pre-resize state so we know whether to re-pin.
+      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+      wasAtBottomRef.current = dist <= 160;
+      if (!raf) raf = requestAnimationFrame(stick);
+    };
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    return () => {
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
 
   const contact = thread?.contact;
   const conv = thread?.conv;
