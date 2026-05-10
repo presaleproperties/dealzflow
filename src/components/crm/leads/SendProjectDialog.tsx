@@ -477,6 +477,27 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </Field>
 
+            {/* Personal note — agent's own line, injected above the project card */}
+            <Field label="Personal note">
+              <Textarea
+                value={personalNote}
+                onChange={(e) => setPersonalNote(e.target.value)}
+                placeholder="Add a short personal line — e.g. “Saw you liked Langley, this just dropped.”"
+                rows={3}
+                className="resize-none text-sm"
+              />
+              <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
+                <span>Appears above the Presale project card. Plain text — links auto-styled.</span>
+                <button
+                  type="button"
+                  onClick={saveNoteAsDefault}
+                  className="underline hover:text-foreground shrink-0 ml-2"
+                >
+                  Save as my default
+                </button>
+              </div>
+            </Field>
+
             {/* Attachments — Brochure / Floor Plans / Pricing */}
             <Field label="Attachments">
               <div className="rounded-md border border-border divide-y divide-border">
