@@ -4,6 +4,7 @@ import { useSendSms } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { triggerHaptic } from '@/lib/haptics';
 
 export interface InlineTextComposerHandle {
   /** Set body to a quoted reply preview and focus the textarea. */
@@ -67,9 +68,11 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
   const send = () => {
     if (!body.trim()) return;
     if (!contact.phone) {
+      triggerHaptic('error');
       toast.error('This lead has no phone number');
       return;
     }
+    triggerHaptic('medium');
     // If a quote preview is attached, prepend it as ">" lines so the
     // recipient sees the context they're being replied to.
     const quotedPrefix = quote

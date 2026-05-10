@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Pin, PinOff, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface SwipeRowProps {
   children: ReactNode;
@@ -23,6 +24,7 @@ const MAX_PX = 140;
  */
 export function SwipeRow({ children, isPinned, onPin, onDelete, disabled }: SwipeRowProps) {
   const startX = useRef<number | null>(null);
+  const armed = useRef<'left' | 'right' | null>(null);
   const startY = useRef<number | null>(null);
   const locked = useRef<'h' | 'v' | null>(null);
   const [dx, setDx] = useState(0);
@@ -31,6 +33,7 @@ export function SwipeRow({ children, isPinned, onPin, onDelete, disabled }: Swip
     startX.current = null;
     startY.current = null;
     locked.current = null;
+    armed.current = null;
     setDx(0);
   };
 
@@ -56,14 +59,23 @@ export function SwipeRow({ children, isPinned, onPin, onDelete, disabled }: Swip
 
     // clamp + light resistance past max
     const clamped = Math.max(-MAX_PX, Math.min(MAX_PX, rawDx));
+    // Tick when crossing the commit threshold (iOS Mail parity).
+    const nextArmed: 'left' | 'right' | null =
+      clamped >= COMMIT_PX ? 'right' : clamped <= -COMMIT_PX ? 'left' : null;
+    if (nextArmed !== armed.current) {
+      if (nextArmed) triggerHaptic('selection');
+      armed.current = nextArmed;
+    }
     setDx(clamped);
   };
 
   const onTouchEnd = () => {
     if (disabled) return;
     if (dx >= COMMIT_PX) {
+      triggerHaptic('medium');
       onPin();
     } else if (dx <= -COMMIT_PX) {
+      triggerHaptic('warning');
       onDelete();
     }
     reset();
