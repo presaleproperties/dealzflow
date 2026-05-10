@@ -259,6 +259,7 @@ export default function CrmChatsPage() {
     setStarredOnly(!!b.filters.starredOnly);
     setHasFailures(!!b.filters.hasFailures);
     setShowArchived(!!b.filters.showArchived);
+    setShowCampaigns(!!b.filters.showCampaigns);
     setActiveViewId(b.id);
   };
   // Default to Inbox on first mount
