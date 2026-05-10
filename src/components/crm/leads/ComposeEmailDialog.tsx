@@ -521,6 +521,10 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   };
 
   const isPending = sendBridge.isPending || addMessage.isPending || massSend.isPending;
+  const swipeDownHandlers = useSwipeDownToDismiss({
+    onDismiss: () => onOpenChange(false),
+    disabled: isPending,
+  });
 
   /* Keyboard shortcut: ⌘+Enter / Ctrl+Enter sends from anywhere in the dialog */
   useEffect(() => {
