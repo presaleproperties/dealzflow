@@ -74,7 +74,19 @@ export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Pro
   };
 
   return (
-    <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-2 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+    <div
+      className="sticky bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur px-2 py-2"
+      style={{
+        // Ride the iOS keyboard via GPU translate. --keyboard-inset-bottom is
+        // published by useKeyboardInset on the parent page. When the keyboard
+        // is closed it resolves to 0 and the dock sits flush with the page
+        // bottom + safe-area; when open it lifts to sit just above the keys.
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+        transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
+        willChange: 'transform',
+        transition: 'transform 180ms cubic-bezier(0.32, 0.72, 0, 1)',
+      }}
+    >
       <div className="flex items-end gap-1.5">
         <button
           type="button"
@@ -90,8 +102,21 @@ export function InlineTextComposer({ contact, channel, onOpenFull, onSent }: Pro
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={onKeyDown}
+            onFocus={() => {
+              // After the keyboard finishes its open animation, scroll the
+              // parent thread to the bottom so the most recent message is
+              // visible above the keyboard. Two-stage drop matches iMessage.
+              const drop = () => {
+                const sc = (taRef.current?.closest('[class*="overflow-y-auto"]') as HTMLElement | null)
+                  ?? document.querySelector('[data-thread-scroll]') as HTMLElement | null;
+                sc?.scrollTo({ top: sc.scrollHeight, behavior: 'smooth' });
+              };
+              setTimeout(drop, 120);
+              setTimeout(drop, 360);
+            }}
             placeholder={placeholder}
             rows={1}
+            enterKeyHint="send"
             className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] leading-snug py-1.5 max-h-[140px] placeholder:text-muted-foreground"
           />
         </div>
