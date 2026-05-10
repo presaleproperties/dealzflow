@@ -115,7 +115,7 @@ export default function CrmNewChatPane() {
               </div>
             </div>
             {showResults && (
-              <div className="absolute left-[calc(1.5rem+8px)] right-0 top-[calc(100%+4px)] z-30 max-h-[320px] overflow-y-auto rounded-xl border border-border bg-popover shadow-lg divide-y divide-border/40">
+              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-[320px] overflow-y-auto rounded-xl border border-border bg-popover shadow-lg divide-y divide-border/40">
                 {filtered.length === 0 ? (
                   <div className="px-3 py-6 text-center text-[12.5px] text-muted-foreground">
                     No contacts match.
