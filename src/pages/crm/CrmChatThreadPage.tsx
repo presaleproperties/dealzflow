@@ -618,14 +618,23 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   }
 
   return (
-    <div className={
-      embedded
-        ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
-        // Phone: fill the route slot without negative top margin (which used to
-        // tuck the thread header under the global mobile app header). Tablet+
-        // keeps the bleed for the two-pane shell.
-        : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4'
-    }>
+    <div
+      ref={containerRef}
+      className={
+        embedded
+          ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
+          // Phone: fill the route slot without negative top margin (which used to
+          // tuck the thread header under the global mobile app header). Tablet+
+          // keeps the bleed for the two-pane shell.
+          : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4 relative'
+      }
+      style={{
+        // Edge-swipe-back visual feedback: tiny right-shift + brightness fade
+        // proportional to how far the user has dragged from the left edge.
+        transform: 'translate3d(calc(var(--edge-swipe-progress, 0) * 16px), 0, 0)',
+        transition: 'transform 120ms ease-out',
+      }}
+    >
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
         {!embedded && (
