@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree, Star, Archive, ArchiveRestore, Bell, BellOff, Clock4 } from 'lucide-react';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, isSameDay, differenceInMinutes } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { formatContactName, formatPhone } from '@/lib/format';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
@@ -89,6 +89,14 @@ function formatStamp(iso: string): string {
   if (isToday(d))     return format(d, 'h:mm a');
   if (isYesterday(d)) return `Yesterday · ${format(d, 'h:mm a')}`;
   return format(d, 'MMM d · h:mm a');
+}
+
+/** Editorial day separator label rendered between stacks when the day flips. */
+function formatDayDivider(iso: string): string {
+  const d = new Date(iso);
+  if (isToday(d))     return `Today · ${format(d, 'h:mm a')}`;
+  if (isYesterday(d)) return `Yesterday · ${format(d, 'h:mm a')}`;
+  return format(d, 'EEEE, MMM d · h:mm a');
 }
 
 type DeliveryState = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
@@ -854,45 +862,81 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         ) : (
           stacks.map((stack, si) => {
             const outbound = stack.direction === 'outbound';
+            const stackFirstAt = stack.items[0]?.created_at;
+            const prevStackLast = si > 0 ? stacks[si - 1].items[stacks[si - 1].items.length - 1] : null;
+            // Show a day-divider when the day flips OR when there's a >45 min gap
+            // between consecutive stacks (matches iMessage's "drift" behavior).
+            const showDivider = stackFirstAt && (
+              !prevStackLast ||
+              !isSameDay(new Date(prevStackLast.created_at), new Date(stackFirstAt)) ||
+              differenceInMinutes(new Date(stackFirstAt), new Date(prevStackLast.created_at)) > 45
+            );
             return (
-              <div key={si} className={`flex ${outbound ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[82%] flex flex-col gap-1 ${outbound ? 'items-end' : 'items-start'}`}>
-                  {stack.items.map((m, mi) => {
-                    const isLast = mi === stack.items.length - 1;
-                    // Resolve delivery state for outbound SMS / WhatsApp bubbles
-                    const isTrackable = outbound && (m.channel === 'sms' || m.channel === 'whatsapp') && m.source_table === 'crm_sms_log' && !!m.source_id;
-                    const logEntry = isTrackable ? smsStatuses[m.source_id as string] : undefined;
-                    const deliveryState: DeliveryState | null = isTrackable
-                      ? normalizeStatus(logEntry?.status)
-                      : (outbound && m.channel === 'email' ? 'sent' : null);
-                    const deliveryError = logEntry?.error_message ?? null;
-                    return (
-                      <div key={m.id} className="flex flex-col gap-0.5 max-w-full">
+              <div key={si}>
+                {showDivider && stackFirstAt && (
+                  <div className="flex justify-center py-2">
+                    <span className="text-[10.5px] tracking-wide uppercase text-muted-foreground/70 font-medium">
+                      {formatDayDivider(stackFirstAt)}
+                    </span>
+                  </div>
+                )}
+                <div className={`flex ${outbound ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[78%] sm:max-w-[68%] flex flex-col ${outbound ? 'items-end' : 'items-start'}`}>
+                    {stack.items.map((m, mi) => {
+                      const isLast = mi === stack.items.length - 1;
+                      const isFirst = mi === 0;
+                      const single = stack.items.length === 1;
+                      // Per-bubble corner radii so a run reads as a single group.
+                      // Outbound runs square the right edge between bubbles; inbound
+                      // runs square the left edge. The free side stays fully rounded.
+                      const corner = outbound
+                        ? (single ? 'rounded-2xl rounded-br-md'
+                          : isFirst ? 'rounded-2xl rounded-br-md'
+                          : isLast  ? 'rounded-2xl rounded-tr-md rounded-br-md'
+                          : 'rounded-l-2xl rounded-r-md')
+                        : (single ? 'rounded-2xl rounded-bl-md'
+                          : isFirst ? 'rounded-2xl rounded-bl-md'
+                          : isLast  ? 'rounded-2xl rounded-tl-md rounded-bl-md'
+                          : 'rounded-r-2xl rounded-l-md');
+
+                      const isTrackable = outbound && (m.channel === 'sms' || m.channel === 'whatsapp') && m.source_table === 'crm_sms_log' && !!m.source_id;
+                      const logEntry = isTrackable ? smsStatuses[m.source_id as string] : undefined;
+                      const deliveryState: DeliveryState | null = isTrackable
+                        ? normalizeStatus(logEntry?.status)
+                        : (outbound && m.channel === 'email' ? 'sent' : null);
+                      const deliveryError = logEntry?.error_message ?? null;
+                      const isOptimistic = (m as any).__optimistic === true;
+                      return (
                         <div
-                          className={`px-3.5 py-2 rounded-2xl text-[14px] leading-snug whitespace-pre-wrap break-words shadow-sm ${
-                            outbound
-                              ? 'bg-primary text-primary-foreground rounded-br-md'
-                              : 'bg-card text-foreground border border-border rounded-bl-md'
-                          } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''}`}
+                          key={m.id}
+                          className={`flex flex-col max-w-full ${mi > 0 ? 'mt-[3px]' : ''} ${isOptimistic ? 'animate-in fade-in-0 zoom-in-95 duration-150' : 'animate-in fade-in-0 slide-in-from-bottom-1 duration-200'}`}
                         >
-                          {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
+                          <div
+                            className={`px-3.5 py-2 text-[14.5px] leading-[1.35] whitespace-pre-wrap break-words ${corner} ${
+                              outbound
+                                ? 'bg-primary text-primary-foreground shadow-[0_1px_1px_rgba(0,0,0,0.06)]'
+                                : 'bg-card text-foreground border border-border/60'
+                            } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''} ${isOptimistic ? 'opacity-90' : ''}`}
+                          >
+                            {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
+                          </div>
+                          {isLast && (
+                            <span className={`mt-1 text-[10.5px] tabular-nums flex items-center gap-1.5 ${outbound ? 'text-muted-foreground/80 justify-end pr-1' : 'text-muted-foreground/70 pl-1'}`}>
+                              <span>{formatStamp(m.created_at)}</span>
+                              {outbound && m.sent_by ? <span aria-hidden className="text-muted-foreground/40">·</span> : null}
+                              {outbound && m.sent_by ? <span>{m.sent_by}</span> : null}
+                              {outbound && deliveryState ? (
+                                <>
+                                  <span aria-hidden className="text-muted-foreground/40">·</span>
+                                  <DeliveryIndicator state={deliveryState} error={deliveryError} />
+                                </>
+                              ) : null}
+                            </span>
+                          )}
                         </div>
-                        {isLast && (
-                          <span className={`text-[10px] tabular-nums flex items-center gap-1.5 ${outbound ? 'text-muted-foreground justify-end pr-1' : 'text-muted-foreground/80 pl-1'}`}>
-                            <span>{formatStamp(m.created_at)}</span>
-                            {outbound && m.sent_by ? <span aria-hidden>·</span> : null}
-                            {outbound && m.sent_by ? <span>{m.sent_by}</span> : null}
-                            {outbound && deliveryState ? (
-                              <>
-                                <span aria-hidden className="text-muted-foreground/40">·</span>
-                                <DeliveryIndicator state={deliveryState} error={deliveryError} />
-                              </>
-                            ) : null}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             );
