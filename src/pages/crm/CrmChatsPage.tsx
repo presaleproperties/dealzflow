@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
 import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
 import { useChatPins } from '@/hooks/useChatPins';
+import { SwipeRow } from '@/components/crm/chats/SwipeRow';
 
 /**
  * Strip HTML, collapse whitespace, decode common entities so email previews
