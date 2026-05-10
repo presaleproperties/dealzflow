@@ -47,7 +47,7 @@ export default function CrmNewChatPane() {
   // phone-based inbox; email is its own world. We never cross channels —
   // opening a "new SMS" must not jump into an email thread.
   const channelParam = (searchParams.get('channel') ?? 'sms') as 'sms' | 'whatsapp' | 'email';
-  const channelGroup = channelParam === 'email' ? ['email'] : ['sms', 'whatsapp'];
+  
 
   // When a contact is picked, ask the server to resolve any existing thread
   // for this person via the Identity Vault (normalized phone/email match).
