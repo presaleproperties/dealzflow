@@ -168,7 +168,7 @@ export function MobileChatSendView({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      if (canSend && !sending) onSend();
+      if (canSend && !sending) { triggerHaptic('medium'); onSend(); }
     }
   };
 
