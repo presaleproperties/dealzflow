@@ -22,30 +22,21 @@ export function useOpenChat() {
   return useCallback(
     async (contactId: string, channel: ChatChannel, onCompose?: () => void) => {
       try {
-        // Prefer an existing thread on the requested channel; if none,
-        // fall back to ANY thread for that contact so we never strand
-        // the user in a blank "new chat" when they already have history.
-        const { data: preferred } = await supabase
+        // Match strictly within the requested channel family so SMS never
+        // opens an email thread (and vice-versa). SMS and WhatsApp share
+        // the same phone-based inbox; email is its own world.
+        const channelGroup: ChatChannel[] =
+          channel === 'email' ? ['email'] : ['sms', 'whatsapp'];
+
+        const { data, error } = await supabase
           .from('crm_conversations')
           .select('id, channel, last_message_at')
           .eq('contact_id', contactId)
-          .eq('channel', channel)
+          .in('channel', channelGroup)
           .order('last_message_at', { ascending: false, nullsFirst: false })
           .limit(1)
           .maybeSingle();
-
-        let data = preferred;
-        if (!data?.id) {
-          const { data: anyThread, error } = await supabase
-            .from('crm_conversations')
-            .select('id, channel, last_message_at')
-            .eq('contact_id', contactId)
-            .order('last_message_at', { ascending: false, nullsFirst: false })
-            .limit(1)
-            .maybeSingle();
-          if (error) throw error;
-          data = anyThread;
-        }
+        if (error) throw error;
 
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
 
