@@ -23,6 +23,7 @@ export interface InboxViewFilters {
   attachmentsOnly?: boolean;
   starredOnly?: boolean;
   showArchived?: boolean;
+  showCampaigns?: boolean;
   hasFailures?: boolean;
 }
 
