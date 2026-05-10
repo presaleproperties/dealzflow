@@ -155,6 +155,37 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
 
+  // Hydrate per-agent defaults (personal note + CTA toggles) once per open.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (!open) { hydratedRef.current = false; return; }
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    const prefs = loadAgentPrefs(agentKey);
+    if (typeof prefs.defaultPersonalNote === 'string' && !personalNote) {
+      setPersonalNote(prefs.defaultPersonalNote);
+    }
+    if (typeof prefs.defaultCtaProjectDetails === 'boolean') {
+      setCtaProjectDetails(prefs.defaultCtaProjectDetails);
+    }
+    if (typeof prefs.defaultCtaCallNow === 'boolean') {
+      setCtaCallNow(prefs.defaultCtaCallNow);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, agentKey]);
+
+  const saveNoteAsDefault = () => {
+    saveAgentPrefs(agentKey, { defaultPersonalNote: personalNote });
+    toast({ title: 'Saved', description: 'This note will pre-fill your future Send Project drafts.' });
+  };
+  const saveCtasAsDefault = () => {
+    saveAgentPrefs(agentKey, {
+      defaultCtaProjectDetails: ctaProjectDetails,
+      defaultCtaCallNow: ctaCallNow,
+    });
+    toast({ title: 'Saved', description: 'These CTA defaults will apply to your future sends.' });
+  };
+
   // ─── Presale signup-style funnels (seeded in crm_automations) ────────────
   const { data: funnels = [] } = useQuery<Funnel[]>({
     queryKey: ['send-project.funnels'],
