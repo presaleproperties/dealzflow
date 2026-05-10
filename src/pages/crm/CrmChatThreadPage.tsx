@@ -12,8 +12,15 @@ import { ChatThreadSkeleton, MessageBubbleSkeleton } from '@/components/crm/sms/
 import { useOfflineOutbox } from '@/hooks/useOfflineOutbox';
 import { EmailMessageView, buildReplyQuote, buildForwardQuote } from '@/components/crm/chats/EmailMessageView';
 import { InlineEmailReplyBox } from '@/components/crm/chats/InlineEmailReplyBox';
-import { InlineTextComposer } from '@/components/crm/chats/InlineTextComposer';
+import { InlineTextComposer, type InlineTextComposerHandle } from '@/components/crm/chats/InlineTextComposer';
+import { MessageActionSheet, type MessageActionTarget } from '@/components/crm/chats/MessageActionSheet';
+import { MobileLeadContextCard } from '@/components/crm/chats/MobileLeadContextCard';
+import { NewMessagesPill } from '@/components/crm/chats/NewMessagesPill';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
+import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
+import { useLongPress } from '@/hooks/useLongPress';
+import { useIsCompact } from '@/hooks/use-mobile';
+import { useDialer } from '@/hooks/useDialer';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -180,6 +187,30 @@ interface CrmChatThreadPageProps {
   embedded?: boolean;
 }
 
+/**
+ * Mobile-friendly bubble wrapper. On touch input the user can long-press
+ * to open the bubble action sheet (Reply quote / Copy / Resend / Delete).
+ * On non-touch devices the wrapper is just a pass-through `<div>`.
+ */
+function TouchBubble({
+  children,
+  className,
+  onLongPress,
+  disabled,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onLongPress: () => void;
+  disabled?: boolean;
+}) {
+  const handlers = useLongPress<HTMLDivElement>(() => onLongPress(), { delay: 420 });
+  return (
+    <div className={className} {...(disabled ? {} : handlers)}>
+      {children}
+    </div>
+  );
+}
+
 export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPageProps = {}) {
   const { conversationId = '' } = useParams<{ conversationId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -204,6 +235,24 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const snoozeOptions = useMemo(() => snoozePresets(), []);
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
+  const isCompact = useIsCompact();
+  const dialer = useDialer();
+
+  // Composer handle — lets long-press "Quote reply" prefill the inline composer.
+  const composerRef = useRef<InlineTextComposerHandle | null>(null);
+
+  // Long-press action sheet target (mobile-only context menu for bubbles).
+  const [actionTarget, setActionTarget] = useState<MessageActionTarget | null>(null);
+
+  // Container ref consumed by the edge-swipe-back gesture for visual feedback.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // iOS-style edge swipe-back: only on mobile, only when this view owns its
+  // own back button (not embedded as the right pane on tablet/desktop).
+  useEdgeSwipeBack(() => navigate('/crm/chats'), {
+    enabled: isCompact && !embedded,
+    targetRef: containerRef,
+  });
 
   // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
   // composer can ride above the keyboard instead of being covered by it.
@@ -593,14 +642,23 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   }
 
   return (
-    <div className={
-      embedded
-        ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
-        // Phone: fill the route slot without negative top margin (which used to
-        // tuck the thread header under the global mobile app header). Tablet+
-        // keeps the bleed for the two-pane shell.
-        : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4'
-    }>
+    <div
+      ref={containerRef}
+      className={
+        embedded
+          ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
+          // Phone: fill the route slot without negative top margin (which used to
+          // tuck the thread header under the global mobile app header). Tablet+
+          // keeps the bleed for the two-pane shell.
+          : 'flex flex-col flex-1 min-h-0 h-full sm:-mx-4 sm:-my-4 relative'
+      }
+      style={{
+        // Edge-swipe-back visual feedback: tiny right-shift + brightness fade
+        // proportional to how far the user has dragged from the left edge.
+        transform: 'translate3d(calc(var(--edge-swipe-progress, 0) * 16px), 0, 0)',
+        transition: 'transform 120ms ease-out',
+      }}
+    >
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border flex items-center gap-3 px-3 py-2.5">
         {!embedded && (
@@ -635,13 +693,18 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           </div>
         </Link>
         {conv.channel !== 'email' && contact.phone && (
-          <a
-            href={`tel:${contact.phone.replace(/\D/g, '')}`}
-            aria-label="Call"
-            className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+          <button
+            type="button"
+            onClick={() => dialer.startCall({
+              contact: { id: contact.id, name, phone: contact.phone! },
+              number: contact.phone!,
+            })}
+            disabled={dialer.status !== 'idle' && dialer.status !== 'ended'}
+            aria-label={`Call ${name}`}
+            className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Phone className="w-4 h-4" />
-          </a>
+          </button>
         )}
         {conv.channel === 'email' && (
           <>
@@ -860,7 +923,15 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             })}
           </div>
         ) : (
-          stacks.map((stack, si) => {
+          <>
+            {/* Mobile-only collapsible lead context (pipeline / tags / view lead) */}
+            {isCompact && (
+              <MobileLeadContextCard
+                contact={contact}
+                lastActivityAt={(contact as any).last_touch_at ?? conv.last_message_at}
+              />
+            )}
+            {stacks.map((stack, si) => {
             const outbound = stack.direction === 'outbound';
             const stackFirstAt = stack.items[0]?.created_at;
             const prevStackLast = si > 0 ? stacks[si - 1].items[stacks[si - 1].items.length - 1] : null;
@@ -911,15 +982,23 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                           key={m.id}
                           className={`flex flex-col max-w-full ${mi > 0 ? 'mt-[3px]' : ''} ${isOptimistic ? 'animate-in fade-in-0 zoom-in-95 duration-150' : 'animate-in fade-in-0 slide-in-from-bottom-1 duration-200'}`}
                         >
-                          <div
+                          <TouchBubble
+                            disabled={!isCompact}
+                            onLongPress={() => setActionTarget({
+                              id: m.id,
+                              text: (m.content ?? '').trim(),
+                              outbound,
+                              failed: deliveryState === 'failed',
+                              canDelete: outbound,
+                            })}
                             className={`px-3.5 py-2 text-[14.5px] leading-[1.35] whitespace-pre-wrap break-words ${corner} ${
                               outbound
                                 ? 'bg-primary text-primary-foreground shadow-[0_1px_1px_rgba(0,0,0,0.06)]'
                                 : 'bg-card text-foreground border border-border/60'
-                            } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''} ${isOptimistic ? 'opacity-90' : ''}`}
+                            } ${deliveryState === 'failed' ? 'ring-1 ring-destructive/60' : ''} ${isOptimistic ? 'opacity-90' : ''} select-text`}
                           >
                             {(m.content ?? '').trim() || <span className="italic opacity-60">(empty)</span>}
-                          </div>
+                          </TouchBubble>
                           {isLast && (
                             <span className={`mt-1 text-[10.5px] tabular-nums flex items-center gap-1.5 ${outbound ? 'text-muted-foreground/80 justify-end pr-1' : 'text-muted-foreground/70 pl-1'}`}>
                               <span>{formatStamp(m.created_at)}</span>
@@ -940,7 +1019,8 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
                 </div>
               </div>
             );
-          })
+          })}
+          </>
         )}
 
         {/* Ghost bubbles for offline outbox items not yet on the server */}
@@ -998,6 +1078,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
         />
       ) : (
         <InlineTextComposer
+          ref={composerRef}
           contact={contact}
           channel={conv.channel as 'sms' | 'whatsapp'}
           conversationId={conv.id}
@@ -1012,6 +1093,42 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           }}
         />
       )}
+
+      {/* Floating "↓ N new" pill — visible on SMS/WhatsApp threads when the
+          user is scrolled away from the bottom and new messages arrive. */}
+      {conv.channel !== 'email' && (
+        <NewMessagesPill scrollRef={scrollRef} messagesCount={messages.length} />
+      )}
+
+      {/* Long-press action sheet (mobile only is enforced via TouchBubble's
+          `disabled` prop, but the sheet itself is harmless on desktop). */}
+      <MessageActionSheet
+        target={actionTarget}
+        onClose={() => setActionTarget(null)}
+        onCopy={(t) => {
+          try {
+            void navigator.clipboard?.writeText(t.text);
+            toast.success('Copied');
+          } catch {
+            toast.error('Could not copy');
+          }
+        }}
+        onQuoteReply={(t) => composerRef.current?.quoteReply(t.text)}
+        onResend={(t) => {
+          // Find the original outbox / message and re-trigger via the composer.
+          composerRef.current?.quoteReply(t.text);
+          toast.message('Edit and tap send to retry');
+        }}
+        onDelete={async (t) => {
+          // Soft delete: remove the message row. SMS-log row is left intact
+          // so reporting / Twilio reconciliation isn't disturbed.
+          const { error } = await supabase.from('crm_messages').delete().eq('id', t.id);
+          if (error) { toast.error('Could not delete'); return; }
+          toast.success('Message deleted');
+          qc.invalidateQueries({ queryKey: ['crm-chat-thread-messages', conversationId] });
+          qc.invalidateQueries({ queryKey: ['crm-chats'] });
+        }}
+      />
 
       {/* Channel-specific composers — full editor opens on demand for email
           (CC/BCC, attachments, templates) and is the only path for SMS/WhatsApp. */}

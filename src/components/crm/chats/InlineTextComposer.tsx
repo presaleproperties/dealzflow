@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Send, Plus, FileText, Image as ImageIcon, Variable, MoreHorizontal } from 'lucide-react';
+import { useEffect, useImperativeHandle, useRef, useState, forwardRef, type KeyboardEvent } from 'react';
+import { Send, Plus, FileText, Image as ImageIcon, Variable, MoreHorizontal, X as XIcon, CornerUpLeft } from 'lucide-react';
 import { useSendSms } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+export interface InlineTextComposerHandle {
+  /** Set body to a quoted reply preview and focus the textarea. */
+  quoteReply: (text: string) => void;
+  focus: () => void;
+}
 
 interface Props {
   contact: CrmContact;
@@ -23,10 +29,23 @@ interface Props {
  * full Send dialog. The "+" button still launches `SendTextDialog` for
  * templates, attachments, scheduling, etc.
  */
-export function InlineTextComposer({ contact, channel, conversationId, onOpenFull, onSent }: Props) {
+export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(function InlineTextComposer(
+  { contact, channel, conversationId, onOpenFull, onSent },
+  ref,
+) {
   const [body, setBody] = useState('');
+  const [quote, setQuote] = useState<string | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const sendSms = useSendSms();
+
+  useImperativeHandle(ref, () => ({
+    quoteReply: (text: string) => {
+      const trimmed = (text || '').trim();
+      setQuote(trimmed.length > 200 ? trimmed.slice(0, 200) + '…' : trimmed);
+      requestAnimationFrame(() => taRef.current?.focus());
+    },
+    focus: () => taRef.current?.focus(),
+  }), []);
 
   // Auto-grow textarea (1–6 lines). Min height matches a single line so the
   // dock stays slim until the user actually types multiple lines.
@@ -51,12 +70,16 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
       toast.error('This lead has no phone number');
       return;
     }
-    const text = body;
+    // If a quote preview is attached, prepend it as ">" lines so the
+    // recipient sees the context they're being replied to.
+    const quotedPrefix = quote
+      ? quote.split('\n').map((l) => `> ${l}`).join('\n') + '\n\n'
+      : '';
+    const text = quotedPrefix + body;
+    const draftBody = body;
     setBody('');
-    // Reset textarea height immediately so the dock doesn't visibly snap.
+    setQuote(null);
     if (taRef.current) taRef.current.style.height = 'auto';
-    // Optimistic scroll — bubble lands in cache via onMutate, then we drop
-    // to the bottom so it's visible even on small screens.
     onSent?.();
     sendSms.mutate(
       {
@@ -69,7 +92,7 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
       {
         onError: (err: any) => {
           // Restore the draft so the user doesn't lose what they typed.
-          setBody(text);
+          setBody(draftBody);
           toast.error(err?.message || 'Failed to send');
         },
       },
@@ -100,6 +123,22 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
+        {quote && (
+          <div className="mb-1.5 flex items-start gap-2 rounded-xl border border-border/50 bg-muted/40 px-2.5 py-1.5 animate-in fade-in-0 slide-in-from-bottom-1 duration-150">
+            <CornerUpLeft className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0 text-[12px] leading-snug text-muted-foreground line-clamp-2 whitespace-pre-wrap">
+              {quote}
+            </div>
+            <button
+              type="button"
+              onClick={() => setQuote(null)}
+              aria-label="Remove quote"
+              className="shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -189,4 +228,4 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
       </div>
     </div>
   );
-}
+});
