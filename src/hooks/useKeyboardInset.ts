@@ -65,8 +65,11 @@ export function useKeyboardInset(enabled = true) {
     };
 
     const schedule = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(publish);
+      // Publish synchronously — iOS fires `visualViewport.resize` on every
+      // frame of the keyboard slide, so we want the composer transform to
+      // match that frame exactly. Gating through rAF introduces a 1-frame
+      // lag that reads as the composer "chasing" the keyboard.
+      publish();
     };
 
     const publishStableKeyboardOpenInset = () => {
@@ -87,12 +90,13 @@ export function useKeyboardInset(enabled = true) {
     window.visualViewport?.addEventListener('resize', schedule);
     window.visualViewport?.addEventListener('scroll', schedule);
 
-    // Pin the window — iOS still tries to pan the layout viewport even with
-    // overlays-content. That pan is what visually shakes the page upward.
+    // Pin the window in capture phase, before any layout settles. With the
+    // chat thread mounted, body is `position: fixed` so this is a no-op
+    // belt-and-suspenders for any other route that also focuses an input.
     const pin = () => {
       if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
     };
-    window.addEventListener('scroll', pin, { passive: true });
+    window.addEventListener('scroll', pin, { passive: true, capture: true });
 
     return () => {
       window.clearTimeout(settleTimer);
