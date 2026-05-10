@@ -246,6 +246,7 @@ export default function CrmChatsPage() {
     { id: '__unread',   name: 'Unread',   channel: 'all' as ChatChannelFilter, filters: { unreadOnly: true } as InboxViewFilters },
     { id: '__starred',  name: 'Starred',  channel: 'all' as ChatChannelFilter, filters: { starredOnly: true } as InboxViewFilters },
     { id: '__failed',   name: 'Failed',   channel: 'all' as ChatChannelFilter, filters: { hasFailures: true } as InboxViewFilters },
+    { id: '__campaigns', name: 'Campaigns', channel: 'all' as ChatChannelFilter, filters: { showCampaigns: true } as InboxViewFilters },
     { id: '__archive',  name: 'Archived', channel: 'all' as ChatChannelFilter, filters: { showArchived: true } as InboxViewFilters },
   ], []);
   const applyBuiltin = (b: typeof builtinViews[number]) => {
