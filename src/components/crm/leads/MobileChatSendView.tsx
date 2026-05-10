@@ -97,10 +97,9 @@ export function MobileChatSendView({
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  // Single-line baseline (~36px) → grows one line at a time → caps at ~5 lines
-  // (132px) and starts scrolling internally instead of pushing the chat up.
-  const TA_MIN = 36;
-  const TA_MAX = 132;
+  // Single-line baseline matches the 32px attach button, then grows internally.
+  const TA_MIN = 32;
+  const TA_MAX = 112;
   const [taHeight, setTaHeight] = useState(TA_MIN);
   const [taScrollable, setTaScrollable] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -178,34 +177,44 @@ export function MobileChatSendView({
   const showSendBtn = body.trim().length > 0 || mediaUrls.length > 0;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-background">
-      {/* Header — left-aligned, Lofty/Messages-style.
-          Back, avatar, name + segment subtitle, status pill. Right side keeps
-          a slim Call + More so power actions are still one tap away. */}
+    <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden bg-background">
+      {/* Header — mirrors MobileAppHeader: fixed top chrome, safe-area outside
+          the row, blurred edge-to-edge background, and a stable row height. */}
       <header
         data-composer-header="true"
-        className="relative z-30 shrink-0 border-b border-border/40 bg-background/95 backdrop-blur-md"
+        className="sticky top-0 z-30 shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="relative flex items-center gap-1.5 px-1 h-12">
+        <div
+          className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
+          style={{ background: 'hsl(var(--background) / 0.85)' }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-px"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, hsl(var(--border) / 0.7) 10%, hsl(var(--border) / 0.7) 90%, transparent)',
+          }}
+        />
+        <div className="relative flex items-center gap-2 px-4 h-11">
           <button
             type="button"
             onClick={onClose}
             aria-label="Back to leads"
-            className="shrink-0 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="shrink-0 -ml-2 inline-flex items-center justify-center h-9 w-9 rounded-full text-foreground active:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <ChevronLeft className="h-[22px] w-[22px]" strokeWidth={2.25} aria-hidden />
           </button>
-          <Avatar className="h-8 w-8 shrink-0" aria-hidden>
+          <Avatar className="h-7 w-7 shrink-0" aria-hidden>
             <AvatarFallback className="text-[11px] font-semibold bg-primary/15 text-primary">
               {initials || '?'}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0 flex flex-col leading-[1.15] pr-1">
-            <span className="text-[15px] font-semibold tracking-tight text-foreground truncate">
+          <div className="flex-1 min-w-0 flex flex-col leading-[1.12] pr-1">
+            <span className="text-[14px] font-semibold text-foreground truncate">
               {fullName}
             </span>
-            <span className="text-[11px] text-muted-foreground truncate mt-px">
+            <span className="text-[10.5px] text-muted-foreground truncate mt-px">
               {[segmentLabel, channel === 'whatsapp' ? 'WhatsApp' : null].filter(Boolean).join(' · ')}
             </span>
           </div>
