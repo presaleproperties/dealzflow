@@ -386,7 +386,7 @@ export function EmailMessageView({
                     <HtmlBodyFrame html={quoted} messageId={`${id}-q`} />
                   ) : (
                     <pre className="whitespace-pre-wrap break-words font-sans text-[13px] leading-relaxed text-muted-foreground m-0">
-                      {quoted}
+                      {linkify(quoted)}
                     </pre>
                   )}
                 </div>
