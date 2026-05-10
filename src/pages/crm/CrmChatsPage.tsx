@@ -646,7 +646,7 @@ export default function CrmChatsPage() {
                     onTouchStart={() => prefetchThread(t.id)}
                     data-active={isActive || undefined}
                     data-unread={isUnread || undefined}
-                    className={`inbox-row group items-center !gap-3 ${
+                    className={`inbox-row group items-center !gap-2.5 ${
                       isCursor && !isActive ? 'bg-muted/40' : ''
                     } ${isSelected && !isActive ? 'bg-primary/[0.05]' : ''}`}>
                     {/* Bulk-select checkbox replaces avatar in select mode */}
