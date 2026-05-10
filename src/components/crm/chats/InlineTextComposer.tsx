@@ -113,13 +113,11 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
 
   return (
     <div
-      className="sticky bottom-0 z-20 border-t border-border/70 bg-background/85 backdrop-blur-xl"
+      data-chat-composer="true"
+      className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
         paddingTop: '8px',
-        transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
-        willChange: 'transform',
-        transition: 'transform 180ms cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
@@ -183,7 +181,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-          <div className="flex-1 min-w-0 relative flex items-end rounded-[22px] border border-border/70 bg-muted/30 focus-within:bg-background focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.10)] transition-all px-4 py-1">
+            <div className="flex-1 min-w-0 relative flex items-end rounded-[20px] border border-border/70 bg-muted/30 focus-within:bg-background focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.10)] transition-all px-3.5 py-1">
             <textarea
               ref={taRef}
               value={body}
