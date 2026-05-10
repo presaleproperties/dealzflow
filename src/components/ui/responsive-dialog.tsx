@@ -136,16 +136,26 @@ export const ResponsiveDialogContent = React.forwardRef<
           side="bottom"
           data-mobile-drawer={isDrawer ? 'true' : undefined}
           className={cn(
-            'p-0 inset-x-0 bottom-auto max-h-none h-[var(--composer-viewport-height,100dvh)] w-screen rounded-none border-0 flex flex-col overflow-hidden',
+            'p-0 inset-x-0 bottom-auto max-h-none w-screen rounded-none border-0 flex flex-col overflow-hidden',
             className,
           )}
-          style={{ top: 'var(--composer-viewport-top, 0px)', bottom: 'auto', height: 'var(--composer-viewport-height, 100dvh)', maxHeight: 'none', ...style }}
+          style={{
+            top: 'var(--composer-viewport-top, 0px)',
+            bottom: 'auto',
+            // Shrink with the keyboard so the composer body + footer stay
+            // visible above the soft keyboard (chat-composer parity).
+            height: 'calc(var(--composer-viewport-height, 100dvh) - var(--keyboard-inset-bottom, 0px))',
+            maxHeight: 'none',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            ...style,
+          }}
           {...(rest as any)}
         >
           {children}
         </SheetContent>
       );
     }
+
 
     return (
       <SheetContent
@@ -158,7 +168,7 @@ export const ResponsiveDialogContent = React.forwardRef<
             : 'rounded-t-2xl max-h-[94vh] flex flex-col',
           className,
         )}
-        style={isDrawer ? { top: 'var(--composer-viewport-top, 0px)', bottom: 'auto', height: 'var(--composer-viewport-height, 100dvh)', maxHeight: 'none', ...style } : { paddingTop: 'var(--composer-top-pad)', ...style }}
+        style={isDrawer ? { top: 'var(--composer-viewport-top, 0px)', bottom: 'auto', height: 'calc(var(--composer-viewport-height, 100dvh) - var(--keyboard-inset-bottom, 0px))', maxHeight: 'none', paddingBottom: 'env(safe-area-inset-bottom, 0px)', ...style } : { paddingTop: 'var(--composer-top-pad)', ...style }}
         {...(rest as any)}
       >
         {!hideMobileHandle && (
