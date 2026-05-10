@@ -186,11 +186,6 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
             <Send className="w-[15px] h-[15px] -translate-x-[1px] translate-y-[1px]" />
           </button>
         </div>
-        <div className="hidden sm:flex justify-end mt-1 pr-12">
-          <span className="text-[10px] text-muted-foreground/50">
-            Press <kbd className="px-1 py-0.5 rounded bg-muted text-muted-foreground/70 font-mono text-[9.5px]">Enter</kbd> to send · <kbd className="px-1 py-0.5 rounded bg-muted text-muted-foreground/70 font-mono text-[9.5px]">Shift+Enter</kbd> for newline
-          </span>
-        </div>
       </div>
     </div>
   );
