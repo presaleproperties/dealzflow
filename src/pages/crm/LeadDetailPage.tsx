@@ -17,6 +17,7 @@ import { SendProjectDialog } from '@/components/crm/leads/SendProjectDialog';
 import { MobileLeadDetail } from '@/components/crm/leads/MobileLeadDetail';
 import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { useOpenWhatsAppChat } from '@/hooks/useOpenWhatsAppChat';
+import { useOpenChat } from '@/hooks/useOpenChat';
 import type { MessagingChannel } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { LeadTopBar } from '@/components/crm/leads/detail/LeadTopBar';
