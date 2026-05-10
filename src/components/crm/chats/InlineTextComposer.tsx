@@ -136,7 +136,7 @@ export function InlineTextComposer({ contact, channel, conversationId, onOpenFul
           className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-primary-foreground active:scale-95 transition disabled:opacity-40 disabled:active:scale-100"
           style={{ background: 'hsl(var(--primary))' }}
         >
-          {sendSms.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          <Send className="w-4 h-4" />
         </button>
       </div>
     </div>
