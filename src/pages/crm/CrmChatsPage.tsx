@@ -118,6 +118,7 @@ export default function CrmChatsPage() {
   const [starredOnly, setStarredOnly] = useState(false);
   const [hasFailures, setHasFailures] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [showCampaigns, setShowCampaigns] = useState(false);
 
   // Bulk-select mode
   const [selectMode, setSelectMode] = useState(false);
