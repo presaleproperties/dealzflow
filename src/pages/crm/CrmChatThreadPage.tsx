@@ -923,7 +923,15 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
             })}
           </div>
         ) : (
-          stacks.map((stack, si) => {
+          <>
+            {/* Mobile-only collapsible lead context (pipeline / tags / view lead) */}
+            {isCompact && (
+              <MobileLeadContextCard
+                contact={contact}
+                lastActivityAt={(contact as any).last_touch_at ?? conv.last_message_at}
+              />
+            )}
+            {stacks.map((stack, si) => {
             const outbound = stack.direction === 'outbound';
             const stackFirstAt = stack.items[0]?.created_at;
             const prevStackLast = si > 0 ? stacks[si - 1].items[stacks[si - 1].items.length - 1] : null;
