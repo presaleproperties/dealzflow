@@ -134,21 +134,9 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
     enabled: open,
   });
 
-  const { data: automationAvailable } = useQuery({
-    queryKey: ['send-project.automation', FOLLOWUP_SLUG],
-    queryFn: async () => {
-      // crm_automations has no slug column yet; match by name (Prompt 3 will seed).
-      const { data } = await supabase
-        .from('crm_automations')
-        .select('id')
-        .or(`name.eq.${FOLLOWUP_SLUG},name.ilike.cold lead followup`)
-        .limit(1)
-        .maybeSingle();
-      return Boolean(data);
-    },
-    staleTime: 60_000,
-    enabled: open,
-  });
+  // (Legacy single-funnel availability check removed — replaced by funnel
+  // picker that lists all `presale-*` automations seeded in crm_automations.)
+
 
   // ─── Local state ─────────────────────────────────────────────────────────
   const queryClient = useQueryClient();
