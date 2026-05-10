@@ -59,14 +59,23 @@ export function SwipeRow({ children, isPinned, onPin, onDelete, disabled }: Swip
 
     // clamp + light resistance past max
     const clamped = Math.max(-MAX_PX, Math.min(MAX_PX, rawDx));
+    // Tick when crossing the commit threshold (iOS Mail parity).
+    const nextArmed: 'left' | 'right' | null =
+      clamped >= COMMIT_PX ? 'right' : clamped <= -COMMIT_PX ? 'left' : null;
+    if (nextArmed !== armed.current) {
+      if (nextArmed) triggerHaptic('selection');
+      armed.current = nextArmed;
+    }
     setDx(clamped);
   };
 
   const onTouchEnd = () => {
     if (disabled) return;
     if (dx >= COMMIT_PX) {
+      triggerHaptic('medium');
       onPin();
     } else if (dx <= -COMMIT_PX) {
+      triggerHaptic('warning');
       onDelete();
     }
     reset();
