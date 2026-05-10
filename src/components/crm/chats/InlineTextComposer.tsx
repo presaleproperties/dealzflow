@@ -29,10 +29,23 @@ interface Props {
  * full Send dialog. The "+" button still launches `SendTextDialog` for
  * templates, attachments, scheduling, etc.
  */
-export function InlineTextComposer({ contact, channel, conversationId, onOpenFull, onSent }: Props) {
+export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(function InlineTextComposer(
+  { contact, channel, conversationId, onOpenFull, onSent },
+  ref,
+) {
   const [body, setBody] = useState('');
+  const [quote, setQuote] = useState<string | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const sendSms = useSendSms();
+
+  useImperativeHandle(ref, () => ({
+    quoteReply: (text: string) => {
+      const trimmed = (text || '').trim();
+      setQuote(trimmed.length > 200 ? trimmed.slice(0, 200) + '…' : trimmed);
+      requestAnimationFrame(() => taRef.current?.focus());
+    },
+    focus: () => taRef.current?.focus(),
+  }), []);
 
   // Auto-grow textarea (1–6 lines). Min height matches a single line so the
   // dock stays slim until the user actually types multiple lines.
