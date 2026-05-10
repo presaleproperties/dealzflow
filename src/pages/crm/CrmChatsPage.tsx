@@ -743,7 +743,7 @@ export default function CrmChatsPage() {
                       </button>
                     )}
 
-                    {/* Per-row inline action — pin only */}
+                    {/* Per-row inline actions — pin + delete */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
@@ -751,6 +751,13 @@ export default function CrmChatsPage() {
                           {pinned.has(t.id)
                             ? <PinOff className="w-4 h-4 text-muted-foreground" />
                             : <Pin className="w-4 h-4 text-muted-foreground" />}
+                        </RowAction>
+                        <RowAction title="Delete chat"
+                          onClick={() => {
+                            if (!window.confirm('Delete this chat? Underlying emails and texts are preserved — only the inbox conversation is removed.')) return;
+                            flags.remove(t.id).then(() => toast.success('Chat deleted'));
+                          }}>
+                          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                         </RowAction>
                       </div>
                     )}
