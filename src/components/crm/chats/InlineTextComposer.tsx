@@ -122,8 +122,13 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
         paddingTop: '6px',
         transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
-        willChange: 'auto',
-        transition: 'none',
+        willChange: 'transform',
+        // iOS visualViewport.resize only fires at start/end of the keyboard
+        // animation, so without a CSS transition the composer would teleport
+        // up and "wait" while the keyboard finishes sliding (the lag the
+        // user reported in the standalone PWA). Match the iOS spring curve
+        // so the composer rides the keyboard naturally.
+        transition: 'transform 260ms cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
