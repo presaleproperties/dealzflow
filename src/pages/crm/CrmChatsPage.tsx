@@ -346,9 +346,8 @@ export default function CrmChatsPage() {
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
-      <div className="hidden md:block px-3 sm:px-4 pt-2 space-y-1.5">
-        <EmailLiveStatusBar />
-        <SmsLiveStatusBar />
+      <div className="hidden md:block px-3 sm:px-4 pt-2">
+        <ChannelGreenLight />
       </div>
       {/* Premium glassmorphic header */}
       <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60">
