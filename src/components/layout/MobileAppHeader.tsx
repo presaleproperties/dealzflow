@@ -73,12 +73,10 @@ export function MobileAppHeader() {
   const isCrm = pathname.startsWith('/crm');
   const isChatThread = /^\/crm\/chats\/[^/]+/.test(pathname) && pathname !== '/crm/chats/new';
 
-  if (isChatThread) return null;
-
   // Unread count badge (always-on, light query)
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['mobile-header-unread', user?.id],
-    enabled: !!user,
+    enabled: !!user && !isChatThread,
     staleTime: 30_000,
     refetchInterval: 60_000,
     queryFn: async () => {
@@ -93,7 +91,7 @@ export function MobileAppHeader() {
   // Feed loaded only when the sheet opens
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['mobile-header-notifications', user?.id],
-    enabled: open && !!user,
+    enabled: open && !!user && !isChatThread,
     staleTime: 15_000,
     queryFn: async () => {
       const { data } = await supabase
@@ -122,6 +120,8 @@ export function MobileAppHeader() {
     qc.invalidateQueries({ queryKey: ['mobile-header-unread'] });
     qc.invalidateQueries({ queryKey: ['mobile-header-notifications'] });
   };
+
+  if (isChatThread) return null;
 
   return (
     <>
