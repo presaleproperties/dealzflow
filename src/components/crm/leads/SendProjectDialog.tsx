@@ -380,7 +380,7 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
         project_slug: projectSlug,
         template_slug: templateSlug,
         channel: 'email',
-        enroll_followup_slug: enrollFollowup && automationAvailable ? FOLLOWUP_SLUG : null,
+        enroll_followup_slug: funnelSlug && funnelSlug !== NONE_FUNNEL_SLUG ? funnelSlug : null,
         dry_run: false,
         attachments: {
           brochure: attachBrochure,
