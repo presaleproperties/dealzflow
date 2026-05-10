@@ -197,6 +197,10 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
 
+  // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
+  // composer can ride above the keyboard instead of being covered by it.
+  useKeyboardInset(true);
+
   // Conversation + joined contact
   const { data: rawThread, isLoading: threadLoading } = useQuery({
     queryKey: ['crm-chat-thread', conversationId],
