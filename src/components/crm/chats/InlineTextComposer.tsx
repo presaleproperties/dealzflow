@@ -5,6 +5,7 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { triggerHaptic } from '@/lib/haptics';
+import { isNative } from '@/lib/native';
 
 export interface InlineTextComposerHandle {
   /** Set body to a quoted reply preview and focus the textarea. */
@@ -119,16 +120,18 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       data-chat-composer="true"
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
+        paddingBottom: isNative ? '6px' : 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
         paddingTop: '6px',
-        transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
+        transform: isNative
+          ? 'none'
+          : 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
         willChange: 'transform',
         // iOS visualViewport.resize only fires at start/end of the keyboard
         // animation, so without a CSS transition the composer would teleport
         // up and "wait" while the keyboard finishes sliding (the lag the
         // user reported in the standalone PWA). Match the iOS spring curve
         // so the composer rides the keyboard naturally.
-        transition: 'transform 260ms cubic-bezier(0.32, 0.72, 0, 1)',
+        transition: 'none',
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
@@ -192,7 +195,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-            <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-primary/40 transition-colors px-3.5">
+            <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border/60 transition-colors px-3.5">
             <textarea
               ref={taRef}
               value={body}
