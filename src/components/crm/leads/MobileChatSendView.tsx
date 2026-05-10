@@ -183,8 +183,9 @@ export function MobileChatSendView({
           the row, blurred edge-to-edge background, and a stable row height. */}
       <header
         data-composer-header="true"
-        className="sticky top-0 z-30 shrink-0"
+        className="sticky top-0 z-30 shrink-0 touch-pan-y"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        {...useSwipeDownToDismiss({ onDismiss: onClose })}
       >
         <div
           className="absolute inset-0 backdrop-blur-2xl backdrop-saturate-[180%]"
@@ -197,6 +198,10 @@ export function MobileChatSendView({
               'linear-gradient(90deg, transparent, hsl(var(--border) / 0.7) 10%, hsl(var(--border) / 0.7) 90%, transparent)',
           }}
         />
+        {/* Grabber affordance — visual cue for swipe-down-to-dismiss. */}
+        <div className="relative flex justify-center pt-1 pb-0.5" aria-hidden>
+          <span className="block h-[5px] w-9 rounded-full bg-foreground/15" />
+        </div>
         <div className="relative flex items-center gap-2 px-4 h-11">
           <button
             type="button"
