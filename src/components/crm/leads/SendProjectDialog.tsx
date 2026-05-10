@@ -466,12 +466,35 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               <Combobox
                 value={templateSlug}
                 onChange={setTemplateSlug}
-                items={templates.map(t => ({ value: t.slug, label: t.name }))}
+                items={templates.map(t => ({
+                  value: t.slug,
+                  label: t.name,
+                  hint: t.description,
+                }))}
                 placeholder="Select email style…"
                 emptyText="No project email styles."
               />
-              <div className="text-[11px] text-muted-foreground mt-1.5">
-                Branded layout & project card from Presale Properties · your CRM signature replaces the default footer.
+              <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground mt-1.5">
+                <span className="truncate">
+                  {templateSlug ? (
+                    <>
+                      <span className="font-mono opacity-70">{templateSlug}</span>
+                      {' · Branded layout from Presale Properties'}
+                    </>
+                  ) : (
+                    'Branded layout & project card from Presale Properties · your CRM signature replaces the default footer.'
+                  )}
+                </span>
+                {templatesFetchedAt > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => refetchTemplates()}
+                    className="shrink-0 underline hover:text-foreground"
+                    title={new Date(templatesFetchedAt).toLocaleString()}
+                  >
+                    Synced {formatDistanceToNowStrict(new Date(templatesFetchedAt), { addSuffix: true })} · refresh
+                  </button>
+                )}
               </div>
             </Field>
 
