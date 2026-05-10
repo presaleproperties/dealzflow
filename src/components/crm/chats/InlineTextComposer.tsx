@@ -48,13 +48,13 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     focus: () => taRef.current?.focus(),
   }), []);
 
-  // Auto-grow textarea (1–6 lines). Min height matches a single line so the
+  // Auto-grow textarea (1–4 lines). Min height matches a single line so the
   // dock stays slim until the user actually types multiple lines.
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const next = Math.min(Math.max(el.scrollHeight, 20), 120);
+    const next = Math.min(Math.max(el.scrollHeight, 22), 92);
     el.style.height = `${next}px`;
   }, [body]);
 
@@ -119,11 +119,11 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       data-chat-composer="true"
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
-        paddingTop: '8px',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
+        paddingTop: '6px',
         transform: 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
-        willChange: 'transform',
-        transition: 'transform 180ms cubic-bezier(0.32, 0.72, 0, 1)',
+        willChange: 'auto',
+        transition: 'none',
       }}
     >
       <div className="mx-auto w-full max-w-[820px] px-3 sm:px-4">
@@ -143,13 +143,13 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </button>
           </div>
         )}
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1.5">
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 aria-label="Attachments and templates"
-                className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
               >
                 <Plus className="w-[18px] h-[18px]" />
               </button>
@@ -197,15 +197,15 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
                 const drop = () => {
                   const sc = (taRef.current?.closest('[class*="overflow-y-auto"]') as HTMLElement | null)
                     ?? document.querySelector('[data-thread-scroll]') as HTMLElement | null;
-                  sc?.scrollTo({ top: sc.scrollHeight, behavior: 'smooth' });
+                  sc?.scrollTo({ top: sc.scrollHeight, behavior: 'auto' });
                 };
-                setTimeout(drop, 120);
-                setTimeout(drop, 360);
+                requestAnimationFrame(drop);
+                setTimeout(drop, 90);
               }}
               placeholder={placeholder}
               rows={1}
               enterKeyHint="send"
-              className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] leading-[20px] py-[7px] max-h-[120px] placeholder:text-muted-foreground/60"
+              className="m-textarea flex-1 min-w-0 bg-transparent resize-none outline-none text-[16px] leading-[20px] py-[4px] max-h-[92px] min-h-0 placeholder:text-muted-foreground/60"
             />
 
             {showCounter && (
@@ -221,7 +221,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             disabled={!canSend}
             aria-label="Send"
             className={
-              'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
+               'shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
               (canSend
                 ? 'bg-primary text-primary-foreground shadow-sm hover:brightness-110'
                 : 'bg-muted text-muted-foreground/60 cursor-not-allowed active:scale-100')
