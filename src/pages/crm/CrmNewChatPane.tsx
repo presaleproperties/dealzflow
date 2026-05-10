@@ -43,10 +43,14 @@ export default function CrmNewChatPane() {
 
   useEffect(() => { if (!picked) toRef.current?.focus(); }, [picked]);
 
-  // When a contact is picked, check for ANY existing thread and jump in.
-  // We look across all channels so "starting a new chat" with someone you
-  // already email/SMS just opens that real thread instead of stranding the
-  // user in a blank one.
+  // Channel from query string ('sms' default). SMS and WhatsApp share the
+  // phone-based inbox; email is its own world. We never cross channels —
+  // opening a "new SMS" must not jump into an email thread.
+  const channelParam = (searchParams.get('channel') ?? 'sms') as 'sms' | 'whatsapp' | 'email';
+  const channelGroup = channelParam === 'email' ? ['email'] : ['sms', 'whatsapp'];
+
+  // When a contact is picked, look for an existing thread *within the same
+  // channel family* and jump in. Otherwise stay on the blank thread.
   useEffect(() => {
     if (!picked) return;
     let cancelled = false;
@@ -57,6 +61,7 @@ export default function CrmNewChatPane() {
           .from('crm_conversations')
           .select('id, channel, last_message_at')
           .eq('contact_id', picked.id)
+          .in('channel', channelGroup)
           .order('last_message_at', { ascending: false, nullsFirst: false })
           .limit(1)
           .maybeSingle();
@@ -72,7 +77,7 @@ export default function CrmNewChatPane() {
       }
     })();
     return () => { cancelled = true; };
-  }, [picked, navigate]);
+  }, [picked, navigate, channelGroup.join(',')]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
