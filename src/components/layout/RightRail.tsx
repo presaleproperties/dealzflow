@@ -6,8 +6,10 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   Sparkles, Phone, Inbox, Bell, HelpCircle, Settings as Cog,
   Mail, MessageSquare, X, ExternalLink, Sun, Moon, Monitor, Search,
-  LogOut, ShieldAlert, Maximize2, User,
+  LogOut, ShieldAlert, Maximize2, User, Pin, PinOff,
 } from 'lucide-react';
+import { useChatPins, sortByPinned } from '@/hooks/useChatPins';
+import { formatContactName } from '@/lib/format';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useCrmAccess } from '@/contexts/CrmAccessContext';
