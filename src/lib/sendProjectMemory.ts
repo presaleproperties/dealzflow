@@ -7,6 +7,11 @@ const CONTACT_DRAFT_KEY = (contactId: string) => `sendproject:draft:${contactId}
 export interface AgentPrefs {
   lastTemplateSlug?: string;
   lastAttachments?: { brochure: boolean; floor_plans: boolean; pricing: boolean };
+  /** Personal note prefilled in every Send Project draft for this agent. */
+  defaultPersonalNote?: string;
+  /** Default CTA visibility for this agent's sends. */
+  defaultCtaProjectDetails?: boolean;
+  defaultCtaCallNow?: boolean;
 }
 
 export interface ContactDraft {

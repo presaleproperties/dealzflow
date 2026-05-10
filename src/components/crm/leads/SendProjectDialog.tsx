@@ -155,6 +155,37 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   // CTA URL override (per-email; blank = use Presale default)
   const [projectDetailsUrlOverride, setProjectDetailsUrlOverride] = useState<string>('');
 
+  // Hydrate per-agent defaults (personal note + CTA toggles) once per open.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (!open) { hydratedRef.current = false; return; }
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    const prefs = loadAgentPrefs(agentKey);
+    if (typeof prefs.defaultPersonalNote === 'string' && !personalNote) {
+      setPersonalNote(prefs.defaultPersonalNote);
+    }
+    if (typeof prefs.defaultCtaProjectDetails === 'boolean') {
+      setCtaProjectDetails(prefs.defaultCtaProjectDetails);
+    }
+    if (typeof prefs.defaultCtaCallNow === 'boolean') {
+      setCtaCallNow(prefs.defaultCtaCallNow);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, agentKey]);
+
+  const saveNoteAsDefault = () => {
+    saveAgentPrefs(agentKey, { defaultPersonalNote: personalNote });
+    toast({ title: 'Saved', description: 'This note will pre-fill your future Send Project drafts.' });
+  };
+  const saveCtasAsDefault = () => {
+    saveAgentPrefs(agentKey, {
+      defaultCtaProjectDetails: ctaProjectDetails,
+      defaultCtaCallNow: ctaCallNow,
+    });
+    toast({ title: 'Saved', description: 'These CTA defaults will apply to your future sends.' });
+  };
+
   // ─── Presale signup-style funnels (seeded in crm_automations) ────────────
   const { data: funnels = [] } = useQuery<Funnel[]>({
     queryKey: ['send-project.funnels'],
@@ -446,6 +477,27 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
               </div>
             </Field>
 
+            {/* Personal note — agent's own line, injected above the project card */}
+            <Field label="Personal note">
+              <Textarea
+                value={personalNote}
+                onChange={(e) => setPersonalNote(e.target.value)}
+                placeholder="Add a short personal line — e.g. “Saw you liked Langley, this just dropped.”"
+                rows={3}
+                className="resize-none text-sm"
+              />
+              <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
+                <span>Appears above the Presale project card. Plain text — links auto-styled.</span>
+                <button
+                  type="button"
+                  onClick={saveNoteAsDefault}
+                  className="underline hover:text-foreground shrink-0 ml-2"
+                >
+                  Save as my default
+                </button>
+              </div>
+            </Field>
+
             {/* Attachments — Brochure / Floor Plans / Pricing */}
             <Field label="Attachments">
               <div className="rounded-md border border-border divide-y divide-border">
@@ -509,8 +561,15 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
                   <Switch checked={ctaCallNow} onCheckedChange={setCtaCallNow} />
                 </div>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1.5">
-                Brochure / Floor Plans / Pricing buttons are controlled by the Attachments toggles above.
+              <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
+                <span>Brochure / Floor Plans / Pricing buttons are controlled by the Attachments toggles above.</span>
+                <button
+                  type="button"
+                  onClick={saveCtasAsDefault}
+                  className="underline hover:text-foreground shrink-0 ml-2"
+                >
+                  Save as my default
+                </button>
               </div>
             </Field>
 
