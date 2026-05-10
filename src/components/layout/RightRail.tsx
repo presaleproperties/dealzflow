@@ -677,19 +677,46 @@ function ConversationList({
   onOpen?: () => void;
 }) {
   const q = search.trim().toLowerCase();
+  const { pinned, isPinned, toggle: togglePin } = useChatPins();
 
   const nameOf = (t: ChatThread) => {
-    const n = [t.first_name, t.last_name].filter(Boolean).join(' ').trim();
+    const n = formatContactName(t.first_name, t.last_name);
     return n || t.email || t.phone || 'Unknown';
   };
 
-  const filtered = q
+  // Strip HTML tags from email previews so they don't render as raw markup
+  // (parity with cleanPreview() in CrmChatsPage).
+  const cleanPreview = (raw?: string | null) => {
+    if (!raw) return '';
+    return raw
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  let filtered = q
     ? threads.filter(t => {
         const name = nameOf(t).toLowerCase();
-        const preview = (t.last_message_preview ?? '').toLowerCase();
-        return name.includes(q) || preview.includes(q);
+        const preview = cleanPreview(t.last_message_preview).toLowerCase();
+        const subject = (t.subject ?? '').toLowerCase();
+        const email = (t.email ?? '').toLowerCase();
+        const phone = (t.phone ?? '').toLowerCase();
+        return name.includes(q) || preview.includes(q) || subject.includes(q)
+          || email.includes(q) || phone.includes(q);
       })
     : threads;
+
+  // Pinned to top — same store as the main Chats page, so the order stays in
+  // lockstep across the drawer + page.
+  filtered = sortByPinned(filtered, pinned);
 
   if (filtered.length === 0) {
     return (
@@ -713,11 +740,15 @@ function ConversationList({
         const name = nameOf(t);
         const initials = initialsOf(name);
         const unread = (t.unread_count ?? 0) > 0;
-        const preview = t.last_message_preview?.trim() || `(no messages yet)`;
-        const prefix = t.last_message_direction === 'outbound' ? 'You: ' : '';
+        const pinnedRow = isPinned(t.id);
+        // Email rows show subject (parity w/ Chats page rail) — falls back to preview.
+        const previewText = t.subject
+          ? t.subject
+          : (cleanPreview(t.last_message_preview) || '(no messages yet)');
+        const prefix = !t.subject && t.last_message_direction === 'outbound' ? 'You: ' : '';
 
         return (
-          <li key={t.id} className="relative">
+          <li key={t.id} className="relative group/row">
             {unread && (
               <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-destructive" />
             )}
@@ -746,13 +777,18 @@ function ConversationList({
               {/* Body */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <div
-                    className={cn(
-                      'text-[13px] truncate tracking-tight',
-                      unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
+                  <div className="flex items-center gap-1 min-w-0">
+                    {pinnedRow && (
+                      <Pin className="w-3 h-3 text-primary -rotate-45 shrink-0" strokeWidth={2.6} />
                     )}
-                  >
-                    {name}
+                    <div
+                      className={cn(
+                        'text-[13px] truncate tracking-tight',
+                        unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90',
+                      )}
+                    >
+                      {name}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {unread && (
@@ -771,10 +807,25 @@ function ConversationList({
                     unread ? 'text-foreground/85' : 'text-muted-foreground',
                   )}
                 >
-                  {prefix}{preview}
+                  {prefix}{previewText}
                 </div>
               </div>
             </Link>
+            {/* Hover pin/unpin — keyboard-accessible, not part of the link */}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); togglePin(t.id); }}
+              title={pinnedRow ? 'Unpin' : 'Pin to top'}
+              aria-label={pinnedRow ? 'Unpin conversation' : 'Pin conversation to top'}
+              className={cn(
+                'absolute right-3 top-2 w-6 h-6 rounded-full inline-flex items-center justify-center bg-card/90 border border-border/40 transition-opacity',
+                pinnedRow ? 'opacity-100 text-primary' : 'opacity-0 group-hover/row:opacity-100 text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {pinnedRow
+                ? <PinOff className="w-3 h-3" />
+                : <Pin className="w-3 h-3 -rotate-45" />}
+            </button>
           </li>
         );
       })}
