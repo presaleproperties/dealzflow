@@ -11,8 +11,8 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 import { BookShowingDialog } from './BookShowingDialog';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
-import { SendTextDialog } from './SendTextDialog';
 import { SendBookingLinkDialog } from './SendBookingLinkDialog';
+import { useOpenChat } from '@/hooks/useOpenChat';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
 import { formatContactName } from '@/lib/format';
 
