@@ -51,6 +51,7 @@ export function useKeyboardInset(enabled = true) {
 
     publish();
     window.visualViewport?.addEventListener('resize', schedule);
+    window.visualViewport?.addEventListener('scroll', schedule);
 
     // Pin the window — iOS still tries to pan the layout viewport even with
     // overlays-content. That pan is what visually shakes the page upward.
