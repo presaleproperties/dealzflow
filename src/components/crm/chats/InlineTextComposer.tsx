@@ -68,9 +68,11 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
   const send = () => {
     if (!body.trim()) return;
     if (!contact.phone) {
+      triggerHaptic('error');
       toast.error('This lead has no phone number');
       return;
     }
+    triggerHaptic('medium');
     // If a quote preview is attached, prepend it as ">" lines so the
     // recipient sees the context they're being replied to.
     const quotedPrefix = quote
