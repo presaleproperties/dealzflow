@@ -669,13 +669,18 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           </div>
         </Link>
         {conv.channel !== 'email' && contact.phone && (
-          <a
-            href={`tel:${contact.phone.replace(/\D/g, '')}`}
-            aria-label="Call"
-            className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+          <button
+            type="button"
+            onClick={() => dialer.startCall({
+              contact: { id: contact.id, name, phone: contact.phone! },
+              number: contact.phone!,
+            })}
+            disabled={dialer.status !== 'idle' && dialer.status !== 'ended'}
+            aria-label={`Call ${name}`}
+            className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Phone className="w-4 h-4" />
-          </a>
+          </button>
         )}
         {conv.channel === 'email' && (
           <>
