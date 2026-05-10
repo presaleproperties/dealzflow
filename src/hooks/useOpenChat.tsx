@@ -22,21 +22,15 @@ export function useOpenChat() {
   return useCallback(
     async (contactId: string, channel: ChatChannel, onCompose?: () => void) => {
       try {
-        // Match strictly within the requested channel family so SMS never
-        // opens an email thread (and vice-versa). SMS and WhatsApp share
-        // the same phone-based inbox; email is its own world.
-        const channelGroup: ChatChannel[] =
-          channel === 'email' ? ['email'] : ['sms', 'whatsapp'];
-
-        const { data, error } = await supabase
-          .from('crm_conversations')
-          .select('id, channel, last_message_at')
-          .eq('contact_id', contactId)
-          .in('channel', channelGroup)
-          .order('last_message_at', { ascending: false, nullsFirst: false })
-          .limit(1)
-          .maybeSingle();
+        // Server-side resolution: walks the Identity Vault so duplicate
+        // contact rows that share a normalized phone (SMS/WhatsApp) or
+        // email (Email) all resolve to the same existing thread.
+        const { data: convId, error } = await supabase.rpc(
+          'crm_find_existing_conversation',
+          { _contact_id: contactId, _channel: channel },
+        );
         if (error) throw error;
+        const data = convId ? { id: convId as string } : null;
 
         qc.invalidateQueries({ queryKey: ['crm-chats'] });
 
