@@ -150,7 +150,6 @@ let drainTimer: ReturnType<typeof setTimeout> | null = null;
  */
 export async function drainOutbox(): Promise<void> {
   if (draining) return;
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   draining = true;
   try {
     const items = await listOutbox();
