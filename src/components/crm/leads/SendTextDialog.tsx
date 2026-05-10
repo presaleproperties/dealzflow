@@ -312,6 +312,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
       from: fromOverride || undefined,
       media_urls: mediaUrls,
       channel,
+      conversation_id: conversationId ?? undefined,
       scheduled_for: scheduled ? new Date(scheduledFor).toISOString() : undefined,
     }, {
       onSuccess: () => { onSent?.(); onOpenChange(false); },
