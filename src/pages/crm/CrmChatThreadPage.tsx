@@ -211,6 +211,24 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   const snoozeOptions = useMemo(() => snoozePresets(), []);
   // Offline outbox state (filtered by contact later, once thread loads)
   const outbox = useOfflineOutbox();
+  const isCompact = useIsCompact();
+  const dialer = useDialer();
+
+  // Composer handle — lets long-press "Quote reply" prefill the inline composer.
+  const composerRef = useRef<InlineTextComposerHandle | null>(null);
+
+  // Long-press action sheet target (mobile-only context menu for bubbles).
+  const [actionTarget, setActionTarget] = useState<MessageActionTarget | null>(null);
+
+  // Container ref consumed by the edge-swipe-back gesture for visual feedback.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // iOS-style edge swipe-back: only on mobile, only when this view owns its
+  // own back button (not embedded as the right pane on tablet/desktop).
+  useEdgeSwipeBack(() => navigate('/crm/chats'), {
+    enabled: isCompact && !embedded,
+    targetRef: containerRef,
+  });
 
   // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
   // composer can ride above the keyboard instead of being covered by it.
