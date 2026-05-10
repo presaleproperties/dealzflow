@@ -27,7 +27,7 @@ interface Props {
 interface Project { slug: string; name: string; city: string | null; status: string | null; presale_slug: string | null }
 interface Template { slug: string; name: string }
 
-const FOLLOWUP_SLUG = 'cold-lead-followup';
+// (Legacy FOLLOWUP_SLUG removed — funnel picker drives enroll_followup_slug.)
 
 // Presale signup-style funnels (seeded in crm_automations). Each = a sequence
 // of emails using Presale's Template A (with docs) or Template B (agent intro)
