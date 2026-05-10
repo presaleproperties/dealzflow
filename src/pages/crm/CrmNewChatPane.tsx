@@ -49,18 +49,44 @@ export default function CrmNewChatPane() {
   const channelParam = (searchParams.get('channel') ?? 'sms') as 'sms' | 'whatsapp' | 'email';
   const channelGroup = channelParam === 'email' ? ['email'] : ['sms', 'whatsapp'];
 
-  // When a contact is picked, look for an existing thread *within the same
-  // channel family* and jump in. Otherwise stay on the blank thread.
+  // When a contact is picked, look for an existing thread within the same
+  // channel family. We also widen the search to *all contacts that share the
+  // picked contact's phone (SMS/WhatsApp) or email (Email)* so duplicate
+  // contact rows for the same person still resolve to their real thread.
   useEffect(() => {
     if (!picked) return;
     let cancelled = false;
     setLookingUp(true);
     (async () => {
       try {
+        // 1) Build the set of candidate contact_ids.
+        const ids = new Set<string>([picked.id]);
+        if (channelParam === 'email') {
+          const email = (picked.email ?? '').trim().toLowerCase();
+          if (email) {
+            const { data: peers } = await supabase
+              .from('crm_contacts')
+              .select('id')
+              .or(`email.ilike.${email},email_secondary.ilike.${email}`);
+            peers?.forEach((p) => ids.add(p.id));
+          }
+        } else {
+          const digits = (picked.phone ?? '').replace(/\D/g, '');
+          if (digits.length >= 7) {
+            // Match the last 10 digits to be tolerant of country-code variants.
+            const tail = digits.slice(-10);
+            const { data: peers } = await supabase
+              .from('crm_contacts')
+              .select('id, phone, phone_secondary')
+              .or(`phone.ilike.%${tail}%,phone_secondary.ilike.%${tail}%`);
+            peers?.forEach((p) => ids.add(p.id));
+          }
+        }
+
         const { data } = await supabase
           .from('crm_conversations')
           .select('id, channel, last_message_at')
-          .eq('contact_id', picked.id)
+          .in('contact_id', Array.from(ids))
           .in('channel', channelGroup)
           .order('last_message_at', { ascending: false, nullsFirst: false })
           .limit(1)
@@ -77,7 +103,7 @@ export default function CrmNewChatPane() {
       }
     })();
     return () => { cancelled = true; };
-  }, [picked, navigate, channelGroup.join(',')]);
+  }, [picked, navigate, channelParam, channelGroup.join(',')]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
