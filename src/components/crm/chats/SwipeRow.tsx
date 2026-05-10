@@ -24,6 +24,7 @@ const MAX_PX = 140;
  */
 export function SwipeRow({ children, isPinned, onPin, onDelete, disabled }: SwipeRowProps) {
   const startX = useRef<number | null>(null);
+  const armed = useRef<'left' | 'right' | null>(null);
   const startY = useRef<number | null>(null);
   const locked = useRef<'h' | 'v' | null>(null);
   const [dx, setDx] = useState(0);
