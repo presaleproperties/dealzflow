@@ -34,6 +34,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useCrmContactSmsLog } from '@/hooks/useCrmContactSmsLog';
 import { useDialer } from '@/hooks/useDialer';
 import { useSwipeDownToDismiss } from '@/hooks/useSwipeDownToDismiss';
+import { triggerHaptic } from '@/lib/haptics';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import type { MessagingChannel } from '@/hooks/useSms';
 
