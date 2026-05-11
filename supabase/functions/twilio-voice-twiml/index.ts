@@ -120,17 +120,18 @@ Deno.serve(async (req) => {
           .maybeSingle();
         agentUserId = agent?.user_id ?? null;
       }
-      if (!agentUserId) {
-        const { data: owner } = await supabase
-          .from("crm_team")
-          .select("user_id")
-          .eq("role", "owner")
-          .eq("is_active", true)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        agentUserId = owner?.user_id ?? null;
-      }
+      // S5: keep a fallback agent (first active owner) distinct from primary
+      let fallbackUserId: string | null = null;
+      const { data: owner } = await supabase
+        .from("crm_team")
+        .select("user_id")
+        .eq("role", "owner")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      fallbackUserId = owner?.user_id ?? null;
+      if (!agentUserId) agentUserId = fallbackUserId;
 
       await supabase.from("crm_call_log").upsert({
         twilio_call_sid: callSid,
@@ -148,15 +149,36 @@ Deno.serve(async (req) => {
           { voice: 'alice' },
           'This call may be recorded for quality and training purposes.',
         );
-        const dial = twiml.dial({
+        // S5: Sequential ring cascade — primary (20s) → fallback (15s) → voicemail
+        const dialPrimary = twiml.dial({
           answerOnBridge: true,
-          timeout: 25,
+          timeout: 20,
           record: 'record-from-answer-dual',
           recordingStatusCallback: RECORDING_URL,
           recordingStatusCallbackEvent: ['completed'],
-          action: STATUS_URL, // Twilio POSTs DialCallStatus when leg ends
+          action: STATUS_URL,
         });
-        dial.client(agentUserId);
+        dialPrimary.client(agentUserId);
+
+        if (fallbackUserId && fallbackUserId !== agentUserId) {
+          const dialFallback = twiml.dial({
+            answerOnBridge: true,
+            timeout: 15,
+            record: 'record-from-answer-dual',
+            recordingStatusCallback: RECORDING_URL,
+            recordingStatusCallbackEvent: ['completed'],
+            action: STATUS_URL,
+          });
+          dialFallback.client(fallbackUserId);
+        }
+
+        // Final voicemail fallback if no agent picks up
+        twiml.say("No agents are available right now. Please leave a message after the tone.");
+        twiml.record({
+          maxLength: 120,
+          playBeep: true,
+          recordingStatusCallback: RECORDING_URL,
+        });
       } else {
         twiml.say("Sorry, no agents are available to take this call. Please leave a message after the tone.");
         twiml.record({
