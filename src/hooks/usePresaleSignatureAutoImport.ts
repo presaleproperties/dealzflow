@@ -79,16 +79,56 @@ export function usePresaleSignatureAutoImport() {
         }
 
         if (shouldBackfillSignatureRow || shouldImportSignature) {
-          const row = {
-            user_id: userId,
-            name: shouldBackfillSignatureRow ? 'Default signature' : 'Presale Properties',
-            html: shouldBackfillSignatureRow ? existingSettingsSignature : agent.signatureHtml!,
-            is_default: true,
-            sort_order: 0,
-            kind: 'full' as const,
+          // Build a PresaleSignatureAgent payload from the synced identity so
+          // both layout variants render with the same data (name/title/photo).
+          const sigAgent: PresaleSignatureAgent = {
+            full_name: agent.name,
+            title: agent.title,
+            photo_url: agent.headshotUrl,
+            phone: agent.phone,
+            email: agent.email,
+            website_url: agent.websiteUrl,
+            calendly_url: agent.calendlyUrl,
+            brokerage: agent.brokerage,
+            license_no: agent.licenseNumber,
+            instagram_url: agent.instagramUrl,
           };
+
+          // When backfilling a previously-saved settings signature, keep that
+          // exact HTML — never overwrite what the agent authored. Otherwise,
+          // seed BOTH layout presets (Side + Centre) so the composer dropdown
+          // lets the sender pick where the headshot lives.
+          const rows = shouldBackfillSignatureRow
+            ? [
+                {
+                  user_id: userId,
+                  name: 'Default signature',
+                  html: existingSettingsSignature,
+                  is_default: true,
+                  sort_order: 0,
+                  kind: 'full' as const,
+                },
+              ]
+            : [
+                {
+                  user_id: userId,
+                  name: 'Headshot — Side',
+                  html: buildPresaleHeadshotLeftSignature(sigAgent),
+                  is_default: true,
+                  sort_order: 0,
+                  kind: 'full' as const,
+                },
+                {
+                  user_id: userId,
+                  name: 'Headshot — Centre',
+                  html: buildPresaleCardSignature(sigAgent),
+                  is_default: false,
+                  sort_order: 1,
+                  kind: 'full' as const,
+                },
+              ];
           const { error } = await (supabase.from('crm_email_signatures' as any) as any)
-            .insert(row);
+            .insert(rows);
           if (!error) {
             qc.invalidateQueries({ queryKey: ['crm-email-signatures'] });
           }
