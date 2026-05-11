@@ -26,7 +26,7 @@
 // the reply lands in crm_email_log and is auto-merged on the next render.
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogTitle, ResponsiveDialogDescription } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pill } from '@/components/crm/shared/Pill';
@@ -373,7 +373,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   };
 
 
-  // Keyboard: "R" to reply, Esc handled by Dialog itself.
+  // Keyboard: "R" to reply, Esc handled by ResponsiveDialog itself.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -435,14 +435,14 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   const headerInitials = initialsFor(fullName, contact.email);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent
         className="max-w-[1280px] w-screen md:w-[96vw] h-[100dvh] md:h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none md:rounded-2xl border-0 md:border border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
       >
-        <DialogTitle className="sr-only">Email thread with {fullName}</DialogTitle>
-        <DialogDescription className="sr-only">
+        <ResponsiveDialogTitle className="sr-only">Email thread with {fullName}</ResponsiveDialogTitle>
+        <ResponsiveDialogDescription className="sr-only">
           {threads.length} thread{threads.length === 1 ? '' : 's'} with this lead
-        </DialogDescription>
+        </ResponsiveDialogDescription>
 
         {/* Header bar — Mail-style on mobile (single line, no eyebrow), full identity on desktop */}
         <div className="flex items-center justify-between px-3 md:px-5 py-2 md:py-3 border-b border-border/70 bg-card/95 md:bg-gradient-to-b md:from-card md:to-card/95 backdrop-blur flex-shrink-0">
@@ -796,7 +796,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
             Reply
           </button>
         )}
-      </DialogContent>
+      </ResponsiveDialogContent>
 
       {/* Mobile: open the canonical composer for replies — single source of truth. */}
       {mobileComposeOpen && (
@@ -840,7 +840,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
           onPickContact={(c) => setForwardPicked(c)}
         />
       )}
-    </Dialog>
+    </ResponsiveDialog>
   );
 }
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Loader2, Mail, ChevronsUpDown, Check, Upload, FileText, Map, DollarSign, AlertCircle } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -421,8 +421,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
   const sendDisabled = !gmailConnected || !projectSlug || !templateSlug || sending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent
         className={cn(
           'p-0 overflow-hidden',
           isMobile
@@ -430,11 +430,11 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             : 'max-w-5xl w-[95vw] h-[80vh] grid grid-rows-[auto_1fr]',
         )}
       >
-        <DialogHeader className="px-5 py-3 border-b border-border">
-          <DialogTitle className="text-[15px] font-semibold tracking-tight">
+        <ResponsiveDialogHeader className="px-5 py-3 border-b border-border">
+          <ResponsiveDialogTitle className="text-[15px] font-semibold tracking-tight">
             Send Project — {contact.first_name || 'Lead'}
-          </DialogTitle>
-        </DialogHeader>
+          </ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
 
         <div className={cn(
           'min-h-0',
@@ -697,8 +697,8 @@ export function SendProjectDialog({ contact, open, onOpenChange }: Props) {
             </Button>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 

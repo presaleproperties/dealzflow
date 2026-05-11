@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogDescription, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -263,14 +263,14 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); cancelEditor(); } }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Manage Pipelines</DialogTitle>
-            <DialogDescription>
+      <ResponsiveDialog open={open} onOpenChange={(o) => { if (!o) { onClose(); cancelEditor(); } }}>
+        <ResponsiveDialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Manage Pipelines</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
               Add, edit, or remove the pipeline pills shown on the leads list and Kanban board. Pipelines with leads in them must be emptied before they can be deleted.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
 
           <ScrollArea className="flex-1 -mx-6 px-6">
             <DragDropContext
@@ -402,7 +402,7 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
           </ScrollArea>
 
 
-          <DialogFooter className="border-t border-border/40 pt-4 sm:justify-between">
+          <ResponsiveDialogFooter className="border-t border-border/40 pt-4 sm:justify-between">
             <Button
               variant="outline"
               size="sm"
@@ -415,9 +415,9 @@ export function ManagePipelinesDialog({ open, onClose, segmentCounts }: Props) {
             <Button variant="default" size="sm" onClick={() => { onClose(); cancelEditor(); }}>
               Done
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => { if (!o) setConfirmDeleteId(null); }}>
         <AlertDialogContent>

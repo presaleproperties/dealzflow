@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -157,19 +157,19 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className={cn(
         "p-0 overflow-hidden rounded-2xl border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]",
         audiencePicker ? "max-w-3xl" : "max-w-2xl",
       )}>
-        <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/60 bg-gradient-to-b from-card to-card/95">
+        <ResponsiveDialogHeader className="px-5 pt-4 pb-3 border-b border-border/60 bg-gradient-to-b from-card to-card/95">
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/80">
             Mass Send · {channel === 'whatsapp' ? 'WhatsApp' : 'SMS / MMS'}
           </p>
-          <DialogTitle className="flex items-center gap-2 text-[15px] font-semibold tracking-tight mt-0.5">
+          <ResponsiveDialogTitle className="flex items-center gap-2 text-[15px] font-semibold tracking-tight mt-0.5">
             <Users className="w-4 h-4 text-primary" />
             Sending to {reachable.length.toLocaleString()} {reachable.length === 1 ? 'recipient' : 'recipients'}
-          </DialogTitle>
+          </ResponsiveDialogTitle>
           <div className="flex items-center gap-1 mt-2.5 p-0.5 rounded-md bg-muted w-fit">
             <button
               onClick={() => setChannel('sms')}
@@ -190,7 +190,7 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
               <span className="w-3 h-3 rounded-full bg-emerald-500" /> WhatsApp
             </button>
           </div>
-        </DialogHeader>
+        </ResponsiveDialogHeader>
 
         <div className="px-5 py-4 space-y-4 max-h-[78vh] overflow-y-auto">
           {/* Audience picker (in-dialog) */}
@@ -421,8 +421,8 @@ export function BulkSendTextDialog({ open, onOpenChange, contactIds, onComplete,
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 
