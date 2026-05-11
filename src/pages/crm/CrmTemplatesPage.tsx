@@ -953,11 +953,11 @@ function PreviewPane({
         phone: (previewAs as any).phone ?? '',
       },
       sender: agent ? {
-        first_name: agent.first_name ?? '',
-        last_name: agent.last_name ?? '',
-        full_name: [agent.first_name, agent.last_name].filter(Boolean).join(' '),
-        email: (agent as any).email ?? '',
-        phone: (agent as any).phone ?? '',
+        first_name: (agent.name ?? '').split(' ')[0] ?? '',
+        full_name: agent.name ?? '',
+        email: agent.email ?? '',
+        phone: agent.phone ?? '',
+        signature: agent.signatureHtml ?? '',
       } : null,
     });
   };
