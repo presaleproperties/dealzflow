@@ -1120,6 +1120,9 @@ function PreviewPane({
         </div>
       )}
 
+      {/* Preview-as recipient picker — pipes a real lead's data through merge tags */}
+      <PreviewAsBar value={previewAs} onChange={setPreviewAs} />
+
       {inlineEdit ? (
         <div className="flex-1 grid grid-rows-[minmax(0,1fr)_minmax(0,1fr)] min-h-0 divide-y divide-border/60">
           <div className="min-h-0 flex flex-col bg-card">
