@@ -707,7 +707,7 @@ function timeAgoShort(dateStr?: string | null): string {
 }
 
 function TemplateCard({
-  item, selected, onSelect, tagIds, onEdit, onSend, onDelete,
+  item, selected, onSelect, tagIds, onEdit, onSend, onDelete, onHistory,
 }: {
   item: UnifiedTemplate;
   selected: boolean;
@@ -716,6 +716,7 @@ function TemplateCard({
   onEdit: () => void;
   onSend: () => void;
   onDelete: () => void;
+  onHistory: () => void;
 }) {
   const toggleFav = useToggleFavoriteV2();
   const duplicateEmail = useDuplicateTemplate();
