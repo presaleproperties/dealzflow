@@ -41,6 +41,7 @@ import {
   type GoogleCalendarEvent,
 } from '@/hooks/useGoogleCalendarEvents';
 import { PROJECTS } from '@/hooks/useCrmContacts';
+import { useCrmProjects } from '@/hooks/useCrmProjects';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { formatContactName } from '@/lib/format';
