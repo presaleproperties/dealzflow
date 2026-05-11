@@ -247,9 +247,7 @@ export function LeadContextRail() {
           {/* Notes preview */}
           {lead.notes && (
             <Section title="Notes">
-              <p className="text-[12.5px] text-foreground/85 leading-relaxed line-clamp-6 whitespace-pre-wrap">
-                {lead.notes}
-              </p>
+              <FormattedNote raw={lead.notes} />
               <Link
                 to={`/crm/leads/${lead.id}`}
                 className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-primary hover:opacity-80"
