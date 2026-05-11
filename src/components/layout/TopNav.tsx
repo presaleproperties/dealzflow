@@ -345,8 +345,19 @@ export function TopNav() {
             })}
           </nav>
 
-          {/* Right-aligned global CRM search */}
-          <div className="flex-1 flex justify-end">
+          {/* Right-aligned mode pill + global CRM search */}
+          <div className="flex-1 flex justify-end items-center gap-3">
+            {/* S19 — Mode pill: shows whether the user is in Workspace or CRM context */}
+            <span
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+              aria-label={location.pathname.startsWith('/crm') ? 'CRM mode' : 'Workspace mode'}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${location.pathname.startsWith('/crm') ? 'bg-primary' : 'bg-emerald-400'}`}
+                aria-hidden
+              />
+              {location.pathname.startsWith('/crm') ? 'CRM' : 'Workspace'}
+            </span>
             {isCrmMember && location.pathname.startsWith('/crm') && (
               <div className="hidden md:block">
                 <GlobalLeadSearch />
