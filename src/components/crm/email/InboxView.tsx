@@ -966,7 +966,7 @@ function SwipeableThreadRow({
 
 function MobileThreadDetail({
   thread, messages, isLoading, onBack, onArchive,
-  reply, onReplyChange, onSend, sending,
+  reply, onReplyChange, onSend, sending, onOpenFull, hasContact,
 }: {
   thread: Thread;
   messages: Msg[];
@@ -977,6 +977,8 @@ function MobileThreadDetail({
   onReplyChange: (s: string) => void;
   onSend: () => void | Promise<void>;
   sending: boolean;
+  onOpenFull?: () => void;
+  hasContact?: boolean;
 }) {
   // Auto-grow reply textarea (cap height so it never eats the screen).
   const taRef = useRef<HTMLTextAreaElement | null>(null);
