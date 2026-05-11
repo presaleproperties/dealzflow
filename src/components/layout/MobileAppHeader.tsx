@@ -74,11 +74,12 @@ export function MobileAppHeader() {
   const isChatThread = /^\/crm\/chats\/[^/]+/.test(pathname) && pathname !== '/crm/chats/new';
 
   // Unread count badge (always-on, light query)
-  const { data: unreadCount = 0 } = useQuery({
+  const { data: unreadCount = 0, refetch: refetchUnread } = useQuery({
     queryKey: ['mobile-header-unread', user?.id],
     enabled: !!user && !isChatThread,
     staleTime: 30_000,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { count } = await supabase
         .from('crm_notifications')
@@ -87,6 +88,32 @@ export function MobileAppHeader() {
       return count ?? 0;
     },
   });
+
+  // Real-time: bump the badge the instant a new notification arrives.
+  useEffect(() => {
+    if (!user?.id || isChatThread) return;
+    const ch = supabase
+      .channel(`mobile-header-notifs-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'crm_notifications', filter: `user_id=eq.${user.id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ['mobile-header-unread'] });
+          qc.invalidateQueries({ queryKey: ['mobile-header-notifications'] });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id, isChatThread, qc]);
+
+  // Refetch when app returns from background (iOS PWA suspends timers).
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refetchUnread();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [refetchUnread]);
 
   // Feed loaded only when the sheet opens
   const { data: notifications, isLoading } = useQuery({
