@@ -26,6 +26,7 @@ import {
   smsSegments, type MessagingChannel, type SmsLogRow,
 } from '@/hooks/useSms';
 import { useThreadState } from '@/hooks/useThreadState';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 import { isMessagingMuted, setMessagingMuted } from '@/lib/messagingSound';
 import { toast } from 'sonner';
