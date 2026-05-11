@@ -2081,4 +2081,47 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
   select {
     font-size: 16px;
   }
+  /* Tiptap editor body — bump to 16px to also avoid auto-zoom on focus */
+  .ProseMirror { font-size: 16px; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   MOBILE TOUCH-TARGET POLISH (audit batch 1)
+   - 44px tap area on icon buttons via wrapper class
+   - Roomier inbox rows on small viewports
+   - Roomier dialer keypad on small viewports
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Inbox/chat list rows: ensure comfortable 64px tap row. */
+  .inbox-row { min-height: 64px; }
+
+  /* SMS composer & header icon buttons: bump to 44x44 tap target.
+     Visual icon size is unchanged (icons are 16-20px inside).
+     Targets buttons inside .imsg-composer-pill row + the imsg-header. */
+  .imsg-header button.h-8,
+  .imsg-header button.h-9 { min-width: 44px; min-height: 44px; }
+  .imsg-font .h-9.w-9.rounded-full { width: 44px; height: 44px; }
+
+  /* RichTextEditor toolbar buttons (currently h-8 w-8) */
+  .composer-toolbar .h-8.w-8 { width: 44px; height: 44px; }
+
+  /* Dialer keypad — easier thumb taps. */
+  .dialer-keypad button { height: 56px !important; font-size: 18px; }
+  .dialer-controls .control-btn { width: 56px; height: 56px; }
+  .dialer-controls .hangup-btn { width: 64px; height: 56px; }
+
+  /* Call note rows — comfortable spacing */
+  .call-note-row { min-height: 56px; }
+}
+
+/* Universal helper: any element with .touch-44 gets a guaranteed 44px tap area
+   without changing its visual layout (icon stays original size). */
+.touch-44 { min-width: 44px; min-height: 44px; }
+
+/* Send-button "flash" while in flight */
+@keyframes sendFlash {
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.55; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.sending-flash { animation: sendFlash 0.45s ease-in-out; }
