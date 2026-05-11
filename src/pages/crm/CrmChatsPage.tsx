@@ -763,9 +763,17 @@ export default function CrmChatsPage() {
                       </button>
                     )}
 
-                    {/* Per-row inline actions — pin + delete */}
+                    {/* Per-row inline actions — snooze + pin + delete */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <SnoozeMenu
+                          isSnoozed={!!snoozeText}
+                          onSnooze={(iso) => {
+                            flags.snooze(t.id, iso).then(() => {
+                              toast.success(iso ? 'Snoozed' : 'Unsnoozed');
+                            });
+                          }}
+                        />
                         <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
                           onClick={() => togglePin(t.id)}>
                           {pinned.has(t.id)
