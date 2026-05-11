@@ -1630,6 +1630,8 @@ export type Database = {
           id: string
           is_active: boolean
           is_favorite: boolean
+          is_featured: boolean
+          is_locked: boolean
           last_synced_at: string | null
           last_used_at: string | null
           merge_tags: string[] | null
@@ -1654,6 +1656,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_favorite?: boolean
+          is_featured?: boolean
+          is_locked?: boolean
           last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
@@ -1678,6 +1682,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_favorite?: boolean
+          is_featured?: boolean
+          is_locked?: boolean
           last_synced_at?: string | null
           last_used_at?: string | null
           merge_tags?: string[] | null
@@ -3552,6 +3558,7 @@ export type Database = {
           scheduled_for: string | null
           sent_at: string
           status: string
+          template_id: string | null
           to_number: string
           twilio_message_sid: string | null
           user_id: string | null
@@ -3580,6 +3587,7 @@ export type Database = {
           scheduled_for?: string | null
           sent_at?: string
           status?: string
+          template_id?: string | null
           to_number: string
           twilio_message_sid?: string | null
           user_id?: string | null
@@ -3608,6 +3616,7 @@ export type Database = {
           scheduled_for?: string | null
           sent_at?: string
           status?: string
+          template_id?: string | null
           to_number?: string
           twilio_message_sid?: string | null
           user_id?: string | null
@@ -3767,12 +3776,18 @@ export type Database = {
           channel: string
           created_at: string
           created_by: string | null
+          created_by_agent_slug: string | null
           default_media_urls: string[]
           id: string
           is_active: boolean
+          is_favorite_legacy: boolean
+          is_featured: boolean
+          is_locked: boolean
           last_used_at: string | null
           merge_tags: string[]
           name: string
+          owner_agent_slug: string | null
+          owner_scope: string
           times_used: number
           updated_at: string
         }
@@ -3782,12 +3797,18 @@ export type Database = {
           channel?: string
           created_at?: string
           created_by?: string | null
+          created_by_agent_slug?: string | null
           default_media_urls?: string[]
           id?: string
           is_active?: boolean
+          is_favorite_legacy?: boolean
+          is_featured?: boolean
+          is_locked?: boolean
           last_used_at?: string | null
           merge_tags?: string[]
           name: string
+          owner_agent_slug?: string | null
+          owner_scope?: string
           times_used?: number
           updated_at?: string
         }
@@ -3797,12 +3818,18 @@ export type Database = {
           channel?: string
           created_at?: string
           created_by?: string | null
+          created_by_agent_slug?: string | null
           default_media_urls?: string[]
           id?: string
           is_active?: boolean
+          is_favorite_legacy?: boolean
+          is_featured?: boolean
+          is_locked?: boolean
           last_used_at?: string | null
           merge_tags?: string[]
           name?: string
+          owner_agent_slug?: string | null
+          owner_scope?: string
           times_used?: number
           updated_at?: string
         }
@@ -4217,6 +4244,92 @@ export type Database = {
           },
         ]
       }
+      crm_template_favorites: {
+        Row: {
+          created_at: string
+          template_id: string
+          template_kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          template_id: string
+          template_kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          template_id?: string
+          template_kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_template_folder_items: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          folder_id: string
+          template_id: string
+          template_kind: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          folder_id: string
+          template_id: string
+          template_kind: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          folder_id?: string
+          template_id?: string
+          template_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_template_folder_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "crm_template_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_template_folders: {
+        Row: {
+          channel: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_template_sync_log: {
         Row: {
           actor_id: string | null
@@ -4260,6 +4373,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_template_tag_items: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          tag_id: string
+          template_id: string
+          template_kind: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          tag_id: string
+          template_id: string
+          template_kind: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          tag_id?: string
+          template_id?: string
+          template_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_template_tag_items_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "crm_template_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_template_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+        }
+        Relationships: []
       }
       crm_thread_drafts: {
         Row: {
@@ -5806,6 +5975,19 @@ export type Database = {
           dup_count: number | null
           match_key: string | null
           match_type: string | null
+        }
+        Relationships: []
+      }
+      crm_template_stats: {
+        Row: {
+          last_sent_at: string | null
+          sparkline_30d: Json | null
+          template_id: string | null
+          template_kind: string | null
+          total_clicks: number | null
+          total_opens: number | null
+          total_replies: number | null
+          total_sends: number | null
         }
         Relationships: []
       }
