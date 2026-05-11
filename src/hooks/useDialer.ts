@@ -102,6 +102,20 @@ const useDialerStore = create<DialerState>((set) => ({
 
 let initPromise: Promise<Device | null> | null = null;
 
+// S4: Track the active reset timeout so a new inbound/outbound call can cancel it,
+// and so we never reset state out from under an active call.
+let pendingResetTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleReset(delayMs: number) {
+  if (pendingResetTimer !== null) clearTimeout(pendingResetTimer);
+  pendingResetTimer = setTimeout(() => {
+    pendingResetTimer = null;
+    const s = useDialerStore.getState();
+    // Bail if a new call has appeared while we were waiting
+    if (s.currentCall || s.status === 'ringing' || s.status === 'in-progress') return;
+    s.reset();
+  }, delayMs);
+}
+
 async function fetchToken(): Promise<{ token: string; identity: string } | null> {
   const { data, error } = await supabase.functions.invoke('twilio-voice-token', { body: {} });
   if (error || !data?.token) {
@@ -150,6 +164,11 @@ async function ensureDevice(): Promise<Device | null> {
         if (refreshed) device.updateToken(refreshed.token);
       });
       device.on('incoming', (call: Call) => {
+        // S4: a fresh inbound call invalidates any pending reset from a prior call
+        if (pendingResetTimer !== null) {
+          clearTimeout(pendingResetTimer);
+          pendingResetTimer = null;
+        }
         attachCallHandlers(call);
         const from = call.parameters.From || '';
         useDialerStore.setState({
@@ -197,15 +216,15 @@ function attachCallHandlers(call: Call) {
   call.on('mute', (muted: boolean) => useDialerStore.setState({ muted }));
   call.on('disconnect', () => {
     useDialerStore.setState({ status: 'ended' });
-    setTimeout(() => useDialerStore.getState().reset(), 1500);
+    scheduleReset(1500);
   });
   call.on('cancel', () => {
     useDialerStore.setState({ status: 'ended' });
-    setTimeout(() => useDialerStore.getState().reset(), 1200);
+    scheduleReset(1200);
   });
   call.on('reject', () => {
     useDialerStore.setState({ status: 'ended' });
-    setTimeout(() => useDialerStore.getState().reset(), 800);
+    scheduleReset(800);
   });
   call.on('error', (e: any) => {
     console.error('[dialer] call error', e);

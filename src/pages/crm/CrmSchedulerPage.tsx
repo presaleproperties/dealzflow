@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { openExternal } from '@/lib/openUrl';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SchedulerEventTypesPanel } from '@/components/crm/scheduler/SchedulerEventTypesPanel';
@@ -64,7 +65,7 @@ function HeroIdentity({ profile, onCopy, publicUrl }: { profile: any; onCopy: ()
             <Button variant="outline" size="sm" onClick={onCopy} className="flex-1 sm:flex-none">
               <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy link
             </Button>
-            <Button size="sm" onClick={() => window.open(publicUrl, '_blank')}
+            <Button size="sm" onClick={() => openExternal(publicUrl)}
               className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-sm">
               <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Preview live
             </Button>
