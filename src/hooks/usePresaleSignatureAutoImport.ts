@@ -34,7 +34,10 @@ export function usePresaleSignatureAutoImport() {
 
     const existingSettingsSignature = settings?.signature_html?.trim() || '';
     const hasSignatureToImport = !!agent.signatureHtml?.trim();
-    const hasNoSavedSignatures = (signatures?.length ?? 0) === 0;
+    const fullSignatures = (signatures ?? []).filter((s) => (s.kind ?? 'full') === 'full');
+    const replySignatures = (signatures ?? []).filter((s) => s.kind === 'reply');
+    const hasNoFullSignatures = fullSignatures.length === 0;
+    const hasNoReplySignatures = replySignatures.length === 0;
 
     // Settings may exist with blanks — only fill in fields that are empty.
     const settingsNeedsSenderName = !settings?.sender_name && !!agent.name;
@@ -44,12 +47,20 @@ export function usePresaleSignatureAutoImport() {
     // If the user already has a manually saved legacy/settings signature, use
     // that to seed the signatures table. Never let Presale defaults outrank a
     // saved CRM signature just because the newer signatures table is empty.
-    const shouldBackfillSignatureRow = hasNoSavedSignatures && !!existingSettingsSignature;
-    const shouldImportSignature = hasNoSavedSignatures && !existingSettingsSignature && hasSignatureToImport;
+    const shouldBackfillSignatureRow = hasNoFullSignatures && !!existingSettingsSignature;
+    const shouldImportSignature = hasNoFullSignatures && !existingSettingsSignature && hasSignatureToImport;
+    // Reply signature is derived from Presale agent identity. Always seed it
+    // when missing — keeps every agent on the same minimalist reply pattern.
+    const shouldSeedReplySignature = hasNoReplySignatures && (!!agent.name || !!agent.email);
     const shouldSeedSettings =
       settingsNeedsSenderName || settingsNeedsReplyTo || settingsNeedsLogo;
 
-    if (!shouldBackfillSignatureRow && !shouldImportSignature && !shouldSeedSettings) return;
+    if (
+      !shouldBackfillSignatureRow &&
+      !shouldImportSignature &&
+      !shouldSeedReplySignature &&
+      !shouldSeedSettings
+    ) return;
 
     ranRef.current = true;
 
@@ -69,9 +80,37 @@ export function usePresaleSignatureAutoImport() {
             html: shouldBackfillSignatureRow ? existingSettingsSignature : agent.signatureHtml!,
             is_default: true,
             sort_order: 0,
+            kind: 'full' as const,
           };
           const { error } = await (supabase.from('crm_email_signatures' as any) as any)
             .insert(row);
+          if (!error) {
+            qc.invalidateQueries({ queryKey: ['crm-email-signatures'] });
+          }
+        }
+
+        if (shouldSeedReplySignature) {
+          const replyHtml = buildPresaleReplySignature({
+            full_name: agent.name,
+            title: agent.title,
+            phone: agent.phone,
+            email: agent.email,
+            brokerage: agent.brokerage,
+            license_no: agent.licenseNumber,
+            calendly_url: agent.calendlyUrl,
+            website_url: agent.websiteUrl,
+            instagram_url: agent.instagramUrl,
+          });
+          const replyRow = {
+            user_id: userId,
+            name: 'Reply signature',
+            html: replyHtml,
+            is_default: true,
+            sort_order: 0,
+            kind: 'reply' as const,
+          };
+          const { error } = await (supabase.from('crm_email_signatures' as any) as any)
+            .insert(replyRow);
           if (!error) {
             qc.invalidateQueries({ queryKey: ['crm-email-signatures'] });
           }
