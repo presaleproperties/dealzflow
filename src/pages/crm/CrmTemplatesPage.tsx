@@ -453,7 +453,7 @@ function MessagingPanel() {
         </div>
       </div>
       <Button asChild size="sm" variant="outline">
-        <Link to="/crm/sms">Open SMS templates →</Link>
+        <Link to="/crm/chats">Open Chats →</Link>
       </Button>
       <div className="text-[11px] text-muted-foreground/70">
         {smsTemplates.length} template{smsTemplates.length === 1 ? '' : 's'} available

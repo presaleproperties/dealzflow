@@ -85,12 +85,11 @@ const WORKSPACE_MORE: MoreGroup[] = [
 ];
 
 const CRM_MORE: MoreGroup[] = [
-  // Workflow = daily messaging surfaces. Email + SMS are highest frequency.
+  // Workflow = daily messaging surfaces.
   {
     label: 'Workflow',
     items: [
       { label: 'Email Center', path: '/crm/email',    icon: Mail },
-      { label: 'SMS Center',   path: '/crm/sms',      icon: MessageSquare, ownerAdminOnly: true },
       { label: 'Pipeline',     path: '/crm/pipeline', icon: Kanban },
     ],
   },

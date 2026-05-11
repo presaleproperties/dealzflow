@@ -48,7 +48,7 @@ const ROUTES: RouteEntry[] = [
   { path: '/crm/chats', label: 'Chats', group: 'CRM' },
   { path: '/crm/calendar', label: 'Calendar', group: 'CRM' },
   { path: '/crm/email', label: 'Email Center', group: 'CRM' },
-  { path: '/crm/sms', label: 'SMS Center', group: 'CRM' },
+  
   { path: '/crm/templates', label: 'Templates', group: 'CRM' },
   { path: '/crm/reports', label: 'Reports', group: 'CRM' },
   { path: '/crm/automations', label: 'Automations', group: 'CRM', notes: 'Owner/admin only' },

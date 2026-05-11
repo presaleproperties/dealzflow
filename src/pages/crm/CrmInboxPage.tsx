@@ -17,16 +17,14 @@ import { useIsAdmin } from '@/hooks/useAdmin';
 
 const CrmEmailWorkspacePage = lazy(() => import('./CrmEmailWorkspacePage'));
 const CrmChatsShell = lazy(() => import('./CrmChatsShell'));
-const CrmSmsCenterPage = lazy(() => import('./CrmSmsCenterPage'));
 
-type Channel = 'email' | 'sms' | 'whatsapp';
+type Channel = 'email' | 'whatsapp';
 
 const STORAGE_KEY = 'crm:inbox:active-channel';
 
 const TABS: { value: Channel; label: string; icon: typeof Mail; subtitle: string }[] = [
   { value: 'email',    label: 'Email',    icon: Mail,          subtitle: 'Branded sends · synced replies' },
-  { value: 'sms',      label: 'SMS',      icon: Phone,         subtitle: 'Twilio · quiet-hours aware' },
-  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, subtitle: 'Two-way chats & threads' },
+  { value: 'whatsapp', label: 'Chats',    icon: MessageSquare, subtitle: 'SMS + WhatsApp threads' },
 ];
 
 export default function CrmInboxPage() {
@@ -68,7 +66,7 @@ export default function CrmInboxPage() {
           <h1 className="text-[15px] font-semibold tracking-tight">Inbox</h1>
         </div>
         <nav role="tablist" aria-label="Communication channel" className="px-4 lg:px-6 mt-2 flex gap-1 overflow-x-auto">
-          {TABS.filter((t) => t.value !== 'sms' || isAdmin).map((tab) => {
+          {TABS.map((tab) => {
             const isActive = tab.value === active;
             const Icon = tab.icon;
             return (
@@ -102,7 +100,6 @@ export default function CrmInboxPage() {
       <div className="flex-1 min-h-0 overflow-hidden">
         <Suspense fallback={<InboxFallback />}>
           {active === 'email' && <CrmEmailWorkspacePage />}
-          {active === 'sms' && isAdmin && <CrmSmsCenterPage />}
           {active === 'whatsapp' && <CrmChatsShell />}
         </Suspense>
       </div>

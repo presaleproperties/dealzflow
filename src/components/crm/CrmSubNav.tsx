@@ -15,7 +15,7 @@ const PRIMARY: Tab[] = [
   { label: 'Leads',    path: '/crm/leads' },
   { label: 'Pipeline', path: '/crm/pipeline' },
   { label: 'Email',    path: '/crm/email' },
-  { label: 'SMS',      path: '/crm/sms', ownerAdminOnly: true },
+  { label: 'Chats',    path: '/crm/chats' },
   { label: 'Calendar',  path: '/crm/calendar' },
   { label: 'Templates', path: '/crm/templates' },
 ];
