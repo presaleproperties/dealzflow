@@ -8,6 +8,7 @@ import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, L
 import { useAgentNames } from '@/hooks/useTeamAgents';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
+import { startInAppCall } from '@/hooks/useDialer';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/dataCompleteness';
@@ -352,7 +353,7 @@ export default function CrmContactsPage() {
                         </Link>
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
-                        {c.phone ? <a href={`tel:${c.phone}`} className="text-sm text-primary hover:underline">{c.phone}</a> : <span className="text-muted-foreground">—</span>}
+                        {c.phone ? <button type="button" onClick={() => startInAppCall({ phone: c.phone, contactId: c.id, contactName: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.phone })} className="text-sm text-primary hover:underline">{c.phone}</button> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
                         {c.email ? (

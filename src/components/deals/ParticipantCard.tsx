@@ -1,5 +1,6 @@
 import { Mail, Phone, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { startInAppCall } from '@/hooks/useDialer';
 
 interface Participant {
   id: string;
@@ -65,9 +66,9 @@ export function ParticipantCard({ participant: p }: { participant: Participant }
       {p.phoneNumber && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Phone className="h-3 w-3 shrink-0" />
-          <a href={`tel:${p.phoneNumber}`} className="hover:text-primary active:text-primary transition-colors touch-manipulation">
+          <button type="button" onClick={() => startInAppCall({ phone: p.phoneNumber, contactName: name })} className="hover:text-primary active:text-primary transition-colors touch-manipulation">
             {p.phoneNumber}
-          </a>
+          </button>
         </div>
       )}
       <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">

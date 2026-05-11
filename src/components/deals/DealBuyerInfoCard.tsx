@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Mail, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Participant } from './ParticipantCard';
+import { startInAppCall } from '@/hooks/useDialer';
 
 const spring = { type: 'spring' as const, stiffness: 120, damping: 20 };
 
@@ -47,13 +48,14 @@ export function DealBuyerInfoCard({ participants, clientName }: DealBuyerInfoCar
         )}
 
         {buyer?.phoneNumber && (
-          <a
-            href={`tel:${buyer.phoneNumber}`}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-3"
+          <button
+            type="button"
+            onClick={() => startInAppCall({ phone: buyer.phoneNumber, contactName: name ?? undefined })}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-3 w-full text-left"
           >
             <Phone className="h-4 w-4 shrink-0" />
             <span>{buyer.phoneNumber}</span>
-          </a>
+          </button>
         )}
 
         {buyer && (

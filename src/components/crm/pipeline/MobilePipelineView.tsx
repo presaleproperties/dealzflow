@@ -83,7 +83,7 @@ export function MobilePipelineView() {
         return;
       }
       for (const seg of pipelineSegments) {
-        if (contactMatchesSegment(c, seg.filter_config)) { map[seg.id].push(c); break; }
+        if (contactMatchesSegment(c, seg.filter_config, seg.id)) { map[seg.id].push(c); break; }
       }
     });
     const cts: Record<string, number> = {};

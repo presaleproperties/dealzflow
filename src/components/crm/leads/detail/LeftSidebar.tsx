@@ -26,6 +26,7 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { LEAD_STATUSES, LEAD_TYPES, LEAD_TYPE_LABELS, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { startInAppCall } from '@/hooks/useDialer';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { useUnifiedPipelines, useActivePipelineFor, useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
@@ -175,13 +176,14 @@ export function LeftSidebar({
           <div className="space-y-2 pt-4 border-t border-border/60">
             {contact.phone && (
               <div className="flex items-center justify-between gap-2 group">
-                <a
-                  href={`tel:${contact.phone}`}
-                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors"
+                <button
+                  type="button"
+                  onClick={() => startInAppCall({ phone: contact.phone, contactId: contact.id, contactName: formatContactName(contact) })}
+                  className="flex items-center gap-2.5 min-w-0 text-[14.5px] text-foreground hover:text-primary transition-colors text-left"
                 >
                   <Phone className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
                   <span className="truncate font-medium tabular-nums">{formatPhone(contact.phone)}</span>
-                </a>
+                </button>
                 <CopyButton value={contact.phone} label="phone" />
               </div>
             )}

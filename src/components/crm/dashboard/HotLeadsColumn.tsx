@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCrmContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
+import { startInAppCall } from '@/hooks/useDialer';
 import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
@@ -149,9 +150,9 @@ function LeadCard({ c, noteId, setNoteId, noteText, setNoteText, handleSaveNote,
           {c.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`tel:${c.phone}`} className="p-1.5 rounded-md hover:bg-muted/60 transition-colors">
+                <button type="button" onClick={() => startInAppCall({ phone: c.phone, contactId: c.id, contactName: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.phone })} className="p-1.5 rounded-md hover:bg-muted/60 transition-colors">
                   <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call</TooltipContent>
             </Tooltip>
@@ -252,7 +253,7 @@ export function HotLeadsColumn() {
   const filteredLeads = useMemo(() => {
     if (!currentSegment) return [];
     return contacts
-      .filter(c => contactMatchesSegment(c, currentSegment.filter_config))
+      .filter(c => contactMatchesSegment(c, currentSegment.filter_config, currentSegment.id))
       .sort((a, b) => touchDays(b) - touchDays(a))
       .slice(0, 20);
   }, [contacts, currentSegment]);

@@ -24,10 +24,26 @@ import type { LeadSegment } from '@/hooks/useCrmLeadSegments';
  * Strict and loose can coexist on the same filter — strict keys are AND-applied
  * first, then the loose keys must also pass.
  */
-export function contactMatchesSegment(contact: CrmContact, filter: Record<string, unknown>): boolean {
+export function contactMatchesSegment(
+  contact: CrmContact,
+  filter: Record<string, unknown>,
+  segmentId?: string,
+): boolean {
   if (!filter || Object.keys(filter).length === 0) return true;
 
   const canonicalSegmentId = (contact as unknown as { pipeline_segment_id?: string | null }).pipeline_segment_id;
+
+  // Canonical-id short-circuit: if the caller passed a segmentId AND the
+  // contact has been canonically stamped to it, this is a guaranteed match.
+  // We DO NOT fall through to "false" when the canonical id points to a
+  // different segment — fall through to evaluate the filter rules instead,
+  // so segments without a canonical assignment can still match by filter.
+  if (segmentId && canonicalSegmentId && canonicalSegmentId === segmentId) {
+    return true;
+  }
+
+  // Legacy: a filter that itself names a target pipeline_segment_id only
+  // matches contacts canonically stamped to that segment.
   const filterSegmentId = typeof filter.pipeline_segment_id === 'string' ? filter.pipeline_segment_id : null;
   if (filterSegmentId) return canonicalSegmentId === filterSegmentId;
 
@@ -102,7 +118,7 @@ export function assignContactsToSegments(
       return;
     }
     for (const seg of pipelineSegments) {
-      if (contactMatchesSegment(c, seg.filter_config)) {
+      if (contactMatchesSegment(c, seg.filter_config, seg.id)) {
         map[seg.id].push(c);
         break; // first match wins
       }
@@ -128,7 +144,7 @@ export function computeSegmentCounts(
     if (!s.filter_config || Object.keys(s.filter_config).length === 0) {
       counts[s.id] = contacts.length;
     } else {
-      counts[s.id] = contacts.filter(c => contactMatchesSegment(c, s.filter_config)).length;
+      counts[s.id] = contacts.filter(c => contactMatchesSegment(c, s.filter_config, s.id)).length;
     }
   });
   return counts;
