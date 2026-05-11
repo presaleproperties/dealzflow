@@ -1590,6 +1590,7 @@ export type Database = {
           html: string
           id: string
           is_default: boolean
+          kind: string
           name: string
           sort_order: number
           updated_at: string
@@ -1600,6 +1601,7 @@ export type Database = {
           html?: string
           id?: string
           is_default?: boolean
+          kind?: string
           name: string
           sort_order?: number
           updated_at?: string
@@ -1610,6 +1612,7 @@ export type Database = {
           html?: string
           id?: string
           is_default?: boolean
+          kind?: string
           name?: string
           sort_order?: number
           updated_at?: string
