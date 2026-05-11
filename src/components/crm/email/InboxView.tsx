@@ -563,7 +563,10 @@ export default function InboxView() {
               {filteredThreads.map(t => {
                 const isActive = selectedThreadId === t.id;
                 const isUnread = t.unread_count > 0;
-                const senderLabel = t.last_message_from || t.participants[0] || 'Unknown';
+                const senderRaw = t.last_message_from || t.participants[0] || 'Unknown';
+                const senderLabel = cleanSender(senderRaw);
+                const snippet = cleanSnippet(t.last_message_snippet);
+                const time = smartTime(t.last_message_at);
                 return (
                   <li key={t.id}>
                     <button
@@ -585,17 +588,23 @@ export default function InboxView() {
                         {initials(senderLabel)}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <span className="inbox-row__sender">{senderLabel}</span>
-                          <span className="inbox-row__time">
-                            {smartTime(t.last_message_at)}
-                          </span>
+                        <div className="flex items-baseline gap-2 min-w-0">
+                          <span className="inbox-row__sender truncate min-w-0 flex-1">{senderLabel}</span>
+                          <time
+                            dateTime={t.last_message_at}
+                            className={cn(
+                              'inbox-row__time shrink-0 whitespace-nowrap',
+                              isUnread && 'text-primary font-medium',
+                            )}
+                          >
+                            {time}
+                          </time>
                         </div>
-                        <div className="inbox-row__subject">
+                        <div className="inbox-row__subject truncate">
                           {t.subject || '(no subject)'}
                         </div>
-                        <p className="inbox-row__snippet">
-                          {t.last_message_snippet || '—'}
+                        <p className="inbox-row__snippet line-clamp-2">
+                          {snippet || '—'}
                         </p>
                         {t.message_count > 1 && (
                           <span className="inbox-row__meta">
