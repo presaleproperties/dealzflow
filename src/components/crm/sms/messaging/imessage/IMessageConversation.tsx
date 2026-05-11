@@ -478,8 +478,14 @@ function IMessageBubbleImpl({
                     const isImg = /\.(jpe?g|png|gif|webp|heic)$|image%2F/i.test(u);
                     if (isImg) {
                       return (
-                        <a key={idx} href={u} target="_blank" rel="noreferrer">
-                          <img src={u} className="rounded-md max-h-40 object-cover" alt="attachment" />
+                        <a key={idx} href={u} target="_blank" rel="noreferrer" className="block">
+                          <img
+                            src={u}
+                            loading="lazy"
+                            className="rounded-md max-w-full w-auto max-h-40 sm:max-h-56 object-cover bg-muted"
+                            style={{ maxWidth: '280px' }}
+                            alt="attachment"
+                          />
                         </a>
                       );
                     }
@@ -785,10 +791,12 @@ function IMessageComposer({
   };
 
   // Wraps the parent's onSend with a native haptic so iOS / Android users feel
-  // the same little "thump" they'd get in Messages or WhatsApp.
+  // the same little "thump" they'd get in Messages or WhatsApp. Also refocuses
+  // the textarea so the user can keep typing without an extra tap.
   const onSendWithHaptic = useCallback(async () => {
     haptic('light');
     await onSend();
+    setTimeout(() => textareaRef.current?.focus(), 0);
   }, [onSend]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -874,6 +882,7 @@ function IMessageComposer({
               <Button
                 size="icon"
                 variant="ghost"
+                aria-label="Attach or more options"
                 className="h-9 w-9 rounded-full shrink-0 bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
                 title="More"
               >
@@ -988,7 +997,12 @@ function IMessageComposer({
             <Button
               size="icon"
               onClick={onSendWithHaptic}
-              className="h-9 w-9 rounded-full shrink-0 bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm transition-all native-press"
+              disabled={sending}
+              aria-label="Send message"
+              className={cn(
+                'h-9 w-9 rounded-full shrink-0 bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm transition-all native-press',
+                sending && 'sending-flash opacity-70',
+              )}
             >
               {scheduledFor ? <CalendarIcon className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </Button>

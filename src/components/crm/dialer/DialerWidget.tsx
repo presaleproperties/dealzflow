@@ -107,11 +107,12 @@ export function DialerWidget() {
 
       {/* Keypad */}
       {keypadOpen && isActive && (
-        <div className="px-5 pb-3 grid grid-cols-3 gap-2">
+        <div className="dialer-keypad px-5 pb-3 grid grid-cols-3 gap-2">
           {KEYPAD.map((k) => (
             <button
               key={k}
               onClick={() => dialer.sendDigit(k)}
+              aria-label={`Dial ${k}`}
               className="h-10 rounded-md border bg-background hover:bg-muted active:scale-95 transition-all text-base font-medium tabular-nums"
             >
               {k}
@@ -141,12 +142,12 @@ export function DialerWidget() {
             </Button>
           </div>
         ) : isActive || isConnecting ? (
-          <div className="flex items-center justify-around">
+          <div className="dialer-controls flex items-center justify-around">
             <button
               onClick={() => dialer.toggleMute()}
               disabled={!isActive}
               className={cn(
-                'h-11 w-11 rounded-full border flex items-center justify-center transition-all',
+                'control-btn h-11 w-11 rounded-full border flex items-center justify-center transition-all',
                 muted ? 'bg-muted text-foreground border-foreground/20' : 'bg-background hover:bg-muted',
                 !isActive && 'opacity-40 cursor-not-allowed',
               )}
@@ -158,7 +159,7 @@ export function DialerWidget() {
               onClick={() => dialer.setKeypadOpen(!keypadOpen)}
               disabled={!isActive}
               className={cn(
-                'h-11 w-11 rounded-full border flex items-center justify-center transition-all',
+                'control-btn h-11 w-11 rounded-full border flex items-center justify-center transition-all',
                 keypadOpen ? 'bg-muted text-foreground border-foreground/20' : 'bg-background hover:bg-muted',
                 !isActive && 'opacity-40 cursor-not-allowed',
               )}
@@ -168,7 +169,7 @@ export function DialerWidget() {
             </button>
             <button
               onClick={() => dialer.hangup()}
-              className="h-11 w-11 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 active:scale-95 transition-all"
+              className="hangup-btn h-11 w-11 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 active:scale-95 transition-all"
               aria-label="Hang up"
             >
               <PhoneOff className="h-5 w-5" />
