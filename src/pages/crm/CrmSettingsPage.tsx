@@ -260,7 +260,7 @@ export default function CrmSettingsPage() {
 
           {activeTab === 'setup'         && <SectionErrorBoundary name="Setup"><SetupChecklist isAdmin={isOwnerOrAdmin} isOwner={isOwner} onJump={setTab} /></SectionErrorBoundary>}
           {activeTab === 'profile'       && <SectionErrorBoundary name="Profile"><ProfileSection /></SectionErrorBoundary>}
-          {activeTab === 'email'         && <SectionErrorBoundary name="Email"><EmailSettingsSection /></SectionErrorBoundary>}
+          {activeTab === 'email'         && <SectionErrorBoundary name="Email"><div className="space-y-6"><EmailSettingsSection /><ReplySignatureCard /></div></SectionErrorBoundary>}
           {activeTab === 'notifications' && <SectionErrorBoundary name="Notifications"><NotificationsSection /></SectionErrorBoundary>}
           {activeTab === 'timeline'      && <SectionErrorBoundary name="Timeline"><TimelinePreferencesSection /></SectionErrorBoundary>}
           {activeTab === 'team'          && (
