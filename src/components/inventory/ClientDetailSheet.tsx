@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ClientInventoryItem, useUpsertClientInventory, useDeleteClientInventory } from '@/hooks/useClientInventory';
+import { startInAppCall } from '@/hooks/useDialer';
 import { useSyncedDeals } from '@/hooks/useSyncedDeals';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
