@@ -214,7 +214,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
     }
   }, [open]);
 
-  /* Apply prefill (Reply / Reply All / Forward) once when the dialog opens */
+  /* Apply prefill (Reply / Reply All / Forward, OR a template from the library) */
   const prefillAppliedRef = useRef(false);
   useEffect(() => {
     if (!open) { prefillAppliedRef.current = false; return; }
@@ -225,8 +225,15 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
       setCc(initialCc);
       setShowCcBcc(true);
     }
+    /* Templates carry their own designed shell + agent signature. Mount in
+     * Preview so Tiptap doesn't flatten the rich HTML, and turn off the
+     * auto-append signature toggle so we don't double-stack signatures. */
+    if (initialAsTemplate) {
+      setMode('preview');
+      setAppendSignature(false);
+    }
     prefillAppliedRef.current = true;
-  }, [open, initialSubject, initialBodyHtml, initialCc]);
+  }, [open, initialSubject, initialBodyHtml, initialCc, initialAsTemplate]);
 
   /* Mobile back-button trap — keeps user on the lead detail page. */
   useComposerBackButton(open, onOpenChange);
