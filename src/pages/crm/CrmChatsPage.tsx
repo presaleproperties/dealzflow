@@ -23,6 +23,7 @@ import { useChatPins } from '@/hooks/useChatPins';
 import { SwipeRow } from '@/components/crm/chats/SwipeRow';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
+import { useDraftContactIds } from '@/hooks/useDraftContactIds';
 
 
 /**
