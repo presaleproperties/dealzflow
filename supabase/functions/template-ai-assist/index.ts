@@ -45,6 +45,8 @@ interface AssistBody {
   format?: "html" | "plain";
   /** Channel hint — when 'sms' the model keeps replies under 160 chars when possible. */
   channel?: "sms" | "whatsapp" | "email";
+  /** For `search` mode — list of templates to rank by relevance. */
+  candidates?: SearchCandidate[];
 }
 
 const SYSTEM_RULES_HTML = `You are an expert real-estate email copywriter for a luxury Vancouver presale brokerage.
