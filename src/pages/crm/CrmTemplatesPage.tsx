@@ -930,12 +930,31 @@ function PreviewPane({
   }, [item.uid]);
 
   const previewSource = inlineEdit
-    ? (item.kind === 'sms' ? draftBody : draftBody)
+    ? draftBody
     : (item.kind === 'sms' ? item.bodyText : item.bodyHtml);
-  const html = useMemo(
-    () => renderWithSampleData(item.kind === 'sms' ? `<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${(previewSource || '').replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!))}</pre>` : previewSource),
-    [previewSource, item.kind],
+  const previewSubject = inlineEdit ? draftSubject : (item.subject ?? '');
+
+  const renderedBody = useMemo(() => {
+    if (item.kind === 'sms') {
+      const escaped = (previewSource || '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]!));
+      return renderWithSampleData(`<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${escaped}</pre>`);
+    }
+    return renderWithSampleData(previewSource);
+  }, [previewSource, item.kind]);
+
+  const renderedSubject = useMemo(
+    () => renderWithSampleData(previewSubject || '').replace(/<[^>]+>/g, ''),
+    [previewSubject],
   );
+
+  const subjectStrip = item.kind === 'email'
+    ? `<div style="border-bottom:1px solid #eee;padding:14px 24px;font:600 13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111;background:#fafafa">
+         <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#888;font-weight:600;margin-bottom:4px">Subject</div>
+         ${renderedSubject ? renderedSubject.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]!)) : '<span style="color:#bbb;font-weight:500">No subject</span>'}
+       </div>`
+    : '';
+
+  const html = `${subjectStrip}<div style="padding:24px">${renderedBody || '<p style="color:#999;margin:0">No content</p>'}</div>`;
 
   const onInlineSave = async () => {
     if (!draftName.trim()) { toast.error('Name is required'); return; }
@@ -1094,7 +1113,7 @@ function PreviewPane({
                 title="Live preview"
                 className="w-full h-full border-0"
                 sandbox="allow-same-origin"
-                srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
+                srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:0;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
               />
             </div>
           </div>
@@ -1106,7 +1125,7 @@ function PreviewPane({
               title="Template preview"
               className="w-full h-full border-0"
               sandbox="allow-same-origin"
-              srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
+              srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:0;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
             />
           </div>
         </div>
