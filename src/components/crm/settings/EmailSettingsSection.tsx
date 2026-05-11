@@ -96,14 +96,17 @@ export default function EmailSettingsSection() {
   // latest signature (composers read from that table, preferring is_default).
   const syncDefaultSignatureRow = (html: string) => {
     if (!html?.trim()) return;
-    const def = (storedSignatures ?? []).find((s) => s.is_default)
-      ?? (storedSignatures ?? [])[0];
+    // Builder edits the FULL signature only — reply signature is a separate
+    // row managed by the ReplySignatureCard below.
+    const fullRows = (storedSignatures ?? []).filter((s) => (s.kind ?? 'full') === 'full');
+    const def = fullRows.find((s) => s.is_default) ?? fullRows[0];
     upsertSignatureRow.mutate({
       id: def?.id,
       name: def?.name || 'Default signature',
       html,
       is_default: true,
       sort_order: def?.sort_order ?? 0,
+      kind: 'full',
     });
   };
 
