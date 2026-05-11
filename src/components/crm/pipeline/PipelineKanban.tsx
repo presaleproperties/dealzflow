@@ -445,7 +445,7 @@ export function PipelineKanban() {
       ) : pipelineSegments.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">No pipeline stages configured</div>
       ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div
             ref={scrollRef}
             className="kanban-scroll flex-1 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none"
@@ -454,6 +454,9 @@ export function PipelineKanban() {
               {pipelineSegments.map(seg => {
                 const colors = getSegmentColor(seg);
                 const segContacts = columns[seg.id] ?? [];
+                const limit = visibleCounts[seg.id] || CARDS_PER_PAGE;
+                const visible = segContacts.slice(0, limit);
+                const remaining = segContacts.length - limit;
                 return (
                   <div
                     key={seg.id}
@@ -464,7 +467,6 @@ export function PipelineKanban() {
                       minWidth: isMobile ? '85vw' : '260px',
                     }}
                   >
-                    {/* Column header */}
                     <div
                       className="flex items-center justify-between px-3 py-1.5 sm:py-2 rounded-t-xl border-b"
                       style={{ borderColor: colors.border }}
@@ -477,55 +479,42 @@ export function PipelineKanban() {
                       </Pill>
                     </div>
 
-                    {/* Droppable area */}
-                    <Droppable droppableId={seg.id}>
-                      {(provided, snapshot) => {
-                        const limit = visibleCounts[seg.id] || CARDS_PER_PAGE;
-                        const visible = segContacts.slice(0, limit);
-                        const remaining = segContacts.length - limit;
-                        return (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200 ${snapshot.isDraggingOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
-                            style={{ maxHeight: 'calc(100dvh - 280px)' }}
-                          >
-                            {visible.map((contact, idx) => (
-                              <LeadCard key={contact.id} contact={contact} index={idx} onOpen={handleOpen} />
-                            ))}
-                            {provided.placeholder}
-                            {remaining > 0 && (
-                              <button
-                                onClick={() => loadMore(seg.id)}
-                                className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                              >
-                                Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
-                              </button>
-                            )}
-                            {contactsLoading && segContacts.length === 0 && (
-                              <div className="space-y-2">
-                                {Array.from({ length: 2 }).map((_, j) => (
-                                  <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
-                                    <Skeleton className="h-4 w-3/4" />
-                                    <Skeleton className="h-3 w-1/2" />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {!contactsLoading && segContacts.length === 0 && (
-                              <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
-                            )}
-                          </div>
-                        );
-                      }}
-                    </Droppable>
+                    <DroppableColumn
+                      id={seg.id}
+                      className="flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200"
+                      style={{ maxHeight: 'calc(100dvh - 280px)' }}
+                    >
+                      {visible.map((contact) => (
+                        <DraggableLeadCard key={contact.id} contact={contact} onOpen={handleOpen} />
+                      ))}
+                      {remaining > 0 && (
+                        <button
+                          onClick={() => loadMore(seg.id)}
+                          className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                          Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
+                        </button>
+                      )}
+                      {contactsLoading && segContacts.length === 0 && (
+                        <div className="space-y-2">
+                          {Array.from({ length: 2 }).map((_, j) => (
+                            <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-1/2" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!contactsLoading && segContacts.length === 0 && (
+                        <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
+                      )}
+                    </DroppableColumn>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Mobile dot indicators */}
           {isMobile && (
             <div className="flex justify-center gap-1.5 pt-2 pb-1">
               {pipelineSegments.map((seg, idx) => {
@@ -545,13 +534,17 @@ export function PipelineKanban() {
                         inline: 'start',
                       });
                     }}
-                    aria-label={seg.name}
+                    aria-label={`Jump to ${seg.name} column`}
                   />
                 );
               })}
             </div>
           )}
-        </DragDropContext>
+
+          <DragOverlay dropAnimation={null}>
+            {activeDragContact ? <LeadCardInner contact={activeDragContact} isOverlay /> : null}
+          </DragOverlay>
+        </DndContext>
       )}
     </div>
   );
