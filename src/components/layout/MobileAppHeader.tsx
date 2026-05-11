@@ -58,6 +58,23 @@ function fmtTime(d?: string | null) {
   try { return formatDistanceToNow(new Date(d), { addSuffix: true }); } catch { return ''; }
 }
 
+function TypeIcon({ type }: { type: string | null }) {
+  const props = { className: 'w-3.5 h-3.5', strokeWidth: 1.8 };
+  switch ((type ?? '').toLowerCase()) {
+    case 'sms':
+    case 'whatsapp': return <MessageSquare {...props} />;
+    case 'email':
+    case 'email_open':
+    case 'email_reply': return <Mail {...props} />;
+    case 'call': return <Phone {...props} />;
+    case 'appointment':
+    case 'showing': return <Calendar {...props} />;
+    case 'hot_lead': return <Flame {...props} />;
+    case 'mention': return <AtSign {...props} />;
+    default: return <BellRing {...props} />;
+  }
+}
+
 export function MobileAppHeader() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
