@@ -441,10 +441,44 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       }, () => {});
   }, [thread?.conv.id, thread?.conv.unread_count, qc]);
 
-  // Auto-scroll: only when the user is already near the bottom. Otherwise the
-  // <NewMessagesPill /> takes over and we leave their scroll position alone.
-  // Wrapped in rAF so we measure after the new bubble has been laid out — this
-  // is what kills the visible "jump" when an inbound message lands.
+  // Initial scroll: when a thread is first opened (or the user switches
+  // threads), jump straight to the most recent message — chat threads should
+  // always open at the bottom, like iMessage / Gmail's mobile thread view.
+  // Two rAFs so we measure AFTER images / email iframes have laid out their
+  // first paint; otherwise scrollHeight is short and we land mid-thread.
+  const initialScrollDoneRef = useRef<string | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (!conversationId) return;
+    if (messages.length === 0) return;
+    if (initialScrollDoneRef.current === conversationId) return;
+    initialScrollDoneRef.current = conversationId;
+    const id1 = requestAnimationFrame(() => {
+      const id2 = requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        wasAtBottomRef.current = true;
+      });
+      (el as any).__pendingRaf = id2;
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      const id2 = (el as any).__pendingRaf;
+      if (id2) cancelAnimationFrame(id2);
+    };
+  }, [conversationId, messages.length]);
+
+  // Reset the initial-scroll guard when navigating to a different thread so
+  // each thread gets its own one-shot bottom-pin on open.
+  useEffect(() => {
+    initialScrollDoneRef.current = null;
+  }, [conversationId]);
+
+  // Auto-scroll on new messages: only when the user is already near the
+  // bottom. Otherwise the <NewMessagesPill /> takes over and we leave their
+  // scroll position alone. Wrapped in rAF so we measure after the new bubble
+  // has been laid out — this is what kills the visible "jump" when an inbound
+  // message lands.
   const wasAtBottomRef = useRef(true);
   useEffect(() => {
     const el = scrollRef.current;
