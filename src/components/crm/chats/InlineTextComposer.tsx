@@ -394,7 +394,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-          <div className="flex-1 min-w-0 relative flex items-center rounded-[20px] border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3.5 py-1 min-h-[36px]">
+          <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3 py-0 min-h-[32px]">
             <textarea
               ref={taRef}
               value={body}
