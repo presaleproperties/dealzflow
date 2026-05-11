@@ -599,6 +599,28 @@ export async function processPresaleActivity(
     inserted = data;
   }
 
+  // Backfill orphan activity events: any prior crm_activity_events rows with
+  // matching email/phone but null contact_id (Presale push arrived before the
+  // contact existed, or before identity stitch) get re-linked to this contact
+  // so the lead's timeline shows the full history (incl. auto-emails sent
+  // before the contact was created).
+  if (contact && (email || phone)) {
+    try {
+      const orFilters = [
+        email ? `lead_email.eq.${email}` : null,
+        phone ? `lead_phone.eq.${phone}` : null,
+      ].filter(Boolean).join(",");
+      if (orFilters) {
+        await supabase
+          .from("crm_activity_events")
+          .update({ contact_id: contact.id })
+          .is("contact_id", null)
+          .or(orFilters);
+      }
+    } catch (e) {
+      console.warn("[presale-activity] orphan backfill failed (non-fatal):", e);
+    }
+  }
 
   if (!contact && (email || phone)) {
     await notifySyncFailure(
