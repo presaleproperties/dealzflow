@@ -353,7 +353,7 @@ export default function CrmContactsPage() {
                         </Link>
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
-                        {c.phone ? <a href={`tel:${c.phone}`} className="text-sm text-primary hover:underline">{c.phone}</a> : <span className="text-muted-foreground">—</span>}
+                        {c.phone ? <button type="button" onClick={() => startInAppCall({ phone: c.phone, contactId: c.id, contactName: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.phone })} className="text-sm text-primary hover:underline">{c.phone}</button> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5 hidden md:table-cell">
                         {c.email ? (
