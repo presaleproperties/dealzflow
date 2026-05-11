@@ -150,9 +150,9 @@ function LeadCard({ c, noteId, setNoteId, noteText, setNoteText, handleSaveNote,
           {c.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`tel:${c.phone}`} className="p-1.5 rounded-md hover:bg-muted/60 transition-colors">
+                <button type="button" onClick={() => startInAppCall({ phone: c.phone, contactId: c.id, contactName: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.phone })} className="p-1.5 rounded-md hover:bg-muted/60 transition-colors">
                   <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call</TooltipContent>
             </Tooltip>
