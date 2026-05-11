@@ -253,7 +253,7 @@ export function HotLeadsColumn() {
   const filteredLeads = useMemo(() => {
     if (!currentSegment) return [];
     return contacts
-      .filter(c => contactMatchesSegment(c, currentSegment.filter_config))
+      .filter(c => contactMatchesSegment(c, currentSegment.filter_config, currentSegment.id))
       .sort((a, b) => touchDays(b) - touchDays(a))
       .slice(0, 20);
   }, [contacts, currentSegment]);
