@@ -202,15 +202,15 @@ function attachCallHandlers(call: Call) {
   call.on('mute', (muted: boolean) => useDialerStore.setState({ muted }));
   call.on('disconnect', () => {
     useDialerStore.setState({ status: 'ended' });
-    setTimeout(() => useDialerStore.getState().reset(), 1500);
+    scheduleReset(1500);
   });
   call.on('cancel', () => {
     useDialerStore.setState({ status: 'ended' });
-    setTimeout(() => useDialerStore.getState().reset(), 1200);
+    scheduleReset(1200);
   });
   call.on('reject', () => {
     useDialerStore.setState({ status: 'ended' });
-    setTimeout(() => useDialerStore.getState().reset(), 800);
+    scheduleReset(800);
   });
   call.on('error', (e: any) => {
     console.error('[dialer] call error', e);
