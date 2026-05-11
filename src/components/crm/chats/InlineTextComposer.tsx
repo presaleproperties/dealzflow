@@ -428,7 +428,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             disabled={!canSend}
             aria-label="Send"
             className={
-              'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
+              'shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
               (canSend
                 ? 'bg-primary text-primary-foreground shadow-sm hover:brightness-110'
                 : 'bg-muted text-muted-foreground/50 cursor-not-allowed active:scale-100')
