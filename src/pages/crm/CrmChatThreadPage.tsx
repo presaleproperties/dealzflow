@@ -537,6 +537,30 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     };
   }, []);
 
+  // Native Capacitor keyboards can report their height via --kb-h without a
+  // matching visualViewport resize event. Watch the root keyboard vars too so
+  // mobile + tablet native shells still pin the newest messages above the IME.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof document === 'undefined') return;
+    let raf = 0;
+    const pinIfComposerFocused = () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active?.closest('[data-chat-composer]')) return;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        raf = 0;
+      });
+    };
+    const observer = new MutationObserver(pinIfComposerFocused);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'data-keyboard-open'] });
+    return () => {
+      observer.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   // When the composer input gains focus, immediately pin to the bottom so the
   // most recent messages slide up with the keyboard instead of being hidden
   // behind it. Listens at document level since the composer lives in a sibling
