@@ -215,8 +215,8 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       data-chat-composer="true"
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
-        paddingBottom: isNative ? '10px' : 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
-        paddingTop: '10px',
+        paddingBottom: isNative ? '6px' : 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
+        paddingTop: '6px',
         transform: isNative
           ? 'none'
           : 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
@@ -287,7 +287,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
               <button
                 type="button"
                 aria-label="Attachments and templates"
-                className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
               >
                 <Plus className="w-[18px] h-[18px]" />
               </button>
@@ -394,7 +394,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-          <div className="flex-1 min-w-0 relative flex items-center rounded-[20px] border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3.5 py-1 min-h-[36px]">
+          <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3 py-0 min-h-[32px]">
             <textarea
               ref={taRef}
               value={body}
@@ -428,7 +428,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             disabled={!canSend}
             aria-label="Send"
             className={
-              'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
+              'shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
               (canSend
                 ? 'bg-primary text-primary-foreground shadow-sm hover:brightness-110'
                 : 'bg-muted text-muted-foreground/50 cursor-not-allowed active:scale-100')
