@@ -9,11 +9,10 @@
  * Tabs are remembered in localStorage so the user lands back where they were.
  */
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Inbox, Mail, MessageSquare, Phone } from 'lucide-react';
+import { Inbox, Mail, MessageSquare } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useIsAdmin } from '@/hooks/useAdmin';
 
 const CrmEmailWorkspacePage = lazy(() => import('./CrmEmailWorkspacePage'));
 const CrmChatsShell = lazy(() => import('./CrmChatsShell'));
