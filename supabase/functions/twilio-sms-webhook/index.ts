@@ -61,17 +61,24 @@ Deno.serve(async (req) => {
         if (errorMessage) update.error_message = errorMessage;
         await admin.from('crm_sms_log').update(update).eq('twilio_message_sid', sid);
 
-        // Update campaign counters
-        const { data: row } = await admin.from('crm_sms_log').select('campaign_id').eq('twilio_message_sid', sid).maybeSingle();
+        // S1: collapse N+1 — fetch id + campaign_id in a single round-trip
+        const { data: row } = await admin
+          .from('crm_sms_log')
+          .select('id, campaign_id')
+          .eq('twilio_message_sid', sid)
+          .maybeSingle();
         if (row?.campaign_id) {
           if (status === 'delivered') {
             try { await admin.rpc('increment_sms_campaign_delivered', { _campaign_id: row.campaign_id }); } catch {}
             await admin.from('crm_sms_campaign_recipients').update({
               status: 'delivered', delivered_at: new Date().toISOString(),
-            }).eq('campaign_id', row.campaign_id).eq('sms_log_id', (await admin.from('crm_sms_log').select('id').eq('twilio_message_sid', sid).maybeSingle()).data?.id);
+            }).eq('campaign_id', row.campaign_id).eq('sms_log_id', row.id);
           } else if (status === 'failed' || status === 'undelivered') {
+            const { count } = await admin.from('crm_sms_campaign_recipients')
+              .select('id', { count: 'exact', head: true })
+              .eq('campaign_id', row.campaign_id).eq('status', 'failed');
             await admin.from('crm_sms_campaigns').update({
-              failed_count: (await admin.from('crm_sms_campaign_recipients').select('id', { count: 'exact', head: true }).eq('campaign_id', row.campaign_id).eq('status', 'failed')).count || 0,
+              failed_count: count || 0,
             }).eq('id', row.campaign_id);
           }
         }
