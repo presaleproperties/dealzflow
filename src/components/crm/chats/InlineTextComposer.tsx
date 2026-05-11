@@ -158,25 +158,25 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
   // Send is fire-and-forget — never disable on isPending. The optimistic
   // bubble + cleared input give the user "tap, gone" feedback so they can
   // immediately type and send the next message (iMessage parity).
-  const canSend = body.trim().length > 0 && !!contact.phone;
+  const canSend = (body.trim().length > 0 || media.length > 0) && !!contact.phone;
 
   const send = () => {
-    if (!body.trim()) return;
+    if (!body.trim() && media.length === 0) return;
     if (!contact.phone) {
       triggerHaptic('error');
       toast.error('This lead has no phone number');
       return;
     }
     triggerHaptic('medium');
-    // If a quote preview is attached, prepend it as ">" lines so the
-    // recipient sees the context they're being replied to.
     const quotedPrefix = quote
       ? quote.split('\n').map((l) => `> ${l}`).join('\n') + '\n\n'
       : '';
     const text = quotedPrefix + body;
     const draftBody = body;
+    const draftMedia = media;
     setBody('');
     setQuote(null);
+    setMedia([]);
     if (taRef.current) taRef.current.style.height = 'auto';
     onSent?.();
     sendSms.mutate(
@@ -186,11 +186,12 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
         body: text,
         channel,
         conversation_id: conversationId ?? undefined,
+        media_urls: draftMedia.length ? draftMedia.map((m) => m.url) : undefined,
       },
       {
         onError: (err: any) => {
-          // Restore the draft so the user doesn't lose what they typed.
           setBody(draftBody);
+          setMedia(draftMedia);
           toast.error(err?.message || 'Failed to send');
         },
       },
