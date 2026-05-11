@@ -157,15 +157,21 @@ function linkify(text: string): React.ReactNode[] {
   return nodes;
 }
 
-/** Strip <script> and on*= handlers as a defense-in-depth before iframe srcdoc. */
+/**
+ * Sanitize email HTML before rendering inside an iframe srcdoc.
+ * Uses DOMPurify with a permissive HTML profile so styled marketing emails
+ * still look correct, while stripping <script>, on*= handlers, javascript:
+ * URIs, and unsafe SVG/MathML constructs.
+ */
 function sanitizeForIframe(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
-    // Strip javascript: URIs in href/src
-    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
-    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+  return DOMPurify.sanitize(html, {
+    WHOLE_DOCUMENT: true,
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ['target', 'background', 'bgcolor', 'align', 'valign', 'border', 'cellpadding', 'cellspacing'],
+    FORBID_TAGS: ['script', 'style', 'object', 'embed', 'iframe', 'form', 'input', 'button', 'meta', 'link'],
+    FORBID_ATTR: ['srcdoc'],
+    ALLOW_DATA_ATTR: false,
+  });
 }
 
 /**
