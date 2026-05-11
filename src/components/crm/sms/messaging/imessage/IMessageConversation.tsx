@@ -88,8 +88,12 @@ export function IMessageConversation(props: Props) {
   const prevThreadKey = useRef(thread.key);
   const muted = threadState.isMuted(channel, thread.key);
   const archived = threadState.isArchived(channel, thread.key);
-  const { viewportHeight, keyboardOpen } = useVisualViewport();
-  const prevKeyboardOpen = useRef(keyboardOpen);
+  // Keyboard state lives on <html class="keyboard-open"> + CSS var
+  // `--vv-height` (see useVisualViewport). We observe class flips via
+  // MutationObserver so we don't trigger a React re-render on every
+  // visualViewport frame (which caused the composer to slide back down
+  // behind the iOS keyboard).
+  useVisualViewport();
 
   // Track whether the user is pinned to the bottom of the scroller.
   useEffect(() => {
@@ -116,22 +120,29 @@ export function IMessageConversation(props: Props) {
     }
   }, [visibleMessages.length, thread.key]);
 
-  // When the iOS keyboard opens, ride it: snap to bottom so the latest
-  // message sits just above the composer (which is now above the keyboard).
+  // When the iOS keyboard opens (signalled by <html class="keyboard-open">),
+  // snap to bottom so the latest message sits just above the composer.
   useEffect(() => {
-    if (keyboardOpen && !prevKeyboardOpen.current) {
-      const el = scrollRef.current;
-      if (el) {
-        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 100);
+    const root = document.documentElement;
+    let prev = root.classList.contains('keyboard-open');
+    const observer = new MutationObserver(() => {
+      const isOpen = root.classList.contains('keyboard-open');
+      if (isOpen && !prev) {
+        const el = scrollRef.current;
+        if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 100);
       }
-    }
-    prevKeyboardOpen.current = keyboardOpen;
-  }, [keyboardOpen]);
+      prev = isOpen;
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
-  // On mobile, when the keyboard is up, lock the outer container to the
-  // visible viewport height so the composer never hides behind it.
-  const containerStyle = isMobile && keyboardOpen
-    ? { position: 'fixed' as const, top: 0, left: 0, right: 0, height: `${viewportHeight}px` }
+  // On mobile, lock the outer container to the live visual viewport height
+  // via the `--vv-height` CSS variable. Because it's a CSS var (not React
+  // state), the compositor applies it in the same frame as the iOS keyboard
+  // animation — the composer can't drift back down behind the keyboard.
+  const containerStyle = isMobile
+    ? { position: 'fixed' as const, top: 0, left: 0, right: 0, height: 'var(--vv-height, 100dvh)' }
     : undefined;
 
   return (
