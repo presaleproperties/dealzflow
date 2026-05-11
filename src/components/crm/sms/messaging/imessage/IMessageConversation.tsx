@@ -882,6 +882,7 @@ function IMessageComposer({
               <Button
                 size="icon"
                 variant="ghost"
+                aria-label="Attach or more options"
                 className="h-9 w-9 rounded-full shrink-0 bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
                 title="More"
               >
