@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogDescription, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -167,17 +167,17 @@ export function ImportConversationDialog({ contact, open, onOpenChange }: Props)
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <ResponsiveDialog open={open} onOpenChange={handleClose}>
+      <ResponsiveDialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
             Import conversation from Lofty
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             Paste the full email thread, text exchange, or call notes. AI will recognize each message and lay it out chronologically.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         {step === 'paste' && (
           <div className="flex-1 flex flex-col gap-3 min-h-0">
@@ -253,7 +253,7 @@ export function ImportConversationDialog({ contact, open, onOpenChange }: Props)
           </div>
         )}
 
-        <DialogFooter className="flex-shrink-0">
+        <ResponsiveDialogFooter className="flex-shrink-0">
           {step === 'paste' && (
             <>
               <Button variant="ghost" onClick={() => handleClose(false)}>Cancel</Button>
@@ -277,8 +277,8 @@ export function ImportConversationDialog({ contact, open, onOpenChange }: Props)
               <Loader2 className="w-4 h-4 animate-spin" /> Saving…
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

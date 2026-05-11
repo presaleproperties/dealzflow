@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle } from '@/components/ui/responsive-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDownLeft, ArrowUpRight, Eye, MousePointerClick, Mail, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -155,10 +155,10 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, on
   const toAddr = email.to_email || (isInbound ? 'You' : contactEmail);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-3xl p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/60 space-y-3 shrink-0">
+        <ResponsiveDialogHeader className="px-5 pt-5 pb-3 border-b border-border/60 space-y-3 shrink-0">
           <div className="flex items-start gap-3">
             <div
               className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${
@@ -194,9 +194,9 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, on
                   </span>
                 )}
               </div>
-              <DialogTitle className="text-base font-semibold leading-snug break-words">
+              <ResponsiveDialogTitle className="text-base font-semibold leading-snug break-words">
                 {email.subject || '(no subject)'}
-              </DialogTitle>
+              </ResponsiveDialogTitle>
             </div>
           </div>
 
@@ -227,7 +227,7 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, on
               </>
             )}
           </div>
-        </DialogHeader>
+        </ResponsiveDialogHeader>
 
         {/* Body */}
         <div className="flex-1 overflow-auto bg-muted/20 p-3 sm:p-5">
@@ -258,8 +258,8 @@ export function EmailPreviewDialog({ email, open, onOpenChange, contactEmail, on
             </Button>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 

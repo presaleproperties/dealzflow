@@ -93,6 +93,15 @@ export function useUpdatePayout() {
         return acc;
       }, {} as Record<string, any>);
 
+      // S8: Any manual edit to `amount` flags this payout as user-overridden,
+      // so future deal-level recalculations leave it alone. Callers that want
+      // to recalc a payout (and clear the lock) must pass manual_override:false
+      // explicitly.
+      if (Object.prototype.hasOwnProperty.call(cleanedData, 'amount')
+          && !Object.prototype.hasOwnProperty.call(cleanedData, 'manual_override')) {
+        cleanedData.manual_override = true;
+      }
+
       const { data: payout, error } = await supabase
         .from('payouts')
         .update(cleanedData)
@@ -263,7 +272,10 @@ export function useRecalculatePayouts() {
       if (fetchError) throw fetchError;
 
       // Update each payout with the recalculated amount
-      const updates = existingPayouts?.map((payout) => {
+      const updates = existingPayouts?.flatMap((payout) => {
+        // S8: Skip payouts that the user has manually edited.
+        if ((payout as any).manual_override === true) return [];
+
         let newAmount = 0;
 
         if (payout.payout_type === 'Advance') {
@@ -281,10 +293,10 @@ export function useRecalculatePayouts() {
           newAmount = payout.amount;
         }
 
-        return {
+        return [{
           id: payout.id,
           amount: Math.round(newAmount * 100) / 100,
-        };
+        }];
       }) || [];
 
       // Batch update all payouts
