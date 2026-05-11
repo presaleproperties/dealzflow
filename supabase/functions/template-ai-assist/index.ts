@@ -128,10 +128,16 @@ Deno.serve(async (req: Request) => {
     }
 
     const wantsSubjects = body.mode === "subject_lines";
-    const messages = [
-      { role: "system", content: body.format === "plain" ? SYSTEM_RULES_PLAIN : SYSTEM_RULES_HTML },
-      { role: "user", content: buildUserPrompt(body) },
-    ];
+    const wantsSearch = body.mode === "search";
+    const messages = wantsSearch
+      ? [
+          { role: "system", content: "You match real-estate templates to an agent's intent. Always reply with a tool call." },
+          { role: "user", content: buildUserPrompt(body) },
+        ]
+      : [
+          { role: "system", content: body.format === "plain" ? SYSTEM_RULES_PLAIN : SYSTEM_RULES_HTML },
+          { role: "user", content: buildUserPrompt(body) },
+        ];
 
     const payload: Record<string, unknown> = {
       model: "google/gemini-3-flash-preview",
@@ -160,6 +166,36 @@ Deno.serve(async (req: Request) => {
         },
       }];
       payload.tool_choice = { type: "function", function: { name: "return_subjects" } };
+    }
+
+    if (wantsSearch) {
+      payload.tools = [{
+        type: "function",
+        function: {
+          name: "return_matches",
+          description: "Return relevant template ids in ranked order with a brief reason for each.",
+          parameters: {
+            type: "object",
+            properties: {
+              matches: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    reason: { type: "string" },
+                  },
+                  required: ["id"],
+                },
+                maxItems: 8,
+              },
+            },
+            required: ["matches"],
+            additionalProperties: false,
+          },
+        },
+      }];
+      payload.tool_choice = { type: "function", function: { name: "return_matches" } };
     }
 
     const ai = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
