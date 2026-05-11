@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
-import { useEmailSignatures } from '@/hooks/useEmailSignatures';
+import { useEmailSignatures, pickSignatureForKind } from '@/hooks/useEmailSignatures';
 import { useBridgeSendEmail } from '@/hooks/useBridgeEmail';
 import { renderForRecipient } from '@/lib/emailVariables';
 import { toast } from 'sonner';
