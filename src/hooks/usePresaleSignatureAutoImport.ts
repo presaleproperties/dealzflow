@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePresaleAgent } from '@/stores/usePresaleAgent';
 import { useEmailSignatures } from './useEmailSignatures';
 import { useEmailSettings } from './useEmailSettings';
+import { buildPresaleReplySignature } from '@/lib/presaleSignatures';
 
 export function usePresaleSignatureAutoImport() {
   const { agent, status } = usePresaleAgent();
