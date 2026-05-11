@@ -24,15 +24,15 @@ export default function CrmChatsShell() {
 
   return (
     <>
-      {/* ---------- PHONE / TABLET (single pane) ---------- */}
-      <div className="lg:hidden flex flex-1 min-h-0 h-full flex-col">
+      {/* ---------- PHONE (single pane, <md) ---------- */}
+      <div className="md:hidden flex flex-1 min-h-0 h-full flex-col">
         {isNew ? <CrmNewChatPane /> : hasThread ? <CrmChatThreadPage /> : <CrmChatsPage />}
       </div>
 
-      {/* ---------- DESKTOP (two pane) ---------- */}
-      <div className="hidden lg:flex flex-1 min-h-0 h-full -mx-4 -my-4">
+      {/* ---------- TABLET / DESKTOP (two pane, md+) ---------- */}
+      <div className="hidden md:flex flex-1 min-h-0 h-full -mx-4 -my-4">
         {/* Left: list (fixed width) */}
-        <aside className="w-[320px] lg:w-[380px] xl:w-[420px] shrink-0 border-r border-border/60 bg-background flex flex-col min-h-0 overflow-hidden">
+        <aside className="w-[300px] lg:w-[380px] xl:w-[420px] shrink-0 border-r border-border/60 bg-background flex flex-col min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
             <CrmChatsPage />
           </div>

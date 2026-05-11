@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, MessageSquare, Mail, Phone, Calendar, Flame, AtSign, BellRing } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +58,23 @@ function fmtTime(d?: string | null) {
   try { return formatDistanceToNow(new Date(d), { addSuffix: true }); } catch { return ''; }
 }
 
+function TypeIcon({ type }: { type: string | null }) {
+  const props = { className: 'w-3.5 h-3.5', strokeWidth: 1.8 };
+  switch ((type ?? '').toLowerCase()) {
+    case 'sms':
+    case 'whatsapp': return <MessageSquare {...props} />;
+    case 'email':
+    case 'email_open':
+    case 'email_reply': return <Mail {...props} />;
+    case 'call': return <Phone {...props} />;
+    case 'appointment':
+    case 'showing': return <Calendar {...props} />;
+    case 'hot_lead': return <Flame {...props} />;
+    case 'mention': return <AtSign {...props} />;
+    default: return <BellRing {...props} />;
+  }
+}
+
 export function MobileAppHeader() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -74,11 +91,12 @@ export function MobileAppHeader() {
   const isChatThread = /^\/crm\/chats\/[^/]+/.test(pathname) && pathname !== '/crm/chats/new';
 
   // Unread count badge (always-on, light query)
-  const { data: unreadCount = 0 } = useQuery({
+  const { data: unreadCount = 0, refetch: refetchUnread } = useQuery({
     queryKey: ['mobile-header-unread', user?.id],
     enabled: !!user && !isChatThread,
     staleTime: 30_000,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { count } = await supabase
         .from('crm_notifications')
@@ -87,6 +105,32 @@ export function MobileAppHeader() {
       return count ?? 0;
     },
   });
+
+  // Real-time: bump the badge the instant a new notification arrives.
+  useEffect(() => {
+    if (!user?.id || isChatThread) return;
+    const ch = supabase
+      .channel(`mobile-header-notifs-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'crm_notifications', filter: `user_id=eq.${user.id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ['mobile-header-unread'] });
+          qc.invalidateQueries({ queryKey: ['mobile-header-notifications'] });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id, isChatThread, qc]);
+
+  // Refetch when app returns from background (iOS PWA suspends timers).
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refetchUnread();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [refetchUnread]);
 
   // Feed loaded only when the sheet opens
   const { data: notifications, isLoading } = useQuery({
@@ -225,18 +269,24 @@ export function MobileAppHeader() {
                   type="button"
                   onClick={() => handleOpenItem(n)}
                   className={cn(
-                    "w-full text-left block px-3 py-3 rounded-xl transition-colors border active:scale-[0.99]",
+                    "w-full text-left block px-3 py-3 rounded-xl transition-colors border active:scale-[0.99] active:bg-muted/60",
                     n.is_read
                       ? "border-transparent hover:bg-muted/50"
                       : "border-primary/20 bg-primary/5 hover:bg-primary/10"
                   )}
                 >
                   <div className="flex items-start gap-2.5">
-                    {!n.is_read && (
-                      <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0 bg-primary" />
-                    )}
+                    <div className={cn(
+                      "shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center",
+                      n.is_read ? "bg-muted text-muted-foreground" : "bg-primary/15 text-primary",
+                    )}>
+                      <TypeIcon type={n.type} />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-foreground leading-tight">
+                      <div className={cn(
+                        "text-[13px] leading-tight",
+                        n.is_read ? "font-medium text-foreground/90" : "font-bold text-foreground",
+                      )}>
                         {n.title}
                       </div>
                       {n.body && (
@@ -248,6 +298,9 @@ export function MobileAppHeader() {
                         {fmtTime(n.created_at)}
                       </div>
                     </div>
+                    {!n.is_read && (
+                      <span className="w-2 h-2 rounded-full mt-2 shrink-0 bg-primary" aria-label="Unread" />
+                    )}
                   </div>
                 </button>
               ))}

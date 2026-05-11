@@ -41,7 +41,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       style={isMobile ? ({ "--width": "calc(100vw - 24px)" } as React.CSSProperties) : undefined}
       toastOptions={{
-        duration: 6000,
+        duration: 5000,
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-card group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-2xl group-[.toaster]:rounded-xl group-[.toaster]:px-4 group-[.toaster]:py-3 group-[.toaster]:backdrop-blur-md",

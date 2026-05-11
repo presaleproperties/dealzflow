@@ -64,3 +64,40 @@ self.addEventListener("fetch", (event) => {
     })()
   );
 });
+
+// ---------------------------------------------------------------------------
+// Web Push — show a notification and deep-link the user into the relevant
+// thread when they tap it. Payload shape is set by the send-push edge fn:
+//   { title, body, url, tag, icon, badge }
+// where `url` mirrors crm_notifications.link_to (e.g. /crm/chats/<id>).
+// ---------------------------------------------------------------------------
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  const title = data.title || "Dealzflow";
+  const options = {
+    body: data.body || "",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
+    tag: data.tag || undefined,
+    data: { url: data.url || data.link_to || "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    // Reuse an open tab if we have one — navigate it to the target.
+    for (const c of all) {
+      if ("focus" in c) {
+        try { await c.focus(); } catch {}
+        try { await c.navigate(target); } catch {}
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(target);
+  })());
+});

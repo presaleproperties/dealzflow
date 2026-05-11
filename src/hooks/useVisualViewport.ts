@@ -49,10 +49,19 @@ export function useVisualViewport() {
     vv?.addEventListener('scroll', update);
     window.addEventListener('resize', update);
 
+    // iOS sometimes delays the visualViewport resize when the device rotates,
+    // especially with the soft keyboard up. Force a recalculation 300ms later.
+    const onOrientation = () => {
+      update();
+      window.setTimeout(update, 300);
+    };
+    window.addEventListener('orientationchange', onOrientation);
+
     return () => {
       vv?.removeEventListener('resize', update);
       vv?.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', onOrientation);
       root.classList.remove('keyboard-open');
     };
   }, []);
