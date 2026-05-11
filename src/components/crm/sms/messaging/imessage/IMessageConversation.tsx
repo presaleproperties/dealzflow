@@ -26,7 +26,6 @@ import {
   smsSegments, type MessagingChannel, type SmsLogRow,
 } from '@/hooks/useSms';
 import { useThreadState } from '@/hooks/useThreadState';
-import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 import { isMessagingMuted, setMessagingMuted } from '@/lib/messagingSound';
 import { toast } from 'sonner';
@@ -84,16 +83,11 @@ export function IMessageConversation(props: Props) {
   } = props;
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
   const prevThreadKey = useRef(thread.key);
   const muted = threadState.isMuted(channel, thread.key);
   const archived = threadState.isArchived(channel, thread.key);
-  // Keyboard state lives on <html class="keyboard-open"> + CSS var
-  // `--vv-height` (see useVisualViewport). We observe class flips via
-  // MutationObserver so we don't trigger a React re-render on every
-  // visualViewport frame (which caused the composer to slide back down
-  // behind the iOS keyboard).
-  useVisualViewport();
 
   // Track whether the user is pinned to the bottom of the scroller.
   useEffect(() => {
@@ -120,33 +114,28 @@ export function IMessageConversation(props: Props) {
     }
   }, [visibleMessages.length, thread.key]);
 
-  // When the iOS keyboard opens (signalled by <html class="keyboard-open">),
-  // snap to bottom so the latest message sits just above the composer.
   useEffect(() => {
-    const root = document.documentElement;
-    let prev = root.classList.contains('keyboard-open');
-    const observer = new MutationObserver(() => {
-      const isOpen = root.classList.contains('keyboard-open');
-      if (isOpen && !prev) {
-        const el = scrollRef.current;
-        if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 100);
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.attributeName === 'class') {
+          if (document.documentElement.classList.contains('keyboard-open')) {
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+          }
+        }
       }
-      prev = isOpen;
     });
-    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
 
-  // On mobile, lock the outer container to the live visual viewport height
-  // via the `--vv-height` CSS variable. Because it's a CSS var (not React
-  // state), the compositor applies it in the same frame as the iOS keyboard
-  // animation — the composer can't drift back down behind the keyboard.
   const containerStyle = isMobile
-    ? { position: 'fixed' as const, top: 0, left: 0, right: 0, height: 'var(--vv-height, 100dvh)' }
+    ? { bottom: 'var(--keyboard-offset, 0px)' }
     : undefined;
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font" style={containerStyle}>
+    <div className={cn('flex flex-col min-h-0 overflow-hidden imsg-font', isMobile ? 'fixed top-0 left-0 right-0' : 'h-full')} style={containerStyle}>
       {/* ===== Frosted header (centered title, iMessage style) ===== */}
       <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top shrink-0 sticky top-0 z-30">
         {/* Left controls */}
@@ -320,6 +309,7 @@ export function IMessageConversation(props: Props) {
           onReply={onQuote}
           onDeleteMessage={onDeleteMessage}
         />
+        <div ref={messagesEndRef} />
       </div>
 
       {/* ===== Composer ===== */}
