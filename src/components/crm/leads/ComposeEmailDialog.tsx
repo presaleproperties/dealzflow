@@ -112,7 +112,7 @@ const isRichSignatureHtml = (html: string) =>
   /<(table|thead|tbody|tr|td|th|img|style|center|font)[\s>]/i.test(html)
   || /<[a-z][^>]*\sstyle\s*=/i.test(html);
 
-export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc, extraContacts, onSent, onPickContact }: Props) {
+export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject, initialBodyHtml, initialCc, initialAsTemplate, extraContacts, onSent, onPickContact }: Props) {
   const { user } = useAuth();
   const addMessage = useAddCrmMessage();
   const sendBridge = useBridgeSendEmail();
