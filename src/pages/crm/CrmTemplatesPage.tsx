@@ -613,7 +613,7 @@ function MobileFilterButton(props: any) {
           <div>
             <div className="text-[10px] uppercase tracking-wider font-semibold mb-1 text-muted-foreground">Source</div>
             <div className="grid grid-cols-2 gap-1">
-              {(['all', 'mine', 'team', 'presale'] as const).map((s) => (
+              {(['all', 'mine', 'team'] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => props.setSource(s)}
