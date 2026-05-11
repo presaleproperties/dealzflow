@@ -28,7 +28,7 @@ export function ReplySignatureCard() {
   const { data: signatures = [] } = useEmailSignatures();
   const upsert = useUpsertEmailSignature();
   const { agent } = usePresaleAgent();
-  const { settings } = useEmailSettings();
+  const { data: settings } = useEmailSettings();
 
   const replyRow = useMemo(
     () => signatures.find((s) => s.kind === 'reply') ?? null,
