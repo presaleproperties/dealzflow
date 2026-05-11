@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { openExternal } from '@/lib/openUrl';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SchedulerEventTypesPanel } from '@/components/crm/scheduler/SchedulerEventTypesPanel';

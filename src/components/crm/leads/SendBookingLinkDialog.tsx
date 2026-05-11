@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { openExternal } from '@/lib/openUrl';
 import { ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
