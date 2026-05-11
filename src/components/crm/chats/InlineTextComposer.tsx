@@ -211,7 +211,9 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     setBody('');
     setQuote(null);
     setMedia([]);
+    setAiSuggestion(null);
     if (taRef.current) taRef.current.style.height = 'auto';
+    void clearDraft();
     onSent?.();
     sendSms.mutate(
       {
