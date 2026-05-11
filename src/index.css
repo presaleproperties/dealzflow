@@ -262,12 +262,14 @@
        sits flush with the keyboard top — no double padding, no jump. */
     --composer-safe-bottom: max(env(safe-area-inset-bottom, 0px), 10px);
     --keyboard-inset-bottom: 0px;
+    --keyboard-offset: 0px;
     --composer-viewport-top: 0px;
     --composer-viewport-height: 100dvh;
     /* Composer chrome paints edge-to-edge; only the controls are inset below
        the status bar, matching MobileAppHeader without artificial white space. */
     --composer-header-top-pad: env(safe-area-inset-top, 0px);
   }
+  html.keyboard-open,
   html[data-keyboard-open="true"] {
     --composer-safe-bottom: 8px;
   }
@@ -282,6 +284,7 @@
   /* When a composer drawer opens the soft keyboard, hide the floating
      bottom nav so it can't slide under the agent's thumb while typing.
      Pure CSS — no per-frame JS, no shake. */
+  html.keyboard-open nav[aria-label="Primary"],
   html[data-keyboard-open="true"] nav[aria-label="Primary"] {
     transform: translateY(120%);
     transition: transform 180ms ease-out;
