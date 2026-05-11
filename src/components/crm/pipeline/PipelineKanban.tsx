@@ -189,7 +189,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
 const CARDS_PER_PAGE = 50;
 
 export function PipelineKanban() {
-  const { data: contacts = [], isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useCrmContacts();
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useCrmContactsLite();
   const { data: segments = [], isLoading: segmentsLoading, error: segmentsError, refetch: refetchSegments } = useCrmLeadSegments();
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const dynamicAgents = useMemo(() => {
