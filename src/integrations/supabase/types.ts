@@ -4430,6 +4430,51 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_template_versions: {
+        Row: {
+          body: string | null
+          category: string | null
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          id: string
+          kind: string
+          name: string | null
+          preview_text: string | null
+          subject: string | null
+          template_id: string
+          version: number
+        }
+        Insert: {
+          body?: string | null
+          category?: string | null
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          name?: string | null
+          preview_text?: string | null
+          subject?: string | null
+          template_id: string
+          version: number
+        }
+        Update: {
+          body?: string | null
+          category?: string | null
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string | null
+          preview_text?: string | null
+          subject?: string | null
+          template_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       crm_thread_drafts: {
         Row: {
           body: string
@@ -6201,6 +6246,10 @@ export type Database = {
           matched_on: string
           matched_value: string
         }[]
+      }
+      crm_revert_template_version: {
+        Args: { _kind: string; _template_id: string; _version: number }
+        Returns: undefined
       }
       crm_scheduler_resolve_slug: {
         Args: { _event_slug: string; _team_slug: string }
