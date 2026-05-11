@@ -67,6 +67,11 @@ interface Props {
   initialSubject?: string;
   initialBodyHtml?: string;
   initialCc?: string;
+  /** When true, the prefill is treated as a fully-designed template (e.g. opened
+   *  from the Templates library). The composer mounts in Preview mode and the
+   *  auto-appended signature is disabled so the template's built-in signature
+   *  is the only one rendered. */
+  initialAsTemplate?: boolean;
   /** Additional recipients for mass-send. When the total count is >1, the
    *  composer routes through `crm-mass-send-email` (personalized server-side).
    *  The primary `contact` drives the live variable preview. */
