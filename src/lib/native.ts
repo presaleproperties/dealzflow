@@ -50,9 +50,9 @@ export function onKeyboardHide(cb: () => void) {
   return () => { handle.then((h) => h.remove()); };
 }
 
-export async function setKeyboardResizeNative() {
+export async function setKeyboardResizeNone() {
   if (!isNative) return;
-  try { await Keyboard.setResizeMode({ mode: KeyboardResize.Native }); } catch { /* noop */ }
+  try { await Keyboard.setResizeMode({ mode: KeyboardResize.None }); } catch { /* noop */ }
 }
 
 export async function hideKeyboardAccessoryBar() {
