@@ -412,7 +412,7 @@ export function PipelineKanban() {
         <DragDropContext onDragEnd={handleDragEnd}>
           <div
             ref={scrollRef}
-            className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none"
+            className="kanban-scroll flex-1 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none"
           >
             <div className="flex gap-2 sm:gap-3 min-w-max h-full">
               {pipelineSegments.map(seg => {
