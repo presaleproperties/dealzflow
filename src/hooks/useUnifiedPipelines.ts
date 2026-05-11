@@ -40,7 +40,7 @@ export function useActivePipelineFor(contact: CrmContact | null | undefined) {
       if (direct) return direct;
     }
     for (const seg of pipelines) {
-      if (contactMatchesSegment(contact, seg.filter_config)) return seg;
+      if (contactMatchesSegment(contact, seg.filter_config, seg.id)) return seg;
     }
     return null;
   }, [contact, pipelines]);
