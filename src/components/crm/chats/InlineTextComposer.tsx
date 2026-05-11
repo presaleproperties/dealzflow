@@ -252,10 +252,10 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
         paddingTop: '14px',
-        paddingBottom: 'max(18px, env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'max(10px, calc(env(safe-area-inset-bottom, 0px) - var(--keyboard-inset-bottom, 0px)))',
         transform: isNative
           ? 'none'
-          : 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
+          : 'none',
         willChange: 'transform',
         // iOS visualViewport.resize only fires at start/end of the keyboard
         // animation, so without a CSS transition the composer would teleport

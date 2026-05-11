@@ -33,6 +33,7 @@ export function useKeyboardInset(enabled = true) {
     let frame = 0;
     let settleTimer = 0;
     let last = -1;
+    let keyboardOpen = false;
     const initialViewportHeight = Math.max(
       window.innerHeight || 0,
       root.clientHeight || 0,
@@ -44,19 +45,26 @@ export function useKeyboardInset(enabled = true) {
       frame = 0;
       const vv = window.visualViewport;
       const visualHeight = vv?.height ?? window.innerHeight;
-      const layoutHeight = Math.max(window.innerHeight || 0, root.clientHeight || 0, visualHeight);
+      const visualOffsetTop = vv?.offsetTop ?? 0;
+      const innerHeight = window.innerHeight || 0;
+      const rootHeight = root.clientHeight || 0;
+      const layoutHeight = Math.max(innerHeight, rootHeight, visualHeight);
       const editing = isEditableElement(document.activeElement);
 
-      // iOS installed PWAs sometimes shrink `window.innerHeight` late in the
-      // keyboard animation. If we calculate from that moving value, the inset
-      // decays back toward 0 and the composer slides under the keyboard. Keep a
-      // stable "keyboard closed" viewport height and measure against that.
-      if (!editing || visualHeight >= stableViewportHeight - 80) {
+      // Keep a stable "keyboard closed" viewport height while an editable has
+      // focus. iOS can update window.innerHeight late in the keyboard animation;
+      // recalibrating then is what made the composer slide back down and leave a
+      // gap above the keyboard.
+      if (!editing && !keyboardOpen) {
         stableViewportHeight = Math.max(stableViewportHeight, layoutHeight, visualHeight);
       }
 
-      const raw = Math.max(0, Math.round(stableViewportHeight - visualHeight));
+      const fromStable = Math.round(stableViewportHeight - visualHeight - visualOffsetTop);
+      const fromLayout = Math.round(rootHeight - visualHeight - visualOffsetTop);
+      const fromWindow = Math.round(innerHeight - visualHeight - visualOffsetTop);
+      const raw = Math.max(0, fromStable, fromLayout, fromWindow);
       const kb = editing && raw > 60 ? raw : 0;
+      keyboardOpen = kb > 60;
       if (kb === last) return;
       last = kb;
       root.style.setProperty('--keyboard-inset-bottom', `${kb}px`);
@@ -74,19 +82,13 @@ export function useKeyboardInset(enabled = true) {
 
     const publishStableKeyboardOpenInset = () => {
       window.clearTimeout(settleTimer);
-      const vv = window.visualViewport;
-      if (!vv || !isEditableElement(document.activeElement)) return;
-      const immediate = Math.max(0, Math.round(stableViewportHeight - vv.height));
-      if (immediate > 60 && immediate !== last) {
-        last = immediate;
-        root.style.setProperty('--keyboard-inset-bottom', `${immediate}px`);
-        root.setAttribute('data-keyboard-open', 'true');
-      }
+      schedule();
       settleTimer = window.setTimeout(schedule, 180);
     };
 
     publish();
     document.addEventListener('focusin', publishStableKeyboardOpenInset);
+    document.addEventListener('focusout', publishStableKeyboardOpenInset);
     window.visualViewport?.addEventListener('resize', schedule);
     window.visualViewport?.addEventListener('scroll', schedule);
 
@@ -102,6 +104,7 @@ export function useKeyboardInset(enabled = true) {
       window.clearTimeout(settleTimer);
       if (frame) window.cancelAnimationFrame(frame);
       document.removeEventListener('focusin', publishStableKeyboardOpenInset);
+      document.removeEventListener('focusout', publishStableKeyboardOpenInset);
       window.visualViewport?.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('scroll', schedule);
       window.removeEventListener('scroll', pin, { capture: true } as any);
