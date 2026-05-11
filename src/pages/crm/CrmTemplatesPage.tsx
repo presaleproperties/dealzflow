@@ -873,6 +873,16 @@ function TemplateCard({
           >
             <Copy className="w-3.5 h-3.5" />
           </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8"
+            onClick={(e) => { stop(e); onHistory(); }}
+            aria-label="Version history"
+            title="Version history"
+          >
+            <History className="w-3.5 h-3.5" />
+          </Button>
           {editable && (
             <Button
               size="icon"
