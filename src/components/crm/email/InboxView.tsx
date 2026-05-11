@@ -1029,33 +1029,44 @@ function MobileThreadDetail({
         className="shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-md px-3 pt-2"
         style={{ paddingBottom: 'max(0.5rem, calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px)))' }}
       >
-        <div className="rounded-2xl border border-border/70 bg-background shadow-sm overflow-hidden">
-          <Textarea
-            ref={taRef}
-            value={reply}
-            onChange={(e) => onReplyChange(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void onSend(); }
-            }}
-            placeholder={`Reply to ${thread.last_message_from || thread.participants[0] || ''}…`}
-            rows={1}
-            enterKeyHint="send"
-            className="text-[14px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none px-3.5 py-3 min-h-[44px] max-h-[180px]"
-          />
-          <div className="flex items-center justify-between px-2 pb-2">
-            <span className="text-[10.5px] text-muted-foreground/70 px-1.5">⌘+Enter to send</span>
-            <Button
-              size="sm"
-              onClick={onSend}
-              disabled={sending || !reply.trim()}
-              className="h-9 gap-1.5 px-4 rounded-xl text-[13px] font-semibold"
-            >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Send
-            </Button>
+        {hasContact && onOpenFull ? (
+          <Button
+            onClick={onOpenFull}
+            className="w-full h-11 gap-2 rounded-2xl text-[14px] font-semibold"
+          >
+            <Reply className="h-4 w-4" />
+            Reply
+          </Button>
+        ) : (
+          <div className="rounded-2xl border border-border/70 bg-background shadow-sm overflow-hidden">
+            <Textarea
+              ref={taRef}
+              value={reply}
+              onChange={(e) => onReplyChange(e.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void onSend(); }
+              }}
+              placeholder={`Reply to ${thread.last_message_from || thread.participants[0] || ''}…`}
+              rows={1}
+              enterKeyHint="send"
+              className="text-[14px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none px-3.5 py-3 min-h-[44px] max-h-[180px]"
+            />
+            <div className="flex items-center justify-between px-2 pb-2">
+              <span className="text-[10.5px] text-muted-foreground/70 px-1.5">⌘+Enter to send</span>
+              <Button
+                size="sm"
+                onClick={onSend}
+                disabled={sending || !reply.trim()}
+                className="h-9 gap-1.5 px-4 rounded-xl text-[13px] font-semibold"
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Send
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
     </div>
   );
 }
