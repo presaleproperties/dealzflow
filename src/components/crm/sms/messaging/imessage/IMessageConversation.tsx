@@ -97,7 +97,7 @@ export function IMessageConversation(props: Props) {
         {/* Left controls */}
         <div className="flex items-center gap-1">
           {isMobile ? (
-            <Button size="icon" variant="ghost" className="h-8 w-8 -ml-1 text-[#007AFF]" onClick={onBack}>
+            <Button size="icon" variant="ghost" aria-label="Back to conversations" className="h-8 w-8 -ml-1 text-[#007AFF]" onClick={onBack}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
           ) : (
