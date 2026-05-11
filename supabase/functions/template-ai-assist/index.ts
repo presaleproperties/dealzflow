@@ -98,6 +98,12 @@ function buildUserPrompt(b: AssistBody): string {
       return `Generate 5 subject line variants for this email — each under 55 chars, no clickbait, no all-caps. Return as a JSON array under key "subjects".${subj}${prompt}${agent}\n\nHTML:\n${b.html ?? ""}`;
     case "generate":
       return `Write a brand-new presale real-estate email based on these notes. Use {{lead.first_name}}, {{sender.full_name}}, {{link.book_call}} where appropriate.${subj}\nNOTES: ${b.prompt ?? "Re-engage a cold lead about a new project launch."}${agent}`;
+    case "search": {
+      const cands = (b.candidates ?? []).slice(0, 80).map((c, i) =>
+        `${i + 1}. [${c.kind}] id=${c.id} | ${c.name}${c.subject ? ` — ${c.subject}` : ""}${c.snippet ? `\n   ${c.snippet.slice(0, 140)}` : ""}`
+      ).join("\n");
+      return `A real-estate agent is looking for a template. Rank the most relevant template ids for this intent. Return at most 8 ids in order of relevance.\n\nINTENT: ${b.prompt ?? ""}\n\nCANDIDATES:\n${cands}`;
+    }
   }
 }
 
