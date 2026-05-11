@@ -604,18 +604,23 @@ export async function processPresaleActivity(
   // contact existed, or before identity stitch) get re-linked to this contact
   // so the lead's timeline shows the full history (incl. auto-emails sent
   // before the contact was created).
-  if (contact && (email || phone)) {
+  if (contact) {
     try {
-      const orFilters = [
-        email ? `lead_email.eq.${email}` : null,
-        phone ? `lead_phone.eq.${phone}` : null,
-      ].filter(Boolean).join(",");
-      if (orFilters) {
-        await supabase
-          .from("crm_activity_events")
-          .update({ contact_id: contact.id })
-          .is("contact_id", null)
-          .or(orFilters);
+      // Identity-vault aware backfill (matches alternate emails/phones too).
+      const { error: rpcErr } = await supabase.rpc("crm_backfill_orphan_activity", { _contact_id: contact.id });
+      if (rpcErr) {
+        // Fallback to primary email/phone match
+        const orFilters = [
+          email ? `lead_email.eq.${email}` : null,
+          phone ? `lead_phone.eq.${phone}` : null,
+        ].filter(Boolean).join(",");
+        if (orFilters) {
+          await supabase
+            .from("crm_activity_events")
+            .update({ contact_id: contact.id })
+            .is("contact_id", null)
+            .or(orFilters);
+        }
       }
     } catch (e) {
       console.warn("[presale-activity] orphan backfill failed (non-fatal):", e);
