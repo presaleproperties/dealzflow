@@ -791,10 +791,12 @@ function IMessageComposer({
   };
 
   // Wraps the parent's onSend with a native haptic so iOS / Android users feel
-  // the same little "thump" they'd get in Messages or WhatsApp.
+  // the same little "thump" they'd get in Messages or WhatsApp. Also refocuses
+  // the textarea so the user can keep typing without an extra tap.
   const onSendWithHaptic = useCallback(async () => {
     haptic('light');
     await onSend();
+    setTimeout(() => textareaRef.current?.focus(), 0);
   }, [onSend]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
