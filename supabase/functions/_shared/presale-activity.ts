@@ -293,11 +293,31 @@ export async function processPresaleActivity(
     }
   }
 
-  // ── Identity stitch: email → phone → guarded presale_user_id ──────────────
-  // Visitor ids can survive across test submissions in the same browser. Never
-  // let a reused visitor id merge a different submitted email into another lead.
+  // ── Identity stitch: identity-vault → email → phone → guarded presale_user_id
+  // The identity vault matches against ANY email/phone the contact has ever
+  // used (alternates from prior signups), preventing duplicate "New" leads
+  // when a known lead signs up with a fresh email address.
   let contact: { id: string; first_name: string | null; last_name: string | null; assigned_to: string | null } | null = null;
-  if (email) {
+  if (email || phone) {
+    try {
+      const { data: resolved } = await supabase.rpc("crm_resolve_contact_identity", {
+        _email: email || null,
+        _phone: phone || null,
+      });
+      const hit = Array.isArray(resolved) ? resolved[0] : resolved;
+      if (hit?.contact_id) {
+        const { data } = await supabase
+          .from("crm_contacts")
+          .select("id, first_name, last_name, assigned_to")
+          .eq("id", hit.contact_id)
+          .maybeSingle();
+        if (data) contact = data as typeof contact;
+      }
+    } catch (e) {
+      console.warn("[presale-activity] identity resolver failed, falling back:", e);
+    }
+  }
+  if (!contact && email) {
     const { data } = await supabase
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
@@ -461,7 +481,19 @@ export async function processPresaleActivity(
     // Do not auto-create duplicates for generic Presale sync/task/update events.
     // Only true lead lifecycle or high-intent engagement events should create a
     // new CRM lead; unmatched administrative events are stored for back-fill.
-    const canAutoCreate = HIGH_INTENT.has(ev.type) || ev.type === "vip_registration" || ev.type === "floorplan_download";
+    // Auto-create only on true high-intent NEW signals. Email opens/clicks
+    // and email_sent are NEVER allowed to spawn a placeholder lead — they're
+    // ambient signals on already-known leads, and creating a "New" stub on
+    // an unmatched open just produces duplicates.
+    const NEVER_CREATE = new Set([
+      "email_open", "email_opened", "email.opened",
+      "email_clicked", "email.clicked", "link_click",
+      "email_sent", "email.sent",
+      "email_auto_response_sent", "email.auto_response_sent",
+      "return_visit", "deck_visit",
+    ]);
+    const canAutoCreate = !NEVER_CREATE.has(ev.type)
+      && (HIGH_INTENT.has(ev.type) || ev.type === "vip_registration" || ev.type === "floorplan_download");
     if (!canAutoCreate) {
       contact = null;
     } else {
@@ -567,6 +599,28 @@ export async function processPresaleActivity(
     inserted = data;
   }
 
+  // Backfill orphan activity events: any prior crm_activity_events rows with
+  // matching email/phone but null contact_id (Presale push arrived before the
+  // contact existed, or before identity stitch) get re-linked to this contact
+  // so the lead's timeline shows the full history (incl. auto-emails sent
+  // before the contact was created).
+  if (contact && (email || phone)) {
+    try {
+      const orFilters = [
+        email ? `lead_email.eq.${email}` : null,
+        phone ? `lead_phone.eq.${phone}` : null,
+      ].filter(Boolean).join(",");
+      if (orFilters) {
+        await supabase
+          .from("crm_activity_events")
+          .update({ contact_id: contact.id })
+          .is("contact_id", null)
+          .or(orFilters);
+      }
+    } catch (e) {
+      console.warn("[presale-activity] orphan backfill failed (non-fatal):", e);
+    }
+  }
 
   if (!contact && (email || phone)) {
     await notifySyncFailure(
