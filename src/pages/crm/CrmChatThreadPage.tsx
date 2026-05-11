@@ -22,7 +22,6 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useIsCompact } from '@/hooks/use-mobile';
 import { useDialer } from '@/hooks/useDialer';
 import { useAuth } from '@/hooks/useAuth';
-import { isNative } from '@/lib/native';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrmInboxFlags, snoozePresets } from '@/hooks/useCrmInboxFlags';
@@ -256,8 +255,8 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   });
 
   // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
-  // composer can ride above the keyboard instead of being covered by it.
-  useKeyboardInset(!isNative && !embedded && isCompact);
+  // thread shell shrinks above the keyboard in PWA and native shells.
+  useKeyboardInset(!embedded && isCompact);
 
   // Hard-lock the document while this thread is mounted on mobile. With
   // `interactive-widget=overlays-content` iOS still tries to pan the layout
@@ -267,7 +266,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   // transition instant — only --keyboard-inset-bottom moves, nothing else.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (isNative || embedded || !isCompact) return;
+    if (embedded || !isCompact) return;
     const html = document.documentElement;
     const body = document.body;
     const prev = {
@@ -533,6 +532,30 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
     return () => {
       vv.removeEventListener('resize', onResize);
       vv.removeEventListener('scroll', onResize);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  // Native Capacitor keyboards can report their height via --kb-h without a
+  // matching visualViewport resize event. Watch the root keyboard vars too so
+  // mobile + tablet native shells still pin the newest messages above the IME.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof document === 'undefined') return;
+    let raf = 0;
+    const pinIfComposerFocused = () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active?.closest('[data-chat-composer]')) return;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        raf = 0;
+      });
+    };
+    const observer = new MutationObserver(pinIfComposerFocused);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'data-keyboard-open'] });
+    return () => {
+      observer.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -812,7 +835,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           // while focusing the reply box. Tablet+ keeps the two-pane bleed.
           : 'flex flex-col flex-1 min-h-0 h-[100dvh] sm:h-full sm:-mx-4 sm:-my-4 relative bg-background overflow-hidden'
       }
-      style={!embedded ? { height: 'calc(100dvh - var(--keyboard-inset-bottom, 0px))' } : undefined}
+      style={!embedded ? { height: 'calc(100dvh - max(var(--keyboard-inset-bottom, 0px), var(--kb-h, 0px)))' } : undefined}
     >
       {/* Header */}
       <div
