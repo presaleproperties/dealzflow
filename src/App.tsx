@@ -27,6 +27,7 @@ import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner
 import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 import { useLiveNotificationToasts } from "@/hooks/useLiveNotificationToasts";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
 import { DialerWidget } from "@/components/crm/dialer/DialerWidget";
 import { NewChatDialog } from "@/components/crm/chats/NewChatDialog";
 import { ViewportDebugOverlay } from "@/components/dev/ViewportDebugOverlay";
