@@ -959,9 +959,21 @@ function IMessageComposer({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
+              onFocus={() => {
+                // iOS keyboard slide takes ~300ms; after it's up, scroll the
+                // focused composer into view so it sits above the keyboard.
+                setTimeout(() => {
+                  textareaRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                }, 300);
+              }}
+              enterKeyHint="send"
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="on"
+              autoCapitalize="sentences"
               placeholder={isDictating ? 'Listening…' : 'Message'}
               rows={1}
-              className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
+              className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[16px] sm:text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
               style={{ maxHeight: MAX_HEIGHT }}
             />
             {isDictating && interimText && (
