@@ -234,6 +234,68 @@ async function resolveContactByPhone(phone: string): Promise<DialerContact | nul
   };
 }
 
+/**
+ * Imperative call helper for places that don't render a hook (event handlers,
+ * non-component utilities). Mirrors `useDialer().startCall` but works with
+ * the global store directly. The dialer widget mounted at the app root will
+ * surface call state when this is invoked.
+ */
+export async function startInAppCall(args: {
+  phone: string | null | undefined;
+  contactId?: string | null;
+  contactName?: string | null;
+}): Promise<void> {
+  const { phone, contactId, contactName } = args;
+  if (!phone) {
+    toast.error('No phone number on file');
+    return;
+  }
+  const status = useDialerStore.getState().status;
+  if (status !== 'idle' && status !== 'ended') {
+    toast.error('Already on a call');
+    return;
+  }
+  const device = await ensureDevice();
+  if (!device) {
+    toast.error('Dialer not ready', {
+      description: useDialerStore.getState().deviceError ?? 'Try again in a moment.',
+    });
+    return;
+  }
+  try {
+    useDialerStore.setState({
+      status: 'connecting',
+      direction: 'outbound',
+      contact: contactId
+        ? { id: contactId, name: contactName ?? phone, phone }
+        : { id: 'adhoc', name: contactName ?? phone, phone },
+      number: phone,
+      startedAt: Date.now(),
+      answeredAt: null,
+      durationSec: 0,
+      muted: false,
+      errorMessage: null,
+      widgetOpen: true,
+    });
+    const call = await device.connect({
+      params: {
+        To: phone,
+        ...(contactId ? { contactId } : {}),
+      },
+    });
+    attachCallHandlers(call);
+    useDialerStore.setState({
+      currentCall: call,
+      callSid: call.parameters.CallSid ?? null,
+    });
+  } catch (e: unknown) {
+    const err = e as { message?: string };
+    console.error('[dialer] startInAppCall failed', e);
+    toast.error('Could not start call', { description: err?.message });
+    useDialerStore.setState({ status: 'error', errorMessage: err?.message ?? null });
+  }
+}
+
 export function useDialer() {
   const state = useDialerStore();
 

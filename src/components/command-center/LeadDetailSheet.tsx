@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react';
 import type { ProspectRow } from './NeedsAttention';
+import { startInAppCall } from '@/hooks/useDialer';
 
 // ─── helpers ───────────────────────────────────────────────────────────────────
 const SOURCE_COLORS: Record<string, string> = {
@@ -304,13 +305,20 @@ export function LeadDetailSheet({ prospect, open, onClose }: Props) {
               </a>
             )}
             {conversation?.lead_phone && (
-              <a
-                href={`tel:${conversation.lead_phone}`}
+              <button
+                type="button"
+                onClick={() =>
+                  startInAppCall({
+                    phone: conversation.lead_phone,
+                    contactId: (conversation as { contact_id?: string }).contact_id ?? null,
+                    contactName: conversation.lead_name ?? null,
+                  })
+                }
                 className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5" />
                 Call
-              </a>
+              </button>
             )}
             <a
               href={`/pipeline`}

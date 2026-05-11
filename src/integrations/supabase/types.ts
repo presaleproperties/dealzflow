@@ -6065,6 +6065,10 @@ export type Database = {
         Returns: number
       }
       bulk_reformat_crm_notes: { Args: never; Returns: Json }
+      bulk_update_contacts_silent: {
+        Args: { p_contact_ids: string[]; p_updates: Json }
+        Returns: number
+      }
       contact_related_counts: {
         Args: { _contact_ids: string[] }
         Returns: {
@@ -6103,6 +6107,10 @@ export type Database = {
         Returns: number
       }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
+      crm_bulk_delete_contacts: {
+        Args: { p_contact_ids: string[] }
+        Returns: Json
+      }
       crm_can_see_contact: {
         Args: { _assigned_to: string; _user_id: string }
         Returns: boolean

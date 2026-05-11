@@ -80,18 +80,25 @@ Deno.serve(async (req) => {
         started_at: new Date().toISOString(),
       }, { onConflict: "twilio_call_sid" });
 
+      // Two-party consent announcement before recording starts.
+      // Required in BC/many CA + US two-party consent jurisdictions.
+      twiml.say(
+        { voice: 'alice' },
+        'This call may be recorded for quality and training purposes.',
+      );
+
       const dial = twiml.dial({
         callerId,
         answerOnBridge: true,
-        record: "record-from-answer-dual",
+        record: 'record-from-answer-dual',
         recordingStatusCallback: RECORDING_URL,
-        recordingStatusCallbackEvent: ["completed"],
+        recordingStatusCallbackEvent: ['completed'],
       });
       dial.number(
         {
           statusCallback: STATUS_URL,
-          statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
-          statusCallbackMethod: "POST",
+          statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+          statusCallbackMethod: 'POST',
         },
         to,
       );
@@ -137,12 +144,16 @@ Deno.serve(async (req) => {
       }, { onConflict: "twilio_call_sid" });
 
       if (agentUserId) {
+        twiml.say(
+          { voice: 'alice' },
+          'This call may be recorded for quality and training purposes.',
+        );
         const dial = twiml.dial({
           answerOnBridge: true,
           timeout: 25,
-          record: "record-from-answer-dual",
+          record: 'record-from-answer-dual',
           recordingStatusCallback: RECORDING_URL,
-          recordingStatusCallbackEvent: ["completed"],
+          recordingStatusCallbackEvent: ['completed'],
           action: STATUS_URL, // Twilio POSTs DialCallStatus when leg ends
         });
         dial.client(agentUserId);

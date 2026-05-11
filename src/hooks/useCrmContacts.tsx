@@ -141,12 +141,18 @@ export function useCrmContacts(
   const query = useQuery({
     queryKey: ['crm-contacts'],
     queryFn: async () => {
+      // Hard cap to keep memory + bandwidth bounded. Pipeline Kanban + leads
+      // grids should use `useCrmContactsLite` / paginated hooks for large
+      // workspaces. If we hit the cap we surface a one-time toast so the
+      // user knows the view is truncated.
       const PAGE_SIZE = 1000;
+      const HARD_CAP = 2000;
       let allData: Record<string, unknown>[] = [];
       let from = 0;
       let hasMore = true;
+      let truncated = false;
 
-      while (hasMore) {
+      while (hasMore && allData.length < HARD_CAP) {
         const { data, error } = await supabase
           .from('crm_contacts')
           .select('*')
@@ -159,6 +165,21 @@ export function useCrmContacts(
           hasMore = data.length === PAGE_SIZE;
         } else {
           hasMore = false;
+        }
+      }
+      if (allData.length >= HARD_CAP && hasMore) {
+        truncated = true;
+        allData = allData.slice(0, HARD_CAP);
+      }
+
+      if (truncated) {
+        // Fire-and-forget; only warn once per session.
+        const w = window as unknown as { __crmContactsTruncatedWarned?: boolean };
+        if (!w.__crmContactsTruncatedWarned) {
+          w.__crmContactsTruncatedWarned = true;
+          toast.warning(
+            `Showing the most recent ${HARD_CAP} contacts. Use search or paginated views to see the rest.`,
+          );
         }
       }
 
@@ -404,18 +425,24 @@ export function useBulkUpdateContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ids, updates }: { ids: string[]; updates: Record<string, unknown> }) => {
-      const normalizedUpdates = { ...updates };
+      if (!ids.length) return;
+      const normalizedUpdates: Record<string, unknown> = { ...updates };
       if ('tags' in normalizedUpdates) normalizedUpdates.tags = normalizeCrmMultiValueList(normalizedUpdates.tags);
       if ('projects' in normalizedUpdates) normalizedUpdates.projects = normalizeCrmMultiValueList(normalizedUpdates.projects);
 
-      const { error } = await supabase
-        .from('crm_contacts')
-        .update(normalizedUpdates)
-        .in('id', ids);
+      // Use the SECURITY DEFINER RPC so bulk admin actions don't bump
+      // last_touch_at (which would corrupt engagement scoring + the
+      // "Needs Attention" queue) — see Last Activity Rule memory.
+      const { error } = await supabase.rpc('bulk_update_contacts_silent' as never, {
+        p_contact_ids: ids,
+        p_updates: normalizedUpdates,
+      } as never);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
       toast.success('Contacts updated');
     },
     onError: (err: Error) => {
@@ -466,18 +493,23 @@ export function useBulkDeleteContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      // Use the SECURITY DEFINER RPC so each delete is permission-checked
-      // server-side and we get a clear error if any row was blocked by RLS.
-      const results = await Promise.all(
-        ids.map((id) => supabase.rpc('crm_delete_contact', { p_contact_id: id })),
-      );
-      const firstError = results.find((r) => r.error)?.error;
-      if (firstError) throw firstError;
-      const blocked = results.filter((r) => r.data !== true).length;
-      if (blocked > 0) throw new Error(`${blocked} lead(s) could not be deleted (no permission)`);
+      if (!ids.length) return;
+      // Single transactional RPC — replaces the previous N-parallel call
+      // pattern, which fan-out 200 RPCs for a 200-row delete and could
+      // partially fail leaving timeline orphans behind.
+      const { data, error } = await supabase.rpc('crm_bulk_delete_contacts' as never, {
+        p_contact_ids: ids,
+      } as never);
+      if (error) throw error;
+      const result = (data as { deleted?: number; blocked?: number } | null) ?? {};
+      if ((result.blocked ?? 0) > 0) {
+        throw new Error(`${result.blocked} lead(s) could not be deleted (no permission)`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
       toast.success('Contacts deleted');
     },
     onError: (err: Error) => {
