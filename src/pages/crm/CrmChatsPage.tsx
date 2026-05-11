@@ -594,8 +594,8 @@ export default function CrmChatsPage() {
             in advanced filters cover the same ground without a second pill row. */}
       </div>
 
-      {/* Thread list */}
-      <div className="flex-1 -mx-3 sm:-mx-4">
+      {/* Thread list — owns scroll so the header stays put */}
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-3 sm:-mx-4">
         <PullToRefresh onRefresh={handlePullRefresh}>
         {isLoading ? (
           <ul>
