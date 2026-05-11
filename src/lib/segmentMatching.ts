@@ -118,7 +118,7 @@ export function assignContactsToSegments(
       return;
     }
     for (const seg of pipelineSegments) {
-      if (contactMatchesSegment(c, seg.filter_config)) {
+      if (contactMatchesSegment(c, seg.filter_config, seg.id)) {
         map[seg.id].push(c);
         break; // first match wins
       }
