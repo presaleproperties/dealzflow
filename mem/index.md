@@ -99,7 +99,7 @@
 - [Lofty Conversation Sync](mem://features/integrations/lofty-conversation-sync) — Outbound migration tool: `lofty-sync-conversations` edge fn pulls emails/SMS/calls per contact; idempotent dedupe via `lofty:` prefix in gmail_message_id/twilio_message_sid + `[lofty-call:<id>]` marker in notes; "Pull from Lofty" button on lead detail
 - [Integrations Hub](mem://features/crm/integrations-hub-v4) — Deprecated integrations listed
 - [Central Hub Architecture](mem://features/crm/central-hub-architecture) — crm_lead_sources registry, crm_source_events audit log, assignment-based notification routing
-- [SMS Ecosystem](mem://features/crm/sms-ecosystem-v1) — Twilio SMS: single send, bulk from Leads, SMS Center page, templates, STOP/HELP, quiet hours, MMS via crm-sms-media bucket
+- [SMS Ecosystem](mem://features/crm/sms-ecosystem-v1) — Twilio SMS: single send, bulk from Leads, Chats page, templates, STOP/HELP, quiet hours, MMS via crm-sms-media bucket
 - [Last Activity Rule](mem://features/crm/last-touch-rule) — last_touch_at = manual actions only; bulk/automation must SET app.skip_touch=on
 - [CRM Mobile Premium Polish v4](mem://style/crm-mobile-premium-polish-v4) — Shared crm-mobile-* utility classes (page-enter motion, airier rows, premium FAB, skeleton shimmer, sheet header) applied to all 6 CRM mobile screens
 - [CRM Leads Search Rules](mem://features/crm/leads-search-rules) — Tokenized AND search across name/email/phone with PostgREST escaping, useRef debounce, mobile bar close clears query, count: 'estimated'
