@@ -380,11 +380,11 @@ export default function CrmChatsPage() {
         <div className="flex items-end justify-between gap-2 px-4 pt-3 pb-2.5">
           <div className="min-w-0 flex items-baseline gap-2.5">
             <h1 className="text-[20px] font-semibold text-foreground tracking-[-0.02em] leading-none">Chats</h1>
-            <p className="text-[11.5px] text-muted-foreground font-medium leading-none tabular-nums">
+            <p className="text-[11.5px] text-muted-foreground/80 font-medium leading-none tabular-nums">
               {selectMode && selected.size > 0
-                ? <><span className="text-primary font-bold">{selected.size}</span> selected</>
+                ? <><span className="text-primary font-semibold">{selected.size}</span> selected</>
                 : counts.all > 0
-                  ? <><span className="text-primary font-bold">{counts.all}</span> unread · {threads.length}</>
+                  ? <><span className="text-primary font-semibold">{counts.all}</span> unread <span className="opacity-50">·</span> {threads.length}</>
                   : <>{threads.length} {threads.length === 1 ? 'thread' : 'threads'}</>
               }
             </p>
