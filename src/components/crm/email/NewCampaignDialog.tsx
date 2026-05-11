@@ -84,9 +84,13 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
+  const { data: dynamicProjects = [] } = useCrmProjects();
+  const projectNames = dynamicProjects.length
+    ? dynamicProjects.map((p: any) => p.name).filter(Boolean)
+    : [...PROJECTS];
   const filterOptions = filterType === 'status' ? [...LEAD_STATUSES]
     : filterType === 'source' ? [...LEAD_SOURCES]
-    : filterType === 'project' ? [...PROJECTS]
+    : filterType === 'project' ? projectNames
     : [];
 
   return (
