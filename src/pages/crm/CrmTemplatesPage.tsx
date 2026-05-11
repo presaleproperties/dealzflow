@@ -907,11 +907,60 @@ function TemplateCard({
 function PreviewPane({
   item, onEdit, onDelete, onSend, onHistory,
 }: { item: UnifiedTemplate; onEdit: () => void; onDelete: () => void; onSend: () => void; onHistory: () => void }) {
-  const html = useMemo(() => renderWithSampleData(item.bodyHtml), [item.bodyHtml]);
   const { map: statsMap } = useTemplateStatsMap();
   const stats = statsMap.get(`${item.kind}:${item.id}`);
   const changeScope = useChangeTemplateScope();
+  const updateEmail = useUpdateEmailTemplate();
+  const saveSms = useSaveSmsTemplate();
   const editable = item.source !== 'presale' && !item.isLocked;
+
+  // Inline editor state
+  const [inlineEdit, setInlineEdit] = useState(false);
+  const [draftName, setDraftName] = useState(item.name);
+  const [draftSubject, setDraftSubject] = useState(item.subject ?? '');
+  const [draftBody, setDraftBody] = useState(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+  const [saving, setSaving] = useState(false);
+
+  // Reset drafts when switching templates or exiting edit mode
+  useEffect(() => {
+    setInlineEdit(false);
+    setDraftName(item.name);
+    setDraftSubject(item.subject ?? '');
+    setDraftBody(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+  }, [item.uid]);
+
+  const previewSource = inlineEdit
+    ? (item.kind === 'sms' ? draftBody : draftBody)
+    : (item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+  const html = useMemo(
+    () => renderWithSampleData(item.kind === 'sms' ? `<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${(previewSource || '').replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!))}</pre>` : previewSource),
+    [previewSource, item.kind],
+  );
+
+  const onInlineSave = async () => {
+    if (!draftName.trim()) { toast.error('Name is required'); return; }
+    setSaving(true);
+    try {
+      if (item.kind === 'email') {
+        await updateEmail.mutateAsync({
+          id: item.id,
+          updates: { name: draftName, subject: draftSubject, html_content: draftBody },
+        });
+      } else {
+        await saveSms.mutateAsync({ id: item.id, name: draftName, body: draftBody });
+      }
+      setInlineEdit(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onInlineCancel = () => {
+    setDraftName(item.name);
+    setDraftSubject(item.subject ?? '');
+    setDraftBody(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+    setInlineEdit(false);
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden rounded-lg border border-border/60 bg-card">
