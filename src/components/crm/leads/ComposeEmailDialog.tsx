@@ -226,14 +226,21 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
   /* Mobile back-button trap — keeps user on the lead detail page. */
   useComposerBackButton(open, onOpenChange);
 
-  /* Pick default signature when dialog opens or signatures load */
+  /* Pick default signature when dialog opens or signatures load. When the
+   * dialog opens with reply/forward prefill (initialSubject is set), prefer
+   * the agent's minimalist REPLY signature so threaded conversations don't
+   * carry a full marketing block on every reply. */
   useEffect(() => {
     if (!open) return;
     if (selectedSignatureId) return;
     if (signatures.length === 0) return;
-    const def = signatures.find((s) => s.is_default) ?? signatures[0];
+    const isReplyContext = !!initialSubject;
+    const picked = isReplyContext
+      ? pickSignatureForKind(signatures, 'reply')
+      : pickSignatureForKind(signatures, 'full');
+    const def = picked ?? signatures.find((s) => s.is_default) ?? signatures[0];
     setSelectedSignatureId(def.id);
-  }, [open, signatures, selectedSignatureId]);
+  }, [open, signatures, selectedSignatureId, initialSubject]);
 
   /* Resolve currently-selected signature HTML, falling back to legacy single signature */
   const activeSignatureHtml = useMemo(() => {
