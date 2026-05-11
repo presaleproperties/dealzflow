@@ -907,11 +907,60 @@ function TemplateCard({
 function PreviewPane({
   item, onEdit, onDelete, onSend, onHistory,
 }: { item: UnifiedTemplate; onEdit: () => void; onDelete: () => void; onSend: () => void; onHistory: () => void }) {
-  const html = useMemo(() => renderWithSampleData(item.bodyHtml), [item.bodyHtml]);
   const { map: statsMap } = useTemplateStatsMap();
   const stats = statsMap.get(`${item.kind}:${item.id}`);
   const changeScope = useChangeTemplateScope();
+  const updateEmail = useUpdateEmailTemplate();
+  const saveSms = useSaveSmsTemplate();
   const editable = item.source !== 'presale' && !item.isLocked;
+
+  // Inline editor state
+  const [inlineEdit, setInlineEdit] = useState(false);
+  const [draftName, setDraftName] = useState(item.name);
+  const [draftSubject, setDraftSubject] = useState(item.subject ?? '');
+  const [draftBody, setDraftBody] = useState(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+  const [saving, setSaving] = useState(false);
+
+  // Reset drafts when switching templates or exiting edit mode
+  useEffect(() => {
+    setInlineEdit(false);
+    setDraftName(item.name);
+    setDraftSubject(item.subject ?? '');
+    setDraftBody(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+  }, [item.uid]);
+
+  const previewSource = inlineEdit
+    ? (item.kind === 'sms' ? draftBody : draftBody)
+    : (item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+  const html = useMemo(
+    () => renderWithSampleData(item.kind === 'sms' ? `<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${(previewSource || '').replace(/[<>&]/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]!))}</pre>` : previewSource),
+    [previewSource, item.kind],
+  );
+
+  const onInlineSave = async () => {
+    if (!draftName.trim()) { toast.error('Name is required'); return; }
+    setSaving(true);
+    try {
+      if (item.kind === 'email') {
+        await updateEmail.mutateAsync({
+          id: item.id,
+          updates: { name: draftName, subject: draftSubject, html_content: draftBody },
+        });
+      } else {
+        await saveSms.mutateAsync({ id: item.id, name: draftName, body: draftBody });
+      }
+      setInlineEdit(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onInlineCancel = () => {
+    setDraftName(item.name);
+    setDraftSubject(item.subject ?? '');
+    setDraftBody(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
+    setInlineEdit(false);
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden rounded-lg border border-border/60 bg-card">
@@ -919,59 +968,93 @@ function PreviewPane({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold mb-0.5">
-              Preview
+              {inlineEdit ? 'Editing' : 'Preview'}
             </div>
-            <div className="text-[14px] font-semibold truncate text-foreground">{item.name}</div>
-            {item.subject && (
-              <div className="text-[12px] text-muted-foreground truncate mt-0.5">
-                {renderWithSampleData(item.subject).replace(/<[^>]+>/g, '')}
-              </div>
+            {inlineEdit ? (
+              <Input
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                placeholder="Template name"
+                className="h-8 text-[14px] font-semibold"
+              />
+            ) : (
+              <div className="text-[14px] font-semibold truncate text-foreground">{item.name}</div>
+            )}
+            {item.kind === 'email' && (
+              inlineEdit ? (
+                <Input
+                  value={draftSubject}
+                  onChange={(e) => setDraftSubject(e.target.value)}
+                  placeholder="Subject line"
+                  className="h-7 text-[12px] mt-1.5"
+                />
+              ) : item.subject ? (
+                <div className="text-[12px] text-muted-foreground truncate mt-0.5">
+                  {renderWithSampleData(item.subject).replace(/<[^>]+>/g, '')}
+                </div>
+              ) : null
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {editable && (
-              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-[12px]" onClick={onEdit}>
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5 text-[12px]"
-              onClick={onHistory}
-              title="Version history"
-            >
-              <History className="w-3.5 h-3.5" /> History
-            </Button>
-            <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSend}>
-              <Send className="w-3.5 h-3.5" /> Send
-            </Button>
-            {editable && item.kind === 'email' && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="More">
-                    <MoreHorizontal className="w-4 h-4" />
+            {inlineEdit ? (
+              <>
+                <Button size="sm" variant="ghost" className="h-8 text-[12px]" onClick={onInlineCancel} disabled={saving}>
+                  Cancel
+                </Button>
+                <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onInlineSave} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save'}
+                </Button>
+              </>
+            ) : (
+              <>
+                {editable && (
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-[12px]" onClick={() => setInlineEdit(true)}>
+                    <Pencil className="w-3.5 h-3.5" /> Edit
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem
-                    onClick={() => changeScope.mutate({ id: item.id, scope: item.source === 'mine' ? 'team' : 'mine' })}
-                  >
-                    {item.source === 'mine' ? 'Share with team' : 'Move to my library'}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onDelete} className="text-destructive">
-                    <Trash2 className="w-3.5 h-3.5 mr-2" /> Archive
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 text-[12px]"
+                  onClick={onHistory}
+                  title="Version history"
+                >
+                  <History className="w-3.5 h-3.5" /> History
+                </Button>
+                <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSend}>
+                  <Send className="w-3.5 h-3.5" /> Send
+                </Button>
+                {editable && item.kind === 'email' && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="More">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem onClick={onEdit}>
+                        <ExternalLink className="w-3.5 h-3.5 mr-2" /> Open full editor
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => changeScope.mutate({ id: item.id, scope: item.source === 'mine' ? 'team' : 'mine' })}
+                      >
+                        {item.source === 'mine' ? 'Share with team' : 'Move to my library'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Archive
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
 
       {/* Stats strip */}
-      {stats && (
+      {stats && !inlineEdit && (
         <div className="px-4 py-2 border-b border-border/60 bg-muted/20 flex items-center gap-4 text-[11.5px] text-muted-foreground shrink-0">
           <Stat label="Sends" value={stats.total_sends} />
           {item.kind === 'email' ? (
@@ -988,16 +1071,46 @@ function PreviewPane({
         </div>
       )}
 
-      <div className="flex-1 bg-muted/20 overflow-hidden p-4">
-        <div className="h-full rounded-md border border-border/60 bg-white overflow-hidden shadow-sm">
-          <iframe
-            title="Template preview"
-            className="w-full h-full border-0"
-            sandbox="allow-same-origin"
-            srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
-          />
+      {inlineEdit ? (
+        <div className="flex-1 grid grid-rows-[minmax(0,1fr)_minmax(0,1fr)] min-h-0 divide-y divide-border/60">
+          <div className="min-h-0 flex flex-col bg-card">
+            <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold flex items-center justify-between">
+              <span>{item.kind === 'email' ? 'HTML body' : 'Message body'}</span>
+              <span className="text-muted-foreground/70 normal-case tracking-normal">
+                Merge tags like {'{{first_name}}'} are supported
+              </span>
+            </div>
+            <Textarea
+              value={draftBody}
+              onChange={(e) => setDraftBody(e.target.value)}
+              spellCheck={item.kind === 'sms'}
+              className="flex-1 m-3 mt-1 font-mono text-[12px] leading-relaxed resize-none"
+              placeholder={item.kind === 'email' ? '<p>Hi {{first_name}}…</p>' : 'Hi {{first_name}}…'}
+            />
+          </div>
+          <div className="min-h-0 bg-muted/20 p-3 overflow-hidden">
+            <div className="h-full rounded-md border border-border/60 bg-white overflow-hidden shadow-sm">
+              <iframe
+                title="Live preview"
+                className="w-full h-full border-0"
+                sandbox="allow-same-origin"
+                srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 bg-muted/20 overflow-hidden p-4">
+          <div className="h-full rounded-md border border-border/60 bg-white overflow-hidden shadow-sm">
+            <iframe
+              title="Template preview"
+              className="w-full h-full border-0"
+              sandbox="allow-same-origin"
+              srcDoc={`<html><head><style>body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px;margin:0;background:#fff}img{max-width:100%}a{color:#D7A542}</style></head><body>${html || '<p style="color:#999">No content</p>'}</body></html>`}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
