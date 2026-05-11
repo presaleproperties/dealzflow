@@ -4,6 +4,7 @@ import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
 import { InlineEditField } from './InlineEditField';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
+import { startInAppCall } from '@/hooks/useDialer';
 
 export function LeadCoBuyerCard({ contact }: { contact: CrmContact }) {
   const updateContact = useUpdateCrmContact();
