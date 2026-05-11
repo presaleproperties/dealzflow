@@ -38,8 +38,15 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
 ) {
   const [body, setBody] = useState('');
   const [quote, setQuote] = useState<string | null>(null);
+  const [media, setMedia] = useState<{ url: string; name: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [plusView, setPlusView] = useState<'menu' | 'templates' | 'variables'>('menu');
+  const [tplFilter, setTplFilter] = useState('');
   const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const sendSms = useSendSms();
+  const { data: templates = [] } = useSmsTemplates();
 
   useImperativeHandle(ref, () => ({
     quoteReply: (text: string) => {
@@ -60,6 +67,91 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     const next = Math.min(Math.max(el.scrollHeight, 20), 110);
     el.style.height = `${next}px`;
   }, [body]);
+
+  // Reset popover state when it closes so it always opens on the menu view.
+  useEffect(() => {
+    if (!plusOpen) {
+      setPlusView('menu');
+      setTplFilter('');
+    }
+  }, [plusOpen]);
+
+  const channelTemplates = useMemo(
+    () => templates.filter((t) => t.is_active && (t.channel === channel || !t.channel)),
+    [templates, channel],
+  );
+  const filteredTemplates = useMemo(() => {
+    const q = tplFilter.trim().toLowerCase();
+    if (!q) return channelTemplates;
+    return channelTemplates.filter(
+      (t) => t.name.toLowerCase().includes(q) || t.body.toLowerCase().includes(q),
+    );
+  }, [channelTemplates, tplFilter]);
+
+  const renderCtx = useMemo(() => ({
+    first_name: contact.first_name || '',
+    last_name: contact.last_name || '',
+    full_name: [contact.first_name, contact.last_name].filter(Boolean).join(' '),
+    email: contact.email || '',
+    phone: contact.phone || '',
+    city: contact.city || '',
+    company: 'DealzFlow',
+  }), [contact]);
+
+  const insertAtCursor = (snippet: string) => {
+    const el = taRef.current;
+    if (!el) { setBody((b) => b + snippet); return; }
+    const start = el.selectionStart ?? body.length;
+    const end = el.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + snippet + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + snippet.length;
+      try { el.setSelectionRange(pos, pos); } catch { /* noop */ }
+    });
+  };
+
+  const onPickTemplate = (tpl: { body: string; default_media_urls?: string[] }) => {
+    const rendered = renderSmsTemplate(tpl.body, renderCtx);
+    setBody((b) => (b.trim() ? b + (b.endsWith('\n') ? '' : '\n') + rendered : rendered));
+    if (Array.isArray(tpl.default_media_urls)) {
+      const adds = tpl.default_media_urls.filter(Boolean).map((url) => ({ url, name: url.split('/').pop() || 'attachment' }));
+      if (adds.length) setMedia((m) => [...m, ...adds]);
+    }
+    setPlusOpen(false);
+    requestAnimationFrame(() => taRef.current?.focus());
+  };
+
+  const onPickVariable = (tag: string) => {
+    insertAtCursor(renderSmsTemplate(tag, renderCtx));
+    setPlusOpen(false);
+  };
+
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setUploading(true);
+    const uploaded: { url: string; name: string }[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} is over 5MB — Twilio MMS limit`);
+          continue;
+        }
+        const path = `${contact.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const { error: upErr } = await supabase.storage.from('crm-sms-media').upload(path, file, {
+          cacheControl: '3600', upsert: false, contentType: file.type,
+        });
+        if (upErr) { toast.error(`Upload failed: ${upErr.message}`); continue; }
+        const { data: pub } = supabase.storage.from('crm-sms-media').getPublicUrl(path);
+        uploaded.push({ url: pub.publicUrl, name: file.name });
+      }
+      if (uploaded.length) setMedia((m) => [...m, ...uploaded]);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   const name = (contact.first_name || contact.last_name || 'lead').toString();
   const placeholder = `Message ${name.split(' ')[0]}…`;
