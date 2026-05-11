@@ -425,7 +425,7 @@ export default function CrmCalendarPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Projects</SelectItem>
-                        {PROJECTS.map((p) => (
+                        {projectNames.map((p) => (
                           <SelectItem key={p} value={p}>
                             {p}
                           </SelectItem>
@@ -481,7 +481,7 @@ export default function CrmCalendarPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
-                  {PROJECTS.map((p) => (
+                  {projectNames.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>
