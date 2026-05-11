@@ -311,18 +311,31 @@ export function PipelineKanban() {
     return () => el.removeEventListener('scroll', onScroll);
   }, [isMobile, pipelineSegments.length]);
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const targetSegId = result.destination.droppableId;
-    const contactId = result.draggableId;
+  const [activeDragContact, setActiveDragContact] = useState<CrmContact | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const handleDragStart = (e: DragStartEvent) => {
+    const c = (e.active.data.current as { contact?: CrmContact } | undefined)?.contact ?? null;
+    setActiveDragContact(c);
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    setActiveDragContact(null);
+    if (!e.over) return;
+    const targetSegId = String(e.over.id);
+    const contactId = String(e.active.id);
     const contact = contacts.find(c => c.id === contactId);
     const targetSeg = pipelineSegments.find(s => s.id === targetSegId);
     if (!contact || !targetSeg) return;
-    if (result.source.droppableId === targetSegId) return;
+    const currentSegId = (contact as any).pipeline_segment_id;
+    if (currentSegId === targetSegId) return;
 
     const optimisticContact = { ...contact, pipeline_segment_id: targetSeg.id } as CrmContact;
-
-    // Optimistic update so the card visibly stays in the new column
     const prev = queryClient.getQueryData<CrmContact[]>(['crm-contacts']);
     if (prev) {
       queryClient.setQueryData<CrmContact[]>(
