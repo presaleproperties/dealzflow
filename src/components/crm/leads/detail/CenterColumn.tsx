@@ -23,6 +23,7 @@ import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster';
+import { EmailThreadStack, SmsRunStack, normalizeSubject } from './ThreadStack';
 import { Pin } from 'lucide-react';
 
 
