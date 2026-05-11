@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Mail, MessageSquare, Search, Send, X, Star, StarOff, Plus, Folder,
   Pencil, Trash2, ExternalLink, Tag as TagIcon, Sparkles, FolderPlus,
-  History, MoreHorizontal, Lock, Command as CommandIcon,
+  History, MoreHorizontal, Lock, Command as CommandIcon, Clock, Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ import {
 } from '@/hooks/useTemplateOrg';
 import {
   useUpdateEmailTemplate, useCreateEmailTemplate, useSoftDeleteEmailTemplate,
-  useChangeTemplateScope,
+  useChangeTemplateScope, useDuplicateTemplate,
 } from '@/hooks/useEmailTemplates';
 import { useSaveSmsTemplate, useDeleteSmsTemplate } from '@/hooks/useSms';
 import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
@@ -214,16 +214,16 @@ export default function CrmTemplatesPage() {
             />
 
             {isLoading ? (
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-[110px] rounded-lg bg-muted/40 animate-pulse" />
+                  <div key={i} className="h-[300px] rounded-xl bg-muted/40 animate-pulse" />
                 ))}
               </div>
             ) : items.length === 0 ? (
               <EmptyState onCreate={() => setCreating({ kind: 'email' })} hasSearch={!!search} />
             ) : (
               <ScrollArea className="flex-1 -mr-2 pr-2 mt-1">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
                   {items.map((u) => (
                     <TemplateCard
                       key={u.uid}
@@ -231,6 +231,9 @@ export default function CrmTemplatesPage() {
                       tagIds={tagsByTemplate.get(u.uid) ?? []}
                       selected={selected?.uid === u.uid}
                       onSelect={() => setSelectedUid(u.uid)}
+                      onEdit={() => setEditing(u)}
+                      onSend={() => sendTemplate(u)}
+                      onDelete={() => setPendingDelete(u)}
                     />
                   ))}
                 </div>
@@ -644,38 +647,99 @@ function MobileFilterButton(props: any) {
 // ===========================================================================
 // Card
 // ===========================================================================
+function extractFirstImage(html: string): string | null {
+  if (!html) return null;
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (!m) return null;
+  const src = m[1].trim();
+  if (src.startsWith('cid:') || src.startsWith('data:image/svg')) return null;
+  return src;
+}
+
+function timeAgoShort(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  if (diff < 0) return 'just now';
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  if (d > 0) return `${d}d ago`;
+  if (h > 0) return `${h}h ago`;
+  if (m > 0) return `${m}m ago`;
+  return 'just now';
+}
+
 function TemplateCard({
-  item, selected, onSelect, tagIds,
-}: { item: UnifiedTemplate; selected: boolean; onSelect: () => void; tagIds: string[] }) {
+  item, selected, onSelect, tagIds, onEdit, onSend, onDelete,
+}: {
+  item: UnifiedTemplate;
+  selected: boolean;
+  onSelect: () => void;
+  tagIds: string[];
+  onEdit: () => void;
+  onSend: () => void;
+  onDelete: () => void;
+}) {
   const toggleFav = useToggleFavoriteV2();
+  const duplicateEmail = useDuplicateTemplate();
+  const saveSms = useSaveSmsTemplate();
   const { map: statsMap } = useTemplateStatsMap();
   const { data: tags = [] } = useTemplateTags();
   const stats = statsMap.get(`${item.kind}:${item.id}`);
   const itemTags = tagIds.map((id) => tags.find((t) => t.id === id)).filter(Boolean) as any[];
 
+  const heroImage = useMemo(() => extractFirstImage(item.bodyHtml), [item.bodyHtml]);
+  const editable = item.source !== 'presale' && !item.isLocked;
+  const projectLabel = item.category && item.category !== 'general' ? item.category : null;
+
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  const onDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (item.source === 'presale') { toast.info('Duplicate is disabled for Presale templates.'); return; }
+    if (item.kind === 'email') {
+      duplicateEmail.mutate(item.raw as any);
+    } else {
+      saveSms.mutate({ name: `${item.name} (Copy)`, body: item.bodyText } as any, {
+        onSuccess: () => toast.success('Duplicated to your library'),
+      });
+    }
+  };
+
   return (
-    <button
+    <div
       onClick={onSelect}
       className={cn(
-        'group relative text-left rounded-lg border bg-card transition-all p-3.5 min-h-[110px] flex flex-col',
-        selected ? 'border-primary/60 ring-1 ring-primary/30' : 'border-border hover:border-foreground/20',
+        'group relative rounded-xl border bg-card overflow-hidden transition-all cursor-pointer flex flex-col',
+        selected ? 'border-primary/60 ring-1 ring-primary/30 shadow-sm' : 'border-border hover:border-foreground/20 hover:shadow-sm',
       )}
     >
-      <div className="flex items-start gap-2 mb-1.5">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Pill tone={item.kind === 'email' ? 'primary' : 'neutral'} size="sm">
-              {item.kind === 'email' ? 'Email' : 'SMS'}
-            </Pill>
-            <Pill tone={item.source === 'mine' ? 'success' : item.source === 'presale' ? 'info' : 'neutral'} size="sm">
-              {item.source}
-            </Pill>
-            {item.isFeatured && <Pill tone="primary" size="sm">★ Featured</Pill>}
-            {item.isLocked && <Lock className="w-3 h-3 text-muted-foreground" />}
+      {/* Hero */}
+      <div className="relative h-44 bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden">
+        {heroImage ? (
+          <img
+            src={heroImage}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => { (e.currentTarget.style.display = 'none'); }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {item.kind === 'email'
+              ? <Mail className="w-10 h-10 text-muted-foreground/20" />
+              : <MessageSquare className="w-10 h-10 text-muted-foreground/20" />}
           </div>
-          <div className="font-semibold text-[13.5px] truncate text-foreground">{item.name}</div>
-          {item.subject && (
-            <div className="text-[11.5px] text-muted-foreground truncate mt-0.5">{item.subject}</div>
+        )}
+        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+          <Pill tone={item.kind === 'email' ? 'success' : 'neutral'} size="sm" className="shadow-sm">
+            {item.kind === 'email' ? 'Email' : 'SMS'}
+          </Pill>
+          {item.isFeatured && <Pill tone="primary" size="sm" className="shadow-sm">Featured</Pill>}
+          {item.isLocked && (
+            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-background/80 backdrop-blur text-muted-foreground shadow-sm">
+              <Lock className="w-2.5 h-2.5" /> Locked
+            </span>
           )}
         </div>
         <button
@@ -684,30 +748,108 @@ function TemplateCard({
             toggleFav.mutate({ templateId: item.id, kind: item.kind, on: !item.isFavorite });
           }}
           className={cn(
-            'p-1 rounded transition-colors',
-            item.isFavorite ? 'text-amber-500' : 'text-muted-foreground/40 hover:text-amber-500',
+            'absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center shadow-sm transition-colors',
+            item.isFavorite ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500',
           )}
           aria-label={item.isFavorite ? 'Unfavorite' : 'Favorite'}
         >
-          <Star className="w-4 h-4" fill={item.isFavorite ? 'currentColor' : 'none'} />
+          <Star className="w-3.5 h-3.5" fill={item.isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>
-      <div className="text-[11.5px] text-muted-foreground line-clamp-2 leading-snug">
-        {item.bodyText.slice(0, 180)}
-      </div>
-      <div className="mt-auto pt-2 flex items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1 min-w-0">
-          {itemTags.slice(0, 3).map((t) => (
-            <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate">
-              #{t.label}
-            </span>
-          ))}
+
+      {/* Body */}
+      <div className="p-3.5 flex flex-col gap-1.5 flex-1">
+        <div className="font-semibold text-[14px] leading-snug text-foreground line-clamp-2">
+          {item.name}
         </div>
-        <div className="text-[10px] text-muted-foreground shrink-0">
-          {stats?.total_sends ? `${stats.total_sends} sends` : 'No sends yet'}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Clock className="w-3 h-3" />
+          <span>{timeAgoShort(item.updatedAt)}</span>
+          {projectLabel && (
+            <>
+              <span className="text-muted-foreground/40">·</span>
+              <span className="truncate">{projectLabel}</span>
+            </>
+          )}
+          {stats?.total_sends ? (
+            <>
+              <span className="text-muted-foreground/40 ml-auto">·</span>
+              <span className="shrink-0">{stats.total_sends} sends</span>
+            </>
+          ) : null}
+        </div>
+        {item.subject && (
+          <div className="text-[11.5px] text-muted-foreground/80 truncate mt-0.5">{item.subject}</div>
+        )}
+        {itemTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {itemTags.slice(0, 4).map((t) => (
+              <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground truncate">
+                #{t.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-auto pt-3 border-t border-border/60 flex items-center gap-1.5">
+          {editable ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 h-8 text-[12px]"
+              onClick={(e) => { stop(e); onEdit(); }}
+            >
+              Edit
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 h-8 text-[12px] gap-1.5"
+              asChild
+              onClick={stop}
+            >
+              <a href="https://presaleproperties.com/agent/marketing" target="_blank" rel="noopener noreferrer">
+                Edit on Presale <ExternalLink className="w-3 h-3" />
+              </a>
+            </Button>
+          )}
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8"
+            onClick={(e) => { stop(e); onSend(); }}
+            aria-label="Send"
+            title="Send"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8"
+            onClick={onDuplicate}
+            aria-label="Duplicate"
+            title="Duplicate to my library"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </Button>
+          {editable && (
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={(e) => { stop(e); onDelete(); }}
+              aria-label="Delete"
+              title="Archive"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
