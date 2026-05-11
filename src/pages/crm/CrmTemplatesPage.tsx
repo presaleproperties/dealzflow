@@ -214,16 +214,16 @@ export default function CrmTemplatesPage() {
             />
 
             {isLoading ? (
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-[110px] rounded-lg bg-muted/40 animate-pulse" />
+                  <div key={i} className="h-[300px] rounded-xl bg-muted/40 animate-pulse" />
                 ))}
               </div>
             ) : items.length === 0 ? (
               <EmptyState onCreate={() => setCreating({ kind: 'email' })} hasSearch={!!search} />
             ) : (
               <ScrollArea className="flex-1 -mr-2 pr-2 mt-1">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
                   {items.map((u) => (
                     <TemplateCard
                       key={u.uid}
@@ -231,6 +231,9 @@ export default function CrmTemplatesPage() {
                       tagIds={tagsByTemplate.get(u.uid) ?? []}
                       selected={selected?.uid === u.uid}
                       onSelect={() => setSelectedUid(u.uid)}
+                      onEdit={() => setEditing(u)}
+                      onSend={() => sendTemplate(u)}
+                      onDelete={() => setPendingDelete(u)}
                     />
                   ))}
                 </div>
