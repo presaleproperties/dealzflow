@@ -26,6 +26,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Pill } from '@/components/crm/shared/Pill';
 import { renderWithSampleData } from '@/lib/emailVariables';
+import { renderForRecipient } from '@/lib/emailVariables';
+import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { useUnifiedTemplates, type UnifiedTemplate } from '@/hooks/useUnifiedTemplates';
 import {
   useTemplateFolders, useCreateFolder, useDeleteFolder, useAddTemplateToFolder,
