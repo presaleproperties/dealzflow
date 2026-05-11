@@ -244,6 +244,20 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (wantsSearch) {
+      const call = data?.choices?.[0]?.message?.tool_calls?.[0];
+      let matches: Array<{ id: string; reason?: string }> = [];
+      try {
+        const parsed = JSON.parse(call?.function?.arguments || "{}");
+        matches = Array.isArray(parsed?.matches) ? parsed.matches.slice(0, 8) : [];
+      } catch (_) {
+        matches = [];
+      }
+      return new Response(JSON.stringify({ matches }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let out: string = data?.choices?.[0]?.message?.content ?? "";
     // Defensive cleanup — strip code fences the model occasionally adds.
     out = out.replace(/^```(html|text)?\s*/i, "").replace(/```$/i, "").trim();
