@@ -1,16 +1,15 @@
 // CRM Email — single unified hub.
-// Top-level segmented control: Inbox · Templates · Campaigns · Flows · Stats · Health.
+// Top-level: Inbox · Outbound · Reports (3 tabs, editorial all-text).
+//   • Outbound  → Templates / Campaigns / Flows (inner segmented control)
+//   • Reports   → Stats / Health (inner segmented control)
+//
 // "New Email" button (top-right) opens NewEmailLauncherDialog (lead picker)
 // which then mounts the SAME `<ComposeEmailDialog />` used by every other
-// surface in the CRM (lead detail blue CTA, leads table, contacts page,
-// chat thread, quick actions). One composer everywhere — never re-add a
-// second design.
+// surface in the CRM. One composer everywhere — never re-add a second design.
 
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  Mail, Workflow, Megaphone, BarChart3, Activity, Inbox, PenSquare, Sparkles,
-} from 'lucide-react';
+import { PenSquare } from 'lucide-react';
 import InboxView from '@/components/crm/email/InboxView';
 import { NewEmailLauncherDialog } from '@/components/crm/email/NewEmailLauncherDialog';
 import { EmailLiveStatusBar } from '@/components/crm/shared/LiveStatusBar';
@@ -18,52 +17,88 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-// Lazy hub sections — only load when their tab is opened.
+// Lazy hub sections — only load when their parent tab is opened.
 const CrmMarketingHubPage = lazy(() => import('./CrmMarketingHubPage'));
 const CrmEmailCampaignsPage = lazy(() => import('./CrmEmailCampaignsPage'));
 const CrmEmailWorkflowsPage = lazy(() => import('./CrmEmailWorkflowsPage'));
 const CrmEmailAnalyticsPage = lazy(() => import('./CrmEmailAnalyticsPage'));
 const CrmEmailHealthPage = lazy(() => import('./CrmEmailHealthPage'));
 
-type Mode = 'inbox' | 'templates' | 'campaigns' | 'workflows' | 'analytics' | 'health';
+type Primary = 'inbox' | 'outbound' | 'reports';
+type OutboundSub = 'templates' | 'campaigns' | 'workflows';
+type ReportsSub = 'analytics' | 'health';
 
-const TABS: { value: Mode; icon: typeof Mail; label: string }[] = [
-  { value: 'inbox',      icon: Inbox,     label: 'Inbox' },
-  { value: 'templates',  icon: Sparkles,  label: 'Templates' },
-  { value: 'campaigns',  icon: Megaphone, label: 'Campaigns' },
-  { value: 'workflows',  icon: Workflow,  label: 'Flows' },
-  { value: 'analytics',  icon: BarChart3, label: 'Stats' },
-  { value: 'health',     icon: Activity,  label: 'Health' },
+const PRIMARY: { value: Primary; label: string }[] = [
+  { value: 'inbox',    label: 'Inbox' },
+  { value: 'outbound', label: 'Outbound' },
+  { value: 'reports',  label: 'Reports' },
 ];
 
-const VALID = new Set<Mode>(TABS.map(t => t.value));
+const OUTBOUND: { value: OutboundSub; label: string }[] = [
+  { value: 'templates',  label: 'Templates' },
+  { value: 'campaigns',  label: 'Campaigns' },
+  { value: 'workflows',  label: 'Flows' },
+];
+
+const REPORTS: { value: ReportsSub; label: string }[] = [
+  { value: 'analytics',  label: 'Stats' },
+  { value: 'health',     label: 'Health' },
+];
+
+/** Map legacy ?tab=… values to the new (primary, sub) tuple. */
+function legacyToTuple(t: string | null): { primary: Primary; outbound?: OutboundSub; reports?: ReportsSub } | null {
+  if (!t) return null;
+  if (t === 'inbox') return { primary: 'inbox' };
+  if (t === 'templates' || t === 'outbound') return { primary: 'outbound', outbound: 'templates' };
+  if (t === 'campaigns')  return { primary: 'outbound', outbound: 'campaigns' };
+  if (t === 'workflows' || t === 'flows') return { primary: 'outbound', outbound: 'workflows' };
+  if (t === 'analytics' || t === 'stats' || t === 'reports') return { primary: 'reports', reports: 'analytics' };
+  if (t === 'health') return { primary: 'reports', reports: 'health' };
+  return null;
+}
 
 export default function CrmEmailWorkspacePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  // Legacy `?tab=compose` falls back to inbox.
-  const initial = searchParams.get('tab') as Mode | null;
-  const [mode, setMode] = useState<Mode>(initial && VALID.has(initial) ? initial : 'inbox');
+
+  const initial = useMemo(() => legacyToTuple(searchParams.get('tab')), []);
+  const [primary, setPrimary] = useState<Primary>(initial?.primary ?? 'inbox');
+  const [outboundSub, setOutboundSub] = useState<OutboundSub>(initial?.outbound ?? 'templates');
+  const [reportsSub, setReportsSub] = useState<ReportsSub>(initial?.reports ?? 'analytics');
   const [composerOpen, setComposerOpen] = useState(false);
 
+  // Legacy ?tab=compose → open dialog and land on Inbox.
   useEffect(() => {
-    const t = searchParams.get('tab') as Mode | null;
-    if (t === ('compose' as Mode)) {
-      // Legacy URL → open the dialog and land on Inbox.
+    const t = searchParams.get('tab');
+    if (t === 'compose') {
       setComposerOpen(true);
       const sp = new URLSearchParams(searchParams);
       sp.delete('tab');
       setSearchParams(sp, { replace: true });
-      setMode('inbox');
-      return;
+      setPrimary('inbox');
     }
-    if (t && VALID.has(t) && t !== mode) setMode(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, []);
 
-  const switchMode = (next: Mode) => {
-    setMode(next);
+  const switchPrimary = (next: Primary) => {
+    setPrimary(next);
     const sp = new URLSearchParams(searchParams);
-    if (next === 'inbox') sp.delete('tab'); else sp.set('tab', next);
+    if (next === 'inbox') sp.delete('tab');
+    else if (next === 'outbound') sp.set('tab', outboundSub);
+    else sp.set('tab', reportsSub);
+    setSearchParams(sp, { replace: true });
+  };
+
+  const switchOutbound = (next: OutboundSub) => {
+    setOutboundSub(next);
+    const sp = new URLSearchParams(searchParams);
+    sp.set('tab', next);
+    setSearchParams(sp, { replace: true });
+  };
+
+  const switchReports = (next: ReportsSub) => {
+    setReportsSub(next);
+    const sp = new URLSearchParams(searchParams);
+    sp.set('tab', next);
     setSearchParams(sp, { replace: true });
   };
 
@@ -72,21 +107,21 @@ export default function CrmEmailWorkspacePage() {
       {/* Status bar is desktop-only — on mobile the chat header already shows
           connection state and we don't want a fat banner stealing the fold. */}
       <div className="hidden md:block mb-2"><EmailLiveStatusBar /></div>
-      {/* Editorial header — segmented tabs + primary "New Email" CTA */}
-      <div className="mb-3 flex items-center gap-3">
-        <div className="flex-1 -mx-1 overflow-x-auto no-scrollbar">
-          <div className="inline-flex items-center gap-0.5 p-0.5 mx-1 rounded-xl border border-border/70 bg-card shadow-sm">
-            {TABS.map(t => (
-              <ModeBtn
+
+      {/* Editorial header — text-only primary tabs + primary "New Email" CTA */}
+      <div className="mb-2.5 flex items-center gap-3">
+        <nav className="flex-1 min-w-0 -mx-1 overflow-x-auto no-scrollbar">
+          <div className="inline-flex items-center gap-5 px-1">
+            {PRIMARY.map(t => (
+              <PrimaryTab
                 key={t.value}
-                active={mode === t.value}
-                onClick={() => switchMode(t.value)}
-                icon={t.icon}
+                active={primary === t.value}
+                onClick={() => switchPrimary(t.value)}
                 label={t.label}
               />
             ))}
           </div>
-        </div>
+        </nav>
         <Button
           onClick={() => setComposerOpen(true)}
           className="shrink-0 h-9 gap-1.5 text-[12.5px] font-semibold"
@@ -96,17 +131,40 @@ export default function CrmEmailWorkspacePage() {
         </Button>
       </div>
 
-      <div className="flex-1 min-h-0">
-        {mode === 'inbox' && <InboxView />}
+      {/* Sub-nav — only renders when there is one. Editorial pill segmented. */}
+      {primary === 'outbound' && (
+        <SubSegmented
+          items={OUTBOUND}
+          value={outboundSub}
+          onChange={(v) => switchOutbound(v as OutboundSub)}
+        />
+      )}
+      {primary === 'reports' && (
+        <SubSegmented
+          items={REPORTS}
+          value={reportsSub}
+          onChange={(v) => switchReports(v as ReportsSub)}
+        />
+      )}
 
-        {mode !== 'inbox' && (
+      <div className="flex-1 min-h-0">
+        {primary === 'inbox' && <InboxView />}
+
+        {primary === 'outbound' && (
           <div className="h-full overflow-auto rounded-2xl border border-border/70 bg-card shadow-sm">
             <Suspense fallback={<HubSkeleton />}>
-              {mode === 'templates'  && <CrmMarketingHubPage />}
-              {mode === 'campaigns'  && <CrmEmailCampaignsPage />}
-              {mode === 'workflows'  && <CrmEmailWorkflowsPage />}
-              {mode === 'analytics'  && <CrmEmailAnalyticsPage />}
-              {mode === 'health'     && <CrmEmailHealthPage />}
+              {outboundSub === 'templates' && <CrmMarketingHubPage />}
+              {outboundSub === 'campaigns' && <CrmEmailCampaignsPage />}
+              {outboundSub === 'workflows' && <CrmEmailWorkflowsPage />}
+            </Suspense>
+          </div>
+        )}
+
+        {primary === 'reports' && (
+          <div className="h-full overflow-auto rounded-2xl border border-border/70 bg-card shadow-sm">
+            <Suspense fallback={<HubSkeleton />}>
+              {reportsSub === 'analytics' && <CrmEmailAnalyticsPage />}
+              {reportsSub === 'health'    && <CrmEmailHealthPage />}
             </Suspense>
           </div>
         )}
@@ -121,20 +179,54 @@ export default function CrmEmailWorkspacePage() {
   );
 }
 
-function ModeBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
+/* ─────────────────── Tab primitives ─────────────────── */
+
+function PrimaryTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold whitespace-nowrap transition-all',
-        active
-          ? 'bg-foreground text-background shadow-sm'
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+        'relative inline-flex items-center h-9 text-[13.5px] font-semibold tracking-tight whitespace-nowrap transition-colors',
+        active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
       )}
     >
-      <Icon className="h-3.5 w-3.5" />
       {label}
+      {active && (
+        <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-primary" />
+      )}
     </button>
+  );
+}
+
+function SubSegmented<T extends string>({
+  items, value, onChange,
+}: {
+  items: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="mb-3">
+      <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-border/70 bg-card shadow-sm">
+        {items.map(it => {
+          const active = it.value === value;
+          return (
+            <button
+              key={it.value}
+              onClick={() => onChange(it.value)}
+              className={cn(
+                'inline-flex items-center h-7 px-3 rounded-md text-[11.5px] font-semibold whitespace-nowrap transition-all',
+                active
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+              )}
+            >
+              {it.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
