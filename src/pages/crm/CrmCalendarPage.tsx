@@ -124,6 +124,10 @@ export default function CrmCalendarPage() {
   const { data: connectionData } = useGoogleCalendarConnection();
   const { data: gcalData } = useGoogleCalendarEvents(fetchStart, fetchEnd);
   const isGCalConnected = connectionData?.connected ?? false;
+  const { data: dynamicProjects = [] } = useCrmProjects();
+  const projectNames = dynamicProjects.length
+    ? dynamicProjects.map((p: any) => p.name).filter(Boolean)
+    : [...PROJECTS];
 
   const [agentFilter, setAgentFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
