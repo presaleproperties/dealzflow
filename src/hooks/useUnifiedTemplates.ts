@@ -70,7 +70,7 @@ function classifyEmailSource(t: EmailTemplate, mySlug?: string | null): UnifiedS
 export function useUnifiedTemplates(filters: UnifiedFilters) {
   const emailQ = useEmailTemplates();
   const smsQ = useSmsTemplates();
-  const bridgeQ = useBridgeTemplates();
+  const bridgeQ = { data: [] as BridgeTemplate[], isLoading: false };
   const favsQ = useTemplateFavorites();
   const folderItemsQ = useTemplateFolderItems();
   const tagItemsQ = useTemplateTagItems();
@@ -137,30 +137,8 @@ export function useUnifiedTemplates(filters: UnifiedFilters) {
       });
     }
 
-    for (const a of (bridgeQ.data ?? []).filter((b) => b.asset_type === 'email')) {
-      const html = (a as any).body_html ?? '';
-      out.push({
-        uid: `presale:${a.id}`,
-        kind: 'email',
-        source: 'presale',
-        id: a.id,
-        name: a.name,
-        subject: a.subject ?? null,
-        bodyHtml: html,
-        bodyText: snippetFromHtml(html),
-        category: 'presale',
-        isFavorite: favSet.has(`email:${a.id}`),
-        isFeatured: false,
-        isLocked: true,
-        ownerScope: 'team:presale',
-        ownerAgentSlug: null,
-        createdByAgentSlug: null,
-        timesUsed: 0,
-        lastUsedAt: null,
-        updatedAt: (a as any).updated_at ?? new Date().toISOString(),
-        raw: a,
-      });
-    }
+    // Presale bridge templates intentionally excluded — they are outdated
+    // and managed remotely. Agents create their own in the library.
 
     return out;
   }, [emailQ.data, smsQ.data, bridgeQ.data, favsQ.data, filters.myAgentSlug]);
