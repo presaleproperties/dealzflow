@@ -70,7 +70,7 @@ function classifyEmailSource(t: EmailTemplate, mySlug?: string | null): UnifiedS
 export function useUnifiedTemplates(filters: UnifiedFilters) {
   const emailQ = useEmailTemplates();
   const smsQ = useSmsTemplates();
-  const bridgeQ = { data: [] as BridgeTemplate[] };
+  const bridgeQ = { data: [] as BridgeTemplate[], isLoading: false };
   const favsQ = useTemplateFavorites();
   const folderItemsQ = useTemplateFolderItems();
   const tagItemsQ = useTemplateTagItems();
