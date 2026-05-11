@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type KeyboardEvent } from 'react';
-import { Send, Plus, FileText, Image as ImageIcon, Variable, X as XIcon, CornerUpLeft, ChevronLeft, Search as SearchIcon, Loader2 } from 'lucide-react';
+import { Send, Plus, FileText, Image as ImageIcon, Variable, X as XIcon, CornerUpLeft, ChevronLeft, Search as SearchIcon, Loader2, Sparkles, Check, Wand2 } from 'lucide-react';
 import { useSendSms, useSmsTemplates, SMS_VARIABLES, renderSmsTemplate } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
@@ -7,6 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { triggerHaptic } from '@/lib/haptics';
 import { isNative } from '@/lib/native';
 import { supabase } from '@/integrations/supabase/client';
+import { useThreadDraft } from '@/hooks/useThreadDraft';
+import { useComposerAI, type ComposerAIMode } from '@/hooks/useComposerAI';
+
 
 export interface InlineTextComposerHandle {
   /** Set body to a quoted reply preview and focus the textarea. */
@@ -43,10 +46,40 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
   const [plusOpen, setPlusOpen] = useState(false);
   const [plusView, setPlusView] = useState<'menu' | 'templates' | 'variables'>('menu');
   const [tplFilter, setTplFilter] = useState('');
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<{ from: string; to: string; mode: ComposerAIMode } | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const sendSms = useSendSms();
   const { data: templates = [] } = useSmsTemplates();
+  const { draft, queueSave, clear: clearDraft } = useThreadDraft(contact.id, channel);
+  const composerAI = useComposerAI();
+  const hydratedRef = useRef(false);
+
+  // Hydrate the composer from a saved draft (once per thread).
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (!draft) return;
+    hydratedRef.current = true;
+    if (draft.body) setBody(draft.body);
+    if (draft.quote) setQuote(draft.quote);
+    if (draft.media?.length) setMedia(draft.media);
+  }, [draft]);
+
+  // Reset hydration guard when switching to a different thread.
+  useEffect(() => {
+    hydratedRef.current = false;
+    setBody('');
+    setQuote(null);
+    setMedia([]);
+    setAiSuggestion(null);
+  }, [contact.id, channel]);
+
+  // Autosave the draft (debounced inside the hook).
+  useEffect(() => {
+    if (!hydratedRef.current && !body && !quote && media.length === 0) return;
+    queueSave({ body, quote, media });
+  }, [body, quote, media, queueSave]);
 
   useImperativeHandle(ref, () => ({
     quoteReply: (text: string) => {
@@ -56,6 +89,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     },
     focus: () => taRef.current?.focus(),
   }), []);
+
 
   // Auto-grow textarea (1–4 lines). Min height matches a single line so the
   // dock stays slim until the user actually types multiple lines.
