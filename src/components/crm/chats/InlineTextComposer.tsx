@@ -55,7 +55,8 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     const el = taRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const next = Math.min(Math.max(el.scrollHeight, 22), 92);
+    // Single-line baseline = 20px; cap at 5 lines.
+    const next = Math.min(Math.max(el.scrollHeight, 20), 110);
     el.style.height = `${next}px`;
   }, [body]);
 
