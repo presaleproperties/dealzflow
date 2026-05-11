@@ -93,6 +93,34 @@ function decodeHtmlEntities(s: string): string {
   return ta.value;
 }
 
+/**
+ * Some inbound emails (esp. Apple Mail / Outlook marketing) leak the inner
+ * contents of <style> / <script> blocks into the plain-text alternative.
+ * Strip CSS rule blocks ("selector { … }"), MSO conditional comments, and
+ * @-rules so they don't show up as visible text in the reading pane.
+ */
+function stripLeakedCss(s: string): string {
+  if (!s) return s;
+  let out = s;
+  // Drop @media / @font-face / @import blocks (with their balanced braces).
+  out = out.replace(/@[a-z-]+[^{};]*\{[\s\S]*?\}\s*\}?/gi, '');
+  // Drop MSO conditional comments left behind as text.
+  out = out.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+  // Drop CSS rule blocks: anything that looks like "selector { prop:value; … }"
+  // We only strip when the block contains a CSS-like declaration to avoid
+  // nuking JSON-y content. Run several passes for nested/sibling rules.
+  const cssBlock = /(^|[\s,>+~}])([a-zA-Z#.\[\]:*\-_ ()="',\d>+~|^$]+)\{[^{}]*?:[^{}]*?\}/g;
+  for (let i = 0; i < 4; i++) {
+    const next = out.replace(cssBlock, '$1');
+    if (next === out) break;
+    out = next;
+  }
+  // Tidy up runs of blank lines left behind.
+  out = out.replace(/\n{3,}/g, '\n\n').trimStart();
+  return out;
+}
+
+
 /** True when the string is a full HTML document (has <html>...</html>). */
 function isFullHtmlDocument(s: string): boolean {
   return /<html[\s>]/i.test(s) && /<\/html\s*>/i.test(s);
