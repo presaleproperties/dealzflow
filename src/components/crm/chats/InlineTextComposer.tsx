@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type KeyboardEvent } from 'react';
-import { Send, Plus, FileText, Image as ImageIcon, Variable, X as XIcon, CornerUpLeft, ChevronLeft, Search as SearchIcon, Loader2 } from 'lucide-react';
+import { Send, Plus, FileText, Image as ImageIcon, Variable, X as XIcon, CornerUpLeft, ChevronLeft, Search as SearchIcon, Loader2, Sparkles, Check, Wand2 } from 'lucide-react';
 import { useSendSms, useSmsTemplates, SMS_VARIABLES, renderSmsTemplate } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
@@ -7,6 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { triggerHaptic } from '@/lib/haptics';
 import { isNative } from '@/lib/native';
 import { supabase } from '@/integrations/supabase/client';
+import { useThreadDraft } from '@/hooks/useThreadDraft';
+import { useComposerAI, type ComposerAIMode } from '@/hooks/useComposerAI';
+
 
 export interface InlineTextComposerHandle {
   /** Set body to a quoted reply preview and focus the textarea. */
@@ -43,10 +46,40 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
   const [plusOpen, setPlusOpen] = useState(false);
   const [plusView, setPlusView] = useState<'menu' | 'templates' | 'variables'>('menu');
   const [tplFilter, setTplFilter] = useState('');
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<{ from: string; to: string; mode: ComposerAIMode } | null>(null);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const sendSms = useSendSms();
   const { data: templates = [] } = useSmsTemplates();
+  const { draft, queueSave, clear: clearDraft } = useThreadDraft(contact.id, channel);
+  const composerAI = useComposerAI();
+  const hydratedRef = useRef(false);
+
+  // Hydrate the composer from a saved draft (once per thread).
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (!draft) return;
+    hydratedRef.current = true;
+    if (draft.body) setBody(draft.body);
+    if (draft.quote) setQuote(draft.quote);
+    if (draft.media?.length) setMedia(draft.media);
+  }, [draft]);
+
+  // Reset hydration guard when switching to a different thread.
+  useEffect(() => {
+    hydratedRef.current = false;
+    setBody('');
+    setQuote(null);
+    setMedia([]);
+    setAiSuggestion(null);
+  }, [contact.id, channel]);
+
+  // Autosave the draft (debounced inside the hook).
+  useEffect(() => {
+    if (!hydratedRef.current && !body && !quote && media.length === 0) return;
+    queueSave({ body, quote, media });
+  }, [body, quote, media, queueSave]);
 
   useImperativeHandle(ref, () => ({
     quoteReply: (text: string) => {
@@ -56,6 +89,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     },
     focus: () => taRef.current?.focus(),
   }), []);
+
 
   // Auto-grow textarea (1–4 lines). Min height matches a single line so the
   // dock stays slim until the user actually types multiple lines.
@@ -177,7 +211,9 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     setBody('');
     setQuote(null);
     setMedia([]);
+    setAiSuggestion(null);
     if (taRef.current) taRef.current.style.height = 'auto';
+    void clearDraft();
     onSent?.();
     sendSms.mutate(
       {
@@ -281,6 +317,47 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
           className="hidden"
           onChange={(e) => onPickFiles(e.target.files)}
         />
+
+        {/* AI suggestion diff strip */}
+        {aiSuggestion && (
+          <div className="mb-1.5 rounded-xl border border-primary/30 bg-primary/5 px-2.5 py-2 animate-in fade-in-0 slide-in-from-bottom-1 duration-150">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold mb-1">
+                  AI suggestion
+                </div>
+                <div className="text-[13px] leading-snug text-foreground whitespace-pre-wrap line-clamp-4">
+                  {aiSuggestion.to}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBody(aiSuggestion.to);
+                    setAiSuggestion(null);
+                    triggerHaptic('light');
+                    requestAnimationFrame(() => taRef.current?.focus());
+                  }}
+                  aria-label="Accept suggestion"
+                  className="h-7 px-2.5 rounded-md bg-primary text-primary-foreground text-[12px] font-medium flex items-center gap-1 hover:brightness-110 active:scale-95 transition"
+                >
+                  <Check className="w-3 h-3" /> Use
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiSuggestion(null)}
+                  aria-label="Dismiss suggestion"
+                  className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5">
           <Popover open={plusOpen} onOpenChange={setPlusOpen}>
             <PopoverTrigger asChild>
@@ -391,6 +468,62 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
                   </div>
                 </div>
               )}
+            </PopoverContent>
+          </Popover>
+
+          {/* AI assist */}
+          <Popover open={aiOpen} onOpenChange={setAiOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="AI assist"
+                disabled={!body.trim() || composerAI.isPending}
+                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+              >
+                {composerAI.isPending ? (
+                  <Loader2 className="w-[16px] h-[16px] animate-spin" />
+                ) : (
+                  <Sparkles className="w-[16px] h-[16px]" />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="start" sideOffset={8} className="w-56 p-1">
+              {([
+                { mode: 'improve' as const, label: 'Improve writing', icon: Wand2 },
+                { mode: 'shorten' as const, label: 'Make shorter', icon: null },
+                { mode: 'lengthen' as const, label: 'Make longer', icon: null },
+                { mode: 'tone:friendly' as const, label: 'Tone: friendly', icon: null },
+                { mode: 'tone:professional' as const, label: 'Tone: professional', icon: null },
+                { mode: 'translate:pa' as const, label: 'Translate → Punjabi', icon: null },
+                { mode: 'translate:hi' as const, label: 'Translate → Hindi', icon: null },
+                { mode: 'translate:zh' as const, label: 'Translate → Mandarin', icon: null },
+                { mode: 'translate:en' as const, label: 'Translate → English', icon: null },
+              ]).map((opt) => (
+                <button
+                  key={opt.mode}
+                  type="button"
+                  onClick={() => {
+                    setAiOpen(false);
+                    composerAI.mutate(
+                      { mode: opt.mode, body, channel },
+                      {
+                        onSuccess: (res) => {
+                          if (res.suggestion && res.suggestion !== res.original) {
+                            setAiSuggestion({ from: res.original, to: res.suggestion, mode: opt.mode });
+                            triggerHaptic('light');
+                          } else {
+                            toast.message('No change suggested');
+                          }
+                        },
+                      },
+                    );
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] hover:bg-muted text-left"
+                >
+                  {opt.icon ? <opt.icon className="w-3.5 h-3.5 text-muted-foreground" /> : <span className="w-3.5" />}
+                  {opt.label}
+                </button>
+              ))}
             </PopoverContent>
           </Popover>
 

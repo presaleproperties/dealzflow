@@ -28,13 +28,17 @@ interface AssistBody {
   prompt?: string;
   /** For `tone` mode. */
   tone?: ToneVariant;
-  /** For `translate` mode — ISO codes (`en`, `zh`, `ko`, `pa`). */
+  /** For `translate` mode — ISO codes (`en`, `zh`, `ko`, `pa`, `hi`). */
   targetLanguage?: string;
   /** Soft guidance for the agent context. */
   agentName?: string;
+  /** 'html' (default, for email) or 'plain' (for SMS / WhatsApp). */
+  format?: "html" | "plain";
+  /** Channel hint — when 'sms' the model keeps replies under 160 chars when possible. */
+  channel?: "sms" | "whatsapp" | "email";
 }
 
-const SYSTEM_RULES = `You are an expert real-estate email copywriter for a luxury Vancouver presale brokerage.
+const SYSTEM_RULES_HTML = `You are an expert real-estate email copywriter for a luxury Vancouver presale brokerage.
 
 ABSOLUTE RULES — never break these:
 1. Output ONLY HTML. Wrap copy in semantic tags (<p>, <h2>, <ul>, <li>, <strong>, <a>). No <html>, <head>, or <body> tags.
@@ -43,6 +47,15 @@ ABSOLUTE RULES — never break these:
 4. Keep the same overall structure unless the user explicitly asks for restructuring.
 5. Never include explanations, markdown fences, or commentary. Output is rendered directly into the email.
 6. Brand voice: confident, warm, concise. No emojis unless already present in input. No exclamation marks unless already present.`;
+
+const SYSTEM_RULES_PLAIN = `You are an expert real-estate text-message copywriter for a luxury Vancouver presale brokerage.
+
+ABSOLUTE RULES — never break these:
+1. Output PLAIN TEXT ONLY. No HTML tags, no markdown fences, no asterisks, no bullet points unless naturally written ("- " is fine).
+2. PRESERVE every merge token EXACTLY as it appears — {{lead.first_name}}, {$first_name}, \${first_name}, etc. Never translate or alter braces.
+3. SMS-friendly length: when the channel is SMS, aim for under 160 characters unless the user asked to lengthen.
+4. Brand voice: warm, confident, concise. Conversational — like a top agent texting a friend. No corporate fluff. No emojis unless already present.
+5. Never include explanations, headers, or commentary. The output goes straight into the message bubble.`;
 
 function buildUserPrompt(b: AssistBody): string {
   const subj = b.subject?.trim() ? `\nCURRENT SUBJECT: ${b.subject}` : "";
@@ -99,7 +112,7 @@ Deno.serve(async (req: Request) => {
 
     const wantsSubjects = body.mode === "subject_lines";
     const messages = [
-      { role: "system", content: SYSTEM_RULES },
+      { role: "system", content: body.format === "plain" ? SYSTEM_RULES_PLAIN : SYSTEM_RULES_HTML },
       { role: "user", content: buildUserPrompt(body) },
     ];
 
@@ -178,11 +191,16 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    let html: string = data?.choices?.[0]?.message?.content ?? "";
+    let out: string = data?.choices?.[0]?.message?.content ?? "";
     // Defensive cleanup — strip code fences the model occasionally adds.
-    html = html.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+    out = out.replace(/^```(html|text)?\s*/i, "").replace(/```$/i, "").trim();
 
-    return new Response(JSON.stringify({ html }), {
+    if (body.format === "plain") {
+      return new Response(JSON.stringify({ text: out, body: out }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ html: out }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

@@ -1,74 +1,134 @@
-## Goal
+# Chats Experience Upgrade — 3 Builds
 
-Replace the current single-template picker in **Send Project** with the same trigger-based funnel that fires when a lead signs up on PresaleProperties.com — except the agent picks which trigger to fire and the entire follow-up sequence is scheduled and sent from the CRM (so no Presale-side changes needed).
+Three focused builds, shipped in order so each is usable on its own. All three respect existing CRM Communication Privacy, Last Activity Rule, Sender Signature Rule, and Mobile Composer Drawer rules.
 
-## Canonical triggers (mirrored from `bridge-ingest-lead`)
+---
 
-| Trigger | Fires when (on real signup) | Initial template | Follow-up sequence |
-|---|---|---|---|
-| `vip_registration` | VIP signup form | VIP welcome | Day 1, Day 3, Day 7 |
-| `floor_plan_request` | Floorplan download | Floorplan delivery | Day 1, Day 4 |
-| `project_inquiry` | Project inquiry form | Project info | Day 2, Day 5 |
-| `contact_form` | Generic contact form | Acknowledgement | Day 2 |
-| `deck_revisit_hot` | Deck re-opened (hot rule) | Re-engagement | Day 1, Day 3 |
-| `cold_lead_followup` | Manually triggered for stale leads | Cold nudge | Day 7, Day 14 |
+## Build 1 — Composer Power-Ups
 
-Each trigger maps to one of the existing `★`-prefixed Presale auto-templates that `serve-auto-templates` already serves — we just decide which one fires and when. The mapping table is hard-coded in one file (`src/lib/presaleTriggers.ts`) and easy to extend later.
+Make the inline composer the only place an agent needs during a conversation.
 
-## Architecture
+**Per-thread drafts that persist**
+- New table `crm_thread_drafts` (one row per `user_id` × `contact_id` × `channel`) storing body, media URLs, quote text, updated_at.
+- `useThreadDraft(contactId, channel)` hook — debounced autosave (800ms), reads on thread open, clears on send.
+- "Draft" chip on the conversation row in `CrmChatsPage` when a draft exists.
 
-```text
-SendProjectDialog (UI)
-    ├─ replaces template picker with Trigger picker (dropdown of 6 above)
-    ├─ shows the sequence preview ("Sends now + Day 1 + Day 3")
-    └─ on Send → invokes edge fn `crm-fire-trigger`
-                    │
-                    ├─ Render initial via fetch-presale-templates (POST)
-                    ├─ Send initial via bridge-send-email (existing)
-                    └─ Insert rows into NEW table `crm_scheduled_sends`
-                          (one row per follow-up step, status=pending)
+**Inline channel switcher**
+- Small segmented control inside the composer pill: `Text · Email`. Switching swaps the active sender (uses existing `useSendSms` / opens `ComposeEmailDialog` inline-mode).
+- Default channel = last-replied channel for that contact (already in `crm_chats` row).
 
-NEW edge fn `crm-process-scheduled-sends` (cron every 5 min)
-    └─ For each due row: render via fetch-presale-templates,
-       send via bridge-send-email, mark sent. Honors unsubscribe + reply.
+**AI assist (one-tap rewrite)**
+- "Sparkles" button → menu: Improve, Shorten, Lengthen, Tone (friendly/professional/concise), Translate (Punjabi, Hindi, Mandarin, English).
+- Calls existing `template-ai-assist` edge fn with mode + body. Shows result in a slim diff strip above the textarea with Accept / Reject (no popup).
+- Preserves merge tokens.
+
+**Schedule send + quiet-hours-aware**
+- "Clock" button beside Send opens a small popover: Now / In 1h / Tonight 7pm / Tomorrow 9am / Custom.
+- If quiet hours active → Send button auto-becomes "Send at 9:00 AM" (uses existing quiet-hours engine, no modal block).
+
+**Slash commands**
+- Typing `/` in textarea opens an inline command palette (no popover): `/template`, `/snippet`, `/var`, `/schedule`, `/file`. Keyboard-driven, dismissable with Esc.
+
+---
+
+## Build 2 — Triage Tools (Snooze + Saved Views)
+
+Snooze, saved views, and bulk select hooks already exist server-side. Finish wiring the UI surfaces.
+
+**Snooze**
+- Add "Snooze" to the desktop hover row + mobile swipe action (right swipe).
+- Popover with presets: Later today, Tonight, Tomorrow 9am, This weekend, Next week, Custom.
+- `snoozedLabel` already renders on row → confirm it shows on snoozed rows in the inbox.
+- Auto-resurface: scheduled job already exists in `useCrmInboxFlags` snoozePresets — verify cron triggers `snoozed_until <= now()` clears.
+
+**Saved views**
+- New left-rail section above the channel filters: "Views" with chips for built-ins (Unread, Mine, Hot, Awaiting reply >24h, Snoozed, Archived) + user-created views from `crm_inbox_views`.
+- "Save current view" button captures channel + query + filters into a new row.
+- Pin/unpin and reorder via drag (desktop) / long-press (mobile).
+- Keyboard shortcut `g` then `1-9` to jump to view N.
+
+**Bulk operations on desktop**
+- Checkbox column appears on hover, sticky toolbar at top once any row is checked.
+- Actions: Mark read/unread, Archive, Snooze, Assign to agent (if admin).
+- Mobile: long-press a row enters multi-select mode with the same toolbar.
+
+---
+
+## Build 3 — Lead Context Side Panel
+
+Stop the constant tab-switch to lead detail.
+
+**Desktop (≥1024px): right rail inside `CrmChatsShell`**
+- New 320px panel: contact card, pipeline pill (uses unified pipelines hook), engagement score, assigned agent, Phone/Email/Text quick actions.
+- Sections (collapsible, remember state per-user): Recent presale activity (last 5), Upcoming showings (next 3), Open deals, Tags, Notes (inline add).
+- Quick "Pin contact to top of inbox" action.
+- Toggle to hide/show the rail (persisted in localStorage).
+
+**Tablet (768–1023px)**
+- Right rail collapses to a slide-over sheet triggered by an "info" icon in the thread header. Same content. Reuses `<ResponsiveDialog>` so it feels native.
+
+**Mobile (<768px)**
+- Replace the existing collapsible `MobileLeadContextCard` at the top of the thread with a bottom-sheet trigger in the thread header (single tap on the contact name). Sheet has the same content as desktop. Cleaner thread view, more room for messages.
+
+**One-tap actions inside the rail**
+- Call → uses `useDialer` (already wired).
+- Book showing → opens existing booking dialog with contact pre-loaded.
+- Send template → opens template picker that returns into the composer (Build 1).
+
+---
+
+## Technical Notes
+
+**New table (Build 1)**
+```sql
+CREATE TABLE crm_thread_drafts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  contact_id uuid NOT NULL,
+  channel text NOT NULL CHECK (channel IN ('sms','whatsapp','email')),
+  body text DEFAULT '',
+  quote text,
+  media jsonb DEFAULT '[]'::jsonb,
+  subject text,
+  scheduled_for timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, contact_id, channel)
+);
+-- RLS: user can CRUD only their own drafts (auth.uid() = user_id)
 ```
 
-## Files to add / change
+**Files to create**
+- `src/hooks/useThreadDraft.ts`
+- `src/hooks/useScheduledSend.ts` (wraps useSendSms with `scheduled_for`)
+- `src/components/crm/chats/ComposerAIBar.tsx`
+- `src/components/crm/chats/ComposerSlashMenu.tsx`
+- `src/components/crm/chats/ChannelSegmented.tsx`
+- `src/components/crm/chats/SnoozePopover.tsx`
+- `src/components/crm/chats/SavedViewsRail.tsx`
+- `src/components/crm/chats/BulkSelectToolbar.tsx`
+- `src/components/crm/chats/LeadContextRail.tsx` (desktop)
+- `src/components/crm/chats/LeadContextSheet.tsx` (tablet/mobile)
 
-**New**
-- `src/lib/presaleTriggers.ts` — single source of truth: trigger → template + sequence
-- `supabase/functions/crm-fire-trigger/index.ts` — sends initial + queues follow-ups
-- `supabase/functions/crm-process-scheduled-sends/index.ts` — cron worker
-- DB migration: `crm_scheduled_sends` table (contact_id, trigger_id, step_index, template_slug, project_slug, agent_slug, scheduled_for, status, sent_at, message_id, cancelled_reason) with RLS scoped to assigned agent + admins, plus pg_cron job (every 5 min)
+**Files to edit**
+- `src/components/crm/chats/InlineTextComposer.tsx` — drafts, AI bar, schedule, slash, channel switch
+- `src/pages/crm/CrmChatsPage.tsx` — saved-views rail, bulk toolbar, snooze action
+- `src/pages/crm/CrmChatsShell.tsx` — wire desktop right rail (3-pane on ≥1024)
+- `src/pages/crm/CrmChatThreadPage.tsx` — header tap → context sheet on mobile/tablet, remove inline `MobileLeadContextCard`
 
-**Changed**
-- `src/components/crm/leads/SendProjectDialog.tsx`
-  - Replace `templates` query + dropdown with **trigger picker** (Select)
-  - Show sequence preview ("This will send now + 2 follow-ups over 4 days")
-  - On submit → invoke `crm-fire-trigger` instead of current send path
-  - Keep project picker, agent override, Gmail-status check, and existing UX exactly as is
+**Constraints respected**
+- Mobile composer stays in `mobile-drawer`, not full-bleed.
+- Bottom-nav clearance via `var(--bottom-nav-pad)`.
+- All chips through `<Pill>` primitive.
+- Sender signature always resolved per agent (no hardcoding).
+- Last-touch only fires on actual manual sends.
+- No tel:/mailto:/_blank — call uses dialer, email opens in `ComposeEmailDialog`.
 
-**Auto-cancel rules** (built into `crm-process-scheduled-sends`)
-- If lead replies (`crm_email_threads` has new inbound after the trigger fired) → cancel remaining steps
-- If lead unsubscribes → cancel remaining steps
-- If contact deleted / merged → cancel remaining steps
-- Reason recorded in `cancelled_reason` for audit
+---
 
-## What stays untouched
+## Order of work
 
-- The "Send Project" button placement and dialog open/close flow
-- Project picker UI, Gmail connection check, agent override
-- All existing Presale endpoints (no changes on Presale side at all)
-- Existing single-shot `★` templates continue to work for ad-hoc sends elsewhere
+1. **Build 1** — biggest daily-use win, needs one migration. Estimated 1 round.
+2. **Build 2** — pure UI wiring on existing hooks. Estimated 1 round.
+3. **Build 3** — new component, threads through 3 files. Estimated 1 round.
 
-## What this explicitly does NOT do
-
-- Does not touch Presale's own activity log / scheduling — funnel lives in CRM only
-- Does not author new email templates — uses Presale's `serve-auto-templates` for rendering, exactly like today
-- No changes to `bridge-ingest-lead` (real signups still trigger Presale's own funnel as they do today)
-
-## Open detail to confirm during build
-
-The mapping in the table above is my best read of the canonical triggers in `bridge-ingest-lead`. When I get to `presaleTriggers.ts` I'll match each trigger's `template_slug` to whatever `serve-auto-templates` actually returns today (live fetch on first load) — if the slug for, say, "VIP welcome" is named differently, I'll log a warning and let you pick the closest match in Settings later. The day-offsets above are sensible defaults; we can tune per trigger after first send.
-
-Ready to build on your go-ahead.
+Approve and I'll start with Build 1 (the migration goes first so you can confirm the drafts table before I write the rest).
