@@ -494,24 +494,39 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   }, [messages.length]);
 
   // Keyboard transition guard — when the visual viewport resizes (iOS keyboard
-  // showing/hiding) the scroll container's clientHeight changes. If the user
-  // was pinned to the bottom, re-pin them every frame of the transition so the
-  // last bubble stays glued to the composer instead of drifting up/down.
+  // showing/hiding) the scroll container's clientHeight changes. We force-pin
+  // to the bottom while the keyboard is opening so the newest messages stay
+  // visible above the composer (iMessage / WhatsApp behavior). Once the
+  // keyboard is fully open we revert to "only stick if near bottom" so a user
+  // who scrolled up to read history isn't yanked back down.
   useEffect(() => {
     const el = scrollRef.current;
     const vv = typeof window !== 'undefined' ? window.visualViewport : null;
     if (!el || !vv) return;
     let raf = 0;
-    const stick = () => {
+    let lastVH = vv.height;
+    let kbOpening = false;
+    const pin = () => {
       raf = 0;
-      if (!wasAtBottomRef.current) return;
       el.scrollTop = el.scrollHeight;
     };
     const onResize = () => {
-      // Capture pre-resize state so we know whether to re-pin.
-      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-      wasAtBottomRef.current = dist <= 160;
-      if (!raf) raf = requestAnimationFrame(stick);
+      const newVH = vv.height;
+      // Viewport shrank → keyboard is opening. Force-pin regardless of position.
+      if (newVH < lastVH - 50) {
+        kbOpening = true;
+        wasAtBottomRef.current = true;
+      } else if (newVH > lastVH + 50) {
+        // Keyboard closing: stop forcing.
+        kbOpening = false;
+      }
+      lastVH = newVH;
+      if (kbOpening || wasAtBottomRef.current) {
+        if (!raf) raf = requestAnimationFrame(pin);
+      } else {
+        const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+        wasAtBottomRef.current = dist <= 160;
+      }
     };
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
@@ -520,6 +535,34 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       vv.removeEventListener('scroll', onResize);
       if (raf) cancelAnimationFrame(raf);
     };
+  }, []);
+
+  // When the composer input gains focus, immediately pin to the bottom so the
+  // most recent messages slide up with the keyboard instead of being hidden
+  // behind it. Listens at document level since the composer lives in a sibling
+  // subtree on mobile.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const tag = target.tagName;
+      const editable = (target as HTMLElement).isContentEditable;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !editable) return;
+      // Only pin if the focused field is part of the composer (bottom of page).
+      if (!target.closest('[data-chat-composer], form, footer')) return;
+      wasAtBottomRef.current = true;
+      // Several rAFs to ride through the keyboard animation on iOS.
+      let count = 0;
+      const tick = () => {
+        el.scrollTop = el.scrollHeight;
+        if (++count < 12) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    return () => document.removeEventListener('focusin', onFocusIn);
   }, []);
 
 
