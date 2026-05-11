@@ -905,8 +905,8 @@ function TemplateCard({
 // Preview pane
 // ===========================================================================
 function PreviewPane({
-  item, onEdit, onDelete, onSend,
-}: { item: UnifiedTemplate; onEdit: () => void; onDelete: () => void; onSend: () => void }) {
+  item, onEdit, onDelete, onSend, onHistory,
+}: { item: UnifiedTemplate; onEdit: () => void; onDelete: () => void; onSend: () => void; onHistory: () => void }) {
   const html = useMemo(() => renderWithSampleData(item.bodyHtml), [item.bodyHtml]);
   const { map: statsMap } = useTemplateStatsMap();
   const stats = statsMap.get(`${item.kind}:${item.id}`);
@@ -934,6 +934,15 @@ function PreviewPane({
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-[12px]"
+              onClick={onHistory}
+              title="Version history"
+            >
+              <History className="w-3.5 h-3.5" /> History
+            </Button>
             <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSend}>
               <Send className="w-3.5 h-3.5" /> Send
             </Button>
