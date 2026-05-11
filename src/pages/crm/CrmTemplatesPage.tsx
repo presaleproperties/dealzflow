@@ -69,6 +69,25 @@ export default function CrmTemplatesPage() {
   const [composeEmail, setComposeEmail] = useState<{ subject: string; html: string } | null>(null);
   const [composeSms, setComposeSms] = useState<{ body: string } | null>(null);
   const [sendPresale, setSendPresale] = useState<any | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const sendTemplate = (t: UnifiedTemplate) => {
+    pushRecentTemplate({ id: t.id, kind: t.kind });
+    if (t.source === 'presale') setSendPresale(t.raw);
+    else if (t.kind === 'email') setComposeEmail({ subject: t.subject ?? '', html: t.bodyHtml });
+    else setComposeSms({ body: t.bodyText });
+  };
 
   const { items, isLoading, tagsByTemplate } = useUnifiedTemplates({
     channel, search, source, folderId, tagIds, favoritedOnly, featuredOnly, myAgentSlug: mySlug,
