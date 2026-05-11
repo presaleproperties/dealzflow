@@ -471,6 +471,62 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
+          {/* AI assist */}
+          <Popover open={aiOpen} onOpenChange={setAiOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="AI assist"
+                disabled={!body.trim() || composerAI.isPending}
+                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+              >
+                {composerAI.isPending ? (
+                  <Loader2 className="w-[16px] h-[16px] animate-spin" />
+                ) : (
+                  <Sparkles className="w-[16px] h-[16px]" />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="start" sideOffset={8} className="w-56 p-1">
+              {([
+                { mode: 'improve' as const, label: 'Improve writing', icon: Wand2 },
+                { mode: 'shorten' as const, label: 'Make shorter', icon: null },
+                { mode: 'lengthen' as const, label: 'Make longer', icon: null },
+                { mode: 'tone:friendly' as const, label: 'Tone: friendly', icon: null },
+                { mode: 'tone:professional' as const, label: 'Tone: professional', icon: null },
+                { mode: 'translate:pa' as const, label: 'Translate → Punjabi', icon: null },
+                { mode: 'translate:hi' as const, label: 'Translate → Hindi', icon: null },
+                { mode: 'translate:zh' as const, label: 'Translate → Mandarin', icon: null },
+                { mode: 'translate:en' as const, label: 'Translate → English', icon: null },
+              ]).map((opt) => (
+                <button
+                  key={opt.mode}
+                  type="button"
+                  onClick={() => {
+                    setAiOpen(false);
+                    composerAI.mutate(
+                      { mode: opt.mode, body, channel },
+                      {
+                        onSuccess: (res) => {
+                          if (res.suggestion && res.suggestion !== res.original) {
+                            setAiSuggestion({ from: res.original, to: res.suggestion, mode: opt.mode });
+                            triggerHaptic('light');
+                          } else {
+                            toast.message('No change suggested');
+                          }
+                        },
+                      },
+                    );
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] hover:bg-muted text-left"
+                >
+                  {opt.icon ? <opt.icon className="w-3.5 h-3.5 text-muted-foreground" /> : <span className="w-3.5" />}
+                  {opt.label}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+
           <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3 py-0 min-h-[32px]">
             <textarea
               ref={taRef}
