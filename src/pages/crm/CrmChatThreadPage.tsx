@@ -812,7 +812,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           // while focusing the reply box. Tablet+ keeps the two-pane bleed.
           : 'flex flex-col flex-1 min-h-0 h-[100dvh] sm:h-full sm:-mx-4 sm:-my-4 relative bg-background overflow-hidden'
       }
-      style={!embedded && !isNative ? { height: 'calc(100dvh - var(--keyboard-inset-bottom, 0px))' } : undefined}
+      style={!embedded ? { height: 'calc(100dvh - var(--keyboard-inset-bottom, 0px))' } : undefined}
     >
       {/* Header */}
       <div
