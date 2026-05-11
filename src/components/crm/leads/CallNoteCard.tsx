@@ -42,7 +42,7 @@ export function CallNoteCard({ call }: Props) {
     <div className="group relative">
       <div
         className={cn(
-          'w-full text-left rounded-lg border bg-card pl-3.5 pr-3 py-2.5 md:pl-4 md:pr-3.5 md:py-3 transition-all',
+          'call-note-row w-full text-left rounded-lg border bg-card pl-3.5 pr-3 py-2.5 md:pl-4 md:pr-3.5 md:py-3 transition-all',
           'border-border/60 border-l-[3px]',
         )}
         style={{ borderLeftColor: `hsl(${tint})` }}
