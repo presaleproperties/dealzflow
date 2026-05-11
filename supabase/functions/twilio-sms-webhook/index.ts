@@ -79,9 +79,45 @@ Deno.serve(async (req) => {
     const sid = data.MessageSid;
     const numMedia = parseInt(data.NumMedia || '0', 10);
     const mediaUrls: string[] = [];
+    // Twilio media URLs require Basic Auth and aren't viewable in a browser.
+    // Download each via the connector gateway, re-host in our public crm-sms-media
+    // bucket, and store the public URL so <img> tags just work.
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const TWILIO_API_KEY = Deno.env.get('TWILIO_API_KEY');
+    const GATEWAY_URL = 'https://connector-gateway.lovable.dev/twilio';
     for (let i = 0; i < numMedia; i++) {
       const u = data[`MediaUrl${i}`];
-      if (u) mediaUrls.push(u);
+      const ct = data[`MediaContentType${i}`] || 'application/octet-stream';
+      if (!u) continue;
+      try {
+        // Extract the path after `/2010-04-01/Accounts/{AccountSid}` so the
+        // gateway can re-prefix it with the right account credentials.
+        const m = u.match(/\/2010-04-01\/Accounts\/[^/]+(\/.*)$/);
+        const subPath = m?.[1] || null;
+        let blob: Blob | null = null;
+        if (subPath && LOVABLE_API_KEY && TWILIO_API_KEY) {
+          const r = await fetch(`${GATEWAY_URL}${subPath}`, {
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              'X-Connection-Api-Key': TWILIO_API_KEY,
+            },
+            redirect: 'follow',
+          });
+          if (r.ok) blob = await r.blob();
+        }
+        if (!blob) { mediaUrls.push(u); continue; }
+        const ext = (ct.split('/')[1] || 'bin').split(';')[0].replace(/[^a-z0-9]/gi, '') || 'bin';
+        const path = `inbound/${sid || 'msg'}/${i}.${ext}`;
+        const { error: upErr } = await admin.storage.from('crm-sms-media').upload(path, blob, {
+          contentType: ct, upsert: true,
+        });
+        if (upErr) { mediaUrls.push(u); continue; }
+        const { data: pub } = admin.storage.from('crm-sms-media').getPublicUrl(path);
+        mediaUrls.push(pub.publicUrl);
+      } catch (e) {
+        console.error('media rehost failed', e);
+        mediaUrls.push(u);
+      }
     }
 
     if (!fromNum || !toNum) {
