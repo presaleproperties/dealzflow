@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
 
     const wantsSubjects = body.mode === "subject_lines";
     const messages = [
-      { role: "system", content: SYSTEM_RULES },
+      { role: "system", content: body.format === "plain" ? SYSTEM_RULES_PLAIN : SYSTEM_RULES_HTML },
       { role: "user", content: buildUserPrompt(body) },
     ];
 
@@ -191,11 +191,16 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    let html: string = data?.choices?.[0]?.message?.content ?? "";
+    let out: string = data?.choices?.[0]?.message?.content ?? "";
     // Defensive cleanup — strip code fences the model occasionally adds.
-    html = html.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+    out = out.replace(/^```(html|text)?\s*/i, "").replace(/```$/i, "").trim();
 
-    return new Response(JSON.stringify({ html }), {
+    if (body.format === "plain") {
+      return new Response(JSON.stringify({ text: out, body: out }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ html: out }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
