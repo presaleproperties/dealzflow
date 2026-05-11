@@ -35,7 +35,7 @@ import {
 } from '@/hooks/useTemplateOrg';
 import {
   useUpdateEmailTemplate, useCreateEmailTemplate, useSoftDeleteEmailTemplate,
-  useChangeTemplateScope,
+  useChangeTemplateScope, useDuplicateTemplate,
 } from '@/hooks/useEmailTemplates';
 import { useSaveSmsTemplate, useDeleteSmsTemplate } from '@/hooks/useSms';
 import { usePresaleAgentStore } from '@/stores/usePresaleAgent';
