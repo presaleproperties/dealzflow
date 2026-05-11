@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Mail, MessageSquare, Search, Send, X, Star, StarOff, Plus, Folder,
   Pencil, Trash2, ExternalLink, Tag as TagIcon, Sparkles, FolderPlus,
-  History, MoreHorizontal, Lock, Command as CommandIcon,
+  History, MoreHorizontal, Lock, Command as CommandIcon, Clock, Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
