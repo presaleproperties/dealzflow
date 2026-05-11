@@ -256,8 +256,8 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   });
 
   // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
-  // composer can ride above the keyboard instead of being covered by it.
-  useKeyboardInset(!isNative && !embedded && isCompact);
+  // thread shell shrinks above the keyboard in PWA and native shells.
+  useKeyboardInset(!embedded && isCompact);
 
   // Hard-lock the document while this thread is mounted on mobile. With
   // `interactive-widget=overlays-content` iOS still tries to pan the layout
@@ -267,7 +267,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   // transition instant — only --keyboard-inset-bottom moves, nothing else.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (isNative || embedded || !isCompact) return;
+    if (embedded || !isCompact) return;
     const html = document.documentElement;
     const body = document.body;
     const prev = {
@@ -812,7 +812,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           // while focusing the reply box. Tablet+ keeps the two-pane bleed.
           : 'flex flex-col flex-1 min-h-0 h-[100dvh] sm:h-full sm:-mx-4 sm:-my-4 relative bg-background overflow-hidden'
       }
-      style={!embedded ? { height: 'calc(100dvh - var(--keyboard-inset-bottom, 0px))' } : undefined}
+      style={!embedded ? { height: 'calc(100dvh - max(var(--keyboard-inset-bottom, 0px), var(--kb-h, 0px)))' } : undefined}
     >
       {/* Header */}
       <div
