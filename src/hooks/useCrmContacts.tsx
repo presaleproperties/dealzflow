@@ -493,18 +493,23 @@ export function useBulkDeleteContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      // Use the SECURITY DEFINER RPC so each delete is permission-checked
-      // server-side and we get a clear error if any row was blocked by RLS.
-      const results = await Promise.all(
-        ids.map((id) => supabase.rpc('crm_delete_contact', { p_contact_id: id })),
-      );
-      const firstError = results.find((r) => r.error)?.error;
-      if (firstError) throw firstError;
-      const blocked = results.filter((r) => r.data !== true).length;
-      if (blocked > 0) throw new Error(`${blocked} lead(s) could not be deleted (no permission)`);
+      if (!ids.length) return;
+      // Single transactional RPC — replaces the previous N-parallel call
+      // pattern, which fan-out 200 RPCs for a 200-row delete and could
+      // partially fail leaving timeline orphans behind.
+      const { data, error } = await supabase.rpc('crm_bulk_delete_contacts' as never, {
+        p_contact_ids: ids,
+      } as never);
+      if (error) throw error;
+      const result = (data as { deleted?: number; blocked?: number } | null) ?? {};
+      if ((result.blocked ?? 0) > 0) {
+        throw new Error(`${result.blocked} lead(s) could not be deleted (no permission)`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
       toast.success('Contacts deleted');
     },
     onError: (err: Error) => {
