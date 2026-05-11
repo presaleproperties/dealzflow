@@ -481,7 +481,19 @@ export async function processPresaleActivity(
     // Do not auto-create duplicates for generic Presale sync/task/update events.
     // Only true lead lifecycle or high-intent engagement events should create a
     // new CRM lead; unmatched administrative events are stored for back-fill.
-    const canAutoCreate = HIGH_INTENT.has(ev.type) || ev.type === "vip_registration" || ev.type === "floorplan_download";
+    // Auto-create only on true high-intent NEW signals. Email opens/clicks
+    // and email_sent are NEVER allowed to spawn a placeholder lead — they're
+    // ambient signals on already-known leads, and creating a "New" stub on
+    // an unmatched open just produces duplicates.
+    const NEVER_CREATE = new Set([
+      "email_open", "email_opened", "email.opened",
+      "email_clicked", "email.clicked", "link_click",
+      "email_sent", "email.sent",
+      "email_auto_response_sent", "email.auto_response_sent",
+      "return_visit", "deck_visit",
+    ]);
+    const canAutoCreate = !NEVER_CREATE.has(ev.type)
+      && (HIGH_INTENT.has(ev.type) || ev.type === "vip_registration" || ev.type === "floorplan_download");
     if (!canAutoCreate) {
       contact = null;
     } else {
