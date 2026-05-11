@@ -144,7 +144,7 @@ export function computeSegmentCounts(
     if (!s.filter_config || Object.keys(s.filter_config).length === 0) {
       counts[s.id] = contacts.length;
     } else {
-      counts[s.id] = contacts.filter(c => contactMatchesSegment(c, s.filter_config)).length;
+      counts[s.id] = contacts.filter(c => contactMatchesSegment(c, s.filter_config, s.id)).length;
     }
   });
   return counts;
