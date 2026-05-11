@@ -91,14 +91,14 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
   }), []);
 
 
-  // Auto-grow textarea (1–4 lines). Min height matches a single line so the
-  // dock stays slim until the user actually types multiple lines.
+  // Auto-grow textarea (1–5 lines). Reset to 0 first so scrollHeight reflects
+  // the natural content height including the textarea's own vertical padding,
+  // which keeps the single-line baseline matched to the pill height.
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
-    el.style.height = 'auto';
-    // Single-line baseline = 20px; cap at 5 lines.
-    const next = Math.min(Math.max(el.scrollHeight, 20), 110);
+    el.style.height = '0px';
+    const next = Math.min(el.scrollHeight, 132);
     el.style.height = `${next}px`;
   }, [body]);
 
