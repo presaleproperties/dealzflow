@@ -95,7 +95,7 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Campaign</DialogTitle></DialogHeader>
 
         <Tabs value={String(step)} onValueChange={v => setStep(Number(v))}>

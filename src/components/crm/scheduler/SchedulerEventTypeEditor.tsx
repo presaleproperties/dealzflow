@@ -55,7 +55,7 @@ export function SchedulerEventTypeEditor({ eventType, onClose, onCreate, onUpdat
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[640px] max-h-[85vh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="max-w-[640px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isNew ? 'New event type' : `Edit: ${eventType?.title}`}</DialogTitle>
         </DialogHeader>

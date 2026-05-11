@@ -17,7 +17,7 @@ interface Props {
 export function TemplatePickerDialog({ open, onOpenChange, onSelect }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[85dvh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-xl max-h-[85dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Choose a Template</DialogTitle>
           <p className="text-sm text-muted-foreground">Start with a pre-built automation and customize it</p>

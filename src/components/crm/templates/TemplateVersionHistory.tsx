@@ -83,7 +83,7 @@ export function TemplateVersionHistory({ templateId, onRestore }: Props) {
             <History className="w-3.5 h-3.5" /> History
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col">
+        <DialogContent aria-describedby={undefined} className="max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/40">
             <DialogTitle className="text-base">Version history</DialogTitle>
           </DialogHeader>
@@ -141,7 +141,7 @@ export function TemplateVersionHistory({ templateId, onRestore }: Props) {
 
       {/* Preview drawer */}
       <Dialog open={!!previewing} onOpenChange={() => setPreviewing(null)}>
-        <DialogContent className="max-w-4xl h-[85vh] p-0 overflow-hidden flex flex-col">
+        <DialogContent aria-describedby={undefined} className="max-w-4xl h-[85vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 flex-row items-center justify-between space-y-0">
             <div>
               <DialogTitle className="text-sm">v{previewing?.version_number} — {previewing?.name}</DialogTitle>

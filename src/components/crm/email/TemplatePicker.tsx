@@ -152,7 +152,7 @@ export function TemplatePicker({ open, onOpenChange, onSelect }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl w-screen h-[100dvh] sm:w-[96vw] sm:h-[88vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl [&>button]:hidden">
+      <DialogContent aria-describedby={undefined} className="max-w-5xl w-screen h-[100dvh] sm:w-[96vw] sm:h-[88vh] p-0 overflow-hidden flex flex-col gap-0 rounded-none sm:rounded-2xl [&>button]:hidden">
         {/* Header — single X (auto shadcn close hidden via [&>button]:hidden) */}
         <div className="px-4 sm:px-5 py-3 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">

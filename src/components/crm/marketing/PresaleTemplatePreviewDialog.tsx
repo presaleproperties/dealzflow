@@ -13,7 +13,7 @@ export function PresaleTemplatePreviewDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+      <DialogContent aria-describedby={undefined} className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{asset?.name ?? ''}</DialogTitle>
         </DialogHeader>

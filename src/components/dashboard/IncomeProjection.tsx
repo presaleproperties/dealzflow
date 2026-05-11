@@ -417,7 +417,7 @@ export function IncomeProjection({ payouts, expenses, revShareMonthlyAvg = 0, pr
 
       {/* Month Detail Dialog */}
       <Dialog open={!!selectedMonth} onOpenChange={() => setSelectedMonth(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent aria-describedby={undefined} className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl">{selectedMonth?.fullMonth}</DialogTitle>
           </DialogHeader>

@@ -91,7 +91,7 @@ export function SchedulerOnboardingDialog({ profile }: { profile: AgentScheduler
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-[540px]" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent aria-describedby={undefined} className="max-w-[540px]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />

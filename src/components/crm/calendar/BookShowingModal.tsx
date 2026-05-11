@@ -56,7 +56,7 @@ export function BookShowingModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={o => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent aria-describedby={undefined} className="max-w-md">
         <DialogHeader>
           <DialogTitle>Book Showing</DialogTitle>
         </DialogHeader>

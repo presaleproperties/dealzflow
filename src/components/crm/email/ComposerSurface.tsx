@@ -973,7 +973,7 @@ export function ComposerSurface({
 
       {/* Save as template */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent aria-describedby={undefined} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Save as Template</DialogTitle>
           </DialogHeader>
