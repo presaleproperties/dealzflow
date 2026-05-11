@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type EmailSignatureKind = 'full' | 'reply';
+
 export type EmailSignature = {
   id: string;
   user_id: string;
@@ -9,6 +11,7 @@ export type EmailSignature = {
   html: string;
   is_default: boolean;
   sort_order: number;
+  kind: EmailSignatureKind;
   created_at: string;
   updated_at: string;
 };
