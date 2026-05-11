@@ -20,6 +20,7 @@ import {
 import DataImportSection from '@/components/crm/settings/DataImportSection';
 import DataManagerSection from '@/components/crm/settings/DataManagerSection';
 import EmailSettingsSection from '@/components/crm/settings/EmailSettingsSection';
+import ReplySignatureCard from '@/components/crm/settings/ReplySignatureCard';
 import ProjectsManagerSection from '@/components/crm/settings/ProjectsManagerSection';
 import SourceManagerSection from '@/components/crm/settings/SourceManagerSection';
 import { LeadSourcesPanel } from '@/components/crm/integrations/LeadSourcesPanel';
