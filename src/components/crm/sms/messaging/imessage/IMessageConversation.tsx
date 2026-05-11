@@ -546,6 +546,20 @@ function IMessageBubbleImpl({
   );
 }
 
+// Memoized to prevent re-render of every bubble when only one message updates.
+// Cheap shallow compare over the BubbleProps fields that actually drive output.
+const IMessageBubble = memo(IMessageBubbleImpl, (a, b) => (
+  a.m === b.m &&
+  a.isOutbound === b.isOutbound &&
+  a.sameAsPrev === b.sameAsPrev &&
+  a.sameAsNext === b.sameAsNext &&
+  a.isLastInRun === b.isLastInRun &&
+  a.highlight === b.highlight &&
+  a.threadState === b.threadState &&
+  a.onReply === b.onReply &&
+  a.onDeleteMessage === b.onDeleteMessage
+));
+
 function statusLabel(status: string, scheduledFor?: string | null) {
   if (status === 'scheduled' && scheduledFor) {
     const d = new Date(scheduledFor);
