@@ -3,6 +3,7 @@
 // IMPORTANT: this endpoint must be configured as Twilio's "A MESSAGE COMES IN" webhook
 //   AND the StatusCallback URL on outbound messages.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { isValidTwilioSignature, reconstructTwilioUrl } from '../_shared/twilioSignature.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +31,17 @@ Deno.serve(async (req) => {
     const formData = await req.formData();
     const data: Record<string, string> = {};
     for (const [k, v] of formData.entries()) data[k] = String(v);
+
+    // SECURITY: validate Twilio signature. Without this, anyone can forge
+    // an inbound SMS (trigger STOP for arbitrary numbers — DoS the contact
+    // list) or spoof a delivery-status update.
+    const sig = req.headers.get('x-twilio-signature');
+    const fullUrl = reconstructTwilioUrl(req);
+    const valid = await isValidTwilioSignature(sig, fullUrl, data);
+    if (!valid) {
+      console.warn('[twilio-sms-webhook] invalid signature', { type, hasSig: !!sig });
+      return new Response('forbidden', { status: 403, headers: corsHeaders });
+    }
 
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,
