@@ -317,6 +317,47 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
           className="hidden"
           onChange={(e) => onPickFiles(e.target.files)}
         />
+
+        {/* AI suggestion diff strip */}
+        {aiSuggestion && (
+          <div className="mb-1.5 rounded-xl border border-primary/30 bg-primary/5 px-2.5 py-2 animate-in fade-in-0 slide-in-from-bottom-1 duration-150">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold mb-1">
+                  AI suggestion
+                </div>
+                <div className="text-[13px] leading-snug text-foreground whitespace-pre-wrap line-clamp-4">
+                  {aiSuggestion.to}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBody(aiSuggestion.to);
+                    setAiSuggestion(null);
+                    triggerHaptic('light');
+                    requestAnimationFrame(() => taRef.current?.focus());
+                  }}
+                  aria-label="Accept suggestion"
+                  className="h-7 px-2.5 rounded-md bg-primary text-primary-foreground text-[12px] font-medium flex items-center gap-1 hover:brightness-110 active:scale-95 transition"
+                >
+                  <Check className="w-3 h-3" /> Use
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiSuggestion(null)}
+                  aria-label="Dismiss suggestion"
+                  className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5">
           <Popover open={plusOpen} onOpenChange={setPlusOpen}>
             <PopoverTrigger asChild>
