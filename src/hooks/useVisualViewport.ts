@@ -20,16 +20,16 @@ export function useVisualViewport() {
       const isOpen = offset > KEYBOARD_THRESHOLD;
 
       // Write CSS custom properties directly — no React state
-      root.style.setProperty('--vv-height', `${vh}px`);
-      root.style.setProperty('--keyboard-offset', `${offset}px`);
+      root.style.setProperty('--vv-height', vh + 'px');
+      root.style.setProperty('--keyboard-offset', offset + 'px');
 
       if (isOpen !== keyboardOpenRef.current) {
         keyboardOpenRef.current = isOpen;
         root.classList.toggle('keyboard-open', isOpen);
       }
 
+      // Aggressively prevent iOS from scrolling the page behind the keyboard
       if (isOpen) {
-        // Aggressively prevent iOS from scrolling the page behind the keyboard
         window.scrollTo(0, 0);
         document.body.scrollTop = 0;
         root.scrollTop = 0;
@@ -107,40 +107,6 @@ export function useVisualViewport() {
       root.style.removeProperty('--vv-height');
       root.style.removeProperty('--keyboard-offset');
       root.classList.remove('keyboard-open');
-    };
-  }, []);
-
-  return { keyboardOpenRef };
-}
-      rafId = requestAnimationFrame(update);
-    }
-
-    update();
-
-    if (vv) {
-      vv.addEventListener('resize', onViewportChange);
-      vv.addEventListener('scroll', onViewportChange);
-    }
-    window.addEventListener('resize', onViewportChange);
-
-    const onOrientation = () => {
-      setTimeout(onViewportChange, 100);
-      setTimeout(onViewportChange, 300);
-    };
-    window.addEventListener('orientationchange', onOrientation);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      if (vv) {
-        vv.removeEventListener('resize', onViewportChange);
-        vv.removeEventListener('scroll', onViewportChange);
-      }
-      window.removeEventListener('resize', onViewportChange);
-      window.removeEventListener('orientationchange', onOrientation);
-      root.style.removeProperty('--vv-height');
-      root.style.removeProperty('--keyboard-offset');
-      root.classList.remove('keyboard-open');
-      root.removeAttribute('data-keyboard-open');
     };
   }, []);
 
