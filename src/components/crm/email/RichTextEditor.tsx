@@ -133,30 +133,30 @@ export function RichTextEditor({
     <div className="flex flex-col h-full min-h-0 lg:min-h-[320px] bg-background">
       {/* Toolbar — sits flush against the composer header above (no border-top, no rounded corners) */}
       <div
-        className="composer-toolbar flex items-center gap-0.5 px-1 py-1.5 border-b border-border/60 bg-muted/20 overflow-x-auto"
+        className="composer-toolbar flex items-center gap-0.5 px-1 py-1.5 border-b border-border/60 bg-muted/20 overflow-x-auto flex-nowrap"
         style={{ touchAction: 'pan-x', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
       >
-        <Button type="button" variant={editor.isActive('bold') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBold().run()}>
+        <Button type="button" aria-label="Bold" variant={editor.isActive('bold') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBold().run()}>
           <Bold className="w-4 h-4" />
         </Button>
-        <Button type="button" variant={editor.isActive('italic') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <Button type="button" aria-label="Italic" variant={editor.isActive('italic') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleItalic().run()}>
           <Italic className="w-4 h-4" />
         </Button>
-        <Button type="button" variant={editor.isActive('heading') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <Button type="button" aria-label="Heading" variant={editor.isActive('heading') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
           <Heading2 className="w-4 h-4" />
         </Button>
-        <Button type="button" variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+        <Button type="button" aria-label="Bullet list" variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleBulletList().run()}>
           <List className="w-4 h-4" />
         </Button>
-        <Button type="button" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+        <Button type="button" aria-label="Numbered list" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
           <ListOrdered className="w-4 h-4" />
         </Button>
         <div className="w-px h-5 bg-border/70 mx-1" />
-        <Button type="button" variant={editor.isActive('link') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={handleSetLink} title="Add or edit link">
+        <Button type="button" aria-label="Insert link" variant={editor.isActive('link') ? 'secondary' : 'ghost'} size="sm" className={btnClass} onClick={handleSetLink} title="Add or edit link">
           <Link2 className="w-4 h-4" />
         </Button>
         {editor.isActive('link') && (
-          <Button type="button" variant="ghost" size="sm" className={btnClass} onClick={() => editor.chain().focus().unsetLink().run()} title="Remove link">
+          <Button type="button" aria-label="Remove link" variant="ghost" size="sm" className={btnClass} onClick={() => editor.chain().focus().unsetLink().run()} title="Remove link">
             <Link2Off className="w-4 h-4" />
           </Button>
         )}
