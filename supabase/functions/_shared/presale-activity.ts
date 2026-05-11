@@ -293,11 +293,31 @@ export async function processPresaleActivity(
     }
   }
 
-  // ── Identity stitch: email → phone → guarded presale_user_id ──────────────
-  // Visitor ids can survive across test submissions in the same browser. Never
-  // let a reused visitor id merge a different submitted email into another lead.
+  // ── Identity stitch: identity-vault → email → phone → guarded presale_user_id
+  // The identity vault matches against ANY email/phone the contact has ever
+  // used (alternates from prior signups), preventing duplicate "New" leads
+  // when a known lead signs up with a fresh email address.
   let contact: { id: string; first_name: string | null; last_name: string | null; assigned_to: string | null } | null = null;
-  if (email) {
+  if (email || phone) {
+    try {
+      const { data: resolved } = await supabase.rpc("crm_resolve_contact_identity", {
+        _email: email || null,
+        _phone: phone || null,
+      });
+      const hit = Array.isArray(resolved) ? resolved[0] : resolved;
+      if (hit?.contact_id) {
+        const { data } = await supabase
+          .from("crm_contacts")
+          .select("id, first_name, last_name, assigned_to")
+          .eq("id", hit.contact_id)
+          .maybeSingle();
+        if (data) contact = data as typeof contact;
+      }
+    } catch (e) {
+      console.warn("[presale-activity] identity resolver failed, falling back:", e);
+    }
+  }
+  if (!contact && email) {
     const { data } = await supabase
       .from("crm_contacts")
       .select("id, first_name, last_name, assigned_to")
