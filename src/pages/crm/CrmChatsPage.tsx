@@ -23,6 +23,7 @@ import { useChatPins } from '@/hooks/useChatPins';
 import { SwipeRow } from '@/components/crm/chats/SwipeRow';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
+import { useDraftContactIds } from '@/hooks/useDraftContactIds';
 
 
 /**
@@ -136,6 +137,7 @@ export default function CrmChatsPage() {
 
   const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived, showCampaigns });
   const queryClient = useQueryClient();
+  const { set: draftContactIds } = useDraftContactIds();
   const handlePullRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['crm-chats'] });
   };
@@ -708,6 +710,11 @@ export default function CrmChatsPage() {
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1">
                         <p className={`text-[13px] truncate leading-snug flex-1 min-w-0 ${isUnread ? 'text-foreground/85' : 'text-muted-foreground'}`}>
+                          {draftContactIds.has(t.contact_id) && (
+                            <span className="inline-flex items-center mr-1.5 px-1.5 h-[15px] rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9.5px] font-bold uppercase tracking-wide align-middle">
+                              Draft
+                            </span>
+                          )}
                           {failed && <AlertCircle className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-destructive" strokeWidth={2.4} aria-label="Last send failed" />}
                           {t.last_message_direction === 'outbound' && !failed && (
                             <CornerUpLeft className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/60" strokeWidth={2.2} aria-label="You replied" />
@@ -716,9 +723,6 @@ export default function CrmChatsPage() {
                             <Paperclip className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70" strokeWidth={2.2} aria-label="Has attachment" />
                           )}
                           {t.subject ? (
-                            // Subject alone reads cleanest in the rail (Gmail/Outlook
-                            // compact view). Appending " — preview" caused the
-                            // subject to truncate mid-title on narrow rails.
                             <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/85'}>{t.subject}</span>
                           ) : (preview || fallback || 'No messages yet')}
                         </p>
@@ -759,9 +763,17 @@ export default function CrmChatsPage() {
                       </button>
                     )}
 
-                    {/* Per-row inline actions — pin + delete */}
+                    {/* Per-row inline actions — snooze + pin + delete */}
                     {!selectMode && (
                       <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <SnoozeMenu
+                          isSnoozed={!!snoozeText}
+                          onSnooze={(iso) => {
+                            flags.snooze(t.id, iso).then(() => {
+                              toast.success(iso ? 'Snoozed' : 'Unsnoozed');
+                            });
+                          }}
+                        />
                         <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
                           onClick={() => togglePin(t.id)}>
                           {pinned.has(t.id)

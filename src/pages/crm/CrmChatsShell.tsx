@@ -3,6 +3,7 @@ import { MessageSquare } from 'lucide-react';
 import CrmChatsPage from './CrmChatsPage';
 import CrmChatThreadPage from './CrmChatThreadPage';
 import CrmNewChatPane from './CrmNewChatPane';
+import { LeadContextRail } from '@/components/crm/chats/LeadContextRail';
 
 /**
  * Two-pane chat shell.
@@ -47,6 +48,10 @@ export default function CrmChatsShell() {
             <EmptyThreadState />
           )}
         </section>
+
+        {/* Right: lead context rail (lg+ only, collapsible). Hidden when no
+            thread is open or when the user is composing a new chat. */}
+        {hasThread && <LeadContextRail />}
       </div>
     </>
   );
