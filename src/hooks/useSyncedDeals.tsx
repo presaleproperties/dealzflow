@@ -13,25 +13,46 @@ import { isTeamDeal as checkIsTeamDealShared } from '@/lib/transactionUtils';
 export function extractProjectNameFromAddress(address: string | null): string | null {
   if (!address) return null;
 
+  // S13 Tier 3 — reject candidates that look like street addresses.
+  // Street-type suffixes commonly seen in BC/Fraser-Valley addressing.
+  const STREET_TYPES = /\b(st|street|ave|avenue|rd|road|dr|drive|blvd|boulevard|way|lane|ln|crescent|cres|court|ct|place|pl|hwy|highway|terrace|tr|loop|circle|cir)\b/i;
+
+  const isStreetCandidate = (s: string): boolean => {
+    const trimmed = s.trim();
+    if (!trimmed) return true;
+    // Starts with a house number → it's a street, not a project name.
+    if (/^\d/.test(trimmed)) return true;
+    // Contains a street-type suffix → street, not project.
+    if (STREET_TYPES.test(trimmed)) return true;
+    return false;
+  };
+
+  const accept = (raw: string | undefined): string | null => {
+    if (!raw) return null;
+    const candidate = raw.trim();
+    if (isStreetCandidate(candidate)) return null;
+    return titleCase(candidate);
+  };
+
   // Pattern 1: "Part N/N - ProjectName ..." — project name after "Part X/X -"
   const afterPart = address.match(/^[Pp]ar[kt]\s*\d\/\d\s*[-–]\s*([A-Za-z][A-Za-z\s]+?)(?:\s*[-–,]|\s+(?:Unit|#|\d))/);
-  if (afterPart) return titleCase(afterPart[1].trim());
+  if (afterPart) { const r = accept(afterPart[1]); if (r) return r; }
 
   // Pattern 2: "ProjectName Part N/N ..." — project name before "Part X/X"
   const beforePart = address.match(/^([A-Za-z][A-Za-z\s]+?)\s+[Pp]art\s+\d\/\d/);
-  if (beforePart) return titleCase(beforePart[1].trim());
+  if (beforePart) { const r = accept(beforePart[1]); if (r) return r; }
 
   // Pattern 3: "ProjectName - Part N/N ..." or "ProjectName, Part N/N ..."
   const beforePartDash = address.match(/^([A-Za-z][A-Za-z\s]+?)\s*[-–,]\s*[Pp]art\s*\d\/\d/);
-  if (beforePartDash) return titleCase(beforePartDash[1].trim());
+  if (beforePartDash) { const r = accept(beforePartDash[1]); if (r) return r; }
 
   // Pattern 4: "ProjectName N/N - ..." (e.g. "Walker House 1/2 - #703")
   const beforeFraction = address.match(/^([A-Za-z][A-Za-z\s]+?)\s+\d\/\d\s*[-–]/);
-  if (beforeFraction) return titleCase(beforeFraction[1].trim());
+  if (beforeFraction) { const r = accept(beforeFraction[1]); if (r) return r; }
 
   // Pattern 5: "PROJECT NAME, Unit NNN (1/2 commission...)" — HAYER style
   const commaUnit = address.match(/^([A-Z][A-Z\s]+?),\s*[Uu]nit/);
-  if (commaUnit) return titleCase(commaUnit[1].trim());
+  if (commaUnit) { const r = accept(commaUnit[1]); if (r) return r; }
 
   return null;
 }
