@@ -323,43 +323,66 @@ export default function InboxView() {
   }, [filteredThreads, selectedThreadId, selectedThread?.id, isCompact, markUnread]);
 
 
+  // Shared compose dialog (mounted from both desktop & mobile branches).
+  const composeNode = replyContact ? (
+    <ComposeEmailDialog
+      contact={replyContact}
+      open={composeOpen}
+      onOpenChange={setComposeOpen}
+      initialSubject={replySubject}
+      onSent={() => {
+        setComposeOpen(false);
+        if (selectedThread) {
+          qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
+          qc.invalidateQueries({ queryKey: ['crm-inbox-messages', selectedThread.id] });
+        }
+      }}
+    />
+  ) : null;
+
   // ───────────────── Mobile (list-or-detail) ─────────────────
   if (isCompact) {
     const showingDetail = !!selectedThread;
     return (
-      <div className="flex flex-col min-h-0 h-full bg-background">
-        {!showingDetail ? (
-          <MobileThreadList
-            folder={folder}
-            folders={folders}
-            onFolderChange={(f) => { setFolder(f); setSelectedThreadId(null); }}
-            search={search}
-            onSearchChange={setSearch}
-            threads={filteredThreads}
-            isLoading={threadsQuery.isLoading}
-            onPick={(id) => { triggerHaptic('selection'); setSelectedThreadId(id); }}
-            onSync={sync}
-            syncing={syncing}
-            onPullRefresh={handlePullRefresh}
-            onArchive={archiveThread}
-            onMarkUnread={markUnread}
-          />
-        ) : (
-          <MobileThreadDetail
-            thread={selectedThread!}
-            messages={messagesQuery.data ?? []}
-            isLoading={messagesQuery.isLoading}
-            onBack={() => setSelectedThreadId(null)}
-            onArchive={archive}
-            reply={reply}
-            onReplyChange={setReply}
-            onSend={sendReply}
-            sending={sending}
-          />
-        )}
-      </div>
+      <>
+        <div className="flex flex-col min-h-0 h-full bg-background">
+          {!showingDetail ? (
+            <MobileThreadList
+              folder={folder}
+              folders={folders}
+              onFolderChange={(f) => { setFolder(f); setSelectedThreadId(null); }}
+              search={search}
+              onSearchChange={setSearch}
+              threads={filteredThreads}
+              isLoading={threadsQuery.isLoading}
+              onPick={(id) => { triggerHaptic('selection'); setSelectedThreadId(id); }}
+              onSync={sync}
+              syncing={syncing}
+              onPullRefresh={handlePullRefresh}
+              onArchive={archiveThread}
+              onMarkUnread={markUnread}
+            />
+          ) : (
+            <MobileThreadDetail
+              thread={selectedThread!}
+              messages={messagesQuery.data ?? []}
+              isLoading={messagesQuery.isLoading}
+              onBack={() => setSelectedThreadId(null)}
+              onArchive={archive}
+              reply={reply}
+              onReplyChange={setReply}
+              onSend={sendReply}
+              sending={sending}
+              onOpenFull={openReply}
+              hasContact={!!selectedThread!.contact_id}
+            />
+          )}
+        </div>
+        {composeNode}
+      </>
     );
   }
+
 
   // ───────────────── Desktop (3-pane) ─────────────────
   // Dynamic grid template lets users collapse either side pane.
