@@ -9,6 +9,7 @@ import {
   useUpsertEmailSignature,
 } from '@/hooks/useEmailSignatures';
 import { usePresaleAgent } from '@/stores/usePresaleAgent';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { buildPresaleReplySignature } from '@/lib/presaleSignatures';
 
 /**
