@@ -29,6 +29,7 @@ import {
   X,
 } from 'lucide-react';
 import type { ProspectRow } from './NeedsAttention';
+import { startInAppCall } from '@/hooks/useDialer';
 
 // ─── helpers ───────────────────────────────────────────────────────────────────
 const SOURCE_COLORS: Record<string, string> = {
