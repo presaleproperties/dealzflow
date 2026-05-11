@@ -2,7 +2,7 @@
  * UnifiedThreadView — Phase 1 placeholder.
  *
  * Today, lead-detail email threads render via `<LeadEmailThreadDialog />`
- * (modal) and SMS threads render via `<MessagingCenter />` / `CrmChatThreadPage`.
+ * (modal) and SMS threads render via `CrmChatThreadPage`.
  * Phase 2 will extract a single inline thread component (Apple-Mail style:
  * collapsed history + inline reply box) used by the lead detail
  * Communication tab and the future `/crm/inbox` shell.

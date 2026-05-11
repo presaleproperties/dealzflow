@@ -158,7 +158,7 @@ export function StepCrmSms({ eyebrow, onBack, onNext, onSkip }: Props) {
                 maxLength={20}
               />
               <p className="text-[11px] text-muted-foreground mt-1.5">
-                We'll save it locally and your admin will link it to your account in the SMS Center.
+                We'll save it locally and your admin will link it to your account in Chats.
               </p>
             </div>
             <Button onClick={confirmHaveNumber} variant="outline" className="w-full h-11">
