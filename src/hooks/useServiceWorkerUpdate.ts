@@ -32,9 +32,13 @@ export function useServiceWorkerUpdate() {
 
     navigator.serviceWorker.ready.then(handleRegistration);
 
-    // Poll every 60s to check for updates
+    // Poll every 60s to check for updates. Swallow rejections like
+    // "newestWorker is null" that fire on Safari/iOS when there's nothing
+    // new to install — they're benign and don't need user-facing noise.
     const interval = setInterval(() => {
-      navigator.serviceWorker.ready.then((r) => r.update());
+      navigator.serviceWorker.ready
+        .then((r) => r.update().catch(() => {}))
+        .catch(() => {});
     }, 60_000);
 
     return () => clearInterval(interval);

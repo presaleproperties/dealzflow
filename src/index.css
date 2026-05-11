@@ -352,6 +352,18 @@
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.4);
   }
+
+  /* Kanban gets a slightly thicker, gold-tinted horizontal scrollbar so
+     overflow is discoverable on desktop without feeling heavy. */
+  .kanban-scroll { scroll-behavior: smooth; scrollbar-color: hsl(var(--primary) / 0.35) transparent; }
+  .kanban-scroll::-webkit-scrollbar { height: 8px; }
+  .kanban-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.32);
+    border-radius: 99px;
+  }
+  .kanban-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.55);
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────────────
