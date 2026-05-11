@@ -290,6 +290,41 @@ function RailAction({
   );
 }
 
+function FormattedNote({ raw }: { raw: string }) {
+  const parsed = parseLeadNote(raw);
+
+  if (!parsed.isStructured) {
+    return (
+      <p className="text-[12.5px] text-foreground/85 leading-relaxed line-clamp-6 whitespace-pre-wrap">
+        {parsed.intro || raw}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {parsed.intro && (
+        <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-2">
+          {parsed.intro}
+        </p>
+      )}
+      <dl className="grid grid-cols-[88px_1fr] gap-x-2 gap-y-1.5 text-[12px]">
+        {parsed.fields.slice(0, 8).map((f, i) => (
+          <div key={`${f.label}-${i}`} className="contents">
+            <dt className="text-muted-foreground/80 truncate">{f.label}</dt>
+            <dd className="text-foreground/90 break-words leading-snug">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {parsed.fields.length > 8 && (
+        <p className="text-[11px] text-muted-foreground/70">
+          +{parsed.fields.length - 8} more fields
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="px-4 py-3 border-t border-border/40">
