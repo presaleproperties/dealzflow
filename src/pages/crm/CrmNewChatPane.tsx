@@ -205,13 +205,14 @@ export default function CrmNewChatPane() {
           </div>
         </Link>
         {picked.phone && (
-          <a
-            href={`tel:${picked.phone.replace(/\D/g, '')}`}
+          <button
+            type="button"
+            onClick={() => startInAppCall({ phone: picked.phone, contactId: picked.id, contactName: name })}
             aria-label="Call"
             className="h-9 w-9 rounded-full flex items-center justify-center text-emerald-600 hover:bg-emerald-500/10 transition-colors"
           >
             <Phone className="w-4 h-4" />
-          </a>
+          </button>
         )}
         <Link
           to={`/crm/leads/${picked.id}`}
