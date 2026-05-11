@@ -1,134 +1,135 @@
-# Chats Experience Upgrade — 3 Builds
+# Templates 2.0 — A 10× Library
 
-Three focused builds, shipped in order so each is usable on its own. All three respect existing CRM Communication Privacy, Last Activity Rule, Sender Signature Rule, and Mobile Composer Drawer rules.
-
----
-
-## Build 1 — Composer Power-Ups
-
-Make the inline composer the only place an agent needs during a conversation.
-
-**Per-thread drafts that persist**
-- New table `crm_thread_drafts` (one row per `user_id` × `contact_id` × `channel`) storing body, media URLs, quote text, updated_at.
-- `useThreadDraft(contactId, channel)` hook — debounced autosave (800ms), reads on thread open, clears on send.
-- "Draft" chip on the conversation row in `CrmChatsPage` when a draft exists.
-
-**Inline channel switcher**
-- Small segmented control inside the composer pill: `Text · Email`. Switching swaps the active sender (uses existing `useSendSms` / opens `ComposeEmailDialog` inline-mode).
-- Default channel = last-replied channel for that contact (already in `crm_chats` row).
-
-**AI assist (one-tap rewrite)**
-- "Sparkles" button → menu: Improve, Shorten, Lengthen, Tone (friendly/professional/concise), Translate (Punjabi, Hindi, Mandarin, English).
-- Calls existing `template-ai-assist` edge fn with mode + body. Shows result in a slim diff strip above the textarea with Accept / Reject (no popup).
-- Preserves merge tokens.
-
-**Schedule send + quiet-hours-aware**
-- "Clock" button beside Send opens a small popover: Now / In 1h / Tonight 7pm / Tomorrow 9am / Custom.
-- If quiet hours active → Send button auto-becomes "Send at 9:00 AM" (uses existing quiet-hours engine, no modal block).
-
-**Slash commands**
-- Typing `/` in textarea opens an inline command palette (no popover): `/template`, `/snippet`, `/var`, `/schedule`, `/file`. Keyboard-driven, dismissable with Esc.
+A single page where any agent on the team can find, preview, edit, build, and send any email or SMS template in seconds — with shared folders, tags, favorites, real usage analytics, and an AI assistant that helps you find or write the right template.
 
 ---
 
-## Build 2 — Triage Tools (Snooze + Saved Views)
+## What changes for users
 
-Snooze, saved views, and bulk select hooks already exist server-side. Finish wiring the UI surfaces.
+### One library, two channels
+A single Templates page with an **Email / SMS** segmented switch at the top. Same layout, same shortcuts, same muscle memory.
 
-**Snooze**
-- Add "Snooze" to the desktop hover row + mobile swipe action (right swipe).
-- Popover with presets: Later today, Tonight, Tomorrow 9am, This weekend, Next week, Custom.
-- `snoozedLabel` already renders on row → confirm it shows on snoozed rows in the inbox.
-- Auto-resurface: scheduled job already exists in `useCrmInboxFlags` snoozePresets — verify cron triggers `snoozed_until <= now()` clears.
+### A real "find anything" experience
+- **Cmd/Ctrl+K command palette** — type to instantly jump to any template by name, subject, body content, tag, or folder.
+- **Smart search bar** — fuzzy match across name + subject + body + tags + project.
+- **Filters that stack**: Source (Mine / Team / Presale) · Folder · Tag · Channel (Email/SMS) · Favorited · Recently used.
+- **Ask AI**: "find me a follow-up after a showing for a Mandarin-speaking buyer" → AI ranks the best matches.
+- **Saved views** per agent (e.g. "My hot-lead replies") stored locally.
 
-**Saved views**
-- New left-rail section above the channel filters: "Views" with chips for built-ins (Unread, Mine, Hot, Awaiting reply >24h, Snoozed, Archived) + user-created views from `crm_inbox_views`.
-- "Save current view" button captures channel + query + filters into a new row.
-- Pin/unpin and reorder via drag (desktop) / long-press (mobile).
-- Keyboard shortcut `g` then `1-9` to jump to view N.
+### Organize the way real teams work
+- **Folders** (e.g. "Cold outreach", "Showings", "Closing", "Nurture") — drag a template in, or create a new folder inline. Folders are team-shared.
+- **Color tags** — multi-select chips on a template (e.g. `urgent`, `mandarin`, `langley`). Click a tag to filter the library.
+- **Favorites** — star any template to pin it to the top of your personal view.
+- **Recent** — your last 10 used templates surface in a dedicated rail at the top.
 
-**Bulk operations on desktop**
-- Checkbox column appears on hover, sticky toolbar at top once any row is checked.
-- Actions: Mark read/unread, Archive, Snooze, Assign to agent (if admin).
-- Mobile: long-press a row enters multi-select mode with the same toolbar.
+### Sharing & roles (Full library + analytics)
+- **Mine** — only you can see/edit. One-click **"Share with team"** promotes it to the team library.
+- **Team** — anyone on the team can use; only the author or an admin can edit.
+- **Featured** — admins can mark a team template as ⭐ Featured so new agents see the gold standards first.
+- **Locked** — admins can lock a Featured template to prevent edits.
+
+### Per-template analytics
+Live stats panel on every template:
+- Total sends · Last sent
+- Open rate · Reply rate · Click rate (email) · Reply rate (SMS)
+- Sparkline of sends over the last 30 days
+- Top performers section on the empty-search state ("Most-replied-to last 30 days")
+
+### Create & edit faster
+- **New template** dialog asks 3 things: channel, name, "start blank / from existing / from AI prompt".
+- AI prompt path: "Write a friendly first-touch email for an investor lead in Surrey BC who downloaded a floor plan" → generated draft (subject + body) you can accept, tweak, or regenerate.
+- **Inline edit** opens a side editor (no page jump): subject, body (rich text for email, plain for SMS), merge-tag picker, MMS attachments for SMS, preview against a sample lead.
+- **Version history** is preserved (already exists) — accessible from a "History" button.
+
+### Preview that mirrors the real send
+- Right-side preview pane renders the template **with sample data merged** (lead name, agent signature, etc.) — what the recipient actually sees.
+- "Preview as…" dropdown lets you swap the sample lead with a real one to sanity-check merge tags.
+- **Send button** opens the canonical composer (`ComposeEmailDialog` / `SendTextDialog`) pre-loaded with the template — no surprises.
+
+### Mobile-friendly
+List view collapses to single column, preview pane becomes a bottom sheet, search bar pins to top, FAB-free (per pill-nav rule).
 
 ---
 
-## Build 3 — Lead Context Side Panel
+## Layout
 
-Stop the constant tab-switch to lead detail.
-
-**Desktop (≥1024px): right rail inside `CrmChatsShell`**
-- New 320px panel: contact card, pipeline pill (uses unified pipelines hook), engagement score, assigned agent, Phone/Email/Text quick actions.
-- Sections (collapsible, remember state per-user): Recent presale activity (last 5), Upcoming showings (next 3), Open deals, Tags, Notes (inline add).
-- Quick "Pin contact to top of inbox" action.
-- Toggle to hide/show the rail (persisted in localStorage).
-
-**Tablet (768–1023px)**
-- Right rail collapses to a slide-over sheet triggered by an "info" icon in the thread header. Same content. Reuses `<ResponsiveDialog>` so it feels native.
-
-**Mobile (<768px)**
-- Replace the existing collapsible `MobileLeadContextCard` at the top of the thread with a bottom-sheet trigger in the thread header (single tap on the contact name). Sheet has the same content as desktop. Cleaner thread view, more room for messages.
-
-**One-tap actions inside the rail**
-- Call → uses `useDialer` (already wired).
-- Book showing → opens existing booking dialog with contact pre-loaded.
-- Send template → opens template picker that returns into the composer (Build 1).
-
----
-
-## Technical Notes
-
-**New table (Build 1)**
-```sql
-CREATE TABLE crm_thread_drafts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  contact_id uuid NOT NULL,
-  channel text NOT NULL CHECK (channel IN ('sms','whatsapp','email')),
-  body text DEFAULT '',
-  quote text,
-  media jsonb DEFAULT '[]'::jsonb,
-  subject text,
-  scheduled_for timestamptz,
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, contact_id, channel)
-);
--- RLS: user can CRUD only their own drafts (auth.uid() = user_id)
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Templates           [Email | SMS]   [+ New]  [Cmd+K]       │
+│  342 templates · 28 favorites                               │
+├──────────┬──────────────────────────────┬───────────────────┤
+│ RAIL     │  TOOLBAR  search · sort      │  PREVIEW          │
+│          ├──────────────────────────────┤                   │
+│ ⭐ Favs  │  ┌──────────────────────────┐│  Subject line…    │
+│ 🕐 Recent│  │ Template card            ││  ─────────────    │
+│          │  │ name · subject snippet   ││  [Rendered HTML]  │
+│ FOLDERS  │  │ tags · sends · last used ││                   │
+│  Cold    │  └──────────────────────────┘│  ─────────────    │
+│  Showing │  ┌──────────────────────────┐│  Stats            │
+│  Closing │  │ Template card            ││  ▾ 248 sends      │
+│  + new   │  │ ...                      ││  ▾ 42% open       │
+│          │  └──────────────────────────┘│  ▾ 18% reply      │
+│ TAGS     │                              │                   │
+│  urgent  │                              │  [Edit] [Send]    │
+│  mandarin│                              │  [History] [···]  │
+│  langley │                              │                   │
+└──────────┴──────────────────────────────┴───────────────────┘
 ```
 
-**Files to create**
-- `src/hooks/useThreadDraft.ts`
-- `src/hooks/useScheduledSend.ts` (wraps useSendSms with `scheduled_for`)
-- `src/components/crm/chats/ComposerAIBar.tsx`
-- `src/components/crm/chats/ComposerSlashMenu.tsx`
-- `src/components/crm/chats/ChannelSegmented.tsx`
-- `src/components/crm/chats/SnoozePopover.tsx`
-- `src/components/crm/chats/SavedViewsRail.tsx`
-- `src/components/crm/chats/BulkSelectToolbar.tsx`
-- `src/components/crm/chats/LeadContextRail.tsx` (desktop)
-- `src/components/crm/chats/LeadContextSheet.tsx` (tablet/mobile)
+---
 
-**Files to edit**
-- `src/components/crm/chats/InlineTextComposer.tsx` — drafts, AI bar, schedule, slash, channel switch
-- `src/pages/crm/CrmChatsPage.tsx` — saved-views rail, bulk toolbar, snooze action
-- `src/pages/crm/CrmChatsShell.tsx` — wire desktop right rail (3-pane on ≥1024)
-- `src/pages/crm/CrmChatThreadPage.tsx` — header tap → context sheet on mobile/tablet, remove inline `MobileLeadContextCard`
+## Implementation plan (technical)
 
-**Constraints respected**
-- Mobile composer stays in `mobile-drawer`, not full-bleed.
-- Bottom-nav clearance via `var(--bottom-nav-pad)`.
-- All chips through `<Pill>` primitive.
-- Sender signature always resolved per agent (no hardcoding).
-- Last-touch only fires on actual manual sends.
-- No tel:/mailto:/_blank — call uses dialer, email opens in `ComposeEmailDialog`.
+### 1. Schema additions (one migration)
+
+- `crm_template_folders` — `id, name, color, sort_order, created_by, channel ('email'|'sms'|'both')`. Team-shared, RLS: any CRM member reads, members create, only owner/admin updates/deletes.
+- `crm_template_folder_items` — `template_id, template_kind ('email'|'sms'), folder_id`. Composite PK; ON DELETE CASCADE.
+- `crm_template_tags` — `id, label, color`. Team-shared.
+- `crm_template_tag_items` — `template_id, template_kind, tag_id`. Composite PK.
+- `crm_template_favorites` — `template_id, template_kind, user_id`. Composite PK; per-agent.
+- `crm_sms_templates`: add `is_favorite_legacy boolean default false` removed in favor of new table. Add `owner_scope text`, `owner_agent_slug text`, `is_featured boolean`, `is_locked boolean` to mirror email schema.
+- `crm_email_templates`: add `is_featured boolean default false`, `is_locked boolean default false`.
+- View: `crm_template_stats` — joins `crm_email_log` / `crm_sms_log` for sends/open/click/reply per template, last 30 days sparkline as JSON array.
+
+### 2. Hooks (new + extended)
+
+- `src/hooks/useUnifiedTemplates.ts` — single hook returning `{ items: UnifiedTemplate[] }` merging email + SMS + presale bridge; supports filters `{ search, channel, folderId, tagIds, favoritedOnly, source }`.
+- `src/hooks/useTemplateFolders.ts` — CRUD + reorder.
+- `src/hooks/useTemplateTags.ts` — CRUD + assign/unassign.
+- `src/hooks/useTemplateFavorites.ts` — toggle.
+- `src/hooks/useTemplateStats.ts` — pull `crm_template_stats` for one or many template ids.
+- Extend `useTemplateAI.ts` with `searchByIntent(prompt)` action calling the existing `template-ai-assist` edge fn (new `mode: 'rank'`).
+
+### 3. Components (new under `src/components/crm/templates/`)
+
+- `TemplatesPageV2.tsx` (replaces page body of `CrmTemplatesPage.tsx`).
+- `TemplateRail.tsx` — Favorites · Recent · Folders · Tags.
+- `TemplateGrid.tsx` — virtualized card list (50 per page, infinite scroll).
+- `TemplateCard.tsx` — name, channel pill, snippet, tag chips, sends/last-used micro-stats.
+- `TemplatePreviewPane.tsx` — iframe-rendered email or SMS bubble preview, sample-lead picker, stats accordion, action bar.
+- `TemplateCommandPalette.tsx` — Cmd+K dialog using `cmdk`.
+- `NewTemplateDialog.tsx` — channel + start mode (blank / clone / AI).
+- `TemplateEditorDrawer.tsx` — inline editor (right-side `Sheet`), reuses `VariablePicker` + `AIAssistMenu`.
+- `MoveToFolderMenu.tsx`, `TagPickerPopover.tsx`, `ShareWithTeamDialog.tsx`.
+
+### 4. Existing wiring preserved
+
+- "Send" button still hands off to `ComposeEmailDialog` / `SendTextDialog` (per Composer Architecture v2).
+- Presale bridge templates still appear via `useBridgeTemplates`, sourced as `presale` and read-only.
+- Edit-in-Agent-Hub for Presale assets remains a one-click deep link.
+- Per-agent ownership rules from the existing Per-agent Template Ownership memory are unchanged.
+
+### 5. Out of scope for this pass
+
+- Drag-and-drop to reorder folders (use sort_order for now, drag in v2).
+- A/B testing variants.
+- Template marketplace / external import.
 
 ---
 
-## Order of work
+## Rollout
 
-1. **Build 1** — biggest daily-use win, needs one migration. Estimated 1 round.
-2. **Build 2** — pure UI wiring on existing hooks. Estimated 1 round.
-3. **Build 3** — new component, threads through 3 files. Estimated 1 round.
-
-Approve and I'll start with Build 1 (the migration goes first so you can confirm the drafts table before I write the rest).
+1. Migration for folders/tags/favorites/featured + stats view.
+2. Hooks + new components, page swapped behind a `?v=2` flag for one preview cycle, then made default.
+3. Seed each of the 21 existing email templates into a default "Inbox" folder so nothing looks empty on day one.
+4. Memory note added: `templates-v2` describing the new architecture so future work follows the same pattern.
