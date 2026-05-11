@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { useCrmEmailTemplates, useCreateCampaign } from '@/hooks/useCrmEmail';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, PROJECTS } from '@/hooks/useCrmContacts';
+import { useCrmProjects } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
 
 interface Props {
