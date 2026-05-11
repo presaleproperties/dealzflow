@@ -83,11 +83,34 @@ export function IMessageConversation(props: Props) {
   } = props;
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
+  const prevThreadKey = useRef(thread.key);
   const muted = threadState.isMuted(channel, thread.key);
   const archived = threadState.isArchived(channel, thread.key);
 
+  // Track whether the user is pinned to the bottom of the scroller.
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+      isAtBottomRef.current = dist < 64;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threadChanged = prevThreadKey.current !== thread.key;
+    prevThreadKey.current = thread.key;
+    const last = visibleMessages[visibleMessages.length - 1];
+    const lastIsOutbound = last && (last as any).direction === 'outbound';
+    if (threadChanged || isAtBottomRef.current || lastIsOutbound) {
+      el.scrollTop = el.scrollHeight;
+      isAtBottomRef.current = true;
+    }
   }, [visibleMessages.length, thread.key]);
 
   return (
