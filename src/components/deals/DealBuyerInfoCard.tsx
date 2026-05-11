@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Mail, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Participant } from './ParticipantCard';
+import { startInAppCall } from '@/hooks/useDialer';
 
 const spring = { type: 'spring' as const, stiffness: 120, damping: 20 };
 
