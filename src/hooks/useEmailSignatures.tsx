@@ -41,6 +41,7 @@ type UpsertPayload = {
   html: string;
   is_default?: boolean;
   sort_order?: number;
+  kind?: EmailSignatureKind;
 };
 
 export function useUpsertEmailSignature() {
