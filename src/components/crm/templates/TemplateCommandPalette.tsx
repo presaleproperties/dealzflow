@@ -46,9 +46,12 @@ export function TemplateCommandPalette({
 
   const aiResults = useMemo(() => {
     if (!aiMatches) return [];
-    return aiMatches
-      .map((m) => ({ template: byId.get(m.id), reason: m.reason }))
-      .filter((r): r is { template: UnifiedTemplate; reason?: string } => !!r.template);
+    const out: Array<{ template: UnifiedTemplate; reason?: string }> = [];
+    for (const m of aiMatches) {
+      const template = byId.get(m.id);
+      if (template) out.push({ template, reason: m.reason });
+    }
+    return out;
   }, [aiMatches, byId]);
 
   const askAI = async () => {
