@@ -127,6 +127,20 @@ export default function NewDealPage() {
 
     if (!formData.client_name || !formData.deal_type || !formData.property_type) return;
 
+    // Money-loss guard: a team deal with 0% team portion silently gives the
+    // user 100% of the commission. Force the agent to enter the split.
+    if (isTeamDeal) {
+      const portion = Number(formData.team_member_portion ?? 0);
+      if (!portion || portion <= 0) {
+        toast.error('Team member detected — please enter their commission split percentage.');
+        return;
+      }
+      if (portion >= 100) {
+        toast.error('Team member portion must be less than 100%.');
+        return;
+      }
+    }
+
     try {
       const deal = await createDeal.mutateAsync(formData as DealFormData);
       navigate(`/deals/${deal.id}`, { state: { fromNewDeal: true } });

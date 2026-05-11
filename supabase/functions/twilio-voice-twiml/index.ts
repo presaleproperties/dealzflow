@@ -16,6 +16,7 @@
 // Public webhook — Twilio signature is validated via X-Twilio-Signature.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import twilio from "npm:twilio@5.3.7";
+import { isValidTwilioSignature, reconstructTwilioUrl } from "../_shared/twilioSignature.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,8 +39,16 @@ Deno.serve(async (req) => {
     const params: Record<string, string> = {};
     for (const [k, v] of form.entries()) params[k] = String(v);
 
-    // Optional: validate Twilio signature in production
-    // (Skipped in dev to keep iteration fast; webhook URL is private-by-obscurity.)
+    // SECURITY: Validate Twilio signature. Without this, anyone with the
+    // public webhook URL can POST From=client:<arbitrary uid>&To=+1... and
+    // place outbound calls on our Twilio bill (toll fraud).
+    const sig = req.headers.get("x-twilio-signature");
+    const fullUrl = reconstructTwilioUrl(req);
+    const valid = await isValidTwilioSignature(sig, fullUrl, params);
+    if (!valid) {
+      console.warn("[twilio-voice-twiml] invalid signature", { fullUrl, hasSig: !!sig });
+      return new Response("forbidden", { status: 403, headers: corsHeaders });
+    }
 
     const callSid = params.CallSid;
     const from    = params.From || "";
