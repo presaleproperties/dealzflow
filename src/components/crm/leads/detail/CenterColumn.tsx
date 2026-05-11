@@ -206,7 +206,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
   const [replyCompose, setReplyCompose] = useState<{ subject: string; bodyHtml: string } | null>(null);
 
   const handleReplyToPreview = (em: EmailLogRow) => {
