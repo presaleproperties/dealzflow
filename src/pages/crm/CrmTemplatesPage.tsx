@@ -295,24 +295,27 @@ function ChannelToggle({ channel, onChange }: { channel: 'all' | 'email' | 'sms'
   return (
     <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md">
       {([
-        { v: 'all', label: 'All' },
+        { v: 'all', label: 'All', icon: null as null | typeof Mail },
         { v: 'email', label: 'Email', icon: Mail },
         { v: 'sms', label: 'SMS', icon: MessageSquare },
-      ] as const).map((opt) => (
-        <button
-          key={opt.v}
-          onClick={() => onChange(opt.v)}
-          className={cn(
-            'h-8 px-2.5 text-[12px] rounded inline-flex items-center gap-1 transition-colors',
-            channel === opt.v
-              ? 'bg-background text-foreground shadow-sm font-medium'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          {opt.icon ? <opt.icon className="w-3.5 h-3.5" /> : null}
-          {opt.label}
-        </button>
-      ))}
+      ] as const).map((opt) => {
+        const Icon = opt.icon;
+        return (
+          <button
+            key={opt.v}
+            onClick={() => onChange(opt.v)}
+            className={cn(
+              'h-8 px-2.5 text-[12px] rounded inline-flex items-center gap-1 transition-colors',
+              channel === opt.v
+                ? 'bg-background text-foreground shadow-sm font-medium'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
