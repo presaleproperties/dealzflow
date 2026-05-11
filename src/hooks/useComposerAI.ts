@@ -42,20 +42,19 @@ export function useComposerAI() {
 
       const [op, arg] = mode.includes(':') ? mode.split(':') : [mode, undefined];
 
-      const { data, error } = await supabase.functions.invoke('template-ai-assist', {
-        body: {
-          op,                       // improve | shorten | lengthen | tone | translate
-          arg,                      // friendly | professional | concise | en | pa | hi | zh
-          body: trimmed,
-          channel: channel ?? 'sms',
-          // NOTE: server is responsible for preserving merge tokens
-          preserve_tokens: true,
-        },
-      });
+      const payload: Record<string, unknown> = {
+        mode: op,                 // improve | shorten | lengthen | tone | translate
+        html: trimmed,            // plain text is fine; SYSTEM_RULES_PLAIN respects it
+        format: 'plain',          // SMS / WhatsApp = plain text out
+        channel: channel ?? 'sms',
+      };
+      if (op === 'tone') payload.tone = arg;
+      if (op === 'translate') payload.targetLanguage = arg;
+
+      const { data, error } = await supabase.functions.invoke('template-ai-assist', { body: payload });
       if (error) throw error;
-      const suggestion =
-        (data && (data.body || data.result || data.text)) ?? trimmed;
-      return { original: trimmed, suggestion: String(suggestion), mode };
+      const suggestion = (data && (data.text || data.body || data.html)) ?? trimmed;
+      return { original: trimmed, suggestion: String(suggestion).trim(), mode };
     },
     onError: (e: any) => {
       const msg = e?.message ?? 'AI assist failed';
