@@ -207,9 +207,28 @@ function splitQuotedText(text: string): { main: string; quoted: string | null } 
     if (/^-{2,}\s*Original Message\s*-{2,}\s*$/i.test(lines[i])) {
       return { main: lines.slice(0, i).join('\n').trimEnd(), quoted: lines.slice(i).join('\n') };
     }
+    // Outlook-style header block ("From: …" optionally followed by Sent/To/Subject).
+    if (/^\s*From:\s/i.test(lines[i])) {
+      return { main: lines.slice(0, i).join('\n').trimEnd(), quoted: lines.slice(i).join('\n') };
+    }
+  }
+  // Fallback: handle single-line dumps where the entire history was flattened
+  // into one paragraph (no newlines). Cut at the first "From: … Sent: … To: … Subject:"
+  // run or "On <date> … wrote:" inline marker.
+  const inlineMarkers: RegExp[] = [
+    /\s+From:\s+[^]+?\s+Sent:\s+[^]+?\s+To:\s+[^]+?\s+Subject:\s+/i,
+    /\s+On\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\s\S]{1,200}wrote:\s+/i,
+    /\s+-{2,}\s*Original Message\s*-{2,}\s+/i,
+  ];
+  for (const re of inlineMarkers) {
+    const m = text.match(re);
+    if (m && m.index !== undefined && m.index > 20) {
+      return { main: text.slice(0, m.index).trimEnd(), quoted: text.slice(m.index).trimStart() };
+    }
   }
   return { main: text, quoted: null };
 }
+
 
 /** Wrap user HTML in a minimal document so the iframe inherits sane defaults.
  *  When the source is already a full <html>…</html> document (most marketing
