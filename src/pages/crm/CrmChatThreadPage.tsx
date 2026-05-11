@@ -22,7 +22,6 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useIsCompact } from '@/hooks/use-mobile';
 import { useDialer } from '@/hooks/useDialer';
 import { useAuth } from '@/hooks/useAuth';
-import { isNative } from '@/lib/native';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrmInboxFlags, snoozePresets } from '@/hooks/useCrmInboxFlags';
