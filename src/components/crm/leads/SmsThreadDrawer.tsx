@@ -139,7 +139,11 @@ export function SmsThreadDrawer({
                           isTarget && 'ring-2 ring-primary/60',
                         )}
                       >
-                        {m.body ? m.body : <span className="italic text-muted-foreground">(empty message)</span>}
+                        {m.body
+                          ? m.body
+                          : mediaCount === 0
+                          ? <span className="italic text-muted-foreground">(no text)</span>
+                          : null}
                         {mediaCount > 0 && (
                           <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                             <ImageIcon className="w-3 h-3" />
