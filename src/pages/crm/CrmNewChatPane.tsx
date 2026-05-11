@@ -18,6 +18,7 @@ import { useCrmContacts, type CrmContact } from '@/hooks/useCrmContacts';
 import { formatContactName, formatPhone } from '@/lib/format';
 import { InlineTextComposer } from '@/components/crm/chats/InlineTextComposer';
 import { supabase } from '@/integrations/supabase/client';
+import { startInAppCall } from '@/hooks/useDialer';
 
 const SMS_COLOR = 'hsl(199 89% 48%)';
 
