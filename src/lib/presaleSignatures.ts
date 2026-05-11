@@ -179,6 +179,44 @@ export function buildPresaleHeadshotLeftSignature(agent: PresaleSignatureAgent):
 </table>`.trim();
 }
 
+/**
+ * Minimalist REPLY-only signature.
+ * ──────────────────────────────────────────────────────────────────────────
+ * Auto-appended on replies & forwards. Three lines, text-only, no headshot,
+ * no logo, no brand divider — designed to look native inside threaded
+ * conversations the way Gmail / Apple Mail / Outlook trim full signatures.
+ *
+ *   Name
+ *   Title · Brokerage
+ *   Phone · email@domain.com
+ *
+ * Built from the same PresaleSignatureAgent so every agent gets a consistent
+ * minimalist reply that mirrors their full signature identity.
+ */
+export function buildPresaleReplySignature(agent: PresaleSignatureAgent): string {
+  const name = agent.full_name || "Presale Properties Team";
+  const title = agent.title || "Presale Specialist";
+  const brokerage = agent.brokerage || "";
+  const phone = agent.phone || FALLBACK_PHONE;
+  const email = agent.email || FALLBACK_EMAIL;
+  const cleanPhone = phone.replace(/\D/g, "");
+
+  const titleLine = brokerage
+    ? `${esc(title)} <span style="color:${ACCENT};">·</span> ${esc(brokerage)}`
+    : esc(title);
+
+  return `
+<div style="margin-top:18px;font-family:${F};font-size:13px;line-height:1.55;color:${DARK};">
+  <p style="margin:0;font-weight:700;color:${DARK};">${esc(name)}</p>
+  <p style="margin:1px 0 0 0;font-size:12px;color:#5a5a5a;">${titleLine}</p>
+  <p style="margin:3px 0 0 0;font-size:12px;color:#5a5a5a;">
+    <a href="tel:${cleanPhone}" style="color:#5a5a5a;text-decoration:none;">${esc(phone)}</a>
+    <span style="color:${ACCENT};padding:0 6px;">·</span>
+    <a href="mailto:${esc(email)}" style="color:#5a5a5a;text-decoration:none;">${esc(email)}</a>
+  </p>
+</div>`.trim();
+}
+
 export type PresaleSignaturePresetId = "presale_headshot_left" | "presale_card" | "presale_lofty";
 
 export const PRESALE_SIGNATURE_PRESETS: Array<{
