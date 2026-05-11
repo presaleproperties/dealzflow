@@ -79,6 +79,30 @@ function initials(name?: string | null, email?: string | null) {
   return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
 }
 
+/** Strip HTML, decode entities, drop quoted reply tails so the snippet is readable. */
+function cleanSnippet(raw?: string | null): string {
+  if (!raw) return '';
+  let s = String(raw);
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  s = s.replace(/<\/?(br|p|div|li|tr|h[1-6])[^>]*>/gi, ' ');
+  s = s.replace(/<[^>]+>/g, ' ');
+  s = s
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+  s = s.split('\n').filter(l => !/^\s*>/.test(l) && !/^On .+wrote:\s*$/i.test(l)).join(' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/** Strip noisy "Firstname Lastname <email@x>" → "Firstname Lastname". */
+function cleanSender(raw?: string | null): string {
+  if (!raw) return 'Unknown';
+  const s = String(raw).trim();
+  const m = s.match(/^"?([^"<]+?)"?\s*<[^>]+>$/);
+  return (m ? m[1] : s).replace(/^"|"$/g, '').trim() || 'Unknown';
+}
+
 export default function InboxView() {
   const qc = useQueryClient();
   const isCompact = useIsCompact();
@@ -539,7 +563,10 @@ export default function InboxView() {
               {filteredThreads.map(t => {
                 const isActive = selectedThreadId === t.id;
                 const isUnread = t.unread_count > 0;
-                const senderLabel = t.last_message_from || t.participants[0] || 'Unknown';
+                const senderRaw = t.last_message_from || t.participants[0] || 'Unknown';
+                const senderLabel = cleanSender(senderRaw);
+                const snippet = cleanSnippet(t.last_message_snippet);
+                const time = smartTime(t.last_message_at);
                 return (
                   <li key={t.id}>
                     <button
@@ -561,17 +588,23 @@ export default function InboxView() {
                         {initials(senderLabel)}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <span className="inbox-row__sender">{senderLabel}</span>
-                          <span className="inbox-row__time">
-                            {smartTime(t.last_message_at)}
-                          </span>
+                        <div className="flex items-baseline gap-2 min-w-0">
+                          <span className="inbox-row__sender truncate min-w-0 flex-1">{senderLabel}</span>
+                          <time
+                            dateTime={t.last_message_at}
+                            className={cn(
+                              'inbox-row__time shrink-0 whitespace-nowrap',
+                              isUnread && 'text-primary font-medium',
+                            )}
+                          >
+                            {time}
+                          </time>
                         </div>
-                        <div className="inbox-row__subject">
+                        <div className="inbox-row__subject truncate">
                           {t.subject || '(no subject)'}
                         </div>
-                        <p className="inbox-row__snippet">
-                          {t.last_message_snippet || '—'}
+                        <p className="inbox-row__snippet line-clamp-2">
+                          {snippet || '—'}
                         </p>
                         {t.message_count > 1 && (
                           <span className="inbox-row__meta">
