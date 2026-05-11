@@ -107,11 +107,12 @@ export function DialerWidget() {
 
       {/* Keypad */}
       {keypadOpen && isActive && (
-        <div className="px-5 pb-3 grid grid-cols-3 gap-2">
+        <div className="dialer-keypad px-5 pb-3 grid grid-cols-3 gap-2">
           {KEYPAD.map((k) => (
             <button
               key={k}
               onClick={() => dialer.sendDigit(k)}
+              aria-label={`Dial ${k}`}
               className="h-10 rounded-md border bg-background hover:bg-muted active:scale-95 transition-all text-base font-medium tabular-nums"
             >
               {k}
