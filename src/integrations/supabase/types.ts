@@ -5823,6 +5823,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      crm_backfill_orphan_activity: {
+        Args: { _contact_id: string }
+        Returns: number
+      }
       crm_behavior_overview: { Args: { _days?: number }; Returns: Json }
       crm_can_see_contact: {
         Args: { _assigned_to: string; _user_id: string }
