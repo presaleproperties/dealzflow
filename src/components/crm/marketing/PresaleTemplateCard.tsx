@@ -149,7 +149,7 @@ export function PresaleTemplateCard({ asset, onSend, onPreview }: Props) {
 function MiniThumbnail({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
   return (
-    <iframe title="Preview"
+    <iframe
       ref={(el) => {
         ref.current = el;
         if (el) {
