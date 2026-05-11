@@ -374,9 +374,9 @@ export default function CrmChatsPage() {
   };
 
   return (
-    <div className="flex flex-1 min-h-0 h-full flex-col">
-      {/* Editorial sticky header — opaque so scrolled rows don't bleed through */}
-      <div className="-mx-3 sm:-mx-4 -mt-3 md:-mt-4 sticky top-0 z-20 bg-background border-b border-border/60">
+    <div className="flex flex-1 min-h-0 h-full flex-col overflow-hidden">
+      {/* Editorial header — fixed above the scrolling list, never moves on scroll */}
+      <div className="-mx-3 sm:-mx-4 -mt-3 md:-mt-4 flex-shrink-0 z-20 bg-background border-b border-border/60">
         <div className="flex items-end justify-between gap-2 px-4 pt-3 pb-2.5">
           <div className="min-w-0 flex items-baseline gap-2.5">
             <h1 className="text-[20px] font-semibold text-foreground tracking-[-0.02em] leading-none">Chats</h1>
@@ -594,8 +594,8 @@ export default function CrmChatsPage() {
             in advanced filters cover the same ground without a second pill row. */}
       </div>
 
-      {/* Thread list */}
-      <div className="flex-1 -mx-3 sm:-mx-4">
+      {/* Thread list — owns scroll so the header stays put */}
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-3 sm:-mx-4">
         <PullToRefresh onRefresh={handlePullRefresh}>
         {isLoading ? (
           <ul>
