@@ -738,6 +738,7 @@ export default function InboxView() {
           </>
         )}
       </main>
+      {composeNode}
     </div>
   );
 }
