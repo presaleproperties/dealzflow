@@ -181,6 +181,12 @@ export function useCrmContacts(
           w.__crmContactsTruncatedWarned = true;
           toast.warning(
             `Showing the most recent ${HARD_CAP} contacts. Use search or paginated views to see the rest.`,
+            {
+              id: 'crm-contacts-truncated',
+              duration: 8000,
+              dismissible: true,
+              closeButton: true,
+            },
           );
         }
       }
