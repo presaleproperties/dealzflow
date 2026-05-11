@@ -102,6 +102,20 @@ const useDialerStore = create<DialerState>((set) => ({
 
 let initPromise: Promise<Device | null> | null = null;
 
+// S4: Track the active reset timeout so a new inbound/outbound call can cancel it,
+// and so we never reset state out from under an active call.
+let pendingResetTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleReset(delayMs: number) {
+  if (pendingResetTimer !== null) clearTimeout(pendingResetTimer);
+  pendingResetTimer = setTimeout(() => {
+    pendingResetTimer = null;
+    const s = useDialerStore.getState();
+    // Bail if a new call has appeared while we were waiting
+    if (s.currentCall || s.status === 'ringing' || s.status === 'in-progress') return;
+    s.reset();
+  }, delayMs);
+}
+
 async function fetchToken(): Promise<{ token: string; identity: string } | null> {
   const { data, error } = await supabase.functions.invoke('twilio-voice-token', { body: {} });
   if (error || !data?.token) {
