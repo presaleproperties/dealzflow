@@ -242,7 +242,7 @@ function splitQuotedText(text: string): { main: string; quoted: string | null } 
  *  emails), use it verbatim — only injecting <base target="_blank"> so links
  *  open in a new tab and a small reset to keep table-based layouts fluid.
  */
-function buildSrcDoc(html: string): string {
+function buildSrcDoc(html: string, frameId: string): string {
   const baseAndReset = `
     <base target="_blank"/>
     <style>
@@ -252,12 +252,50 @@ function buildSrcDoc(html: string): string {
       a{color:#1a73e8}
     </style>`;
 
+  // Posted from inside the sandboxed (no allow-same-origin) iframe so the
+  // parent can size the frame to fit its content. We control this script
+  // entirely; user HTML cannot tamper with it because the parent matches
+  // the frameId before accepting messages.
+  const sizer = `
+    <script>(function(){
+      var id = ${JSON.stringify(frameId)};
+      function send(){
+        try{
+          var h = Math.max(
+            document.documentElement && document.documentElement.scrollHeight || 0,
+            document.body && document.body.scrollHeight || 0
+          );
+          parent.postMessage({ __emailFrame: id, height: h }, '*');
+        }catch(e){}
+      }
+      window.addEventListener('load', send);
+      window.addEventListener('resize', send);
+      try {
+        var ro = new ResizeObserver(send);
+        ro.observe(document.documentElement);
+        if (document.body) ro.observe(document.body);
+      } catch(e) {}
+      var imgs = document.querySelectorAll('img');
+      imgs.forEach(function(img){
+        if(!img.complete){ img.addEventListener('load', send); img.addEventListener('error', send); }
+      });
+      setTimeout(send, 50);
+      setTimeout(send, 400);
+    })();</script>`;
+
   if (isFullHtmlDocument(html)) {
-    // Inject <base> + reset just before </head>; if no <head>, add one.
-    if (/<head[\s>]/i.test(html)) {
-      return html.replace(/<\/head\s*>/i, `${baseAndReset}</head>`);
+    let out = html;
+    if (/<head[\s>]/i.test(out)) {
+      out = out.replace(/<\/head\s*>/i, `${baseAndReset}</head>`);
+    } else {
+      out = out.replace(/<html([^>]*)>/i, `<html$1><head>${baseAndReset}</head>`);
     }
-    return html.replace(/<html([^>]*)>/i, `<html$1><head>${baseAndReset}</head>`);
+    if (/<\/body\s*>/i.test(out)) {
+      out = out.replace(/<\/body\s*>/i, `${sizer}</body>`);
+    } else {
+      out += sizer;
+    }
+    return out;
   }
 
   return `<!doctype html><html><head><meta charset="utf-8"/>${baseAndReset}
@@ -268,56 +306,33 @@ function buildSrcDoc(html: string): string {
     table{border-collapse:collapse}
     blockquote{margin:0 0 0 8px;padding:0 0 0 12px;border-left:3px solid #e0e0e0;color:#5f6368}
     pre{white-space:pre-wrap;word-break:break-word}
-  </style></head><body>${html}</body></html>`;
+  </style></head><body>${html}${sizer}</body></html>`;
 }
 
-/** Iframe that auto-resizes to fit its rendered HTML. */
+/** Iframe that auto-resizes via postMessage from a controlled sizer script.
+ *  Sandbox INTENTIONALLY omits `allow-same-origin` — that combo with
+ *  `allow-scripts` would let untrusted email content read parent cookies
+ *  / localStorage. Our sizer only postMessages out; user JS is stripped
+ *  by DOMPurify before render anyway. */
 function HtmlBodyFrame({ html, messageId }: { html: string; messageId: string }) {
   const ref = useRef<HTMLIFrameElement | null>(null);
-  const [height, setHeight] = useState<number>(80);
-  const srcDoc = useMemo(() => buildSrcDoc(sanitizeForIframe(decodeHtmlEntities(html))), [html]);
+  const frameId = useMemo(() => `emf-${messageId}`, [messageId]);
+  const [height, setHeight] = useState<number>(120);
+  const srcDoc = useMemo(
+    () => buildSrcDoc(sanitizeForIframe(decodeHtmlEntities(html)), frameId),
+    [html, frameId],
+  );
 
   useEffect(() => {
-    const frame = ref.current;
-    if (!frame) return;
-    const measure = () => {
-      try {
-        const doc = frame.contentDocument;
-        if (!doc) return;
-        const h = Math.max(
-          doc.documentElement?.scrollHeight ?? 0,
-          doc.body?.scrollHeight ?? 0,
-        );
-        if (h > 0 && Math.abs(h - height) > 2) setHeight(h);
-      } catch { /* cross-origin (won't happen with srcdoc) */ }
+    const onMessage = (e: MessageEvent) => {
+      const data = e.data as { __emailFrame?: string; height?: number } | null;
+      if (!data || data.__emailFrame !== frameId) return;
+      const h = Number(data.height) || 0;
+      if (h > 0) setHeight((prev) => (Math.abs(prev - h) > 2 ? h : prev));
     };
-    const onLoad = () => {
-      measure();
-      // Watch for late-loading images to reflow
-      try {
-        const doc = frame.contentDocument;
-        if (!doc) return;
-        const imgs = doc.querySelectorAll('img');
-        imgs.forEach((img) => {
-          if (!(img as HTMLImageElement).complete) {
-            img.addEventListener('load', measure, { once: true });
-            img.addEventListener('error', measure, { once: true });
-          }
-        });
-        // Resize observer on body for dynamic content
-        const ro = new ResizeObserver(measure);
-        if (doc.body) ro.observe(doc.body);
-        (frame as any).__ro = ro;
-      } catch { /* noop */ }
-    };
-    frame.addEventListener('load', onLoad);
-    return () => {
-      frame.removeEventListener('load', onLoad);
-      const ro = (frame as any).__ro as ResizeObserver | undefined;
-      try { ro?.disconnect(); } catch { /* noop */ }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [srcDoc]);
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [frameId]);
 
   return (
     <iframe
@@ -325,7 +340,7 @@ function HtmlBodyFrame({ html, messageId }: { html: string; messageId: string })
       ref={ref}
       title="Email message body"
       srcDoc={srcDoc}
-      sandbox="allow-same-origin allow-popups"
+      sandbox="allow-popups allow-scripts"
       className="w-full block bg-transparent"
       style={{ height, border: 0 }}
     />
