@@ -16,7 +16,12 @@ interface CrmLayoutProps {
 
 export function CrmLayout({ requireRole, children }: CrmLayoutProps) {
   const { pathname } = useLocation();
-  const isImmersiveChatThread = /^\/crm\/chats\/[^/]+/.test(pathname) && pathname !== '/crm/chats/new';
+  // The chats shell (list pane + thread/empty pane) owns its own scroll on
+  // every viewport, so the outer route container must NOT add a second
+  // page-level scrollbar. Without this, mousewheel events anywhere on the
+  // chats route bubble up and scroll the whole CRM page instead of the list.
+  const isImmersiveChatsRoute = pathname === '/crm/chats' || pathname === '/crm/chats/new' || /^\/crm\/chats\/[^/]+/.test(pathname);
+  const isImmersiveChatThread = isImmersiveChatsRoute;
 
   return (
     <CrmRouteGuard requireRole={requireRole}>
