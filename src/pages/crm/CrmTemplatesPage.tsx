@@ -45,6 +45,7 @@ import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickS
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
 import { TemplateCommandPalette } from '@/components/crm/templates/TemplateCommandPalette';
+import { TemplateVersionHistoryDialog } from '@/components/crm/templates/TemplateVersionHistoryDialog';
 
 const EMPTY_CONTACT: CrmContact = {
   id: '__pick__', first_name: '', last_name: '', email: null,
@@ -70,6 +71,7 @@ export default function CrmTemplatesPage() {
   const [composeSms, setComposeSms] = useState<{ body: string } | null>(null);
   const [sendPresale, setSendPresale] = useState<any | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [historyTemplate, setHistoryTemplate] = useState<UnifiedTemplate | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -174,6 +176,8 @@ export default function CrmTemplatesPage() {
               setFavoritedOnly={setFavoritedOnly}
               featuredOnly={featuredOnly}
               setFeaturedOnly={setFeaturedOnly}
+              allItems={items}
+              onSelectTemplate={(uid) => setSelectedUid(uid)}
             />
           </aside>
 
@@ -234,6 +238,7 @@ export default function CrmTemplatesPage() {
                       onEdit={() => setEditing(u)}
                       onSend={() => sendTemplate(u)}
                       onDelete={() => setPendingDelete(u)}
+                      onHistory={() => setHistoryTemplate(u)}
                     />
                   ))}
                 </div>
@@ -248,6 +253,7 @@ export default function CrmTemplatesPage() {
                 item={selected}
                 onEdit={() => setEditing(selected)}
                 onDelete={() => setPendingDelete(selected)}
+                onHistory={() => setHistoryTemplate(selected)}
                 onSend={() => {
                   pushRecentTemplate({ id: selected.id, kind: selected.kind });
                   if (selected.source === 'presale') {
@@ -328,6 +334,12 @@ export default function CrmTemplatesPage() {
         onPreview={(t) => setSelectedUid(t.uid)}
         onSend={(t) => { sendTemplate(t); }}
         onEdit={(t) => setEditing(t)}
+      />
+
+      <TemplateVersionHistoryDialog
+        template={historyTemplate}
+        open={!!historyTemplate}
+        onOpenChange={(o) => { if (!o) setHistoryTemplate(null); }}
       />
     </div>
   );
