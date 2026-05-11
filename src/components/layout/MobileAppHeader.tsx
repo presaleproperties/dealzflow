@@ -269,18 +269,24 @@ export function MobileAppHeader() {
                   type="button"
                   onClick={() => handleOpenItem(n)}
                   className={cn(
-                    "w-full text-left block px-3 py-3 rounded-xl transition-colors border active:scale-[0.99]",
+                    "w-full text-left block px-3 py-3 rounded-xl transition-colors border active:scale-[0.99] active:bg-muted/60",
                     n.is_read
                       ? "border-transparent hover:bg-muted/50"
                       : "border-primary/20 bg-primary/5 hover:bg-primary/10"
                   )}
                 >
                   <div className="flex items-start gap-2.5">
-                    {!n.is_read && (
-                      <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0 bg-primary" />
-                    )}
+                    <div className={cn(
+                      "shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center",
+                      n.is_read ? "bg-muted text-muted-foreground" : "bg-primary/15 text-primary",
+                    )}>
+                      <TypeIcon type={n.type} />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-foreground leading-tight">
+                      <div className={cn(
+                        "text-[13px] leading-tight",
+                        n.is_read ? "font-medium text-foreground/90" : "font-bold text-foreground",
+                      )}>
                         {n.title}
                       </div>
                       {n.body && (
@@ -292,6 +298,9 @@ export function MobileAppHeader() {
                         {fmtTime(n.created_at)}
                       </div>
                     </div>
+                    {!n.is_read && (
+                      <span className="w-2 h-2 rounded-full mt-2 shrink-0 bg-primary" aria-label="Unread" />
+                    )}
                   </div>
                 </button>
               ))}
