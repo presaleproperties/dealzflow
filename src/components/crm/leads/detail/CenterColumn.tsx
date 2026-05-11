@@ -24,7 +24,7 @@ import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster';
 import { Pin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
 
