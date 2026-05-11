@@ -1,11 +1,12 @@
-import { useEffect, useImperativeHandle, useRef, useState, forwardRef, type KeyboardEvent } from 'react';
-import { Send, Plus, FileText, Image as ImageIcon, Variable, MoreHorizontal, X as XIcon, CornerUpLeft } from 'lucide-react';
-import { useSendSms } from '@/hooks/useSms';
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef, type KeyboardEvent } from 'react';
+import { Send, Plus, FileText, Image as ImageIcon, Variable, X as XIcon, CornerUpLeft, ChevronLeft, Search as SearchIcon, Loader2 } from 'lucide-react';
+import { useSendSms, useSmsTemplates, SMS_VARIABLES, renderSmsTemplate } from '@/hooks/useSms';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { triggerHaptic } from '@/lib/haptics';
 import { isNative } from '@/lib/native';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface InlineTextComposerHandle {
   /** Set body to a quoted reply preview and focus the textarea. */
