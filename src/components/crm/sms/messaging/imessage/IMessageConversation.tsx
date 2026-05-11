@@ -88,6 +88,8 @@ export function IMessageConversation(props: Props) {
   const prevThreadKey = useRef(thread.key);
   const muted = threadState.isMuted(channel, thread.key);
   const archived = threadState.isArchived(channel, thread.key);
+  const { viewportHeight, keyboardOpen } = useVisualViewport();
+  const prevKeyboardOpen = useRef(keyboardOpen);
 
   // Track whether the user is pinned to the bottom of the scroller.
   useEffect(() => {
@@ -113,6 +115,24 @@ export function IMessageConversation(props: Props) {
       isAtBottomRef.current = true;
     }
   }, [visibleMessages.length, thread.key]);
+
+  // When the iOS keyboard opens, ride it: snap to bottom so the latest
+  // message sits just above the composer (which is now above the keyboard).
+  useEffect(() => {
+    if (keyboardOpen && !prevKeyboardOpen.current) {
+      const el = scrollRef.current;
+      if (el) {
+        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 100);
+      }
+    }
+    prevKeyboardOpen.current = keyboardOpen;
+  }, [keyboardOpen]);
+
+  // On mobile, when the keyboard is up, lock the outer container to the
+  // visible viewport height so the composer never hides behind it.
+  const containerStyle = isMobile && keyboardOpen
+    ? { position: 'fixed' as const, top: 0, left: 0, right: 0, height: `${viewportHeight}px` }
+    : undefined;
 
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font">
