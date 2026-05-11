@@ -1,0 +1,2 @@
+REVOKE ALL ON FUNCTION public.crm_snapshot_email_template_version() FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.crm_snapshot_sms_template_version() FROM public, anon, authenticated;
