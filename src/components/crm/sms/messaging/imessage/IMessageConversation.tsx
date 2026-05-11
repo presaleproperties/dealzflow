@@ -135,7 +135,7 @@ export function IMessageConversation(props: Props) {
     : undefined;
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font" style={containerStyle}>
       {/* ===== Frosted header (centered title, iMessage style) ===== */}
       <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top shrink-0 sticky top-0 z-30">
         {/* Left controls */}
