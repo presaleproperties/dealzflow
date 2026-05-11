@@ -9,6 +9,7 @@ import {
   useUpsertEmailSignature,
 } from '@/hooks/useEmailSignatures';
 import { usePresaleAgent } from '@/stores/usePresaleAgent';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 import { buildPresaleReplySignature } from '@/lib/presaleSignatures';
 
 /**
@@ -27,6 +28,7 @@ export function ReplySignatureCard() {
   const { data: signatures = [] } = useEmailSignatures();
   const upsert = useUpsertEmailSignature();
   const { agent } = usePresaleAgent();
+  const { data: settings } = useEmailSettings();
 
   const replyRow = useMemo(
     () => signatures.find((s) => s.kind === 'reply') ?? null,
@@ -40,21 +42,25 @@ export function ReplySignatureCard() {
     if (replyRow && !editing) setHtml(replyRow.html ?? '');
   }, [replyRow, editing]);
 
-  const derivedDefault = useMemo(
-    () =>
-      buildPresaleReplySignature({
-        full_name: agent?.name,
-        title: agent?.title,
-        phone: agent?.phone,
-        email: agent?.email,
-        brokerage: agent?.brokerage,
-        license_no: agent?.licenseNumber,
-        calendly_url: agent?.calendlyUrl,
-        website_url: agent?.websiteUrl,
-        instagram_url: agent?.instagramUrl,
-      }),
-    [agent],
-  );
+  // Source the reply signature info from the SAME data that powers the
+  // signature builder above (crm_email_settings.signature_builder_data.fields).
+  // Falls back to the Presale agent identity so brand-new agents still get
+  // a sensible default before they've touched the builder.
+  const derivedDefault = useMemo(() => {
+    const fields =
+      ((settings as any)?.signature_builder_data?.fields ?? {}) as Record<string, string | undefined>;
+    return buildPresaleReplySignature({
+      full_name: fields.fullName || agent?.name,
+      title: fields.title || agent?.title,
+      phone: fields.phone || agent?.phone,
+      email: fields.email || agent?.email,
+      brokerage: fields.brokerage || agent?.brokerage,
+      license_no: agent?.licenseNumber,
+      calendly_url: agent?.calendlyUrl,
+      website_url: fields.website || agent?.websiteUrl,
+      instagram_url: fields.instagram || agent?.instagramUrl,
+    });
+  }, [settings, agent]);
 
   const previewHtml = (editing ? html : replyRow?.html) || derivedDefault;
 
