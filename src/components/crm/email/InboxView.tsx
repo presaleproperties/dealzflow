@@ -276,12 +276,38 @@ export default function InboxView() {
 
   const archive = async () => { if (selectedThread) await archiveThread(selectedThread.id); };
 
+  // Reply-only signature for the inline fallback. Composer dialog already
+  // handles reply-vs-full picking on its own, but the inline textarea path
+  // (used when a thread has no linked contact) must also append it so every
+  // reply ships the minimalist reply signature — never the full marketing one.
+  const { data: signatures = [] } = useEmailSignatures();
+  const replySignatureHtml = useMemo(
+    () => pickSignatureForKind(signatures, 'reply')?.html ?? '',
+    [signatures],
+  );
+
   const sendReply = async () => {
     if (!selectedThread || !reply.trim()) return;
     try {
       setSending(true);
+      // Wrap plain reply text as minimal HTML and append the reply signature
+      // so the threaded conversation gets the same minimalist sign-off as
+      // sends from the rich composer.
+      const escapedBody = reply
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br/>');
+      const body_html = replySignatureHtml
+        ? `<div>${escapedBody}</div><br/>${replySignatureHtml}`
+        : `<div>${escapedBody}</div>`;
       await supabase.functions.invoke('gmail-actions', {
-        body: { action: 'send_reply', thread_db_id: selectedThread.id, body_text: reply },
+        body: {
+          action: 'send_reply',
+          thread_db_id: selectedThread.id,
+          body_text: reply,
+          body_html,
+        },
       });
       triggerHaptic('success');
       toast.success('Reply sent');
