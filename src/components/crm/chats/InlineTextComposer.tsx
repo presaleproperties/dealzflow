@@ -287,7 +287,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
               <button
                 type="button"
                 aria-label="Attachments and templates"
-                className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
               >
                 <Plus className="w-[18px] h-[18px]" />
               </button>
