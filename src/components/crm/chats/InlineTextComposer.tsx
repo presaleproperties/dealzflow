@@ -55,7 +55,8 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
     const el = taRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const next = Math.min(Math.max(el.scrollHeight, 22), 92);
+    // Single-line baseline = 20px; cap at 5 lines.
+    const next = Math.min(Math.max(el.scrollHeight, 20), 110);
     el.style.height = `${next}px`;
   }, [body]);
 
@@ -151,13 +152,13 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </button>
           </div>
         )}
-        <div className="flex items-end gap-1.5">
+        <div className="flex items-center gap-1.5">
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 aria-label="Attachments and templates"
-                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
               >
                 <Plus className="w-[18px] h-[18px]" />
               </button>
@@ -195,7 +196,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-            <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border/60 transition-colors px-3.5">
+          <div className="flex-1 min-w-0 relative flex items-center rounded-[20px] border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3.5 py-1 min-h-[36px]">
             <textarea
               ref={taRef}
               value={body}
@@ -213,11 +214,11 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
               placeholder={placeholder}
               rows={1}
               enterKeyHint="send"
-              className="m-textarea flex-1 min-w-0 bg-transparent resize-none outline-none text-[16px] leading-[20px] py-[4px] max-h-[92px] min-h-0 placeholder:text-muted-foreground/60"
+              className="m-textarea flex-1 min-w-0 bg-transparent resize-none outline-none text-[14.5px] leading-[20px] py-0 max-h-[110px] min-h-0 placeholder:text-muted-foreground/55"
             />
 
             {showCounter && (
-              <span className="pointer-events-none absolute right-3 bottom-1 text-[10px] tabular-nums text-muted-foreground/70">
+              <span className="pointer-events-none absolute right-3 -bottom-4 text-[10px] tabular-nums text-muted-foreground/70">
                 {charCount}{segments > 1 ? ` · ${segments} segs` : ''}
               </span>
             )}
@@ -229,13 +230,13 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             disabled={!canSend}
             aria-label="Send"
             className={
-               'shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
+              'shrink-0 h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
               (canSend
                 ? 'bg-primary text-primary-foreground shadow-sm hover:brightness-110'
-                : 'bg-muted text-muted-foreground/60 cursor-not-allowed active:scale-100')
+                : 'bg-muted text-muted-foreground/50 cursor-not-allowed active:scale-100')
             }
           >
-            <Send className="w-[15px] h-[15px] -translate-x-[1px] translate-y-[1px]" />
+            <Send className="w-[15px] h-[15px]" />
           </button>
         </div>
       </div>
