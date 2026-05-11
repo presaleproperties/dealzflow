@@ -124,7 +124,11 @@ export function useSyncedDeals() {
 
       // Extract client contact: prioritize BUYER participant data over DB columns
       // because DB client_email/client_phone often contains the SELLER (developer) contact
-      const isListing = participants.some((p: Participant) => p.participantRole === 'SELLERS_AGENT');
+      // S8: trust deal_type / is_listing first; fall back to participant role only if unset.
+      // Defensive default: when neither is_listing nor a SELLERS_AGENT exists, treat as buyer-side.
+      const dealTypeIsListing = tx.deal_type === 'listing' || tx.is_listing === true;
+      const hasSellersAgent = participants.some((p: Participant) => p.participantRole === 'SELLERS_AGENT');
+      const isListing = dealTypeIsListing || (tx.deal_type == null && tx.is_listing == null && hasSellersAgent);
       const primaryClientRole = isListing ? 'SELLER' : 'BUYER';
       const clientParticipant = participants.find((p: Participant) =>
         p.participantRole === primaryClientRole
