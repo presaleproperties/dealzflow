@@ -57,7 +57,9 @@ function getInitials(name: string | null) {
 }
 
 function daysInStage(contact: CrmContact) {
-  const ref = contact.stage_changed_at || contact.status_changed_at;
+  // S6: only count from stage_changed_at — falling back to status_changed_at
+  // double-counts time spent in earlier statuses and misleads agents.
+  const ref = contact.stage_changed_at;
   if (!ref) return null;
   return Math.floor((Date.now() - new Date(ref).getTime()) / (1000 * 60 * 60 * 24));
 }
