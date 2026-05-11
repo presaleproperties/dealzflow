@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Mail, MessageSquare, Search, Send, X, Star, StarOff, Plus, Folder,
   Pencil, Trash2, ExternalLink, Tag as TagIcon, Sparkles, FolderPlus,
-  History, MoreHorizontal, Lock,
+  History, MoreHorizontal, Lock, Command as CommandIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
+import { TemplateCommandPalette } from '@/components/crm/templates/TemplateCommandPalette';
 
 const EMPTY_CONTACT: CrmContact = {
   id: '__pick__', first_name: '', last_name: '', email: null,
@@ -68,6 +69,25 @@ export default function CrmTemplatesPage() {
   const [composeEmail, setComposeEmail] = useState<{ subject: string; html: string } | null>(null);
   const [composeSms, setComposeSms] = useState<{ body: string } | null>(null);
   const [sendPresale, setSendPresale] = useState<any | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const sendTemplate = (t: UnifiedTemplate) => {
+    pushRecentTemplate({ id: t.id, kind: t.kind });
+    if (t.source === 'presale') setSendPresale(t.raw);
+    else if (t.kind === 'email') setComposeEmail({ subject: t.subject ?? '', html: t.bodyHtml });
+    else setComposeSms({ body: t.bodyText });
+  };
 
   const { items, isLoading, tagsByTemplate } = useUnifiedTemplates({
     channel, search, source, folderId, tagIds, favoritedOnly, featuredOnly, myAgentSlug: mySlug,
@@ -102,6 +122,19 @@ export default function CrmTemplatesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 gap-1.5 text-[12.5px] hidden sm:inline-flex"
+              onClick={() => setPaletteOpen(true)}
+              title="Quick find (⌘K)"
+            >
+              <Search className="w-3.5 h-3.5" />
+              Quick find
+              <kbd className="ml-1 inline-flex items-center gap-0.5 text-[10px] text-muted-foreground border border-border/60 rounded px-1 py-0.5">
+                <CommandIcon className="w-2.5 h-2.5" />K
+              </kbd>
+            </Button>
             <ChannelToggle channel={channel} onChange={setChannel} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -284,6 +317,15 @@ export default function CrmTemplatesPage() {
         open={!!sendPresale}
         onOpenChange={(v) => { if (!v) setSendPresale(null); }}
       />
+
+      <TemplateCommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        templates={items}
+        onPreview={(t) => setSelectedUid(t.uid)}
+        onSend={(t) => { sendTemplate(t); }}
+        onEdit={(t) => setEditing(t)}
+      />
     </div>
   );
 }
@@ -295,24 +337,27 @@ function ChannelToggle({ channel, onChange }: { channel: 'all' | 'email' | 'sms'
   return (
     <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md">
       {([
-        { v: 'all', label: 'All' },
+        { v: 'all', label: 'All', icon: null as null | typeof Mail },
         { v: 'email', label: 'Email', icon: Mail },
         { v: 'sms', label: 'SMS', icon: MessageSquare },
-      ] as const).map((opt) => (
-        <button
-          key={opt.v}
-          onClick={() => onChange(opt.v)}
-          className={cn(
-            'h-8 px-2.5 text-[12px] rounded inline-flex items-center gap-1 transition-colors',
-            channel === opt.v
-              ? 'bg-background text-foreground shadow-sm font-medium'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          {opt.icon ? <opt.icon className="w-3.5 h-3.5" /> : null}
-          {opt.label}
-        </button>
-      ))}
+      ] as const).map((opt) => {
+        const Icon = opt.icon;
+        return (
+          <button
+            key={opt.v}
+            onClick={() => onChange(opt.v)}
+            className={cn(
+              'h-8 px-2.5 text-[12px] rounded inline-flex items-center gap-1 transition-colors',
+              channel === opt.v
+                ? 'bg-background text-foreground shadow-sm font-medium'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -619,13 +664,13 @@ function TemplateCard({
       <div className="flex items-start gap-2 mb-1.5">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <Pill tone={item.kind === 'email' ? 'gold' : 'neutral'} size="sm">
+            <Pill tone={item.kind === 'email' ? 'primary' : 'neutral'} size="sm">
               {item.kind === 'email' ? 'Email' : 'SMS'}
             </Pill>
             <Pill tone={item.source === 'mine' ? 'success' : item.source === 'presale' ? 'info' : 'neutral'} size="sm">
               {item.source}
             </Pill>
-            {item.isFeatured && <Pill tone="gold" size="sm">★ Featured</Pill>}
+            {item.isFeatured && <Pill tone="primary" size="sm">★ Featured</Pill>}
             {item.isLocked && <Lock className="w-3 h-3 text-muted-foreground" />}
           </div>
           <div className="font-semibold text-[13.5px] truncate text-foreground">{item.name}</div>
