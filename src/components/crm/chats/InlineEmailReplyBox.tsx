@@ -127,7 +127,7 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
   // Collapsed state — single-line "Reply by email…" launcher
   if (!expanded) {
     return (
-      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
+      <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)+10px)]">
         <button
           type="button"
           onClick={() => {
@@ -148,7 +148,7 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
 
   // Expanded inline composer
   return (
-    <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+10px)]">
+    <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur px-3 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)+10px)]">
       <div className="rounded-2xl border border-border bg-background shadow-sm overflow-hidden">
         {/* Subject row */}
         <div className="flex items-center gap-2 px-3 h-9 border-b border-border/60">
