@@ -8,6 +8,7 @@ import { useCrmContacts, useDynamicFilterOptions, LEAD_STATUSES, LEAD_SOURCES, L
 import { useAgentNames } from '@/hooks/useTeamAgents';
 import { LeadStatusBadge } from '@/components/crm/leads/LeadStatusBadge';
 import { MultiSelectFilter, ActiveFilterPills } from '@/components/crm/leads/MultiSelectFilter';
+import { startInAppCall } from '@/hooks/useDialer';
 import { ContactTypeFilter } from '@/components/crm/leads/ContactTypeFilter';
 import { useIsCompact as useIsMobile } from '@/hooks/use-mobile';
 import { getMissingFields, formatFieldName, isProfileComplete } from '@/lib/dataCompleteness';
