@@ -996,7 +996,12 @@ function IMessageComposer({
             <Button
               size="icon"
               onClick={onSendWithHaptic}
-              className="h-9 w-9 rounded-full shrink-0 bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm transition-all native-press"
+              disabled={sending}
+              aria-label="Send message"
+              className={cn(
+                'h-9 w-9 rounded-full shrink-0 bg-[#007AFF] hover:bg-[#0a84ff] text-white shadow-sm transition-all native-press',
+                sending && 'sending-flash opacity-70',
+              )}
             >
               {scheduledFor ? <CalendarIcon className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </Button>
