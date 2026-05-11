@@ -82,6 +82,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // SECURITY: only active CRM team members can send SMS. Without this,
+    // any signed-in user (including pending workspace applicants) could
+    // burn Twilio credits and message arbitrary numbers.
+    const { data: teamRow } = await supabaseAdmin
+      .from('crm_team')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!teamRow) {
+      return new Response(JSON.stringify({ error: 'Not a CRM team member' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json();
     const contact_id: string | null = body?.contact_id ?? null;
     const to_raw: string | undefined = body?.to;
