@@ -78,88 +78,79 @@ export function useUpdateDeal() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DealFormData> }) => {
-      // Clean up empty strings to null for date and optional fields
+      // Clean empty strings → null for optional/date fields
       const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
-        if (value === '' || value === undefined) {
-          acc[key] = null;
-        } else {
-          acc[key] = value;
-        }
+        acc[key] = value === '' || value === undefined ? null : value;
         return acc;
       }, {} as Record<string, any>);
 
-      const { data: deal, error } = await supabase
+      // Fetch current deal so we can compute auto-sync payouts using the
+      // POST-update values (the RPC will apply cleanedData atomically).
+      const { data: current, error: curErr } = await supabase
         .from('deals')
-        .update(cleanedData)
+        .select('*')
         .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
+        .maybeSingle();
+      if (curErr) throw curErr;
+      if (!current) throw new Error('Deal not found');
 
-      // Calculate user's portion for team deals (user gets 100% - team_member_portion)
-      const teamMemberPortion = deal.team_member_portion || 0;
+      const merged = { ...current, ...cleanedData } as any;
+      const teamMemberPortion = Number(merged.team_member_portion ?? 0);
       const userPortion = teamMemberPortion > 0 ? (100 - teamMemberPortion) / 100 : 1;
 
-      // Auto-sync: For RESALE deals, update Completion payout when closing date or commission changes
-      if (deal.property_type === 'RESALE') {
-        const updates: Record<string, any> = {};
-        
-        if (cleanedData.close_date_est !== undefined) {
-          updates.due_date = cleanedData.close_date_est;
-        }
-        
-        // Sync gross commission to Completion payout amount for resale (applying user's portion)
-        if (cleanedData.gross_commission_est !== undefined || cleanedData.team_member_portion !== undefined) {
-          const grossAmount = deal.gross_commission_est || 0;
-          updates.amount = Math.round(grossAmount * userPortion * 100) / 100;
-        }
-        
-        if (Object.keys(updates).length > 0) {
-          await supabase
-            .from('payouts')
-            .update(updates)
-            .eq('deal_id', id)
-            .eq('payout_type', 'Completion');
+      // Build payout updates the RPC will apply (skipping any payout where
+      // manual_override = true so user-edited rows aren't clobbered).
+      const { data: existingPayouts } = await supabase
+        .from('payouts')
+        .select('id, payout_type, manual_override')
+        .eq('deal_id', id);
+
+      const payoutUpdates: Array<{ id: string; amount?: number; due_date?: string | null }> = [];
+      const findPayout = (kind: string) => existingPayouts?.find((p) => p.payout_type === kind);
+
+      if (merged.property_type === 'RESALE') {
+        const completion = findPayout('Completion');
+        if (completion) {
+          const upd: any = { id: completion.id };
+          if ('close_date_est' in cleanedData) upd.due_date = cleanedData.close_date_est;
+          if ('gross_commission_est' in cleanedData || 'team_member_portion' in cleanedData) {
+            const grossAmount = Number(merged.gross_commission_est || 0);
+            upd.amount = Math.round(grossAmount * userPortion * 100) / 100;
+          }
+          if (Object.keys(upd).length > 1) payoutUpdates.push(upd);
         }
       }
 
-      // Auto-sync: For PRESALE deals, update payout dates and amounts when deal values change
-      if (deal.property_type === 'PRESALE') {
-        // Sync advance_date and advance_commission with Advance payout (applying user's portion)
-        const advanceUpdates: Record<string, any> = {};
-        if (cleanedData.advance_date !== undefined) {
-          advanceUpdates.due_date = cleanedData.advance_date;
+      if (merged.property_type === 'PRESALE') {
+        const advance = findPayout('Advance');
+        if (advance) {
+          const upd: any = { id: advance.id };
+          if ('advance_date' in cleanedData) upd.due_date = cleanedData.advance_date;
+          if ('advance_commission' in cleanedData || 'team_member_portion' in cleanedData) {
+            const advAmount = Number(merged.advance_commission || 0);
+            upd.amount = Math.round(advAmount * userPortion * 100) / 100;
+          }
+          if (Object.keys(upd).length > 1) payoutUpdates.push(upd);
         }
-        if (cleanedData.advance_commission !== undefined || cleanedData.team_member_portion !== undefined) {
-          const advanceAmount = deal.advance_commission || 0;
-          advanceUpdates.amount = Math.round(advanceAmount * userPortion * 100) / 100;
-        }
-        if (Object.keys(advanceUpdates).length > 0) {
-          await supabase
-            .from('payouts')
-            .update(advanceUpdates)
-            .eq('deal_id', id)
-            .eq('payout_type', 'Advance');
-        }
-        
-        // Sync completion_date and completion_commission with Completion payout (applying user's portion)
-        const completionUpdates: Record<string, any> = {};
-        if (cleanedData.completion_date !== undefined) {
-          completionUpdates.due_date = cleanedData.completion_date;
-        }
-        if (cleanedData.completion_commission !== undefined || cleanedData.team_member_portion !== undefined) {
-          const completionAmount = deal.completion_commission || 0;
-          completionUpdates.amount = Math.round(completionAmount * userPortion * 100) / 100;
-        }
-        if (Object.keys(completionUpdates).length > 0) {
-          await supabase
-            .from('payouts')
-            .update(completionUpdates)
-            .eq('deal_id', id)
-            .eq('payout_type', 'Completion');
+        const completion = findPayout('Completion');
+        if (completion) {
+          const upd: any = { id: completion.id };
+          if ('completion_date' in cleanedData) upd.due_date = cleanedData.completion_date;
+          if ('completion_commission' in cleanedData || 'team_member_portion' in cleanedData) {
+            const compAmount = Number(merged.completion_commission || 0);
+            upd.amount = Math.round(compAmount * userPortion * 100) / 100;
+          }
+          if (Object.keys(upd).length > 1) payoutUpdates.push(upd);
         }
       }
+
+      // Single transactional RPC — deal + payouts succeed or fail together.
+      const { data: deal, error } = await supabase.rpc('update_deal_with_payouts', {
+        p_deal_id: id,
+        p_deal_data: cleanedData,
+        p_payouts: payoutUpdates,
+      });
+      if (error) throw error;
 
       return deal as Deal;
     },

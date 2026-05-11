@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Pill } from '@/components/crm/shared/Pill';
 import { toast } from 'sonner';
-import { useCrmContacts, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useCrmContactsLite } from '@/hooks/useCrmContactsLite';
 import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { formatContactName } from '@/lib/format';
 import { useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
@@ -188,7 +189,7 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
 const CARDS_PER_PAGE = 50;
 
 export function PipelineKanban() {
-  const { data: contacts = [], isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useCrmContacts();
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError, refetch: refetchContacts } = useCrmContactsLite();
   const { data: segments = [], isLoading: segmentsLoading, error: segmentsError, refetch: refetchSegments } = useCrmLeadSegments();
   const dynamicOpts = useDynamicFilterOptions(contacts);
   const dynamicAgents = useMemo(() => {

@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CrmContact } from './useCrmContacts';
 import { normalizeCrmContactArrays } from '@/lib/crmMultiValue';
@@ -9,10 +8,11 @@ import { normalizeCrmContactArrays } from '@/lib/crmMultiValue';
  *   • computing pipeline segment counts (segmentMatching)
  *   • populating dynamic filter dropdowns (useDynamicFilterOptions)
  *   • view counts (All / Closed)
+ *   • Pipeline Kanban (drops PII like notes/birthday/budget)
  *
- * Drops payload from ~50 columns × 6900 rows to ~13 columns × 6900 rows,
- * making the Leads page render its pills/filters dramatically faster while
- * the visible table itself is still served by usePaginatedCrmContacts.
+ * SECURITY: Realtime subscription is intentionally DISABLED — see CRM
+ * Hardening memory. Streaming changes for every contact to every tab
+ * leaks PII. Mutations invalidate the cache via their own onSuccess.
  */
 const LITE_COLUMNS = [
   'id',
@@ -36,12 +36,15 @@ const LITE_COLUMNS = [
   'is_pre_approved',
   'campaign_source',
   'last_touch_at',
+  'stage_changed_at',
+  'status_changed_at',
+  'lead_score',
+  'created_at',
+  'updated_at',
 ].join(',');
 
 export function useCrmContactsLite() {
-  const queryClient = useQueryClient();
-
-  const query = useQuery({
+  return useQuery({
     queryKey: ['crm-contacts-lite'],
     queryFn: async () => {
       const PAGE_SIZE = 1000;
@@ -74,18 +77,5 @@ export function useCrmContactsLite() {
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('crm-contacts-lite-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'crm_contacts' },
-        () => queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] }),
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
-
-  return query;
 }
+

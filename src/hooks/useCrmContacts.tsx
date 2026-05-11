@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { normalizeCrmContactArrays, normalizeCrmMultiValueList } from '@/lib/crmMultiValue';
 
@@ -174,21 +173,11 @@ export function useCrmContacts(
     enabled: options?.enabled ?? true,
   });
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('crm-contacts-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'crm_contacts' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
-          queryClient.invalidateQueries({ queryKey: ['crm-dashboard-kpis'] });
-          queryClient.invalidateQueries({ queryKey: ['crm-pipeline-snapshot'] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  // SECURITY: Realtime subscription on `crm_contacts` is intentionally
+  // DISABLED. It streamed PII (email, phone) of every contact to every
+  // connected CRM browser tab on any row change — explicitly forbidden by
+  // the CRM Hardening memory. Mutation hooks invalidate the cache via their
+  // own onSuccess callbacks; that's the canonical refresh path.
 
   return query;
 }
