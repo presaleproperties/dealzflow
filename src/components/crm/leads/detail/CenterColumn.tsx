@@ -347,48 +347,25 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         <div className="px-3 md:px-0 space-y-3">
-          {/* Toolbar: filter pills + Pull from Lofty + Import */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {filters.map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none transition-colors border inline-flex items-center',
-                    filter === f.key
-                      ? 'bg-primary/15 text-primary border-primary/30'
-                      : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
-                  )}
-                >
-                  {f.label}
-                  {(counts as any)[f.key] > 0 && (
-                    <span className="ml-1 text-[10px] opacity-70">{(counts as any)[f.key]}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-[11px] gap-1.5"
-                onClick={handlePullFromLofty}
-                disabled={pullingLofty}
+          {/* Toolbar: filter pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {filters.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none transition-colors border inline-flex items-center',
+                  filter === f.key
+                    ? 'bg-primary/15 text-primary border-primary/30'
+                    : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
+                )}
               >
-                {pullingLofty ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                Pull from Lofty
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-[11px] gap-1.5"
-                onClick={() => setShowImport(true)}
-              >
-                <StickyNote className="w-3 h-3" />
-                Import
-              </Button>
-            </div>
+                {f.label}
+                {(counts as any)[f.key] > 0 && (
+                  <span className="ml-1 text-[10px] opacity-70">{(counts as any)[f.key]}</span>
+                )}
+              </button>
+            ))}
           </div>
 
           {/* Notes feed */}
