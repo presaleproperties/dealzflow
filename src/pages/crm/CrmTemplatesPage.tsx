@@ -45,6 +45,7 @@ import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickS
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
 import { TemplateCommandPalette } from '@/components/crm/templates/TemplateCommandPalette';
+import { TemplateVersionHistoryDialog } from '@/components/crm/templates/TemplateVersionHistoryDialog';
 
 const EMPTY_CONTACT: CrmContact = {
   id: '__pick__', first_name: '', last_name: '', email: null,
@@ -70,6 +71,7 @@ export default function CrmTemplatesPage() {
   const [composeSms, setComposeSms] = useState<{ body: string } | null>(null);
   const [sendPresale, setSendPresale] = useState<any | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [historyTemplate, setHistoryTemplate] = useState<UnifiedTemplate | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -174,6 +176,8 @@ export default function CrmTemplatesPage() {
               setFavoritedOnly={setFavoritedOnly}
               featuredOnly={featuredOnly}
               setFeaturedOnly={setFeaturedOnly}
+              allItems={items}
+              onSelectTemplate={(uid) => setSelectedUid(uid)}
             />
           </aside>
 
@@ -234,6 +238,7 @@ export default function CrmTemplatesPage() {
                       onEdit={() => setEditing(u)}
                       onSend={() => sendTemplate(u)}
                       onDelete={() => setPendingDelete(u)}
+                      onHistory={() => setHistoryTemplate(u)}
                     />
                   ))}
                 </div>
@@ -248,6 +253,7 @@ export default function CrmTemplatesPage() {
                 item={selected}
                 onEdit={() => setEditing(selected)}
                 onDelete={() => setPendingDelete(selected)}
+                onHistory={() => setHistoryTemplate(selected)}
                 onSend={() => {
                   pushRecentTemplate({ id: selected.id, kind: selected.kind });
                   if (selected.source === 'presale') {
@@ -329,6 +335,12 @@ export default function CrmTemplatesPage() {
         onSend={(t) => { sendTemplate(t); }}
         onEdit={(t) => setEditing(t)}
       />
+
+      <TemplateVersionHistoryDialog
+        template={historyTemplate}
+        open={!!historyTemplate}
+        onOpenChange={(o) => { if (!o) setHistoryTemplate(null); }}
+      />
     </div>
   );
 }
@@ -374,6 +386,8 @@ function TemplateRail(props: {
   tagIds: string[]; setTagIds: (t: string[]) => void;
   favoritedOnly: boolean; setFavoritedOnly: (b: boolean) => void;
   featuredOnly: boolean; setFeaturedOnly: (b: boolean) => void;
+  allItems?: UnifiedTemplate[];
+  onSelectTemplate?: (uid: string) => void;
 }) {
   const { data: folders = [] } = useTemplateFolders();
   const { data: tags = [] } = useTemplateTags();
@@ -404,10 +418,33 @@ function TemplateRail(props: {
           >
             Featured
           </RailItem>
-          {recents.length > 0 && (
-            <div className="px-2 pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">Recent</div>
-          )}
         </RailGroup>
+
+        {(() => {
+          const all = props.allItems ?? [];
+          const recentResolved = recents
+            .map((r) => all.find((u) => u.id === r.id && u.kind === r.kind))
+            .filter(Boolean) as UnifiedTemplate[];
+          if (recentResolved.length === 0) return null;
+          return (
+            <RailGroup label="Recents">
+              {recentResolved.slice(0, 6).map((t) => (
+                <RailItem
+                  key={t.uid}
+                  active={false}
+                  onClick={() => props.onSelectTemplate?.(t.uid)}
+                  icon={
+                    t.kind === 'email'
+                      ? <Mail className="w-3.5 h-3.5" />
+                      : <MessageSquare className="w-3.5 h-3.5" />
+                  }
+                >
+                  <span className="truncate">{t.name}</span>
+                </RailItem>
+              ))}
+            </RailGroup>
+          );
+        })()}
 
         <RailGroup label="Source">
           {(['all', 'mine', 'team'] as const).map((s) => (
@@ -670,7 +707,7 @@ function timeAgoShort(dateStr?: string | null): string {
 }
 
 function TemplateCard({
-  item, selected, onSelect, tagIds, onEdit, onSend, onDelete,
+  item, selected, onSelect, tagIds, onEdit, onSend, onDelete, onHistory,
 }: {
   item: UnifiedTemplate;
   selected: boolean;
@@ -679,6 +716,7 @@ function TemplateCard({
   onEdit: () => void;
   onSend: () => void;
   onDelete: () => void;
+  onHistory: () => void;
 }) {
   const toggleFav = useToggleFavoriteV2();
   const duplicateEmail = useDuplicateTemplate();
@@ -835,6 +873,16 @@ function TemplateCard({
           >
             <Copy className="w-3.5 h-3.5" />
           </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8"
+            onClick={(e) => { stop(e); onHistory(); }}
+            aria-label="Version history"
+            title="Version history"
+          >
+            <History className="w-3.5 h-3.5" />
+          </Button>
           {editable && (
             <Button
               size="icon"
@@ -857,8 +905,8 @@ function TemplateCard({
 // Preview pane
 // ===========================================================================
 function PreviewPane({
-  item, onEdit, onDelete, onSend,
-}: { item: UnifiedTemplate; onEdit: () => void; onDelete: () => void; onSend: () => void }) {
+  item, onEdit, onDelete, onSend, onHistory,
+}: { item: UnifiedTemplate; onEdit: () => void; onDelete: () => void; onSend: () => void; onHistory: () => void }) {
   const html = useMemo(() => renderWithSampleData(item.bodyHtml), [item.bodyHtml]);
   const { map: statsMap } = useTemplateStatsMap();
   const stats = statsMap.get(`${item.kind}:${item.id}`);
@@ -886,6 +934,15 @@ function PreviewPane({
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-[12px]"
+              onClick={onHistory}
+              title="Version history"
+            >
+              <History className="w-3.5 h-3.5" /> History
+            </Button>
             <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={onSend}>
               <Send className="w-3.5 h-3.5" /> Send
             </Button>
