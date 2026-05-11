@@ -107,6 +107,7 @@ export function IMessageConversation(props: Props) {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label={leftCollapsed ? 'Show conversations' : 'Hide conversations'}
                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground -ml-1"
                     onClick={onToggleLeft}
                   >
