@@ -209,13 +209,21 @@
      lockstep with the keyboard animation instead of snapping at a threshold.
      The JS-set value wins because inline styles on :root beat declared rules. */
   :root {
-    --composer-safe-bottom: env(safe-area-inset-bottom, 0px);
+    /* Home-indicator safe gutter for the composer footer. When the keyboard
+       is closed we always reserve env(safe-area-inset-bottom) (≈34px on
+       iPhones with a home indicator) so the composer never sits flush with
+       the indicator. When the keyboard opens we collapse to 8px so the input
+       sits flush with the keyboard top — no double padding, no jump. */
+    --composer-safe-bottom: max(env(safe-area-inset-bottom, 0px), 10px);
     --keyboard-inset-bottom: 0px;
     --composer-viewport-top: 0px;
     --composer-viewport-height: 100dvh;
     /* Composer chrome paints edge-to-edge; only the controls are inset below
        the status bar, matching MobileAppHeader without artificial white space. */
     --composer-header-top-pad: env(safe-area-inset-top, 0px);
+  }
+  html[data-keyboard-open="true"] {
+    --composer-safe-bottom: 8px;
   }
   :root.is-standalone,
   :root.is-standalone-pwa {
