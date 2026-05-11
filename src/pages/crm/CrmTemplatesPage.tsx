@@ -622,13 +622,13 @@ function TemplateCard({
       <div className="flex items-start gap-2 mb-1.5">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <Pill tone={item.kind === 'email' ? 'gold' : 'neutral'} size="sm">
+            <Pill tone={item.kind === 'email' ? 'primary' : 'neutral'} size="sm">
               {item.kind === 'email' ? 'Email' : 'SMS'}
             </Pill>
             <Pill tone={item.source === 'mine' ? 'success' : item.source === 'presale' ? 'info' : 'neutral'} size="sm">
               {item.source}
             </Pill>
-            {item.isFeatured && <Pill tone="gold" size="sm">★ Featured</Pill>}
+            {item.isFeatured && <Pill tone="primary" size="sm">★ Featured</Pill>}
             {item.isLocked && <Lock className="w-3 h-3 text-muted-foreground" />}
           </div>
           <div className="font-semibold text-[13.5px] truncate text-foreground">{item.name}</div>
