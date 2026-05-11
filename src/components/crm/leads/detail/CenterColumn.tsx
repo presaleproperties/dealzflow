@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
-import { StickyNote, Sparkles, Download, Loader2 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { StickyNote, Sparkles, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
@@ -11,7 +9,6 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
-import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
