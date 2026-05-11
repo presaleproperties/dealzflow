@@ -137,6 +137,7 @@ export default function CrmChatsPage() {
 
   const { data: threads = [], isLoading } = useCrmChats(filter, { showArchived, showCampaigns });
   const queryClient = useQueryClient();
+  const { set: draftContactIds } = useDraftContactIds();
   const handlePullRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['crm-chats'] });
   };
