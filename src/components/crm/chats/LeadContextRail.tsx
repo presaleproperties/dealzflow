@@ -23,6 +23,7 @@ import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
 import { useDialer } from '@/hooks/useDialer';
 import { formatContactName, formatPhone } from '@/lib/format';
+import { parseLeadNote } from '@/lib/formatLeadNote';
 
 const STORAGE_KEY = 'crm-chat-rail-collapsed';
 
