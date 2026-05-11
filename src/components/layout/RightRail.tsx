@@ -30,6 +30,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { MessagesDrawerContent } from '@/components/layout/MessagesDrawer';
 
 // Themed tokens — adapt to light/dark via index.css
 const GOLD = 'hsl(var(--primary))';
@@ -404,7 +405,7 @@ export function RightRail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Slide-over: Inbox / Communications */}
+      {/* Slide-over: Inbox / Communications — editorial rebuild */}
       <Sheet
         open={panel === 'inbox'}
         onOpenChange={(o) => {
@@ -417,100 +418,23 @@ export function RightRail() {
       >
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[440px] p-0 bg-card border-l border-border [&>button]:hidden"
+          className={cn(
+            'p-0 bg-background border-l border-border [&>button]:hidden',
+            // Phone: bottom sheet (rounded-top, drag-handle vibe via header) — sets w-full + max-h instead of side panel.
+            'max-md:!inset-x-0 max-md:!right-0 max-md:!left-0 max-md:!top-auto max-md:!bottom-0 max-md:!w-full max-md:!h-[88dvh] max-md:!max-w-none max-md:rounded-t-2xl max-md:border-t max-md:border-l-0 max-md:data-[state=open]:slide-in-from-bottom max-md:data-[state=closed]:slide-out-to-bottom',
+            // Tablet+: classic right-side drawer
+            'md:w-full md:sm:max-w-[460px]',
+          )}
         >
-          {/* Header */}
-          <SheetHeader className="px-5 pt-5 pb-4 border-b border-border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <SheetTitle className="text-[17px] font-semibold text-foreground tracking-tight text-left">
-                  Messages
-                </SheetTitle>
-                {inboxUnread > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[28px] h-[20px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10.5px] font-semibold">
-                    {inboxUnread > 99 ? '99+' : inboxUnread}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <Link
-                  to={isCrmMember ? '/crm/email' : '/dashboard'}
-                  onClick={() => setPanel(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                  aria-label="Open full inbox"
-                  title="Open full inbox"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </Link>
-                <button
-                  onClick={() => setPanel(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </SheetHeader>
-
-          {/* Search bar */}
-          <div className="px-5 pt-4 pb-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" strokeWidth={2} />
-              <input
-                value={inboxSearch}
-                onChange={(e) => setInboxSearch(e.target.value)}
-                placeholder="Search History"
-                className="w-full h-9 pl-9 pr-3 rounded-lg border border-border bg-background/60 text-[12.5px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
-              />
-            </div>
+          {/* Mobile drag handle */}
+          <div className="md:hidden pt-2 pb-1 flex items-center justify-center">
+            <span className="w-9 h-1 rounded-full bg-border/80" />
           </div>
-
-          {/* Quick filter chips row */}
-          <div className="px-5 pb-3">
-            <div className="flex items-center gap-3 overflow-x-auto pb-1 -mx-1 px-1">
-              <FilterChip
-                icon={Sparkles}
-                label="All"
-                active={inboxFilter === 'all'}
-                onClick={() => setInboxFilter('all')}
-                tone="primary"
-              />
-              <FilterChip
-                icon={Mail}
-                label="Email"
-                active={inboxFilter === 'email'}
-                onClick={() => setInboxFilter('email')}
-                tone="blue"
-                badge={chatThreads?.filter(t => t.channel === 'email' && (t.unread_count ?? 0) > 0).length}
-              />
-              <FilterChip
-                icon={MessageSquare}
-                label="Text"
-                active={inboxFilter === 'text'}
-                onClick={() => setInboxFilter('text')}
-                tone="purple"
-                badge={chatThreads?.filter(t => (t.channel === 'sms' || t.channel === 'whatsapp') && (t.unread_count ?? 0) > 0).length}
-              />
-            </div>
-          </div>
-
-          <div className="h-px bg-border" />
-
-          {/* List */}
-          <ScrollArea className="h-[calc(100dvh-260px)]">
-            <div className="py-1">
-              {feedLoading ? (
-                <div className="text-center text-xs text-muted-foreground py-10">Loading…</div>
-              ) : (
-                <ConversationList
-                  threads={chatThreads ?? []}
-                  search={inboxSearch}
-                  onOpen={() => setPanel(null)}
-                />
-              )}
-            </div>
-          </ScrollArea>
+          <MessagesDrawerContent
+            open={panel === 'inbox'}
+            onClose={() => setPanel(null)}
+            isCrmMember={isCrmMember}
+          />
         </SheetContent>
       </Sheet>
 
