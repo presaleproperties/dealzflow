@@ -554,9 +554,9 @@ function CellContent({ col, contact, updateContact, tagLibrary, onSendSms, onSen
           {contact.phone && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <a href={`tel:${contact.phone}`} className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                <button type="button" onClick={() => startInAppCall({ phone: contact.phone, contactId: contact.id, contactName: formatContactName(contact) })} className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                   <Phone className="w-[15px] h-[15px]" strokeWidth={1.75} />
-                </a>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">Call {formatPhone(contact.phone)}</TooltipContent>
             </Tooltip>
