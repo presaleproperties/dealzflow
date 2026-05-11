@@ -441,65 +441,120 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                   </span>
                 </div>
                 {(() => {
-                  // Walk the date-group and collapse consecutive system-style
-                  // notes (lead score updates, task created/completed,
-                  // automation writes) into a single SystemActivityCluster row.
+                  // Walk the date-group and:
+                  //  • collapse consecutive system-style notes into one cluster
+                  //  • collapse runs of emails sharing a normalized subject
+                  //    into a single thread stack (latest expanded + toggle)
+                  //  • collapse runs of consecutive same-channel SMS/WhatsApp
+                  //    messages into a single conversation stack
                   const out: React.ReactNode[] = [];
-                  let runStart = -1;
-                  for (let i = 0; i <= group.notes.length; i++) {
+                  let i = 0;
+                  while (i < group.notes.length) {
                     const note = group.notes[i];
-                    const isSys = note ? isSystemishNote(note) : false;
-                    if (isSys) {
-                      if (runStart === -1) runStart = i;
+
+                    // System run
+                    if (isSystemishNote(note)) {
+                      let j = i;
+                      while (j < group.notes.length && isSystemishNote(group.notes[j])) j++;
+                      const run = group.notes.slice(i, j);
+                      out.push(
+                        <SystemActivityCluster key={`syscluster-${run[0].id}`} notes={run} />,
+                      );
+                      i = j;
                       continue;
                     }
-                    // Flush any pending system run.
-                    if (runStart !== -1) {
-                      const run = group.notes.slice(runStart, i);
-                      out.push(
-                        <SystemActivityCluster
-                          key={`syscluster-${run[0].id}`}
-                          notes={run}
-                        />,
-                      );
-                      runStart = -1;
-                    }
-                    if (!note) break;
+
                     const emailRow = emailById.get(note.id);
                     const smsRow = smsById.get(note.id);
+
+                    // Email thread run (same normalized subject, consecutive)
                     if (emailRow) {
-                      out.push(
-                        <EmailNoteCard
-                          key={note.id}
-                          email={emailRow}
-                          contactEmail={contact.email}
-                          onOpen={() => handleOpenEmail(note.id)}
-                        />,
-                      );
-                    } else if (smsRow) {
-                      out.push(
-                        <SmsNoteCard
-                          key={note.id}
-                          message={smsRow}
-                          onOpen={() => openSmsThread(smsRow)}
-                        />,
-                      );
-                    } else {
-                      out.push(
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          isOwn={note.user_id === currentUserId}
-                          contactId={contact.id}
-                          editingId={editingId}
-                          editContent={editContent}
-                          onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
-                          onCancelEdit={() => setEditingId(null)}
-                          onSaveEdit={handleEditSave}
-                          setEditContent={setEditContent}
-                        />,
-                      );
+                      const subjectKey = normalizeSubject(emailRow.subject);
+                      const stack: { note: CrmNote; row: typeof emailRow }[] = [
+                        { note, row: emailRow },
+                      ];
+                      let j = i + 1;
+                      while (j < group.notes.length) {
+                        const n = group.notes[j];
+                        const r = emailById.get(n.id);
+                        if (!r || normalizeSubject(r.subject) !== subjectKey) break;
+                        stack.push({ note: n, row: r });
+                        j++;
+                      }
+                      if (stack.length === 1) {
+                        out.push(
+                          <EmailNoteCard
+                            key={note.id}
+                            email={emailRow}
+                            contactEmail={contact.email}
+                            onOpen={() => handleOpenEmail(note.id)}
+                          />,
+                        );
+                      } else {
+                        out.push(
+                          <EmailThreadStack
+                            key={`thread-${note.id}`}
+                            emails={stack}
+                            contactEmail={contact.email}
+                            onOpen={handleOpenEmail}
+                          />,
+                        );
+                      }
+                      i = j;
+                      continue;
                     }
+
+                    // SMS run (same channel, consecutive)
+                    if (smsRow) {
+                      const channelKey = smsRow.channel;
+                      const stack: { note: CrmNote; row: typeof smsRow }[] = [
+                        { note, row: smsRow },
+                      ];
+                      let j = i + 1;
+                      while (j < group.notes.length) {
+                        const n = group.notes[j];
+                        const r = smsById.get(n.id);
+                        if (!r || r.channel !== channelKey) break;
+                        stack.push({ note: n, row: r });
+                        j++;
+                      }
+                      if (stack.length === 1) {
+                        out.push(
+                          <SmsNoteCard
+                            key={note.id}
+                            message={smsRow}
+                            onOpen={() => openSmsThread(smsRow)}
+                          />,
+                        );
+                      } else {
+                        out.push(
+                          <SmsRunStack
+                            key={`smsrun-${note.id}`}
+                            messages={stack}
+                            onOpen={openSmsThread}
+                          />,
+                        );
+                      }
+                      i = j;
+                      continue;
+                    }
+
+                    // Plain note
+                    out.push(
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        isOwn={note.user_id === currentUserId}
+                        contactId={contact.id}
+                        editingId={editingId}
+                        editContent={editContent}
+                        onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
+                        onCancelEdit={() => setEditingId(null)}
+                        onSaveEdit={handleEditSave}
+                        setEditContent={setEditContent}
+                      />,
+                    );
+                    i++;
                   }
                   return out;
                 })()}
