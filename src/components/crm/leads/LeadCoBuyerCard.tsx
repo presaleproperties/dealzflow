@@ -29,7 +29,7 @@ export function LeadCoBuyerCard({ contact }: { contact: CrmContact }) {
           <div className="flex items-center gap-3">
             <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" strokeWidth={1.8} />
             <span className="text-xs text-muted-foreground w-16 flex-shrink-0">Phone</span>
-            <InlineEditField value={contact.co_buyer_phone} onSave={(v) => save('co_buyer_phone', v)} href={`tel:${contact.co_buyer_phone}`} />
+            <InlineEditField value={contact.co_buyer_phone} onSave={(v) => save('co_buyer_phone', v)} onActivate={() => startInAppCall({ phone: contact.co_buyer_phone, contactId: contact.id, contactName: contact.co_buyer_name ?? undefined })} />
           </div>
         )}
         {contact.co_buyer_email && (
