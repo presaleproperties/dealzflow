@@ -150,6 +150,11 @@ async function ensureDevice(): Promise<Device | null> {
         if (refreshed) device.updateToken(refreshed.token);
       });
       device.on('incoming', (call: Call) => {
+        // S4: a fresh inbound call invalidates any pending reset from a prior call
+        if (pendingResetTimer !== null) {
+          clearTimeout(pendingResetTimer);
+          pendingResetTimer = null;
+        }
         attachCallHandlers(call);
         const from = call.parameters.From || '';
         useDialerStore.setState({
