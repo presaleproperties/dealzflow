@@ -79,6 +79,30 @@ function initials(name?: string | null, email?: string | null) {
   return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
 }
 
+/** Strip HTML, decode entities, drop quoted reply tails so the snippet is readable. */
+function cleanSnippet(raw?: string | null): string {
+  if (!raw) return '';
+  let s = String(raw);
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  s = s.replace(/<\/?(br|p|div|li|tr|h[1-6])[^>]*>/gi, ' ');
+  s = s.replace(/<[^>]+>/g, ' ');
+  s = s
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+  s = s.split('\n').filter(l => !/^\s*>/.test(l) && !/^On .+wrote:\s*$/i.test(l)).join(' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/** Strip noisy "Firstname Lastname <email@x>" → "Firstname Lastname". */
+function cleanSender(raw?: string | null): string {
+  if (!raw) return 'Unknown';
+  const s = String(raw).trim();
+  const m = s.match(/^"?([^"<]+?)"?\s*<[^>]+>$/);
+  return (m ? m[1] : s).replace(/^"|"$/g, '').trim() || 'Unknown';
+}
+
 export default function InboxView() {
   const qc = useQueryClient();
   const isCompact = useIsCompact();
