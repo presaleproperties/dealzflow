@@ -466,9 +466,11 @@ function IMessageBubbleImpl({
                 </div>
               )}
 
-              <div className="min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
-                <HighlightedText text={text} query={highlight} />
-              </div>
+              {hasText && (
+                <div className="min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
+                  <HighlightedText text={text} query={highlight} />
+                </div>
+              )}
 
               {m.media_urls && m.media_urls.length > 0 && (
                 <div className="mt-1.5 grid grid-cols-2 gap-1">
