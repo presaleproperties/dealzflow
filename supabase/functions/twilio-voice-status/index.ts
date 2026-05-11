@@ -1,6 +1,7 @@
 // Twilio call status callback. Updates `crm_call_log` with timing,
 // status transitions, and final duration when the call ends.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { isValidTwilioSignature, reconstructTwilioUrl } from "../_shared/twilioSignature.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +16,16 @@ Deno.serve(async (req) => {
     const form = await req.formData();
     const p: Record<string, string> = {};
     for (const [k, v] of form.entries()) p[k] = String(v);
+
+    // SECURITY: validate Twilio signature on every callback to prevent
+    // attackers from spoofing call status updates.
+    const sig = req.headers.get("x-twilio-signature");
+    const fullUrl = reconstructTwilioUrl(req);
+    const valid = await isValidTwilioSignature(sig, fullUrl, p);
+    if (!valid) {
+      console.warn("[twilio-voice-status] invalid signature");
+      return new Response("forbidden", { status: 403, headers: corsHeaders });
+    }
 
     const callSid = p.CallSid || p.ParentCallSid;
     if (!callSid) return new Response("missing CallSid", { status: 400, headers: corsHeaders });
