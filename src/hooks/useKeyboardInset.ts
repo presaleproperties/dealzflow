@@ -62,7 +62,9 @@ export function useKeyboardInset(enabled = true) {
       const fromStable = Math.round(stableViewportHeight - visualHeight - visualOffsetTop);
       const fromLayout = Math.round(rootHeight - visualHeight - visualOffsetTop);
       const fromWindow = Math.round(innerHeight - visualHeight - visualOffsetTop);
-      const nativeKeyboardHeight = Number.parseFloat(root.style.getPropertyValue('--kb-h')) || 0;
+      const nativeKeyboardHeight = root.classList.contains('is-native')
+        ? Number.parseFloat(root.style.getPropertyValue('--kb-h')) || 0
+        : 0;
       const raw = Math.max(0, nativeKeyboardHeight, fromStable, fromLayout, fromWindow);
       const kb = editing && raw > 60 ? raw : 0;
       keyboardOpen = kb > 60;
