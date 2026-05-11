@@ -127,6 +127,7 @@ export function useVisualViewport() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      clearTimeout(animationTimer);
       if (vv) {
         vv.removeEventListener('resize', onViewportChange);
         vv.removeEventListener('scroll', onViewportChange);
