@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Pill } from '@/components/crm/shared/Pill';
 import { toast } from 'sonner';
-import { useCrmContacts, useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useDynamicFilterOptions } from '@/hooks/useCrmContacts';
+import { useCrmContactsLite } from '@/hooks/useCrmContactsLite';
 import { useCrmLeadSegments, type LeadSegment } from '@/hooks/useCrmLeadSegments';
 import { formatContactName } from '@/lib/format';
 import { useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
