@@ -96,12 +96,16 @@ export default function InboxView() {
     try { return localStorage.getItem('inbox.listCollapsed') === '1'; } catch { return false; }
   });
   // Reply box starts as a slim trigger; expands when the user wants to reply.
+  // When the thread has a linked contact we hand off to ComposeEmailDialog
+  // (signatures, AI assist, attachments, merge tokens). Otherwise we fall
+  // back to the legacy inline textarea so unattached threads still work.
   const [replyOpen, setReplyOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
   const replyRef = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { try { localStorage.setItem('inbox.foldersCollapsed', foldersCollapsed ? '1' : '0'); } catch {} }, [foldersCollapsed]);
   useEffect(() => { try { localStorage.setItem('inbox.listCollapsed', listCollapsed ? '1' : '0'); } catch {} }, [listCollapsed]);
   // Reset reply state when switching threads.
-  useEffect(() => { setReplyOpen(false); setReply(''); }, [selectedThreadId]);
+  useEffect(() => { setReplyOpen(false); setComposeOpen(false); setReply(''); }, [selectedThreadId]);
   // Auto-grow expanded reply textarea.
   useEffect(() => {
     if (!replyOpen) return;
