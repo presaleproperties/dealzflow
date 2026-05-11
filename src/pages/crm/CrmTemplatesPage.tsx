@@ -407,7 +407,7 @@ function TemplateRail(props: {
         </RailGroup>
 
         <RailGroup label="Source">
-          {(['all', 'mine', 'team', 'presale'] as const).map((s) => (
+          {(['all', 'mine', 'team'] as const).map((s) => (
             <RailItem key={s} active={props.source === s} onClick={() => props.setSource(s)}>
               <span className="capitalize">{s === 'all' ? 'All sources' : s}</span>
             </RailItem>
