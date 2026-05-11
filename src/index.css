@@ -130,6 +130,19 @@
 }
 
 @layer base {
+  /* S18 — Global keyboard focus ring. Visible only for keyboard users (focus-visible),
+     respects design tokens, and never appears on touch/click. */
+  :where(button, a, [role="button"], [role="link"], [role="menuitem"], [role="tab"], [role="option"], summary):focus-visible {
+    outline: 2px solid hsl(var(--ring, var(--primary)));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  :where(input, textarea, select, [contenteditable="true"]):focus-visible {
+    outline: 2px solid hsl(var(--ring, var(--primary)));
+    outline-offset: 1px;
+  }
+}
+
   /* Native iPhone bottom-nav clearance.
      The interactive row stays stable and low, while the nav surface owns the
      home-indicator safe-area so installed PWAs do not float or overlap. */
