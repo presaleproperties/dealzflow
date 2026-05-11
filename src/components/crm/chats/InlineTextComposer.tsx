@@ -252,7 +252,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
         paddingTop: '14px',
-        paddingBottom: 'max(10px, calc(env(safe-area-inset-bottom, 0px) - var(--keyboard-inset-bottom, 0px)))',
+        paddingBottom: 'var(--composer-safe-bottom)',
         transform: isNative
           ? 'none'
           : 'none',
