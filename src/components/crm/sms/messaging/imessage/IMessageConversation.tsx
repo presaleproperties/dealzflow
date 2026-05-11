@@ -478,8 +478,14 @@ function IMessageBubbleImpl({
                     const isImg = /\.(jpe?g|png|gif|webp|heic)$|image%2F/i.test(u);
                     if (isImg) {
                       return (
-                        <a key={idx} href={u} target="_blank" rel="noreferrer">
-                          <img src={u} className="rounded-md max-h-40 object-cover" alt="attachment" />
+                        <a key={idx} href={u} target="_blank" rel="noreferrer" className="block">
+                          <img
+                            src={u}
+                            loading="lazy"
+                            className="rounded-md max-w-full w-auto max-h-40 sm:max-h-56 object-cover bg-muted"
+                            style={{ maxWidth: '280px' }}
+                            alt="attachment"
+                          />
                         </a>
                       );
                     }
