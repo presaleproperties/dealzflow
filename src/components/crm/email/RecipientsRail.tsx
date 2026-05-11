@@ -122,7 +122,7 @@ export function RecipientsRail({ selected, onSelectedChange }: Props) {
         if (!name.includes(q) && !email.includes(q) && !phone.includes(q)) return false;
       }
       if (activeSegment && Object.keys(activeSegment.filter_config).length > 0) {
-        if (!contactMatchesSegment(c, activeSegment.filter_config)) return false;
+        if (!contactMatchesSegment(c, activeSegment.filter_config, activeSegment.id)) return false;
       }
       if (activeProjects.size > 0) {
         const projs = [
