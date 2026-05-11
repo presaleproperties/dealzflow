@@ -482,7 +482,7 @@ export function PipelineKanban() {
           {isMobile && (
             <div className="flex justify-center gap-1.5 pt-2 pb-1">
               {pipelineSegments.map((seg, idx) => {
-                const colors = getSegmentColor(seg.name);
+                const colors = getSegmentColor(seg);
                 return (
                   <button
                     key={seg.id}
