@@ -252,9 +252,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
         paddingTop: '14px',
-        paddingBottom: isNative
-          ? 'max(18px, env(safe-area-inset-bottom, 0px))'
-          : 'max(18px, calc(env(safe-area-inset-bottom, 0px) + 8px))',
+        paddingBottom: 'max(18px, env(safe-area-inset-bottom, 0px))',
         transform: isNative
           ? 'none'
           : 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
@@ -529,7 +527,7 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-          <div className="flex-1 min-w-0 relative flex items-stretch rounded-[20px] border border-border bg-muted/55 focus-within:bg-background focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition-all px-4">
+          <div className="flex-1 min-w-0 relative flex items-stretch min-h-[40px] rounded-[20px] border border-border bg-muted/55 focus-within:bg-background focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition-all px-4">
             <textarea
               ref={taRef}
               value={body}
