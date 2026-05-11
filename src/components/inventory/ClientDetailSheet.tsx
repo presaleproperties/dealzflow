@@ -235,12 +235,16 @@ export function ClientDetailSheet({ open, onClose, item }: Props) {
 
             {item.clientPhone ? (
               <div className="flex items-center justify-between group">
-                <a href={`tel:${item.clientPhone}`} className="flex items-center gap-3 text-sm text-foreground hover:text-primary transition-colors">
+                <button
+                  type="button"
+                  onClick={() => startInAppCall({ phone: item.clientPhone, contactName: item.clientName })}
+                  className="flex items-center gap-3 text-sm text-foreground hover:text-primary transition-colors text-left"
+                >
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Phone className="w-4 h-4 text-primary" />
                   </div>
                   <span>{item.clientPhone}</span>
-                </a>
+                </button>
                 <button
                   onClick={() => copyToClipboard(item.clientPhone!, 'Phone')}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all"
