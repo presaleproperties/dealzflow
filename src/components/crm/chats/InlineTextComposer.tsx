@@ -281,15 +281,15 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
           className="hidden"
           onChange={(e) => onPickFiles(e.target.files)}
         />
-        <div className="flex items-center gap-1.5">
+        <div className="relative flex items-end rounded-[20px] border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors pl-1 pr-1 py-1 min-h-[36px]">
           <Popover open={plusOpen} onOpenChange={setPlusOpen}>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 aria-label="Attachments and templates"
-                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
+                className="shrink-0 h-7 w-7 mb-px rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
               >
-                <Plus className="w-[18px] h-[18px]" />
+                <Plus className="w-[16px] h-[16px]" />
               </button>
             </PopoverTrigger>
             <PopoverContent side="top" align="start" sideOffset={8} className="w-72 p-0 overflow-hidden">
@@ -394,33 +394,31 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             </PopoverContent>
           </Popover>
 
-          <div className="flex-1 min-w-0 relative flex items-center rounded-full border border-border/60 bg-muted/30 focus-within:bg-background focus-within:border-border transition-colors px-3 py-0 min-h-[32px]">
-            <textarea
-              ref={taRef}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              onKeyDown={onKeyDown}
-              onFocus={() => {
-                const drop = () => {
-                  const sc = (taRef.current?.closest('[class*="overflow-y-auto"]') as HTMLElement | null)
-                    ?? document.querySelector('[data-thread-scroll]') as HTMLElement | null;
-                  sc?.scrollTo({ top: sc.scrollHeight, behavior: 'auto' });
-                };
-                requestAnimationFrame(drop);
-                setTimeout(drop, 90);
-              }}
-              placeholder={placeholder}
-              rows={1}
-              enterKeyHint="send"
-              className="m-textarea flex-1 min-w-0 bg-transparent resize-none outline-none text-[14.5px] leading-[20px] py-0 max-h-[110px] min-h-0 placeholder:text-muted-foreground/55"
-            />
+          <textarea
+            ref={taRef}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={() => {
+              const drop = () => {
+                const sc = (taRef.current?.closest('[class*="overflow-y-auto"]') as HTMLElement | null)
+                  ?? document.querySelector('[data-thread-scroll]') as HTMLElement | null;
+                sc?.scrollTo({ top: sc.scrollHeight, behavior: 'auto' });
+              };
+              requestAnimationFrame(drop);
+              setTimeout(drop, 90);
+            }}
+            placeholder={placeholder}
+            rows={1}
+            enterKeyHint="send"
+            className="m-textarea flex-1 min-w-0 bg-transparent resize-none outline-none text-[14.5px] leading-[20px] py-1 px-1.5 max-h-[110px] min-h-[26px] placeholder:text-muted-foreground/55 self-center"
+          />
 
-            {showCounter && (
-              <span className="pointer-events-none absolute right-3 -bottom-4 text-[10px] tabular-nums text-muted-foreground/70">
-                {charCount}{segments > 1 ? ` · ${segments} segs` : ''}
-              </span>
-            )}
-          </div>
+          {showCounter && (
+            <span className="pointer-events-none absolute right-12 -bottom-4 text-[10px] tabular-nums text-muted-foreground/70">
+              {charCount}{segments > 1 ? ` · ${segments} segs` : ''}
+            </span>
+          )}
 
           <button
             type="button"
@@ -428,13 +426,13 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
             disabled={!canSend}
             aria-label="Send"
             className={
-              'shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-95 ' +
+              'shrink-0 h-7 w-7 mb-px rounded-full flex items-center justify-center transition-all active:scale-95 ' +
               (canSend
                 ? 'bg-primary text-primary-foreground shadow-sm hover:brightness-110'
-                : 'bg-muted text-muted-foreground/50 cursor-not-allowed active:scale-100')
+                : 'bg-transparent text-muted-foreground/40 cursor-not-allowed active:scale-100')
             }
           >
-            <Send className="w-[15px] h-[15px]" />
+            <Send className="w-[14px] h-[14px]" />
           </button>
         </div>
       </div>
