@@ -345,7 +345,7 @@ export function EmailMessageView({
   // Decode entity-encoded markup so emails synced through JSON webhooks render
   // as real HTML instead of "&lt;p&gt;hello&lt;/p&gt;" text.
   const decodedHtml = useMemo(() => (html ? decodeHtmlEntities(html) : ''), [html]);
-  const decodedText = useMemo(() => (text ? decodeHtmlEntities(text) : ''), [text]);
+  const decodedText = useMemo(() => (text ? stripLeakedCss(decodeHtmlEntities(text)) : ''), [text]);
   const isHtml = looksLikeHtml(decodedHtml) || looksLikeHtml(decodedText);
   const rawBody = (decodedHtml && decodedHtml.trim()) ? decodedHtml : (decodedText ?? '');
   const { main, quoted } = useMemo(() => {
