@@ -312,6 +312,7 @@ export default function CrmTemplatesPage() {
           onOpenChange={(o) => { if (!o) setComposeEmail(null); }}
           initialSubject={composeEmail.subject}
           initialBodyHtml={composeEmail.html}
+          initialAsTemplate
           onPickContact={() => {}}
         />
       )}
