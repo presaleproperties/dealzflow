@@ -88,8 +88,12 @@ export function IMessageConversation(props: Props) {
   const prevThreadKey = useRef(thread.key);
   const muted = threadState.isMuted(channel, thread.key);
   const archived = threadState.isArchived(channel, thread.key);
-  const { viewportHeight, keyboardOpen } = useVisualViewport();
-  const prevKeyboardOpen = useRef(keyboardOpen);
+  // Keyboard state lives on <html class="keyboard-open"> + CSS var
+  // `--vv-height` (see useVisualViewport). We observe class flips via
+  // MutationObserver so we don't trigger a React re-render on every
+  // visualViewport frame (which caused the composer to slide back down
+  // behind the iOS keyboard).
+  useVisualViewport();
 
   // Track whether the user is pinned to the bottom of the scroller.
   useEffect(() => {
