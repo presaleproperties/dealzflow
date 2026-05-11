@@ -437,7 +437,7 @@ export function LeadEmailThreadDialog({ contact, open, onOpenChange, initialEmai
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent
-        className="max-w-[1280px] w-screen md:w-[96vw] h-[100dvh] md:h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none md:rounded-2xl border-0 md:border border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
+        className="mobile-truly-fullscreen mobile-drawer max-w-[1280px] w-screen md:w-[96vw] h-[100dvh] md:h-[90vh] p-0 gap-0 overflow-hidden flex flex-col rounded-none md:rounded-2xl border-0 md:border border-border/70 shadow-[0_30px_80px_-20px_hsl(var(--foreground)/0.25)]"
       >
         <ResponsiveDialogTitle className="sr-only">Email thread with {fullName}</ResponsiveDialogTitle>
         <ResponsiveDialogDescription className="sr-only">

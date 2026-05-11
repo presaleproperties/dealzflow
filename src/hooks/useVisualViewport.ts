@@ -1,16 +1,3 @@
-/**
- * useVisualViewport
- * -----------------
- * Writes `--vv-height` and `--keyboard-offset` CSS custom properties on
- * <html> in sync with `window.visualViewport`, and toggles a
- * `keyboard-open` class. No React state — components read the CSS vars
- * via `height: var(--vv-height, 100dvh)` so the browser compositor pins
- * fixed containers in the SAME frame the viewport changes (instead of
- * waiting 1–3 frames for a React re-render → causing the iOS PWA
- * "composer slides back down" bug).
- *
- * Mount once at the app root.
- */
 import { useEffect, useRef } from 'react';
 
 const KEYBOARD_THRESHOLD = 150;
@@ -23,49 +10,90 @@ export function useVisualViewport() {
 
     const root = document.documentElement;
     const vv = window.visualViewport;
+    let rafId = 0;
+    let loopRunning = false;
 
     function update() {
       const vh = vv ? vv.height : window.innerHeight;
-      const offset = window.innerHeight - vh;
+      const fullHeight = window.innerHeight;
+      const offset = fullHeight - vh;
       const isOpen = offset > KEYBOARD_THRESHOLD;
 
-      root.style.setProperty('--vv-height', `${vh}px`);
-      root.style.setProperty('--keyboard-offset', `${offset}px`);
+      // Write CSS custom properties directly — no React state
+      root.style.setProperty('--vv-height', vh + 'px');
+      root.style.setProperty('--keyboard-offset', offset + 'px');
 
       if (isOpen !== keyboardOpenRef.current) {
         keyboardOpenRef.current = isOpen;
         root.classList.toggle('keyboard-open', isOpen);
-        if (isOpen) root.setAttribute('data-keyboard-open', 'true');
-        else root.removeAttribute('data-keyboard-open');
       }
 
+      // Aggressively prevent iOS from scrolling the page behind the keyboard
       if (isOpen) {
-        // Standalone PWA: prevent iOS from panning the body behind the
-        // fixed chat container while the keyboard is up.
+        window.scrollTo(0, 0);
         document.body.scrollTop = 0;
         root.scrollTop = 0;
       }
     }
 
-    let rafId = 0;
-    function onViewportChange() {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(update);
+    // Continuous RAF loop while keyboard is open — keeps fighting iOS scroll
+    function loop() {
+      if (!keyboardOpenRef.current) {
+        loopRunning = false;
+        return;
+      }
+      update();
+      rafId = requestAnimationFrame(loop);
     }
 
+    function startLoop() {
+      if (!loopRunning) {
+        loopRunning = true;
+        rafId = requestAnimationFrame(loop);
+      }
+    }
+
+    function onViewportChange() {
+      update();
+      if (keyboardOpenRef.current) {
+        startLoop();
+      }
+    }
+
+    // Initial
     update();
 
+    // Listen to visualViewport events
     if (vv) {
       vv.addEventListener('resize', onViewportChange);
       vv.addEventListener('scroll', onViewportChange);
     }
     window.addEventListener('resize', onViewportChange);
 
-    const onOrientation = () => {
+    // Also listen to focus/blur on inputs as a backup trigger
+    function onFocusIn(e: FocusEvent) {
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+        // Keyboard is likely about to open — start polling
+        setTimeout(onViewportChange, 100);
+        setTimeout(onViewportChange, 300);
+        setTimeout(onViewportChange, 600);
+        setTimeout(onViewportChange, 1000);
+      }
+    }
+    function onFocusOut() {
       setTimeout(onViewportChange, 100);
       setTimeout(onViewportChange, 300);
-    };
-    window.addEventListener('orientationchange', onOrientation);
+    }
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+
+    // Orientation change
+    window.addEventListener('orientationchange', () => {
+      setTimeout(onViewportChange, 100);
+      setTimeout(onViewportChange, 300);
+      setTimeout(onViewportChange, 500);
+    });
 
     return () => {
       cancelAnimationFrame(rafId);
@@ -74,11 +102,11 @@ export function useVisualViewport() {
         vv.removeEventListener('scroll', onViewportChange);
       }
       window.removeEventListener('resize', onViewportChange);
-      window.removeEventListener('orientationchange', onOrientation);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
       root.style.removeProperty('--vv-height');
       root.style.removeProperty('--keyboard-offset');
       root.classList.remove('keyboard-open');
-      root.removeAttribute('data-keyboard-open');
     };
   }, []);
 

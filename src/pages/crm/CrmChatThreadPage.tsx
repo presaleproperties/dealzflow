@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree, Star, Archive, ArchiveRestore, Bell, BellOff, Clock4, MoreVertical } from 'lucide-react';
@@ -831,11 +831,11 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       className={
         embedded
           ? 'flex flex-col flex-1 min-h-0 h-full bg-background'
-          // Phone/native: own the visual viewport so iOS cannot pan the header
-          // while focusing the reply box. Tablet+ keeps the two-pane bleed.
-          : 'flex flex-col flex-1 min-h-0 h-[100dvh] sm:h-full sm:-mx-4 sm:-my-4 relative bg-background overflow-hidden'
+          // Phone/native: own the visual viewport with a bottom keyboard offset
+          // so iOS cannot pan the header/composer behind the keyboard.
+          : 'fixed top-0 left-0 right-0 bottom-[var(--chat-keyboard-bottom)] sm:relative sm:inset-auto flex flex-col flex-1 min-h-0 sm:h-full sm:-mx-4 sm:-my-4 bg-background overflow-hidden'
       }
-      style={!embedded ? { height: 'calc(100dvh - max(var(--keyboard-inset-bottom, 0px), var(--kb-h, 0px)))' } : undefined}
+      style={!embedded ? { '--chat-keyboard-bottom': 'max(var(--keyboard-offset, 0px), var(--keyboard-inset-bottom, 0px), var(--kb-h, 0px))' } as CSSProperties : undefined}
     >
       {/* Header */}
       <div

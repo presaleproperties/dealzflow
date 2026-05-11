@@ -262,12 +262,14 @@
        sits flush with the keyboard top — no double padding, no jump. */
     --composer-safe-bottom: max(env(safe-area-inset-bottom, 0px), 10px);
     --keyboard-inset-bottom: 0px;
+    --keyboard-offset: 0px;
     --composer-viewport-top: 0px;
     --composer-viewport-height: 100dvh;
     /* Composer chrome paints edge-to-edge; only the controls are inset below
        the status bar, matching MobileAppHeader without artificial white space. */
     --composer-header-top-pad: env(safe-area-inset-top, 0px);
   }
+  html.keyboard-open,
   html[data-keyboard-open="true"] {
     --composer-safe-bottom: 8px;
   }
@@ -282,6 +284,7 @@
   /* When a composer drawer opens the soft keyboard, hide the floating
      bottom nav so it can't slide under the agent's thumb while typing.
      Pure CSS — no per-frame JS, no shake. */
+  html.keyboard-open nav[aria-label="Primary"],
   html[data-keyboard-open="true"] nav[aria-label="Primary"] {
     transform: translateY(120%);
     transition: transform 180ms ease-out;
@@ -2075,17 +2078,29 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
 }
 
 
-/* ─── iOS PWA keyboard handling ─────────────────────────────────────── */
-/* When the soft keyboard is up, lock the body so iOS Safari can't pan
-   the window to chase the focused input (the visible "shake"). The
-   chat thread itself pins to visualViewport.height via JS. */
-@supports (-webkit-touch-callout: none) {
-  html.keyboard-open,
-  html.keyboard-open body {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-  }
+/* iOS PWA keyboard — lock body when keyboard is open */
+html.keyboard-open,
+html.keyboard-open body {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none !important;
+}
+
+/* But allow scrolling inside the chat message list */
+html.keyboard-open .overflow-y-auto,
+html.keyboard-open .overflow-y-scroll {
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html.keyboard-open .safe-bottom {
+  padding-bottom: 0;
 }
 
 /* Prevent iOS auto-zoom on input focus — any input <16px font-size
