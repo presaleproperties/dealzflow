@@ -1,60 +1,42 @@
-/**
- * useLongPress — touch long-press detector with movement cancellation.
- *
- * Returns event handlers to spread onto a target element. After `delay` ms
- * of contact (default 450ms) without moving more than `threshold` px,
- * fires `onLongPress` with the original touch event. Movement, lift, or
- * scroll cancels the gesture. A short haptic blip is played when supported.
- *
- * Skips when the pointer is a mouse — desktop has hover menus instead.
- */
 import { useCallback, useRef } from 'react';
-import { triggerHaptic } from '@/lib/haptics';
 
-interface Options {
-  delay?: number;
-  threshold?: number;
-}
-
+/**
+ * S13 — Long-press hook for mobile action sheets.
+ * Fires `onLongPress` after `delay` ms of sustained press, with light haptic.
+ * Cancels on movement >8px or pointer leave/up before threshold.
+ */
 export function useLongPress<T extends HTMLElement = HTMLElement>(
-  onLongPress: (e: React.TouchEvent<T>) => void,
-  { delay = 450, threshold = 8 }: Options = {},
+  onLongPress: (e: React.PointerEvent<T>) => void,
+  { delay = 500, moveTolerance = 8 }: { delay?: number; moveTolerance?: number } = {},
 ) {
   const timer = useRef<number | null>(null);
-  const startPt = useRef<{ x: number; y: number } | null>(null);
+  const start = useRef<{ x: number; y: number } | null>(null);
   const fired = useRef(false);
 
   const clear = useCallback(() => {
     if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
-    startPt.current = null;
+    start.current = null;
   }, []);
 
-  const onTouchStart = useCallback((e: React.TouchEvent<T>) => {
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    startPt.current = { x: t.clientX, y: t.clientY };
+  const onPointerDown = useCallback((e: React.PointerEvent<T>) => {
     fired.current = false;
+    start.current = { x: e.clientX, y: e.clientY };
     timer.current = window.setTimeout(() => {
       fired.current = true;
-      triggerHaptic('medium');
+      try { (navigator as any).vibrate?.(10); } catch {}
       onLongPress(e);
     }, delay);
   }, [onLongPress, delay]);
 
-  const onTouchMove = useCallback((e: React.TouchEvent<T>) => {
-    if (!startPt.current) return;
-    const t = e.touches[0];
-    const dx = t.clientX - startPt.current.x;
-    const dy = t.clientY - startPt.current.y;
-    if (Math.hypot(dx, dy) > threshold) clear();
-  }, [threshold, clear]);
+  const onPointerMove = useCallback((e: React.PointerEvent<T>) => {
+    if (!start.current) return;
+    const dx = e.clientX - start.current.x;
+    const dy = e.clientY - start.current.y;
+    if (Math.hypot(dx, dy) > moveTolerance) clear();
+  }, [clear, moveTolerance]);
 
-  const onTouchEnd = useCallback(() => clear(), [clear]);
-  const onTouchCancel = useCallback(() => clear(), [clear]);
-  const onContextMenu = useCallback((e: React.MouseEvent<T>) => {
-    // Prevent native long-press text-select / context menu when our gesture fired.
-    if (fired.current) e.preventDefault();
-  }, []);
+  const onPointerUp = useCallback(() => clear(), [clear]);
+  const onPointerCancel = useCallback(() => clear(), [clear]);
 
-  return { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, onContextMenu };
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, didLongPress: () => fired.current };
 }

@@ -41,6 +41,7 @@ import {
   type GoogleCalendarEvent,
 } from '@/hooks/useGoogleCalendarEvents';
 import { PROJECTS } from '@/hooks/useCrmContacts';
+import { useCrmProjects } from '@/hooks/useCrmProjects';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
 import { AgentAvatar } from '@/components/crm/AgentAvatar';
 import { formatContactName } from '@/lib/format';
@@ -123,6 +124,10 @@ export default function CrmCalendarPage() {
   const { data: connectionData } = useGoogleCalendarConnection();
   const { data: gcalData } = useGoogleCalendarEvents(fetchStart, fetchEnd);
   const isGCalConnected = connectionData?.connected ?? false;
+  const { data: dynamicProjects = [] } = useCrmProjects();
+  const projectNames = dynamicProjects.length
+    ? dynamicProjects.map((p: any) => p.name).filter(Boolean)
+    : [...PROJECTS];
 
   const [agentFilter, setAgentFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
@@ -420,7 +425,7 @@ export default function CrmCalendarPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Projects</SelectItem>
-                        {PROJECTS.map((p) => (
+                        {projectNames.map((p) => (
                           <SelectItem key={p} value={p}>
                             {p}
                           </SelectItem>
@@ -476,7 +481,7 @@ export default function CrmCalendarPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
-                  {PROJECTS.map((p) => (
+                  {projectNames.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
                     </SelectItem>

@@ -23,6 +23,8 @@
     --primary-foreground: 222 25% 10%;
     --primary-glow: 39 72% 62%;
     --primary-subtle: 39 60% 95%;
+    /* Strong gold variant for text on light surfaces (≥4.5:1 on white) */
+    --primary-strong: 35 75% 38%;
 
     /* Secondary */
     --secondary: 30 6% 94%;
@@ -88,6 +90,8 @@
     --primary-foreground: 222 25% 10%;
     --primary-glow: 39 76% 64%;
     --primary-subtle: 39 50% 16%;
+    /* Strong gold variant — brighter on dark for readable accent text */
+    --primary-strong: 39 80% 68%;
 
     --secondary: 222 18% 18%;
     --secondary-foreground: 220 12% 80%;
@@ -126,6 +130,21 @@
 }
 
 @layer base {
+  /* S18 — Global keyboard focus ring. Visible only for keyboard users (focus-visible),
+     respects design tokens, and never appears on touch/click. */
+  :where(button, a, [role="button"], [role="link"], [role="menuitem"], [role="tab"], [role="option"], summary):focus-visible {
+    outline: 2px solid hsl(var(--ring, var(--primary)));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  :where(input, textarea, select, [contenteditable="true"]):focus-visible {
+    outline: 2px solid hsl(var(--ring, var(--primary)));
+    outline-offset: 1px;
+  }
+}
+
+@layer base {
+
   /* Native iPhone bottom-nav clearance.
      The interactive row stays stable and low, while the nav surface owns the
      home-indicator safe-area so installed PWAs do not float or overlap. */

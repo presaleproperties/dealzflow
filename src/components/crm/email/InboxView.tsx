@@ -904,7 +904,7 @@ function MobileThreadList({
       </header>
 
       {/* List with PTR */}
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: 'var(--bottom-nav-pad)' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'var(--bottom-nav-pad)' }}>
         <PullToRefresh onRefresh={onPullRefresh}>
           {isLoading ? (
             <div>

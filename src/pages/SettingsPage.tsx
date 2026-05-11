@@ -1034,7 +1034,7 @@ function DeleteAccountSection() {
       toast.error(error.message || 'Failed to delete account');
       setLoading(false);
     } else {
-      navigate('/auth');
+      navigate('/auth', { replace: true });
     }
   };
 

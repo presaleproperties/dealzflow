@@ -1505,7 +1505,7 @@ export function ComposeEmailDialog({ contact, open, onOpenChange, initialSubject
 
       {/* Save as template sub-dialog */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent aria-describedby={undefined} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Save as Template</DialogTitle>
           </DialogHeader>

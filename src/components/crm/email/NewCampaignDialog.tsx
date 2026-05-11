@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { useCrmEmailTemplates, useCreateCampaign } from '@/hooks/useCrmEmail';
 import { useCrmContacts, LEAD_STATUSES, LEAD_SOURCES, PROJECTS } from '@/hooks/useCrmContacts';
+import { useCrmProjects } from '@/hooks/useCrmProjects';
 import { toast } from 'sonner';
 
 interface Props {
@@ -83,14 +84,18 @@ export function NewCampaignDialog({ open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
+  const { data: dynamicProjects = [] } = useCrmProjects();
+  const projectNames = dynamicProjects.length
+    ? dynamicProjects.map((p: any) => p.name).filter(Boolean)
+    : [...PROJECTS];
   const filterOptions = filterType === 'status' ? [...LEAD_STATUSES]
     : filterType === 'source' ? [...LEAD_SOURCES]
-    : filterType === 'project' ? [...PROJECTS]
+    : filterType === 'project' ? projectNames
     : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Campaign</DialogTitle></DialogHeader>
 
         <Tabs value={String(step)} onValueChange={v => setStep(Number(v))}>

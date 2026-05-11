@@ -140,7 +140,7 @@ export function useCrmContacts(
 
   const query = useQuery({
     queryKey: ['crm-contacts'],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       // Hard cap to keep memory + bandwidth bounded. Pipeline Kanban + leads
       // grids should use `useCrmContactsLite` / paginated hooks for large
       // workspaces. If we hit the cap we surface a one-time toast so the
@@ -153,11 +153,13 @@ export function useCrmContacts(
       let truncated = false;
 
       while (hasMore && allData.length < HARD_CAP) {
+        if (signal?.aborted) throw new Error('aborted');
         const { data, error } = await supabase
           .from('crm_contacts')
           .select('*')
           .order('created_at', { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
+          .range(from, from + PAGE_SIZE - 1)
+          .abortSignal(signal as AbortSignal);
         if (error) throw error;
         if (data && data.length > 0) {
           allData = allData.concat(data);

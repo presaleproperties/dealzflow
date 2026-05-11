@@ -30,7 +30,7 @@ export function ShowingDetailModal({ showing, onClose, onUpdateStatus }: Props) 
 
   return (
     <Dialog open={!!showing} onOpenChange={o => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-sm">
+      <DialogContent aria-describedby={undefined} className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Showing Details</DialogTitle>
         </DialogHeader>
