@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Mail, MessageSquare, Phone, Send, Info, WifiOff, Clock, AlertTriangle, Check, CheckCheck, AlertCircle, MailOpen, MoreHorizontal, Search as SearchIcon, X as XIcon, ChevronsDownUp, ChevronsUpDown, ListTree, Star, Archive, ArchiveRestore, Bell, BellOff, Clock4, MoreVertical } from 'lucide-react';
@@ -835,7 +835,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
           // so iOS cannot pan the header/composer behind the keyboard.
           : 'fixed top-0 left-0 right-0 bottom-[var(--chat-keyboard-bottom)] sm:relative sm:inset-auto flex flex-col flex-1 min-h-0 sm:h-full sm:-mx-4 sm:-my-4 bg-background overflow-hidden'
       }
-      style={!embedded ? { '--chat-keyboard-bottom': 'max(var(--keyboard-offset, 0px), var(--keyboard-inset-bottom, 0px), var(--kb-h, 0px))' } as React.CSSProperties : undefined}
+      style={!embedded ? { '--chat-keyboard-bottom': 'max(var(--keyboard-offset, 0px), var(--keyboard-inset-bottom, 0px), var(--kb-h, 0px))' } as CSSProperties : undefined}
     >
       {/* Header */}
       <div
