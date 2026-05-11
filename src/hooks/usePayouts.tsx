@@ -93,6 +93,15 @@ export function useUpdatePayout() {
         return acc;
       }, {} as Record<string, any>);
 
+      // S8: Any manual edit to `amount` flags this payout as user-overridden,
+      // so future deal-level recalculations leave it alone. Callers that want
+      // to recalc a payout (and clear the lock) must pass manual_override:false
+      // explicitly.
+      if (Object.prototype.hasOwnProperty.call(cleanedData, 'amount')
+          && !Object.prototype.hasOwnProperty.call(cleanedData, 'manual_override')) {
+        cleanedData.manual_override = true;
+      }
+
       const { data: payout, error } = await supabase
         .from('payouts')
         .update(cleanedData)
