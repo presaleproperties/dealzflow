@@ -3,6 +3,7 @@ import { MessageSquare } from 'lucide-react';
 import CrmChatsPage from './CrmChatsPage';
 import CrmChatThreadPage from './CrmChatThreadPage';
 import CrmNewChatPane from './CrmNewChatPane';
+import { LeadContextRail } from '@/components/crm/chats/LeadContextRail';
 
 /**
  * Two-pane chat shell.
