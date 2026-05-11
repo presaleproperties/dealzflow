@@ -62,7 +62,7 @@ const SECTIONS = [
         id: 'crm_sms',
         title: '8. SMS / WhatsApp number',
         body: 'Twilio-powered. Ask your admin to provision a number and link it to your account. Single send from a lead profile, bulk send from the Leads table (50+ requires confirm), STOP/HELP and quiet hours handled automatically.',
-        cta: { to: '/crm/sms', label: 'Open SMS Center' },
+        cta: { to: '/crm/chats', label: 'Open Chats' },
       },
       {
         id: 'crm_tour',

@@ -218,10 +218,10 @@ export function StepCrmSms({ eyebrow, onBack, onNext, onSkip }: Props) {
         </details>
 
         <Link
-          to="/crm/sms"
+          to="/crm/chats"
           className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
         >
-          Open SMS Center
+          Open Chats
           <ExternalLink className="w-3 h-3" />
         </Link>
       </div>
