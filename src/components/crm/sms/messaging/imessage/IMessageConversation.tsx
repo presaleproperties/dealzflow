@@ -148,6 +148,7 @@ export function IMessageConversation(props: Props) {
                 <Button
                   size="icon"
                   variant="ghost"
+                  aria-label="Find in conversation"
                   className={cn('h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10',
                     showConvoSearch && 'bg-[#007AFF]/15')}
                   onClick={onToggleConvoSearch}
@@ -159,7 +160,7 @@ export function IMessageConversation(props: Props) {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10">
+                <Button size="icon" variant="ghost" aria-label="FaceTime audio" className="h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10">
                   <Phone className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
@@ -171,6 +172,7 @@ export function IMessageConversation(props: Props) {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label="Open lead details"
                     className="h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10"
                     onClick={() => navigate(`/crm/leads/${thread.contact!.id}`)}
                   >
@@ -186,6 +188,7 @@ export function IMessageConversation(props: Props) {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label={rightCollapsed ? 'Show details' : 'Hide details'}
                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                     onClick={onToggleRight}
                   >
@@ -197,7 +200,7 @@ export function IMessageConversation(props: Props) {
             )}
             <Popover>
               <PopoverTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
+                <Button size="icon" variant="ghost" aria-label="More options" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
