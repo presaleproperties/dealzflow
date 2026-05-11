@@ -30,6 +30,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { MessagesDrawerContent } from '@/components/layout/MessagesDrawer';
 
 // Themed tokens — adapt to light/dark via index.css
 const GOLD = 'hsl(var(--primary))';
