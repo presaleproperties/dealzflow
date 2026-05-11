@@ -60,8 +60,11 @@ export function InlineEmailReplyBox({ contact, lastSubject, onOpenFull }: Props)
   }, [expanded, seededSubject, subject]);
 
   const activeSignatureHtml = useMemo(() => {
-    const def = signatures.find((s) => s.is_default) ?? signatures[0];
-    if (def) return def.html;
+    // Reply context → minimalist reply signature (per-agent, auto-seeded
+    // from the Presale identity). Falls back to the full default if the
+    // agent hasn't seeded a reply signature yet.
+    const picked = pickSignatureForKind(signatures, 'reply');
+    if (picked) return picked.html;
     return emailSettings?.signature_html ?? '';
   }, [signatures, emailSettings]);
 
