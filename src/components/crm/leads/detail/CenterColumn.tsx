@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
-import { StickyNote, Sparkles, Download, Loader2 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { StickyNote, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useCrmContactShowings } from '@/hooks/useCrmLeadDetail';
@@ -11,7 +9,6 @@ import { useCrmEmailLog } from '@/hooks/useCrmEmailLog';
 import { useCrmContactSmsLog, type CrmSmsLogRow } from '@/hooks/useCrmContactSmsLog';
 import { useCrmContactActivityEvents } from '@/hooks/useCrmLeadCommunications';
 import { QuickActionBar } from '@/components/crm/leads/QuickActionBar';
-import { ImportConversationDialog } from '@/components/crm/leads/ImportConversationDialog';
 import { EmailNoteCard } from '@/components/crm/leads/EmailNoteCard';
 import { EmailPreviewDialog, type EmailLogRow } from '@/components/crm/leads/EmailPreviewDialog';
 import { LeadEmailThreadDialog } from '@/components/crm/leads/LeadEmailThreadDialog';
@@ -26,8 +23,9 @@ import { NoteCard } from './NoteCard';
 import { ShowingsTab } from './ShowingsTab';
 import { AiSummaryCard, GenerateAiSummaryButton } from './AiSummaryCard';
 import { SystemActivityCluster, isSystemishNote } from './SystemActivityCluster';
+import { EmailThreadStack, SmsRunStack, normalizeSubject } from './ThreadStack';
 import { Pin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 
 type FilterType = 'all' | 'manual' | 'email' | 'sms' | 'call_log' | 'web' | 'system';
 
@@ -209,7 +207,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [previewEmail, setPreviewEmail] = useState<EmailLogRow | null>(null);
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadInitialId, setThreadInitialId] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
   const [replyCompose, setReplyCompose] = useState<{ subject: string; bodyHtml: string } | null>(null);
 
   const handleReplyToPreview = (em: EmailLogRow) => {
@@ -278,40 +275,6 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
   const [filter, setFilter] = useState<FilterType>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-  const [pullingLofty, setPullingLofty] = useState(false);
-  const queryClient = useQueryClient();
-
-  const handlePullFromLofty = async () => {
-    if (pullingLofty) return;
-    setPullingLofty(true);
-    const t = toast.loading('Pulling conversation from Lofty…');
-    try {
-      const { data, error } = await supabase.functions.invoke('lofty-sync-conversations', {
-        body: { contactId: contact.id },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const r = (data?.results || [])[0];
-      if (r?.error) {
-        toast.error(r.error, { id: t });
-      } else {
-        const c = r?.counts || { emails: 0, texts: 0, calls: 0, skipped: 0 };
-        toast.success(
-          `Imported ${c.emails} email${c.emails === 1 ? '' : 's'}, ${c.texts} text${c.texts === 1 ? '' : 's'}, ${c.calls} call${c.calls === 1 ? '' : 's'}`
-            + (c.skipped ? ` · ${c.skipped} already in sync` : ''),
-          { id: t },
-        );
-      }
-      // Refresh the activity timeline.
-      queryClient.invalidateQueries({ queryKey: ['crm-email-log', contact.id] });
-      queryClient.invalidateQueries({ queryKey: ['crm-sms-log', contact.id] });
-      queryClient.invalidateQueries({ queryKey: ['crm-notes', contact.id] });
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to pull from Lofty', { id: t });
-    } finally {
-      setPullingLofty(false);
-    }
-  };
 
   const isWebActivity = (n: CrmNote) =>
     /website behavior summary/i.test(n.content) || n.note_type === 'zapier';
@@ -385,48 +348,25 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         </div>
 
         <div className="px-3 md:px-0 space-y-3">
-          {/* Toolbar: filter pills + Pull from Lofty + Import */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {filters.map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none transition-colors border inline-flex items-center',
-                    filter === f.key
-                      ? 'bg-primary/15 text-primary border-primary/30'
-                      : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
-                  )}
-                >
-                  {f.label}
-                  {(counts as any)[f.key] > 0 && (
-                    <span className="ml-1 text-[10px] opacity-70">{(counts as any)[f.key]}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-[11px] gap-1.5"
-                onClick={handlePullFromLofty}
-                disabled={pullingLofty}
+          {/* Toolbar: filter pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {filters.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-[10.5px] font-medium leading-none transition-colors border inline-flex items-center',
+                  filter === f.key
+                    ? 'bg-primary/15 text-primary border-primary/30'
+                    : 'bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/50',
+                )}
               >
-                {pullingLofty ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                Pull from Lofty
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-[11px] gap-1.5"
-                onClick={() => setShowImport(true)}
-              >
-                <StickyNote className="w-3 h-3" />
-                Import
-              </Button>
-            </div>
+                {f.label}
+                {(counts as any)[f.key] > 0 && (
+                  <span className="ml-1 text-[10px] opacity-70">{(counts as any)[f.key]}</span>
+                )}
+              </button>
+            ))}
           </div>
 
           {/* Notes feed */}
@@ -502,65 +442,120 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
                   </span>
                 </div>
                 {(() => {
-                  // Walk the date-group and collapse consecutive system-style
-                  // notes (lead score updates, task created/completed,
-                  // automation writes) into a single SystemActivityCluster row.
+                  // Walk the date-group and:
+                  //  • collapse consecutive system-style notes into one cluster
+                  //  • collapse runs of emails sharing a normalized subject
+                  //    into a single thread stack (latest expanded + toggle)
+                  //  • collapse runs of consecutive same-channel SMS/WhatsApp
+                  //    messages into a single conversation stack
                   const out: React.ReactNode[] = [];
-                  let runStart = -1;
-                  for (let i = 0; i <= group.notes.length; i++) {
+                  let i = 0;
+                  while (i < group.notes.length) {
                     const note = group.notes[i];
-                    const isSys = note ? isSystemishNote(note) : false;
-                    if (isSys) {
-                      if (runStart === -1) runStart = i;
+
+                    // System run
+                    if (isSystemishNote(note)) {
+                      let j = i;
+                      while (j < group.notes.length && isSystemishNote(group.notes[j])) j++;
+                      const run = group.notes.slice(i, j);
+                      out.push(
+                        <SystemActivityCluster key={`syscluster-${run[0].id}`} notes={run} />,
+                      );
+                      i = j;
                       continue;
                     }
-                    // Flush any pending system run.
-                    if (runStart !== -1) {
-                      const run = group.notes.slice(runStart, i);
-                      out.push(
-                        <SystemActivityCluster
-                          key={`syscluster-${run[0].id}`}
-                          notes={run}
-                        />,
-                      );
-                      runStart = -1;
-                    }
-                    if (!note) break;
+
                     const emailRow = emailById.get(note.id);
                     const smsRow = smsById.get(note.id);
+
+                    // Email thread run (same normalized subject, consecutive)
                     if (emailRow) {
-                      out.push(
-                        <EmailNoteCard
-                          key={note.id}
-                          email={emailRow}
-                          contactEmail={contact.email}
-                          onOpen={() => handleOpenEmail(note.id)}
-                        />,
-                      );
-                    } else if (smsRow) {
-                      out.push(
-                        <SmsNoteCard
-                          key={note.id}
-                          message={smsRow}
-                          onOpen={() => openSmsThread(smsRow)}
-                        />,
-                      );
-                    } else {
-                      out.push(
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          isOwn={note.user_id === currentUserId}
-                          contactId={contact.id}
-                          editingId={editingId}
-                          editContent={editContent}
-                          onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
-                          onCancelEdit={() => setEditingId(null)}
-                          onSaveEdit={handleEditSave}
-                          setEditContent={setEditContent}
-                        />,
-                      );
+                      const subjectKey = normalizeSubject(emailRow.subject);
+                      const stack: { note: CrmNote; row: typeof emailRow }[] = [
+                        { note, row: emailRow },
+                      ];
+                      let j = i + 1;
+                      while (j < group.notes.length) {
+                        const n = group.notes[j];
+                        const r = emailById.get(n.id);
+                        if (!r || normalizeSubject(r.subject) !== subjectKey) break;
+                        stack.push({ note: n, row: r });
+                        j++;
+                      }
+                      if (stack.length === 1) {
+                        out.push(
+                          <EmailNoteCard
+                            key={note.id}
+                            email={emailRow}
+                            contactEmail={contact.email}
+                            onOpen={() => handleOpenEmail(note.id)}
+                          />,
+                        );
+                      } else {
+                        out.push(
+                          <EmailThreadStack
+                            key={`thread-${note.id}`}
+                            emails={stack}
+                            contactEmail={contact.email}
+                            onOpen={handleOpenEmail}
+                          />,
+                        );
+                      }
+                      i = j;
+                      continue;
                     }
+
+                    // SMS run (same channel, consecutive)
+                    if (smsRow) {
+                      const channelKey = smsRow.channel;
+                      const stack: { note: CrmNote; row: typeof smsRow }[] = [
+                        { note, row: smsRow },
+                      ];
+                      let j = i + 1;
+                      while (j < group.notes.length) {
+                        const n = group.notes[j];
+                        const r = smsById.get(n.id);
+                        if (!r || r.channel !== channelKey) break;
+                        stack.push({ note: n, row: r });
+                        j++;
+                      }
+                      if (stack.length === 1) {
+                        out.push(
+                          <SmsNoteCard
+                            key={note.id}
+                            message={smsRow}
+                            onOpen={() => openSmsThread(smsRow)}
+                          />,
+                        );
+                      } else {
+                        out.push(
+                          <SmsRunStack
+                            key={`smsrun-${note.id}`}
+                            messages={stack}
+                            onOpen={openSmsThread}
+                          />,
+                        );
+                      }
+                      i = j;
+                      continue;
+                    }
+
+                    // Plain note
+                    out.push(
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        isOwn={note.user_id === currentUserId}
+                        contactId={contact.id}
+                        editingId={editingId}
+                        editContent={editContent}
+                        onSetEditing={(id, c) => { setEditingId(id); setEditContent(c); }}
+                        onCancelEdit={() => setEditingId(null)}
+                        onSaveEdit={handleEditSave}
+                        setEditContent={setEditContent}
+                      />,
+                    );
+                    i++;
                   }
                   return out;
                 })()}
@@ -625,11 +620,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         initialBodyHtml={replyCompose?.bodyHtml}
       />
 
-      <ImportConversationDialog
-        contact={contact}
-        open={showImport}
-        onOpenChange={setShowImport}
-      />
+
 
       <SmsThreadDrawer
         open={smsDrawerOpen}
