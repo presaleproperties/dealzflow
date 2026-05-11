@@ -17,25 +17,37 @@ import { Skeleton } from '@/components/ui/skeleton';
 const CrmEmailWorkspacePage = lazy(() => import('./CrmEmailWorkspacePage'));
 const CrmChatsShell = lazy(() => import('./CrmChatsShell'));
 
-type Channel = 'email' | 'whatsapp';
+type Channel = 'email' | 'chats';
 
 const STORAGE_KEY = 'crm:inbox:active-channel';
 
 const TABS: { value: Channel; label: string; icon: typeof Mail; subtitle: string }[] = [
-  { value: 'email',    label: 'Email',    icon: Mail,          subtitle: 'Branded sends · synced replies' },
-  { value: 'whatsapp', label: 'Chats',    icon: MessageSquare, subtitle: 'SMS + WhatsApp threads' },
+  { value: 'email', label: 'Email', icon: Mail,          subtitle: 'Branded sends · synced replies' },
+  { value: 'chats', label: 'Chats', icon: MessageSquare, subtitle: 'SMS + WhatsApp threads' },
 ];
+
+/** Migrate legacy stored values ('sms', 'whatsapp') → 'chats'. */
+function normalizeChannel(v: string | null | undefined): Channel | null {
+  if (!v) return null;
+  if (v === 'sms' || v === 'whatsapp' || v === 'chats') return 'chats';
+  if (v === 'email') return 'email';
+  return null;
+}
 
 export default function CrmInboxPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const initial: Channel = (() => {
-    const fromQuery = new URLSearchParams(location.search).get('channel') as Channel | null;
-    if (fromQuery && TABS.some((t) => t.value === fromQuery)) return fromQuery;
+    const fromQuery = normalizeChannel(new URLSearchParams(location.search).get('channel'));
+    if (fromQuery) return fromQuery;
     try {
-      const v = localStorage.getItem(STORAGE_KEY) as Channel | null;
-      if (v && TABS.some((t) => t.value === v)) return v;
+      const stored = normalizeChannel(localStorage.getItem(STORAGE_KEY));
+      if (stored) {
+        // Persist migrated value so we only do this once.
+        localStorage.setItem(STORAGE_KEY, stored);
+        return stored;
+      }
     } catch { /* ignore */ }
     return 'email';
   })();
@@ -98,7 +110,7 @@ export default function CrmInboxPage() {
       <div className="flex-1 min-h-0 overflow-hidden">
         <Suspense fallback={<InboxFallback />}>
           {active === 'email' && <CrmEmailWorkspacePage />}
-          {active === 'whatsapp' && <CrmChatsShell />}
+          {active === 'chats' && <CrmChatsShell />}
         </Suspense>
       </div>
     </div>
