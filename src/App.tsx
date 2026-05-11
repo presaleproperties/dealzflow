@@ -205,6 +205,9 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
   useLiveNotificationToasts();
+  // Toggle html.keyboard-open globally so iOS PWA chat/email composers
+  // never get hidden behind the soft keyboard.
+  useVisualViewport();
   return (
     <>
       {children}
