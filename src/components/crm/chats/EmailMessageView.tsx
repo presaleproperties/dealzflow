@@ -93,6 +93,34 @@ function decodeHtmlEntities(s: string): string {
   return ta.value;
 }
 
+/**
+ * Some inbound emails (esp. Apple Mail / Outlook marketing) leak the inner
+ * contents of <style> / <script> blocks into the plain-text alternative.
+ * Strip CSS rule blocks ("selector { … }"), MSO conditional comments, and
+ * @-rules so they don't show up as visible text in the reading pane.
+ */
+function stripLeakedCss(s: string): string {
+  if (!s) return s;
+  let out = s;
+  // Drop @media / @font-face / @import blocks (with their balanced braces).
+  out = out.replace(/@[a-z-]+[^{};]*\{[\s\S]*?\}\s*\}?/gi, '');
+  // Drop MSO conditional comments left behind as text.
+  out = out.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+  // Drop CSS rule blocks: anything that looks like "selector { prop:value; … }"
+  // We only strip when the block contains a CSS-like declaration to avoid
+  // nuking JSON-y content. Run several passes for nested/sibling rules.
+  const cssBlock = /(^|[\s,>+~}])([a-zA-Z#.\[\]:*\-_ ()="',\d>+~|^$]+)\{[^{}]*?:[^{}]*?\}/g;
+  for (let i = 0; i < 4; i++) {
+    const next = out.replace(cssBlock, '$1');
+    if (next === out) break;
+    out = next;
+  }
+  // Tidy up runs of blank lines left behind.
+  out = out.replace(/\n{3,}/g, '\n\n').trimStart();
+  return out;
+}
+
+
 /** True when the string is a full HTML document (has <html>...</html>). */
 function isFullHtmlDocument(s: string): boolean {
   return /<html[\s>]/i.test(s) && /<\/html\s*>/i.test(s);
@@ -179,9 +207,28 @@ function splitQuotedText(text: string): { main: string; quoted: string | null } 
     if (/^-{2,}\s*Original Message\s*-{2,}\s*$/i.test(lines[i])) {
       return { main: lines.slice(0, i).join('\n').trimEnd(), quoted: lines.slice(i).join('\n') };
     }
+    // Outlook-style header block ("From: …" optionally followed by Sent/To/Subject).
+    if (/^\s*From:\s/i.test(lines[i])) {
+      return { main: lines.slice(0, i).join('\n').trimEnd(), quoted: lines.slice(i).join('\n') };
+    }
+  }
+  // Fallback: handle single-line dumps where the entire history was flattened
+  // into one paragraph (no newlines). Cut at the first "From: … Sent: … To: … Subject:"
+  // run or "On <date> … wrote:" inline marker.
+  const inlineMarkers: RegExp[] = [
+    /\s+From:\s+[^]+?\s+Sent:\s+[^]+?\s+To:\s+[^]+?\s+Subject:\s+/i,
+    /\s+On\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\s\S]{1,200}wrote:\s+/i,
+    /\s+-{2,}\s*Original Message\s*-{2,}\s+/i,
+  ];
+  for (const re of inlineMarkers) {
+    const m = text.match(re);
+    if (m && m.index !== undefined && m.index > 20) {
+      return { main: text.slice(0, m.index).trimEnd(), quoted: text.slice(m.index).trimStart() };
+    }
   }
   return { main: text, quoted: null };
 }
+
 
 /** Wrap user HTML in a minimal document so the iframe inherits sane defaults.
  *  When the source is already a full <html>…</html> document (most marketing
@@ -298,7 +345,7 @@ export function EmailMessageView({
   // Decode entity-encoded markup so emails synced through JSON webhooks render
   // as real HTML instead of "&lt;p&gt;hello&lt;/p&gt;" text.
   const decodedHtml = useMemo(() => (html ? decodeHtmlEntities(html) : ''), [html]);
-  const decodedText = useMemo(() => (text ? decodeHtmlEntities(text) : ''), [text]);
+  const decodedText = useMemo(() => (text ? stripLeakedCss(decodeHtmlEntities(text)) : ''), [text]);
   const isHtml = looksLikeHtml(decodedHtml) || looksLikeHtml(decodedText);
   const rawBody = (decodedHtml && decodedHtml.trim()) ? decodedHtml : (decodedText ?? '');
   const { main, quoted } = useMemo(() => {
