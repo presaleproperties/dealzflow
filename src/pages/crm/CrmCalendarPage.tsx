@@ -191,7 +191,7 @@ export default function CrmCalendarPage() {
     const source = info.event.extendedProps.source;
     if (source === 'google') {
       const link = info.event.extendedProps.htmlLink;
-      if (link) window.open(link, '_blank');
+      if (link) openExternal(link);
       return;
     }
     const s = info.event.extendedProps.showing as CrmShowingWithContact;
@@ -259,7 +259,7 @@ export default function CrmCalendarPage() {
           subtitle: e.location || undefined,
           color: GCAL_COLOR,
           badge: 'Google',
-          onClick: () => e.htmlLink && window.open(e.htmlLink, '_blank'),
+          onClick: () => e.htmlLink && openExternal(e.htmlLink),
         });
       });
     }

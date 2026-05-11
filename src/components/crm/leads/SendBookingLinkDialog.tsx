@@ -81,7 +81,7 @@ export function SendBookingLinkDialog({ contact, open, onOpenChange }: Props) {
           ) : setupNeeded ? (
             <div className="py-6 text-center space-y-3">
               <p className="text-[13.5px] text-muted-foreground">Set up your scheduler URL to share booking links.</p>
-              <Button size="sm" onClick={() => window.open('/crm/scheduler?tab=setup&section=profile', '_blank')}>
+              <Button size="sm" onClick={() => openExternal('/crm/scheduler?tab=setup&section=profile')}>
                 Open Scheduler setup <ExternalLink className="w-3 h-3 ml-1.5" />
               </Button>
             </div>
