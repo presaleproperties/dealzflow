@@ -23,6 +23,7 @@ import { Pill } from '@/components/crm/shared/Pill';
 import { Button } from '@/components/ui/button';
 import { useDialer } from '@/hooks/useDialer';
 import { formatContactName, formatPhone } from '@/lib/format';
+import { parseLeadNote } from '@/lib/formatLeadNote';
 
 const STORAGE_KEY = 'crm-chat-rail-collapsed';
 
@@ -246,9 +247,7 @@ export function LeadContextRail() {
           {/* Notes preview */}
           {lead.notes && (
             <Section title="Notes">
-              <p className="text-[12.5px] text-foreground/85 leading-relaxed line-clamp-6 whitespace-pre-wrap">
-                {lead.notes}
-              </p>
+              <FormattedNote raw={lead.notes} />
               <Link
                 to={`/crm/leads/${lead.id}`}
                 className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-primary hover:opacity-80"
@@ -288,6 +287,41 @@ function RailAction({
       <Icon className="w-4 h-4 text-foreground" />
       <span className="text-[10.5px] font-semibold text-foreground/80">{label}</span>
     </button>
+  );
+}
+
+function FormattedNote({ raw }: { raw: string }) {
+  const parsed = parseLeadNote(raw);
+
+  if (!parsed.isStructured) {
+    return (
+      <p className="text-[12.5px] text-foreground/85 leading-relaxed line-clamp-6 whitespace-pre-wrap">
+        {parsed.intro || raw}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {parsed.intro && (
+        <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-2">
+          {parsed.intro}
+        </p>
+      )}
+      <dl className="grid grid-cols-[88px_1fr] gap-x-2 gap-y-1.5 text-[12px]">
+        {parsed.fields.slice(0, 8).map((f, i) => (
+          <div key={`${f.label}-${i}`} className="contents">
+            <dt className="text-muted-foreground/80 truncate">{f.label}</dt>
+            <dd className="text-foreground/90 break-words leading-snug">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {parsed.fields.length > 8 && (
+        <p className="text-[11px] text-muted-foreground/70">
+          +{parsed.fields.length - 8} more fields
+        </p>
+      )}
+    </div>
   );
 }
 
