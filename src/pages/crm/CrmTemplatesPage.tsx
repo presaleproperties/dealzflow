@@ -126,19 +126,6 @@ export default function CrmTemplatesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 gap-1.5 text-[12.5px] hidden sm:inline-flex"
-              onClick={() => setPaletteOpen(true)}
-              title="Quick find (⌘K)"
-            >
-              <Search className="w-3.5 h-3.5" />
-              Quick find
-              <kbd className="ml-1 inline-flex items-center gap-0.5 text-[10px] text-muted-foreground border border-border/60 rounded px-1 py-0.5">
-                <CommandIcon className="w-2.5 h-2.5" />K
-              </kbd>
-            </Button>
             <ChannelToggle channel={channel} onChange={setChannel} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
