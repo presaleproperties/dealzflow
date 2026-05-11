@@ -658,7 +658,7 @@ export default function InboxView() {
               {!replyOpen ? (
                 <button
                   type="button"
-                  onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+                  onClick={openReply}
                   className="group w-full flex items-center gap-3 px-6 h-12 text-left text-[12.5px] text-muted-foreground hover:bg-muted/40 transition-colors"
                 >
                   <span className="h-7 w-7 shrink-0 rounded-full bg-primary/10 text-primary text-[10.5px] font-semibold inline-flex items-center justify-center group-hover:bg-primary/15 transition-colors">
