@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
-import { ChannelGreenLight } from '@/components/crm/shared/LiveStatusBar';
+
 import { useChatPins } from '@/hooks/useChatPins';
 import { SwipeRow } from '@/components/crm/chats/SwipeRow';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
@@ -375,9 +375,6 @@ export default function CrmChatsPage() {
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
-      <div className="hidden md:block px-3 sm:px-4 pt-2">
-        <ChannelGreenLight />
-      </div>
       {/* Premium glassmorphic header */}
       <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60">
         <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
