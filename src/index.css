@@ -2059,3 +2059,26 @@ html.is-standalone ::-webkit-scrollbar { width: 0; height: 0; }
   }
 }
 
+
+/* ─── iOS PWA keyboard handling ─────────────────────────────────────── */
+/* When the soft keyboard is up, lock the body so iOS Safari can't pan
+   the window to chase the focused input (the visible "shake"). The
+   chat thread itself pins to visualViewport.height via JS. */
+@supports (-webkit-touch-callout: none) {
+  html.keyboard-open,
+  html.keyboard-open body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+}
+
+/* Prevent iOS auto-zoom on input focus — any input <16px font-size
+   triggers the zoom. Force 16px on touch devices only. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

@@ -27,6 +27,7 @@ import { SessionRestoringBanner } from "@/components/auth/SessionRestoringBanner
 import { RouteHydrationGate } from "@/components/auth/RouteHydrationGate";
 import { useHotLeadActivityToasts } from "@/hooks/useHotLeadActivityToasts";
 import { useLiveNotificationToasts } from "@/hooks/useLiveNotificationToasts";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
 import { DialerWidget } from "@/components/crm/dialer/DialerWidget";
 import { NewChatDialog } from "@/components/crm/chats/NewChatDialog";
 import { ViewportDebugOverlay } from "@/components/dev/ViewportDebugOverlay";
@@ -205,6 +206,9 @@ function NativeBootstrap({ children }: { children: React.ReactNode }) {
   usePresaleSignatureAutoImport();
   useHotLeadActivityToasts();
   useLiveNotificationToasts();
+  // Toggle html.keyboard-open globally so iOS PWA chat/email composers
+  // never get hidden behind the soft keyboard.
+  useVisualViewport();
   return (
     <>
       {children}

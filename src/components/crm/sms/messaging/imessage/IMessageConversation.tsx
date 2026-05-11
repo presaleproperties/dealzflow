@@ -26,6 +26,7 @@ import {
   smsSegments, type MessagingChannel, type SmsLogRow,
 } from '@/hooks/useSms';
 import { useThreadState } from '@/hooks/useThreadState';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { uploadSmsMedia } from '@/lib/smsMediaUpload';
 import { isMessagingMuted, setMessagingMuted } from '@/lib/messagingSound';
 import { toast } from 'sonner';
@@ -87,6 +88,8 @@ export function IMessageConversation(props: Props) {
   const prevThreadKey = useRef(thread.key);
   const muted = threadState.isMuted(channel, thread.key);
   const archived = threadState.isArchived(channel, thread.key);
+  const { viewportHeight, keyboardOpen } = useVisualViewport();
+  const prevKeyboardOpen = useRef(keyboardOpen);
 
   // Track whether the user is pinned to the bottom of the scroller.
   useEffect(() => {
@@ -113,8 +116,26 @@ export function IMessageConversation(props: Props) {
     }
   }, [visibleMessages.length, thread.key]);
 
+  // When the iOS keyboard opens, ride it: snap to bottom so the latest
+  // message sits just above the composer (which is now above the keyboard).
+  useEffect(() => {
+    if (keyboardOpen && !prevKeyboardOpen.current) {
+      const el = scrollRef.current;
+      if (el) {
+        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 100);
+      }
+    }
+    prevKeyboardOpen.current = keyboardOpen;
+  }, [keyboardOpen]);
+
+  // On mobile, when the keyboard is up, lock the outer container to the
+  // visible viewport height so the composer never hides behind it.
+  const containerStyle = isMobile && keyboardOpen
+    ? { position: 'fixed' as const, top: 0, left: 0, right: 0, height: `${viewportHeight}px` }
+    : undefined;
+
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden imsg-font" style={containerStyle}>
       {/* ===== Frosted header (centered title, iMessage style) ===== */}
       <div className="imsg-header px-4 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-2 native-safe-top shrink-0 sticky top-0 z-30">
         {/* Left controls */}
@@ -413,6 +434,11 @@ function IMessageBubbleImpl({
   const isOptimistic = m.id.startsWith('optimistic-');
   const isScheduled = m.status === 'scheduled';
   const { quote, text } = parseQuoted(m.body);
+  const hasMedia = !!(m.media_urls && m.media_urls.length > 0);
+  const hasText = !!(text && text.trim().length > 0);
+  // Don't render hollow bubbles — if there's nothing to show (no text, no
+  // quote, no media) the bubble would just say "(empty)" which looks broken.
+  if (!hasText && !quote && !hasMedia) return null;
 
   return (
     <ContextMenu>
@@ -440,9 +466,11 @@ function IMessageBubbleImpl({
                 </div>
               )}
 
-              <div className="min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
-                <HighlightedText text={text} query={highlight} />
-              </div>
+              {hasText && (
+                <div className="min-w-0 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] hyphens-auto">
+                  <HighlightedText text={text} query={highlight} />
+                </div>
+              )}
 
               {m.media_urls && m.media_urls.length > 0 && (
                 <div className="mt-1.5 grid grid-cols-2 gap-1">
@@ -931,9 +959,21 @@ function IMessageComposer({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
+              onFocus={() => {
+                // iOS keyboard slide takes ~300ms; after it's up, scroll the
+                // focused composer into view so it sits above the keyboard.
+                setTimeout(() => {
+                  textareaRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                }, 300);
+              }}
+              enterKeyHint="send"
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="on"
+              autoCapitalize="sentences"
               placeholder={isDictating ? 'Listening…' : 'Message'}
               rows={1}
-              className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
+              className="flex-1 min-h-[24px] resize-none border-0 bg-transparent px-0 py-0 text-[16px] sm:text-[15px] leading-[1.4] focus-visible:ring-0 focus-visible:border-0 shadow-none placeholder:text-muted-foreground/55 overflow-hidden"
               style={{ maxHeight: MAX_HEIGHT }}
             />
             {isDictating && interimText && (
