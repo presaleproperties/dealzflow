@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { ChevronDown, ChevronRight, CornerUpLeft, CornerUpRight, Forward, MoreHorizontal, Paperclip, Mail } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { Button } from '@/components/ui/button';
