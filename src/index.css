@@ -143,6 +143,8 @@
   }
 }
 
+@layer base {
+
   /* Native iPhone bottom-nav clearance.
      The interactive row stays stable and low, while the nav surface owns the
      home-indicator safe-area so installed PWAs do not float or overlap. */
