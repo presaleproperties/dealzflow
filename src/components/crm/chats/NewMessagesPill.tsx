@@ -51,20 +51,36 @@ export function NewMessagesPill({ scrollRef, messagesCount, bottomSlack = 120 }:
     }
   }, [messagesCount, atBottom]);
 
-  if (atBottom || unread === 0) return null;
+  if (atBottom) return null;
+
+  const scrollToBottom = () => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  };
+
+  // With unread → labeled pill. Without unread → minimal circular ↓ button.
+  if (unread > 0) {
+    return (
+      <button
+        type="button"
+        onClick={scrollToBottom}
+        className="absolute left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)+88px)] z-30 inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-primary text-primary-foreground text-[12px] font-semibold shadow-lg shadow-primary/30 backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-200 active:scale-95 transition-transform"
+        aria-label={`Jump to ${unread} new message${unread === 1 ? '' : 's'}`}
+      >
+        <ArrowDown className="w-3.5 h-3.5" />
+        {unread} new
+      </button>
+    );
+  }
 
   return (
     <button
       type="button"
-      onClick={() => {
-        const el = scrollRef.current;
-        if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-      }}
-      className="absolute left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)+88px)] z-30 inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-primary text-primary-foreground text-[12px] font-semibold shadow-lg shadow-primary/30 backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-200 active:scale-95 transition-transform"
-      aria-label={`Jump to ${unread} new message${unread === 1 ? '' : 's'}`}
+      onClick={scrollToBottom}
+      className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom,0px)+88px)] z-30 inline-flex items-center justify-center w-9 h-9 rounded-full bg-background/90 border border-border text-foreground shadow-md backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-200 active:scale-95 transition-transform hover:bg-background"
+      aria-label="Scroll to latest message"
     >
-      <ArrowDown className="w-3.5 h-3.5" />
-      {unread} new
+      <ArrowDown className="w-4 h-4" />
     </button>
   );
 }
