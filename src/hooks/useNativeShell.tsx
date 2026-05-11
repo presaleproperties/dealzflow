@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import {
-  isNative, platform, setKeyboardResizeNative,
+  isNative, platform, setKeyboardResizeNone,
   onKeyboardShow, onKeyboardHide, hideKeyboardAccessoryBar,
 } from '@/lib/native';
 
@@ -10,8 +10,8 @@ import {
  *   target the native shell (e.g. extra padding for the status bar / home
  *   indicator).
  * - Sets the status bar style to match our dark glass header.
- * - Switches the iOS keyboard to native resize so messaging composers stay
- *   above the keyboard automatically.
+ * - Keeps the WebView from resizing under the keyboard so messaging composers
+ *   move from one shared CSS keyboard inset instead of double-applying native resize.
  * - Exposes the live keyboard height as `--kb-h` on <html> so screens that
  *   need extra control (chat scroll-to-bottom) can react.
  */
@@ -26,7 +26,7 @@ export function useNativeShell() {
     // active theme instead of being hard-coded. Hide iOS' accessory bar so
     // chat composers sit flush against the real keyboard instead of leaving
     // the native prev/next toolbar gap shown in screenshots.
-    setKeyboardResizeNative();
+    setKeyboardResizeNone();
     hideKeyboardAccessoryBar();
 
     const off1 = onKeyboardShow((h) => root.style.setProperty('--kb-h', `${h}px`));

@@ -19,9 +19,9 @@ const config: CapacitorConfig = {
   },
   plugins: {
     Keyboard: {
-      // 'native' lets iOS push the composer up smoothly with the keyboard,
-      // mirroring the Messages / WhatsApp behavior.
-      resize: 'native',
+      // Keep the WebView stable; composers use the shared --keyboard-inset-bottom
+      // / --kb-h CSS vars so iOS does not double-resize and jump input pills.
+      resize: 'none',
       style: 'dark',
       resizeOnFullScreen: true,
     },
