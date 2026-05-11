@@ -520,7 +520,7 @@ export function SendTextDialog({ contact, open, onOpenChange, initialChannel = '
                       {templates.length === 0 ? (
                         <div className="px-3 py-6 text-center text-xs text-muted-foreground">
                           No templates yet.<br />
-                          Create one in SMS Center.
+                          Create one in CRM → Templates.
                         </div>
                       ) : templates.filter(t => t.is_active).map(t => (
                         <button

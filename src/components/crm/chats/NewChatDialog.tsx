@@ -6,8 +6,8 @@
 // the picked contact pre-loaded. Triggered via `useNewChatStore.open()`.
 //
 // Important: this REPLACES the old "Send Text" quick-action flow that
-// jumped straight into /crm/sms — that surface is admin-only and required
-// agents to scroll the thread list to find a contact.
+// jumped straight into /crm/sms — that surface has been removed; agents
+// now start chats from the unified Chats page or this launcher.
 import { useEffect, useMemo, useState } from 'react';
 import { MessageSquare, Mail, Search, X, ArrowLeft } from 'lucide-react';
 import {
