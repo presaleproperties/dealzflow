@@ -257,7 +257,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
 
   // Publish iOS soft-keyboard height as --keyboard-inset-bottom so the
   // composer can ride above the keyboard instead of being covered by it.
-  useKeyboardInset(!isNative);
+  useKeyboardInset(!isNative && !embedded && isCompact);
 
   // Hard-lock the document while this thread is mounted on mobile. With
   // `interactive-widget=overlays-content` iOS still tries to pan the layout
@@ -267,7 +267,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
   // transition instant — only --keyboard-inset-bottom moves, nothing else.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (isNative) return;
+    if (isNative || embedded || !isCompact) return;
     const html = document.documentElement;
     const body = document.body;
     const prev = {
@@ -297,7 +297,7 @@ export default function CrmChatThreadPage({ embedded = false }: CrmChatThreadPag
       (body.style as any).overscrollBehavior = prev.bodyOverscroll;
       window.scrollTo(0, scrollY);
     };
-  }, []);
+  }, [embedded, isCompact]);
 
   // Conversation + joined contact
   const { data: rawThread, isLoading: threadLoading } = useQuery({
