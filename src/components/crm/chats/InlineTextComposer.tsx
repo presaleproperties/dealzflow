@@ -251,10 +251,10 @@ export const InlineTextComposer = forwardRef<InlineTextComposerHandle, Props>(fu
       data-chat-composer="true"
       className="shrink-0 z-20 border-t border-border/70 bg-background/95 backdrop-blur-xl"
       style={{
-        paddingTop: '10px',
+        paddingTop: '14px',
         paddingBottom: isNative
-          ? '12px'
-          : 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+          ? '22px'
+          : 'calc(env(safe-area-inset-bottom, 0px) + 22px)',
         transform: isNative
           ? 'none'
           : 'translate3d(0, calc(var(--keyboard-inset-bottom, 0px) * -1), 0)',
