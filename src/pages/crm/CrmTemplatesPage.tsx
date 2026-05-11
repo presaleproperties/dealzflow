@@ -44,6 +44,7 @@ import { SendTextDialog } from '@/components/crm/leads/SendTextDialog';
 import { PresaleQuickSendDialog } from '@/components/crm/marketing/PresaleQuickSendDialog';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
+import { TemplateCommandPalette } from '@/components/crm/templates/TemplateCommandPalette';
 
 const EMPTY_CONTACT: CrmContact = {
   id: '__pick__', first_name: '', last_name: '', email: null,
