@@ -916,6 +916,7 @@ function PreviewPane({
   const updateEmail = useUpdateEmailTemplate();
   const saveSms = useSaveSmsTemplate();
   const editable = item.source !== 'presale' && !item.isLocked;
+  const agent = usePresaleAgentStore((s) => s.agent);
 
   // Inline editor state
   const [inlineEdit, setInlineEdit] = useState(false);
@@ -923,6 +924,9 @@ function PreviewPane({
   const [draftSubject, setDraftSubject] = useState(item.subject ?? '');
   const [draftBody, setDraftBody] = useState(item.kind === 'sms' ? item.bodyText : item.bodyHtml);
   const [saving, setSaving] = useState(false);
+
+  // Preview-as-recipient state (live merge-tag preview)
+  const [previewAs, setPreviewAs] = useState<CrmContact | null>(null);
 
   // Reset drafts when switching templates or exiting edit mode
   useEffect(() => {
@@ -937,17 +941,40 @@ function PreviewPane({
     : (item.kind === 'sms' ? item.bodyText : item.bodyHtml);
   const previewSubject = inlineEdit ? draftSubject : (item.subject ?? '');
 
+  // Render with the picked recipient when set, otherwise sample data.
+  const renderText = (input: string): string => {
+    if (!previewAs) return renderWithSampleData(input);
+    return renderForRecipient(input, {
+      lead: {
+        first_name: previewAs.first_name ?? '',
+        last_name: previewAs.last_name ?? '',
+        full_name: [previewAs.first_name, previewAs.last_name].filter(Boolean).join(' '),
+        email: previewAs.email ?? '',
+        phone: (previewAs as any).phone ?? '',
+      },
+      sender: agent ? {
+        first_name: agent.first_name ?? '',
+        last_name: agent.last_name ?? '',
+        full_name: [agent.first_name, agent.last_name].filter(Boolean).join(' '),
+        email: (agent as any).email ?? '',
+        phone: (agent as any).phone ?? '',
+      } : null,
+    });
+  };
+
   const renderedBody = useMemo(() => {
     if (item.kind === 'sms') {
       const escaped = (previewSource || '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]!));
-      return renderWithSampleData(`<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${escaped}</pre>`);
+      return renderText(`<pre style="white-space:pre-wrap;font-family:inherit;margin:0">${escaped}</pre>`);
     }
-    return renderWithSampleData(previewSource);
-  }, [previewSource, item.kind]);
+    return renderText(previewSource);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewSource, item.kind, previewAs?.id, agent?.slug]);
 
   const renderedSubject = useMemo(
-    () => renderWithSampleData(previewSubject || '').replace(/<[^>]+>/g, ''),
-    [previewSubject],
+    () => renderText(previewSubject || '').replace(/<[^>]+>/g, ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [previewSubject, previewAs?.id, agent?.slug],
   );
 
   const subjectStrip = item.kind === 'email'
