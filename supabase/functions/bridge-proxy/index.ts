@@ -70,12 +70,66 @@ Deno.serve(async (req) => {
       case "list-developers":
         result = await presaleBridge.listDevelopers();
         break;
-      case "get-lead-behavior":
-        result = await presaleBridge.getLeadBehavior({
-          email: params.email,
-          phone: params.phone,
-        });
+      case "get-lead-behavior": {
+        // Enforce lead-visibility: caller must be assigned to (or admin over)
+        // a contact whose email/phone matches the requested params.
+        const email = (params.email ?? "").trim().toLowerCase();
+        const phone = (params.phone ?? "").trim();
+        if (!email && !phone) {
+          return new Response(JSON.stringify({ error: "missing_email_or_phone" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Find candidate contacts by primary email/phone or identity-vault entries.
+        const orParts: string[] = [];
+        if (email) orParts.push(`email.eq.${email}`, `email_secondary.eq.${email}`);
+        if (phone) orParts.push(`phone.eq.${phone}`, `phone_secondary.eq.${phone}`);
+        const { data: contacts } = await supabase
+          .from("crm_contacts")
+          .select("id")
+          .or(orParts.join(","))
+          .limit(25);
+
+        let visibleId: string | null = null;
+        for (const c of contacts ?? []) {
+          const { data: ok } = await supabase.rpc("crm_can_see_contact_id", {
+            _user_id: userData.user.id,
+            _contact_id: c.id,
+          });
+          if (ok === true) { visibleId = c.id as string; break; }
+        }
+
+        // If no row matched, fall back to identity vault lookup.
+        if (!visibleId) {
+          const idVals: string[] = [];
+          if (email) idVals.push(email);
+          if (phone) idVals.push(phone);
+          const { data: ids } = await supabase
+            .from("crm_contact_identities")
+            .select("contact_id")
+            .in("value", idVals)
+            .limit(25);
+          for (const r of ids ?? []) {
+            const { data: ok } = await supabase.rpc("crm_can_see_contact_id", {
+              _user_id: userData.user.id,
+              _contact_id: r.contact_id,
+            });
+            if (ok === true) { visibleId = r.contact_id as string; break; }
+          }
+        }
+
+        if (!visibleId) {
+          return new Response(JSON.stringify({ error: "forbidden" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        result = await presaleBridge.getLeadBehavior({ email, phone });
         break;
+      }
       case "render-email":
         result = await presaleBridge.renderEmail({
           projectSlug: params.projectSlug ?? "",
