@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCrmContacts, LEAD_STATUSES } from '@/hooks/useCrmContacts';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { useUpdateCrmContact } from '@/hooks/useCrmLeadDetail';
+import { startInAppCall } from '@/hooks/useDialer';
 import { contactMatchesSegment } from '@/lib/segmentMatching';
 import { formatContactName } from '@/lib/format';
 import { formatDistanceToNow } from 'date-fns';
