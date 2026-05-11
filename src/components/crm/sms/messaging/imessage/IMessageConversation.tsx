@@ -379,7 +379,7 @@ interface BubbleProps {
   onDeleteMessage: (id: string) => void;
 }
 
-function IMessageBubble({
+function IMessageBubbleImpl({
   m, isOutbound, sameAsPrev, sameAsNext, isLastInRun, highlight, threadState, onReply, onDeleteMessage,
 }: BubbleProps) {
   const reaction = threadState.getReaction(m.id);
