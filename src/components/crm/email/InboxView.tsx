@@ -181,6 +181,23 @@ export default function InboxView() {
   });
 
   const selectedThread = filteredThreads.find(t => t.id === selectedThreadId) ?? null;
+  // Lazy-load the contact only when we open the full composer for a reply.
+  const { data: replyContact } = useCrmContact(composeOpen ? (selectedThread?.contact_id ?? undefined) : undefined);
+  const replySubject = useMemo(() => {
+    const s = (selectedThread?.subject || '').replace(/^(re:\s*)+/i, '').trim();
+    return s ? `Re: ${s}` : '';
+  }, [selectedThread?.subject]);
+  // Open the rich composer if the thread has a linked contact, otherwise
+  // fall back to the inline textarea (no recipient context to send to).
+  const openReply = useCallback(() => {
+    if (!selectedThread) return;
+    if (selectedThread.contact_id) {
+      setComposeOpen(true);
+    } else {
+      setReplyOpen(true);
+      setTimeout(() => replyRef.current?.focus(), 30);
+    }
+  }, [selectedThread]);
 
   // Mark thread read when opened
   useEffect(() => {
