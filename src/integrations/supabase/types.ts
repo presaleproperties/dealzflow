@@ -4258,6 +4258,48 @@ export type Database = {
           },
         ]
       }
+      crm_thread_drafts: {
+        Row: {
+          body: string
+          channel: string
+          contact_id: string
+          created_at: string
+          id: string
+          media: Json
+          quote: string | null
+          scheduled_for: string | null
+          subject: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          channel: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          media?: Json
+          quote?: string | null
+          scheduled_for?: string | null
+          subject?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          media?: Json
+          quote?: string | null
+          scheduled_for?: string | null
+          subject?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crm_timeline_link_clicks: {
         Row: {
           clicked_at: string
