@@ -1,7 +1,20 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  DragOverlay,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { Search, RefreshCw, Mail, Phone, MapPin, Flame } from 'lucide-react';
 import { formatCurrencyCompact } from '@/lib/format';
 import { Input } from '@/components/ui/input';
@@ -58,7 +71,13 @@ function formatBudget(min?: number | null, max?: number | null): string | null {
 }
 
 /* ─── Lead Card ─── */
-function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: number; onOpen: (id: string) => void }) {
+function LeadCardInner({
+  contact,
+  isOverlay = false,
+}: {
+  contact: CrmContact;
+  isOverlay?: boolean;
+}) {
   const days = daysInStage(contact);
   const daysColor = days === null ? undefined : days <= 7 ? 'hsl(142 71% 45%)' : days <= 14 ? 'hsl(38 92% 50%)' : 'hsl(0 60% 55%)';
   const touchColor = !contact.last_touch_at ? undefined : (() => {
@@ -73,104 +92,119 @@ function LeadCard({ contact, index, onOpen }: { contact: CrmContact; index: numb
   const cityPref = cAny.city_pref || contact.city;
   const isPreApproved = !!cAny.is_pre_approved;
 
-  // Track pointer to distinguish click vs drag
-  const downPos = useRef<{ x: number; y: number } | null>(null);
-
   return (
-    <Draggable draggableId={contact.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY }; }}
-          onPointerUp={(e) => {
-            const start = downPos.current;
-            downPos.current = null;
-            if (snapshot.isDragging || !start) return;
-            const dx = Math.abs(e.clientX - start.x);
-            const dy = Math.abs(e.clientY - start.y);
-            if (dx < 5 && dy < 5) onOpen(contact.id);
-          }}
-          className={`group bg-card rounded-lg border border-border px-2.5 py-2 mb-1.5 shadow-sm cursor-pointer transition-all ${snapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30 opacity-90 scale-[1.02] rotate-[0.5deg] cursor-grabbing' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
-        >
-          {/* Header: name + assigned avatar */}
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
-                  {formatContactName(contact.first_name, contact.last_name)}
-                </p>
-                {isHot && (
-                  <Flame className="w-3 h-3 flex-shrink-0" style={{ color: 'hsl(0 84% 60%)' }} />
-                )}
-              </div>
-              {contact.lead_type && (
-                <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide font-medium">
-                  {contact.lead_type}
-                </p>
-              )}
-            </div>
-            {contact.assigned_to && (
-              <div
-                className="flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-bold flex-shrink-0"
-                style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
-                title={contact.assigned_to}
-              >
-                {getInitials(contact.assigned_to)}
-              </div>
-            )}
+    <div
+      className={`group bg-card rounded-lg border border-border px-2.5 py-2 mb-1.5 shadow-sm transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-primary/40 rotate-[1deg]' : 'hover:shadow-md hover:border-border/80 hover:ring-1 hover:ring-primary/20'}`}
+    >
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
+              {formatContactName(contact.first_name, contact.last_name)}
+            </p>
+            {isHot && (<Flame className="w-3 h-3 flex-shrink-0" style={{ color: 'hsl(0 84% 60%)' }} />)}
           </div>
-
-          {/* Budget — primary metric */}
-          {budget && (
-            <div className="flex items-baseline gap-1.5 mb-1.5">
-              <span className="text-[14px] font-bold text-foreground tabular-nums leading-none">{budget}</span>
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wide">budget</span>
-            </div>
+          {contact.lead_type && (
+            <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide font-medium">{contact.lead_type}</p>
           )}
-
-          {/* Tags row: project + city + pre-approved */}
-          {(contact.project || cityPref || isPreApproved) && (
-            <div className="flex flex-wrap items-center gap-1 mb-1.5">
-              {contact.project && (
-                <Pill tone="primary" truncate>{contact.project}</Pill>
-              )}
-              {cityPref && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                  <MapPin className="w-2.5 h-2.5" />
-                  {cityPref}
-                </span>
-              )}
-              {isPreApproved && (
-                <Pill tone="success">Pre-approved</Pill>
-              )}
-            </div>
-          )}
-
-          {/* Footer: stage age, activity, contact icons */}
-          <div className="flex items-center justify-between pt-1.5 border-t border-border/40">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <span style={daysColor ? { color: daysColor, fontWeight: 600 } : undefined}>
-                {days !== null ? `${days}d` : '—'}
-              </span>
-              <span className="text-border">·</span>
-              {contact.last_touch_at ? (
-                <span style={{ color: touchColor }}>
-                  {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
-                </span>
-              ) : (
-                <span className="italic">No activity</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-              {contact.email && <Mail className="w-3 h-3 text-muted-foreground" />}
-              {contact.phone && <Phone className="w-3 h-3 text-muted-foreground" />}
-            </div>
+        </div>
+        {contact.assigned_to && (
+          <div
+            className="flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-bold flex-shrink-0"
+            style={{ background: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+            title={contact.assigned_to}
+          >
+            {getInitials(contact.assigned_to)}
           </div>
+        )}
+      </div>
+
+      {budget && (
+        <div className="flex items-baseline gap-1.5 mb-1.5">
+          <span className="text-[14px] font-bold text-foreground tabular-nums leading-none">{budget}</span>
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wide">budget</span>
         </div>
       )}
-    </Draggable>
+
+      {(contact.project || cityPref || isPreApproved) && (
+        <div className="flex flex-wrap items-center gap-1 mb-1.5">
+          {contact.project && (<Pill tone="primary" truncate>{contact.project}</Pill>)}
+          {cityPref && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <MapPin className="w-2.5 h-2.5" />
+              {cityPref}
+            </span>
+          )}
+          {isPreApproved && (<Pill tone="success">Pre-approved</Pill>)}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-1.5 border-t border-border/40">
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <span style={daysColor ? { color: daysColor, fontWeight: 600 } : undefined}>
+            {days !== null ? `${days}d` : '—'}
+          </span>
+          <span className="text-border">·</span>
+          {contact.last_touch_at ? (
+            <span style={{ color: touchColor }}>
+              {formatDistanceToNow(new Date(contact.last_touch_at), { addSuffix: true })}
+            </span>
+          ) : (
+            <span className="italic">No activity</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+          {contact.email && <Mail className="w-3 h-3 text-muted-foreground" />}
+          {contact.phone && <Phone className="w-3 h-3 text-muted-foreground" />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DraggableLeadCard({ contact, onOpen }: { contact: CrmContact; onOpen: (id: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: contact.id,
+    data: { contact },
+  });
+  const downPos = useRef<{ x: number; y: number } | null>(null);
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0 : 1,
+    touchAction: 'none',
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="cursor-grab active:cursor-grabbing"
+      onPointerDown={(e) => { downPos.current = { x: e.clientX, y: e.clientY }; }}
+      onPointerUp={(e) => {
+        const start = downPos.current;
+        downPos.current = null;
+        if (!start) return;
+        const dx = Math.abs(e.clientX - start.x);
+        const dy = Math.abs(e.clientY - start.y);
+        if (dx < 5 && dy < 5) onOpen(contact.id);
+      }}
+    >
+      <LeadCardInner contact={contact} />
+    </div>
+  );
+}
+
+function DroppableColumn({ id, children, className, style }: { id: string; children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className ?? ''} ${isOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
+      style={style}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -277,18 +311,31 @@ export function PipelineKanban() {
     return () => el.removeEventListener('scroll', onScroll);
   }, [isMobile, pipelineSegments.length]);
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const targetSegId = result.destination.droppableId;
-    const contactId = result.draggableId;
+  const [activeDragContact, setActiveDragContact] = useState<CrmContact | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const handleDragStart = (e: DragStartEvent) => {
+    const c = (e.active.data.current as { contact?: CrmContact } | undefined)?.contact ?? null;
+    setActiveDragContact(c);
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    setActiveDragContact(null);
+    if (!e.over) return;
+    const targetSegId = String(e.over.id);
+    const contactId = String(e.active.id);
     const contact = contacts.find(c => c.id === contactId);
     const targetSeg = pipelineSegments.find(s => s.id === targetSegId);
     if (!contact || !targetSeg) return;
-    if (result.source.droppableId === targetSegId) return;
+    const currentSegId = (contact as any).pipeline_segment_id;
+    if (currentSegId === targetSegId) return;
 
     const optimisticContact = { ...contact, pipeline_segment_id: targetSeg.id } as CrmContact;
-
-    // Optimistic update so the card visibly stays in the new column
     const prev = queryClient.getQueryData<CrmContact[]>(['crm-contacts']);
     if (prev) {
       queryClient.setQueryData<CrmContact[]>(
@@ -398,7 +445,7 @@ export function PipelineKanban() {
       ) : pipelineSegments.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">No pipeline stages configured</div>
       ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div
             ref={scrollRef}
             className="kanban-scroll flex-1 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none"
@@ -407,6 +454,9 @@ export function PipelineKanban() {
               {pipelineSegments.map(seg => {
                 const colors = getSegmentColor(seg);
                 const segContacts = columns[seg.id] ?? [];
+                const limit = visibleCounts[seg.id] || CARDS_PER_PAGE;
+                const visible = segContacts.slice(0, limit);
+                const remaining = segContacts.length - limit;
                 return (
                   <div
                     key={seg.id}
@@ -417,7 +467,6 @@ export function PipelineKanban() {
                       minWidth: isMobile ? '85vw' : '260px',
                     }}
                   >
-                    {/* Column header */}
                     <div
                       className="flex items-center justify-between px-3 py-1.5 sm:py-2 rounded-t-xl border-b"
                       style={{ borderColor: colors.border }}
@@ -430,55 +479,42 @@ export function PipelineKanban() {
                       </Pill>
                     </div>
 
-                    {/* Droppable area */}
-                    <Droppable droppableId={seg.id}>
-                      {(provided, snapshot) => {
-                        const limit = visibleCounts[seg.id] || CARDS_PER_PAGE;
-                        const visible = segContacts.slice(0, limit);
-                        const remaining = segContacts.length - limit;
-                        return (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200 ${snapshot.isDraggingOver ? 'ring-2 ring-primary/30 ring-inset bg-primary/5' : ''}`}
-                            style={{ maxHeight: 'calc(100dvh - 280px)' }}
-                          >
-                            {visible.map((contact, idx) => (
-                              <LeadCard key={contact.id} contact={contact} index={idx} onOpen={handleOpen} />
-                            ))}
-                            {provided.placeholder}
-                            {remaining > 0 && (
-                              <button
-                                onClick={() => loadMore(seg.id)}
-                                className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                              >
-                                Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
-                              </button>
-                            )}
-                            {contactsLoading && segContacts.length === 0 && (
-                              <div className="space-y-2">
-                                {Array.from({ length: 2 }).map((_, j) => (
-                                  <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
-                                    <Skeleton className="h-4 w-3/4" />
-                                    <Skeleton className="h-3 w-1/2" />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {!contactsLoading && segContacts.length === 0 && (
-                              <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
-                            )}
-                          </div>
-                        );
-                      }}
-                    </Droppable>
+                    <DroppableColumn
+                      id={seg.id}
+                      className="flex-1 p-2 min-h-[120px] overflow-y-auto transition-all duration-200"
+                      style={{ maxHeight: 'calc(100dvh - 280px)' }}
+                    >
+                      {visible.map((contact) => (
+                        <DraggableLeadCard key={contact.id} contact={contact} onOpen={handleOpen} />
+                      ))}
+                      {remaining > 0 && (
+                        <button
+                          onClick={() => loadMore(seg.id)}
+                          className="w-full text-center py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                          Load {Math.min(remaining, CARDS_PER_PAGE)} more ({remaining} remaining)
+                        </button>
+                      )}
+                      {contactsLoading && segContacts.length === 0 && (
+                        <div className="space-y-2">
+                          {Array.from({ length: 2 }).map((_, j) => (
+                            <div key={j} className="bg-card rounded-lg border border-border p-3 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-3 w-1/2" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!contactsLoading && segContacts.length === 0 && (
+                        <p className="text-[11px] text-muted-foreground text-center py-6">No leads</p>
+                      )}
+                    </DroppableColumn>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Mobile dot indicators */}
           {isMobile && (
             <div className="flex justify-center gap-1.5 pt-2 pb-1">
               {pipelineSegments.map((seg, idx) => {
@@ -498,13 +534,17 @@ export function PipelineKanban() {
                         inline: 'start',
                       });
                     }}
-                    aria-label={seg.name}
+                    aria-label={`Jump to ${seg.name} column`}
                   />
                 );
               })}
             </div>
           )}
-        </DragDropContext>
+
+          <DragOverlay dropAnimation={null}>
+            {activeDragContact ? <LeadCardInner contact={activeDragContact} isOverlay /> : null}
+          </DragOverlay>
+        </DndContext>
       )}
     </div>
   );

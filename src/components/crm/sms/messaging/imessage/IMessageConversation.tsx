@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, memo } from 'react';
 import { haptic } from '@/lib/native';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -97,7 +97,7 @@ export function IMessageConversation(props: Props) {
         {/* Left controls */}
         <div className="flex items-center gap-1">
           {isMobile ? (
-            <Button size="icon" variant="ghost" className="h-8 w-8 -ml-1 text-[#007AFF]" onClick={onBack}>
+            <Button size="icon" variant="ghost" aria-label="Back to conversations" className="h-8 w-8 -ml-1 text-[#007AFF]" onClick={onBack}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
           ) : (
@@ -107,6 +107,7 @@ export function IMessageConversation(props: Props) {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label={leftCollapsed ? 'Show conversations' : 'Hide conversations'}
                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground -ml-1"
                     onClick={onToggleLeft}
                   >
@@ -147,6 +148,7 @@ export function IMessageConversation(props: Props) {
                 <Button
                   size="icon"
                   variant="ghost"
+                  aria-label="Find in conversation"
                   className={cn('h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10',
                     showConvoSearch && 'bg-[#007AFF]/15')}
                   onClick={onToggleConvoSearch}
@@ -158,7 +160,7 @@ export function IMessageConversation(props: Props) {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10">
+                <Button size="icon" variant="ghost" aria-label="FaceTime audio" className="h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10">
                   <Phone className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
@@ -170,6 +172,7 @@ export function IMessageConversation(props: Props) {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label="Open lead details"
                     className="h-8 w-8 rounded-full text-[#007AFF] hover:bg-[#007AFF]/10"
                     onClick={() => navigate(`/crm/leads/${thread.contact!.id}`)}
                   >
@@ -185,6 +188,7 @@ export function IMessageConversation(props: Props) {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label={rightCollapsed ? 'Show details' : 'Hide details'}
                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                     onClick={onToggleRight}
                   >
@@ -196,7 +200,7 @@ export function IMessageConversation(props: Props) {
             )}
             <Popover>
               <PopoverTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
+                <Button size="icon" variant="ghost" aria-label="More options" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </PopoverTrigger>
@@ -379,7 +383,7 @@ interface BubbleProps {
   onDeleteMessage: (id: string) => void;
 }
 
-function IMessageBubble({
+function IMessageBubbleImpl({
   m, isOutbound, sameAsPrev, sameAsNext, isLastInRun, highlight, threadState, onReply, onDeleteMessage,
 }: BubbleProps) {
   const reaction = threadState.getReaction(m.id);
@@ -545,6 +549,20 @@ function IMessageBubble({
     </ContextMenu>
   );
 }
+
+// Memoized to prevent re-render of every bubble when only one message updates.
+// Cheap shallow compare over the BubbleProps fields that actually drive output.
+const IMessageBubble = memo(IMessageBubbleImpl, (a, b) => (
+  a.m === b.m &&
+  a.isOutbound === b.isOutbound &&
+  a.sameAsPrev === b.sameAsPrev &&
+  a.sameAsNext === b.sameAsNext &&
+  a.isLastInRun === b.isLastInRun &&
+  a.highlight === b.highlight &&
+  a.threadState === b.threadState &&
+  a.onReply === b.onReply &&
+  a.onDeleteMessage === b.onDeleteMessage
+));
 
 function statusLabel(status: string, scheduledFor?: string | null) {
   if (status === 'scheduled' && scheduledFor) {
