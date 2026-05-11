@@ -5323,6 +5323,7 @@ export type Database = {
           deal_id: string
           due_date: string | null
           id: string
+          manual_override: boolean
           notes: string | null
           paid_date: string | null
           payout_type: Database["public"]["Enums"]["payout_type"]
@@ -5337,6 +5338,7 @@ export type Database = {
           deal_id: string
           due_date?: string | null
           id?: string
+          manual_override?: boolean
           notes?: string | null
           paid_date?: string | null
           payout_type: Database["public"]["Enums"]["payout_type"]
@@ -5351,6 +5353,7 @@ export type Database = {
           deal_id?: string
           due_date?: string | null
           id?: string
+          manual_override?: boolean
           notes?: string | null
           paid_date?: string | null
           payout_type?: Database["public"]["Enums"]["payout_type"]
@@ -6532,6 +6535,46 @@ export type Database = {
           event_at: string
           kind: string
         }[]
+      }
+      update_deal_with_payouts: {
+        Args: { p_deal_data: Json; p_deal_id: string; p_payouts?: Json }
+        Returns: {
+          address: string | null
+          advance_commission: number | null
+          advance_date: string | null
+          buyer_type: string | null
+          city: string | null
+          client_name: string
+          close_date_actual: string | null
+          close_date_est: string | null
+          completion_commission: number | null
+          completion_date: string | null
+          created_at: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          gross_commission_actual: number | null
+          gross_commission_est: number | null
+          id: string
+          lead_source: string | null
+          listing_date: string | null
+          net_commission_actual: number | null
+          net_commission_est: number | null
+          notes: string | null
+          pending_date: string | null
+          project_name: string | null
+          property_type: Database["public"]["Enums"]["property_type"] | null
+          sale_price: number | null
+          status: Database["public"]["Enums"]["deal_status"]
+          team_member: string | null
+          team_member_portion: number | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       write_behavior_note: {
         Args: {
