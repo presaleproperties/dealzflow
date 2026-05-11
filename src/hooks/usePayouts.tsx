@@ -272,7 +272,10 @@ export function useRecalculatePayouts() {
       if (fetchError) throw fetchError;
 
       // Update each payout with the recalculated amount
-      const updates = existingPayouts?.map((payout) => {
+      const updates = existingPayouts?.flatMap((payout) => {
+        // S8: Skip payouts that the user has manually edited.
+        if ((payout as any).manual_override === true) return [];
+
         let newAmount = 0;
 
         if (payout.payout_type === 'Advance') {
@@ -290,10 +293,10 @@ export function useRecalculatePayouts() {
           newAmount = payout.amount;
         }
 
-        return {
+        return [{
           id: payout.id,
           amount: Math.round(newAmount * 100) / 100,
-        };
+        }];
       }) || [];
 
       // Batch update all payouts
