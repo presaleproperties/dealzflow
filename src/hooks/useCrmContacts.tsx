@@ -141,12 +141,18 @@ export function useCrmContacts(
   const query = useQuery({
     queryKey: ['crm-contacts'],
     queryFn: async () => {
+      // Hard cap to keep memory + bandwidth bounded. Pipeline Kanban + leads
+      // grids should use `useCrmContactsLite` / paginated hooks for large
+      // workspaces. If we hit the cap we surface a one-time toast so the
+      // user knows the view is truncated.
       const PAGE_SIZE = 1000;
+      const HARD_CAP = 2000;
       let allData: Record<string, unknown>[] = [];
       let from = 0;
       let hasMore = true;
+      let truncated = false;
 
-      while (hasMore) {
+      while (hasMore && allData.length < HARD_CAP) {
         const { data, error } = await supabase
           .from('crm_contacts')
           .select('*')
@@ -159,6 +165,21 @@ export function useCrmContacts(
           hasMore = data.length === PAGE_SIZE;
         } else {
           hasMore = false;
+        }
+      }
+      if (allData.length >= HARD_CAP && hasMore) {
+        truncated = true;
+        allData = allData.slice(0, HARD_CAP);
+      }
+
+      if (truncated) {
+        // Fire-and-forget; only warn once per session.
+        const w = window as unknown as { __crmContactsTruncatedWarned?: boolean };
+        if (!w.__crmContactsTruncatedWarned) {
+          w.__crmContactsTruncatedWarned = true;
+          toast.warning(
+            `Showing the most recent ${HARD_CAP} contacts. Use search or paginated views to see the rest.`,
+          );
         }
       }
 
