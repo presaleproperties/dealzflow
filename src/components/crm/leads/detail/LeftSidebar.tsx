@@ -26,6 +26,7 @@ import { useCrmProjects, useCreateCrmProject } from '@/hooks/useCrmProjects';
 import { useCrmLeadTypes, useCreateCrmLeadType } from '@/hooks/useCrmLeadTypes';
 import { useCrmSources } from '@/hooks/useCrmSources';
 import { LEAD_STATUSES, LEAD_TYPES, LEAD_TYPE_LABELS, LEAD_SOURCES } from '@/hooks/useCrmContacts';
+import { startInAppCall } from '@/hooks/useDialer';
 import { useCrmLeadSegments } from '@/hooks/useCrmLeadSegments';
 import { useUnifiedPipelines, useActivePipelineFor, useSetContactPipeline } from '@/hooks/useUnifiedPipelines';
 import { useTeamAgents } from '@/hooks/useTeamAgents';
