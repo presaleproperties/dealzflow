@@ -1,32 +1,82 @@
+// Strip embedded "team" agent signature block(s) from a template body and
+// append a fresh signature for the duplicating agent.
+
+const NEEDLES = [
+  'avatars/team/',                  // shared Presale agent avatar path
+  'info@presaleproperties.com',     // owner inbox in canonical footer
+  'presalewithuzair.com',           // Uzair's personal site link in footer
+];
+
 /**
- * Template signature helpers — keeps brand identity consistent across
- * agents by stamping the agent's Presale-synced signature (or local
- * email-settings signature as a fallback) onto every saved template.
- *
- * The signature is appended via a sentinel comment so we can detect it
- * later and avoid double-injection on edits / re-saves.
+ * Remove the outermost <table>…</table> block(s) whose inner HTML matches any
+ * of `needles`. Walks the string with a simple depth counter so nested tables
+ * are handled correctly.
  */
+function stripTableContaining(html: string, needles: string[], maxRemovals = 3): string {
+  let out = html;
+  for (let n = 0; n < maxRemovals; n++) {
+    const lower = out.toLowerCase();
+    let removed = false;
+    let cursor = 0;
 
-export const SIGNATURE_OPEN = '<!-- DEALZFLOW_SIGNATURE_START -->';
-export const SIGNATURE_CLOSE = '<!-- DEALZFLOW_SIGNATURE_END -->';
+    while (cursor < out.length) {
+      const open = lower.indexOf('<table', cursor);
+      if (open === -1) break;
 
-/** True if the html already contains a stamped signature block. */
-export function hasSignatureBlock(html: string): boolean {
-  return typeof html === 'string' && html.includes(SIGNATURE_OPEN);
+      // Walk to find the matching </table>
+      let depth = 0;
+      let j = open + 6;
+      let close = -1;
+      while (j < out.length) {
+        const nextOpen = lower.indexOf('<table', j);
+        const nextClose = lower.indexOf('</table>', j);
+        if (nextClose === -1) break;
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          depth++;
+          j = nextOpen + 6;
+        } else {
+          if (depth === 0) { close = nextClose; break; }
+          depth--;
+          j = nextClose + 8;
+        }
+      }
+      if (close === -1) break;
+
+      const block = out.slice(open, close + 8);
+      if (needles.some((needle) => block.toLowerCase().includes(needle.toLowerCase()))) {
+        out = out.slice(0, open) + out.slice(close + 8);
+        removed = true;
+        break;
+      }
+      cursor = close + 8;
+    }
+
+    if (!removed) break;
+  }
+  return out;
 }
 
-/** Strip any previously-stamped signature block (idempotent). */
-export function stripSignatureBlock(html: string): string {
-  if (!hasSignatureBlock(html)) return html;
-  const re = new RegExp(`${SIGNATURE_OPEN}[\\s\\S]*?${SIGNATURE_CLOSE}`, 'g');
-  return html.replace(re, '').trimEnd();
+/**
+ * Insert the new signature HTML before any closing </body> if present,
+ * otherwise append to the end.
+ */
+function appendSignature(html: string, signatureHtml: string): string {
+  if (!signatureHtml.trim()) return html;
+  const wrapped = `\n<div data-agent-signature="1" style="margin-top:24px;">${signatureHtml}</div>\n`;
+  const lower = html.toLowerCase();
+  const closeBody = lower.lastIndexOf('</body>');
+  if (closeBody !== -1) {
+    return html.slice(0, closeBody) + wrapped + html.slice(closeBody);
+  }
+  return html + wrapped;
 }
 
-/** Replace any stamped signature block with the new one (or append it). */
-export function applySignatureBlock(html: string, signatureHtml: string): string {
-  const trimmedSig = (signatureHtml || '').trim();
-  const stripped = stripSignatureBlock(html || '');
-  if (!trimmedSig) return stripped;
-  const block = `\n${SIGNATURE_OPEN}\n<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#14181F;">\n${trimmedSig}\n</div>\n${SIGNATURE_CLOSE}\n`;
-  return `${stripped}${block}`;
+/**
+ * Swap any embedded "team" signature in `bodyHtml` for the duplicating agent's
+ * own signature. If `signatureHtml` is empty, the original signature is still
+ * stripped (so it doesn't impersonate the original author).
+ */
+export function swapTemplateSignature(bodyHtml: string, signatureHtml: string | null | undefined): string {
+  const stripped = stripTableContaining(bodyHtml, NEEDLES);
+  return appendSignature(stripped, signatureHtml ?? '');
 }
