@@ -694,44 +694,47 @@ export default function CrmChatsPage() {
                       className="flex-1 min-w-0 text-left"
                     >
                       <div className="flex items-center gap-1.5">
-                        {pinned.has(t.id) && <Pin className="w-3 h-3 text-primary shrink-0 -rotate-45" strokeWidth={2.6} />}
-                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight flex-1 min-w-0 ${isUnread ? 'font-bold text-foreground' : 'font-semibold text-foreground/90'}`}>
+                        {pinned.has(t.id) && <Pin className="w-2.5 h-2.5 text-primary/70 shrink-0 -rotate-45" strokeWidth={2.4} />}
+                        <h3 className={`text-[15px] truncate tracking-[-0.01em] leading-tight flex-1 min-w-0 ${isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/85'}`}>
                           {name}
                         </h3>
                         {time && (
                           <time dateTime={t.last_message_at ?? undefined} title={fullTime}
-                            className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums leading-tight ${isUnread ? 'text-primary font-bold' : 'text-muted-foreground/80 font-medium'}`}>
+                            className={`text-[11px] whitespace-nowrap shrink-0 tabular-nums leading-tight font-medium ${isUnread ? 'text-primary' : 'text-muted-foreground/70'}`}>
                             {time}
                           </time>
                         )}
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1">
-                        <p className={`text-[13px] truncate leading-snug flex-1 min-w-0 ${isUnread ? 'text-foreground/85' : 'text-muted-foreground'}`}>
+                        <p className={`text-[13px] truncate leading-snug flex-1 min-w-0 ${isUnread ? 'text-foreground/80' : 'text-muted-foreground'}`}>
                           {draftContactIds.has(t.contact_id) && (
-                            <span className="inline-flex items-center mr-1.5 px-1.5 h-[15px] rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9.5px] font-bold uppercase tracking-wide align-middle">
-                              Draft
-                            </span>
+                            <span className="text-primary/90 font-medium mr-1">Draft ·</span>
                           )}
-                          {failed && <AlertCircle className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-destructive" strokeWidth={2.4} aria-label="Last send failed" />}
-                          {t.last_message_direction === 'outbound' && !failed && (
-                            <CornerUpLeft className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/60" strokeWidth={2.2} aria-label="You replied" />
+                          {failed ? (
+                            <AlertCircle className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-destructive/80" strokeWidth={2.2} aria-label="Last send failed" />
+                          ) : t.last_message_direction === 'outbound' && (
+                            <CornerUpLeft className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/45" strokeWidth={2} aria-label="You replied" />
                           )}
                           {t.has_attachment && (
-                            <Paperclip className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/70" strokeWidth={2.2} aria-label="Has attachment" />
+                            <Paperclip className="inline-block w-3 h-3 mr-1 -mt-0.5 align-middle text-muted-foreground/45" strokeWidth={2} aria-label="Has attachment" />
                           )}
                           {t.subject ? (
-                            <span className={isUnread ? 'font-semibold text-foreground' : 'text-foreground/85'}>{t.subject}</span>
+                            <span className={isUnread ? 'font-medium text-foreground/90' : 'text-foreground/75'}>{t.subject}</span>
                           ) : (preview || fallback || 'No messages yet')}
                         </p>
                         {snoozeText && (
-                          <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                          <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-600/85 dark:text-amber-400/85">
                             <Clock4 className="w-2.5 h-2.5" /> {snoozeText.replace(/^Snoozed · /, '')}
                           </span>
                         )}
                         {isUnread && !selectMode && (
-                          <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm shadow-primary/30 tabular-nums">
-                            {t.unread_count > 99 ? '99+' : t.unread_count}
-                          </span>
+                          t.unread_count === 1 ? (
+                            <span aria-label="Unread" className="shrink-0 w-2 h-2 rounded-full bg-primary" />
+                          ) : (
+                            <span className="shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold flex items-center justify-center tabular-nums">
+                              {t.unread_count > 99 ? '99+' : t.unread_count}
+                            </span>
+                          )
                         )}
                       </div>
                     </button>
