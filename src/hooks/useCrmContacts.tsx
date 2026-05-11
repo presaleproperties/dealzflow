@@ -425,18 +425,24 @@ export function useBulkUpdateContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ids, updates }: { ids: string[]; updates: Record<string, unknown> }) => {
-      const normalizedUpdates = { ...updates };
+      if (!ids.length) return;
+      const normalizedUpdates: Record<string, unknown> = { ...updates };
       if ('tags' in normalizedUpdates) normalizedUpdates.tags = normalizeCrmMultiValueList(normalizedUpdates.tags);
       if ('projects' in normalizedUpdates) normalizedUpdates.projects = normalizeCrmMultiValueList(normalizedUpdates.projects);
 
-      const { error } = await supabase
-        .from('crm_contacts')
-        .update(normalizedUpdates)
-        .in('id', ids);
+      // Use the SECURITY DEFINER RPC so bulk admin actions don't bump
+      // last_touch_at (which would corrupt engagement scoring + the
+      // "Needs Attention" queue) — see Last Activity Rule memory.
+      const { error } = await supabase.rpc('bulk_update_contacts_silent' as never, {
+        p_contact_ids: ids,
+        p_updates: normalizedUpdates,
+      } as never);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts-lite'] });
       toast.success('Contacts updated');
     },
     onError: (err: Error) => {
