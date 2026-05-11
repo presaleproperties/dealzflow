@@ -90,6 +90,8 @@
     --primary-foreground: 222 25% 10%;
     --primary-glow: 39 76% 64%;
     --primary-subtle: 39 50% 16%;
+    /* Strong gold variant — brighter on dark for readable accent text */
+    --primary-strong: 39 80% 68%;
 
     --secondary: 222 18% 18%;
     --secondary-foreground: 220 12% 80%;
