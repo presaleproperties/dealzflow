@@ -314,11 +314,7 @@ export default function InboxView() {
       else if (e.key === 'u' && selectedThread) { e.preventDefault(); void markUnread(selectedThread.id); }
       else if (e.key === 'r' && selectedThread) {
         e.preventDefault();
-        setReplyOpen(true);
-        setTimeout(() => {
-          const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
-          ta?.focus();
-        }, 30);
+        openReply();
       }
     };
     window.addEventListener('keydown', onKey);
