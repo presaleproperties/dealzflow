@@ -26,24 +26,12 @@ import type { CrmContact } from '@/hooks/useCrmContacts';
 // keeps working when the same browser is used by a different teammate.
 const AGENT_FILTER_KEY = 'crm.pipeline.agentFilter.v1';
 
-/* ─── Segment-based colors ─── */
-const SEGMENT_COLORS: Record<string, { bg: string; border: string; dot: string }> = {
-  'New Leads':      { bg: 'hsl(var(--primary) / 0.06)',  border: 'hsl(var(--primary) / 0.3)',  dot: 'hsl(var(--primary))' },
-  'Presale':        { bg: 'hsl(210 62% 46% / 0.06)', border: 'hsl(210 62% 46% / 0.3)', dot: 'hsl(210 62% 46%)' },
-  'Pre-Sale 🔥':    { bg: 'hsl(0 84% 60% / 0.06)',   border: 'hsl(0 84% 60% / 0.3)',   dot: 'hsl(0 84% 60%)' },
-  'Re-Sale 🔥':     { bg: 'hsl(25 90% 55% / 0.06)',  border: 'hsl(25 90% 55% / 0.3)',  dot: 'hsl(25 90% 55%)' },
-  'Commercial':     { bg: 'hsl(220 50% 50% / 0.06)', border: 'hsl(220 50% 50% / 0.3)', dot: 'hsl(220 50% 50%)' },
-  'Showing Booked': { bg: 'hsl(142 71% 45% / 0.06)', border: 'hsl(142 71% 45% / 0.3)', dot: 'hsl(142 71% 45%)' },
-  'Offer Made':     { bg: 'hsl(270 60% 55% / 0.06)', border: 'hsl(270 60% 55% / 0.3)', dot: 'hsl(270 60% 55%)' },
-  'Nurturing':      { bg: 'hsl(38 92% 50% / 0.06)',  border: 'hsl(38 92% 50% / 0.3)',  dot: 'hsl(38 92% 50%)' },
-  'Closed':         { bg: 'hsl(142 71% 30% / 0.10)', border: 'hsl(142 71% 30% / 0.3)', dot: 'hsl(142 71% 30%)' },
-  'Lost / Cold':    { bg: 'hsl(220 10% 50% / 0.06)', border: 'hsl(220 10% 50% / 0.3)', dot: 'hsl(220 10% 50%)' },
-};
+/* ─── Segment-based colors (S14 Tier 3 — shared dynamic util) ─── */
+import { getSegmentColor as getSegmentColorShared } from '@/lib/segmentColors';
 
-const DEFAULT_COLOR = { bg: 'hsl(220 10% 50% / 0.06)', border: 'hsl(220 10% 50% / 0.3)', dot: 'hsl(220 10% 50%)' };
-
-function getSegmentColor(name: string) {
-  return SEGMENT_COLORS[name] ?? DEFAULT_COLOR;
+/** Local adapter — kanban already has the full segment row, pass it through. */
+function getSegmentColor(segment: { name?: string | null; color?: string | null; sort_order?: number | null }) {
+  return getSegmentColorShared(segment);
 }
 
 /* ─── Shared segment matching ─── */
@@ -417,7 +405,7 @@ export function PipelineKanban() {
           >
             <div className="flex gap-2 sm:gap-3 min-w-max h-full">
               {pipelineSegments.map(seg => {
-                const colors = getSegmentColor(seg.name);
+                const colors = getSegmentColor(seg);
                 const segContacts = columns[seg.id] ?? [];
                 return (
                   <div
@@ -494,7 +482,7 @@ export function PipelineKanban() {
           {isMobile && (
             <div className="flex justify-center gap-1.5 pt-2 pb-1">
               {pipelineSegments.map((seg, idx) => {
-                const colors = getSegmentColor(seg.name);
+                const colors = getSegmentColor(seg);
                 return (
                   <button
                     key={seg.id}

@@ -394,6 +394,20 @@ export function useDialer() {
   );
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+ * S11 Tier 3 — narrow selector hooks.
+ * Components that read just one slice of dialer state (BottomNav badge,
+ * call-status pill, header indicator, etc.) MUST use these so they
+ * don't re-render every second while the duration ticker fires.
+ * ───────────────────────────────────────────────────────────────────── */
+export const useDialerStatus = () => useDialerStore((s) => s.status);
+export const useDialerDuration = () => useDialerStore((s) => s.durationSec);
+export const useDialerContact = () => useDialerStore((s) => s.contact);
+export const useDialerNumber = () => useDialerStore((s) => s.number);
+export const useDialerWidgetOpen = () => useDialerStore((s) => s.widgetOpen);
+export const useDialerIsActive = () =>
+  useDialerStore((s) => s.status === 'connecting' || s.status === 'ringing' || s.status === 'in-progress');
+
 /**
  * Tick the duration timer once per second while a call is in progress.
  * Lives at the app root via <DialerWidget />.
