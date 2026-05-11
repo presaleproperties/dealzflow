@@ -53,6 +53,7 @@ export function useActivePipelineFor(contact: CrmContact | null | undefined) {
  */
 export function useSetContactPipeline() {
   const qc = useQueryClient();
+  const { pipelines } = useUnifiedPipelines();
   return useMutation({
     mutationFn: async ({
       contact,
@@ -62,20 +63,63 @@ export function useSetContactPipeline() {
       segment: LeadSegment;
     }) => {
       const fc = segment.filter_config as Record<string, unknown>;
-      const updates: Record<string, unknown> = { pipeline_segment_id: segment.id };
+      const nowIso = new Date().toISOString();
+      const updates: Record<string, unknown> = {
+        pipeline_segment_id: segment.id,
+        // Stamp stage_changed_at unconditionally so daysInStage is correct
+        // even when the segment doesn't carry a status rule.
+        stage_changed_at: nowIso,
+      };
       if (Array.isArray(fc.status) && (fc.status as string[]).length > 0) {
         updates.status = (fc.status as string[])[0];
-        updates.status_changed_at = new Date().toISOString();
-        updates.stage_changed_at = new Date().toISOString();
+        updates.status_changed_at = nowIso;
       }
       if (Array.isArray(fc.lead_type) && (fc.lead_type as string[]).length > 0) {
         updates.lead_type = (fc.lead_type as string[])[0];
       }
-      if (Object.keys(updates).length === 0) {
-        throw new Error(`"${segment.name}" has no stage rules`);
-      }
+
+      // Resolve previous segment name for the timeline entry.
+      const prevSegmentId = (contact as unknown as { pipeline_segment_id?: string | null })
+        .pipeline_segment_id ?? null;
+      const prevSegmentName =
+        pipelines.find((p) => p.id === prevSegmentId)?.name ?? 'Unassigned';
+
       const { error } = await supabase.from('crm_contacts').update(updates).eq('id', contact.id);
       if (error) throw error;
+
+      // Best-effort timeline entry — failures here must not undo the move.
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        await supabase.from('crm_activity_events').insert({
+          contact_id: contact.id,
+          type: 'pipeline_stage_changed',
+          occurred_at: nowIso,
+          metadata: {
+            old_segment_id: prevSegmentId,
+            old_segment_name: prevSegmentName,
+            new_segment_id: segment.id,
+            new_segment_name: segment.name,
+            actor_user_id: userData?.user?.id ?? null,
+            source: 'kanban_drag',
+          },
+        });
+      } catch (e) {
+        console.warn('[useSetContactPipeline] timeline insert failed', e);
+      }
+
+      // Best-effort assigned-agent notification.
+      try {
+        await supabase.rpc('crm_send_notification' as never, {
+          p_contact_id: contact.id,
+          p_kind: 'pipeline_stage_changed',
+          p_title: `Moved to ${segment.name}`,
+          p_body: `Pipeline stage changed from "${prevSegmentName}" to "${segment.name}"`,
+        } as never);
+      } catch (e) {
+        // RPC may not exist in every environment — silent fallback.
+        console.debug('[useSetContactPipeline] notification skipped', e);
+      }
+
       return updates;
     },
     onSuccess: () => {
@@ -86,6 +130,9 @@ export function useSetContactPipeline() {
       qc.invalidateQueries({ queryKey: ['crm-segment-counts'] });
       qc.invalidateQueries({ queryKey: ['crm-pipeline-snapshot'] });
       qc.invalidateQueries({ queryKey: ['crm-dashboard-kpis'] });
+      qc.invalidateQueries({ queryKey: ['crm-lead-timeline'] });
+      qc.invalidateQueries({ queryKey: ['crm-lead-timeline-v2'] });
+      qc.invalidateQueries({ queryKey: ['crm-activity-events'] });
     },
   });
 }
