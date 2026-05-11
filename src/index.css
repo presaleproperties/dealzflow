@@ -23,6 +23,8 @@
     --primary-foreground: 222 25% 10%;
     --primary-glow: 39 72% 62%;
     --primary-subtle: 39 60% 95%;
+    /* Strong gold variant for text on light surfaces (≥4.5:1 on white) */
+    --primary-strong: 35 75% 38%;
 
     /* Secondary */
     --secondary: 30 6% 94%;
