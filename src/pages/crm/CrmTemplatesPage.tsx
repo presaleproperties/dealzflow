@@ -317,6 +317,15 @@ export default function CrmTemplatesPage() {
         open={!!sendPresale}
         onOpenChange={(v) => { if (!v) setSendPresale(null); }}
       />
+
+      <TemplateCommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        templates={items}
+        onPreview={(t) => setSelectedUid(t.uid)}
+        onSend={(t) => { sendTemplate(t); }}
+        onEdit={(t) => setEditing(t)}
+      />
     </div>
   );
 }
