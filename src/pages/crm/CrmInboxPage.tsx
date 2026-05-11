@@ -27,7 +27,6 @@ const TABS: { value: Channel; label: string; icon: typeof Mail; subtitle: string
 ];
 
 export default function CrmInboxPage() {
-  const { data: isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const location = useLocation();
 
