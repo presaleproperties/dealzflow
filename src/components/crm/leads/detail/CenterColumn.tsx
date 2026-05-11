@@ -564,11 +564,7 @@ export function CenterColumn({ contact, onCall, onText, onEmail, onTask, onShowi
         initialBodyHtml={replyCompose?.bodyHtml}
       />
 
-      <ImportConversationDialog
-        contact={contact}
-        open={showImport}
-        onOpenChange={setShowImport}
-      />
+
 
       <SmsThreadDrawer
         open={smsDrawerOpen}
