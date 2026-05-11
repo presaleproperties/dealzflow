@@ -3,10 +3,10 @@ import { useSwipeToClose } from './SwipeDismiss';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Handshake, Building2, CalendarDays, MoreHorizontal,
-  Users, Kanban, Mail, Inbox, BarChart3, Zap, LayoutTemplate, Plug,
+  Users, Kanban, Mail, BarChart3, Zap, LayoutTemplate, Plug,
   Settings, Settings2, Receipt, TrendingUp, BarChart2, Network,
   DollarSign, GitBranch, ShieldAlert, LogOut, X, Briefcase, Sparkles,
-  MessageCircle, MessageSquare, Plus, UserPlus, CalendarPlus, FileText,
+  MessageCircle, MessageSquare, Plus, UserPlus, CalendarPlus,
   PenSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
