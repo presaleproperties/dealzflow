@@ -8,6 +8,8 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailMessageView } from '@/components/crm/chats/EmailMessageView';
+import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
+import { useCrmContact } from '@/hooks/useCrmLeadDetail';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,12 +96,16 @@ export default function InboxView() {
     try { return localStorage.getItem('inbox.listCollapsed') === '1'; } catch { return false; }
   });
   // Reply box starts as a slim trigger; expands when the user wants to reply.
+  // When the thread has a linked contact we hand off to ComposeEmailDialog
+  // (signatures, AI assist, attachments, merge tokens). Otherwise we fall
+  // back to the legacy inline textarea so unattached threads still work.
   const [replyOpen, setReplyOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
   const replyRef = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { try { localStorage.setItem('inbox.foldersCollapsed', foldersCollapsed ? '1' : '0'); } catch {} }, [foldersCollapsed]);
   useEffect(() => { try { localStorage.setItem('inbox.listCollapsed', listCollapsed ? '1' : '0'); } catch {} }, [listCollapsed]);
   // Reset reply state when switching threads.
-  useEffect(() => { setReplyOpen(false); setReply(''); }, [selectedThreadId]);
+  useEffect(() => { setReplyOpen(false); setComposeOpen(false); setReply(''); }, [selectedThreadId]);
   // Auto-grow expanded reply textarea.
   useEffect(() => {
     if (!replyOpen) return;
@@ -175,6 +181,23 @@ export default function InboxView() {
   });
 
   const selectedThread = filteredThreads.find(t => t.id === selectedThreadId) ?? null;
+  // Lazy-load the contact only when we open the full composer for a reply.
+  const { data: replyContact } = useCrmContact(composeOpen ? (selectedThread?.contact_id ?? undefined) : undefined);
+  const replySubject = useMemo(() => {
+    const s = (selectedThread?.subject || '').replace(/^(re:\s*)+/i, '').trim();
+    return s ? `Re: ${s}` : '';
+  }, [selectedThread?.subject]);
+  // Open the rich composer if the thread has a linked contact, otherwise
+  // fall back to the inline textarea (no recipient context to send to).
+  const openReply = useCallback(() => {
+    if (!selectedThread) return;
+    if (selectedThread.contact_id) {
+      setComposeOpen(true);
+    } else {
+      setReplyOpen(true);
+      setTimeout(() => replyRef.current?.focus(), 30);
+    }
+  }, [selectedThread]);
 
   // Mark thread read when opened
   useEffect(() => {
@@ -291,11 +314,7 @@ export default function InboxView() {
       else if (e.key === 'u' && selectedThread) { e.preventDefault(); void markUnread(selectedThread.id); }
       else if (e.key === 'r' && selectedThread) {
         e.preventDefault();
-        setReplyOpen(true);
-        setTimeout(() => {
-          const ta = document.querySelector('textarea[data-inbox-reply]') as HTMLTextAreaElement | null;
-          ta?.focus();
-        }, 30);
+        openReply();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -304,43 +323,66 @@ export default function InboxView() {
   }, [filteredThreads, selectedThreadId, selectedThread?.id, isCompact, markUnread]);
 
 
+  // Shared compose dialog (mounted from both desktop & mobile branches).
+  const composeNode = replyContact ? (
+    <ComposeEmailDialog
+      contact={replyContact}
+      open={composeOpen}
+      onOpenChange={setComposeOpen}
+      initialSubject={replySubject}
+      onSent={() => {
+        setComposeOpen(false);
+        if (selectedThread) {
+          qc.invalidateQueries({ queryKey: ['crm-inbox-threads'] });
+          qc.invalidateQueries({ queryKey: ['crm-inbox-messages', selectedThread.id] });
+        }
+      }}
+    />
+  ) : null;
+
   // ───────────────── Mobile (list-or-detail) ─────────────────
   if (isCompact) {
     const showingDetail = !!selectedThread;
     return (
-      <div className="flex flex-col min-h-0 h-full bg-background">
-        {!showingDetail ? (
-          <MobileThreadList
-            folder={folder}
-            folders={folders}
-            onFolderChange={(f) => { setFolder(f); setSelectedThreadId(null); }}
-            search={search}
-            onSearchChange={setSearch}
-            threads={filteredThreads}
-            isLoading={threadsQuery.isLoading}
-            onPick={(id) => { triggerHaptic('selection'); setSelectedThreadId(id); }}
-            onSync={sync}
-            syncing={syncing}
-            onPullRefresh={handlePullRefresh}
-            onArchive={archiveThread}
-            onMarkUnread={markUnread}
-          />
-        ) : (
-          <MobileThreadDetail
-            thread={selectedThread!}
-            messages={messagesQuery.data ?? []}
-            isLoading={messagesQuery.isLoading}
-            onBack={() => setSelectedThreadId(null)}
-            onArchive={archive}
-            reply={reply}
-            onReplyChange={setReply}
-            onSend={sendReply}
-            sending={sending}
-          />
-        )}
-      </div>
+      <>
+        <div className="flex flex-col min-h-0 h-full bg-background">
+          {!showingDetail ? (
+            <MobileThreadList
+              folder={folder}
+              folders={folders}
+              onFolderChange={(f) => { setFolder(f); setSelectedThreadId(null); }}
+              search={search}
+              onSearchChange={setSearch}
+              threads={filteredThreads}
+              isLoading={threadsQuery.isLoading}
+              onPick={(id) => { triggerHaptic('selection'); setSelectedThreadId(id); }}
+              onSync={sync}
+              syncing={syncing}
+              onPullRefresh={handlePullRefresh}
+              onArchive={archiveThread}
+              onMarkUnread={markUnread}
+            />
+          ) : (
+            <MobileThreadDetail
+              thread={selectedThread!}
+              messages={messagesQuery.data ?? []}
+              isLoading={messagesQuery.isLoading}
+              onBack={() => setSelectedThreadId(null)}
+              onArchive={archive}
+              reply={reply}
+              onReplyChange={setReply}
+              onSend={sendReply}
+              sending={sending}
+              onOpenFull={openReply}
+              hasContact={!!selectedThread!.contact_id}
+            />
+          )}
+        </div>
+        {composeNode}
+      </>
     );
   }
+
 
   // ───────────────── Desktop (3-pane) ─────────────────
   // Dynamic grid template lets users collapse either side pane.
@@ -574,8 +616,9 @@ export default function InboxView() {
               <ToolbarBtn
                 icon={Reply}
                 label="Reply"
-                onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+                onClick={openReply}
               />
+
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="ml-auto flex items-center gap-1">
                 {selectedThread.contact_id && (
@@ -638,7 +681,7 @@ export default function InboxView() {
               {!replyOpen ? (
                 <button
                   type="button"
-                  onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+                  onClick={openReply}
                   className="group w-full flex items-center gap-3 px-6 h-12 text-left text-[12.5px] text-muted-foreground hover:bg-muted/40 transition-colors"
                 >
                   <span className="h-7 w-7 shrink-0 rounded-full bg-primary/10 text-primary text-[10.5px] font-semibold inline-flex items-center justify-center group-hover:bg-primary/15 transition-colors">
@@ -695,6 +738,7 @@ export default function InboxView() {
           </>
         )}
       </main>
+      {composeNode}
     </div>
   );
 }
@@ -922,7 +966,7 @@ function SwipeableThreadRow({
 
 function MobileThreadDetail({
   thread, messages, isLoading, onBack, onArchive,
-  reply, onReplyChange, onSend, sending,
+  reply, onReplyChange, onSend, sending, onOpenFull, hasContact,
 }: {
   thread: Thread;
   messages: Msg[];
@@ -933,6 +977,8 @@ function MobileThreadDetail({
   onReplyChange: (s: string) => void;
   onSend: () => void | Promise<void>;
   sending: boolean;
+  onOpenFull?: () => void;
+  hasContact?: boolean;
 }) {
   // Auto-grow reply textarea (cap height so it never eats the screen).
   const taRef = useRef<HTMLTextAreaElement | null>(null);
@@ -983,33 +1029,44 @@ function MobileThreadDetail({
         className="shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-md px-3 pt-2"
         style={{ paddingBottom: 'max(0.5rem, calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-pad, 0px)))' }}
       >
-        <div className="rounded-2xl border border-border/70 bg-background shadow-sm overflow-hidden">
-          <Textarea
-            ref={taRef}
-            value={reply}
-            onChange={(e) => onReplyChange(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void onSend(); }
-            }}
-            placeholder={`Reply to ${thread.last_message_from || thread.participants[0] || ''}…`}
-            rows={1}
-            enterKeyHint="send"
-            className="text-[14px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none px-3.5 py-3 min-h-[44px] max-h-[180px]"
-          />
-          <div className="flex items-center justify-between px-2 pb-2">
-            <span className="text-[10.5px] text-muted-foreground/70 px-1.5">⌘+Enter to send</span>
-            <Button
-              size="sm"
-              onClick={onSend}
-              disabled={sending || !reply.trim()}
-              className="h-9 gap-1.5 px-4 rounded-xl text-[13px] font-semibold"
-            >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Send
-            </Button>
+        {hasContact && onOpenFull ? (
+          <Button
+            onClick={onOpenFull}
+            className="w-full h-11 gap-2 rounded-2xl text-[14px] font-semibold"
+          >
+            <Reply className="h-4 w-4" />
+            Reply
+          </Button>
+        ) : (
+          <div className="rounded-2xl border border-border/70 bg-background shadow-sm overflow-hidden">
+            <Textarea
+              ref={taRef}
+              value={reply}
+              onChange={(e) => onReplyChange(e.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void onSend(); }
+              }}
+              placeholder={`Reply to ${thread.last_message_from || thread.participants[0] || ''}…`}
+              rows={1}
+              enterKeyHint="send"
+              className="text-[14px] resize-none border-0 shadow-none focus-visible:ring-0 rounded-none px-3.5 py-3 min-h-[44px] max-h-[180px]"
+            />
+            <div className="flex items-center justify-between px-2 pb-2">
+              <span className="text-[10.5px] text-muted-foreground/70 px-1.5">⌘+Enter to send</span>
+              <Button
+                size="sm"
+                onClick={onSend}
+                disabled={sending || !reply.trim()}
+                className="h-9 gap-1.5 px-4 rounded-xl text-[13px] font-semibold"
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Send
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
     </div>
   );
 }
