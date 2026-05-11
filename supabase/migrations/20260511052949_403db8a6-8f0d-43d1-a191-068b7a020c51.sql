@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.crm_template_is_my_team_contribution(text) TO authenticated;
