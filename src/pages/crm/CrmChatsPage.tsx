@@ -15,6 +15,7 @@ import { usePrefetchChatThread } from '@/hooks/usePrefetchCrm';
 import { useEmailThreadsForContact } from '@/hooks/useEmailThreadsForContact';
 import { formatContactName } from '@/lib/format';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { InboxEmpty } from '@/components/crm/inbox/InboxEmpty';
