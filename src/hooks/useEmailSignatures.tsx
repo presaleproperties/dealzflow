@@ -88,12 +88,18 @@ export function useSetDefaultSignature() {
     mutationFn: async (id: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-      // Unset any existing default for this user first so only one signature
-      // is ever marked default. Without this, callers that pick the default
-      // via `signatures.find(s => s.is_default)` can return stale rows.
+      // Look up the row's kind so we only clear other defaults of the same
+      // kind. Full vs reply defaults are independent.
+      const { data: row, error: fetchErr } = await (supabase.from('crm_email_signatures' as any) as any)
+        .select('kind')
+        .eq('id', id)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      const kind = (row?.kind as EmailSignatureKind | undefined) ?? 'full';
       const { error: clearErr } = await (supabase.from('crm_email_signatures' as any) as any)
         .update({ is_default: false })
         .eq('user_id', session.user.id)
+        .eq('kind', kind)
         .eq('is_default', true);
       if (clearErr) throw clearErr;
       const { error } = await (supabase.from('crm_email_signatures' as any) as any)
@@ -107,4 +113,25 @@ export function useSetDefaultSignature() {
     },
     onError: (err: Error) => toast.error(err.message),
   });
+}
+
+/**
+ * Resolve the signature HTML to use for a given send context.
+ * `kind: 'reply'` returns the agent's reply-only signature (or falls back to
+ * the full default if they haven't set one yet — never returns the empty
+ * string when a full one exists).
+ */
+export function pickSignatureForKind(
+  signatures: EmailSignature[],
+  kind: EmailSignatureKind,
+): EmailSignature | null {
+  const ofKind = signatures.filter((s) => (s.kind ?? 'full') === kind);
+  const def = ofKind.find((s) => s.is_default) ?? ofKind[0];
+  if (def) return def;
+  if (kind === 'reply') {
+    // Fallback: full default. Better than no signature at all.
+    const full = signatures.filter((s) => (s.kind ?? 'full') === 'full');
+    return full.find((s) => s.is_default) ?? full[0] ?? null;
+  }
+  return null;
 }
