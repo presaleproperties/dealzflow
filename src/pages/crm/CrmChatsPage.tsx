@@ -375,17 +375,17 @@ export default function CrmChatsPage() {
 
   return (
     <div className="flex flex-1 min-h-0 h-full flex-col">
-      {/* Premium glassmorphic header */}
-      <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/60">
-        <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-2">
-          <div className="min-w-0">
-            <h1 className="text-[22px] font-semibold text-foreground tracking-[-0.02em] leading-none">Chats</h1>
-            <p className="hidden sm:block text-[11px] text-muted-foreground mt-1 font-medium">
+      {/* Editorial sticky header — opaque so scrolled rows don't bleed through */}
+      <div className="-mx-3 sm:-mx-4 -mt-3 md:-mt-4 sticky top-0 z-20 bg-background border-b border-border/60">
+        <div className="flex items-end justify-between gap-2 px-4 pt-3 pb-2.5">
+          <div className="min-w-0 flex items-baseline gap-2.5">
+            <h1 className="text-[20px] font-semibold text-foreground tracking-[-0.02em] leading-none">Chats</h1>
+            <p className="text-[11.5px] text-muted-foreground font-medium leading-none tabular-nums">
               {selectMode && selected.size > 0
                 ? <><span className="text-primary font-bold">{selected.size}</span> selected</>
                 : counts.all > 0
-                  ? <><span className="text-primary font-bold">{counts.all}</span> unread · {threads.length} total</>
-                  : <>{threads.length} {threads.length === 1 ? 'conversation' : 'conversations'}</>
+                  ? <><span className="text-primary font-bold">{counts.all}</span> unread · {threads.length}</>
+                  : <>{threads.length} {threads.length === 1 ? 'thread' : 'threads'}</>
               }
             </p>
           </div>
