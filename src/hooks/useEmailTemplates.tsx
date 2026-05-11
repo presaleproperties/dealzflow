@@ -245,12 +245,30 @@ export function useDuplicateTemplate() {
   const mySlug = useMyAgentSlug();
   return useMutation({
     mutationFn: async (tpl: EmailTemplate) => {
-      const owner_scope = mySlug ? `agent:${mySlug}` : 'team:presale';
-      const owner_agent_slug = mySlug;
+      if (!mySlug) {
+        throw new Error(
+          'No Presale agent profile linked to your account yet. Open Settings → Email to finish setup, then duplicate again.',
+        );
+      }
+
+      // Pull the duplicating agent's signature so we can swap out the
+      // original (team) signature embedded in the body.
+      const { data: { session } } = await supabase.auth.getSession();
+      let signatureHtml = '';
+      if (session) {
+        const { data: settings } = await (supabase.from('crm_email_settings' as any) as any)
+          .select('signature_html')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        signatureHtml = (settings as any)?.signature_html ?? '';
+      }
+      const { swapTemplateSignature } = await import('@/lib/templateSignature');
+      const newBody = swapTemplateSignature(tpl.html_content ?? '', signatureHtml);
+
       const { error } = await supabase.from('crm_email_templates').insert({
         name: `${tpl.name} (Copy)`,
         subject: tpl.subject ?? '',
-        body_html: tpl.html_content,
+        body_html: newBody,
         preview_text: tpl.preview_text ?? null,
         category: tpl.category ?? 'general',
         project: tpl.project_tags?.[0] ?? null,
@@ -258,15 +276,15 @@ export function useDuplicateTemplate() {
         source: 'dealflow',
         is_active: true,
         is_favorite: false,
-        owner_scope,
-        owner_agent_slug,
+        owner_scope: `agent:${mySlug}`,
+        owner_agent_slug: mySlug,
         created_by_agent_slug: mySlug,
       } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['email-templates'] });
-      toast.success('Duplicated to your library');
+      toast.success('Duplicated to your library — signature swapped to yours');
     },
     onError: (err: Error) => toast.error(err.message),
   });
