@@ -405,7 +405,7 @@ export function PipelineKanban() {
           >
             <div className="flex gap-2 sm:gap-3 min-w-max h-full">
               {pipelineSegments.map(seg => {
-                const colors = getSegmentColor(seg.name);
+                const colors = getSegmentColor(seg);
                 const segContacts = columns[seg.id] ?? [];
                 return (
                   <div
