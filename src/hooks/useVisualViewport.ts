@@ -12,6 +12,8 @@ export function useVisualViewport() {
     const vv = window.visualViewport;
     let rafId = 0;
     let loopRunning = false;
+    let isAnimating = false;
+    let animationTimer = 0;
 
     function update() {
       const vh = vv ? vv.height : window.innerHeight;
@@ -19,16 +21,44 @@ export function useVisualViewport() {
       const offset = fullHeight - vh;
       const isOpen = offset > KEYBOARD_THRESHOLD;
 
-      // Write CSS custom properties directly — no React state
-      root.style.setProperty('--vv-height', vh + 'px');
-      root.style.setProperty('--keyboard-offset', offset + 'px');
+      if (isOpen && !keyboardOpenRef.current) {
+        // === KEYBOARD JUST OPENED ===
+        // Set the offset ONCE immediately, then freeze for 350ms
+        keyboardOpenRef.current = true;
+        isAnimating = true;
+        root.classList.add('keyboard-open');
+        root.style.setProperty('--keyboard-offset', offset + 'px');
+        root.style.setProperty('--vv-height', vh + 'px');
 
-      if (isOpen !== keyboardOpenRef.current) {
-        keyboardOpenRef.current = isOpen;
-        root.classList.toggle('keyboard-open', isOpen);
+        // After iOS keyboard animation completes, read the FINAL offset
+        clearTimeout(animationTimer);
+        animationTimer = window.setTimeout(() => {
+          isAnimating = false;
+          const settledVh = vv ? vv.height : window.innerHeight;
+          const settledOffset = window.innerHeight - settledVh;
+          root.style.setProperty('--keyboard-offset', settledOffset + 'px');
+          root.style.setProperty('--vv-height', settledVh + 'px');
+        }, 350);
+
+      } else if (!isOpen && keyboardOpenRef.current) {
+        // === KEYBOARD JUST CLOSED ===
+        // Snap back to 0 instantly
+        keyboardOpenRef.current = false;
+        isAnimating = false;
+        clearTimeout(animationTimer);
+        root.classList.remove('keyboard-open');
+        root.style.setProperty('--keyboard-offset', '0px');
+        root.style.setProperty('--vv-height', fullHeight + 'px');
+
+      } else if (isOpen && !isAnimating) {
+        // === KEYBOARD ALREADY OPEN AND SETTLED ===
+        // Normal update (handles orientation changes, etc.)
+        root.style.setProperty('--keyboard-offset', offset + 'px');
+        root.style.setProperty('--vv-height', vh + 'px');
       }
+      // If isOpen && isAnimating: DO NOTHING — we're frozen during animation
 
-      // Aggressively prevent iOS from scrolling the page behind the keyboard
+      // Always prevent iOS body scroll when keyboard is open
       if (isOpen) {
         window.scrollTo(0, 0);
         document.body.scrollTop = 0;
