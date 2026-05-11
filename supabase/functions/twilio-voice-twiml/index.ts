@@ -144,12 +144,16 @@ Deno.serve(async (req) => {
       }, { onConflict: "twilio_call_sid" });
 
       if (agentUserId) {
+        twiml.say(
+          { voice: 'alice' },
+          'This call may be recorded for quality and training purposes.',
+        );
         const dial = twiml.dial({
           answerOnBridge: true,
           timeout: 25,
-          record: "record-from-answer-dual",
+          record: 'record-from-answer-dual',
           recordingStatusCallback: RECORDING_URL,
-          recordingStatusCallbackEvent: ["completed"],
+          recordingStatusCallbackEvent: ['completed'],
           action: STATUS_URL, // Twilio POSTs DialCallStatus when leg ends
         });
         dial.client(agentUserId);
