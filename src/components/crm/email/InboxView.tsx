@@ -593,8 +593,9 @@ export default function InboxView() {
               <ToolbarBtn
                 icon={Reply}
                 label="Reply"
-                onClick={() => { setReplyOpen(true); setTimeout(() => replyRef.current?.focus(), 30); }}
+                onClick={openReply}
               />
+
               <ToolbarBtn icon={Trash2} label="Delete" onClick={archive} />
               <div className="ml-auto flex items-center gap-1">
                 {selectedThread.contact_id && (
