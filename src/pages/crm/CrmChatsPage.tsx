@@ -764,23 +764,37 @@ export default function CrmChatsPage() {
                       </button>
                     )}
 
-                    {/* Per-row inline actions — snooze + pin + delete */}
+                    {/* Per-row overflow menu — pin + delete behind a single 3-dot trigger */}
                     {!selectMode && (
-                       <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                        <RowAction title={pinned.has(t.id) ? 'Unpin' : 'Pin to top'}
-                          onClick={() => togglePin(t.id)}>
-                          {pinned.has(t.id)
-                            ? <PinOff className="w-4 h-4 text-muted-foreground" />
-                            : <Pin className="w-4 h-4 text-muted-foreground" />}
-                        </RowAction>
-                        <RowAction title="Delete chat"
-                          onClick={() => {
-                            if (!window.confirm('Delete this chat? Underlying emails and texts are preserved — only the inbox conversation is removed.')) return;
-                            flags.remove(t.id).then(() => toast.success('Chat deleted'));
-                          }}>
-                          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                        </RowAction>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Row actions"
+                            className="shrink-0 -mr-1 w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={() => togglePin(t.id)}>
+                            {pinned.has(t.id)
+                              ? <><PinOff className="w-4 h-4 mr-2" /> Unpin</>
+                              : <><Pin className="w-4 h-4 mr-2" /> Pin to top</>}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              if (!window.confirm('Delete this chat? Underlying emails and texts are preserved — only the inbox conversation is removed.')) return;
+                              flags.remove(t.id).then(() => toast.success('Chat deleted'));
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                   </SwipeRow>
