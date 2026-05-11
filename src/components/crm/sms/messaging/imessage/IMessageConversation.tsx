@@ -434,6 +434,11 @@ function IMessageBubbleImpl({
   const isOptimistic = m.id.startsWith('optimistic-');
   const isScheduled = m.status === 'scheduled';
   const { quote, text } = parseQuoted(m.body);
+  const hasMedia = !!(m.media_urls && m.media_urls.length > 0);
+  const hasText = !!(text && text.trim().length > 0);
+  // Don't render hollow bubbles — if there's nothing to show (no text, no
+  // quote, no media) the bubble would just say "(empty)" which looks broken.
+  if (!hasText && !quote && !hasMedia) return null;
 
   return (
     <ContextMenu>
