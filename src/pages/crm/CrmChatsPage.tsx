@@ -634,10 +634,10 @@ export default function CrmChatsPage() {
 
               return (
                 <li key={t.id} className="relative" data-row-index={idx} role="option" aria-selected={isActive}>
-                  {(isUnread || isCursor) && !selectMode && (
+                  {isUnread && !selectMode && !isActive && (
                     <span aria-hidden
-                      className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all ${isCursor ? 'h-9 w-[3px]' : 'h-7 w-[3px]'}`}
-                      style={{ background: isUnread ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.55)' }} />
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[2px] rounded-r-full"
+                      style={{ background: 'hsl(var(--primary))' }} />
                   )}
                   <SwipeRow
                     isPinned={pinned.has(t.id)}
