@@ -14,7 +14,16 @@ type Mode =
   | "tone"
   | "translate"
   | "generate"
-  | "subject_lines";
+  | "subject_lines"
+  | "search";
+
+interface SearchCandidate {
+  id: string;
+  kind: "email" | "sms";
+  name: string;
+  subject?: string | null;
+  snippet?: string | null;
+}
 
 type ToneVariant = "friendly" | "professional" | "direct" | "warm" | "luxury";
 
