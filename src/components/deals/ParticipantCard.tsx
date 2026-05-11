@@ -1,5 +1,6 @@
 import { Mail, Phone, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { startInAppCall } from '@/hooks/useDialer';
 
 interface Participant {
   id: string;
