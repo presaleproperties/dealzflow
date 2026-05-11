@@ -1177,6 +1177,94 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 // ===========================================================================
+// "Preview as" recipient picker — pipes a real lead through merge tags so
+// agents can verify subject/body render correctly before sending.
+// ===========================================================================
+function PreviewAsBar({
+  value, onChange,
+}: { value: CrmContact | null; onChange: (c: CrmContact | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const { data: contacts = [] } = useCrmContacts();
+
+  const matches = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const list = contacts.filter((c) => !!c.email);
+    if (!needle) return list.slice(0, 25);
+    return list.filter((c) => {
+      const hay = `${c.first_name ?? ''} ${c.last_name ?? ''} ${c.email ?? ''}`.toLowerCase();
+      return needle.split(/\s+/).every((tok) => hay.includes(tok));
+    }).slice(0, 25);
+  }, [contacts, q]);
+
+  const label = value
+    ? `${value.first_name ?? ''} ${value.last_name ?? ''}`.trim() || (value.email ?? 'Recipient')
+    : 'Sample data';
+
+  return (
+    <div className="px-4 py-2 border-b border-border/60 bg-card flex items-center gap-2 text-[11.5px] shrink-0">
+      <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">Preview as</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="outline" className="h-7 gap-1.5 text-[11.5px] font-medium">
+            {label}
+            <Search className="w-3 h-3 opacity-60" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[320px] p-0" align="start">
+          <div className="p-2 border-b border-border/60">
+            <Input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search leads by name or email…"
+              className="h-8 text-[12px]"
+            />
+          </div>
+          <div className="max-h-[280px] overflow-y-auto py-1">
+            <button
+              onClick={() => { onChange(null); setOpen(false); }}
+              className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-muted/60 flex items-center justify-between"
+            >
+              <span className="text-muted-foreground">Use sample data</span>
+              {!value && <span className="text-[10px] text-muted-foreground">current</span>}
+            </button>
+            {matches.length === 0 ? (
+              <div className="px-3 py-3 text-[11.5px] text-muted-foreground">No leads found</div>
+            ) : (
+              matches.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { onChange(c); setOpen(false); }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-muted/60"
+                >
+                  <div className="text-[12.5px] font-medium truncate">
+                    {`${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || c.email}
+                  </div>
+                  {c.email && (
+                    <div className="text-[11px] text-muted-foreground truncate">{c.email}</div>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <button
+          onClick={() => onChange(null)}
+          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+          title="Clear"
+        >
+          <X className="w-3 h-3" /> clear
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+// ===========================================================================
 // Editor / creator drawer
 // ===========================================================================
 function TemplateEditorDrawer({
