@@ -1242,6 +1242,8 @@ export type Database = {
           contact_id: string
           created_at: string
           direction: string
+          error_message: string | null
+          failed_at: string | null
           gmail_message_id: string | null
           gmail_thread_id: string | null
           id: string
@@ -1252,6 +1254,7 @@ export type Database = {
           open_count: number
           opened_at: string | null
           sent_at: string
+          status: string
           subject: string
           thread_id: string | null
           tracking_id: string | null
@@ -1266,6 +1269,8 @@ export type Database = {
           contact_id: string
           created_at?: string
           direction?: string
+          error_message?: string | null
+          failed_at?: string | null
           gmail_message_id?: string | null
           gmail_thread_id?: string | null
           id?: string
@@ -1276,6 +1281,7 @@ export type Database = {
           open_count?: number
           opened_at?: string | null
           sent_at?: string
+          status?: string
           subject: string
           thread_id?: string | null
           tracking_id?: string | null
@@ -1290,6 +1296,8 @@ export type Database = {
           contact_id?: string
           created_at?: string
           direction?: string
+          error_message?: string | null
+          failed_at?: string | null
           gmail_message_id?: string | null
           gmail_thread_id?: string | null
           id?: string
@@ -1300,6 +1308,7 @@ export type Database = {
           open_count?: number
           opened_at?: string | null
           sent_at?: string
+          status?: string
           subject?: string
           thread_id?: string | null
           tracking_id?: string | null
