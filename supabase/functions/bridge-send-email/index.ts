@@ -168,26 +168,38 @@ Deno.serve(async (req) => {
     const isOwnerIdentity =
       teamRow?.role === "owner" &&
       (teamRow?.email ?? "").toLowerCase() === "info@presaleproperties.com";
+    // Resend fallback flag — set when we route through noreply@dealzflow.ca
+    // because the agent hasn't connected Gmail and isn't the owner identity.
+    let useResendFallback = false;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
     if (!useAgentGmail && !isOwnerIdentity) {
-      const toArrFallback = Array.isArray(body.to) ? body.to : [body.to];
-      await supabase.from("crm_email_schedule").insert({
-        contact_id: body.contact_id ?? null,
-        template_id: body.template_id ?? null,
-        to_emails: toArrFallback,
-        cc: body.cc ?? null,
-        bcc: body.bcc ?? null,
-        subject: body.subject,
-        body_html: body.html,
-        send_at: new Date(Date.now() + 60_000).toISOString(),
-        status: "pending",
-        created_by: userId,
-        error_message: "Inbox not connected — queued. Reconnect Gmail in Settings → Email.",
-      });
-      return json({
-        queued: true,
-        reason: "inbox_not_connected",
-        message: "Your Gmail isn't connected. The email is queued and will send automatically once you reconnect your inbox in Settings → Email.",
-      }, 202);
+      if (resendApiKey) {
+        // Resend fallback path — send via noreply@dealzflow.ca below.
+        useResendFallback = true;
+      } else {
+        // No Gmail, not owner, no Resend key configured → queue for retry
+        // and tell the user exactly what's wrong.
+        const toArrFallback = Array.isArray(body.to) ? body.to : [body.to];
+        await supabase.from("crm_email_schedule").insert({
+          contact_id: body.contact_id ?? null,
+          template_id: body.template_id ?? null,
+          to_emails: toArrFallback,
+          cc: body.cc ?? null,
+          bcc: body.bcc ?? null,
+          subject: body.subject,
+          body_html: body.html,
+          send_at: new Date(Date.now() + 60_000).toISOString(),
+          status: "pending",
+          created_by: userId,
+          error_message: "No email provider available — Gmail not connected and Resend fallback not configured.",
+        });
+        return json({
+          queued: true,
+          reason: "no_email_provider",
+          message: "No email provider available. Connect your Gmail in Settings → Email, or ask an admin to configure the Resend fallback.",
+        }, 202);
+      }
     }
 
     // Fetch sender's brand logo settings so 1:1 emails carry the same banner
