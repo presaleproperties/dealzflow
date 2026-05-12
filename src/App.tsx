@@ -63,6 +63,8 @@ const BridgeStatusPage = lazy(() => import("./pages/admin/BridgeStatusPage"));
 const PresaleWebhookLogPage = lazy(() => import("./pages/admin/PresaleWebhookLogPage"));
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const WebhookValidationPage = lazy(() => import("./pages/admin/WebhookValidationPage"));
+const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
+const CrmTrashPage = lazy(() => import("./pages/crm/CrmTrashPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
 const ResponsiveChecklistPage = lazy(() => import("./pages/ResponsiveChecklistPage"));
