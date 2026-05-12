@@ -367,6 +367,25 @@ export function TopNav() {
                 <GlobalLeadSearch />
               </div>
             )}
+            {isSupported && (
+              <button
+                type="button"
+                onClick={() => setPushDialogOpen(true)}
+                aria-label={isSubscribed ? 'Push notifications enabled' : 'Enable push notifications'}
+                title={isSubscribed ? 'Push notifications enabled' : 'Enable push notifications'}
+                className="relative inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                style={{ color: isSubscribed ? GOLD : INACTIVE_TEXT }}
+              >
+                {isSubscribed ? <BellRing className="w-[18px] h-[18px]" strokeWidth={1.8} /> : <Bell className="w-[18px] h-[18px]" strokeWidth={1.8} />}
+                {isSubscribed && (
+                  <span
+                    className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
+                    style={{ background: GOLD, boxShadow: '0 0 0 2px hsl(var(--background))' }}
+                    aria-hidden
+                  />
+                )}
+              </button>
+            )}
           </div>
           <div className="hidden lg:block w-2" />
         </div>
