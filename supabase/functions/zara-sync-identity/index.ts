@@ -53,9 +53,36 @@ Deno.serve(async (req) => {
     }
 
     const slug = zara.slug?.trim() || "zara";
+    const lookupEmail = (zara.presale_email || zara.email || "").toLowerCase();
 
-    // 2. Fetch the full agent payload from Presale
-    const full: any = await presaleBridge.getAgent(slug);
+    // 2. Resolve via list (slug match first, then email), then fetch full payload.
+    const listed: any = await presaleBridge.listAgents();
+    const agents: any[] = Array.isArray(listed) ? listed
+      : Array.isArray(listed?.agents) ? listed.agents
+      : Array.isArray(listed?.data) ? listed.data
+      : Array.isArray(listed?.results) ? listed.results
+      : [];
+    const matchBySlug = agents.find((a) => (a.slug ?? "").toLowerCase() === slug.toLowerCase());
+    const matchByEmail = !matchBySlug && lookupEmail
+      ? agents.find((a) => (a.email ?? "").toLowerCase() === lookupEmail)
+      : undefined;
+    const matchByName = !matchBySlug && !matchByEmail
+      ? agents.find((a) => (a.name ?? a.full_name ?? "").toLowerCase().includes("zara"))
+      : undefined;
+    const match = matchBySlug ?? matchByEmail ?? matchByName;
+    const identifier = match?.slug ?? match?.id ?? match?.email;
+    if (!identifier) {
+      return new Response(
+        JSON.stringify({
+          error: "No matching Presale agent for Zara",
+          tried_slug: slug,
+          tried_email: lookupEmail,
+          available_slugs: agents.map((a) => a.slug).filter(Boolean).slice(0, 20),
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const full: any = await presaleBridge.getAgent(identifier);
 
     const signatureHtml = pick<string>(full, [
       "signature_html",
