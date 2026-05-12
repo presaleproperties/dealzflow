@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { formatContactName } from '@/lib/format';
 import type { CrmContact } from '@/hooks/useCrmContacts';
 import { TYPE_LABELS } from './types';
+import { LeadActionsMenu } from './LeadActionsMenu';
 
 interface Props {
   contact: CrmContact;
