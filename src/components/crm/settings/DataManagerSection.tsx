@@ -3,7 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCrmContacts } from '@/hooks/useCrmContacts';
 import { toast } from 'sonner';
-import { Download, Trash2, Database, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Download, Trash2, Database, Search, ChevronDown, ChevronRight, Archive, Loader2 } from 'lucide-react';
+import { useFullZipExport } from '@/hooks/useFullZipExport';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ function escapeCsvCell(value: unknown): string {
 export default function DataManagerSection() {
   const { data: contacts = [], isLoading } = useCrmContacts();
   const queryClient = useQueryClient();
+  const fullZip = useFullZipExport();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -161,6 +163,17 @@ export default function DataManagerSection() {
               </Select>
               <Button variant="outline" size="sm" onClick={handleExport} className="h-7 text-[11px]">
                 <Download className="h-3 w-3 mr-1" />Export {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fullZip.run}
+                disabled={fullZip.running}
+                className="h-7 text-[11px]"
+                title="Download a ZIP of every contact + per-lead notes, emails, SMS, calls, showings, and audit history."
+              >
+                {fullZip.running ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Archive className="h-3 w-3 mr-1" />}
+                {fullZip.running ? 'Exporting…' : 'Full ZIP export'}
               </Button>
               {selectedIds.size > 0 && (
                 <AlertDialog>

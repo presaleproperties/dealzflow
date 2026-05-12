@@ -29,6 +29,7 @@ const ACTION_TONE: Record<string, string> = {
   purge: 'text-destructive',
   export_lead: 'text-muted-foreground',
   export_workspace: 'text-muted-foreground',
+  'export.full_zip': 'text-muted-foreground',
 };
 
 function diffSummary(row: CrmAuditRow): string {
