@@ -121,40 +121,11 @@ export function useBridgeSendEmail() {
       if (data?.scheduled) {
         toast.success('Email scheduled');
       } else if (data?.queued) {
-        if (data?.reason === 'inbox_not_connected') {
-          toast.warning('Email queued — connect your inbox', {
-            description: data?.message
-              || "Your Gmail isn't connected yet. Go to Settings → Email → Connect Gmail to send immediately.",
-            duration: 8000,
-            action: {
-              label: 'Connect',
-              onClick: () => { window.location.href = '/crm/settings?tab=email'; },
-            },
-          });
-        } else if (data?.reason === 'no_email_provider') {
-          toast.warning('Email queued — no provider available', {
-            description: data?.message
-              || 'Connect your Gmail in Settings → Email, or ask an admin to configure the Resend fallback.',
-            duration: 10000,
-            action: {
-              label: 'Connect Gmail',
-              onClick: () => { window.location.href = '/crm/settings?tab=email'; },
-            },
-          });
-        } else {
-          toast.success('Email queued', {
-            description: data?.message || 'It will send on the next queue cycle.',
-          });
-        }
-      } else if (data?.sent_via === 'resend' || data?.sent_via === 'resend_fallback') {
-        toast.success('Email sent via fallback', {
-          description: data?.sent_via === 'resend_fallback'
-            ? 'Sent from noreply@dealzflow.ca because Gmail send failed. Replies will still come to you.'
-            : 'Sent from noreply@dealzflow.ca. Connect your Gmail in Settings → Email to send from your own address.',
-          duration: 6000,
+        toast.success('Email queued', {
+          description: data?.message || 'It will send on the next queue cycle.',
         });
       } else {
-        toast.success('Email sent');
+        toast.success('Email sent successfully');
       }
       // Refresh anything that reads from crm_email_log so the lead detail
       // history, dashboard KPIs, recent activity and right-rail update
@@ -174,17 +145,20 @@ export function useBridgeSendEmail() {
     },
     onError: (err: Error) => {
       const msg = err.message || 'Send failed';
-      if (/gmail.*expired|reconnect/i.test(msg)) {
-        toast.error('Gmail reconnect needed', {
+      if (/gmail.*expired|reconnect|gmail.*not connected|gmail_not_connected|gmail_auth_expired/i.test(msg)) {
+        toast.error('Failed to send email — check agent Gmail connection', {
           description: msg,
           duration: 10000,
           action: {
-            label: 'Reconnect',
+            label: 'Open Settings',
             onClick: () => { window.location.href = '/crm/settings?tab=email'; },
           },
         });
       } else {
-        toast.error(msg);
+        toast.error('Failed to send email — check agent Gmail connection', {
+          description: msg,
+          duration: 8000,
+        });
       }
     },
   });
