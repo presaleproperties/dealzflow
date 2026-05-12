@@ -95,6 +95,7 @@
 - [Calendar Sync Arch](mem://features/crm/calendar-sync-architecture-v3) — Google events read-only rendering
 - [Email Campaign Logic](mem://features/crm/email-campaign-logic-v3) — Local logging only
 - [Notifications System](mem://features/notifications/system-overview-v2) — Push via VAPID, SMS removed
+- [Realtime Push Trigger](mem://features/notifications/realtime-push-trigger) — AFTER INSERT trigger on crm_notifications → send-push-notification (med/high). Bootstrap via `bootstrap-push-trigger` edge fn (admin one-shot). SR-bearer bypass on send-push.
 - [Lofty Inbound Sync](mem://features/crm/lofty-inbound-sync-v4) — Inbound only, deduplication
 - [Lofty Conversation Sync](mem://features/integrations/lofty-conversation-sync) — Outbound migration tool: `lofty-sync-conversations` edge fn pulls emails/SMS/calls per contact; idempotent dedupe via `lofty:` prefix in gmail_message_id/twilio_message_sid + `[lofty-call:<id>]` marker in notes; "Pull from Lofty" button on lead detail
 - [Integrations Hub](mem://features/crm/integrations-hub-v4) — Deprecated integrations listed
