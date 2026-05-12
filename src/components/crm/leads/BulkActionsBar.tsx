@@ -5,7 +5,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Trash2, UserCheck, Tag, ArrowRightLeft, X, Mail, MessageSquare, Zap } from 'lucide-react';
 import {
   useBulkUpdateContacts,
-  useBulkDeleteContacts,
   useBulkAddTagsToContacts,
   useCrmContacts,
   LEAD_STATUSES,
@@ -17,11 +16,8 @@ import { InlineLibraryPicker } from './InlineLibraryPicker';
 import { SendTextDialog } from './SendTextDialog';
 import { ComposeEmailDialog } from '@/components/crm/leads/ComposeEmailDialog';
 import { EnrollInAutomationDialog } from '@/components/crm/automations/EnrollInAutomationDialog';
+import { DeleteLeadsConfirmDialog } from './DeleteLeadsConfirmDialog';
 import { formatContactName } from '@/lib/format';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface BulkActionsBarProps {
   selectedIds: string[];
