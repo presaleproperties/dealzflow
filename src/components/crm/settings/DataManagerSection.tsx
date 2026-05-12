@@ -265,6 +265,9 @@ export default function DataManagerSection() {
 
             {/* Duplicate review */}
             <DuplicateReviewSection />
+
+            {/* Workspace data safety checklist (manual) */}
+            <DataSafetyChecklistCard />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
