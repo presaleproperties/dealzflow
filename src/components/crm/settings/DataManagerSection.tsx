@@ -41,6 +41,7 @@ function escapeCsvCell(value: unknown): string {
 export default function DataManagerSection() {
   const { data: contacts = [], isLoading } = useCrmContacts();
   const queryClient = useQueryClient();
+  const fullZip = useFullZipExport();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
