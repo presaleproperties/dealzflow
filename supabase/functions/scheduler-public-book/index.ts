@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
     const startDate = new Date(start_at);
     const endDate = new Date(startDate.getTime() + (evt.duration_min as number) * 60_000);
 
-    // Conflict check (server-side guard; UI also filters)
+    // Soft pre-check (not race-proof on its own — DB partial unique index is the
+    // authoritative guard; we still query so overlapping (not-exact-start) bookings
+    // are caught and returned as 409).
     const { count: conflictCount } = await supabase
       .from('crm_scheduler_bookings')
       .select('id', { count: 'exact', head: true })
