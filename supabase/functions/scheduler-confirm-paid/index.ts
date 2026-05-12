@@ -61,6 +61,8 @@ Deno.serve(async (req) => {
         invitee: intent.invitee_payload,
         answers: intent.answers_payload,
         referrer: intent.referrer,
+        stripe_session_id: sessionId,
+        stripe_payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
       }),
     });
     const bookJson = await bookRes.json();
