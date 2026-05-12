@@ -116,7 +116,9 @@ Deno.serve(async (req) => {
       contactId = created.id;
     }
 
-    // Create booking
+    // Create booking. The partial unique index
+    //   crm_scheduler_bookings_active_slot_uq (agent_user_id, start_at) WHERE status IN (confirmed, rescheduled)
+    // gives atomic double-book prevention even under concurrent requests.
     const { data: booking, error: bookErr } = await supabase
       .from('crm_scheduler_bookings')
       .insert({
@@ -143,7 +145,15 @@ Deno.serve(async (req) => {
         referrer: referrer || null,
       })
       .select('*').single();
-    if (bookErr) throw bookErr;
+    if (bookErr) {
+      // 23505 = unique_violation → another request grabbed this slot first.
+      if ((bookErr as { code?: string }).code === '23505') {
+        return new Response(JSON.stringify({ error: 'slot_taken' }), {
+          status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw bookErr;
+    }
 
     // Persist answers
     if (Array.isArray(answers) && answers.length) {
