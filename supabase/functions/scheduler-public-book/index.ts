@@ -61,6 +61,34 @@ Deno.serve(async (req) => {
     const startDate = new Date(start_at);
     const endDate = new Date(startDate.getTime() + (evt.duration_min as number) * 60_000);
 
+    // Stripe-session idempotency: if a booking already exists for this session,
+    // return it instead of creating a duplicate. Two callers passing the same
+    // session_id (e.g. confirm-paid invoked twice from the success page) MUST
+    // see exactly one booking. The DB-level partial unique index
+    //   crm_scheduler_bookings_stripe_session_uq (stripe_session_id) WHERE NOT NULL
+    // is the authoritative guard; this read just lets us short-circuit cleanly.
+    if (stripe_session_id) {
+      const { data: existing } = await supabase
+        .from('crm_scheduler_bookings')
+        .select('*')
+        .eq('stripe_session_id', String(stripe_session_id))
+        .maybeSingle();
+      if (existing) {
+        return new Response(JSON.stringify({
+          booking_id: existing.id,
+          idempotent: true,
+          confirmation: {
+            event_title: null,
+            start_at: existing.start_at,
+            end_at: existing.end_at,
+            timezone: existing.invitee_timezone,
+            location_type: existing.location_type,
+            location_value: existing.location_value,
+          },
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // Soft pre-check (not race-proof on its own — DB partial unique index is the
     // authoritative guard; we still query so overlapping (not-exact-start) bookings
     // are caught and returned as 409).
