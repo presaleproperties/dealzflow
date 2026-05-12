@@ -26,7 +26,6 @@ interface BulkActionsBarProps {
 
 export function BulkActionsBar({ selectedIds, onClearSelection }: BulkActionsBarProps) {
   const bulkUpdate = useBulkUpdateContacts();
-  const bulkDelete = useBulkDeleteContacts();
   const bulkAddTags = useBulkAddTagsToContacts();
   const { data: tagLib = [] } = useCrmTags();
   const { data: agents = [] } = useTeamAgents();
