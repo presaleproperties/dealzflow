@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
     const startDate = new Date(start_at);
     const endDate = new Date(startDate.getTime() + (evt.duration_min as number) * 60_000);
 
-    // Conflict check (server-side guard; UI also filters)
+    // Soft pre-check (not race-proof on its own — DB partial unique index is the
+    // authoritative guard; we still query so overlapping (not-exact-start) bookings
+    // are caught and returned as 409).
     const { count: conflictCount } = await supabase
       .from('crm_scheduler_bookings')
       .select('id', { count: 'exact', head: true })
@@ -114,7 +116,9 @@ Deno.serve(async (req) => {
       contactId = created.id;
     }
 
-    // Create booking
+    // Create booking. The partial unique index
+    //   crm_scheduler_bookings_active_slot_uq (agent_user_id, start_at) WHERE status IN (confirmed, rescheduled)
+    // gives atomic double-book prevention even under concurrent requests.
     const { data: booking, error: bookErr } = await supabase
       .from('crm_scheduler_bookings')
       .insert({
@@ -141,7 +145,15 @@ Deno.serve(async (req) => {
         referrer: referrer || null,
       })
       .select('*').single();
-    if (bookErr) throw bookErr;
+    if (bookErr) {
+      // 23505 = unique_violation → another request grabbed this slot first.
+      if ((bookErr as { code?: string }).code === '23505') {
+        return new Response(JSON.stringify({ error: 'slot_taken' }), {
+          status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw bookErr;
+    }
 
     // Persist answers
     if (Array.isArray(answers) && answers.length) {
@@ -215,6 +227,64 @@ Deno.serve(async (req) => {
           .eq('id', booking.id);
       }
     } catch (e) { console.warn('gcal insert failed (non-fatal)', e); }
+
+    // Best-effort: push the booking out to external lead systems as a
+    // "Scheduler" lead source. Each integration is fully isolated — a single
+    // failure (timeout, 4xx, network) MUST NOT fail the booking.
+    const outboundPayload = {
+      source: 'DealzFlow Scheduler',
+      booking_id: booking.id,
+      event_slug: evt.slug,
+      event_title: evt.title,
+      start_at: startDate.toISOString(),
+      end_at: endDate.toISOString(),
+      timezone: agent.timezone || 'America/Vancouver',
+      agent: {
+        slug: agent.slug || null,
+        display_name: agent.display_name || null,
+        email: agent.email || null,
+      },
+      invitee: {
+        first_name: firstName,
+        last_name: lastName === '(unknown)' ? null : lastName,
+        email,
+        phone,
+        notes: invitee.notes || null,
+      },
+      utm: utm || {},
+      referrer: referrer || null,
+    };
+
+    const loftyUrl = Deno.env.get('LOFTY_OUTBOUND_WEBHOOK_URL');
+    const loftySecret = Deno.env.get('LOFTY_OUTBOUND_WEBHOOK_SECRET');
+    if (loftyUrl) {
+      try {
+        const r = await fetch(loftyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(loftySecret ? { 'x-webhook-secret': loftySecret } : {}),
+          },
+          body: JSON.stringify(outboundPayload),
+        });
+        if (!r.ok) {
+          console.error('lofty outbound non-2xx', r.status, await r.text().catch(() => ''));
+        }
+      } catch (e) {
+        console.error('lofty outbound failed (non-fatal)', e);
+      }
+    }
+
+    try {
+      const bridgeRes = await supabase.functions.invoke('bridge-ingest-lead', {
+        body: outboundPayload,
+      });
+      if (bridgeRes.error) {
+        console.error('bridge-ingest-lead failed (non-fatal)', bridgeRes.error);
+      }
+    } catch (e) {
+      console.error('bridge-ingest-lead threw (non-fatal)', e);
+    }
 
     // Best-effort: send confirmation + agent notification emails. Fire-and-forget.
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
