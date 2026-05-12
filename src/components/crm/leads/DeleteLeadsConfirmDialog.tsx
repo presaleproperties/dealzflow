@@ -57,8 +57,15 @@ export function DeleteLeadsConfirmDialog({ open, onOpenChange, contactIds, onDel
   const count = contactIds.length;
   const scope = scopeQ.data;
 
+  // Selections of 10 or fewer use a lightweight confirm (preview only) to keep
+  // routine cleanup fast. Above that we require the typed-name gate as a
+  // safety brake on irreversible bulk damage.
+  const TYPE_GATE_THRESHOLD = 10;
+  const requireTypedName = count > TYPE_GATE_THRESHOLD;
+  const canConfirm = requireTypedName ? nameMatches : true;
+
   const handleConfirm = async () => {
-    if (!nameMatches || softDelete.isPending) return;
+    if (!canConfirm || softDelete.isPending) return;
     const deleted = await softDelete.mutateAsync(contactIds);
     onOpenChange(false);
     onDeleted?.(typeof deleted === 'number' ? deleted : count);
@@ -77,7 +84,7 @@ export function DeleteLeadsConfirmDialog({ open, onOpenChange, contactIds, onDel
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        {/* Scope preview */}
+        {/* Scope preview — shown for every selection size */}
         <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-xs">
           {scopeQ.isLoading || !scope ? (
             <div className="space-y-1.5">
@@ -101,23 +108,25 @@ export function DeleteLeadsConfirmDialog({ open, onOpenChange, contactIds, onDel
           )}
         </div>
 
-        {/* Type-to-confirm gate */}
-        <div className="space-y-1.5">
-          <Label htmlFor="delete-confirm-name" className="text-xs text-muted-foreground">
-            Type your name to confirm:{' '}
-            <span className="font-medium text-foreground">{expectedName || '…'}</span>
-          </Label>
-          <Input
-            id="delete-confirm-name"
-            autoComplete="off"
-            autoFocus
-            value={typed}
-            onChange={(e) => setTyped(e.target.value)}
-            placeholder={expectedName || 'Loading…'}
-            disabled={!expectedName || softDelete.isPending}
-            className="h-9"
-          />
-        </div>
+        {/* Type-to-confirm gate — only for selections > 10 */}
+        {requireTypedName && (
+          <div className="space-y-1.5">
+            <Label htmlFor="delete-confirm-name" className="text-xs text-muted-foreground">
+              Type your name to confirm:{' '}
+              <span className="font-medium text-foreground">{expectedName || '…'}</span>
+            </Label>
+            <Input
+              id="delete-confirm-name"
+              autoComplete="off"
+              autoFocus
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder={expectedName || 'Loading…'}
+              disabled={!expectedName || softDelete.isPending}
+              className="h-9"
+            />
+          </div>
+        )}
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={softDelete.isPending}>Cancel</AlertDialogCancel>
@@ -126,7 +135,7 @@ export function DeleteLeadsConfirmDialog({ open, onOpenChange, contactIds, onDel
               e.preventDefault();
               handleConfirm();
             }}
-            disabled={!nameMatches || softDelete.isPending}
+            disabled={!canConfirm || softDelete.isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
           >
             {softDelete.isPending ? 'Deleting…' : `Delete ${count} lead${count === 1 ? '' : 's'}`}
