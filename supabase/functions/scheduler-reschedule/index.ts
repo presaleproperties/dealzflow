@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     if (!bookRes.ok) {
       // Restore old booking if we failed to book
       await supabase.from('crm_scheduler_bookings')
-        .update({ status: 'confirmed', cancelled_at: null, cancellation_reason: null })
+        .update({ status: 'confirmed', deleted_at: null, cancelled_at: null, cancellation_reason: null })
         .eq('id', booking_id);
       return new Response(JSON.stringify({ error: bookJson.error || 'rebook_failed' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
