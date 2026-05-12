@@ -171,6 +171,22 @@ export default function AdminPage() {
           </button>
         </div>
 
+        {/* ── Quick admin links ─────────────────────────── */}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/zara')}>
+            ✨ Zara AI Settings
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/audit')}>
+            Audit Log
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/projects')}>
+            Projects
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/bridge-status')}>
+            Bridge Status
+          </Button>
+        </div>
+
         {/* ── Signups Chart (collapsible) ──────────────────── */}
         {showChart && (
           <Card>
