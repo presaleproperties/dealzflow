@@ -6247,6 +6247,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      crm_count_delete_scope: {
+        Args: { p_contact_ids?: string[] }
+        Returns: Json
+      }
       crm_cta_label: {
         Args: { button_key: string; url: string }
         Returns: string
@@ -6389,6 +6393,10 @@ export type Database = {
         Returns: number
       }
       crm_soft_delete_contacts: { Args: { _ids: string[] }; Returns: number }
+      crm_soft_delete_contacts_with_undo: {
+        Args: { p_ids: string[] }
+        Returns: number
+      }
       crm_stitch_orphan_behavior: { Args: never; Returns: Json }
       crm_team_admin_update_member: {
         Args: {
