@@ -167,16 +167,45 @@ Deno.serve(async (req) => {
         location_value: evt.location_value,
         notes_for_agent: invitee.notes || null,
         payment_required: !!evt.requires_payment,
-        payment_status: evt.requires_payment ? 'pending' : 'none',
+        payment_status: evt.requires_payment
+          ? (stripe_session_id ? 'paid' : 'pending')
+          : 'none',
         payment_amount_cents: evt.price_cents || 0,
         payment_currency: evt.currency || 'CAD',
+        stripe_session_id: stripe_session_id || null,
+        stripe_payment_intent: stripe_payment_intent || null,
         utm: utm || {},
         referrer: referrer || null,
       })
       .select('*').single();
     if (bookErr) {
-      // 23505 = unique_violation → another request grabbed this slot first.
-      if ((bookErr as { code?: string }).code === '23505') {
+      const code = (bookErr as { code?: string }).code;
+      const msg = (bookErr as { message?: string }).message || '';
+      // 23505 = unique_violation. Two unique constraints can fire here:
+      //  - active_slot_uq (agent_user_id, start_at) → slot already taken
+      //  - stripe_session_uq (stripe_session_id)    → idempotent retry
+      if (code === '23505') {
+        if (stripe_session_id && msg.includes('stripe_session')) {
+          const { data: existing } = await supabase
+            .from('crm_scheduler_bookings')
+            .select('*')
+            .eq('stripe_session_id', String(stripe_session_id))
+            .maybeSingle();
+          if (existing) {
+            return new Response(JSON.stringify({
+              booking_id: existing.id,
+              idempotent: true,
+              confirmation: {
+                event_title: evt.title,
+                start_at: existing.start_at,
+                end_at: existing.end_at,
+                timezone: existing.invitee_timezone,
+                location_type: existing.location_type,
+                location_value: existing.location_value,
+              },
+            }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+        }
         return new Response(JSON.stringify({ error: 'slot_taken' }), {
           status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
