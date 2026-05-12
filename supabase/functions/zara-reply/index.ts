@@ -403,8 +403,9 @@ Return strict JSON per the system spec.`;
           } as any);
         } catch (e) { console.warn('crm_gmail_messages mirror failed', e); }
 
-        // Also append to crm_email_log (if present + accepts our shape) so
-        // analytics + thread health surfaces pick it up.
+        // Also append to crm_email_log so analytics + thread health surfaces
+        // pick it up. (No sender_agent_slug column — Zara identity is on
+        // user_id via crm_team.)
         try {
           await admin.from('crm_email_log').insert({
             contact_id,
@@ -414,9 +415,8 @@ Return strict JSON per the system spec.`;
             body: html,
             sent_at: new Date().toISOString(),
             status: 'sent',
-            sender_agent_slug: 'zara',
           } as any);
-        } catch (e) { /* table may not have sender_agent_slug — best-effort */ }
+        } catch (e) { /* best-effort */ }
       }
     }
   }
