@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     }
 
     // Create booking. The partial unique index
-    //   crm_scheduler_bookings_active_slot_uq (agent_user_id, start_at) WHERE status IN (confirmed, rescheduled)
+    //   crm_scheduler_bookings_active_slot_uq (agent_user_id, start_at) WHERE status IN (confirmed, rescheduled) AND deleted_at IS NULL
     // gives atomic double-book prevention even under concurrent requests.
     const { data: booking, error: bookErr } = await supabase
       .from('crm_scheduler_bookings')
@@ -163,6 +163,7 @@ Deno.serve(async (req) => {
         end_at: endDate.toISOString(),
         duration_min: evt.duration_min,
         status: 'confirmed',
+        deleted_at: null,
         location_type: evt.location_type,
         location_value: evt.location_value,
         notes_for_agent: invitee.notes || null,
