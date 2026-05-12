@@ -164,6 +164,17 @@ export default function DataManagerSection() {
               <Button variant="outline" size="sm" onClick={handleExport} className="h-7 text-[11px]">
                 <Download className="h-3 w-3 mr-1" />Export {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fullZip.run}
+                disabled={fullZip.running}
+                className="h-7 text-[11px]"
+                title="Download a ZIP of every contact + per-lead notes, emails, SMS, calls, showings, and audit history."
+              >
+                {fullZip.running ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Archive className="h-3 w-3 mr-1" />}
+                {fullZip.running ? 'Exporting…' : 'Full ZIP export'}
+              </Button>
               {selectedIds.size > 0 && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
