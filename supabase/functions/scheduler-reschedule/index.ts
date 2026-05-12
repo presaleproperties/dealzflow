@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       } catch (e) { console.warn('gcal delete failed', e); }
     }
     await supabase.from('crm_scheduler_bookings')
-      .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancellation_reason: 'rescheduled' })
+      .update({ status: 'cancelled', deleted_at: new Date().toISOString(), cancelled_at: new Date().toISOString(), cancellation_reason: 'rescheduled' })
       .eq('id', booking_id);
 
     // Book the new slot via the standard pipeline
