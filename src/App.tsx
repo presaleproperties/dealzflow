@@ -64,6 +64,7 @@ const PresaleWebhookLogPage = lazy(() => import("./pages/admin/PresaleWebhookLog
 const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const WebhookValidationPage = lazy(() => import("./pages/admin/WebhookValidationPage"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
+const ZaraSettingsPage = lazy(() => import("./pages/admin/ZaraSettingsPage"));
 const CrmTrashPage = lazy(() => import("./pages/crm/CrmTrashPage"));
 const AgentProfilePage = lazy(() => import("./pages/agent/AgentProfilePage"));
 const AgentComposePage = lazy(() => import("./pages/agent/AgentComposePage"));
@@ -273,6 +274,7 @@ const App = () => (
                     <Route path="/admin/webhook-validation" element={<AdminRoute><WebhookValidationPage /></AdminRoute>} />
                     <Route path="/admin/presale-webhooks" element={<AdminRoute><PresaleWebhookLogPage /></AdminRoute>} />
                     <Route path="/admin/audit" element={<AdminRoute><AuditLogPage /></AdminRoute>} />
+                    <Route path="/admin/zara" element={<AdminRoute><ZaraSettingsPage /></AdminRoute>} />
                     <Route path="/crm/trash" element={<ProtectedRoute><CrmLayout requireRole={['owner', 'admin']}><CrmTrashPage /></CrmLayout></ProtectedRoute>} />
                     <Route path="/agent/profile" element={<ProtectedRoute><AgentProfilePage /></ProtectedRoute>} />
                     <Route path="/agent/compose" element={<ProtectedRoute><AgentComposePage /></ProtectedRoute>} />
