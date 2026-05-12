@@ -4193,6 +4193,7 @@ export type Database = {
           invited_at: string | null
           invited_by: string | null
           is_active: boolean
+          is_ai: boolean
           license_no: string | null
           name_aliases: string[]
           permissions: Json
@@ -4205,6 +4206,7 @@ export type Database = {
           quiet_hours_tz: string
           role: string
           scheduler_onboarded_at: string | null
+          sender_signature_html: string | null
           slug: string | null
           timezone: string | null
           title: string | null
@@ -4227,6 +4229,7 @@ export type Database = {
           invited_at?: string | null
           invited_by?: string | null
           is_active?: boolean
+          is_ai?: boolean
           license_no?: string | null
           name_aliases?: string[]
           permissions?: Json
@@ -4239,6 +4242,7 @@ export type Database = {
           quiet_hours_tz?: string
           role?: string
           scheduler_onboarded_at?: string | null
+          sender_signature_html?: string | null
           slug?: string | null
           timezone?: string | null
           title?: string | null
@@ -4261,6 +4265,7 @@ export type Database = {
           invited_at?: string | null
           invited_by?: string | null
           is_active?: boolean
+          is_ai?: boolean
           license_no?: string | null
           name_aliases?: string[]
           permissions?: Json
@@ -4273,6 +4278,7 @@ export type Database = {
           quiet_hours_tz?: string
           role?: string
           scheduler_onboarded_at?: string | null
+          sender_signature_html?: string | null
           slug?: string | null
           timezone?: string | null
           title?: string | null
@@ -4871,6 +4877,51 @@ export type Database = {
           name?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_zara_settings: {
+        Row: {
+          created_at: string
+          daily_send_cap_per_lead: number
+          enabled: boolean
+          id: number
+          model_classify: string
+          model_draft: string
+          quiet_hours_end: string
+          quiet_hours_start: string
+          system_prompt_version: string
+          timezone: string
+          weekly_send_cap_per_lead: number
+          workspace_daily_cap: number
+        }
+        Insert: {
+          created_at?: string
+          daily_send_cap_per_lead?: number
+          enabled?: boolean
+          id?: number
+          model_classify?: string
+          model_draft?: string
+          quiet_hours_end?: string
+          quiet_hours_start?: string
+          system_prompt_version?: string
+          timezone?: string
+          weekly_send_cap_per_lead?: number
+          workspace_daily_cap?: number
+        }
+        Update: {
+          created_at?: string
+          daily_send_cap_per_lead?: number
+          enabled?: boolean
+          id?: number
+          model_classify?: string
+          model_draft?: string
+          quiet_hours_end?: string
+          quiet_hours_start?: string
+          system_prompt_version?: string
+          timezone?: string
+          weekly_send_cap_per_lead?: number
+          workspace_daily_cap?: number
         }
         Relationships: []
       }
@@ -6741,6 +6792,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      zara_can_send_to: { Args: { _contact_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

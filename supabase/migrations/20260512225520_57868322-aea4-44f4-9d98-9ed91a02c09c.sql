@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.zara_can_send_to(uuid) FROM anon;
