@@ -228,6 +228,64 @@ Deno.serve(async (req) => {
       }
     } catch (e) { console.warn('gcal insert failed (non-fatal)', e); }
 
+    // Best-effort: push the booking out to external lead systems as a
+    // "Scheduler" lead source. Each integration is fully isolated — a single
+    // failure (timeout, 4xx, network) MUST NOT fail the booking.
+    const outboundPayload = {
+      source: 'DealzFlow Scheduler',
+      booking_id: booking.id,
+      event_slug: evt.slug,
+      event_title: evt.title,
+      start_at: startDate.toISOString(),
+      end_at: endDate.toISOString(),
+      timezone: agent.timezone || 'America/Vancouver',
+      agent: {
+        slug: agent.slug || null,
+        display_name: agent.display_name || null,
+        email: agent.email || null,
+      },
+      invitee: {
+        first_name: firstName,
+        last_name: lastName === '(unknown)' ? null : lastName,
+        email,
+        phone,
+        notes: invitee.notes || null,
+      },
+      utm: utm || {},
+      referrer: referrer || null,
+    };
+
+    const loftyUrl = Deno.env.get('LOFTY_OUTBOUND_WEBHOOK_URL');
+    const loftySecret = Deno.env.get('LOFTY_OUTBOUND_WEBHOOK_SECRET');
+    if (loftyUrl) {
+      try {
+        const r = await fetch(loftyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(loftySecret ? { 'x-webhook-secret': loftySecret } : {}),
+          },
+          body: JSON.stringify(outboundPayload),
+        });
+        if (!r.ok) {
+          console.error('lofty outbound non-2xx', r.status, await r.text().catch(() => ''));
+        }
+      } catch (e) {
+        console.error('lofty outbound failed (non-fatal)', e);
+      }
+    }
+
+    try {
+      const bridgeRes = await supabase.functions.invoke('bridge-ingest-lead', {
+        body: outboundPayload,
+      });
+      if (bridgeRes.error) {
+        console.error('bridge-ingest-lead failed (non-fatal)', bridgeRes.error);
+      }
+    } catch (e) {
+      console.error('bridge-ingest-lead threw (non-fatal)', e);
+    }
+
     // Best-effort: send confirmation + agent notification emails. Fire-and-forget.
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
