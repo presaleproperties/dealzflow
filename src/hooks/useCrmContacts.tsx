@@ -175,18 +175,14 @@ export function useCrmContacts(
       }
 
       if (truncated) {
-        // Fire-and-forget; only warn once per session.
+        // Logged once per session — no user-facing toast (Leads page uses server-side
+        // pagination; this hook is only used by dashboards/pickers where the cap is fine).
         const w = window as unknown as { __crmContactsTruncatedWarned?: boolean };
         if (!w.__crmContactsTruncatedWarned) {
           w.__crmContactsTruncatedWarned = true;
-          toast.warning(
-            `Showing the most recent ${HARD_CAP} contacts. Use search or paginated views to see the rest.`,
-            {
-              id: 'crm-contacts-truncated',
-              duration: 8000,
-              dismissible: true,
-              closeButton: true,
-            },
+          console.warn(
+            `[useCrmContacts] Truncated to ${HARD_CAP} most-recent contacts. ` +
+            `Use server-paginated queries for full coverage.`,
           );
         }
       }
