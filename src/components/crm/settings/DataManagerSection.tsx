@@ -18,6 +18,7 @@ import { formatContactName } from '@/lib/format';
 import SourceBackfillSection from './SourceBackfillSection';
 import SourceManagerSection from './SourceManagerSection';
 import DuplicateReviewSection from './DuplicateReviewSection';
+import DataSafetyChecklistCard from './DataSafetyChecklistCard';
 import { format } from 'date-fns';
 
 const EXPORT_FIELDS = [
@@ -264,6 +265,9 @@ export default function DataManagerSection() {
 
             {/* Duplicate review */}
             <DuplicateReviewSection />
+
+            {/* Workspace data safety checklist (manual) */}
+            <DataSafetyChecklistCard />
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

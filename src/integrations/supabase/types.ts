@@ -4337,6 +4337,33 @@ export type Database = {
           },
         ]
       }
+      crm_team_settings: {
+        Row: {
+          created_at: string
+          data_safety_checklist: Json
+          id: string
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_safety_checklist?: Json
+          id?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_safety_checklist?: Json
+          id?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       crm_template_favorites: {
         Row: {
           created_at: string
@@ -6395,6 +6422,10 @@ export type Database = {
           _user_ids: string[]
         }
         Returns: number
+      }
+      crm_set_data_safety_check: {
+        Args: { _checked: boolean; _key: string; _note?: string }
+        Returns: Json
       }
       crm_soft_delete_contacts: { Args: { _ids: string[] }; Returns: number }
       crm_soft_delete_contacts_with_undo: {
