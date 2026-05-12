@@ -11,8 +11,10 @@ import {
   ChevronDown, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
   Receipt, TrendingUp, BarChart2, Network,
   Users, Kanban, Mail, MessageCircle, LayoutTemplate, BookUser, Zap,
-  CalendarDays, BarChart3, Settings, Plug, ShieldAlert, LogOut,
+  CalendarDays, BarChart3, Settings, Plug, ShieldAlert, LogOut, Bell, BellRing,
 } from 'lucide-react';
+import { PushNotificationDialog } from '@/components/settings/PushNotificationDialog';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
@@ -111,6 +113,8 @@ export function TopNav() {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [pushDialogOpen, setPushDialogOpen] = useState(false);
+  const { isSubscribed, isSupported } = usePushNotifications();
   const closeTimerRef = useRef<number | null>(null);
 
   const requestSignOut = () => setSignOutOpen(true);
@@ -363,6 +367,25 @@ export function TopNav() {
                 <GlobalLeadSearch />
               </div>
             )}
+            {isSupported && (
+              <button
+                type="button"
+                onClick={() => setPushDialogOpen(true)}
+                aria-label={isSubscribed ? 'Push notifications enabled' : 'Enable push notifications'}
+                title={isSubscribed ? 'Push notifications enabled' : 'Enable push notifications'}
+                className="relative inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                style={{ color: isSubscribed ? GOLD : INACTIVE_TEXT }}
+              >
+                {isSubscribed ? <BellRing className="w-[18px] h-[18px]" strokeWidth={1.8} /> : <Bell className="w-[18px] h-[18px]" strokeWidth={1.8} />}
+                {isSubscribed && (
+                  <span
+                    className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
+                    style={{ background: GOLD, boxShadow: '0 0 0 2px hsl(var(--background))' }}
+                    aria-hidden
+                  />
+                )}
+              </button>
+            )}
           </div>
           <div className="hidden lg:block w-2" />
         </div>
@@ -387,6 +410,8 @@ export function TopNav() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PushNotificationDialog open={pushDialogOpen} onOpenChange={setPushDialogOpen} />
     </>
   );
 }

@@ -189,34 +189,39 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // SECURITY: require a valid JWT. Without auth, anyone with the function
-    // URL + anon key could push notifications to any user (phishing vector).
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing Authorization' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // SECURITY: require auth — either a valid user JWT OR the service-role key
+    // (the latter lets DB triggers fan out push via pg_net without a user session).
+    const authHeader = req.headers.get('Authorization') || '';
+    const isServiceRole =
+      authHeader === `Bearer ${serviceRoleKey}` ||
+      req.headers.get('x-internal-trigger') === serviceRoleKey;
 
-    const { user_id, title, message, url: notifUrl, all_users } = await req.json();
+    const body = await req.json();
+    const { user_id, title, message, url: notifUrl, all_users } = body;
 
-    // Admin-or-self gate: targeting another user (or all_users) requires admin.
-    const targetingOthers = all_users === true || (user_id && user_id !== user.id);
-    if (targetingOthers) {
-      const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-      if (!isAdmin) {
-        return new Response(JSON.stringify({ error: 'Forbidden — admin required to target other users' }), {
-          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!isServiceRole) {
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Missing Authorization' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+      const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: userErr } = await userClient.auth.getUser();
+      if (userErr || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const targetingOthers = all_users === true || (user_id && user_id !== user.id);
+      if (targetingOthers) {
+        const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        if (!isAdmin) {
+          return new Response(JSON.stringify({ error: 'Forbidden — admin required to target other users' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
     }
 

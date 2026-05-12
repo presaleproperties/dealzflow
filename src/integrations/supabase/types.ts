@@ -2059,6 +2059,24 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_internal_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       crm_lead_behavior_engagement: {
         Row: {
           campaign_id: string | null
