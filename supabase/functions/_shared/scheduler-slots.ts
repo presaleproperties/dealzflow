@@ -69,8 +69,16 @@ export function localToUtc(dateStr: string, hhmm: string, tz: string): Date {
     dayShift = 86_400_000;
   }
   const naive = new Date(`${dateStr}T${normalized}Z`); // treat as UTC
-  const tzOffsetMin = getTzOffsetMin(naive, tz);
-  return new Date(naive.getTime() - tzOffsetMin * 60_000 + dayShift);
+  // First pass: offset at the naive instant.
+  const off1 = getTzOffsetMin(naive, tz);
+  let candidate = new Date(naive.getTime() - off1 * 60_000 + dayShift);
+  // Refine: on a DST boundary the offset at `candidate` may differ from the
+  // offset at the naive instant. Re-apply once to converge.
+  const off2 = getTzOffsetMin(candidate, tz);
+  if (off2 !== off1) {
+    candidate = new Date(naive.getTime() - off2 * 60_000 + dayShift);
+  }
+  return candidate;
 }
 
 /**
