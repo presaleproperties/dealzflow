@@ -34,61 +34,136 @@ Deno.serve(async (req) => {
     for (const w of windows) {
       const { data: bookings, error } = await supabase
         .from("crm_scheduler_bookings")
-        .select("id, invitee_email, start_at, status")
+        .select("id, invitee_email, invitee_phone, start_at, status")
         .in("status", ["confirmed", "rescheduled"])
         .gte("start_at", new Date(w.minMs).toISOString())
         .lte("start_at", new Date(w.maxMs).toISOString());
       if (error) throw error;
 
       for (const b of (bookings || [])) {
-        if (!b.invitee_email) { totalSkipped++; continue; }
-
-        // Atomically claim this reminder using the unique index.
-        const { error: claimErr } = await supabase
-          .from("crm_scheduler_reminder_log")
-          .insert({
-            booking_id: b.id,
-            reminder_kind: w.kind,
-            channel: "email",
-            recipient: b.invitee_email,
-            status: "pending",
-          });
-        if (claimErr) {
-          // 23505 = unique violation → already sent. Anything else: log and skip.
-          if ((claimErr as any).code !== "23505") {
-            console.warn("reminder claim failed", b.id, w.kind, claimErr);
-          }
-          totalSkipped++;
-          continue;
-        }
-
-        // Send via scheduler-send-emails
-        try {
-          const sendRes = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-send-emails`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${SERVICE_KEY}`,
-            },
-            body: JSON.stringify({
-              kind: "reminder",
+        // ----- EMAIL channel -----
+        if (b.invitee_email) {
+          // Atomically claim this reminder using the unique index.
+          const { error: claimErr } = await supabase
+            .from("crm_scheduler_reminder_log")
+            .insert({
               booking_id: b.id,
-              reminder_label: w.label,
-            }),
-          });
-          if (!sendRes.ok) throw new Error(`status ${sendRes.status}`);
-          await supabase
-            .from("crm_scheduler_reminder_log")
-            .update({ status: "sent", sent_at: new Date().toISOString() })
-            .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "email");
-          totalSent++;
-        } catch (e) {
-          await supabase
-            .from("crm_scheduler_reminder_log")
-            .update({ status: "failed", error: String((e as Error).message) })
-            .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "email");
-          totalFailed++;
+              reminder_kind: w.kind,
+              channel: "email",
+              recipient: b.invitee_email,
+              status: "pending",
+            });
+          if (claimErr) {
+            if ((claimErr as any).code !== "23505") {
+              console.warn("reminder claim failed", b.id, w.kind, claimErr);
+            }
+            totalSkipped++;
+          } else {
+            try {
+              const sendRes = await fetch(`${SUPABASE_URL}/functions/v1/scheduler-send-emails`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${SERVICE_KEY}`,
+                },
+                body: JSON.stringify({
+                  kind: "reminder",
+                  booking_id: b.id,
+                  reminder_label: w.label,
+                }),
+              });
+              if (!sendRes.ok) throw new Error(`status ${sendRes.status}`);
+              await supabase
+                .from("crm_scheduler_reminder_log")
+                .update({ status: "sent", sent_at: new Date().toISOString() })
+                .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "email");
+              totalSent++;
+            } catch (e) {
+              await supabase
+                .from("crm_scheduler_reminder_log")
+                .update({ status: "failed", error: String((e as Error).message) })
+                .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "email");
+              totalFailed++;
+            }
+          }
         }
+
+        // ----- SMS channel -----
+        // Skip silently when:
+        //  - the invitee never gave us a phone, OR
+        //  - the invitee phone is in crm_sms_opt_outs (and not re-opted in).
+        // No reminder_log row is created for opt-outs so we never re-attempt
+        // and never surface the skip in the cron's totals as a "real" skip.
+        if (b.invitee_phone) {
+          const { data: optOut } = await supabase
+            .from("crm_sms_opt_outs")
+            .select("id")
+            .eq("phone", b.invitee_phone)
+            .is("re_opted_in_at", null)
+            .maybeSingle();
+          if (optOut) {
+            // silent — do not log, do not count
+            continue;
+          }
+
+          const { error: smsClaimErr } = await supabase
+            .from("crm_scheduler_reminder_log")
+            .insert({
+              booking_id: b.id,
+              reminder_kind: w.kind,
+              channel: "sms",
+              recipient: b.invitee_phone,
+              status: "pending",
+            });
+          if (smsClaimErr) {
+            if ((smsClaimErr as any).code !== "23505") {
+              console.warn("sms reminder claim failed", b.id, w.kind, smsClaimErr);
+            }
+            totalSkipped++;
+            continue;
+          }
+
+          try {
+            const smsRes = await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${SERVICE_KEY}`,
+              },
+              body: JSON.stringify({
+                to: b.invitee_phone,
+                body: `${w.label} — your appointment. Reply STOP to opt out.`,
+                channel: "sms",
+                source: `scheduler-reminder:${w.kind}`,
+                booking_id: b.id,
+              }),
+            });
+            const smsJson = await smsRes.json().catch(() => ({}));
+            // send-sms may also return OPTED_OUT if the row was created in a race.
+            // Treat that as a silent skip too — clear the pending claim row.
+            if (!smsRes.ok && smsJson?.code === "OPTED_OUT") {
+              await supabase
+                .from("crm_scheduler_reminder_log")
+                .delete()
+                .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "sms");
+              continue;
+            }
+            if (!smsRes.ok) throw new Error(smsJson?.error || `status ${smsRes.status}`);
+            await supabase
+              .from("crm_scheduler_reminder_log")
+              .update({ status: "sent", sent_at: new Date().toISOString() })
+              .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "sms");
+            totalSent++;
+          } catch (e) {
+            await supabase
+              .from("crm_scheduler_reminder_log")
+              .update({ status: "failed", error: String((e as Error).message) })
+              .eq("booking_id", b.id).eq("reminder_kind", w.kind).eq("channel", "sms");
+            totalFailed++;
+          }
+        }
+
+        if (!b.invitee_email && !b.invitee_phone) totalSkipped++;
       }
     }
 
