@@ -11,8 +11,10 @@ import {
   ChevronDown, LayoutDashboard, GitBranch, Handshake, DollarSign, Building2,
   Receipt, TrendingUp, BarChart2, Network,
   Users, Kanban, Mail, MessageCircle, LayoutTemplate, BookUser, Zap,
-  CalendarDays, BarChart3, Settings, Plug, ShieldAlert, LogOut,
+  CalendarDays, BarChart3, Settings, Plug, ShieldAlert, LogOut, Bell, BellRing,
 } from 'lucide-react';
+import { PushNotificationDialog } from '@/components/settings/PushNotificationDialog';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
