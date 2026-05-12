@@ -209,6 +209,18 @@ Deno.serve(async (req) => {
       });
     } catch (e) { console.error('activity_events insert failed', e); }
 
+    // Zara hook: if this contact is assigned to Zara, fire autonomous reply
+    if (contact?.id && contact.assigned_to) {
+      try {
+        const { data: zara } = await admin.from('crm_team').select('id').eq('slug', 'zara').maybeSingle();
+        if (zara?.id && contact.assigned_to === zara.id) {
+          admin.functions.invoke('zara-reply', {
+            body: { contact_id: contact.id, channel, message_text: bodyText, message_id: sid },
+          }).catch((e) => console.warn('[twilio-sms-webhook] zara-reply invoke failed', e));
+        }
+      } catch (e) { console.warn('[twilio-sms-webhook] zara hook err', e); }
+    }
+
     // Notify CRM team if this is a known contact
     if (contact) {
       const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'A lead';
